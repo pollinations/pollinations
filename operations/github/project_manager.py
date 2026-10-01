@@ -5,7 +5,6 @@ import re
 import requests
 import time
 from typing import Optional
-from urllib.parse import quote
 
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -33,7 +32,6 @@ ISSUE_BODY = ITEM_DATA.get("body", "") or ""
 ISSUE_AUTHOR = ITEM_DATA.get("user", {}).get("login", "")
 ISSUE_AUTHOR_ID = ITEM_DATA.get("user", {}).get("id")
 ISSUE_NODE_ID = ITEM_DATA.get("node_id", "")
-PR_HEAD_REF = ITEM_DATA.get("head", {}).get("ref", "") if IS_PULL_REQUEST else ""
 GITHUB_API = "https://api.github.com"
 GITHUB_GRAPHQL = "https://api.github.com/graphql"
 POLLINATIONS_API = "https://gen.pollinations.ai/v1/chat/completions"
@@ -84,25 +82,8 @@ CONFIG = {
                 "Medium": "e874fe65",
                 "Low": "7495a981",
             },
-            # Focus areas, defined in focus-areas.md.
-            "area_field_id": "PVTSSF_lADOBS76fs4AwCAMzhj_BWQ",
-            "area_options": {
-                "Models": "a60c5943",
-                "Community models": "243f5bd6",
-                "Agents & agent tools": "1261c530",
-                "Developer tools": "9dba7729",
-                "Accounts & keys": "460296c9",
-                "Billing & payments": "b5e3a1aa",
-                "Quests & rewards": "1517245b",
-                "Dashboard": "2faa489c",
-                "API & reliability": "da2dd71a",
-                "CI & releases": "f37a034f",
-                "Internal automation": "6592d6d0",
-                "Brand & news": "594dbcb6",
-                "Docs & support": "5fea3e5a",
-                "App catalog & showcase": "c2c1554f",
-                "Data & insights": "413761e4",
-            },
+            # Options are read from GitHub by name; the names live in project-manager.md.
+            "area_field_name": "Area",
         },
     },
     "discord_relay_bot_id": 247793354,
@@ -182,45 +163,22 @@ def is_paid_customer(github_id) -> bool:
         return False
     return github_id in fetch_paid_customer_ids()
 
-def get_script_dir() -> str:
-    return os.path.dirname(os.path.abspath(__file__))
 
-
-def read_prompt_file() -> str:
-    """The classifier rules followed by the focus area definitions they refer to."""
-    parts = []
-    for name in ("project-manager.md", "focus-areas.md"):
-        with open(os.path.join(get_script_dir(), name), "r") as f:
-            parts.append(f.read())
-    return "\n\n---\n\n".join(parts)
-
-
-# One label list for issues and pull requests; definitions live in project-manager.md.
-# Kinds are listed in tie-break order.
-KINDS = ["MODEL", "ECONOMICS", "MONITORING", "APPS", "INFRA", "UI-UX", "API", "DOCS"]
-TYPES = ["BUG", "FEATURE", "QUESTION", "TRACKING"]
-# POLLEN-QUEST is a classifier flag on PRs only: on an issue it publishes a rewarded quest.
-FLAGS = {"BILLING", "SECURITY", "AUTOMATED"} | ({"POLLEN-QUEST"} if IS_PULL_REQUEST else set())
-# Labels the classifier owns; it replaces these and leaves workflow labels alone.
-OWNED_LABELS = set(KINDS) | set(TYPES) | FLAGS
-# Types a person set on an issue that the classifier keeps.
-PINNED_TYPES = {"TRACKING", "VOTING"}
-# GitHub issue types for the type labels; pull requests have no issue type.
-ISSUE_TYPES = {"BUG": "Bug", "FEATURE": "Feature", "QUESTION": "Question", "TRACKING": "Tracking"}
-AREAS = CONFIG["projects"]["dev"]["area_options"]
+BRIEF_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project-manager.md")
+TYPES = ["Bug", "Feature", "Question", "Task"]
+PRIORITIES = ["High", "Medium", "Low"]
 APP_SUBMISSION_AREA = "App catalog & showcase"
+SKIPPED_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 
 
-def parse_labels(raw: dict) -> Optional[list]:
-    """The model's kind, type and flags as labels; None when the kind is invalid."""
-    kind = str(raw.get("kind", "")).upper()
-    if kind not in KINDS:
-        log_error(f"AI returned invalid kind: {raw.get('kind')!r}")
-        return None
-    item_type = str(raw.get("type") or "").upper()
-    raw_flags = raw.get("flags") if isinstance(raw.get("flags"), list) else []
-    picked = [f.upper() for f in raw_flags if isinstance(f, str) and f.upper() in FLAGS]
-    return list(dict.fromkeys([kind, *([item_type] if item_type in TYPES else []), *picked]))
+def read_brief() -> str:
+    with open(BRIEF_PATH, "r") as f:
+        return f.read()
+
+
+def area_names(brief: str) -> list:
+    """The areas, as listed in the brief's overview table."""
+    return re.findall(r"^\| \[(.+?)\]\(#.+?\) \| .+? \|$", brief, re.MULTILINE)
 
 
 def ask_ai(system_prompt: str, user_prompt: str) -> Optional[dict]:
@@ -275,64 +233,6 @@ def describe_author() -> str:
     return f"{user.get('login', '')} (account type: {user.get('type', 'User')})"
 
 
-def classify(facts: str, tracking_issues: Optional[list] = None) -> Optional[dict]:
-    """Labels for the current issue or PR, plus priority and tracking parent for issues."""
-    tracking_block = ""
-    if tracking_issues:
-        tracking_lines = "\n".join(f"- #{e['number']}: {e['title']}" for e in tracking_issues)
-        tracking_block = (
-            "\n\n## Dev Tracking Issues (choose `tracking_issue` from these for team issues)\n"
-            f"{tracking_lines}\n"
-        )
-    item = "a pull request" if IS_PULL_REQUEST else "an issue"
-    system_prompt = f"""{read_prompt_file()}
-{tracking_block}
----
-**Context:** This is {item}.
-"""
-    user_prompt = f"""
-Author: {describe_author()}
-Title: {ISSUE_TITLE}
-Body: {ISSUE_BODY[:2000]}
-{facts}
-"""
-    raw = ask_ai(system_prompt, user_prompt)
-    if raw is None:
-        return None
-
-    labels = parse_labels(raw)
-    if labels is None:
-        return None
-
-    # null only for promotion PRs, which carry other PRs' work.
-    area = raw.get("area")
-    if area is not None and area not in AREAS:
-        log_error(f"AI returned invalid area: {area!r}")
-        return None
-
-    priority = raw.get("priority")
-    if not IS_PULL_REQUEST and priority not in {"High", "Medium", "Low"}:
-        log_error(f"AI returned invalid priority: {priority}")
-        priority = "Medium"
-
-    tracking_raw = raw.get("tracking_issue")
-    tracking_number = None
-    if isinstance(tracking_raw, int) and not isinstance(tracking_raw, bool):
-        tracking_number = tracking_raw
-    elif isinstance(tracking_raw, str) and tracking_raw.strip().lstrip("#").isdigit():
-        tracking_number = int(tracking_raw.strip().lstrip("#"))
-
-    classification = {
-        "area": area,
-        "labels": labels,
-        "priority": priority,
-        "tracking_issue": tracking_number,
-        "reasoning": raw.get("reasoning", ""),
-    }
-    log_debug(f"AI parsed classification: {classification}")
-    return classification
-
-
 def graphql_request(query: str, variables: dict = None) -> dict:
     try:
         r = requests.post(
@@ -379,65 +279,6 @@ def add_to_project(project_id: str) -> Optional[str]:
     return item_id
 
 
-_TRACKING_ISSUES: Optional[list] = None
-
-
-def fetch_tracking_issues() -> list:
-    """Open Dev tracking issues (labelled TRACKING, opened by the team). Returns
-    [{number, title}] so the AI can pick the best-fit parent. Community epics also
-    carry TRACKING but live in Support, so they are never parents for Dev issues.
-    Cached for the lifetime of the process."""
-    global _TRACKING_ISSUES
-    if _TRACKING_ISSUES is not None:
-        return _TRACKING_ISSUES
-    try:
-        r = requests.get(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues",
-            headers=GITHUB_HEADERS,
-            params={"labels": "TRACKING", "state": "open", "per_page": 100},
-            timeout=15,
-        )
-        if r.status_code != 200:
-            log_error(f"Failed to fetch tracking issues: {r.status_code} - {r.text[:200]}")
-            _TRACKING_ISSUES = []
-            return _TRACKING_ISSUES
-        _TRACKING_ISSUES = [
-            {"number": i["number"], "title": i.get("title", "")}
-            for i in r.json()
-            if "pull_request" not in i
-            and i.get("number") != ISSUE_NUMBER
-            and i.get("user", {}).get("id") in CONFIG["org_member_ids"]
-        ]
-        log_debug(f"Loaded {len(_TRACKING_ISSUES)} open tracking issues")
-        return _TRACKING_ISSUES
-    except (requests.RequestException, ValueError) as e:
-        log_error(f"Exception fetching tracking issues: {e}")
-        _TRACKING_ISSUES = []
-        return _TRACKING_ISSUES
-
-
-def assign_to_tracking_issue(parent_number: int, child_db_id: int) -> bool:
-    """Link the current issue as a native sub-issue of tracking issue #parent_number."""
-    if DRY_RUN:
-        log_debug(f"[DRY-RUN] Would link #{ISSUE_NUMBER} under tracking issue #{parent_number}")
-        return True
-    try:
-        r = requests.post(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{parent_number}/sub_issues",
-            headers={**GITHUB_HEADERS, "X-GitHub-Api-Version": "2026-03-10"},
-            json={"sub_issue_id": child_db_id},
-            timeout=15,
-        )
-        if r.status_code in (200, 201):
-            log_debug(f"Linked #{ISSUE_NUMBER} as sub-issue of tracking issue #{parent_number}")
-            return True
-        log_error(f"Failed to link #{ISSUE_NUMBER} under tracking issue #{parent_number}: {r.status_code} - {r.text[:200]}")
-        return False
-    except requests.RequestException as e:
-        log_error(f"Exception linking sub-issue under #{parent_number}: {e}")
-        return False
-
-
 def set_project_field(project_id: str, item_id: str, field_id: str, option_id: str):
     mutation = """
     mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
@@ -466,83 +307,6 @@ def set_project_field(project_id: str, item_id: str, field_id: str, option_id: s
         log_error(f"Failed to set project field: field_id={field_id}")
 
 
-def set_area(item_id: str, area: Optional[str]):
-    if area is None:
-        log_debug(f"No area for #{ISSUE_NUMBER}")
-        return
-    project = CONFIG["projects"]["dev"]
-    set_project_field(project["id"], item_id, project["area_field_id"], project["area_options"][area])
-
-
-def set_issue_type(labels: list):
-    """Mirror the type label as the GitHub issue type; issues without a type keep theirs."""
-    issue_type = next((ISSUE_TYPES[l] for l in labels if l in ISSUE_TYPES), None)
-    if issue_type is None:
-        return
-    if DRY_RUN:
-        log_debug(f"[DRY-RUN] Would set issue type: {issue_type}")
-        return
-    try:
-        r = requests.patch(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
-            headers=GITHUB_HEADERS,
-            json={"type": issue_type},
-            timeout=10,
-        )
-    except requests.RequestException as e:
-        log_error(f"Exception setting issue type on #{ISSUE_NUMBER}: {e}")
-        return
-    if r.status_code == 200:
-        log_debug(f"Set issue type: {issue_type}")
-    else:
-        log_error(f"Failed to set issue type {issue_type} on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
-
-
-def add_labels(labels: list):
-    if not labels:
-        log_debug("No labels to add")
-        return
-    if DRY_RUN:
-        log_debug(f"[DRY-RUN] Would add labels: {labels}")
-        return
-    try:
-        r = requests.post(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels",
-            headers=GITHUB_HEADERS,
-            json={"labels": labels},
-            timeout=10,
-        )
-    except requests.RequestException as e:
-        fail(f"Exception adding labels to #{ISSUE_NUMBER}: {e}")
-    if r.status_code != 200:
-        fail(f"Failed to add labels to #{ISSUE_NUMBER}: {r.status_code} - {r.text}")
-    log_debug(f"Added labels: {labels}")
-
-
-def remove_label(label: str):
-    if DRY_RUN:
-        log_debug(f"[DRY-RUN] Would remove label: {label}")
-        return
-    try:
-        r = requests.delete(
-            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}/labels/{quote(label)}",
-            headers=GITHUB_HEADERS,
-            timeout=10,
-        )
-    except requests.RequestException as e:
-        fail(f"Exception removing label {label} from #{ISSUE_NUMBER}: {e}")
-    if r.status_code not in (200, 404):
-        fail(f"Failed to remove label {label} from #{ISSUE_NUMBER}: {r.status_code} - {r.text}")
-    log_debug(f"Removed label: {label}")
-
-
-def set_labels(labels: list):
-    """Apply the classifier's labels, replacing the owned labels already on the item."""
-    for stale in sorted((set(get_existing_labels()) & OWNED_LABELS) - set(labels)):
-        remove_label(stale)
-    add_labels(labels)
-
-
 def assign_issue(assignee: str):
     if not assignee or DRY_RUN:
         return
@@ -559,11 +323,6 @@ def assign_issue(assignee: str):
             log_error(f"Failed to assign issue: {r.status_code} - {r.text}")
     except requests.RequestException as e:
         log_error(f"Exception assigning issue: {e}")
-
-
-def get_existing_labels() -> list:
-    labels = ITEM_DATA.get("labels", [])
-    return [l.get("name", "").upper() for l in labels if isinstance(l, dict)]
 
 
 def fetch_pr_files() -> list:
@@ -590,118 +349,139 @@ def fetch_pr_files() -> list:
         page += 1
 
 
-def fetch_linked_issues() -> list:
-    """Title and labels of issues the PR title or body references, for the model."""
-    refs = set(re.findall(r"(?:#|/issues/)(\d+)", f"{ISSUE_TITLE}\n{ISSUE_BODY}"))
-    refs.discard(str(ISSUE_NUMBER))
-    linked = []
-    for number in sorted(refs, key=int, reverse=True)[:10]:
-        try:
-            r = requests.get(
-                f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{number}",
-                headers=GITHUB_HEADERS,
-                timeout=10,
-            )
-        except requests.RequestException as e:
-            fail(f"Exception fetching referenced issue #{number}: {e}")
-        if r.status_code == 404:
-            continue
-        if r.status_code != 200:
-            fail(
-                f"Failed to fetch referenced issue #{number}: {r.status_code} - {r.text[:200]}"
-            )
-        issue = r.json()
-        labels = ", ".join(l.get("name", "") for l in issue.get("labels", []))
-        linked.append(f"#{number} {issue.get('title', '')} (labels: {labels or 'none'})")
-    return linked
+def fetch_area_options(names: list) -> dict:
+    """Area option IDs from the Dev project, by name; fails when the brief and the field differ."""
+    project = CONFIG["projects"]["dev"]
+    query = """
+    query($projectId: ID!, $name: String!) {
+        node(id: $projectId) {
+            ... on ProjectV2 {
+                field(name: $name) {
+                    ... on ProjectV2SingleSelectField { id options { id name } }
+                }
+            }
+        }
+    }
+    """
+    field = graphql_request(query, {"projectId": project["id"], "name": project["area_field_name"]})
+    field = field.get("node", {}).get("field") or {}
+    options = {o["name"]: o["id"] for o in field.get("options", [])}
+    missing = [n for n in names if n not in options]
+    if not field or missing:
+        fail(f"Dev Area field does not match project-manager.md; missing options: {missing}")
+    return {"field_id": field["id"], "options": options}
 
 
-def label_pull_request():
-    # Every open PR sits next to the issues in Dev, where views separate them.
-    item_id = add_to_project(CONFIG["projects"]["dev"]["id"])
-
-    files = fetch_pr_files()
-    linked = "\n".join(fetch_linked_issues()) or "none"
-    listed = "\n".join(files[:300]) + (f"\n... and {len(files) - 300} more" if len(files) > 300 else "")
-    classification = classify(f"Referenced issues:\n{linked}\nChanged files ({len(files)}):\n{listed}")
-    if classification is None:
-        fail(f"AI classification failed for PR #{ISSUE_NUMBER}")
-    labels = classification["labels"]
-    area = classification["area"]
-    log_debug(f"PR #{ISSUE_NUMBER} area: {area}, labels: {labels} ({classification['reasoning']})")
-    if DRY_RUN:
-        print(f"DRY-RUN #{ISSUE_NUMBER}\t{area}\t{','.join(labels)}\t{ISSUE_TITLE}")
-
-    set_area(item_id, area)
-    set_labels(labels)
-
-
-def main():
-    log_debug(f"Processing issue/PR #{ISSUE_NUMBER}: {ISSUE_TITLE}")
-    if not ISSUE_NUMBER or not ISSUE_NODE_ID:
-        log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
-        return
-
+def classify(brief: str, areas: list, facts: str) -> dict:
+    """The project manager's answer for the current issue or PR."""
+    item = "a pull request" if IS_PULL_REQUEST else "an issue"
+    user_prompt = f"""This is {item}.
+Author: {describe_author()}
+Title: {ISSUE_TITLE}
+Body: {ISSUE_BODY[:2000]}
+{facts}
+"""
+    raw = ask_ai(brief, user_prompt)
+    if raw is None:
+        fail(f"AI classification failed for #{ISSUE_NUMBER}")
+    log_debug(f"AI answer: {raw}")
+    area = raw.get("area")
+    if area not in areas and not (IS_PULL_REQUEST and area is None):
+        fail(f"AI returned invalid area for #{ISSUE_NUMBER}: {area!r}")
     if IS_PULL_REQUEST:
-        label_pull_request()
-        return
+        return {"area": area}
+    if raw.get("type") not in TYPES or raw.get("priority") not in PRIORITIES:
+        fail(f"AI returned invalid type or priority for #{ISSUE_NUMBER}: {raw.get('type')!r}, {raw.get('priority')!r}")
+    return {"area": area, "type": raw["type"], "priority": raw["priority"]}
 
-    existing_labels = get_existing_labels()
-    if "APP-SUBMISSION" in existing_labels:
-        log_debug("Found APP-SUBMISSION label, routing to Dev project")
-        set_area(add_to_project(CONFIG["projects"]["dev"]["id"]), APP_SUBMISSION_AREA)
+
+def set_area(item_id: str, area_field: dict, area: Optional[str]):
+    if area is None:
+        log_debug(f"No area for #{ISSUE_NUMBER}")
         return
-    if {"BEE-CENSUS", "HONEY-CENSUS"} & set(existing_labels):
-        log_debug("Found a survey label, survey response; skipping")
+    project = CONFIG["projects"]["dev"]
+    set_project_field(project["id"], item_id, area_field["field_id"], area_field["options"][area])
+
+
+def set_issue_type(issue_type: str):
+    if DRY_RUN:
+        log_debug(f"[DRY-RUN] Would set issue type: {issue_type}")
         return
+    try:
+        r = requests.patch(
+            f"{GITHUB_API}/repos/{REPO_OWNER}/{REPO_NAME}/issues/{ISSUE_NUMBER}",
+            headers=GITHUB_HEADERS,
+            json={"type": issue_type},
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        fail(f"Exception setting issue type on #{ISSUE_NUMBER}: {e}")
+    if r.status_code != 200:
+        fail(f"Failed to set issue type {issue_type} on #{ISSUE_NUMBER}: {r.status_code} - {r.text[:200]}")
+    log_debug(f"Set issue type: {issue_type}")
+
+
+def label_names() -> set:
+    return {l.get("name", "").upper() for l in ITEM_DATA.get("labels", []) if isinstance(l, dict)}
+
+
+def organize_pull_request(brief: str, areas: list, area_field: dict):
+    # Every PR sits next to the issues in Dev, where views separate them.
+    item_id = add_to_project(CONFIG["projects"]["dev"]["id"])
+    files = fetch_pr_files()
+    listed = "\n".join(files[:300]) + (f"\n... and {len(files) - 300} more" if len(files) > 300 else "")
+    answer = classify(brief, areas, f"Changed files ({len(files)}):\n{listed}")
+    if DRY_RUN:
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{answer['area']}\t{ISSUE_TITLE}")
+    set_area(item_id, area_field, answer["area"])
+
+
+def organize_issue(brief: str, areas: list, area_field: dict):
+    project = CONFIG["projects"]["dev"]
     real_author, real_author_id = get_real_author()
     is_internal = ISSUE_AUTHOR_ID in CONFIG["ci_bot_ids"] or is_org_member(real_author_id)
     log_debug(f"Author {ISSUE_AUTHOR} (real: {real_author}, id={real_author_id}) is internal: {is_internal}")
-    
     if real_author != ISSUE_AUTHOR and is_internal:
         assign_issue(real_author)
 
-    tracking_issues = fetch_tracking_issues()
-    classification = classify(f"Author type: {'Internal' if is_internal else 'External'}", tracking_issues)
-    if classification is None:
-        fail(f"AI classification failed for issue #{ISSUE_NUMBER}")
-
+    answer = classify(brief, areas, f"Author type: {'Internal' if is_internal else 'External'}")
     source = "Team" if is_internal else "Community"
-    priority = classification["priority"]
+    priority = answer["priority"]
     if source == "Community" and is_paid_customer(real_author_id):
         log_debug(f"Author {real_author} (id={real_author_id}) is a paying customer; raising priority to High")
         priority = "High"
-    log_debug(f"Classified: source={source}, priority={priority}")
-    project = CONFIG["projects"]["dev"]
-
-    labels = classification["labels"]
-    pinned = set(existing_labels) & PINNED_TYPES
-    if pinned:
-        labels = [l for l in labels if l not in TYPES] + sorted(pinned)
-    area = classification["area"]
-    log_debug(f"Area: {area}, labels: {labels}")
     if DRY_RUN:
-        print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{area}\t{','.join(labels)}\t{ISSUE_TITLE}")
+        print(f"DRY-RUN #{ISSUE_NUMBER}\t{source}\t{priority}\t{answer['type']}\t{answer['area']}\t{ISSUE_TITLE}")
 
     item_id = add_to_project(project["id"])
     set_project_field(project["id"], item_id, project["source_field_id"], project["source_options"][source])
-    if priority:
-        set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
-    set_area(item_id, area)
-    set_labels(labels)
-    set_issue_type(labels)
+    set_project_field(project["id"], item_id, project["priority_field_id"], project["priority_options"][priority])
+    set_area(item_id, area_field, answer["area"])
+    set_issue_type(answer["type"])
 
-    # Parent new team issues under the best-fit tracking issue (skip tracking issues themselves)
-    is_tracking_issue = "TRACKING" in existing_labels or "TRACKING" in labels
-    if source == "Team" and ISSUE_DB_ID and not is_tracking_issue:
-        parent = classification.get("tracking_issue")
-        valid_parents = {e["number"] for e in tracking_issues}
-        if parent in valid_parents:
-            assign_to_tracking_issue(parent, ISSUE_DB_ID)
-        elif parent is not None:
-            log_debug(f"AI returned tracking issue #{parent} not in current list; leaving #{ISSUE_NUMBER} unparented")
-        else:
-            log_debug(f"No tracking issue selected for #{ISSUE_NUMBER}; left unparented")
+
+def main():
+    log_debug(f"Processing #{ISSUE_NUMBER}: {ISSUE_TITLE}")
+    if not ISSUE_NUMBER or not ISSUE_NODE_ID:
+        log_debug("Missing ISSUE_NUMBER or ISSUE_NODE_ID, skipping")
+        return
+    labels = label_names()
+    if not IS_PULL_REQUEST and labels & SKIPPED_LABELS:
+        log_debug("Survey response; skipping")
+        return
+
+    brief = read_brief()
+    areas = area_names(brief)
+    area_field = fetch_area_options(areas)
+
+    if IS_PULL_REQUEST:
+        organize_pull_request(brief, areas, area_field)
+    elif "APP-SUBMISSION" in labels:
+        log_debug("App submission; routing to Dev without classification")
+        set_area(add_to_project(CONFIG["projects"]["dev"]["id"]), area_field, APP_SUBMISSION_AREA)
+    else:
+        organize_issue(brief, areas, area_field)
+
 
 if __name__ == "__main__":
     main()

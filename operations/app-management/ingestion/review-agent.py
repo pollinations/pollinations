@@ -228,22 +228,38 @@ Return only JSON:
         {"submission": submission, "automated_evidence": evidence},
         ensure_ascii=False,
     )
-    response = requests.post(
-        POLLINATIONS_API,
-        headers={"Authorization": f"Bearer {POLLINATIONS_API_KEY}"},
-        json={
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ],
-            "max_tokens": 500,
-            "temperature": 0,
-        },
-        timeout=60,
-    )
-    response.raise_for_status()
-    content = response.json()["choices"][0]["message"]["content"]
+    # MODEL is a reasoning model: when it spends the whole completion budget on
+    # reasoning tokens it answers with a normal 200 whose `content` is null, and
+    # the re.search below then killed the run with
+    # "expected string or bytes-like object, got 'NoneType'". Give it a second,
+    # larger budget and fail with a readable message instead.
+    content = ""
+    finish_reason = None
+    for max_tokens in (500, 2000):
+        response = requests.post(
+            POLLINATIONS_API,
+            headers={"Authorization": f"Bearer {POLLINATIONS_API_KEY}"},
+            json={
+                "model": MODEL,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": max_tokens,
+                "temperature": 0,
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        choice = (response.json().get("choices") or [{}])[0]
+        content = (choice.get("message") or {}).get("content") or ""
+        finish_reason = choice.get("finish_reason")
+        if content.strip():
+            break
+    if not content.strip():
+        raise RuntimeError(
+            f"pre-review model returned no content (finish_reason={finish_reason})"
+        )
     match = re.search(r"\{[\s\S]*\}", content)
     if not match:
         raise ValueError("pre-review model did not return JSON")

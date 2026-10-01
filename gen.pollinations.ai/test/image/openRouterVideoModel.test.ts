@@ -5,6 +5,7 @@ import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
+    callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -75,6 +76,72 @@ afterEach(() => {
 });
 
 describe("openRouterVideoModel", () => {
+    it("sends HeyGen Video 1 at 480p by default and bills the requested seconds", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests);
+
+        const result = await callHeyGenVideoAPI("a paper boat", {
+            ...baseParams,
+            model: "heygen/heygen-video-1",
+            duration: 7,
+        });
+
+        expect(requests[0]).toEqual({
+            model: "heygen/heygen-video-1",
+            prompt: "a paper boat",
+            resolution: "480p",
+            aspect_ratio: "16:9",
+            duration: 7,
+            seed: 42,
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "heygen/heygen-video-1",
+            usage: { completionVideoSeconds: 7 },
+        });
+    });
+
+    it("maps HeyGen Video 1 resolution, portrait ratio and first frame", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests);
+
+        await callHeyGenVideoAPI("animate this", {
+            ...baseParams,
+            model: "heygen/heygen-video-1",
+            width: 720,
+            height: 1280,
+            resolution: "768p",
+            image: ["https://example.com/start.png"],
+        });
+
+        expect(requests[0]).toMatchObject({
+            resolution: "768p",
+            aspect_ratio: "9:16",
+            frame_images: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/start.png" },
+                    frame_type: "first_frame",
+                },
+            ],
+        });
+    });
+
+    it("rejects a HeyGen Video 1 duration outside 5 to 15 seconds", async () => {
+        setOpenRouterEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callHeyGenVideoAPI("a paper boat", {
+                ...baseParams,
+                model: "heygen/heygen-video-1",
+                duration: 4,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("maps the HappyHorse image to a first-frame request", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];

@@ -1442,6 +1442,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.00000062,
     },
   },
+  "heygen/heygen-video-1": {
+    "cost": {
+      "completionVideoSeconds": 0.01055,
+    },
+    "costVariants": {
+      "768p": {
+        "completionVideoSeconds": 0.015825,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.01055,
+    },
+  },
   "hyper3d/rodin-2.5": {
     "cost": {
       "completionImageTokens": 0.1,

@@ -1,3 +1,7 @@
+- **2026-09-30** – **🚀 GPT-6.1 Sol is here** Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions).
+- **2026-09-30** – **🎵 Audio tools in the SDK** Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
+- **2026-09-30** – **🎨 A new home for apps** The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters.
+- **2026-09-30** – **🎮 Pollinations for Godot 4** Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations) <!-- app -->
 - **2026-09-29** – **🚀 Claude Sonnet 5.5** Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models).
 - **2026-09-29** – **🔗 Claude Code, meet Pollinations** The new Anthropic-compatible `/v1/messages` endpoint supports streaming, tools, and thinking across chat-capable models. Point `ANTHROPIC_BASE_URL` at `https://gen.pollinations.ai`.
 - **2026-09-29** – **🎨 Lightning Image Turbo** Generate images from a prompt, with up to two reference images for guidance, through the image API. [Explore image models](https://gen.pollinations.ai/image/models).

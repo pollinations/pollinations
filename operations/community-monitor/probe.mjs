@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
-import { parseChatStream } from "./chat-stream.mjs";
+import {
+    hasChatProbeMarker,
+    parseChatStream,
+    probeErrorDetails,
+} from "./chat-stream.mjs";
 import {
     imageProbeRequest,
     imageProbeResult,
     nextImageOperation,
 } from "./image-probe.mjs";
+import { nextProbeAt, recordProbe } from "./probe-schedule.mjs";
 
-// One probe sweep across listed community text and image models via
-// gen.pollinations.ai. Text models get one request every cycle; image models
-// get one request every four hours. This keeps full-catalog coverage current
-// without letting routine probes consume a provider's quota or the whole
-// monitor cycle.
+// Probe selected community text/image models, at most once every four hours.
+// Repeated failures back off to weekly; --model is a one-off diagnostic check.
 // Actual spend is reconciled from real `usage` tokens and recorded in state.
 // Writes /home/ubuntu/monitor/probe-results.json and prints a summary table.
 
@@ -25,7 +27,6 @@ const GEN = process.env.POLLINATIONS_GEN_URL ?? "https://gen.pollinations.ai";
 const CONCURRENCY = 4;
 const TEXT_TIMEOUT_MS = 45_000;
 const IMAGE_TIMEOUT_MS = 150_000;
-const IMAGE_PROBE_INTERVAL_MS = 4 * 60 * 60 * 1000;
 const STATE_PATH =
     process.env.MONITOR_STATE_PATH ?? "/home/ubuntu/monitor/state.json";
 const RESULTS_PATH =
@@ -37,13 +38,38 @@ const EST_PROMPT_TOKENS = 20;
 const EST_COMPLETION_TOKENS = 8;
 const EST_IMAGE_OUTPUT_TOKENS = 1120;
 
-// Keep the persisted image cadence key stable across the catalog rename.
+// Keep persisted cadence keys stable across aliases.
 const stateModelId = (id) => id.replace(/^community\//, "");
 
 const modelArgIndex = process.argv.indexOf("--model");
 let onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
 if (modelArgIndex !== -1 && !onlyModel) {
     console.error("--model requires a community/owner/model id");
+    process.exit(1);
+}
+// --models-file <path>: selected routine checks, including hidden exact IDs.
+// JSON array of { name, category, operation? }; [] does not sweep the catalog.
+const modelsFileArgIndex = process.argv.indexOf("--models-file");
+const fileModels =
+    modelsFileArgIndex === -1
+        ? []
+        : JSON.parse(
+              fs.readFileSync(process.argv[modelsFileArgIndex + 1], "utf8"),
+          );
+if (
+    (modelsFileArgIndex !== -1 && onlyModel) ||
+    !Array.isArray(fileModels) ||
+    fileModels.some(
+        (m) =>
+            typeof m?.name !== "string" ||
+            !["text", "image"].includes(m.category) ||
+            (m.operation !== undefined &&
+                !["generate", "edit"].includes(m.operation)),
+    )
+) {
+    console.error(
+        "--models-file needs a JSON array of { name, category: text|image, operation?: generate|edit } and excludes --model",
+    );
     process.exit(1);
 }
 const categoryArgIndex = process.argv.indexOf("--category");
@@ -61,8 +87,9 @@ if (
 function readState() {
     try {
         return JSON.parse(fs.readFileSync(STATE_PATH, "utf8"));
-    } catch {
-        return {};
+    } catch (error) {
+        if (error.code === "ENOENT") return {};
+        throw error;
     }
 }
 
@@ -76,14 +103,22 @@ if (
     console.error("--operation requires --model and must be generate or edit");
     process.exit(1);
 }
+if (!onlyModel && modelsFileArgIndex === -1) {
+    console.error(
+        "Select routine probes with --models-file, or diagnose one --model",
+    );
+    process.exit(1);
+}
 
 // Pricing is public, no auth needed: https://gen.pollinations.ai/models
-async function fetchCommunityModels() {
-    const list = await fetch(`${GEN}/models`).then((r) => r.json());
-    const models = Array.isArray(list) ? list : (list.data ?? list);
-    return models.filter(
-        (m) => m.community && (m.category === "text" || m.category === "image"),
-    );
+async function fetchCatalog() {
+    const response = await fetch(`${GEN}/models?reliability=all`, {
+        signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok)
+        throw new Error(`model catalog returned ${response.status}`);
+    const list = await response.json();
+    return Array.isArray(list) ? list : list.data;
 }
 
 function estimateCost(model) {
@@ -96,97 +131,6 @@ function estimateCost(model) {
             : p * EST_PROMPT_TOKENS + image * EST_IMAGE_OUTPUT_TOKENS;
     }
     return p * EST_PROMPT_TOKENS + c * EST_COMPLETION_TOKENS;
-}
-
-// Basic billing-integrity sanity checks on a single probe response. These are
-// NOT health/hide signals (CYCLE.md's 5xx/timeout rules own that) --
-// they flag "the numbers we're about to pay this owner on look implausible
-// for a short, cache-busted prompt", for a human to investigate. Thresholds are
-// deliberately loose (calibrated against real tokenizer variance seen across
-// the catalog: a 7-word prompt legitimately tokenizes anywhere from ~7 to
-// ~35 tokens depending on the model's tokenizer) -- the goal is to catch
-// clear anomalies (0, or 10x+ too many), not to nitpick normal variance.
-function billingSanityFlags(usage, content) {
-    const flags = [];
-    if (!usage) {
-        flags.push("no usage object returned");
-        return flags;
-    }
-    const {
-        prompt_tokens: p,
-        completion_tokens: c,
-        total_tokens: total,
-    } = usage;
-    const cached =
-        usage.prompt_tokens_details?.cached_tokens ??
-        usage.cached_input_tokens ??
-        usage.cache_read_input_tokens ??
-        0;
-    if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
-    if (cached > 0)
-        flags.push("cached tokens on a cache-busted single-message prompt");
-    if (p != null && cached > p)
-        flags.push("cached_tokens exceeds prompt_tokens");
-    const reasoning =
-        usage.completion_tokens_details?.reasoning_tokens ??
-        usage.reasoning_tokens ??
-        0;
-    if (c != null && reasoning > c)
-        flags.push("reasoning_tokens exceeds completion_tokens");
-    if (p != null && c != null && total != null && total !== p + c)
-        flags.push(
-            "total_tokens differs from prompt_tokens + completion_tokens",
-        );
-    const uncached = p != null && cached <= p ? p - cached : undefined;
-    if (uncached != null && uncached > 100)
-        flags.push("implausible uncached prompt token count");
-    if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
-    if (!content?.trim()) flags.push("empty completion content");
-    return flags;
-}
-
-function imageBillingSanityFlags(usage) {
-    const flags = [];
-    if (!usage) {
-        flags.push("no image usage object returned");
-        return flags;
-    }
-    const input = usage.input_tokens;
-    const output = usage.output_tokens;
-    const total = usage.total_tokens;
-    const text = usage.input_tokens_details?.text_tokens;
-    const image = usage.input_tokens_details?.image_tokens;
-    if (output === 0) flags.push("output_tokens=0 despite a generated image");
-    if (
-        input != null &&
-        text != null &&
-        image != null &&
-        input !== text + image
-    )
-        flags.push(
-            "image input_tokens differs from text_tokens + image_tokens",
-        );
-    if (
-        input != null &&
-        output != null &&
-        total != null &&
-        total !== input + output
-    )
-        flags.push(
-            "image total_tokens differs from input_tokens + output_tokens",
-        );
-    return flags;
-}
-
-function finalCompletionContent(content) {
-    if (typeof content !== "string") return "";
-    const withoutReasoning = content
-        .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
-        .replace(/<think>[\s\S]*?<\/think>/gi, "");
-    // An unclosed reasoning wrapper means the response ended before its final
-    // answer. Do not accept a copy of the marker from inside that reasoning.
-    if (/<(?:thought|think)>/i.test(withoutReasoning)) return "";
-    return withoutReasoning.trim();
 }
 
 async function probeText(model) {
@@ -218,12 +162,30 @@ async function probeText(model) {
         const body = await res.text();
         let usage;
         let content;
+        let servedModel;
         let protocolError;
+        let errorCode;
+        let errorMessage;
+        let upstreamStatus;
         if (res.ok) {
-            ({ usage, content, protocolError } = parseChatStream(body));
+            ({
+                usage,
+                content,
+                servedModel,
+                protocolError,
+                errorCode,
+                errorMessage,
+                upstreamStatus,
+            } = parseChatStream(body));
+        } else {
+            try {
+                ({ errorCode, errorMessage, upstreamStatus } =
+                    probeErrorDetails(JSON.parse(body)?.error));
+            } catch {
+                // Do not persist raw non-JSON error bodies.
+            }
         }
-        const finalContent = finalCompletionContent(content);
-        const hasProbeMarker = finalContent.includes(marker);
+        const hasProbeMarker = hasChatProbeMarker(content, marker);
         const contentPreview =
             typeof content === "string" && content.trim()
                 ? JSON.stringify(content.trim().slice(0, 200))
@@ -234,6 +196,7 @@ async function probeText(model) {
             model: model.name,
             modelUsed,
             fallbackUsed: modelUsed ? modelUsed !== model.name : null,
+            servedModel: servedModel ?? null,
             category: model.category,
             requestPath,
             requestId: res.headers.get("x-request-id"),
@@ -249,17 +212,18 @@ async function probeText(model) {
             usage,
             probeMarker: marker,
             protocolError,
+            errorCode,
+            errorMessage,
+            upstreamStatus,
             detail: res.ok
                 ? protocolError
-                    ? protocolError
+                    ? (errorMessage ?? protocolError)
                     : hasProbeMarker
                       ? undefined
                       : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
-                : body.slice(0, 300),
+                : (errorMessage ??
+                  `text request failed with HTTP ${res.status}`),
         };
-        if (res.ok && !protocolError) {
-            result.billingFlags = billingSanityFlags(usage, content);
-        }
         return result;
     } catch (err) {
         return {
@@ -308,9 +272,6 @@ async function probeImage(model, operation) {
             probeMarker: marker,
             ...imageProbeResult(res, body, model.name),
         };
-        if (res.ok) {
-            result.billingFlags = imageBillingSanityFlags(result.usage);
-        }
         return result;
     } catch (err) {
         return {
@@ -333,14 +294,15 @@ function probe(model) {
     return model.category === "image"
         ? probeImage(
               model,
-              onlyModel
-                  ? (onlyOperation ?? "generate")
-                  : nextImageOperation(
-                        model,
-                        state.spend?.lastImageProbeOperation?.[
-                            stateModelId(model.name)
-                        ],
-                    ),
+              onlyOperation ??
+                  fileOperation.get(model.name) ??
+                  (targeted
+                      ? "generate"
+                      : nextImageOperation(
+                            model,
+                            state.spend?.probes?.[stateModelId(model.name)]
+                                ?.operation,
+                        )),
           )
         : probeText(model);
 }
@@ -367,11 +329,22 @@ function actualCost(result, priceByModel) {
     );
 }
 
-const models = await fetchCommunityModels();
-const listedTarget = models.find(
+const catalog = await fetchCatalog();
+// Agents can perform real work on the probe account; never select them.
+const models = catalog.filter(
+    (model) =>
+        model.community &&
+        !model.agent &&
+        ["text", "image"].includes(model.category),
+);
+const listedTarget = catalog.find(
     (model) => model.name === onlyModel || model.aliases?.includes(onlyModel),
 );
-if (listedTarget) onlyModel = listedTarget.name;
+if (listedTarget) {
+    if (!models.includes(listedTarget))
+        throw new Error("Only community text/image proxy models can be probed");
+    onlyModel = listedTarget.name;
+}
 if (
     onlyOperation &&
     ((listedTarget?.category ?? onlyCategory) !== "image" ||
@@ -398,6 +371,33 @@ if (onlyModel && !models.some((model) => model.name === onlyModel)) {
         flat_rate: false,
     });
 }
+for (const entry of fileModels) {
+    const listed = catalog.find(
+        (model) =>
+            model.name === entry.name || model.aliases?.includes(entry.name),
+    );
+    if (listed) {
+        if (!models.includes(listed))
+            throw new Error(
+                "Only community text/image proxy models can be probed",
+            );
+        entry.name = listed.name;
+    }
+    if (models.some((model) => model.name === entry.name)) continue;
+    models.push({
+        name: entry.name,
+        category: entry.category,
+        pricing: {},
+        flat_rate: false,
+    });
+}
+const fileOperation = new Map(
+    fileModels.map((model) => [model.name, model.operation]),
+);
+const targetNames = new Set(
+    onlyModel ? [onlyModel] : fileModels.map((m) => m.name),
+);
+const targeted = Boolean(onlyModel);
 const priceByModel = new Map(
     models.map((m) => [
         m.name,
@@ -414,26 +414,16 @@ const priceByModel = new Map(
 
 const state = readState();
 const now = Date.now();
-const lastImageProbeAt = state.spend?.lastImageProbeAt ?? {};
-const imageProbeDue = (model) => {
-    const previous = Date.parse(
-        lastImageProbeAt[stateModelId(model.name)] ?? "",
-    );
-    return (
-        !Number.isFinite(previous) || now - previous >= IMAGE_PROBE_INTERVAL_MS
-    );
-};
-const modelsToProbe = onlyModel
-    ? models.filter((model) => model.name === onlyModel)
-    : models.filter(
-          (model) => model.category === "text" || imageProbeDue(model),
-      );
-const skippedImageModels = onlyModel
+const selectedModels = models.filter((model) => targetNames.has(model.name));
+const probeDue = (model) =>
+    now >= nextProbeAt(state.spend?.probes?.[stateModelId(model.name)]);
+const modelsToProbe = targeted
+    ? selectedModels
+    : selectedModels.filter(probeDue);
+const skippedModels = targeted
     ? []
-    : models
-          .filter(
-              (model) => model.category === "image" && !imageProbeDue(model),
-          )
+    : selectedModels
+          .filter((model) => !probeDue(model))
           .map((model) => model.name);
 const estimatedSpend = modelsToProbe.reduce(
     (sum, model) => sum + estimateCost(model),
@@ -470,61 +460,39 @@ const nextState = {
     ...currentState,
     spend: {
         ...currentState.spend,
-        lastCycleBudget: undefined,
-        lastEstimatedPollen: estimatedSpend,
-        lastActualPollen: actualSpend,
-        lastRequestCount: jobs.length,
-        lastRunAt: new Date().toISOString(),
-        lastImageProbeOperation: {
-            ...currentState.spend?.lastImageProbeOperation,
+        ...(!targeted && {
+            lastCycleBudget: undefined,
+            lastEstimatedPollen: estimatedSpend,
+            lastActualPollen: actualSpend,
+            lastRequestCount: jobs.length,
+            lastRunAt: new Date().toISOString(),
+        }),
+        probes: {
+            ...currentState.spend?.probes,
             ...Object.fromEntries(
-                results
-                    .filter((result) => result.category === "image")
-                    .map((result) => [
-                        stateModelId(result.model),
-                        result.operation,
-                    ]),
-            ),
-        },
-        lastImageProbeAt: {
-            ...currentState.spend?.lastImageProbeAt,
-            ...Object.fromEntries(
-                modelsToProbe
-                    .filter((model) => model.category === "image")
-                    .map((model) => [
-                        stateModelId(model.name),
-                        new Date(now).toISOString(),
-                    ]),
+                results.map((result) => [
+                    stateModelId(result.model),
+                    recordProbe(
+                        currentState.spend?.probes?.[
+                            stateModelId(result.model)
+                        ],
+                        result,
+                    ),
+                ]),
             ),
         },
     },
 };
-if (!onlyModel) {
-    fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
-}
-
-// Aggregate billing-sanity flags per model (union across its probes this
-// cycle) -- surfaced separately from health status since a model can be
-// perfectly healthy (200s, fast) while still reporting implausible usage.
-const billingFlagsByModel = {};
-for (const r of results) {
-    if (!r.billingFlags?.length) continue;
-    const set = new Set(billingFlagsByModel[r.model] ?? []);
-    for (const f of r.billingFlags) set.add(f);
-    billingFlagsByModel[r.model] = [...set];
-}
+fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
 
 const out = {
     ts: new Date().toISOString(),
     actualSpend,
-    imageProbeIntervalHours: IMAGE_PROBE_INTERVAL_MS / 3_600_000,
-    skippedImageModels,
+    skippedModels,
     results,
-    billingFlagsByModel,
 };
-if (onlyModel) {
-    // Targeted freshness checks return their result without replacing the
-    // latest complete sweep or influencing the next sweep's cadence state.
+if (targeted) {
+    // One-off diagnostics update the cadence but not the routine result file.
     console.log(JSON.stringify(out));
     process.exit(0);
 }
@@ -544,24 +512,17 @@ for (const r of [...byModel.values()].sort(
     (a, b) => Number(a.ok) - Number(b.ok),
 )) {
     console.log(
-        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}`,
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}${r.servedModel ? ` upstream=${r.servedModel}` : ""}`,
     );
 }
 console.log(
     `${results.filter((r) => r.ok).length}/${results.length} requests healthy across ${byModel.size} models`,
 );
-if (skippedImageModels.length) {
+if (skippedModels.length) {
     console.log(
-        `${skippedImageModels.length} image models not due (4h cadence)`,
+        `${skippedModels.length} models not due (4h base interval, failure backoff up to 6d)`,
     );
 }
 console.log(
     `estimated ${estimatedSpend.toFixed(4)} pollen, actual ${actualSpend.toFixed(4)}`,
 );
-const flaggedModels = Object.keys(billingFlagsByModel);
-if (flaggedModels.length) {
-    console.log(`\nbilling sanity flags (${flaggedModels.length} models):`);
-    for (const model of flaggedModels) {
-        console.log(`  ${model}: ${billingFlagsByModel[model].join("; ")}`);
-    }
-}

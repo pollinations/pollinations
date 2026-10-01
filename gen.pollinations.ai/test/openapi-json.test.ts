@@ -2,6 +2,10 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import {
+    CreateChatCompletionRequestSchema,
+    CreateResponseRequestSchema,
+} from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 
@@ -52,6 +56,25 @@ const ENTER_SCHEMA = {
 };
 
 describe("/openapi.json", () => {
+    it("accepts omitted, null, and string-map metadata on both text APIs", () => {
+        for (const schema of [
+            CreateChatCompletionRequestSchema,
+            CreateResponseRequestSchema,
+        ]) {
+            for (const metadata of [
+                undefined,
+                null,
+                {},
+                { model: "inner-model", custom_key: "value" },
+            ]) {
+                expect(schema.shape.metadata.parse(metadata)).toEqual(metadata);
+            }
+            expect(
+                schema.shape.metadata.safeParse({ model: 123 }).success,
+            ).toBe(false);
+        }
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
@@ -82,9 +105,62 @@ describe("/openapi.json", () => {
         // Gen-owned merged paths prove the real merge ran (not a stub/404).
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/v1/responses"]).toBeDefined();
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/messages",
+            "post",
+            "requestBody",
+            "content",
+            "application/json",
+            "schema",
+        ]);
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/messages",
+            "post",
+            "responses",
+            "200",
+            "content",
+            "application/json",
+            "schema",
+        ]);
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/messages",
+            "post",
+            "responses",
+            "200",
+            "content",
+            "text/event-stream",
+        ]);
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+        expect(schema.paths["/alpha/audio/stem-separation"]).toBeDefined();
+        expect(schema.paths["/audio/stem-separation"]).toBeUndefined();
+        for (const path of [
+            "/models",
+            "/v1/models",
+            "/text/models",
+            "/image/models",
+            "/video/models",
+            "/audio/models",
+            "/embeddings/models",
+            "/3d/models",
+        ]) {
+            expect(schema).toHaveProperty(
+                ["paths", path, "get", "parameters"],
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        in: "header",
+                        name: "pollinations-model-source",
+                        schema: expect.objectContaining({
+                            enum: ["official", "community"],
+                        }),
+                    }),
+                ]),
+            );
+        }
 
         for (const [path, method] of [
             ["/image/{prompt}", "get"],
@@ -97,6 +173,7 @@ describe("/openapi.json", () => {
             ["/v1/audio/speech", "post"],
             ["/v1/audio/voice-changer", "post"],
             ["/v1/audio/voice-isolator", "post"],
+            ["/alpha/audio/stem-separation", "post"],
         ]) {
             expect(schema).toHaveProperty(
                 ["paths", path, method, "responses", "200", "headers", "Link"],
@@ -218,20 +295,15 @@ describe("/openapi.json", () => {
             }),
         );
 
-        const statusOperation = schema.paths["/v1/models/status"] as {
+        const statusOperation = schema.paths["/models/status"] as {
             get: {
                 parameters: { name: string }[];
             };
         };
         expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
+            "traffic",
             "minutes",
-            "format",
         ]);
-        expect(
-            collectPropertySets(schema.paths["/v1/models/status"]).some(
-                (properties) => "data" in properties,
-            ),
-        ).toBe(true);
 
         const speechRequestPropertySets = collectPropertySets(schema).filter(
             (properties) =>

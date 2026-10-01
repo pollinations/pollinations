@@ -82,7 +82,7 @@ export const bloom: HarnessAdapter = {
     async on(ctx, options) {
         if (!commandExists("bloom", ctx.env)) {
             throw new Error(
-                "Bloom was not found. Install it first: uv tool install bloom-cli",
+                "Bloom was not found. Install it first: uv tool install --python 3.12 bloom-cli",
             );
         }
         const apiKey = await resolveHarnessKey(

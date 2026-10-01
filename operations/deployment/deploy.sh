@@ -134,7 +134,7 @@ case "$TARGET" in
         ;;
 esac
 
-while IFS= read -r url; do
+while IFS= read -r url || [[ -n "$url" ]]; do
     [[ -z "$url" ]] || verify_url "$url"
 done < <(field verify)
 

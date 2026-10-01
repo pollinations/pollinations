@@ -99,6 +99,11 @@ describe("registry fallback linking", () => {
             ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:openai"],
             ["openai/gpt-image-1.5", "openai/gpt-image-1.5:openai"],
             ["openai/gpt-image-2", "openai/gpt-image-2:openai"],
+            ["openai/gpt-image-2.5-flare", "openai/gpt-image-2.5-flare:openai"],
+            [
+                "openai/gpt-image-2.5-sunburst",
+                "openai/gpt-image-2.5-sunburst:openai",
+            ],
         ] as const;
 
         for (const [primary, fallback] of pairs) {
@@ -462,6 +467,19 @@ describe("isRetryableFallbackError", () => {
     });
 
     it("does not fail over on caller errors", () => {
+        for (const [status, upstreamStatus] of [
+            [400, 500],
+            [422, 403],
+        ]) {
+            expect(
+                isRetryableFallbackError(
+                    Object.assign(new Error("Provider returned error"), {
+                        status,
+                        upstreamStatus,
+                    }),
+                ),
+            ).toBe(false);
+        }
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
         expect(
             isRetryableFallbackError(

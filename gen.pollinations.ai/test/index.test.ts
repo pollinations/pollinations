@@ -21,6 +21,7 @@ const TRANSCRIPTION_MODEL_IDS = [
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
 });
 
 function envWithEnter(
@@ -377,7 +378,7 @@ describe("gen worker routing", () => {
             input_modalities: ["text", "image"],
             output_modalities: ["image"],
             pricing: {
-                completionImageTokens: "0.08",
+                completionImageTokens: "0.0844",
                 currency: "pollen",
             },
         });
@@ -457,33 +458,15 @@ describe("gen worker routing", () => {
         expect(
             models.find((model) => model.name === "perplexity/sonar")
                 ?.pricing_adjustments,
-        ).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    label: "Search",
-                    price: "5",
-                    currency: "pollen",
-                    quantity: 1_000,
-                    unit: "requests",
-                    option: expect.objectContaining({
-                        value: "low",
-                        label: "Low search context",
-                        default: true,
-                    }),
-                }),
-                expect.objectContaining({
-                    label: "Search",
-                    price: "12",
-                    currency: "pollen",
-                    quantity: 1_000,
-                    unit: "requests",
-                    option: expect.objectContaining({
-                        value: "high",
-                        label: "High search context",
-                    }),
-                }),
-            ]),
-        );
+        ).toEqual([
+            expect.objectContaining({
+                label: "Search",
+                price: "2.5",
+                currency: "pollen",
+                quantity: 1_000,
+                unit: "searches",
+            }),
+        ]);
     });
 
     it("labels image pricing units without auth", async () => {
@@ -558,7 +541,7 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("publishes one configurable Perplexity Sonar model", async () => {
+    it("publishes Sonar as the only Perplexity model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -575,23 +558,12 @@ describe("gen worker routing", () => {
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });
+        // Sonar Pro and Reasoning Pro retired into aliases of Sonar.
         expect(
-            models.find((model) => model.name === "perplexity-high"),
-        ).toBeUndefined();
-        expect(
-            models.find((model) => model.name === "perplexity/sonar-pro"),
-        ).toMatchObject({
-            description:
-                "Advanced web search that synthesizes multiple sources with citations",
-        });
-        expect(
-            models.find(
-                (model) => model.name === "perplexity/sonar-reasoning-pro",
-            ),
-        ).toMatchObject({
-            description:
-                "Thinks step by step while searching the web; slower but more rigorous",
-        });
+            models
+                .filter((model) => model.name.startsWith("perplexity/"))
+                .map((model) => model.name),
+        ).toEqual(["perplexity/sonar"]);
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(
             false,
         );
@@ -681,59 +653,48 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it("reports the source timestamp and marks stale fallback data", async () => {
-        let now = 1_000;
-        vi.spyOn(Date, "now").mockImplementation(() => now);
+    it.each([
+        "all",
+        "regular",
+    ])("proxies %s traffic with a separate 60 second edge cache", async (traffic) => {
         const upstream = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(Response.json({ data: [{ model: "test" }] }))
-            .mockRejectedValueOnce(new Error("Tinybird unavailable"));
+            .mockResolvedValueOnce(
+                Response.json({ data: [{ model: "test" }] }),
+            );
 
-        const fresh = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(fresh.status).toBe(200);
-        expect(fresh.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
+        const response = await fetchWorker(
+            `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
         );
-        expect(fresh.headers.get("X-Model-Status-Stale")).toBeNull();
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=60",
+        );
+        expect(await response.json()).toEqual({ data: [{ model: "test" }] });
 
-        now = 2_000;
-        const cached = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(cached.status).toBe(200);
-        expect(cached.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
-        );
-        expect(upstream).toHaveBeenCalledTimes(1);
-
-        now = 62_000;
-        const stale = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(stale.status).toBe(200);
-        expect(stale.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
-        );
-        expect(stale.headers.get("X-Model-Status-Stale")).toBe("true");
-        expect(upstream).toHaveBeenCalledTimes(2);
+        const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
+        expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
+        expect(url.searchParams.get("minutes")).toBe("15");
+        expect(url.searchParams.get("traffic")).toBe(traffic);
+        expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
     });
 
-    it("evicts old entries when the in-memory cache reaches its bound", async () => {
-        const upstream = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (request) => {
-                const minutes = new URL(
-                    new Request(request).url,
-                ).searchParams.get("minutes");
-                return Response.json({ data: [{ model: `test-${minutes}` }] });
-            });
+    it("rejects unsupported traffic groups before contacting Tinybird", async () => {
+        const response = await fetchWorker("/models/status?traffic=invalid");
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            error: "traffic must be all or regular",
+        });
+    });
 
-        for (let minutes = 8_000; minutes <= 8_032; minutes++) {
-            const response = await fetchWorker(
-                `/v1/models/status?minutes=${minutes}`,
-            );
-            expect(response.status).toBe(200);
-        }
+    it("passes upstream errors through unchanged", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: "bad minutes" }, { status: 400 }),
+        );
 
-        const evicted = await fetchWorker("/v1/models/status?minutes=8000");
-        expect(evicted.status).toBe(200);
-        expect(upstream).toHaveBeenCalledTimes(34);
+        const response = await fetchWorker("/models/status?minutes=abc");
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: "bad minutes" });
     });
 });
 
@@ -1982,11 +1943,14 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes stable-audio-3-medium requests through fal",
+    "routes stable-audio-3-medium requests through the fal queue",
     async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
         const calls: string[] = [];
         const falEndpoint =
-            "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+        const statusUrl = `${falEndpoint}/requests/sa3/status`;
+        const resultUrl = `${falEndpoint}/requests/sa3`;
         const falFileUrl = "https://v3.fal.media/files/test-stable-audio.mp3";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -2009,6 +1973,18 @@ fixtureTest(
                     expect(body.num_inference_steps).toBe(6);
                     expect(body.seed).toBe(42);
 
+                    return Response.json({
+                        request_id: "sa3",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
                     return Response.json({
                         audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 42,
@@ -2035,7 +2011,7 @@ fixtureTest(
         );
 
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const pending = worker.fetch(
             new Request(
                 "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-3-medium&seconds=12&steps=6&seed=42",
                 {
@@ -2048,6 +2024,10 @@ fixtureTest(
             } as unknown as CloudflareBindings),
             ctx,
         );
+        // The first status poll follows a five-second wait.
+        await vi.waitFor(() => expect(calls).toContain(falEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
@@ -2065,6 +2045,7 @@ fixtureTest(
         await waitOnExecutionContext(ctx);
 
         expect(calls).toContain(falEndpoint);
+        expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
     },
 );
@@ -2072,9 +2053,12 @@ fixtureTest(
 fixtureTest(
     "routes stable-audio-3-medium reference_audio through fal audio-to-audio",
     async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
         const calls: string[] = [];
         const a2aEndpoint =
-            "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+        const statusUrl = `${a2aEndpoint}/requests/a2a/status`;
+        const resultUrl = `${a2aEndpoint}/requests/a2a`;
         const falFileUrl = "https://v3.fal.media/files/test-a2a.mp3";
         const referenceAudioUrl =
             "https://media.pollinations.ai/test-reference-audio";
@@ -2103,6 +2087,18 @@ fixtureTest(
                     sentAudioUrl = body.audio_url;
 
                     return Response.json({
+                        request_id: "a2a",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
+                    return Response.json({
                         audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 1,
                     });
@@ -2128,7 +2124,7 @@ fixtureTest(
         );
 
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const pending = worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
                 headers: {
@@ -2147,6 +2143,9 @@ fixtureTest(
             } as unknown as CloudflareBindings),
             ctx,
         );
+        await vi.waitFor(() => expect(calls).toContain(a2aEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
@@ -2166,6 +2165,7 @@ fixtureTest(
 
         expect(calls).toContain(referenceAudioUrl);
         expect(calls).toContain(a2aEndpoint);
+        expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
     },
 );

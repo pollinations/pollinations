@@ -4,6 +4,7 @@ import {
     AUDIO_VOICES,
     type AudioModelName,
     CSM_VOICES,
+    GEMINI_TTS_VOICES,
     KOKORO_VOICES,
     resolveElevenLabsVoiceId,
     XAI_TTS_VOICES,
@@ -37,6 +38,8 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import { runFalJob } from "@/model3d/models/falClient.ts";
+import { toUpstreamError } from "@/model3d/modelUtils.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
 import {
@@ -47,6 +50,7 @@ import {
     callCommunitySpeechEndpoint,
     callCommunityTranscriptionEndpoint,
 } from "../audio/communityEndpoint.ts";
+import { generateLyria35 } from "../audio/lyria.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -81,15 +85,15 @@ const CreateSpeechRequestSchema = z
             }),
         response_format: z
             .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
-            .default("mp3")
+            .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
             description:
-                "Output duration in seconds (elevenlabs/music-v2 3-300; google/lyria-3-clip-preview fixed at 30; elevenlabs/eleven-text-to-sound-v2 0.5-30)",
+                "Output duration in seconds (elevenlabs/music-v2 and elevenlabs/music-v2.5 3-300; google/lyria-3-clip-preview fixed at 30; elevenlabs/eleven-text-to-sound-v2 0.5-30)",
             example: 30,
         }),
         seconds: z.number().min(1).max(380).optional().meta({
@@ -118,12 +122,12 @@ const CreateSpeechRequestSchema = z
         }),
         instrumental: z.boolean().optional().meta({
             description:
-                "If true, guarantees instrumental output (elevenlabs/music-v2 only)",
+                "If true, guarantees instrumental output (elevenlabs/music-v2 and elevenlabs/music-v2.5 only)",
             example: false,
         }),
         store_for_inpainting: z.boolean().optional().meta({
             description:
-                "If true, stores the generated elevenlabs/music-v2 song and returns its song ID for later inpainting.",
+                "If true, stores an ElevenLabs Music v2 or v2.5 song and returns its song ID for later inpainting.",
             example: false,
         }),
         reference_audio: z.url().optional().meta({
@@ -134,7 +138,7 @@ const CreateSpeechRequestSchema = z
         }),
         conditioning_ref: z.unknown().optional().meta({
             description:
-                "ElevenLabs music_v2 AudioRefChunk to apply to the generated chunk. reference_audio creates this automatically; advanced clients can reuse x-elevenlabs-reference-song-id here on later requests.",
+                "ElevenLabs Music v2 or v2.5 AudioRefChunk to apply to the generated chunk. reference_audio creates this automatically; advanced clients can reuse x-elevenlabs-reference-song-id here on later requests.",
         }),
         composition_plan: z.unknown().optional().meta({
             description:
@@ -147,7 +151,7 @@ const CreateSpeechRequestSchema = z
         }),
         instructions: z.string().optional().meta({
             description:
-                "Emotion/style instruction (qwen/qwen3-tts-instruct-flash only). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
     })
@@ -176,7 +180,15 @@ type AudioRefChunk = {
     };
 };
 
+const ELEVENLABS_MUSIC_MODEL_IDS = {
+    "elevenlabs/music-v2": "music_v2",
+    "elevenlabs/music-v2.5": "music_v2_5",
+} as const;
+
+type ElevenLabsMusicModelName = keyof typeof ELEVENLABS_MUSIC_MODEL_IDS;
+
 type GenerateMusicOptions = {
+    modelName: ElevenLabsMusicModelName;
     prompt: string;
     durationSeconds?: number;
     forceInstrumental?: boolean;
@@ -1053,6 +1065,348 @@ function groupXaiWordsBySpeaker(
     return segments;
 }
 
+const OPENROUTER_STT_ENDPOINT =
+    "https://openrouter.ai/api/v1/audio/transcriptions";
+const GEMINI_TRANSCRIBE_MODEL = "google/gemini-3.5-transcribe";
+// Google meters audio at $0.003/min against $2 per 1M tokens: 25 tokens/s.
+const GEMINI_TRANSCRIBE_TOKENS_PER_SECOND = 25;
+const GEMINI_STT_FORMATS = [
+    "wav",
+    "mp3",
+    "flac",
+    "m4a",
+    "ogg",
+    "webm",
+    "aac",
+] as const;
+const GEMINI_STT_FORMAT_ALIASES: Record<string, string> = {
+    mpeg: "mp3",
+    mpga: "mp3",
+    wave: "wav",
+};
+
+function resolveGeminiSttFormat(file: File): string {
+    const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
+    const subtype = file.type.split("/")[1]?.toLowerCase().replace(/^x-/, "");
+    for (const candidate of [extension, subtype ?? ""]) {
+        const format = GEMINI_STT_FORMAT_ALIASES[candidate] ?? candidate;
+        if ((GEMINI_STT_FORMATS as readonly string[]).includes(format)) {
+            return format;
+        }
+    }
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `Unsupported audio format for ${GEMINI_TRANSCRIBE_MODEL}. Supported: ${GEMINI_STT_FORMATS.join(", ")}`,
+    });
+}
+
+interface VertexTranscriptionResponse {
+    candidates?: {
+        content?: {
+            parts?: {
+                text?: string;
+                audioTranscription?: {
+                    text: string;
+                    speakerLabel?: string;
+                    words?: {
+                        word: string;
+                        startOffset?: string;
+                        endOffset: string;
+                    }[];
+                };
+            }[];
+        };
+    }[];
+    usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        promptTokensDetails?: { modality: string; tokenCount: number }[];
+    };
+}
+
+export async function transcribeWithVertexGemini(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    accessToken: string;
+    projectId: string;
+}): Promise<Response> {
+    const {
+        file,
+        language,
+        responseFormat = "json",
+        accessToken,
+        projectId,
+    } = opts;
+    assertTranscriptionResponseFormat(responseFormat, GEMINI_TRANSCRIBE_MODEL);
+    const format = resolveGeminiSttFormat(file);
+    if (!accessToken || !projectId) {
+        throw new UpstreamError(500, {
+            message: "Vertex transcription is not configured",
+        });
+    }
+    const mimeTypes: Record<string, string> = {
+        wav: "audio/wav",
+        mp3: "audio/mpeg",
+        flac: "audio/flac",
+        m4a: "audio/mp4",
+        ogg: "audio/ogg",
+        webm: "audio/webm",
+        aac: "audio/aac",
+    };
+    const wantsWords =
+        responseFormat === "verbose_json" || responseFormat === "diarized_json";
+    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent`;
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            {
+                                inlineData: {
+                                    mimeType: mimeTypes[format],
+                                    data: arrayBufferToBase64(
+                                        await file.arrayBuffer(),
+                                    ),
+                                },
+                            },
+                        ],
+                    },
+                ],
+                generationConfig: {
+                    audioTranscriptionConfig: {
+                        ...(language ? { languageCodes: [language] } : {}),
+                        ...(wantsWords ? { wordTimestamp: true } : {}),
+                        ...(responseFormat === "diarized_json"
+                            ? { diarization: true }
+                            : {}),
+                    },
+                },
+            }),
+        }),
+        endpoint,
+    );
+    const data = (await response
+        .json()
+        .catch(() => null)) as VertexTranscriptionResponse | null;
+    const usage = data?.usageMetadata;
+    const audioTokens = usage?.promptTokensDetails?.find(
+        (part) => part.modality === "AUDIO",
+    )?.tokenCount;
+    const textTokens =
+        usage?.promptTokensDetails?.find((part) => part.modality === "TEXT")
+            ?.tokenCount ?? 0;
+    const outputTokens = usage?.candidatesTokenCount;
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (
+        !parts ||
+        typeof audioTokens !== "number" ||
+        audioTokens <= 0 ||
+        !Number.isInteger(audioTokens) ||
+        typeof outputTokens !== "number" ||
+        outputTokens < 0 ||
+        !Number.isInteger(outputTokens) ||
+        !Number.isInteger(textTokens) ||
+        textTokens < 0 ||
+        usage?.promptTokenCount !== audioTokens + textTokens
+    ) {
+        throw new UpstreamError(502, {
+            message:
+                "Vertex transcription response did not include valid token usage.",
+        });
+    }
+    const turns = parts.flatMap((part) =>
+        part.audioTranscription ? [part.audioTranscription] : [],
+    );
+    const words = turns.flatMap((turn) =>
+        (turn.words ?? []).map((word) => ({
+            word: word.word,
+            start: Number.parseFloat(word.startOffset ?? "0s"),
+            end: Number.parseFloat(word.endOffset),
+        })),
+    );
+    const segments = turns
+        .filter((turn) => turn.words?.length)
+        .map((turn) => ({
+            text: turn.text,
+            start: Number.parseFloat(turn.words?.[0].startOffset ?? "0s"),
+            end: Number.parseFloat(turn.words?.at(-1)?.endOffset ?? "0s"),
+            speaker: turn.speakerLabel?.replace(/^spk:/, "") ?? null,
+        }));
+    return buildTranscriptionResponse({
+        normalized: {
+            text: parts
+                .map((part) => part.audioTranscription?.text ?? part.text ?? "")
+                .join(" "),
+            duration:
+                Math.round(
+                    (audioTokens / GEMINI_TRANSCRIBE_TOKENS_PER_SECOND) * 100,
+                ) / 100,
+            words,
+            segments,
+            diarizedSegments: segments,
+        },
+        responseFormat,
+        usage: {
+            type: "tokens",
+            input_tokens: audioTokens + textTokens,
+            input_token_details: {
+                audio_tokens: audioTokens,
+                text_tokens: textTokens,
+            },
+            output_tokens: outputTokens,
+            total_tokens: audioTokens + textTokens + outputTokens,
+        },
+        usageHeaders: buildUsageHeaders(GEMINI_TRANSCRIBE_MODEL, {
+            promptAudioTokens: audioTokens,
+            promptTextTokens: textTokens,
+            completionTextTokens: outputTokens,
+        }),
+    });
+}
+
+interface OpenRouterSttResponse {
+    text: string;
+    usage?: { input_tokens?: number; output_tokens?: number };
+    segments?: { start: number; end: number; text: string }[];
+    words?: { word: string; start: number; end: number; speaker?: number }[];
+}
+
+export async function transcribeWithOpenRouterGemini(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { file, language, responseFormat = "json", apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+    assertTranscriptionResponseFormat(responseFormat, GEMINI_TRANSCRIBE_MODEL);
+    const format = resolveGeminiSttFormat(file);
+
+    // Timestamps and speaker labels are opt-in upstream: Google notes that
+    // word timestamps can reduce accuracy, so plain formats skip them.
+    const wantsWords =
+        responseFormat === "verbose_json" || responseFormat === "diarized_json";
+    const body = {
+        model: GEMINI_TRANSCRIBE_MODEL,
+        input_audio: {
+            data: arrayBufferToBase64(await file.arrayBuffer()),
+            format,
+        },
+        ...(language ? { language } : {}),
+        ...(wantsWords
+            ? {
+                  response_format: "verbose_json",
+                  timestamp_granularities: ["segment", "word"],
+              }
+            : {}),
+        ...(responseFormat === "diarized_json"
+            ? {
+                  provider: {
+                      options: {
+                          "google-ai-studio": { diarization_mode: "speaker" },
+                      },
+                  },
+              }
+            : {}),
+    };
+
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_STT_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        }),
+        OPENROUTER_STT_ENDPOINT,
+    );
+    const transcript = (await response
+        .json()
+        .catch(() => null)) as OpenRouterSttResponse | null;
+    const inputTokens = transcript?.usage?.input_tokens;
+    const outputTokens = transcript?.usage?.output_tokens ?? 0;
+    if (
+        !transcript ||
+        typeof transcript.text !== "string" ||
+        typeof inputTokens !== "number" ||
+        !Number.isInteger(inputTokens) ||
+        inputTokens <= 0 ||
+        !Number.isInteger(outputTokens) ||
+        outputTokens < 0
+    ) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "OpenRouter transcription response did not include valid token usage.",
+        });
+    }
+
+    log.info(
+        "OpenRouter Gemini transcription: {chars} chars, {tokens} tokens",
+        {
+            chars: transcript.text.length,
+            tokens: inputTokens,
+        },
+    );
+
+    const words = transcript.words ?? [];
+    const diarizedSegments = groupXaiWordsBySpeaker(
+        words.map((word) => ({
+            text: word.word,
+            start: word.start,
+            end: word.end,
+            speaker: word.speaker,
+        })),
+    );
+    return buildTranscriptionResponse({
+        normalized: {
+            // With diarization the provider joins speaker turns without a
+            // separator ("numbers?Yes"), so rebuild the text from the turns.
+            text:
+                responseFormat === "diarized_json" && diarizedSegments.length
+                    ? diarizedSegments.map((segment) => segment.text).join(" ")
+                    : transcript.text,
+            // The provider reports tokens, not seconds; the documented 25
+            // tokens/s rate recovers the duration to within a token.
+            duration:
+                Math.round(
+                    (inputTokens / GEMINI_TRANSCRIBE_TOKENS_PER_SECOND) * 100,
+                ) / 100,
+            words: words.map(({ word, start, end }) => ({ word, start, end })),
+            segments: transcript.segments ?? [],
+            diarizedSegments,
+        },
+        responseFormat,
+        usage: {
+            type: "tokens",
+            input_tokens: inputTokens,
+            input_token_details: { audio_tokens: inputTokens, text_tokens: 0 },
+            output_tokens: outputTokens,
+            total_tokens: inputTokens + outputTokens,
+        },
+        usageHeaders: buildUsageHeaders(
+            `${GEMINI_TRANSCRIBE_MODEL}:openrouter`,
+            {
+                promptAudioTokens: inputTokens,
+                completionTextTokens: outputTokens,
+            },
+        ),
+    });
+}
+
 export async function transcribeWithElevenLabs(opts: {
     file: File;
     language?: string;
@@ -1264,6 +1618,7 @@ function createConditionedCompositionPlan(opts: {
 
 async function uploadMusicReference(opts: {
     file: File;
+    modelId: (typeof ELEVENLABS_MUSIC_MODEL_IDS)[ElevenLabsMusicModelName];
     apiKey: string;
     log: Logger;
 }): Promise<{
@@ -1278,9 +1633,9 @@ async function uploadMusicReference(opts: {
             : "reference.mp3";
     formData.append("file", opts.file, filename);
     // ElevenLabs does not return duration or usage headers for music uploads.
-    // The extracted v2 plan contains the provider-metered chunk durations and
+    // The extracted plan contains the provider-metered chunk durations and
     // does not add to the $0.15/minute ingestion price.
-    formData.append("extract_composition_plan", "music_v2");
+    formData.append("extract_composition_plan", opts.modelId);
 
     opts.log.info("ElevenLabs music upload: filename={filename}, size={size}", {
         filename,
@@ -1331,6 +1686,7 @@ export async function generateMusic(
     opts: GenerateMusicOptions,
 ): Promise<Response> {
     const {
+        modelName,
         prompt,
         durationSeconds,
         forceInstrumental,
@@ -1351,7 +1707,7 @@ export async function generateMusic(
         });
     }
 
-    const modelId = "music_v2";
+    const modelId = ELEVENLABS_MUSIC_MODEL_IDS[modelName];
     let uploadedSongId: string | undefined;
     let uploadedReferenceDuration: number | undefined;
     let compositionPlan = opts.compositionPlan;
@@ -1360,6 +1716,7 @@ export async function generateMusic(
     if (referenceAudio) {
         const upload = await uploadMusicReference({
             file: referenceAudio,
+            modelId,
             apiKey,
             log,
         });
@@ -1457,7 +1814,7 @@ export async function generateMusic(
             createAudioSecondsUsage(uploadedReferenceDuration),
         );
     }
-    const usageHeaders = buildUsageHeaders("elevenlabs/music-v2", usage);
+    const usageHeaders = buildUsageHeaders(modelName, usage);
     const responseHeaders: Record<string, string> = {
         "Content-Type": contentType,
         ...usageHeaders,
@@ -1734,8 +2091,8 @@ function requireElevenMusicOptions(
         storeForInpainting?: boolean;
     },
 ): void {
-    // elevenlabs/music-v2 supports every conditioning option.
-    if (model === "elevenlabs/music-v2") return;
+    // ElevenLabs Music v2 and v2.5 support every conditioning option.
+    if (model in ELEVENLABS_MUSIC_MODEL_IDS) return;
 
     // ElevenLabs-only options (everything except a plain reference clip).
     const usesElevenOnlyOptions =
@@ -1753,7 +2110,7 @@ function requireElevenMusicOptions(
         if (usesElevenOnlyOptions) {
             throw new UpstreamError(400 as ContentfulStatusCode, {
                 message:
-                    "conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2.",
+                    "conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5.",
             });
         }
         return;
@@ -1764,7 +2121,7 @@ function requireElevenMusicOptions(
 
     throw new UpstreamError(400 as ContentfulStatusCode, {
         message:
-            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 also accept reference_audio).",
+            "reference_audio, conditioning_ref, composition_plan, and store_for_inpainting are only supported with model=elevenlabs/music-v2 or elevenlabs/music-v2.5 (stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3 also accept reference_audio).",
     });
 }
 
@@ -1989,8 +2346,7 @@ export async function generateQwenTts(opts: {
     });
 }
 
-const OPENROUTER_FISH_TTS_ENDPOINT =
-    "https://openrouter.ai/api/v1/audio/speech";
+const OPENROUTER_SPEECH_ENDPOINT = "https://openrouter.ai/api/v1/audio/speech";
 const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
 const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
 
@@ -2026,7 +2382,7 @@ export async function generateOpenRouterFishSpeech(opts: {
     );
 
     const response = await ensureUpstreamOk(
-        await fetch(OPENROUTER_FISH_TTS_ENDPOINT, {
+        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${apiKey}`,
@@ -2043,7 +2399,7 @@ export async function generateOpenRouterFishSpeech(opts: {
                 },
             }),
         }),
-        OPENROUTER_FISH_TTS_ENDPOINT,
+        OPENROUTER_SPEECH_ENDPOINT,
     );
 
     const generationId = response.headers.get("x-generation-id");
@@ -2063,6 +2419,368 @@ export async function generateOpenRouterFishSpeech(opts: {
             ),
             "x-tts-voice": voice,
             ...(generationId ? { "x-generation-id": generationId } : {}),
+        },
+    });
+}
+
+const GEMINI_TTS_MODELS = {
+    "google/gemini-3.8-flash-tts": "gemini-3.8-flash-tts",
+    "google/gemini-3.8-flash-lite-tts": "gemini-3.8-flash-lite-tts",
+} as const;
+const GEMINI_TTS_ENDPOINT =
+    "https://generativelanguage.googleapis.com/v1beta/interactions";
+
+const GeminiSpeechResponseSchema = z.object({
+    status: z.literal("completed"),
+    usage: z.object({
+        total_input_tokens: z.number().int().nonnegative(),
+        total_output_tokens: z.number().int().positive(),
+        input_tokens_by_modality: z.array(
+            z.object({
+                modality: z.literal("text"),
+                tokens: z.number().int().nonnegative(),
+            }),
+        ),
+        output_tokens_by_modality: z.array(
+            z.object({
+                modality: z.literal("audio"),
+                tokens: z.number().int().nonnegative(),
+            }),
+        ),
+        total_cached_tokens: z.literal(0),
+        total_thought_tokens: z.literal(0),
+        total_tool_use_tokens: z.literal(0),
+    }),
+    steps: z.array(
+        z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.string(),
+                        mime_type: z.string().optional(),
+                        data: z.string().optional(),
+                    }),
+                )
+                .optional(),
+        }),
+    ),
+});
+
+// Validate the actual speech and billable usage together: a successful HTTP
+// response without usable audio or provider usage must never settle a charge.
+export function parseGeminiSpeechResponse(
+    data: unknown,
+    responseFormat: string,
+) {
+    const parsed = GeminiSpeechResponseSchema.safeParse(data);
+    if (!parsed.success) {
+        throw new UpstreamError(502, {
+            message: "Google returned incomplete speech or invalid usage",
+        });
+    }
+    // Google bills the public usage totals. raw_prompt_token and invocation
+    // counters include internal tokens; adding them would double-count usage.
+    // https://discuss.ai.google.dev/t/182722/2
+    const { usage, steps } = parsed.data;
+    if (
+        usage.input_tokens_by_modality.reduce(
+            (sum, entry) => sum + entry.tokens,
+            0,
+        ) !== usage.total_input_tokens ||
+        usage.output_tokens_by_modality.reduce(
+            (sum, entry) => sum + entry.tokens,
+            0,
+        ) !== usage.total_output_tokens
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned inconsistent speech usage",
+        });
+    }
+    const blocks = steps
+        .flatMap((step) => step.content ?? [])
+        .filter((block) => block.type === "audio");
+    const block = blocks[0];
+    const expectedMime = responseFormat === "pcm" ? "audio/l16" : "audio/wav";
+    if (
+        blocks.length !== 1 ||
+        !block?.data ||
+        block.mime_type?.split(";")[0] !== expectedMime
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned missing or unexpected speech audio",
+        });
+    }
+    let bytes: Uint8Array<ArrayBuffer>;
+    try {
+        bytes = Uint8Array.from(atob(block.data), (char) => char.charCodeAt(0));
+    } catch {
+        throw new UpstreamError(502, {
+            message: "Google returned invalid speech audio encoding",
+        });
+    }
+    if (!bytes.length || (responseFormat === "pcm" && bytes.length % 2 !== 0)) {
+        throw new UpstreamError(502, {
+            message: "Google returned empty or truncated speech audio",
+        });
+    }
+    if (
+        responseFormat === "wav" &&
+        (new TextDecoder().decode(bytes.subarray(0, 4)) !== "RIFF" ||
+            new TextDecoder().decode(bytes.subarray(8, 12)) !== "WAVE")
+    ) {
+        throw new UpstreamError(502, {
+            message: "Google returned invalid WAV audio",
+        });
+    }
+    return {
+        bytes,
+        usage: {
+            promptTextTokens: usage.total_input_tokens,
+            completionAudioTokens: usage.total_output_tokens,
+        },
+    };
+}
+
+function resolveGeminiSpeechVoice(
+    modelName: string,
+    requestedVoice: string,
+    responseFormat: string,
+) {
+    const voice = GEMINI_TTS_VOICES.find(
+        (candidate) =>
+            candidate.toLowerCase() ===
+            (requestedVoice === "alloy"
+                ? "Kore"
+                : requestedVoice
+            ).toLowerCase(),
+    );
+    if (!voice) {
+        throw new UpstreamError(400, {
+            message: `Invalid voice for ${modelName}: ${requestedVoice}. Supported voices: ${GEMINI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+    if (responseFormat !== "wav" && responseFormat !== "pcm") {
+        throw new UpstreamError(400, {
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: wav, pcm.`,
+        });
+    }
+    return voice;
+}
+
+export async function generateGeminiSpeech(opts: {
+    modelName: keyof typeof GEMINI_TTS_MODELS;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    instructions?: string;
+    apiKey?: string;
+    log: Logger;
+}): Promise<Response> {
+    const { modelName, text, responseFormat, instructions, apiKey, log } = opts;
+    const voice = resolveGeminiSpeechVoice(
+        modelName,
+        opts.voice,
+        responseFormat,
+    );
+    if (!apiKey) {
+        throw new UpstreamError(500, {
+            message: "Google Gemini is not configured (missing API key)",
+        });
+    }
+    const response = await ensureUpstreamOk(
+        await fetch(GEMINI_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "x-goog-api-key": apiKey,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: GEMINI_TTS_MODELS[modelName],
+                store: false,
+                input: [
+                    {
+                        type: "user_input",
+                        content: [
+                            {
+                                type: "text",
+                                text,
+                                ...(instructions
+                                    ? {
+                                          annotations: [
+                                              {
+                                                  type: "speech_metadata",
+                                                  style: instructions,
+                                              },
+                                          ],
+                                      }
+                                    : {}),
+                            },
+                        ],
+                    },
+                ],
+                response_format: {
+                    type: "audio",
+                    mime_type:
+                        responseFormat === "pcm" ? "audio/l16" : "audio/wav",
+                },
+                generation_config: { speech_config: [{ voice }] },
+            }),
+        }),
+        GEMINI_TTS_ENDPOINT,
+    );
+    const { bytes, usage } = parseGeminiSpeechResponse(
+        await response.json(),
+        responseFormat,
+    );
+    log.info("Gemini TTS success: model={model}, usage={usage}", {
+        model: modelName,
+        usage,
+    });
+    return new Response(bytes, {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm"
+                    ? "audio/pcm;rate=24000;channels=1"
+                    : "audio/wav",
+            ...buildUsageHeaders(modelName, usage),
+            "x-tts-voice": voice,
+        },
+    });
+}
+
+function pcmToWav(
+    pcm: Uint8Array,
+    sampleRate: number,
+): Uint8Array<ArrayBuffer> {
+    const wav = new Uint8Array(44 + pcm.byteLength);
+    const view = new DataView(wav.buffer);
+    const writeAscii = (offset: number, value: string) => {
+        for (let i = 0; i < value.length; i++) {
+            wav[offset + i] = value.charCodeAt(i);
+        }
+    };
+    writeAscii(0, "RIFF");
+    view.setUint32(4, 36 + pcm.byteLength, true);
+    writeAscii(8, "WAVEfmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeAscii(36, "data");
+    view.setUint32(40, pcm.byteLength, true);
+    wav.set(pcm, 44);
+    return wav;
+}
+
+// Speech responses carry audio only. The generation record becomes available
+// asynchronously; wait for its native tokens before returning billable audio.
+export async function readOpenRouterSpeechUsage(
+    generationId: string,
+    apiKey: string,
+) {
+    const endpoint = `https://openrouter.ai/api/v1/generation?id=${encodeURIComponent(generationId)}`;
+    for (let attempt = 0; attempt < 30; attempt++) {
+        const response = await fetch(endpoint, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (response.status === 404) {
+            await response.body?.cancel();
+            if (attempt < 29) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+            continue;
+        }
+        await ensureUpstreamOk(response, endpoint);
+        const parsed = z
+            .object({
+                data: z.object({
+                    native_tokens_prompt: z.number().int().nonnegative(),
+                    native_tokens_completion: z.number().int().positive(),
+                    total_cost: z.number().nonnegative(),
+                }),
+            })
+            .safeParse(await response.json());
+        if (!parsed.success)
+            throw new UpstreamError(502, {
+                message: "OpenRouter returned invalid speech usage",
+            });
+        return {
+            promptTextTokens: parsed.data.data.native_tokens_prompt,
+            completionAudioTokens: parsed.data.data.native_tokens_completion,
+        };
+    }
+    throw new UpstreamError(502, {
+        message: "OpenRouter speech usage is not available",
+    });
+}
+
+export async function generateOpenRouterGeminiSpeech(opts: {
+    modelName: string;
+    upstreamModel: keyof typeof GEMINI_TTS_MODELS;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    instructions?: string;
+    apiKey: string;
+}): Promise<Response> {
+    const {
+        modelName,
+        upstreamModel,
+        text,
+        responseFormat,
+        instructions,
+        apiKey,
+    } = opts;
+    const voice = resolveGeminiSpeechVoice(
+        upstreamModel,
+        opts.voice,
+        responseFormat,
+    );
+    if (!apiKey)
+        throw new UpstreamError(500, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: upstreamModel,
+                input: text,
+                voice,
+                response_format: "pcm",
+                ...(instructions ? { instructions } : {}),
+                provider: {
+                    only: ["google-ai-studio"],
+                    allow_fallbacks: false,
+                },
+            }),
+        }),
+        OPENROUTER_SPEECH_ENDPOINT,
+    );
+    const pcm = new Uint8Array(await response.arrayBuffer());
+    const generationId = response.headers.get("x-generation-id");
+    if (!pcm.length || pcm.length % 2 !== 0 || !generationId)
+        throw new UpstreamError(502, {
+            message:
+                "OpenRouter returned incomplete speech audio or no generation ID",
+        });
+    const usage = await readOpenRouterSpeechUsage(generationId, apiKey);
+    return new Response(responseFormat === "pcm" ? pcm : pcmToWav(pcm, 24000), {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm"
+                    ? "audio/pcm;rate=24000;channels=1"
+                    : "audio/wav",
+            ...buildUsageHeaders(modelName, usage),
+            "x-tts-voice": voice,
+            "x-generation-id": generationId,
         },
     });
 }
@@ -2147,6 +2865,49 @@ export async function generateXaiSpeech(opts: {
                 createAudioTokenUsage(inputCharacters),
             ),
             "x-tts-voice": voice,
+        },
+    });
+}
+
+export async function generateAzureSpeech(opts: {
+    modelName: "openai/tts-1" | "openai/tts-1-hd";
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+}): Promise<Response> {
+    const { modelName, text, voice, responseFormat, apiKey } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Azure speech service is not configured",
+        });
+    }
+    const characters = [...text].length;
+    if (characters > 4096) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Azure TTS input must be 4096 characters or fewer",
+        });
+    }
+    const deployment = modelName === "openai/tts-1" ? "tts" : "tts-hd";
+    const endpoint = `https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/${deployment}/audio/speech?api-version=2025-04-01-preview`;
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: { "api-key": apiKey, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: modelName.slice("openai/".length),
+                input: text,
+                voice,
+                response_format: responseFormat,
+            }),
+        }),
+        endpoint,
+    );
+    return new Response(response.body, {
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") || "audio/mpeg",
+            ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
         },
     });
 }
@@ -2243,15 +3004,14 @@ export async function generateDeepInfraSpeech(opts: {
  * Dispatches the resolved text-to-audio model and wraps the result in safety
  * headers. Shared by the GET /audio/:text and POST /v1/audio/speech handlers.
  */
-// fal synchronous inference endpoint. Stable Audio 3 Medium generates quickly,
-// so the blocking `fal.run` route returns inline without needing the queue/poll
-// API.
+// fal queue endpoint. The blocking `fal.run` route returns a 524 once a job has
+// waited about two minutes for a runner, and fal may still run and bill it.
 const STABLE_AUDIO_3_MEDIUM_ENDPOINT =
-    "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+    "fal-ai/stable-audio-3/medium/text-to-audio";
 // A reference clip switches fal to audio-to-audio (style transfer) — a separate
 // endpoint with its own flat fee.
 const STABLE_AUDIO_3_MEDIUM_A2A_ENDPOINT =
-    "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+    "fal-ai/stable-audio-3/medium/audio-to-audio";
 
 // Stable Audio 3 Large runs on Stability's direct API, which is asynchronous:
 // the POST returns 202 + { id } and the rendered audio is retrieved by polling
@@ -2328,17 +3088,15 @@ export async function generateStableAudio3Medium(opts: {
         },
     );
 
-    const rawResponse = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-            // fal uses `Authorization: Key <id:secret>`, NOT `Bearer`.
-            Authorization: `Key ${falKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(input),
-    });
-    const response = await ensureUpstreamOk(rawResponse, endpoint);
-    const result = (await response.json()) as FalAudioOutput;
+    let result: FalAudioOutput;
+    try {
+        result = (await runFalJob(
+            { endpoint, input },
+            falKey,
+        )) as FalAudioOutput;
+    } catch (error) {
+        throw toUpstreamError(error);
+    }
     const audioUrl =
         typeof result.audio === "string" ? result.audio : result.audio?.url;
     if (!audioUrl) {
@@ -2619,10 +3377,11 @@ async function dispatchAudioGeneration(
         );
     }
 
-    if (model === "elevenlabs/music-v2") {
+    if (model in ELEVENLABS_MUSIC_MODEL_IDS) {
         return withSafetyHeaders(
             c,
             await generateMusic({
+                modelName: model as ElevenLabsMusicModelName,
                 prompt: text,
                 durationSeconds: duration,
                 forceInstrumental: instrumental,
@@ -2633,6 +3392,21 @@ async function dispatchAudioGeneration(
                 referenceAudio,
                 apiKey,
                 log,
+            }),
+        );
+    }
+
+    if (model === "google/lyria-3.5" || model === "google/lyria-3.5:fal") {
+        return withSafetyHeaders(
+            c,
+            await generateLyria35({
+                model,
+                prompt: text,
+                responseFormat,
+                durationSeconds: duration,
+                referenceAudio,
+                geminiApiKey: c.env.GEMINI_API_KEY,
+                falKey: c.env.FAL_KEY,
             }),
         );
     }
@@ -2749,6 +3523,18 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "openai/tts-1":
+        case "openai/tts-1-hd":
+            return withSafetyHeaders(
+                c,
+                await generateAzureSpeech({
+                    modelName: model,
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+                }),
+            );
         case "fish-audio/s2.1-pro":
             return withSafetyHeaders(
                 c,
@@ -2758,6 +3544,38 @@ async function dispatchAudioGeneration(
                     responseFormat,
                     apiKey: openRouterApiKey,
                     log,
+                }),
+            );
+        case "google/gemini-3.8-flash-tts":
+        case "google/gemini-3.8-flash-lite-tts":
+            return withSafetyHeaders(
+                c,
+                await generateGeminiSpeech({
+                    modelName: model,
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: c.env.GEMINI_API_KEY,
+                    instructions,
+                    log,
+                }),
+            );
+        case "google/gemini-3.8-flash-tts:openrouter:ai-studio":
+        case "google/gemini-3.8-flash-lite-tts:openrouter:ai-studio":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterGeminiSpeech({
+                    modelName: model,
+                    upstreamModel:
+                        model ===
+                        "google/gemini-3.8-flash-tts:openrouter:ai-studio"
+                            ? "google/gemini-3.8-flash-tts"
+                            : "google/gemini-3.8-flash-lite-tts",
+                    text,
+                    voice,
+                    responseFormat,
+                    instructions,
+                    apiKey: openRouterApiKey,
                 }),
             );
         case "sesame/csm-1b":
@@ -2789,7 +3607,9 @@ async function generateAudioFromSpeechRequest(
         input,
         safe,
         voice,
-        response_format,
+        response_format = c.var.model.resolved in GEMINI_TTS_MODELS
+            ? "wav"
+            : "mp3",
         duration,
         seconds,
         steps,
@@ -2966,8 +3786,13 @@ export async function handleSpeechWithTimestamps(
     c: AudioContext,
 ): Promise<Response> {
     const log = c.get("log").getChild("tts-timestamps");
-    const { input, safe, voice, response_format, seed } =
-        await parseSpeechRequest(c);
+    const {
+        input,
+        safe,
+        voice,
+        response_format = "mp3",
+        seed,
+    } = await parseSpeechRequest(c);
     const modelName = c.var.model.resolved;
     if (!(modelName in ELEVENLABS_TTS_MODEL_IDS)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -3004,7 +3829,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
-    const file = formData.get("file") as File;
+    const file = formData.get("file");
     const language = formData.get("language") as string | null;
     const prompt = formData.get("prompt") as string | null;
     const responseFormat = formData.get("response_format") as string | null;
@@ -3021,6 +3846,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     if (!file) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "Missing required field: file",
+        });
+    }
+    if (!(file instanceof File) || file.size === 0) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "The file field must contain a non-empty audio file",
         });
     }
     if (speakersExpected !== undefined && responseFormat !== "diarized_json") {
@@ -3054,6 +3884,32 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 language: language || undefined,
                 responseFormat: responseFormat || undefined,
                 apiKey: c.env.XAI_API_KEY,
+                log,
+            });
+        }
+        if (candidate.id === GEMINI_TRANSCRIBE_MODEL) {
+            for (const key of [
+                "GOOGLE_PRIVATE_KEY",
+                "GOOGLE_PRIVATE_KEY_ID",
+                "GOOGLE_CLIENT_EMAIL",
+            ] as const) {
+                const value = c.env[key];
+                if (typeof value === "string") process.env[key] = value;
+            }
+            return transcribeWithVertexGemini({
+                file,
+                language: language || undefined,
+                responseFormat: responseFormat || undefined,
+                accessToken: (await googleCloudAuth.getAccessToken()) ?? "",
+                projectId: c.env.GOOGLE_PROJECT_ID,
+            });
+        }
+        if (candidate.id === `${GEMINI_TRANSCRIBE_MODEL}:openrouter`) {
+            return transcribeWithOpenRouterGemini({
+                file,
+                language: language || undefined,
+                responseFormat: responseFormat || undefined,
+                apiKey: c.env.OPENROUTER_API_KEY,
                 log,
             });
         }
@@ -3331,7 +4187,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on `elevenlabs/music-v2`; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
@@ -3374,7 +4230,8 @@ export const audioRoutes = new Hono<Env>()
                                         "wav",
                                         "pcm",
                                     ],
-                                    default: "mp3",
+                                    description:
+                                        "Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav or raw 24 kHz pcm and rejects other explicit formats.",
                                 },
                                 duration: {
                                     type: "number",
@@ -3407,7 +4264,11 @@ export const audioRoutes = new Hono<Env>()
                                     minimum: 0,
                                     maximum: 4294967295,
                                 },
-                                instructions: { type: "string" },
+                                instructions: {
+                                    type: "string",
+                                    description:
+                                        "Emotion/style instruction for Gemini TTS and Qwen instruct speech.",
+                                },
                                 loop: { type: "boolean" },
                                 prompt_influence: {
                                     type: "number",
@@ -3607,6 +4468,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `openai/gpt-transcribe` — Fast multilingual speech recognition with prompt context",
                 "- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
                 "- `x-ai/grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
+                "- `google/gemini-3.5-transcribe` — Google speech recognition with word timestamps and speaker labels (wav, mp3, flac, m4a, ogg, webm, aac; `prompt` is ignored)",
                 "- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)",
                 "- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
@@ -3628,7 +4490,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "openai/whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
+                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `google/gemini-3.5-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",

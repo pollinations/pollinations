@@ -185,7 +185,10 @@ export function parseApiError(status, errorText) {
         case 401:
             return `Authentication failed. Send a valid API key as an Authorization bearer token. Get your key at https://enter.pollinations.ai/keys`;
         case 403:
-            return `Access forbidden. Your API key may not have permission for this operation.`;
+            return (
+                errorMessage ||
+                "Access forbidden. Your API key may not have permission for this operation."
+            );
         case 404:
             return `Resource not found. The requested endpoint or model may not exist.`;
         case 429:

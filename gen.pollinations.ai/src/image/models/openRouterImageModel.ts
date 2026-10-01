@@ -12,6 +12,7 @@ import {
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
     base64ToBuffer,
+    detectMimeType,
     downloadUserImage,
     readImageDimensions,
     toDataUri,
@@ -25,6 +26,16 @@ const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
 const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
+const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
+// Docs show PNG, but the live endpoint returned WebP (2026-09-23).
+const RECRAFT_FLASH_ASPECT_RATIOS = [
+    "1:1",
+    "4:3",
+    "3:4",
+    "16:9",
+    "9:16",
+] as const;
+const FLUX2_MAX_MODEL = "black-forest-labs/flux.2-max";
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const SVG_MEDIA_TYPE = "image/svg+xml";
 const SEEDREAM_PRO_ASPECT_RATIOS = [
@@ -60,7 +71,7 @@ type GeminiImageConfig = {
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
-    "google/gemini-2.5-flash-image": {
+    "google/gemini-2.5-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 3,
@@ -68,7 +79,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "none",
         reasoning: false,
     },
-    "google/gemini-3.1-flash-image": {
+    "google/gemini-3.1-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3.1-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -76,15 +87,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: true,
     },
-    "google/gemini-3.1-flash-image:openrouter:ai-studio": {
-        upstreamModel: "google/gemini-3.1-flash-image",
-        provider: "google-ai-studio",
-        maxReferenceImages: 14,
-        generator: "Google AI Studio Gemini 3.1 Flash Image",
-        resolution: "tiered",
-        reasoning: true,
-    },
-    "google/gemini-3.1-flash-lite-image": {
+    "google/gemini-3.1-flash-lite-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3.1-flash-lite-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -92,19 +95,11 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "1K",
         reasoning: true,
     },
-    "google/gemini-3-pro-image": {
+    "google/gemini-3-pro-image:openrouter:ai-studio-global": {
         upstreamModel: "google/gemini-3-pro-image",
         provider: "google-ai-studio/global",
         maxReferenceImages: 14,
         generator: "Google AI Studio Gemini 3 Pro Image",
-        resolution: "tiered",
-        reasoning: false,
-    },
-    "google/gemini-3-pro-image:openrouter:vertex-global": {
-        upstreamModel: "google/gemini-3-pro-image",
-        provider: "google-vertex/global",
-        maxReferenceImages: 14,
-        generator: "Vertex AI Gemini 3 Pro Image",
         resolution: "tiered",
         reasoning: false,
     },
@@ -409,8 +404,6 @@ export async function callOpenRouterSeedreamProAPI(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "bytedance/seedream-4.5",
             usage: {
@@ -467,8 +460,6 @@ export async function callOpenRouterGrokImagineProAPI(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
@@ -529,8 +520,6 @@ export async function callOpenRouterGrokImagineImage2API(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
@@ -539,6 +528,100 @@ export async function callOpenRouterGrokImagineImage2API(
                     : {}),
                 completionImageTokens: 1,
             },
+        },
+    };
+}
+
+export async function callOpenRouterFlux2MaxAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 8) {
+        throw UpstreamError.fromProvider(400, {
+            message: "FLUX.2 Max supports at most 8 reference images",
+        });
+    }
+    const apiKey = requireOpenRouterImageApiKey();
+    // BFL does not follow redirects, so a raw reference URL 400s whenever the
+    // host serves one (e.g. picsum.photos). Download and inline as a data
+    // URI instead, matching callOpenRouterSeedreamProAPI.
+    const downloadedImages = await Promise.all(
+        safeParams.image.map((image) => downloadUserImage(image)),
+    );
+    const inputReferences = downloadedImages.map((downloaded) => ({
+        type: "image_url",
+        image_url: {
+            url: `data:${downloaded.mimeType};base64,${downloaded.buffer.toString("base64")}`,
+        },
+    }));
+    const requestBody: Record<string, unknown> = {
+        model: FLUX2_MAX_MODEL,
+        prompt,
+        n: 1,
+        seed: safeParams.seed,
+        provider: {
+            only: ["black-forest-labs/us-3"],
+            allow_fallbacks: false,
+        },
+    };
+
+    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
+    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter FLUX.2 Max request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    const providerCost = data.usage?.cost;
+    if (typeof providerCost !== "number" || !(providerCost > 0)) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+    // OpenRouter only takes an aspect ratio and picks the pixels itself, so the
+    // caller is charged for the image it returns, not the size it requested.
+    const buffer = base64ToBuffer(encodedImage);
+    const output = readImageDimensions(buffer, detectMimeType(buffer));
+    if (!output) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter FLUX.2 Max returned an image of unknown size",
+        });
+    }
+    // Reference megapixels are charged like on the Replicate primary.
+    const usage: Usage = {};
+    addUsage(
+        usage,
+        "promptImageTokens",
+        downloadedImages.reduce((megapixels, { buffer, mimeType }) => {
+            const input = readImageDimensions(buffer, mimeType);
+            return input
+                ? megapixels + (input.width * input.height) / 1_000_000
+                : megapixels;
+        }, 0),
+    );
+    usage.completionImageTokens = (output.width * output.height) / 1_000_000;
+
+    logOps("FLUX.2 Max generation complete", {
+        referenceImages: inputReferences.length,
+        providerCost,
+        output,
+    });
+
+    return {
+        buffer,
+        trackingData: {
+            actualModel: "black-forest-labs/flux.2-max:openrouter",
+            // Our cost is OpenRouter's reported charge plus its 5.5%
+            // credit-purchase fee (#14895), not BFL's tiered megapixel formula.
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+            usage,
         },
     };
 }
@@ -634,11 +717,70 @@ export async function callOpenRouterGeminiImageAPI(
 
     return {
         buffer: finalImageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage,
+        },
+    };
+}
+
+function resolveRecraftFlashAspectRatio(
+    safeParams: ImageParams,
+): (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number] | "auto" {
+    const requested = safeParams.aspectRatio;
+    if (!requested) {
+        return closestRatioLogSpace(
+            safeParams.width,
+            safeParams.height,
+            RECRAFT_FLASH_ASPECT_RATIOS,
+        );
+    }
+    if (requested === "adaptive") return "auto";
+    if (
+        !(RECRAFT_FLASH_ASPECT_RATIOS as readonly string[]).includes(requested)
+    ) {
+        throw UpstreamError.fromProvider(400, {
+            message: `aspectRatio "${requested}" is not supported by Recraft V4.1 Flash. Supported: auto, ${RECRAFT_FLASH_ASPECT_RATIOS.join(", ")}.`,
+        });
+    }
+    return requested as (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number];
+}
+
+export async function callOpenRouterRecraftFlashAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const aspectRatio = resolveRecraftFlashAspectRatio(safeParams);
+    const data = await postOpenRouterImage(
+        apiKey,
+        {
+            model: RECRAFT_FLASH_MODEL,
+            prompt,
+            n: 1,
+            aspect_ratio: aspectRatio,
+            provider: {
+                only: ["recraft"],
+                allow_fallbacks: false,
+            },
+        },
+        "OpenRouter Recraft Flash request failed",
+    );
+    const generatedImage = data.data?.[0];
+    if (!generatedImage?.b64_json) {
+        throw buildOpenRouterNoImageError(data);
+    }
+    logOps("Recraft Flash generation complete", {
+        aspectRatio,
+        providerCost: data.usage?.cost,
+    });
+
+    return {
+        buffer: base64ToBuffer(generatedImage.b64_json),
+        trackingData: {
+            actualModel: RECRAFT_FLASH_MODEL,
+            // OpenRouter bills this endpoint a fixed $0.007 per output image.
+            usage: { completionImageTokens: 1 },
         },
     };
 }
@@ -715,8 +857,6 @@ export async function callOpenRouterRecraftVectorAPI(
     return {
         buffer: base64ToBuffer(generatedImage.b64_json),
         mimeType: SVG_MEDIA_TYPE,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "recraft/recraft-v4.1-vector",
             // OpenRouter bills this endpoint a fixed $0.08 per output image.

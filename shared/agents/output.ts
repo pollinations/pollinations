@@ -187,18 +187,16 @@ export function collectOutput(
             });
             send?.("response.output_item.done", { output_index, item });
         },
-        finish(finishReason: string): AgentOutputItem[] {
-            if (pendingCalls.size) {
-                throw new Error("Agent tool call has no result");
-            }
+        finish(
+            finishReason: string,
+            callerTools: ReadonlySet<string> = new Set(),
+        ): AgentOutputItem[] {
             if (
-                !items.some(
-                    (item) =>
-                        item.type !== "message" ||
-                        item.content.some((part) => part.text.trim()),
+                [...pendingCalls.values()].some(
+                    (call) => !callerTools.has(call.name),
                 )
             ) {
-                throw new Error("Agent produced no response");
+                throw new Error("Agent tool call has no result");
             }
             closeMessage(
                 finishReason === "length" || finishReason === "content_filter"

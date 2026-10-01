@@ -83,7 +83,6 @@ async function normalizedFormData(formData: FormData): Promise<{
     contentType: string;
     identity: string;
 }> {
-    const sanitized = new FormData();
     const identity = new Map<string, unknown[]>();
 
     for (const [name, value] of formData.entries()) {
@@ -96,15 +95,13 @@ async function normalizedFormData(formData: FormData): Promise<{
                 type: value.type,
                 hash: bytesToHex(await crypto.subtle.digest("SHA-256", bytes)),
             });
-            sanitized.append(name, value, value.name);
         } else {
             values.push(value);
-            sanitized.append(name, value);
         }
         identity.set(name, values);
     }
 
-    const encoded = new Response(sanitized);
+    const encoded = new Response(formData);
     return {
         body: new Uint8Array(await encoded.arrayBuffer()),
         contentType: encoded.headers.get("content-type") ?? "",
@@ -130,9 +127,6 @@ export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
                               body.slice().buffer,
                           ),
                       );
-            if (typeof body === "string") {
-                c.set("generationRequestBody", identity);
-            }
             // A route that already declared its cache identity keeps it: the
             // replayable body carries fields, such as the response format,
             // that do not change the generated file.
@@ -164,9 +158,9 @@ export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
             return next();
         }
 
-        const body = normalizedJsonBody(await c.req.text());
+        const body = await c.req.text();
         c.set("generationRequestBody", body);
-        c.set("generationCacheBody", body);
+        c.set("generationCacheBody", normalizedJsonBody(body));
         return next();
     },
 );

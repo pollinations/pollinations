@@ -1,0 +1,103 @@
+DESCRIPTION >
+    Two pre-login funnels by day.
+    Browser sign-in: signed-out views of a sign-in page, requests sent on to
+    GitHub, and sessions created. All are plain counts, so no browser
+    identifier is needed. Each ratio divides a matched pair: pct_started uses
+    sign_in_started, which counts only starts made from one of those same
+    pages, while pct_completed uses sign_in_started_anywhere, which also counts
+    sign-ins begun outside this app and so matches sign_in_completed. signups
+    counts the starts that created an account, so new and returning can be
+    separated without the daily d1_user snapshot. A person who tries twice
+    counts twice, which is the drop-off being measured.
+    Device authorization: codes issued to a CLI, then approved or denied in
+    the browser, then collected as a token, counted per device row so a retry
+    of one stage is not double counted. client_id narrows the device side to
+    one app.
+    Consent grants and Discord linking are plain event counts; read them from
+    product_analytics_daily.
+
+TOKEN tinybird_read READ
+
+NODE sign_in_daily
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        countIf(
+            event = 'page_viewed'
+            AND user_id = ''
+            AND page IN ('/sign-in', '/app/sign-in')
+        ) AS sign_in_viewed,
+        countIf(
+            event = 'sign_in_started'
+            AND page IN ('/sign-in', '/app/sign-in')
+        ) AS sign_in_started,
+        countIf(event = 'sign_in_started') AS sign_in_started_anywhere,
+        countIf(event = 'sign_in_returned') AS sign_in_returned,
+        countIf(event = 'sign_in_completed') AS sign_in_completed,
+        countIf(event = 'signup_completed') AS signups,
+        if(sign_in_viewed = 0, 0, round(100 * sign_in_started / sign_in_viewed, 1)) AS pct_started,
+        if(sign_in_started_anywhere = 0, 0, round(100 * sign_in_returned / sign_in_started_anywhere, 1)) AS pct_returned,
+        if(sign_in_returned = 0, 0, round(100 * sign_in_completed / sign_in_returned, 1)) AS pct_completed_of_returned,
+        if(sign_in_started_anywhere = 0, 0, round(100 * sign_in_completed / sign_in_started_anywhere, 1)) AS pct_completed
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+    GROUP BY date
+
+NODE device_daily
+SQL >
+    %
+    SELECT
+        toDate(started_at) AS date,
+        uniqIf(flow_id, issued > 0) AS device_code_issued,
+        uniqIf(flow_id, approved > 0) AS device_approved,
+        uniqIf(flow_id, denied > 0) AS device_denied,
+        uniqIf(flow_id, token > 0) AS device_token_issued,
+        if(device_code_issued = 0, 0, round(100 * device_approved / device_code_issued, 1)) AS pct_device_approved,
+        if(device_approved = 0, 0, round(100 * device_token_issued / device_approved, 1)) AS pct_device_token_issued
+    FROM (
+        SELECT
+            flow_id,
+            min(timestamp) AS started_at,
+            countIf(event = 'device_code_issued') AS issued,
+            countIf(event = 'device_approved') AS approved,
+            countIf(event = 'device_denied') AS denied,
+            countIf(event = 'device_token_issued') AS token
+        FROM product_event
+        WHERE environment = {{String(environment, 'production')}}
+            AND event IN ('device_code_issued', 'device_approved', 'device_denied', 'device_token_issued')
+            AND flow_id != ''
+            AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+            {% if defined(client_id) %}
+            AND client_id = {{String(client_id)}}
+            {% end %}
+        GROUP BY flow_id
+    )
+    GROUP BY date
+
+NODE funnel
+SQL >
+    SELECT
+        greatest(s.date, d.date) AS date,
+        s.sign_in_viewed AS sign_in_viewed,
+        s.sign_in_started AS sign_in_started,
+        s.sign_in_started_anywhere AS sign_in_started_anywhere,
+        s.sign_in_returned AS sign_in_returned,
+        s.sign_in_completed AS sign_in_completed,
+        s.signups AS signups,
+        s.pct_started AS pct_started,
+        s.pct_returned AS pct_returned,
+        s.pct_completed_of_returned AS pct_completed_of_returned,
+        s.pct_completed AS pct_completed,
+        d.device_code_issued AS device_code_issued,
+        d.device_approved AS device_approved,
+        d.device_denied AS device_denied,
+        d.device_token_issued AS device_token_issued,
+        d.pct_device_approved AS pct_device_approved,
+        d.pct_device_token_issued AS pct_device_token_issued
+    FROM sign_in_daily s
+    FULL OUTER JOIN device_daily d ON s.date = d.date
+    ORDER BY date
+
+TYPE endpoint

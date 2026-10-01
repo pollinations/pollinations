@@ -125,7 +125,10 @@ export default defineConfig(async ({ mode }) => {
                 import.meta.resolve("@cloudflare/vitest-pool-workers"),
             ),
             globalSetup: ["./test/setup/snapshot-server.ts"],
-            setupFiles: ["./test/setup/apply-migrations.ts"],
+            setupFiles: [
+                "./test/setup/apply-migrations.ts",
+                "./test/setup/public-tinybird-pipes.ts",
+            ],
             exclude: [...configDefaults.exclude],
             deps: {
                 optimizer: {
@@ -208,6 +211,14 @@ export default defineConfig(async ({ mode }) => {
                                     },
                                 });
                             },
+                            ASK_JEV_MCP: async (request: Request) =>
+                                Response.json({
+                                    pathname: new URL(request.url).pathname,
+                                    authorization:
+                                        request.headers.get("authorization"),
+                                    cookie: request.headers.get("cookie"),
+                                    payload: await request.json(),
+                                }),
                             FFMPEG_MCP: async (request: Request) => {
                                 if (
                                     request.headers.has("authorization") ||
@@ -402,7 +413,7 @@ export default defineConfig(async ({ mode }) => {
                                             content: [
                                                 {
                                                     type: "text",
-                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}`,
+                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}:${request.headers.get("x-pollinations-user-github")}`,
                                                 },
                                             ],
                                         },

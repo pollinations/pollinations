@@ -28,6 +28,8 @@ When you test manually with a valid secret key (`sk_`), you bypass auth/quota is
 
 **Key insight**: High 401/402/403/400 rates are **expected** from real-world usage. Focus investigation on 500/504 errors.
 
+**Also watch for slow-but-200 failures**: a 200 that arrives after the client's own timeout never shows in error rates or p95 — it only shows in the per-user latency tail. See "Slow-but-200 / Client-Side Timeout" below.
+
 ---
 
 # Data Flow Architecture
@@ -140,6 +142,30 @@ AZURE_CONTENT_SAFETY_API_KEY=<new-key>
 **Impact**: 500 error
 **Fix**: Check Vertex AI quota/status, may be transient
 
+## Slow-but-200 / Client-Side Timeout
+**Error**: None server-side — 200, but users see a timeout or "no response"
+**Cause**: The latency tail is above the client's own timeout (e.g. Roblox HttpService ~30s) while status rates and p95 look fine
+**Impact**: Invisible on error dashboards; usually one user or one request shape (e.g. huge prompts)
+**Fix**: Query the tail per user — `countIf(response_time>30000)`, `max(response_time)` (query in "Raw SQL Queries" below)
+
+## Instant Rejection from a Per-Key Queue/Rate Limit
+**Error**: `Queue full`, or a 402/429 on the user's very first request
+**Cause**: An intended throttle, or leaked in-memory state (a slot never freed)
+**Impact**: User blocked while the backend is idle
+**Fix**: Compare the limiter's state with the backend's own load counters. Wait out the time window and send one request: if it clears, it was a live throttle. If a fix you predicted (e.g. a restart to clear memory) changes nothing, the diagnosis was wrong — re-check live state before trying a second fix. For IP-keyed limits, check how many distinct IPs the limiter actually sees: a proxy can collapse many clients onto one IP, which looks exactly like a leaked slot.
+
+## Stream/Usage Errors (missing usage, dropped terminal SSE event)
+**Error**: Missing token usage (`usage_missing`) or a missing terminal event (e.g. `[DONE]`)
+**Cause**: Usually an upstream disconnect or transport error hidden downstream, not the provider omitting data
+**Impact**: A transport/parsing bug gets blamed on the provider
+**Fix**: Look at the last SSE chunks and the original transport error across provider → adapter → validator before blaming the provider; truncated logs often drop the end. If two components parse the same stream (e.g. validator and tracker), make sure they agree on end-of-stream — a stream ending with one trailing newline, not a blank line, is valid; a disagreement shows up as a phantom provider failure.
+
+## Health-Check False Exclusions (402/403 During Automated Probing)
+**Error**: A monitor excuses a failing model as "client noise" (402/403)
+**Cause**: The same status can come from the probe's own wallet/auth or from the provider's credits, quota, or suspension
+**Impact**: Real outages get vetoed, or probe problems look like outages
+**Fix**: Before tuning thresholds, follow a few excluded cases through the decision log and find who actually failed — probe or provider
+
 ---
 
 # Environment Variables to Check
@@ -242,7 +268,8 @@ sops -d enter.pollinations.ai/secrets/env.json > /tmp/env.json
 # Step 2: Add the token (use jq)
 jq '. + {"CLOUDFLARE_OBSERVABILITY_TOKEN": "your_token"}' /tmp/env.json > /tmp/env_updated.json
 
-# Step 3: Re-encrypt (must rename to match .sops.yaml pattern)
+# Step 3: Re-encrypt. sops matches creation_rules against the INPUT file name,
+# not the output, so rename first (as below) or use `sops --filename-override`.
 cp /tmp/env_updated.json /tmp/env.json
 sops -e /tmp/env.json > enter.pollinations.ai/secrets/env.json
 
@@ -410,13 +437,10 @@ log.warn("Chat completions error {status}: {body}", {
 
 For aggregated model health stats, query Tinybird directly.
 
-> **⚠️ Use the prod read token from SOPS — do NOT use `.tinyb`.** The `.tinyb` in `enter.pollinations.ai/observability/` points to the **staging** workspace (`pollinations_enter_staging`), which has ~no real traffic, so prod queries come back empty. Get the prod token instead:
-> ```bash
-> TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
-> ```
-> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
+> **Token**: the prod read token lives in SOPS (`enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN`) and works for pipes and raw SQL against `pollinations_enter`. Do not use `.tinyb`: it points at staging, which has no real traffic. For raw SQL, `enter.pollinations.ai/observability/scripts/tb-prod.sh "<sql>"` does the lookup for you (see Raw SQL Queries below). The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
 
 ```bash
+TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
 H="https://api.europe-west2.gcp.tinybird.co"
 
 # Get model health stats — pass minutes (default pipe window is short; use 240 for last 4h)
@@ -437,6 +461,8 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 ---
 
 # Debugging Workflow
+
+**Before diving in**: the user's framing ("the instance was turned off", "the model always fails") is a hypothesis, not a fact. Check the premise cheaply first, and be ready to report "you said X, reality is Y."
 
 1. **Check Model Monitor** - https://monitor.pollinations.ai
    - Identify which models have high error rates
@@ -487,6 +513,27 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
      -H "Authorization: Bearer $TOKEN" \
      -w "\nHTTP: %{http_code}\n" -o /dev/null
    ```
+   - Use a unique prompt (timestamp/nonce) when checking credentials or connectivity — a cached response returns 200 even with a dead key. Identical bodies/ids across calls means cache, not health.
+
+---
+
+# Diagnosing Timeouts Across a Multi-Hop Path
+
+Users can report timeouts that Tinybird/Worker logs don't show, because the failure is at a hop you don't log.
+
+1. **Try to disprove the suspected deploy, not confirm it.** Bucket the symptom hourly across the deploy time; if it existed before, the deploy is cleared. If a proxy/CDN hop is suspected, measure it: compare TTFB via the public host against TTFB direct to origin.
+
+2. **Check the outermost edge.** A CDN in front of the Worker has its own logs of origin-connection failures that never reach Tinybird. "Dashboard green, users time out" means look one hop further out.
+
+3. **Use TTFB to narrow, then confirm with A/B.** TTFB≈0 → connection failure; TTFB≈timeout → origin hang. But that only describes the hop whose logs you're reading. Confirm with many *sequential* requests (parallel batches cause fake client-side failures) direct vs via the proxy, from the region production traffic uses — for anycast systems the answer depends on where you test from. Use an existing probe host rather than paying for a new one.
+
+4. **Re-check hours after the fix.** Removing one hanging call can look like a full fix until load shifts and the next awaited call on the same path dominates. If the fix is per-route, list every awaited external dependency on that route (rate limiter, DB, KV, service bindings), not just the first one found.
+
+---
+
+# Diagnosing "the Output/Display Is Wrong" Reports
+
+Reading code gives plausible causes, not a verdict. If the suspect logic is a pure exported function, import it in a scratch script, run it over real inputs, and diff the result against the source-of-truth field for every row. Mismatches → that's the bug. Zero mismatches → look elsewhere, unless the sample was incomplete.
 
 ---
 
@@ -504,33 +551,13 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 - For ad-hoc queries, use **Cloudflare Dashboard** → Workers & Pages → pollinations-enter → Observability → Investigate
 - Or use `wrangler tail` for real-time logs
 
-## Alternative: Tinybird (Recommended for Aggregates)
+## Raw SQL Queries (Tinybird)
 
-Tinybird provides pre-aggregated model health stats and raw event data.
-
-### Token Locations
-
-- **Prod read token (use this)**: `enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN` (via SOPS). Works for both pipes and raw `/v0/sql` against prod (`pollinations_enter`).
-- **`.tinyb`** = **staging** workspace (`pollinations_enter_staging`) — empty of prod traffic. Only use for staging-specific debugging.
-
-### Basic Queries
-
-```bash
-# Prod read token from SOPS — works for pipes AND raw SQL
-TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
-
-# Get model health (last 4h)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
-```
-
-### Raw SQL Queries
-
-The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event_v2` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
+`tb-prod.sh` below is `enter.pollinations.ai/observability/scripts/tb-prod.sh`: prod workspace, token from SOPS, no row cap.
 
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
+tb-prod.sh "SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
 FROM generation_event_v2 ge
 LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
 WHERE ge.response_status = 403
@@ -542,8 +569,7 @@ ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, ge.model_requested, ge.error_message, count() as error_count
+tb-prod.sh "SELECT ge.user_id, any(users.github_username) AS github_username, ge.model_requested, ge.error_message, count() as error_count
 FROM generation_event_v2 ge
 LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
 WHERE ge.response_status >= 500
@@ -553,14 +579,32 @@ ORDER BY error_count DESC
 LIMIT 20"
 
 # Check specific user's recent errors
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message
+tb-prod.sh "SELECT start_time, response_status, model_requested, error_message
 FROM generation_event_v2
 WHERE user_id = 'USER_ID_HERE'
   AND start_time > now() - interval 24 hour
 ORDER BY start_time DESC
 LIMIT 50"
+
+# Daily 5xx timeline — run this first; a multi-week aggregate hides incident days.
+# Canonical definition: exclude 4xx and cache hits.
+tb-prod.sh "SELECT toDate(start_time) AS day, countIf(response_status >= 500 AND cache_hit = 0) AS errors_5xx, count() AS total
+FROM generation_event_v2
+WHERE start_time > now() - interval 28 day
+GROUP BY day
+ORDER BY day"
+
+# Slow-but-200 tail: users whose successful requests exceeded a client timeout
+tb-prod.sh "SELECT user_id, countIf(response_time > 30000) AS slow_count, max(response_time) AS max_ms
+FROM generation_event_v2
+WHERE start_time > now() - interval 24 hour
+GROUP BY user_id
+HAVING slow_count > 0
+ORDER BY max_ms DESC
+LIMIT 20"
 ```
+
+Look at the per-day series before trusting an aggregate — spikes are the story, and rollups hide them.
 
 ### Datasource Schema
 
@@ -570,6 +614,8 @@ The `generation_event_v2` datasource is defined in `enter.pollinations.ai/observ
 - `model_requested`, `model_used`
 - `total_price`, `total_cost`
 - `start_time`, `end_time`, `response_time`
+
+**Check token scope before designing a data path.** A token that runs `SELECT 1` may still be `PIPES:READ` only and reject datasource queries ("needs DATASOURCES:READ"). Try a SELECT on a known datasource first; if rejected, build a pipe with the right token instead.
 
 ---
 

@@ -28,7 +28,10 @@ import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
-import { supportsTextFallbackRequest } from "../fallbackCompatibility.js";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "../fallbackCompatibility.js";
 import type { ServiceError } from "../types.js";
 import {
     callDirectResponses,
@@ -147,6 +150,13 @@ async function handleDirectResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const capabilityError = textCapabilityError(
+            c.var.model.definition,
+            request,
+            c.var.model.communityEndpoint,
+        );
+        if (capabilityError)
+            throw new ResponsesInvalidRequestError(capabilityError);
         validateDirectResponsesRequest(request);
         const { result, candidate } = await withModelFallback(
             directResponsesCandidates(c, request),

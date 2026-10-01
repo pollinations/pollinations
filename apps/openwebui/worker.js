@@ -65,7 +65,10 @@ export class OpenWebUIContainer extends Container {
         // community model.
         DEFAULT_MODELS: "openai",
         // Titles, tags and follow-ups need text, even when the chat model generates media.
-        TASK_MODEL_EXTERNAL: "openai/gpt-5-nano",
+        // Non-reasoning on purpose: gpt-5-nano spent 256-1024 reasoning tokens and
+        // 3-12 s per title/tags/follow-up call. Seed value only; the live value is
+        // the `task.model.external` row in the config table.
+        TASK_MODEL_EXTERNAL: "openai/gpt-5.4-nano",
 
         // Model backend: gen.pollinations.ai, bearer = the user's OAuth sk_.
         ENABLE_OLLAMA_API: "false",
@@ -140,6 +143,11 @@ export class OpenWebUIContainer extends Container {
         // one wallet. Local embedding keeps that off a shared budget; the cost
         // is a ~90 MB model download onto the ephemeral disk after a restart.
         ENABLE_VERSION_UPDATE_CHECK: "false",
+
+        // Cache the gen /v1/models fetch per user. The upstream default is 1 s,
+        // so every page load refetched and rebuilt the ~360-model list, which
+        // took 6-8 s on the 0.5 vCPU instance and gated the whole page.
+        MODELS_CACHE_TTL: "300",
     };
 }
 

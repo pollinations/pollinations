@@ -75,6 +75,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Coding Principles — Simplicity & Radical YAGNI (CRITICAL)
 
+- For coding and code reviews, read and use the repo-wide [Ponytail skill](.agents/skills/ponytail/SKILL.md) to look for the smallest correct solution. Its brevity advice does not override explicit requests or this repository's safety, testing, and design-decision requirements.
 - Code is debt: implement only what's needed now. Prefer deleting or reusing code over adding it; avoid speculative abstractions, configuration, and helpers.
 - Use plain data and small functions. No classes or inheritance; compose functions and keep side effects at the edges where practical.
 - Prefer declarative tables, configuration, and data transformations when they make behavior clearer. Keep control flow easy to follow; fewer lines do not justify clever or dense code.

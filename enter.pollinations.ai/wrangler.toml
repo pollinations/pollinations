@@ -127,6 +127,7 @@ id = "a621f17ad3e34000971cffa616675c5b"
 
 [env.production.vars]
 ENVIRONMENT = "production"
+X402_HOLDING_USER_ID = "inFByWZoc0Cuwtj3Pau4Ae9d5VBvfxHp"
 WEFT_FACILITATOR_URL = "https://x402.weft.network"
 WEFT_PAY_TO = "0x657d15ea5f5a2877e766137861d7deee1a9422dc"
 WEFT_NETWORK = "eip155:8453"

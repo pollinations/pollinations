@@ -86,6 +86,12 @@ describe("Payment-response pricing", () => {
 
     it.each([
         { accepts: [] },
+        { accepts: [{ amount: "10000" }] },
+        { accepts: [{ amount: "10000", network }] },
+        { accepts: [{ amount: "10000", asset }] },
+        { accepts: [{ amount: "10000", asset: 123, network }] },
+        { accepts: [{ amount: "10000", asset, network: 84532 }] },
+        { accepts: [{ amount: 10000, asset, network }] },
         { accepts: [{ amount: "10000", asset: payTo, network }] },
         { accepts: [{ amount: "<script>alert(1)</script>", asset, network }] },
     ])("does not invent a price for an absent or invalid quote", ({

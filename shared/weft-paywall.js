@@ -1,7 +1,14 @@
 // Render the x402 response amount using the SDK's asset metadata, not the route price.
 function quotedPrice(paymentRequired, findAsset) {
     const payment = paymentRequired.accepts[0];
-    if (!payment || !/^\d+$/.test(payment.amount)) return null;
+    if (
+        !payment ||
+        typeof payment.amount !== "string" ||
+        !/^\d+$/.test(payment.amount) ||
+        typeof payment.asset !== "string" ||
+        typeof payment.network !== "string"
+    )
+        return null;
     const asset = findAsset(payment.asset, payment.network);
     if (!asset) return null;
 

@@ -187,8 +187,15 @@ export function collectOutput(
             });
             send?.("response.output_item.done", { output_index, item });
         },
-        finish(finishReason: string): AgentOutputItem[] {
-            if (pendingCalls.size) {
+        finish(
+            finishReason: string,
+            callerTools: ReadonlySet<string> = new Set(),
+        ): AgentOutputItem[] {
+            if (
+                [...pendingCalls.values()].some(
+                    (call) => !callerTools.has(call.name),
+                )
+            ) {
                 throw new Error("Agent tool call has no result");
             }
             closeMessage(

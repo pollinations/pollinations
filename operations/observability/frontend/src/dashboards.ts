@@ -43,6 +43,7 @@ export function readDashboardUid(search: string): string {
     return new URLSearchParams(search).get("d") || DEFAULT_DASHBOARD_UID;
 }
 
+/** Kiosk mode hides Grafana navigation. Usage panels have a fixed regular scope. */
 export function dashboardSrc(uid: string): string {
     return `/grafana/d/${encodeURIComponent(uid)}?kiosk`;
 }

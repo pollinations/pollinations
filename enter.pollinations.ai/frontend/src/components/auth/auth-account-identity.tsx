@@ -18,6 +18,7 @@ export function AuthAccountIdentity({
             name={user.name || user.githubUsername || user.email}
             avatarUrl={user.image}
             dashboardHref="/pollen"
+            className="polli:bg-transparent"
             secondaryContent={
                 balance ? (
                     <AccountPollen

@@ -57,6 +57,7 @@ describe("AppUserMenu", () => {
 
         expect(html).toContain("Pollinations Connect");
         expect(html).toContain("mask:url(");
+        expect(html.match(/mask:url\(/g)).toHaveLength(2);
     });
 
     test("shows Permissions only when the connected key has an id", () => {
@@ -65,6 +66,20 @@ describe("AppUserMenu", () => {
         sdk.key.data = { ...sdk.key.data, id: undefined };
 
         expect(renderMenu()).not.toContain("Permissions");
+    });
+
+    test("enlarges only the logged-out action when requested", () => {
+        sdk.auth.isLoggedIn = false;
+        expect(renderMenu()).toContain("polli:h-10");
+        const large = renderToStaticMarkup(<AppUserMenu connectSize="lg" />);
+        expect(large).toContain("polli:h-12");
+        expect(large).toContain("polli:text-base");
+        expect(large).toContain("polli:px-4");
+
+        sdk.auth.isLoggedIn = true;
+        expect(renderToStaticMarkup(<AppUserMenu connectSize="lg" />)).toBe(
+            renderMenu(),
+        );
     });
 
     test("shows the connected key budget", () => {

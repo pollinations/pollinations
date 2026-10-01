@@ -1,3 +1,4 @@
+import type { ModelHealthRow } from "@shared/model-health.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
@@ -6,6 +7,34 @@ import type { Env } from "@/env.ts";
 // is documented for client-side use in docs/public-stats.md.
 const MODEL_ROUTE_HEALTH_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_route_health.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
+
+async function fetchHealthRows(url: URL): Promise<ModelHealthRow[]> {
+    const upstream = await fetch(url, {
+        cf: { cacheTtl: 60, cacheEverything: true },
+        signal: AbortSignal.timeout(5_000),
+    });
+    if (!upstream.ok) {
+        throw new Error(`Model health fetch failed (${upstream.status})`);
+    }
+    const body = (await upstream.json()) as { data?: ModelHealthRow[] };
+    if (!Array.isArray(body.data))
+        throw new Error("Invalid model health response");
+    return body.data;
+}
+
+// Community discovery uses its bounded 50-request sample.
+export function fetchCatalogHealthRows(): Promise<ModelHealthRow[]> {
+    const url = new URL(MODEL_ROUTE_HEALTH_URL);
+    url.pathname = "/v0/pipes/model_catalog_health.json";
+    return fetchHealthRows(url);
+}
+
+// Official models and agents retain their existing 24-hour health display.
+export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
+    const url = new URL(MODEL_ROUTE_HEALTH_URL);
+    url.searchParams.set("minutes", "1440");
+    return fetchHealthRows(url);
+}
 
 // Exists only for the shared edge cache: Tinybird runs the query on every
 // call, so browsers in one colo share one query per minute instead of each
@@ -20,9 +49,21 @@ export const modelStatusRoutes = new Hono<Env>().get(
             "",
             "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
             "",
-            "Cached for 60 seconds per window.",
+            "Cached for 60 seconds per window and traffic scope.",
         ].join("\n"),
         parameters: [
+            {
+                name: "traffic",
+                in: "query",
+                required: false,
+                description:
+                    "Traffic population: all requests (default), or regular usage excluding legacy APIs and Pollinations-internal traffic.",
+                schema: {
+                    type: "string",
+                    enum: ["all", "regular"],
+                    default: "all",
+                },
+            },
             {
                 name: "minutes",
                 in: "query",
@@ -46,6 +87,10 @@ export const modelStatusRoutes = new Hono<Env>().get(
     }),
     async (c) => {
         const url = new URL(MODEL_ROUTE_HEALTH_URL);
+        const traffic = c.req.query("traffic") ?? "all";
+        if (traffic !== "all" && traffic !== "regular")
+            return c.json({ error: "traffic must be all or regular" }, 400);
+        url.searchParams.set("traffic", traffic);
         const minutes = c.req.query("minutes");
         if (minutes !== undefined) url.searchParams.set("minutes", minutes);
         const upstream = await fetch(url, {

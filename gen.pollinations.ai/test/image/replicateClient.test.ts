@@ -181,6 +181,10 @@ describe("runReplicatePrediction", () => {
 
     it.each([
         [
+            "invalid Seedance input (E006)",
+            "ModelError: The input was invalid. (E006)",
+        ],
+        [
             "content filter rejection (E005)",
             "ModelError: The input or output was flagged as sensitive. Please try again with different inputs. (E005)",
         ],
@@ -215,13 +219,16 @@ describe("runReplicatePrediction", () => {
         });
     });
 
-    it("classifies provider capacity errors (E003) as 503", async () => {
+    it.each([
+        "ModelError: Service is currently unavailable due to high demand. Please try again later. (E003)",
+        "ModelError: Service is temporarily unavailable. (E004)",
+    ])("classifies provider capacity errors as 503: %s", async (message) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
                 JSON.stringify({
                     id: "pred_capacity",
                     status: "failed",
-                    error: "ModelError: Service is currently unavailable due to high demand. Please try again later. (E003) (1cah9wlWR9)",
+                    error: message,
                 }),
                 { status: 201 },
             ),

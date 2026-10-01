@@ -3,6 +3,7 @@ import { useId } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Dropdown, type DropdownProps } from "../primitives/Dropdown.tsx";
+import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 
 function initials(name: string) {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -16,14 +17,25 @@ function AccountAvatar({
     avatarUrl,
     secondaryContent,
     dashboardHref,
+    inline = false,
 }: {
     name: string;
     avatarUrl?: string | null;
     secondaryContent?: ReactNode;
     dashboardHref?: string;
+    /** Small avatar inside a pill link; hovering the pill zooms it. */
+    inline?: boolean;
 }) {
-    const large = secondaryContent != null;
-    const className = large ? "polli:h-11 polli:w-11" : "polli:h-8 polli:w-8";
+    const size = inline
+        ? "polli:h-6 polli:w-6"
+        : secondaryContent != null
+          ? "polli:h-11 polli:w-11"
+          : "polli:h-8 polli:w-8";
+    const className = cn(
+        size,
+        inline &&
+            "polli:transition-transform polli:group-hover:scale-110 polli:group-hover:brightness-110 polli:motion-reduce:transition-none polli:motion-reduce:group-hover:scale-100",
+    );
     const avatar = avatarUrl ? (
         <img
             src={avatarUrl}
@@ -70,6 +82,14 @@ export type AccountIdentityProps = {
     className?: string;
 };
 
+export type AccountIdentityLinkProps = Pick<
+    AccountIdentityProps,
+    "name" | "avatarUrl" | "className"
+> & {
+    /** External profile the whole pill opens in a new tab. */
+    href: string;
+};
+
 export function AccountIdentity({
     name,
     avatarUrl,
@@ -80,7 +100,7 @@ export function AccountIdentity({
     return (
         <span
             className={cn(
-                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-ink-100/80 polli:p-1 polli:pr-3",
+                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-surface-opaque polli:p-1 polli:pr-3",
                 className,
             )}
         >
@@ -92,6 +112,35 @@ export function AccountIdentity({
             />
             <AccountDetails name={name} secondaryContent={secondaryContent} />
         </span>
+    );
+}
+
+/** Someone else's identity as a one-line pill link, e.g. an app's developer. */
+export function AccountIdentityLink({
+    name,
+    avatarUrl,
+    href,
+    className,
+}: AccountIdentityLinkProps) {
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+                // Sits in running text on cards, so it is compact and tinted.
+                "polli:group polli:inline-flex polli:max-w-full polli:min-w-0 polli:items-center polli:gap-1.5 polli:rounded-full polli:bg-theme-bg-subtle polli:p-0.5 polli:pr-2.5 polli:align-middle polli:focus-visible:outline-2 polli:focus-visible:outline-offset-2 polli:focus-visible:outline-current",
+                className,
+            )}
+        >
+            <AccountAvatar name={name} avatarUrl={avatarUrl} inline />
+            <AccountDetails name={name} />
+            {/* InlineLink's external arrow at the name's size: this pill leaves the app. */}
+            <ExternalLinkIcon
+                aria-hidden="true"
+                className="polli:-ml-0.5 polli:h-3 polli:w-3 polli:shrink-0 polli:text-theme-text-strong polli:opacity-65"
+            />
+        </a>
     );
 }
 

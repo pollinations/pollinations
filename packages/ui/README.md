@@ -128,6 +128,19 @@ mask; add a platform by adding a line.
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.
 
+## Dialog layout
+
+`Dialog` uses one responsive frame for forms, confirmations, and results:
+full viewport without a border below 640px, contained with rounded corners on
+larger screens. `size` controls desktop width only. Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter`
+for consistent spacing and actions; avoid overriding viewport dimensions
+in consumers. The frame uses Enter’s themed panel color; inset cards use the
+neutral `Surface` default. `AuthModal` uses the same frame for standalone pages.
+
+Enter's `ResourceDialog` keeps dashboard forms and confirmations contained on
+mobile too, with viewport margins and scrollable content. Keep that exception
+in the shared dashboard wrapper rather than repeating dimensions in consumers.
+
 ## What's exported
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and

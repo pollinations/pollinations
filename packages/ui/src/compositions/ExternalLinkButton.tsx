@@ -1,11 +1,17 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { Button, type ButtonAppearance } from "../primitives/Button.tsx";
+import { isExternalHref } from "../lib/link.ts";
+import {
+    Button,
+    type ButtonAppearance,
+    type ButtonProps,
+} from "../primitives/Button.tsx";
 import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 
 type ExternalLinkButtonBaseProps = {
     size?: "sm" | "md" | "lg";
     appearance?: ButtonAppearance;
+    intent?: ButtonProps["intent"];
     /** Set false for another Pollinations property that should behave as product navigation. */
     external?: boolean;
     showIcon?: boolean;
@@ -26,11 +32,12 @@ export type ExternalLinkButtonProps =
     | ExternalLinkButtonAnchorProps
     | ExternalLinkButtonNativeButtonProps;
 
+/** Primary flow actions such as checkout or authorization. Use InlineLink for navigation. */
 export function ExternalLinkButton(props: ExternalLinkButtonProps) {
     const {
         size = "md",
         appearance,
-        external = true,
+        external = "href" in props ? isExternalHref(props.href) : true,
         showIcon = true,
         icon,
         className,

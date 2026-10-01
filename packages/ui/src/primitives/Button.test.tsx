@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test, vi } from "vitest";
 import { ExternalLinkButton } from "../compositions/ExternalLinkButton.tsx";
 import { Button } from "./Button.tsx";
+import { DialogFooter } from "./Dialog.tsx";
 
 describe("Button appearances", () => {
     test("keeps the pill appearance by default", () => {
@@ -47,6 +48,32 @@ describe("Button appearances", () => {
         expect(html).not.toContain('target="_blank"');
         expect(html).not.toContain("noopener noreferrer");
         expect(html).not.toContain("<svg");
+    });
+
+    test("preserves an explicit button appearance inside dialog footers", () => {
+        const button = <Button appearance="pill">Save</Button>;
+        const standalone = renderToStaticMarkup(button);
+        const footer = renderToStaticMarkup(
+            <DialogFooter>{button}</DialogFooter>,
+        );
+        expect(footer).toContain(standalone);
+    });
+
+    test("keeps primary footer actions pill-shaped and outlined", () => {
+        const button = (
+            <Button intent="commit" type="submit">
+                Save changes
+            </Button>
+        );
+        const standalone = renderToStaticMarkup(button);
+        const footer = renderToStaticMarkup(
+            <DialogFooter>{button}</DialogFooter>,
+        );
+
+        expect(footer).toContain(standalone);
+        expect(standalone).toContain("polli:rounded-full");
+        expect(standalone).toContain("polli:border-theme-text-soft");
+        expect(standalone).toContain('type="submit"');
     });
 
     test("makes disabled polymorphic links inert", () => {

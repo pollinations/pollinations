@@ -184,8 +184,6 @@ export async function callKreaImageAPI(
             image.content_type ||
             imageResponse.headers.get("content-type") ||
             undefined,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: "krea/krea-2-medium",
             usage: { completionImageTokens: 1 },

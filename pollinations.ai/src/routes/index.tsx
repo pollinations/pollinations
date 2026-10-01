@@ -30,7 +30,7 @@ function HelloPage() {
                 contentClassName="sm:max-w-[90%] sm:pt-20 lg:max-w-[72%]"
             >
                 <ContentHeader
-                    eyebrow="Open infrastructure for AI builders"
+                    eyebrow="Open infrastructure for AI-natives"
                     title="Models. Agents. Tools. One API."
                     subtitle="The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps."
                     variant="page"

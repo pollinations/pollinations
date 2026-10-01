@@ -26,7 +26,7 @@ The focus wall groups every issue and pull request into one of 15 areas. It show
 | [API & reliability](#api--reliability) | How generation requests are handled, and keeping them up |
 | [CI & releases](#ci--releases) | Tests, CI, deployments and secret syncs |
 | [Internal automation](#internal-automation) | Bots, internal agents and agent guidance that run our work |
-| [Website & social](#website--social) | The public site, brand, news and social posts |
+| [Brand & news](#brand--news) | The public site, brand, news, social posts and announcements |
 | [Docs & support](#docs--support) | API docs, guides, README and helping users |
 | [App catalog & showcase](#app-catalog--showcase) | Apps users submit, and apps we maintain for people to use or copy |
 | [Data & insights](#data--insights) | Getting data into Tinybird and what we learn from it |
@@ -155,7 +155,7 @@ Shared UI in the Enter dashboard (`enter.pollinations.ai/frontend/`) and the `@p
 
 **Covers**
 - Dashboard layout, navigation, loading states and redesigns
-- Notices and announcement banners in the dashboard
+- The banner and notice components themselves (what a banner says → [Brand & news](#brand--news))
 - Shared components in `packages/ui/`
 - Dashboard pages not owned by one area, such as the model list
 
@@ -193,7 +193,7 @@ Getting code tested and shipped safely.
 
 **Not here**
 - Promotion PRs (`main` → `production`): no area, counted as release overhead
-- An upgrade for one app → that app's area, such as the website's React 19 upgrade → [Website & social](#website--social)
+- An upgrade for one app → that app's area, such as the website's React 19 upgrade → [Brand & news](#brand--news)
 
 **Examples:** #14324 speed up pull request checks · #14598 migrate GitHub Actions off Node 20 · #14596 publish SDK through npm OIDC
 
@@ -209,13 +209,13 @@ Bots and agents that run the repository and community work for us.
 
 **Not here**
 - Agents users can run → [Agents & agent tools](#agents--agent-tools)
-- What the news bots post → [Website & social](#website--social)
+- What the news bots post → [Brand & news](#brand--news)
 
 **Examples:** #15590 let the classifier label every new issue and PR · #14974 never let bots trigger the Polli auto-fix agent
 
-### Website & social
+### Brand & news
 
-How we present Pollinations in public: the site at pollinations.ai (`pollinations.ai/`) and what we post (`operations/social/`).
+How we present Pollinations and what we tell people: the site at pollinations.ai (`pollinations.ai/`), the brand, and what we post or announce (`operations/social/`).
 
 **Covers**
 - Home, Apps, legal and marketing pages
@@ -224,6 +224,7 @@ How we present Pollinations in public: the site at pollinations.ai (`pollination
 - Daily, weekly and monthly news, and the pipelines that publish it
 - Discord, Reddit, LinkedIn and X posts
 - Newsletter
+- Announcements, notices and banners shown in the dashboard or on the site: their wording, adding and removing them
 
 **Not here**
 - The Enter dashboard → [Dashboard](#dashboard)
@@ -294,6 +295,7 @@ Getting data into Tinybird (`enter.pollinations.ai/observability/`), and what we
 | Models · Community models | We run it → Models. A community member publishes it → Community models |
 | Agents & agent tools · Developer tools | Runs as an agent or hosted MCP server → Agents. Installed by a developer (SDK, CLI, MCP package, plugin) → Developer tools |
 | Dashboard · any area | A screen owned by one area → that area. Shared or cross-cutting UI → Dashboard |
+| Dashboard · Brand & news | Building or fixing the banner component → Dashboard. What a banner or notice says, adding or removing one → Brand & news |
 | Agents & agent tools · Internal automation | Users run it → Agents. It runs our repo or community → Internal automation |
 | Apps | Users submit it, or we maintain it for people to use or copy → App catalog & showcase. People install it into their own code or tools → Developer tools. An agent or MCP server we host → Agents & agent tools. A community member publishes it as an agent → Community models. It runs our own work → Internal automation |
 | CI & releases · any area | Secret or key sync → CI & releases, unless the PR is mainly about a feature (the x402 key → Billing & payments) |

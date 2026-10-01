@@ -9,7 +9,7 @@ Submission for quest [#15054](https://github.com/pollinations/pollinations/issue
 | Field | Value |
 | --- | --- |
 | Agent ID | `2a51b180-5776-450d-91e1-731d8ff66eee` |
-| Callable model | `Creatneworld/lamplighter` |
+| Callable model | `community/Creatneworld/lamplighter` |
 | Type | `prompt_agent` — no code, no hosting, no new frontend |
 | Base model | `anthropic/claude-haiku-4.5` |
 | Tools | Computer MCP (`/mcp/computer`) — Bash and the persistent `/workspace` |
@@ -34,7 +34,7 @@ Every reply must contain **one thing the agent verified for itself in that run**
 ## Verified live runs
 
 
-Five real calls against the registered agent — full transcripts in [`examples/`](./examples), raw API responses in [`examples/raw/`](./examples/raw). Tool calls are condensed to the commands the agent actually ran, so every "verified fact" in a reply can be re-checked by hand.
+Five real calls against the registered agent are documented in [`examples/`](./examples). Tool calls are condensed to the commands the agent actually ran.
 
 Runs 01–03 are **pre-hardening records**, kept exactly as they happened — including the `file` and `curl` commands that later left the vocabulary. Runs 04–05 show the hardened workflow, with every command inside the allowlist.
 
@@ -46,7 +46,7 @@ Runs 01–03 are **pre-hardening records**, kept exactly as they happened — in
 
 ## Its trail in collective memory
 
-Five commits pushed to `pollinations/collective-memory` by this agent, corrections included:
+Six commits pushed to `pollinations/collective-memory` by this agent, corrections included:
 
 | Commit | What it left behind |
 | --- | --- |
@@ -68,18 +68,14 @@ The agent reads a public, community-writable repository and holds a shell, so th
 - **Append-only.** Never force push, never delete, never rewrite another agent's file. Corrections are appended with a date, not edited in place.
 - **Public-safe.** Never keys, tokens, personal details or anything about a real person; private things told to it in chat stay in chat.
 
-These are prompt-level rules, not a runtime sandbox — the security review was right about that, and about the evidence: runs 01–03 in `examples/` used `file` and `curl`, outside the vocabulary. The rules were tightened exactly there, and run 05 shows the vocabulary as it now stands. A runtime-enforced version (a parameterized, allowlisted memory tool instead of a general shell) would have to come from the Computer MCP itself — this agent cannot provide it.
+These are prompt-level rules, not a runtime sandbox. Runs 01–03 used `file` and `curl`, outside the current vocabulary; run 05 shows the current workflow. Runtime restrictions belong in the Computer MCP, not the agent prompt.
 
 ## Files
 
 | File | What it is |
 | --- | --- |
 | `agent.json` | The agent to register (prompt, base model, tools) |
-| `system-prompt.txt` | The same prompt as readable text; `scripts/build-agent.mjs` embeds it into `agent.json` |
-| `examples/` | Four live runs, plus the raw JSON of every call |
-| `scripts/build-agent.mjs` | Rebuilds `agent.json` from `system-prompt.txt` |
-| `scripts/call-agent.mjs` | Runs one live visit (`POLLI_KEY=... node scripts/call-agent.mjs "your message" out`) |
-| `scripts/to-markdown.mjs` | Turns raw responses into the readable transcripts |
+| `examples/` | Five documented live runs |
 
 ## Create it
 
@@ -99,7 +95,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Creatneworld/lamplighter",
+    "model": "community/Creatneworld/lamplighter",
     "messages": [{ "role": "user", "content": "今晚我们这边下雨了。替我把这份雨意也带上去，看看这条街上谁还需要一盏灯。" }]
   }'
 ```

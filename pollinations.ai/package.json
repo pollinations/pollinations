@@ -25,13 +25,8 @@
         "@pollinations/sdk": "file:../packages/sdk",
         "@pollinations/ui": "file:../packages/ui",
         "@tanstack/react-router": "^1.139.3",
-        "class-variance-authority": "^0.7.1",
-        "clsx": "^2.1.1",
         "react": "^19.2.0",
-        "react-dom": "^19.2.0",
-        "react-markdown": "^10.1.0",
-        "remark-gfm": "^4.0.1",
-        "tailwind-merge": "^3.4.0"
+        "react-dom": "^19.2.0"
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.15.2",
@@ -41,7 +36,6 @@
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.1",
-        "tailwindcss": "^4.3.3",
         "typescript": "^5.9.3",
         "vite": "^7.2.4",
         "vitest": "^3.2.4",

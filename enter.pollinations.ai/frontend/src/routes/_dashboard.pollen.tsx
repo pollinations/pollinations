@@ -19,11 +19,6 @@ import {
     EditOnStripeLink,
     PollenBalance,
 } from "../components/pollen";
-import {
-    BillingPreviewSwitch,
-    billingPreviewSearch,
-    previewBilling,
-} from "../components/pollen/billing-preview.tsx";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
 import { checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
@@ -34,14 +29,12 @@ export const Route = createFileRoute("/_dashboard/pollen")({
     ): {
         pack?: PollenPackKey;
         session_id?: string;
-        preview?: string;
     } => ({
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
                 ? search.pack
                 : undefined,
         ...checkoutReturnSearch(search),
-        ...(import.meta.env.DEV ? billingPreviewSearch(search) : {}),
     }),
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
@@ -51,24 +44,18 @@ export const Route = createFileRoute("/_dashboard/pollen")({
             });
         }
     },
-    loaderDeps: ({ search }) => ({ preview: search.preview }),
-    loader: ({ deps: { preview } }) => {
-        const billing = apiClient.stripe.billing
+    loader: () => ({
+        billing: apiClient.stripe.billing
             .$get()
             .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null);
-        return {
-            billing: preview
-                ? billing.then((real) => previewBilling(preview, real))
-                : billing,
-        };
-    },
+            .catch(() => null),
+    }),
     component: PollenPage,
 });
 
 function PollenPage() {
     const retry = useDashboardRetry("balance");
-    const { pack, session_id: checkoutSessionId, preview } = Route.useSearch();
+    const { pack, session_id: checkoutSessionId } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const router = useRouter();
     // Balance and billing both come from loaders; rerun them once credited.
@@ -147,16 +134,6 @@ function PollenPage() {
                     </Await>
                 </Suspense>
             </Section>
-            {import.meta.env.DEV && (
-                <BillingPreviewSwitch
-                    value={preview}
-                    onChange={(id) =>
-                        void navigate({
-                            search: (prev) => ({ ...prev, preview: id }),
-                        })
-                    }
-                />
-            )}
         </>
     );
 }

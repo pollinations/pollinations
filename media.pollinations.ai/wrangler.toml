@@ -40,8 +40,8 @@ database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "../enter.pollinations.ai/drizzle"
 
 # Production environment
-# Single-request 400 MiB uploads require the media.myceli.ai Enterprise zone
-# maximum upload setting to be at least 425 MB.
+# Single-request 400 MiB uploads require the pollinations.ai zone's maximum
+# upload setting to be at least 425 MB.
 [env.production]
 name = "pollinations-media-prod"
 

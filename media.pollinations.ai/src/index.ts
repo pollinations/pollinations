@@ -391,7 +391,7 @@ api.post(
         const rawTags: string[] = [];
 
         // A request above the buffered formats' possible file limit should
-        // never reach formData() or json() on the Enterprise upload hostname.
+        // never reach formData() or json() on a zone that allows large uploads.
         const requestSize = Number(c.req.header("content-length"));
         const bufferedWireLimit = requestContentType.includes(
             "application/json",

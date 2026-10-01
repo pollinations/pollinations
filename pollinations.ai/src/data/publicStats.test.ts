@@ -229,9 +229,68 @@ describe("platform stats", () => {
         );
 
         await expect(loadPlatformStats()).resolves.toMatchObject({
-            community: 2,
+            // Community agents count as agents, not community models.
+            community: 1,
             models: 5,
             agents: 1,
+            // Kinds count official models only; agents are not a kind.
+            kinds: { text: 2, image: 2 },
+        });
+    });
+
+    it("picks the two newest general-purpose models per category and for the community", async () => {
+        vi.resetModules();
+        const { loadPlatformStats } = await import("./publicStats");
+        const catalog = [
+            {
+                name: "old",
+                title: "Old",
+                category: "image",
+                publisher: "A",
+                added_date: 1,
+            },
+            {
+                name: "new",
+                title: "New",
+                category: "image",
+                publisher: "B",
+                added_date: 3,
+            },
+            {
+                name: "new-turbo",
+                title: "New Turbo",
+                category: "image",
+                publisher: "B",
+                added_date: 2,
+            },
+            {
+                name: "owner/newer",
+                category: "image",
+                community: true,
+                added_date: 4,
+            },
+            {
+                name: "codex",
+                category: "text",
+                is_specialized: true,
+                added_date: 5,
+            },
+            { name: "chat", category: "text", publisher: "C", added_date: 2 },
+        ];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json(catalog)),
+        );
+
+        await expect(loadPlatformStats()).resolves.toMatchObject({
+            // Community models form their own group. Specialized models and
+            // a second model from the same publisher are left out; untitled
+            // models fall back to their name.
+            newest: {
+                image: ["New", "Old"],
+                text: ["chat"],
+                community: ["owner/newer"],
+            },
         });
     });
 
@@ -292,6 +351,9 @@ describe("platform stats", () => {
             models: 0,
             agents: 0,
             community: 0,
+            providers: 0,
+            kinds: {},
+            newest: {},
         });
         await loadPlatformStats();
         expect(fetchMock).toHaveBeenCalledTimes(1);

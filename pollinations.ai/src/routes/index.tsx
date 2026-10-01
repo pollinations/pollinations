@@ -10,7 +10,6 @@ import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
 import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
-import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
@@ -60,7 +59,6 @@ function HelloPage() {
             <DevKit className={postHeroSpacingClassName} />
             <MoneyMoves />
             <LiveApps />
-            <OnTheWay />
             <StartBuilding />
             <BottomScene page="home" />
         </>

@@ -160,6 +160,30 @@ export function useWeeklyApps() {
     return useAsync<DirectoryApp[]>(loadWeeklyApps, []);
 }
 
+type WeeklyHealth = { week: string; status_2xx: number; availability: number };
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * The latest finished week. `weeks_back` cuts at a rolling date, so one week
+ * back returns only part of last week; two always cover it whole. The pipe
+ * also returns the week in progress.
+ */
+const loadLastWeekHealth = cachePublic(async () => {
+    const weeks = await tinybird<WeeklyHealth>(
+        "weekly_health_stats",
+        "&weeks_back=2",
+    );
+    const finished = weeks.filter(
+        (week) => Date.parse(week.week) + WEEK_MS <= Date.now(),
+    );
+    return finished[finished.length - 1] ?? null;
+});
+
+export function useLastWeekHealth() {
+    return useAsync<WeeklyHealth | null>(loadLastWeekHealth, null);
+}
+
 type PlatformStats = {
     /** Callable models excluding agents; official and community entries included. */
     models: number;

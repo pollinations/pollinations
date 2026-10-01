@@ -56,8 +56,8 @@ const BUILD_FEATURES: Feature[] = [
         icon: McpIcon,
     },
     {
-        title: "Connect user wallets",
-        body: "Users sign in with Pollinations and approve a Pollen budget. Their wallet, not yours, pays for what they use.",
+        title: "Let users pay for their usage",
+        body: "Users sign in with Pollinations and approve a spending limit. Their usage is billed to their account, not yours.",
         linkLabel: "Integration guide",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
@@ -71,7 +71,7 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Pollinations CLI",
-        body: "Generate from your terminal with polli. Manage keys, models and agents, and track usage and earnings.",
+        body: "Generate from your terminal with polli. Manage keys, models and agents, and track usage and revenue.",
         linkLabel: "CLI guide",
         href: "https://gen.pollinations.ai/docs#tag/cli",
         icon: TerminalIcon,
@@ -81,17 +81,17 @@ const BUILD_FEATURES: Feature[] = [
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "List your app",
-        body: "Submit it for review to join the Apps catalog. To earn, connect user wallets and turn on app earnings.",
+        body: "Submit it for review to join the Apps catalog. For a revenue share, let users pay for their own usage and turn on app earnings.",
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Connect an endpoint you run and set your price. Earn Pollen when others call it.",
+        body: "Connect an endpoint you run and set your price. You get 75% of its listed price each time someone calls it.",
         icon: BeakerIcon,
     },
     {
         title: "Publish an agent",
-        body: "Combine a model, instructions and hosted tools, or ship an agent.ts from GitHub. We run it; earnings are coming soon.",
+        body: "Combine a model, instructions and hosted tools, or ship an agent.ts from GitHub. We run it; revenue share is coming soon.",
         icon: RobotIcon,
     },
 ];
@@ -197,7 +197,7 @@ export function DevKit({ className }: { className?: string }) {
             <FeatureGroup
                 eyebrow="Build"
                 title="Pick the pieces you need."
-                description="Models and agents from us and the community, plus the tools and wallets around them."
+                description="Models and agents from us and the community, plus hosted tools, storage and billing."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (
@@ -216,8 +216,8 @@ export function DevKit({ className }: { className?: string }) {
             </FeatureGroup>
 
             <FeatureGroup
-                eyebrow="Publish and earn"
-                title="Publish where people already spend Pollen."
+                eyebrow="Publish"
+                title="Put your model, agent or app in front of our users."
                 description="You bring the model, agent or app; we handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

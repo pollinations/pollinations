@@ -13,8 +13,8 @@ export function QuestsCard() {
             <div className="relative z-10 flex flex-col gap-6 lg:max-w-[48%]">
                 <ContentHeader
                     eyebrow="Quests"
-                    title="Build something. Earn your next generation."
-                    subtitle="Earn Quest Pollen by solving GitHub Quests, trying models, or building an app or agent. Many models need Paid Pollen."
+                    title="Free credits for contributors."
+                    subtitle="Get free Quest Pollen for solving GitHub Quests, trying models, or building an app or agent. Many models need Paid Pollen."
                 />
                 <ExternalLinkButton
                     href="https://enter.pollinations.ai/quests"

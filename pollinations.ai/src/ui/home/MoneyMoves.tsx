@@ -13,8 +13,8 @@ import {
 
 /** Users' side is covered by the panel intro; the card holds the rates. */
 const EARNINGS = {
-    title: "Value flows back to builders",
-    body: "Earn Pollen when others use your published model or your app with developer earnings enabled.",
+    title: "Revenue share",
+    body: "Publish a model, or turn on earnings for your app, and get a share of what others spend on it, paid in Pollen.",
     earnings: [
         {
             text: "Model · 75% of its listed price",
@@ -26,25 +26,25 @@ const EARNINGS = {
             text: "App · 25% markup on usage",
             icon: AppIcon,
             href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
-            docsLabel: "App wallet integration documentation",
+            docsLabel: "App payments documentation",
         },
         {
-            text: "Agent · Earnings coming soon",
+            text: "Agent · Coming soon",
             icon: RobotIcon,
             href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
             docsLabel: "Agent publishing documentation",
         },
     ],
-    note: "With app earnings enabled, 1 Pollen of usage costs the user 1.25 Pollen. Your app earns 0.25 Pollen.",
+    note: "Example: with app earnings on, $1.00 of usage costs your user $1.25, and your app gets $0.25 in Pollen.",
 };
 
 export function MoneyMoves() {
     return (
         <section className="dark -mx-5 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-none bg-brand-dark px-5 py-14 sm:-mx-2 sm:rounded-3xl sm:px-8 md:-mx-12 md:px-14">
             <ContentHeader
-                eyebrow="How the money moves"
-                title="Users spend Pollen. Builders earn a share."
-                subtitle="With connected wallets, users pay for model usage from their own Pollen balance. App developers can add a markup, and community model publishers receive a share of their model’s usage."
+                eyebrow="Pricing"
+                title="Prepaid credits, priced in dollars."
+                subtitle="Pollen is our prepaid API credit: 1 Pollen = $1, bought by card through Stripe, with a service fee added at checkout. It is not a cryptocurrency and can’t be traded. Your app’s users can also pay for their own usage."
             />
 
             <Surface variant="card" className="flex flex-col gap-3 p-5">

@@ -2,16 +2,8 @@ import { ContentHeader } from "@pollinations/ui";
 
 const UPCOMING = [
     {
-        title: "Agent micropayments",
-        body: "Let agents pay for external services and other agents’ work—not just the models and tools they already use.",
-    },
-    {
         title: "Permanent media hosting",
         body: "Keep generated images, audio, and video available with paid storage and delivery.",
-    },
-    {
-        title: "Developer cashouts",
-        body: "Turn earnings from apps, agents, and community models into real payouts.",
     },
     {
         title: "App hosting",
@@ -32,7 +24,7 @@ export function OnTheWay() {
             />
             {/* Dashed and unlifted on purpose: nothing here is clickable yet.
                 At most three per row; cards in a shorter last row grow to
-                share its width (five items read as 3 + 2). */}
+                share its width. */}
             <div className="flex flex-wrap gap-4">
                 {UPCOMING.map((item) => (
                     <div

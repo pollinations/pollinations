@@ -149,9 +149,12 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
             .setup-link { display: block; margin-top: 22px; padding: 13px 18px; border: 1px solid #e6c448; border-radius: 10px; background: var(--pollen); color: var(--ink); text-align: center; text-decoration: none; font-size: 15px; font-weight: 750; }
             .setup-link:hover { background: #ffdc44; }
             a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible { outline: 3px solid #24567e; outline-offset: 4px; }
-            .wallet-checkout { margin-bottom: 24px; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
-            .wallet-checkout summary { padding: 14px 18px; cursor: pointer; font-size: 15px; font-weight: 700; }
-            .wallet-checkout #root .container { width: 100%; max-width: none; margin: 0; border-radius: 0 0 12px 12px; box-shadow: none; }
+            .wallet-checkout { margin-top: 16px; text-align: center; overflow-wrap: anywhere; }
+            .wallet-checkout summary { display: inline-block; padding: 8px 16px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 600; list-style: none; }
+            .wallet-checkout summary::-webkit-details-marker { display: none; }
+            .wallet-checkout summary:hover { color: var(--ink); border-color: var(--muted); }
+            .wallet-checkout #root { margin-top: 12px; text-align: left; }
+            .wallet-checkout #root .container { width: 100%; max-width: none; margin: 0; border: 1px solid var(--line); border-radius: 12px; box-shadow: none; }
             .wallet-checkout #root h1 { display: none; }
             .wallet-checkout .button-primary { background: var(--pollen); color: var(--ink); }
             .wallet-checkout .button-primary:hover { background: #ffdc44; }
@@ -181,7 +184,6 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
                 <h1 id="paywall-heading">${heading}</h1>
                 <p class="intro">Give your AI agent a wallet. Let it pay for the ${item} and get back to work.</p>
             </section>
-            ${showWallet ? '<details class="wallet-checkout"><summary>Pay with my wallet</summary><div id="root"></div></details>' : ""}
             <section class="setup" aria-label="Set up Weft">
                 <ol class="steps" role="list">
                     <li>
@@ -198,6 +200,7 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
                 <a class="setup-link" href="https://weft.network/setup.md">Give my agent a wallet &rarr;</a>
             </section>
             <p class="connected">Already connected? Ask your agent to pay for this request.</p>
+            ${showWallet ? '<details class="wallet-checkout"><summary>Pay with my wallet</summary><div id="root"></div></details>' : ""}
         </main>
         ${showWallet ? `<script type="module" src="${WEFT_WALLET_SCRIPT_PATH}"></script>` : ""}
     </body>

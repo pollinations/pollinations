@@ -1,0 +1,35 @@
+{
+  "pr_number": 16121,
+  "title": "chore: pause the pollinations.ai production deploy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16121",
+  "merged_at": "2026-10-01T07:56:15Z",
+  "labels": [
+    "INFRA"
+  ],
+  "pr_body_excerpt": "- Pauses the automatic pollinations.ai deploy on pushes to `production`.\n- Main now has the new Home and Apps next to the old Play and Community. The next promotion would ship that mix.\n- Enter, gen and media keep deploying through `Deploy / Cloudflare production`.\n- Manual deploy (`workflow_dispatch`) still works. To resume, uncomment the `push` trigger once all website v2 pages are on main (#14472).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A pause for the website",
+    "blurb": "The website deploy gets a manual switch while its v2 pages catch up. Enter, gen, and media keep their usual route.",
+    "summary": "The pollinations.ai Cloudflare workflow drops its automatic deploy on pushes to production, retaining manual workflow_dispatch deploys while the remaining website v2 pages are completed; Enter, gen, and media deployments are unchanged.",
+    "impact": "Website promotions can wait until Home, Apps, Play, and Community are ready together, while manual website deploys and the other production deployments remain available.",
+    "keywords": [
+      "website",
+      "deployment",
+      "Cloudflare",
+      "workflow",
+      "v2"
+    ],
+    "visual_concept": "A cozy garden-shed deployment desk represents the website workflow: Polli rests a paw on a paused automatic lever beside a clearly labeled manual switch. Four small page cards for Home, Apps, Play, and Community sit among growing code-plants; a separate terminal shows Enter, gen, and media continuing on their own path.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli gently pauses an automatic website-deploy lever beside a little switch labeled 'MANUAL', while four page cards and code-plants grow on the desk and a friendly CRT robot tends a separate glowing terminal; lime green (#ecf874) fills the monitor glow and leafy accents against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny tool belt, and is strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16121.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli gently pauses an automatic website-deploy lever beside a little switch labeled 'MANUAL', while four page cards and code-plants grow on the desk and a friendly CRT robot tends a separate glowing terminal; lime green (#ecf874) fills the monitor glow and leafy accents against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny tool belt, and is strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-01T07:57:16.678101+00:00"
+}

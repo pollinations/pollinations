@@ -1021,6 +1021,27 @@ export interface ModelInfo {
     output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
     resolutions?: string[];
+    /**
+     * `aspectRatio` values the output follows on the model's primary route; the first is the default.
+     * Fallback routes may differ. Omitted when the primary route ignores `aspectRatio` or it is unverified.
+     */
+    aspect_ratios?: string[];
+    /**
+     * How width and height apply to text-to-image requests on the model's primary route;
+     * edits may follow the input image, and fallback routes may differ. Unverified limits are omitted.
+     */
+    image_size?: {
+        mode: "pixels" | "presets" | "fixed" | "provider";
+        default?: string;
+        min_side?: number;
+        max_side?: number;
+        multiple_of?: number;
+        min_pixels?: number;
+        max_pixels?: number;
+        /** Largest long side ÷ short side. */
+        max_aspect_ratio?: number;
+        sizes?: string[];
+    };
     min_duration?: number;
     max_duration?: number;
     default_duration?: number;

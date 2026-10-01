@@ -12,6 +12,7 @@ import {
     getVisibleModel3dModels,
     getVisibleRealtimeModels,
     getVisibleTextModels,
+    IMAGE_SIZE_MODES,
     MODEL_CATEGORIES,
     MODEL_INPUT_MODALITIES,
     MODEL_OUTPUT_MODALITIES,
@@ -133,6 +134,41 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     resolutions: z.array(z.string()).optional(),
+    aspect_ratios: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "`aspectRatio` values the output follows on the model's primary route; the first is the default. Fallback routes may differ. Omitted when the primary route ignores `aspectRatio` or it is unverified.",
+        ),
+    image_size: z
+        .object({
+            mode: z
+                .enum(IMAGE_SIZE_MODES)
+                .describe(
+                    "`pixels`: width × height sets the output within the limits. `presets`: the output is the listed size nearest the request. `fixed`: only the listed sizes are accepted; others are rejected. `provider`: the provider picks the pixels; on some models the requested width × height still selects a size tier such as 1K, 2K or 4K.",
+                ),
+            default: z
+                .string()
+                .optional()
+                .describe(
+                    "Output size (`WxH`) when width and height are omitted.",
+                ),
+            min_side: z.number().int().positive().optional(),
+            max_side: z.number().int().positive().optional(),
+            multiple_of: z.number().int().positive().optional(),
+            min_pixels: z.number().int().positive().optional(),
+            max_pixels: z.number().int().positive().optional(),
+            max_aspect_ratio: z
+                .number()
+                .positive()
+                .optional()
+                .describe("Largest long side ÷ short side."),
+            sizes: z.array(z.string()).optional(),
+        })
+        .optional()
+        .describe(
+            "How width and height apply to text-to-image requests on the model's primary route; edits may follow the input image, and fallback routes may differ. Unverified limits are omitted.",
+        ),
     title: z.string(),
     description: z.string().optional(),
     input_modalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).optional(),
@@ -270,6 +306,20 @@ export function modelInfoFromDefinition(
             pricingAdjustmentInfoFromRule(rule, service),
         ),
         resolutions: service.resolutions ? [...service.resolutions] : undefined,
+        aspect_ratios: service.aspectRatios
+            ? [...service.aspectRatios]
+            : undefined,
+        image_size: service.imageSize && {
+            mode: service.imageSize.mode,
+            default: service.imageSize.default,
+            min_side: service.imageSize.minSide,
+            max_side: service.imageSize.maxSide,
+            multiple_of: service.imageSize.multipleOf,
+            min_pixels: service.imageSize.minPixels,
+            max_pixels: service.imageSize.maxPixels,
+            max_aspect_ratio: service.imageSize.maxAspectRatio,
+            sizes: service.imageSize.sizes && [...service.imageSize.sizes],
+        },
         // User-facing metadata from service definition
         title: service.title,
         description: service.description,

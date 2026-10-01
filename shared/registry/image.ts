@@ -20,6 +20,8 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.03, // flat per text-to-image output
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "9:16"],
+        imageSize: { mode: "provider" },
         title: "Krea 2 Medium",
         description:
             "Style-rich generation with strong prompt adherence and clean typography",
@@ -39,6 +41,14 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.0001, // per image
         },
+        imageSize: {
+            mode: "pixels",
+            default: "512x512",
+            minSide: 32,
+            maxSide: 768,
+            multipleOf: 32,
+            maxPixels: 262144,
+        },
         title: "DreamShaper 8 LCM",
         description:
             "Near-instant images at rock-bottom cost; simpler detail than premium models",
@@ -55,6 +65,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.04, // per image
         },
+        imageSize: { mode: "provider" },
         title: "FLUX.1 Kontext Pro",
         description:
             "Edits an existing image from plain instructions — swap, restyle, refine",
@@ -72,6 +83,14 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: false,
         cost: {
             completionImageTokens: 0.04, // Azure Global Standard, $40/1K images in East US and Sweden Central.
+        },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 256,
+            maxSide: 1440,
+            multipleOf: 32,
+            maxPixels: 1600000,
         },
         title: "FLUX 1.1 Pro",
         description:
@@ -110,6 +129,13 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 256,
+            multipleOf: 16,
+            maxPixels: 4194304,
+        },
         title: "FLUX.2 Pro",
         description:
             "High-fidelity generation and multi-reference editing with strong prompt adherence",
@@ -130,6 +156,13 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             promptImageTokens: 0.05,
             completionImageTokens: 0.05,
+        },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 256,
+            multipleOf: 16,
+            maxPixels: 4194304,
         },
         title: "FLUX.2 Flex",
         description:
@@ -169,6 +202,13 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 256,
+            maxSide: 2048,
+            multipleOf: 16,
+        },
         title: "FLUX.2 Max",
         description:
             "Flagship-tier generation and multi-reference editing with the highest consistency and prompt adherence in the FLUX.2 line",
@@ -194,6 +234,13 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: perMillion(1.75),
             completionImageTokens: perMillion(19.5),
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 768,
+            multipleOf: 16,
+            maxPixels: 1048576,
+        },
         title: "MAI Image 2.5 Flash",
         description:
             "Quick photorealistic generation and single-reference editing with accurate text rendering",
@@ -217,6 +264,13 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: perMillion(2.5),
             completionImageTokens: perMillion(19),
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 768,
+            multipleOf: 16,
+            maxPixels: 2359296,
+        },
         title: "MAI Image 2.6 Flash",
         description:
             "Photorealistic generation and single-reference editing with accurate text rendering",
@@ -239,6 +293,13 @@ const IMAGE_BASE_SERVICES = {
             promptTextTokens: perMillion(5),
             promptImageTokens: perMillion(8),
             completionImageTokens: perMillion(38),
+        },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 768,
+            multipleOf: 16,
+            maxPixels: 2359296,
         },
         title: "MAI Image 2.6",
         description:
@@ -264,6 +325,7 @@ const IMAGE_BASE_SERVICES = {
             completionTextTokens: perMillion(2.5), // text output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
         },
+        imageSize: { mode: "provider" },
         title: "Nano Banana",
         description:
             "Quick image generation and editing that follows instructions well",
@@ -286,6 +348,7 @@ const IMAGE_BASE_SERVICES = {
             completionTextTokens: perMillion(3), // text/reasoning output tokens
             completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
         },
+        imageSize: { mode: "provider" },
         title: "Nano Banana 2",
         description:
             "Sharper detail and better text rendering in generated and edited images",
@@ -308,6 +371,7 @@ const IMAGE_BASE_SERVICES = {
             completionTextTokens: perMillion(1.5), // text/reasoning output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
+        imageSize: { mode: "provider" },
         title: "Nano Banana 2 Lite",
         description:
             "Speedy, affordable image generation and editing for everyday use",
@@ -332,6 +396,7 @@ const IMAGE_BASE_SERVICES = {
             completionTextTokens: perMillion(12), // text/reasoning output tokens
             completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
         },
+        imageSize: { mode: "provider" },
         title: "Nano Banana Pro",
         description:
             "Studio-quality images up to 4K, with reasoning for tricky prompts",
@@ -351,6 +416,8 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.035, // per image
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "adaptive"],
+        imageSize: { mode: "provider" },
         title: "Seedream 5.0 Lite",
         description:
             "Image generation that can search the web and reason about your prompt",
@@ -369,6 +436,8 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.09, // per 2K image
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "adaptive"],
+        imageSize: { mode: "provider" },
         title: "Seedream 5.0 Pro",
         description: "Premium multimodal image generation and editing",
         inputModalities: ["text", "image"],
@@ -386,6 +455,8 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.03, // per image
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "adaptive"],
+        imageSize: { mode: "pixels", minSide: 1024, maxSide: 4096 },
         title: "Seedream 4.0",
         description: "Photorealistic images with strong prompt adherence",
         inputModalities: ["text", "image"],
@@ -402,6 +473,21 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             completionImageTokens: 0.04 * 1.055, // per image
+        },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "adaptive"],
+        imageSize: {
+            mode: "presets",
+            default: "2048x2048",
+            sizes: [
+                "2048x2048",
+                "2304x1728",
+                "1728x2304",
+                "2560x1440",
+                "1440x2560",
+                "2496x1664",
+                "1664x2496",
+                "3024x1296",
+            ],
         },
         title: "Seedream 4.5",
         description: "Premium photorealism for lifelike scenes and portraits",
@@ -426,6 +512,34 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.03, // flat per image — ideogram-ai/ideogram-v4-turbo
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
+        imageSize: {
+            mode: "presets",
+            default: "2048x2048",
+            sizes: [
+                "2048x2048",
+                "1440x2880",
+                "2880x1440",
+                "1664x2496",
+                "2496x1664",
+                "1792x2240",
+                "2240x1792",
+                "1440x2560",
+                "2560x1440",
+                "1600x2560",
+                "2560x1600",
+                "1728x2304",
+                "2304x1728",
+                "1296x3168",
+                "3168x1296",
+                "1152x2944",
+                "2944x1152",
+                "1248x3328",
+                "3328x1248",
+                "1280x3072",
+                "3072x1280",
+            ],
+        },
         title: "Ideogram 4.0 Turbo",
         description: "Fast images with crisp, accurate text and typography",
         inputModalities: ["text"],
@@ -442,6 +556,34 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.06, // flat per image — ideogram-ai/ideogram-v4-balanced
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
+        imageSize: {
+            mode: "presets",
+            default: "2048x2048",
+            sizes: [
+                "2048x2048",
+                "1440x2880",
+                "2880x1440",
+                "1664x2496",
+                "2496x1664",
+                "1792x2240",
+                "2240x1792",
+                "1440x2560",
+                "2560x1440",
+                "1600x2560",
+                "2560x1600",
+                "1728x2304",
+                "2304x1728",
+                "1296x3168",
+                "3168x1296",
+                "1152x2944",
+                "2944x1152",
+                "1248x3328",
+                "3328x1248",
+                "1280x3072",
+                "3072x1280",
+            ],
+        },
         title: "Ideogram 4.0 Balanced",
         description: "Balanced speed and quality with accurate text rendering",
         inputModalities: ["text"],
@@ -457,6 +599,34 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             completionImageTokens: 0.1, // flat per image — ideogram-ai/ideogram-v4-quality
+        },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
+        imageSize: {
+            mode: "presets",
+            default: "2048x2048",
+            sizes: [
+                "2048x2048",
+                "1440x2880",
+                "2880x1440",
+                "1664x2496",
+                "2496x1664",
+                "1792x2240",
+                "2240x1792",
+                "1440x2560",
+                "2560x1440",
+                "1600x2560",
+                "2560x1600",
+                "1728x2304",
+                "2304x1728",
+                "1296x3168",
+                "3168x1296",
+                "1152x2944",
+                "2944x1152",
+                "1248x3328",
+                "3328x1248",
+                "1280x3072",
+                "3072x1280",
+            ],
         },
         title: "Ideogram 4.0 Quality",
         description:
@@ -477,6 +647,11 @@ const IMAGE_BASE_SERVICES = {
             promptCachedTokens: perMillion(0.2), // per 1M tokens
             promptImageTokens: perMillion(2.5), // per 1M tokens
             completionImageTokens: perMillion(8), // per 1M tokens
+        },
+        imageSize: {
+            mode: "presets",
+            default: "1024x1024",
+            sizes: ["1024x1024", "1536x1024", "1024x1536"],
         },
         title: "GPT Image 1 Mini",
         description: "Affordable image creation and editing for everyday use",
@@ -500,6 +675,11 @@ const IMAGE_BASE_SERVICES = {
             completionTextTokens: perMillion(10), // per 1M tokens
             completionImageTokens: perMillion(32), // per 1M tokens
         },
+        imageSize: {
+            mode: "presets",
+            default: "1024x1024",
+            sizes: ["1024x1024", "1536x1024", "1024x1536"],
+        },
         title: "GPT Image 1.5",
         description:
             "High-fidelity image generation and editing with fine detail",
@@ -521,6 +701,15 @@ const IMAGE_BASE_SERVICES = {
             promptCachedTokens: perMillion(1.25), // per 1M tokens
             promptImageTokens: perMillion(8), // per 1M tokens
             completionImageTokens: perMillion(30), // per 1M tokens
+        },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            maxSide: 3840,
+            multipleOf: 16,
+            minPixels: 655360,
+            maxPixels: 8294400,
+            maxAspectRatio: 3,
         },
         title: "GPT Image 2",
         description:
@@ -546,6 +735,15 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: perMillion(8),
             completionImageTokens: perMillion(30),
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            maxSide: 3840,
+            multipleOf: 16,
+            minPixels: 655360,
+            maxPixels: 8294400,
+            maxAspectRatio: 3,
+        },
         title: "GPT Image 2.5 Flare",
         description:
             "Fast image generation and precise editing with reference images",
@@ -570,6 +768,15 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: perMillion(8),
             completionImageTokens: perMillion(30),
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            maxSide: 3840,
+            multipleOf: 16,
+            minPixels: 655360,
+            maxPixels: 8294400,
+            maxAspectRatio: 3,
+        },
         title: "GPT Image 2.5 Sunburst",
         description:
             "Detailed image generation with precise control over reference-image edits",
@@ -588,6 +795,14 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.002, // per image
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 64,
+            maxSide: 8192,
+            multipleOf: 8,
+            maxPixels: 1048576,
+        },
         title: "FLUX.1 Schnell",
         description: "Fast, high-quality images at a tiny cost",
         inputModalities: ["text"],
@@ -603,6 +818,14 @@ const IMAGE_BASE_SERVICES = {
         perUserRpm: 60,
         cost: {
             completionImageTokens: 0.004, // per image
+        },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 256,
+            maxSide: 4096,
+            multipleOf: 16,
+            maxPixels: 2359296,
         },
         title: "Z-Image Turbo",
         description:
@@ -685,6 +908,7 @@ const IMAGE_BASE_SERVICES = {
             completionVideoTokens: perMillion(17.5),
         },
         resolutions: ["720p", "360p", "1080p", "4k"],
+        aspectRatios: ["16:9", "9:16"],
         title: "Gemini Omni 1.1 Flash",
         description:
             "Cinematic video from text or keyframes with synchronized audio at up to 4K",
@@ -745,6 +969,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "480p", "1080p"],
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "9:21"],
         title: "Seedance 1.0 Pro Fast",
         description: "Video from text or a start image at 480p, 720p, or 1080p",
         inputModalities: ["text", "image"],
@@ -802,6 +1027,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p"],
+        aspectRatios: ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9", "adaptive"],
         title: "Seedance 2.0",
         description:
             "720p video with natively synced sound, from text, images, or references",
@@ -859,6 +1085,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "480p"],
+        aspectRatios: ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9", "adaptive"],
         title: "Seedance 2.0 Mini",
         description:
             "Lower-cost 4–10 second video with synchronized sound and first/last-frame control at 480p or 720p",
@@ -883,6 +1110,7 @@ const IMAGE_BASE_SERVICES = {
             completionVideoSeconds: 0.07,
         },
         resolutions: ["480p"],
+        aspectRatios: ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9", "adaptive"],
         title: "Seedance 2.0 Fast",
         description:
             "Short 4–5 second video with synchronized sound and first/last-frame control at 480p",
@@ -908,6 +1136,7 @@ const IMAGE_BASE_SERVICES = {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
         resolutions: ["720p"],
+        aspectRatios: ["16:9", "9:16"],
         title: "Wan 2.6",
         description:
             "Video with sound from text or an image (720p, 5/10/15s clips)",
@@ -935,6 +1164,7 @@ const IMAGE_BASE_SERVICES = {
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         resolutions: ["480p"],
+        aspectRatios: ["16:9", "9:16"],
         title: "Wan 2.2",
         description:
             "Cheap 5-second silent clips at 480p — great for quick drafts",
@@ -1016,6 +1246,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "1080p"],
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
         title: "Wan 2.7",
         description:
             "Keyframe-controlled video with sound at 720p or 1080p; also accepts reference images and videos",
@@ -1114,6 +1345,18 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.03, // per image
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
+        imageSize: {
+            mode: "presets",
+            default: "2048x2048",
+            sizes: [
+                "2048x2048",
+                "2048x1152",
+                "1152x2048",
+                "2048x1536",
+                "1536x2048",
+            ],
+        },
         title: "Wan 2.7 Image",
         description:
             "Text-to-image and instruction-based editing up to 2K resolution",
@@ -1133,6 +1376,18 @@ const IMAGE_BASE_SERVICES = {
         // which prices Pro identically to standard ($0.03/img).
         cost: {
             completionImageTokens: 0.03, // per image
+        },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
+        imageSize: {
+            mode: "presets",
+            default: "4096x4096",
+            sizes: [
+                "4096x4096",
+                "4096x2304",
+                "2304x4096",
+                "4096x3072",
+                "3072x4096",
+            ],
         },
         title: "Wan 2.7 Image Pro",
         description:
@@ -1186,6 +1441,8 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         ),
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
+        imageSize: { mode: "provider" },
         title: "Qwen Image",
         description:
             "Versatile image creation and editing, strong at text inside images",
@@ -1236,6 +1493,14 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         ),
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "9:21"],
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 32,
+            maxSide: 14142,
+            multipleOf: 32,
+        },
         title: "Qwen Image 2.1",
         description:
             "Generates and edits images from prompts and up to ten references, with accurate text rendering",
@@ -1284,6 +1549,13 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         ),
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "9:21"],
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minPixels: 262144,
+            maxPixels: 4194304,
+        },
         title: "Qwen Image 3",
         description:
             "Creates and edits detailed images with crisp multilingual text and complex layouts",
@@ -1303,6 +1575,7 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
         },
+        imageSize: { mode: "provider" },
         title: "Grok Imagine",
         description: "Photorealistic image generation and quick edits",
         inputModalities: ["text", "image"],
@@ -1329,6 +1602,7 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.01 * 1.055, // per input image on edits
             completionImageTokens: 0.05 * 1.055, // per 1K image
         },
+        imageSize: { mode: "provider" },
         title: "Grok Imagine Pro",
         description:
             "Higher-fidelity photorealistic images for polished results",
@@ -1409,6 +1683,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["1k", "2k"],
+        imageSize: { mode: "provider" },
         title: "Grok Imagine Image 2.0",
         description:
             "Creates and edits high-detail images at 1K or 2K with up to three references",
@@ -1432,6 +1707,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.08 * 1.055, // fixed per output SVG
         },
+        imageSize: { mode: "provider" },
         title: "Recraft V4.1 Vector",
         description:
             "Editable SVG generation and reference-guided vector design",
@@ -1453,6 +1729,8 @@ const IMAGE_BASE_SERVICES = {
             // 2026-09-23, plus the mandatory 5.5% OpenRouter credit fee.
             completionImageTokens: 0.007 * 1.055,
         },
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "adaptive"],
+        imageSize: { mode: "provider" },
         title: "Recraft V4.1 Flash",
         description: "Fast, low-cost raster image generation from text",
         inputModalities: ["text"],
@@ -1471,6 +1749,7 @@ const IMAGE_BASE_SERVICES = {
             completionVideoSeconds: 0.07, // per sec at 720p
         },
         resolutions: ["720p"],
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
         title: "Grok Video Pro",
         description: "Short videos from text or an image (720p, 1-15s)",
         inputModalities: ["text", "image"],
@@ -1529,6 +1808,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "480p", "1080p"],
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16"],
         title: "Grok Imagine Video 1.5",
         description:
             "Video from text or a start image with synchronized audio at 480p, 720p, or 1080p",
@@ -1613,6 +1893,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["480p", "720p"],
+        aspectRatios: ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"],
         title: "Seedance 2.5",
         description:
             "Four-second video with synchronized audio and reference media at 480p or 720p",
@@ -1643,6 +1924,7 @@ const IMAGE_BASE_SERVICES = {
             completionVideoSeconds: 0.0988 * 1.055, // per sec at 720p
         },
         resolutions: ["720p"],
+        aspectRatios: ["1:1", "16:9", "4:3", "3:4", "9:16", "21:9", "9:21"],
         title: "HappyHorse 1.1",
         description: "Text and first-frame video generation at 720p",
         inputModalities: ["text", "image"],
@@ -1696,6 +1978,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["480p", "768p", "2k"],
+        aspectRatios: ["16:9"],
         title: "MiniMax H3",
         description:
             "Five-second text-to-video clips with synchronized stereo audio at 480p, 768p, or 2K",
@@ -1768,6 +2051,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         },
         resolutions: ["480p", "768p", "1080p"],
+        aspectRatios: ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"],
         title: "MiniMax H3 Max",
         description:
             "High-quality 5–15 second video from text, start/end frames, or reference media with synchronized audio at 480p, 768p, or 1080p",
@@ -1832,6 +2116,7 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["480p", "768p", "1080p"],
+        aspectRatios: ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"],
         title: "MiniMax H3 Max Turbo",
         description:
             "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p, 768p, or 1080p",
@@ -1855,6 +2140,14 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: 0.005,
         },
+        imageSize: {
+            mode: "pixels",
+            default: "1024x1024",
+            minSide: 256,
+            maxSide: 4096,
+            multipleOf: 16,
+            maxPixels: 2359296,
+        },
         title: "FLUX.2 Klein 4B",
         description: "Fast image generation and editing up to 2.4 megapixels",
         inputModalities: ["text", "image"],
@@ -1871,6 +2164,19 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         cost: {
             completionImageTokens: 0.005, // per image
+        },
+        imageSize: {
+            mode: "presets",
+            default: "1024x1024",
+            sizes: [
+                "1024x1024",
+                "1184x896",
+                "896x1184",
+                "1376x768",
+                "768x1376",
+                "1248x832",
+                "832x1248",
+            ],
         },
         title: "Pruna p-image",
         description: "Cheap, speedy text-to-image for rapid iteration",
@@ -1905,6 +2211,11 @@ const IMAGE_BASE_SERVICES = {
         perUserRpm: 15,
         cost: {
             completionImageTokens: 0.02, // per image
+        },
+        imageSize: {
+            mode: "fixed",
+            default: "1024x1024",
+            sizes: ["1024x1024"],
         },
         title: "Lightning Image Turbo",
         description:

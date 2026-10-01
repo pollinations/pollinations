@@ -888,7 +888,7 @@ describe("POST /v1/messages", () => {
         { name: "malformed JSON", body: "{", status: 400 },
         {
             name: "an oversized body",
-            body: "x".repeat(20 * 1024 * 1024 + 1),
+            body: "x".repeat(32 * 1024 * 1024 + 1),
             status: 413,
         },
     ])("returns an Anthropic error for $name", async ({ body, status }) => {

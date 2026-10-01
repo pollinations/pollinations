@@ -117,6 +117,52 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("accepts a 28 MiB inline-image chat body before authentication", async () => {
+        const body = JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/png;base64,${"A".repeat(28 * 1024 * 1024)}`,
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+        const response = await fetchWorker("/v1/chat/completions", env, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+        });
+
+        expect(response.status).toBe(401);
+    });
+
+    it("reports the 32 MiB limit for oversized chat bodies", async () => {
+        const body = JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [{ role: "user", content: "A".repeat(33 * 1024 * 1024) }],
+        });
+        const response = await fetchWorker("/v1/chat/completions", env, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": String(body.length),
+            },
+            body,
+        });
+
+        expect(response.status).toBe(413);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { message: "Request body exceeds the 32 MiB limit" },
+        });
+    });
+
     it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 

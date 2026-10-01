@@ -425,6 +425,11 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 0.25,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("connect_polli_cli", {
+        state: "available",
+        rewardAmount: 2,
+        balanceBucket: "tier",
+    });
     expectStableCatalogFields("join_discord", {
         state: "available",
         rewardAmount: 1,
@@ -1209,6 +1214,43 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
     expect(externalRewards).toEqual([
         { questId: "use_app", userId: externalUserId },
     ]);
+});
+
+test("Polli CLI quest rewards its device-login keys, not other app keys", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const owner = await getOnlyUser();
+    const [polliUserId, otherUserId] = await seedByopConnections(
+        owner.id,
+        2,
+        "polli-quest",
+    );
+    if (!polliUserId || !otherUserId) throw new Error("Expected BYOP users");
+
+    await db
+        .update(schema.apikey)
+        .set({ byopClientKeyId: "jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0" })
+        .where(eq(schema.apikey.referenceId, polliUserId));
+
+    await checkQuestsForUser(env, polliUserId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+    await checkQuestsForUser(env, otherUserId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+    await checkQuestsForUser(env, polliUserId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+
+    const rewards = await db
+        .select({
+            userId: schema.rewards.userId,
+            amount: schema.rewards.pollenAmount,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "connect_polli_cli"));
+    expect(rewards).toEqual([{ userId: polliUserId, amount: 2 }]);
 });
 
 test("app milestones award their rewards at inclusive thresholds", async ({

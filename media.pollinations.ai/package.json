@@ -19,6 +19,7 @@
     "drizzle-orm": "^0.44.7",
     "hono": "^4.6.0",
     "hono-openapi": "^1.2.0",
+    "picscrub": "^1.2.0",
     "zod": "4.3.5"
   },
   "devDependencies": {

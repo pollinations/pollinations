@@ -10,19 +10,13 @@ import { useState } from "react";
 import { useNewestApps, useWeeklyApps } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
 
-const TABS = [
-    {
-        label: "Most used",
-        subtitle: "The most-used Pollen Pay apps over the last 7 days.",
-    },
-    { label: "Newest", subtitle: "The latest apps to join the catalog." },
-] as const;
+const TABS = ["Most used this week", "Newest"] as const;
 
 /**
- * A compact shelf of community apps: the busiest ones that use connected
- * wallets, or the newest listings. Missing screenshots use the shared Polli
- * fallback, so the shelf remains visual without pretending generated art is
- * the real app.
+ * A compact shelf of community apps: the busiest ones over the last 7 days
+ * (counting only users who pay with their own Pollen), or the newest
+ * listings. Missing screenshots use the shared Polli fallback, so the shelf
+ * remains visual without pretending generated art is the real app.
  */
 export function LiveApps() {
     const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
@@ -37,20 +31,16 @@ export function LiveApps() {
 
     return (
         <section className="flex flex-col gap-5">
-            <ContentHeader
-                eyebrow={null}
-                title="Apps from the community."
-                subtitle={tab.subtitle}
-            />
+            <ContentHeader eyebrow={null} title="Apps from the community." />
             <div className="flex flex-wrap items-center gap-2">
-                {TABS.map((candidate) => (
+                {TABS.map((label) => (
                     <TabButton
-                        key={candidate.label}
-                        active={tab === candidate}
+                        key={label}
+                        active={tab === label}
                         size="sm"
-                        onClick={() => setTab(candidate)}
+                        onClick={() => setTab(label)}
                     >
-                        {candidate.label}
+                        {label}
                     </TabButton>
                 ))}
                 <Button
@@ -84,7 +74,7 @@ export function LiveApps() {
                     Apps couldn’t be loaded right now.
                 </p>
             ) : (
-                <AppCarousel key={tab.label} apps={apps} />
+                <AppCarousel key={tab} apps={apps} />
             )}
         </section>
     );

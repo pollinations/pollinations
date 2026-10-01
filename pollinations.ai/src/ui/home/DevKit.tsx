@@ -63,9 +63,9 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["Prompt + tools", "Code (agent.ts)", "Your own server"],
         body: (
             <>
-                <Em>Call an agent the way you call a model</Em>, or build your
-                own. We run prompt and code agents for you. <Em>Sandboxes</Em>{" "}
-                for long-running agents are coming soon.
+                <Em>Call an agent like a model</Em>, or build your own. We host
+                prompt and code agents. <Em>Sandboxes</Em> for long-running
+                agents are coming soon.
             </>
         ),
         links: [
@@ -99,8 +99,8 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["npx @pollinations/cli"],
         body: (
             <>
-                <Em>Start with one working task</Em>, then explore keys, models,
-                usage and earnings.
+                <Em>Start with one of these tasks</Em>, then explore keys,
+                models, usage and earnings.
             </>
         ),
         links: [
@@ -119,8 +119,8 @@ const BUILD_FEATURES: Feature[] = [
         title: "Users pay",
         body: (
             <>
-                Sign in with Pollinations and approve a spending limit.{" "}
-                <Em>Usage is billed to each user's own account.</Em>
+                Your users sign in with Pollinations and set a spending limit.{" "}
+                <Em>They pay for their own usage.</Em>
             </>
         ),
         links: [
@@ -135,8 +135,8 @@ const BUILD_FEATURES: Feature[] = [
         title: "Media storage",
         body: (
             <>
-                <Em>Upload images, audio and video</Em> and get a link to use in
-                model calls. Generated files get a link too.
+                <Em>Upload images, audio and video</Em> to get a link for model
+                calls. Generated files get one too.
             </>
         ),
         links: [
@@ -152,7 +152,7 @@ const BUILD_FEATURES: Feature[] = [
         chips: ["Privacy", "Secrets", "NSFW", "Prompt attacks"],
         body: (
             <>
-                <Em>Redact personal data and keys</Em>, or{" "}
+                <Em>Remove personal data and keys</Em>, or{" "}
                 <Em>block unsafe prompts</Em>, before they reach the model. Turn
                 checks on per request.
             </>
@@ -186,8 +186,8 @@ const PUBLISH_FEATURES: Feature[] = [
         title: "List your app",
         body: (
             <>
-                Submit it for review to join the Apps catalog.{" "}
-                <Em>Turn on app earnings.</Em>
+                Submit it for review to join the Apps catalog, then{" "}
+                <Em>turn on earnings</Em>.
             </>
         ),
         links: [{ label: "Submit your app", href: LINKS.githubSubmitApp }],
@@ -197,8 +197,8 @@ const PUBLISH_FEATURES: Feature[] = [
         title: "Publish a model",
         body: (
             <>
-                Connect an endpoint you run and <Em>set your price</Em>. Each
-                call adds Pollen to your balance.
+                Connect your endpoint and <Em>set your price</Em>. Each call
+                adds Pollen to your balance.
             </>
         ),
         links: [
@@ -213,8 +213,7 @@ const PUBLISH_FEATURES: Feature[] = [
         title: "Publish an agent",
         body: (
             <>
-                Make your agent <Em>public in the catalog</Em> so anyone can
-                call it.
+                Add your agent to the catalog so <Em>anyone can call it</Em>.
             </>
         ),
         links: [
@@ -492,7 +491,7 @@ export function DevKit({ className }: { className?: string }) {
 
             <FeatureGroup
                 title="Put your model, agent or app in front of our users."
-                description="You bring the model, agent or app; we handle sign-in, billing and discovery. Public models and agents need publisher access (alpha)."
+                description="You build it; we handle sign-in, billing and discovery. Publishing models and agents is in alpha and needs publisher access."
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (

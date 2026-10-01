@@ -162,7 +162,8 @@ async function runQuestion({
             response: typeof content === "string" ? content : null,
             usage: payload?.usage ?? null,
             expectedAnswer: question.answer,
-            error: null,
+            error:
+                typeof content === "string" ? null : "missing_response_content",
             attempt,
             latencyMs,
             costPollen: model.costPollenOf(payload?.usage),
@@ -226,6 +227,7 @@ export async function runEval({
 
             const questionResults = [];
             for (const question of questions) {
+                if (capReached || rateLimited) break;
                 const reservation = estimateCostPollenOf(
                     model,
                     question,
@@ -276,7 +278,10 @@ export async function runEval({
                 questionResults.push(result);
                 if (rateLimited) break;
             }
-            if (questionResults.some((r) => r.error === "rate_limited")) {
+            if (
+                (rateLimited && questionResults.length < questions.length) ||
+                questionResults.some((r) => r.error === "rate_limited")
+            ) {
                 entries.push({
                     model,
                     status: "rate_limited",

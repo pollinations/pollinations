@@ -35,3 +35,11 @@ test("isCorrect compares the parsed value against the expected answer", () => {
     assert.equal(isCorrect(null, 5), false);
     assert.equal(isCorrect(4.0, 4), true);
 });
+
+test("uses final markers and does not truncate fractions or scientific notation", () => {
+    assert.equal(parseAnswer("answer: 3. Correction. ### Answer: 5"), 5);
+    assert.equal(parseAnswer("### Answer: 5e2"), 500);
+    assert.equal(parseAnswer("### Answer: 5/2"), null);
+    assert.equal(parseAnswer("There are 5 sisters. ### Answer: unknown"), null);
+    assert.equal(parseAnswer("### Answer: 4,000"), 4000);
+});

@@ -331,6 +331,7 @@ export async function main(argv = process.argv.slice(2)) {
         .map((entry) => ({
             name: entry.model.name,
             community: entry.model.community === true,
+            questionResults: entry.questionResults,
         }));
 
     const incomplete = entries

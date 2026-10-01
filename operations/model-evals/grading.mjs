@@ -6,27 +6,31 @@
 // ignores the format, the last standalone number in the response is used as
 // a last resort, mirroring how a human would read a free-form reply.
 
-const ANSWER_MARKER =
-    /answer\s*[:#]?\s*(?:###)?\s*\**\s*\(?\s*(-?\d+(?:\.\d+)?)/i;
-const LAST_NUMBER = /(-?\d+(?:\.\d+)?)(?![^\n]*\d)/;
+const NUMBER_TOKEN =
+    /[-+]?\d+(?:,\d{3})*(?:\.\d+)?(?:e[-+]?\d+)?(?:\/\d+(?:\.\d+)?)?/gi;
+const ANSWER_MARKER = /(?:###\s*)?answer\s*[:#]/gi;
+
+function numericValue(token) {
+    if (!token || token.includes("/")) return null;
+    const value = Number(token.replace(/,/g, ""));
+    return Number.isFinite(value) ? value : null;
+}
 
 export function parseAnswer(response) {
     if (typeof response !== "string" || response.trim() === "") return null;
-    const text = response.replace(/\n/g, " ");
-
-    const markerMatch = text.match(ANSWER_MARKER);
-    if (markerMatch) {
-        const value = Number.parseFloat(markerMatch[1]);
-        if (Number.isFinite(value)) return value;
+    const markers = [...response.matchAll(ANSWER_MARKER)];
+    if (markers.length > 0) {
+        // Prefer the final explicit answer, not a preliminary result in reasoning.
+        const marker = markers[markers.length - 1];
+        const tail = response
+            .slice(marker.index + marker[0].length)
+            .replace(/^[\s*"'(]+/, "");
+        const match = tail.match(NUMBER_TOKEN);
+        if (!match || !tail.startsWith(match[0])) return null;
+        return numericValue(match[0]);
     }
-
-    // Free-form fallback: the last number in the response.
-    const lastMatch = text.match(LAST_NUMBER);
-    if (lastMatch) {
-        const value = Number.parseFloat(lastMatch[1]);
-        if (Number.isFinite(value)) return value;
-    }
-    return null;
+    const numbers = response.match(NUMBER_TOKEN);
+    return numericValue(numbers?.[numbers.length - 1]);
 }
 
 export function isCorrect(parsed, expected) {

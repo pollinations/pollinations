@@ -1,7 +1,9 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { findDefaultAsset, getDefaultAsset } from "@x402/evm";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { createWeftPaywall } from "../../shared/weft-paywall.js";
 import { requireImagePayment } from "../src/weftX402.ts";
 
 const network = "eip155:84532";
@@ -48,6 +50,54 @@ afterAll(async () => {
     });
 });
 
+describe("Payment-response pricing", () => {
+    const paywall = createWeftPaywall("image", findDefaultAsset);
+    const asset = getDefaultAsset(network).asset;
+
+    it.each([
+        ["10000", "0.01"],
+        ["125000", "0.125"],
+        ["1", "0.000001"],
+        ["1000000", "1.00"],
+        ["9007199254740993", "9007199254.740993"],
+    ])("displays the quoted amount %s as %s USD", (amount, expected) => {
+        const html = paywall.generateHtml({
+            accepts: [{ amount, asset, network }],
+        });
+        expect(html).toContain(`Get your image for just ${expected} USD`);
+    });
+
+    it("uses the token's declared decimals instead of assuming six", () => {
+        const network = "eip155:4326";
+        const asset = getDefaultAsset(network);
+        expect(asset.decimals).toBe(18);
+        const html = paywall.generateHtml({
+            accepts: [
+                {
+                    amount: "10000000000000000",
+                    asset: asset.asset,
+                    network,
+                },
+            ],
+        });
+        expect(html).toContain(`Get your image for just 0.01 ${asset.symbol}`);
+        expect(html).not.toContain("0.01 USD");
+    });
+
+    it.each([
+        { accepts: [] },
+        { accepts: [{ amount: "10000", asset: payTo, network }] },
+        { accepts: [{ amount: "<script>alert(1)</script>", asset, network }] },
+    ])("does not invent a price for an absent or invalid quote", ({
+        accepts,
+    }) => {
+        const html = paywall.generateHtml({ accepts });
+        expect(html).toContain("Get your image with Weft");
+        expect(html).not.toContain(" USD");
+        expect(html).not.toContain("<script");
+    });
+});
+
 describe("Weft image paywall", () => {
     it("shows account setup and free credit to browsers without changing the challenge", async () => {
         const response = await request(image)
@@ -59,8 +109,11 @@ describe("Weft image paywall", () => {
         expect(response.headers["content-type"]).toContain("text/html");
         expect(response.text).toContain("set up https://weft.network/setup.md");
         expect(response.text).toContain('href="https://weft.network/setup.md"');
+        expect(response.text).toContain("Get your image for just 0.01 USD");
+        expect(response.text).toContain("Give your AI agent a wallet");
+        expect(response.text).toContain("Pay for this image with Weft.");
         expect(response.text).toContain(
-            "Create a Weft account and verify your email",
+            "Create your Weft account and verify your email",
         );
         expect(response.text).toContain("$3 in free credit");
         expect(response.text).not.toContain("Note to developers");

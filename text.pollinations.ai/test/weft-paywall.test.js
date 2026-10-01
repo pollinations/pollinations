@@ -74,9 +74,13 @@ for (const [method, path] of [
             response.text,
             /href="https:\/\/weft\.network\/setup\.md"/,
         );
+        assert.match(response.text, /Get your response for just 0\.01 USD/);
+        assert.match(response.text, /Give your AI agent a wallet/);
+        assert.match(response.text, /Pay for this response with Weft\./);
+        assert.doesNotMatch(response.text, /Get your image/);
         assert.match(
             response.text,
-            /Create a Weft account and verify your email/,
+            /Create your Weft account and verify your email/,
         );
         assert.match(response.text, /\$3 in free credit/);
         assert.doesNotMatch(response.text, /Note to developers|<script/);

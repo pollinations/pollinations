@@ -1,6 +1,31 @@
-// Shared browser guidance for the legacy image and text x402 routes.
-export const weftPaywall = {
-    generateHtml: () => `<!DOCTYPE html>
+// Render the x402 response amount using the SDK's asset metadata, not the route price.
+function quotedPrice(paymentRequired, findAsset) {
+    const payment = paymentRequired.accepts[0];
+    if (!payment || !/^\d+$/.test(payment.amount)) return null;
+    const asset = findAsset(payment.asset, payment.network);
+    if (!asset) return null;
+
+    const amount = BigInt(payment.amount);
+    const scale = 10n ** BigInt(asset.decimals);
+    const fraction = (amount % scale)
+        .toString()
+        .padStart(asset.decimals, "0")
+        .replace(/0+$/, "")
+        .padEnd(2, "0");
+    const currency = asset.symbol === "USDC" ? "USD" : asset.symbol;
+    return `${amount / scale}.${fraction} ${currency}`;
+}
+
+// One default browser page, with image/text wording selected by the owning route.
+export function createWeftPaywall(resourceType, findAsset) {
+    const item = resourceType === "image" ? "image" : "response";
+    return {
+        generateHtml(paymentRequired) {
+            const price = quotedPrice(paymentRequired, findAsset);
+            const heading = price
+                ? `Get your ${item} for just ${price}`
+                : `Get your ${item} with Weft`;
+            return `<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>Payment Required - Pollinations</title>
@@ -16,16 +41,20 @@ export const weftPaywall = {
     </head>
     <body>
         <main>
-            <h1>Payment Required</h1>
-            <p>This resource is protected by the x402 payment protocol.</p>
+            <h1>${heading}</h1>
+            <p>Give your AI agent a wallet. Let it pay for the ${item} and get back to work.</p>
             <section class="setup" aria-label="Set up Weft">
-                <p><strong>Get started with Weft</strong></p>
-                <p>Paste this command into your AI agent:</p>
+                <p><strong>Paste this into your agent:</strong></p>
                 <code>set up https://weft.network/setup.md</code>
-                <p>Create a Weft account and verify your email to get <strong>$3 in free credit</strong> to use Pollinations.</p>
-                <a href="https://weft.network/setup.md">Read the setup instructions</a>
+                <p>Create your Weft account and verify your email to get <strong>$3 in free credit</strong>.</p>
+                <p>Then tell your agent:</p>
+                <code>Pay for this ${item} with Weft.</code>
+                <p><a href="https://weft.network/setup.md">Give my agent a wallet &rarr;</a></p>
             </section>
+            <p>Already connected? Ask your agent to pay for this request.</p>
         </main>
     </body>
-</html>`,
-};
+</html>`;
+        },
+    };
+}

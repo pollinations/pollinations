@@ -386,9 +386,10 @@ Body: {ISSUE_BODY[:2000]}
         fail(f"AI classification failed for #{ISSUE_NUMBER}")
     log_debug(f"AI answer: {raw}")
     area = raw.get("area")
-    if area not in areas and not (IS_PULL_REQUEST and area is None):
+    if area is not None and area not in areas:
         fail(f"AI returned invalid area for #{ISSUE_NUMBER}: {area!r}")
-    if IS_PULL_REQUEST:
+    # No area means a promotion PR or an unlabelled census response: nothing to classify.
+    if IS_PULL_REQUEST or area is None:
         return {"area": area}
     if raw.get("type") not in TYPES or raw.get("priority") not in PRIORITIES:
         fail(f"AI returned invalid type or priority for #{ISSUE_NUMBER}: {raw.get('type')!r}, {raw.get('priority')!r}")
@@ -445,6 +446,9 @@ def organize_issue(brief: str, areas: list, area_field: dict):
         assign_issue(real_author)
 
     answer = classify(brief, areas, f"Author type: {'Internal' if is_internal else 'External'}")
+    if answer["area"] is None:
+        log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
+        return
     source = "Team" if is_internal else "Community"
     priority = answer["priority"]
     if source == "Community" and is_paid_customer(real_author_id):

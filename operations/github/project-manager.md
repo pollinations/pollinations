@@ -18,7 +18,7 @@ Every issue gets exactly one area, one type and one priority. A pull request get
 
 These are handled before you are called, so you only see them during a manual rerun:
 
-- **Census responses** (`BEE-CENSUS`, `HONEY-CENSUS`): survey answers, not work. No area, type or priority.
+- **Census responses** (`BEE-CENSUS`, `HONEY-CENSUS`): survey answers, not work. No area, type or priority. If you see one without its label (the census form, or someone answering the census in their own words), return `null` for area, type and priority.
 - **App submissions** (`APP-SUBMISSION`): always App catalog & showcase, set without you.
 
 ## Area
@@ -355,4 +355,4 @@ Return JSON only:
 }
 ```
 
-`area` is an exact name from the overview table, or `null` only for a promotion pull request. For a pull request, `type` and `priority` are `null`.
+`area` is an exact name from the overview table, or `null` only for a promotion pull request or a census response. For a pull request, `type` and `priority` are `null`.

@@ -78,13 +78,17 @@ describe("System One adapter", () => {
         expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
     });
 
+    it("resolves Kev 4B only by its OpenRouter id", () => {
+        expect(findModelByName("jaredpalmer/kev-4b")?.name).toBe(
+            "jaredpalmer/kev-4b",
+        );
+        expect(findModelByName("kev")).toBeNull();
+    });
+
     it("routes respan/span-01-lite to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
-            .mockImplementationOnce(async (input, init) => {
-                expect(String(input)).toBe(
-                    "https://openrouter.ai/api/alpha/decisions",
-                );
+            .mockImplementationOnce(async (_input, init) => {
                 expect(JSON.parse(String(init?.body))).toMatchObject({
                     model: "respan/span-01-lite",
                 });
@@ -99,6 +103,33 @@ describe("System One adapter", () => {
             {
                 model: "respan/span-01-lite",
                 modelConfig: { ...modelConfig, model: "respan/span-01-lite" },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("routes jaredpalmer/kev-4b to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "jaredpalmer/kev-4b",
+                });
+                return Response.json({
+                    model: "jaredpalmer/kev-4b-20260924",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 76 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "jaredpalmer/kev-4b",
+                modelConfig: { ...modelConfig, model: "jaredpalmer/kev-4b" },
             },
             vi.fn(),
         );
@@ -332,31 +363,31 @@ describe("System One adapter", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("reports missing credentials as server misconfiguration", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callSystemOne([{ role: "user", content: nativeContent }], {
-                modelConfig: { model: "respan/span-01-lite" },
-            }),
-        ).rejects.toMatchObject({
-            status: 500,
-            message:
-                "The decisions route is not configured for respan/span-01-lite.",
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("names the requested model when the request is malformed", async () => {
         await expect(
             callSystemOne([{ role: "user", content: "not json" }], {
-                modelConfig: { ...modelConfig, model: "respan/span-01-lite" },
+                modelConfig: { ...modelConfig, model: "jaredpalmer/kev-4b" },
             }),
         ).rejects.toMatchObject({
             status: 400,
             message: expect.stringContaining(
-                "respan/span-01-lite could not parse",
+                "jaredpalmer/kev-4b could not parse",
             ),
         });
+    });
+
+    it("reports missing credentials as server misconfiguration", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { model: "jaredpalmer/kev-4b" },
+            }),
+        ).rejects.toMatchObject({
+            status: 500,
+            message:
+                "The decisions route is not configured for jaredpalmer/kev-4b.",
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("preserves upstream status and sanitized response headers", async () => {

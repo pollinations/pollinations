@@ -19,6 +19,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Inception: "inception",
     InferencePort: "inferenceport",
     inclusionAI: "inclusionai",
+    "Jared Palmer": "jared-palmer",
     Krea: "krea",
     Lykon: "lykon",
     Meituan: "meituan",

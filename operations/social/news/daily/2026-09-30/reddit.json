@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-30",
+  "period_start": "2026-09-30",
+  "period_end": "2026-09-30",
+  "generated_at": "2026-10-01T06:32:47.090824+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-30/images/reddit.jpg"
+    }
+  ],
+  "title": "Apps page rebuilt, with SDK and staging updates",
+  "text": "We merged 28 PRs today. The largest visible change is a [rebuilt Apps page](https://github.com/pollinations/pollinations/pull/15997) with filters. Catalog apps now rank by weekly usage, descriptions are shorter, and search keeps your scroll position and plain-text URL values. The website also moved its routes to TanStack Router, including a fix for the docs redirect.\n\nOn the building side, the SDK now accepts speech inputs and audioTransform uploads. Five video models have declared fixed resolutions, GPT-6.1 Sol was added, and the key model picker shows community model creators. The catalog gained two Arabic RTL apps, Aizen and Mmm, a BYOP-authorized speech-to-text app, and a [Godot 4 addon](https://github.com/pollinations/pollinations/pull/15931).\n\nA couple of less visible fixes matter more when they fail: the [computer shell now preserves UTF-8 and binary bytes](https://github.com/pollinations/pollinations/pull/15546), and Polli CLI has a separate staging lane and credentials. We also corrected CLI login and BYOP device-flow guidance. Usage dashboards and model status now separate regular traffic; API docs were regenerated from OpenAPI.\n\nIf you try the new Apps page, reports of confusing filters or navigation behavior are useful. Those tend to survive a surprising amount of local testing."
+}

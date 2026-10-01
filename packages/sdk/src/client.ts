@@ -104,6 +104,7 @@ async function fetchWithTimeout(
     }
 
     try {
+        externalSignal?.throwIfAborted();
         const response = await fetch(url, {
             ...options,
             signal: controller.signal,

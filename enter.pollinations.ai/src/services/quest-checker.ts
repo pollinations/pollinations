@@ -1,10 +1,11 @@
 import { getLogger } from "@logtape/logtape";
 import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { QUEST_GROUPS } from "./quests/index.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP, QUEST_GROUPS } from "./quests/index.ts";
 import {
+    type QuestDb,
     type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestGroup,
@@ -15,6 +16,8 @@ import {
 
 const log = getLogger(["enter", "quest-checker"]);
 const AUTO_CLAIM_QUEST_ID = "first_api_key";
+/** Purchase rewards: the Stripe webhook credits them with the pack. */
+const TOP_UP_QUEST_IDS = ["top_up_since_launch", "top_up_100_since_launch"];
 
 type QuestEvaluationSourceResult = QuestEvaluation & {
     error?: string;
@@ -76,19 +79,7 @@ export async function checkQuestsForUser(
 
     const recorded = await recordRewards(ctx.db, rewardInputs);
     if (proposals.some(({ quest }) => quest.id === AUTO_CLAIM_QUEST_ID)) {
-        const pending = await ctx.db
-            .select({ id: schema.rewards.id })
-            .from(schema.rewards)
-            .where(
-                and(
-                    eq(schema.rewards.userId, user.id),
-                    isNull(schema.rewards.claimedAt),
-                    eq(schema.rewards.questId, AUTO_CLAIM_QUEST_ID),
-                ),
-            );
-        for (const reward of pending) {
-            await claimReward(ctx.db, { rewardId: reward.id, userId: user.id });
-        }
+        await claimPendingRewards(ctx.db, user.id, [AUTO_CLAIM_QUEST_ID]);
     }
 
     const result = {
@@ -103,6 +94,42 @@ export async function checkQuestsForUser(
         result,
     });
     return result;
+}
+
+/**
+ * Record and claim the top-up quest rewards right after a Stripe checkout
+ * credit, so buyers get the bonus without opening Quests.
+ */
+export async function creditTopUpQuestRewards(
+    env: CloudflareBindings,
+    userId: string,
+): Promise<void> {
+    await checkQuestsForUser(env, userId, [ACCOUNT_SETUP_QUEST_GROUP]);
+    await claimPendingRewards(
+        drizzle(env.DB, { schema }),
+        userId,
+        TOP_UP_QUEST_IDS,
+    );
+}
+
+async function claimPendingRewards(
+    db: QuestDb,
+    userId: string,
+    questIds: string[],
+): Promise<void> {
+    const pending = await db
+        .select({ id: schema.rewards.id })
+        .from(schema.rewards)
+        .where(
+            and(
+                eq(schema.rewards.userId, userId),
+                isNull(schema.rewards.claimedAt),
+                inArray(schema.rewards.questId, questIds),
+            ),
+        );
+    for (const reward of pending) {
+        await claimReward(db, { rewardId: reward.id, userId });
+    }
 }
 
 async function loadQuestUser(

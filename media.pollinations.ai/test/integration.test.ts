@@ -954,7 +954,7 @@ describe("media.pollinations.ai", () => {
         expect(pending.objects).toHaveLength(0);
     }, 30_000);
 
-    it("infers the MIME type when FormData omits the file type", async () => {
+    it("preserves the default MIME type when FormData omits the file type", async () => {
         const form = new FormData();
         form.append("file", new File([TINY_PNG], "untyped.png"));
         const response = await SELF.fetch(
@@ -967,7 +967,7 @@ describe("media.pollinations.ai", () => {
         );
         expect(response.status).toBe(200);
         expect(((await response.json()) as UploadResponse).contentType).toBe(
-            "image/png",
+            "application/octet-stream",
         );
     });
 

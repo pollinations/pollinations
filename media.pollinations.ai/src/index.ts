@@ -476,9 +476,8 @@ api.post(
                 requestedId = parsedId.data;
                 fileSize = stagedUpload.size;
                 contentType =
-                    stagedUpload.contentType === "application/octet-stream"
-                        ? detectContentType(stagedUpload.fileName)
-                        : stagedUpload.contentType;
+                    stagedUpload.contentType ||
+                    detectContentType(stagedUpload.fileName);
                 fileName = stagedUpload.fileName;
                 rawTags.push(...splitTags(stagedUpload.rawTags));
             } else if (requestContentType.includes("application/json")) {

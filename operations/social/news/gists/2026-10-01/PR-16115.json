@@ -1,0 +1,34 @@
+{
+  "pr_number": 16115,
+  "title": "fix(sdk): reject already-aborted signals before dispatch",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16115",
+  "merged_at": "2026-10-01T22:11:12Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16114\n\n- Rejects already-aborted caller signals before the SDK invokes fetch, preventing unwanted generation requests.\n- Preserves PollinationsError CANCELLED/status 499 for default and custom abort reasons through the existing error handler.\n- Adds text/chat regressions proving zero fetch calls and checks in-flight cancellation; all 100 SDK tests, typecheck, build and Biome pass.\n- Confirms zero requests against a real loopback HTTP server with the built SDK and a dummy key; normal requests still succeed.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stop means before fetch",
+    "blurb": "An already-cancelled request stops at the SDK door instead of wandering off to generate something. The cancellation still comes back as CANCELLED, status 499.",
+    "summary": "The SDK rejects already-aborted caller signals before invoking fetch, preventing unwanted text and chat generation requests while preserving PollinationsError CANCELLED/status 499 for default and custom abort reasons.",
+    "impact": "Cancelling before dispatch sends zero requests; in-flight cancellation and normal requests continue to work.",
+    "keywords": [
+      "SDK",
+      "abort signals",
+      "cancellation",
+      "fetch",
+      "text",
+      "chat"
+    ],
+    "visual_concept": "Depict a cancelled request as a little envelope halted before a retro API terminal, with a code-plant growing beside it. Polli, wearing a tiny traffic-director hat, gently holds up a stop sign; a friendly CRT robot watches the terminal remain idle.",
+    "image_prompt": "In a cozy pixel art garden workshop, Polli gently stops a request envelope before it reaches a retro terminal, while a small CRT robot watches beside a code-plant; lime green (#ecf874) glows prominently against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny traffic-director hat, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16115.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli gently stops a request envelope before it reaches a retro terminal, while a small CRT robot watches beside a code-plant; lime green (#ecf874) glows prominently against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny traffic-director hat, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-01T22:12:36.152916+00:00"
+}

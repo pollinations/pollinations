@@ -30,6 +30,8 @@ The area shows where the team's effort goes. Pick the area the work is mainly *f
 - Where work came from never decides its area. A pull request or issue for a quest goes to the area of the work itself; the `POLLEN-QUEST` label is never a reason to pick Quests & rewards.
 - A pull request that only promotes, syncs or deploys `main` into `production` (titled "Promote…", "Sync…" or "Deploy…") gets **no area** (`null`). It carries other pull requests' work.
 - Automated pull requests from the Pollinations bot (API docs regeneration, app metrics, README refreshes) get the area of what they refresh.
+- Every issue gets an area, even a vague, off-topic or spam one: an unclear request, a pitch for someone's own project or spam goes to Docs & support, usually as a Question.
+- Adding, rewording or removing a banner or notice goes to Brand & news, even when the notice is about keys, models or an incident.
 
 ### Overview
 

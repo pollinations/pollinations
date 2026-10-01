@@ -1,0 +1,38 @@
+{
+  "pr_number": 15970,
+  "title": "feat: add Span-01 Lite decision model via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15970",
+  "merged_at": "2026-10-01T10:29:45Z",
+  "labels": [
+    "FEATURE",
+    "POLLEN-QUEST",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Fixes #15852\n\n- Adds `respan/span-01-lite`: no aliases, `/alpha/decisions` + `/v1/chat/completions`, `paidOnly: false`, zero cost, `priceMultiplier: 1`. No `contextLength`, since OpenRouter lists none (0).\n- Routes it to `https://openrouter.ai/api/alpha/decisions` with the exact upstream ID through the existing `useSystemOneApi` adapter. Jev and the existing decision/chat surfaces are unchanged.\n- The description says it accepts only `noul` questions with plain-string instructions and that Respan retains prompts (no training).\n- Decision errors (bad message layout, bad JSON, missing config, upstream response without usage) now name the requested model instead of `typesafe/jev-1.13`.\n- The free-tier exemption in the OpenRouter paid-only tests is now \"supports `/alpha/decisions`\" instead of a hardcoded Jev id.\n\n## Verification\n\n- Live requests to `https://openrouter.ai/api/alpha/decisions`:\n  - `noul` question, plain-string instructions: 200, `noul: 0.964`, `usage: {input_tokens: 27, output_tokens: 0, cost: 0}`.\n  - `choice` question and object-shaped `noul` instructions: both 400 `Respan only accepts noul questions whose instructions and criteria are plain strings`, which is what the description states.\n- `systemOneClient.test.ts` (20 tests, run under a plain Node Vitest config) covers routing to the decisions endpoint with the Span ID and model-named errors. `tsc` is clean on the touched files.\n- The Workers-pool tests (`decisions.test.ts`, `model-permissions.test.ts`, `pricing-data.test.ts`, price snapshot) can't run in my local environment, so CI is the check for those.\n\nNot tested through the authenticated gateway (wallet debit / billed event).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A second opinion, in pixels",
+    "blurb": "Span-01 Lite joins the decision-model garden. Give it a `noul` question with plain-string instructions; it knows what to do with those, and politely rejects the other shapes.",
+    "summary": "Adds the free `respan/span-01-lite` model via OpenRouter to `/alpha/decisions` and `/v1/chat/completions`, routing decisions through the existing adapter and naming the requested model in decision errors.",
+    "impact": "Developers gain a zero-cost decision model for `noul` questions with plain-string instructions and criteria; Respan retains prompts but does not use them for training.",
+    "keywords": [
+      "Span-01 Lite",
+      "Respan",
+      "OpenRouter",
+      "decisions",
+      "chat completions",
+      "free model"
+    ],
+    "visual_concept": "Depict Span-01 Lite as a small decision terminal with a Respan-labeled sign, not an invented mascot. Polli feeds it a neatly written question while two paths lead to a decision; a code-plant and lime-green garden keep the technical scene warm.",
+    "image_prompt": "In a cozy pixel garden, Polli hands a plain-string `noul` question to a little Respan decision terminal beside two branching paths and a sprouting code-plant; a prominent lime green (#ecf874) glow lights the warm cream and pastel surroundings. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small within the scene, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15970.jpg",
+    "prompt": "In a cozy pixel garden, Polli hands a plain-string `noul` question to a little Respan decision terminal beside two branching paths and a sprouting code-plant; a prominent lime green (#ecf874) glow lights the warm cream and pastel surroundings. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small within the scene, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-01T10:30:58.641949+00:00"
+}

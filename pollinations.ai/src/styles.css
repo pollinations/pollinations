@@ -337,7 +337,3 @@ main > * {
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
 }
-
-/* Legacy theme for the old Apps, Community and Play pages; see
-   tailwind.config.ts. Delete with the last old page. */
-@config "../tailwind.config.ts";

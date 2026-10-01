@@ -1195,12 +1195,12 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-// Decision models are the exception: Quest Pollen must pay for them, and
-// their input-only pricing bounds what a free-tier account can spend.
-const isDecisionModel = (model: string) =>
-    getRegistryModelDefinition(model).supportedEndpoints?.includes(
-        "/alpha/decisions",
-    );
+// These low-cost decision models are approved for Quest Pollen. A new
+// OpenRouter decision model must be reviewed before it joins this exception.
+const OPENROUTER_QUEST_POLLEN_MODELS = new Set([
+    "typesafe/jev-1.13",
+    "jaredpalmer/kev-4b",
+]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {
@@ -1208,7 +1208,7 @@ test("caller-selectable OpenRouter models require paid balance", () => {
         if (
             definition.provider === "openrouter" &&
             definition.fallbackOnly !== true &&
-            !isDecisionModel(model)
+            !OPENROUTER_QUEST_POLLEN_MODELS.has(model)
         ) {
             expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
         }

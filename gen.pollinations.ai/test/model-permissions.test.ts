@@ -473,17 +473,31 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Decision models are the OpenRouter routes free-tier accounts may select,
-    // so they are visible to both keys and cannot take part in this comparison.
+    // Only the approved low-cost decision models are exempt from paid balance.
+    const questPollenModels = new Set([
+        "typesafe/jev-1.13",
+        "jaredpalmer/kev-4b",
+    ]);
     const openRouterModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);
         return (
             definition.provider === "openrouter" &&
-            !definition.supportedEndpoints?.includes("/alpha/decisions")
+            !questPollenModels.has(model)
         );
     });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of questPollenModels) {
+        expect(
+            freeModelNames.has(model),
+            `${model} visible to Quest Pollen`,
+        ).toBe(true);
+        expect(
+            paidModelNames.has(model),
+            `${model} visible to paid users`,
+        ).toBe(true);
+    }
 
     expect(openRouterModelNames.length).toBeGreaterThan(0);
     expect(

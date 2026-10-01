@@ -29,13 +29,13 @@ describe("POST /api/auth/delete-user", () => {
             .from(userTable);
         if (!user) throw new Error("Expected test user");
         if (user.githubId === null) throw new Error("Expected GitHub identity");
-
         await db.insert(mediaItemTable).values({
             id: "test-media-item",
             ownerUserId: user.id,
             appKeyId: null,
             contentType: "image/png",
             size: 123,
+            source: "upload",
             createdAt: new Date(),
         });
         await db.insert(mediaTagTable).values({

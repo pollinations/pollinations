@@ -26,9 +26,12 @@ describe("checkout confirmation", () => {
             expect(render({ status })).not.toContain("Pollen added");
     });
 
-    it("offers a new checkout after an expired one", () => {
-        expect(render({ status: "expired" }, () => {})).toContain("Buy again");
-        expect(render({ status: "expired" })).not.toContain("<button");
+    it("offers a new checkout after an expired or failed one", () => {
+        for (const status of ["expired", "failed"] as const) {
+            expect(render({ status }, () => {})).toContain("Buy again");
+            expect(render({ status })).not.toContain("<button");
+        }
+        expect(render({ status: "failed" })).toContain("No Pollen was added");
     });
 });
 

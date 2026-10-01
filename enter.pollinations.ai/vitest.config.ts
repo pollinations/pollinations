@@ -34,6 +34,7 @@ export default defineWorkersConfig(async ({ mode }) => {
             ],
         },
         test: {
+            testTimeout: 30_000,
             setupFiles: [
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",

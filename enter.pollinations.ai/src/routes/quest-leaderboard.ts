@@ -1,6 +1,7 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
+import { OPENAPI_TAGS } from "@shared/docs/openapi-tags.ts";
 import { and, eq, isNotNull, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -34,7 +35,7 @@ export type QuestLeaderboardResponse = z.infer<
 export const questLeaderboardRoutes = new Hono<Env>().get(
     "/leaderboard",
     describeRoute({
-        tags: ["✨ Quests"],
+        tags: [OPENAPI_TAGS.quests],
         summary: "Get Quest Leaderboard",
         security: [],
         description:

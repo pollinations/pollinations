@@ -1,14 +1,14 @@
 name: 🍯 Honey Census
-description: For anyone who has bought Pollen. Takes 3 minutes and earns 5 Quest Pollen.
+description: For anyone who has bought more than 2 Pollen in total. Takes 3 minutes and earns 5 Quest Pollen.
 title: "[Honey Census] "
 labels: ["HONEY-CENSUS"]
 body:
   - type: markdown
     attributes:
       value: |
-        A 3-minute survey for anyone who has bought Pollen.
+        A 3-minute survey for anyone who has bought more than 2 Pollen in total.
 
-        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 5 Quest Pollen (once per GitHub account that has bought Pollen). The Pollen is paid when the two big text boxes have at least 100 characters in total.
+        Answers are public, so skip anything private. After you submit, check [your quests](https://enter.pollinations.ai/quests) to claim 5 Quest Pollen (once per GitHub account that has bought more than 2 Pollen). The Pollen is paid when the two big text boxes have at least 100 characters in total.
 
   - type: dropdown
     id: first-buy

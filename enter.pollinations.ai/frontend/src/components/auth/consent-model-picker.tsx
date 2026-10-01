@@ -44,6 +44,7 @@ export function ConsentModelPicker({
     const { parsed, matches, comboboxProps } = useModelQuerySearch({
         models: searchableModels,
         initial: "",
+        placeholder: "Search models, or filter with category:video",
     });
     const indexed = new Map(
         searchableModels.map((model) => [model.name, model]),

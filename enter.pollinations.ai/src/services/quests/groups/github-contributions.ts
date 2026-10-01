@@ -3,9 +3,11 @@ import {
     githubAppCredentialsFromEnv,
 } from "@shared/github/app-auth.ts";
 import { graphql } from "@shared/github/client.ts";
+import { sql } from "drizzle-orm";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestDb,
     type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
@@ -43,16 +45,34 @@ const APP_PUBLISH_BOT = "pollinations-ai";
 const APP_PUBLISH_BRANCH = /^auto\/app-\d+-/;
 
 const CONTRIBUTION_CATEGORY = "contribute" as const;
-// The issue form applies this label; responders can rename the title.
-const SURVEY_LABEL = "BEE-CENSUS";
+// Each survey issue form applies its label; responders can rename the title.
 // Issue forms can only mark fields required, so the minimum length of the
-// written answers is checked here. The wishlist heading is the pre-2026-09-29 form.
-const SURVEY_WRITTEN_ANSWERS = [
-    "What did you last try to build that Pollinations couldn't do?",
-    "What would make you pay this month?",
-    "🪄 Wishlist — features or models you'd like on Pollinations",
-];
-const SURVEY_MIN_WRITTEN_CHARS = 60;
+// written answers (matched by their "### <label>" headings) is checked here.
+type Survey = {
+    label: string;
+    writtenAnswers: string[];
+    minWrittenChars: number;
+};
+const BEE_CENSUS: Survey = {
+    label: "BEE-CENSUS",
+    // The wishlist heading is the pre-2026-09-29 form.
+    writtenAnswers: [
+        "What did you last try to build that Pollinations couldn't do?",
+        "What would make you pay this month?",
+        "🪄 Wishlist — features or models you'd like on Pollinations",
+    ],
+    minWrittenChars: 60,
+};
+const HONEY_CENSUS: Survey = {
+    label: "HONEY-CENSUS",
+    writtenAnswers: [
+        "What would make you use Pollinations more?",
+        "Which other AI tools or services do you pay for, and what for?",
+    ],
+    minWrittenChars: 100,
+};
+// Buying only the smallest pack (2 Pollen) doesn't qualify for the Honey Census.
+const HONEY_CENSUS_MIN_POLLEN_BOUGHT = 2;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "merged_pr",
@@ -91,12 +111,27 @@ const solveGithubIssueQuest: QuestDefinition = {
 const beeCensusQuest: QuestDefinition = {
     id: "bee_census",
     title: "Take the Bee Census",
-    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. Your two written answers need at least ${SURVEY_MIN_WRITTEN_CHARS} characters in total. One response per GitHub account.`,
+    description: `Answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=bee-census.yml) about what you build and what you need. Your two written answers need at least ${BEE_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
     rewardAmount: 3,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=bee-census.yml`,
+    // Paused on 2026-09-30 after 55 responses: the form is removed and the
+    // card is off the board; answers already given still pay. To reopen,
+    // restore .github/ISSUE_TEMPLATE/bee-census.yml and delete this line.
+    state: "completed",
+};
+
+const honeyCensusQuest: QuestDefinition = {
+    id: "honey_census",
+    title: "Take the Honey Census",
+    description: `For anyone who has bought more than ${HONEY_CENSUS_MIN_POLLEN_BOUGHT} Pollen in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
+    category: "community",
+    scope: "perUser",
+    rewardAmount: 5,
+    balanceBucket: "tier",
+    url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
 };
 
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
@@ -412,6 +447,7 @@ export async function listQuestCards(
         questToCard(reportedIssueQuest),
         questToCard(solveGithubIssueQuest),
         questToCard(beeCensusQuest),
+        questToCard(honeyCensusQuest),
         ...issues.map((issue) => questToCard(toIssueQuestDefinition(issue))),
     ];
 }
@@ -475,32 +511,52 @@ async function hasMergedPr(token: string, user: QuestUser): Promise<boolean> {
 async function answeredSurvey(
     token: string,
     user: QuestUser,
+    survey: Survey,
 ): Promise<boolean> {
     if (!user.githubUsername) return false;
     const data = await graphql<SearchData<SurveyIssueNode>>(
         token,
         SURVEY_QUERY,
         {
-            query: `repo:${REPO} is:issue author:${user.githubUsername} label:${SURVEY_LABEL}`,
+            query: `repo:${REPO} is:issue author:${user.githubUsername} label:${survey.label}`,
         },
     );
     return data.search.nodes.some(
         (issue) =>
             issue.author?.databaseId === user.githubId &&
-            writtenAnswerLength(issue.body) >= SURVEY_MIN_WRITTEN_CHARS,
+            writtenAnswerLength(issue.body, survey) >= survey.minWrittenChars,
     );
 }
 
-// Characters written under the survey's free-text headings ("### <label>").
-function writtenAnswerLength(body: string): number {
+// Visible characters written under the survey's free-text headings. Invisible
+// format characters (e.g. U+200E) and repeated whitespace don't count.
+function writtenAnswerLength(body: string, survey: Survey): number {
     let length = 0;
     for (const section of body.split(/^### /m).slice(1)) {
         const [heading, ...answer] = section.split("\n");
-        if (SURVEY_WRITTEN_ANSWERS.includes(heading.trim())) {
-            length += answer.join("\n").trim().length;
+        if (survey.writtenAnswers.includes(heading.trim())) {
+            length += answer
+                .join("\n")
+                .replace(/\p{Cf}/gu, "")
+                .replace(/\s+/g, " ")
+                .trim().length;
         }
     }
     return length;
+}
+
+// Pollen bought in total: Stripe checkouts, paid auto top-ups, and Polar
+// orders from before Stripe.
+async function pollenBought(db: QuestDb, userId: string): Promise<number> {
+    const [row] = await db.all<{ total: number }>(sql`
+        SELECT
+            (SELECT COALESCE(SUM(pollen_credited), 0) FROM stripe_checkout_credits
+             WHERE user_id = ${userId})
+          + (SELECT COALESCE(SUM(amount_usd), 0) FROM stripe_auto_top_up_attempt
+             WHERE user_id = ${userId} AND status = 'paid')
+          + (SELECT COALESCE(SUM(pollen_credited), 0) FROM polar_checkout_credits
+             WHERE user_id = ${userId}) AS total`);
+    return row?.total ?? 0;
 }
 
 export async function evaluateUser(
@@ -511,12 +567,18 @@ export async function evaluateUser(
     if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
-    const [issues, mergedPr, reportedIssues, surveyed] = await Promise.all([
-        loadQuestIssues(token),
-        hasMergedPr(token, user),
-        reportedIssueProposals(token, user),
-        answeredSurvey(token, user),
-    ]);
+    const [issues, mergedPr, reportedIssues, beeCensus, honeyCensus] =
+        await Promise.all([
+            loadQuestIssues(token),
+            hasMergedPr(token, user),
+            reportedIssueProposals(token, user),
+            answeredSurvey(token, user, BEE_CENSUS),
+            pollenBought(ctx.db, user.id).then(
+                (bought) =>
+                    bought > HONEY_CENSUS_MIN_POLLEN_BOUGHT &&
+                    answeredSurvey(token, user, HONEY_CENSUS),
+            ),
+        ]);
 
     // Payable issue bounties: completed by a merged PR authored by the current
     // user's linked GitHub account, with a positive reward.
@@ -538,7 +600,10 @@ export async function evaluateUser(
             ...(mergedPr
                 ? [{ quest: firstMergedPrQuest, userId: user.id }]
                 : []),
-            ...(surveyed ? [{ quest: beeCensusQuest, userId: user.id }] : []),
+            ...(beeCensus ? [{ quest: beeCensusQuest, userId: user.id }] : []),
+            ...(honeyCensus
+                ? [{ quest: honeyCensusQuest, userId: user.id }]
+                : []),
         ],
     };
 }

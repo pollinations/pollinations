@@ -583,8 +583,8 @@ def main():
         log_debug("Found APP-SUBMISSION label, routing to Dev project")
         add_to_project(CONFIG["projects"]["dev"]["id"])
         return
-    if "BEE-CENSUS" in existing_labels:
-        log_debug("Found BEE-CENSUS label, survey response; skipping")
+    if {"BEE-CENSUS", "HONEY-CENSUS"} & set(existing_labels):
+        log_debug("Found a survey label, survey response; skipping")
         return
     real_author, real_author_id = get_real_author()
     is_internal = ISSUE_AUTHOR_ID in CONFIG["ci_bot_ids"] or is_org_member(real_author_id)

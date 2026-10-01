@@ -27,21 +27,21 @@ const impactEmoji: Record<string, string> = {
 const chipBase =
     "inline-flex items-center px-2 py-0.5 text-[11px] font-mono font-medium rounded-sub-card cursor-pointer transition duration-300 ease-in-out";
 const chipColors = [
-    "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
-    "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
-    "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
-    "border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)_/_0.3)]",
+    "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)/0.3)]",
+    "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)/0.3)]",
+    "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)/0.3)]",
+    "border-accent-strong shadow-[1px_1px_0_rgb(var(--accent-strong)/0.3)]",
 ];
 const chipActiveColors = [
-    "bg-primary-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)_/_0.2)]",
-    "bg-secondary-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)_/_0.2)]",
-    "bg-tertiary-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)_/_0.2)]",
-    "bg-accent-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)_/_0.2)]",
+    "bg-primary-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)/0.2)]",
+    "bg-secondary-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)/0.2)]",
+    "bg-tertiary-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)/0.2)]",
+    "bg-accent-strong text-dark border-r-2 border-b-2 border-dark/20 shadow-[2px_2px_0_rgb(var(--dark)/0.2)]",
 ];
 const chipInactive =
-    "bg-white/60 text-muted border-r-2 border-b-2 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none";
+    "bg-white/60 text-muted border-r-2 border-b-2 hover:translate-x-px hover:translate-y-px hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none";
 const chipInactiveDefault =
-    "bg-white/60 text-muted border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)_/_0.08)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none";
+    "bg-white/60 text-muted border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)/0.08)] hover:translate-x-px hover:translate-y-px hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none";
 
 export function BuildDiary() {
     const { timeline, loading, error, getEntryContent, getPRContent } =
@@ -294,7 +294,7 @@ export function BuildDiary() {
                     onClick={() => go("left")}
                     className={`font-headline text-sm select-none flex items-center justify-center w-8 h-8 rounded-sub-card transition duration-200 ${
                         x > 0
-                            ? "text-muted cursor-pointer bg-white/60 border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)_/_0.08)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                            ? "text-muted cursor-pointer bg-white/60 border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)/0.08)] hover:translate-x-px hover:translate-y-px hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                             : "text-dark/15 cursor-default bg-white/30"
                     }`}
                 >
@@ -313,7 +313,7 @@ export function BuildDiary() {
                     onClick={() => go("right")}
                     className={`font-headline text-sm select-none flex items-center justify-center w-8 h-8 rounded-sub-card transition duration-200 ${
                         x < timeline.length - 1
-                            ? "text-muted cursor-pointer bg-white/60 border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)_/_0.08)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                            ? "text-muted cursor-pointer bg-white/60 border-r-2 border-b-2 border-border-subtle shadow-[1px_1px_0_rgb(var(--dark)/0.08)] hover:translate-x-px hover:translate-y-px hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                             : "text-dark/15 cursor-default bg-white/30"
                     }`}
                 >
@@ -357,7 +357,7 @@ export function BuildDiary() {
                 </div>
 
                 {/* Summary */}
-                <div className="text-sm text-muted leading-relaxed overflow-hidden line-clamp-[8]">
+                <div className="text-sm text-muted leading-relaxed overflow-hidden line-clamp-8">
                     <LazyMarkdownGfm
                         components={{
                             p: ({ node, ...props }) => (

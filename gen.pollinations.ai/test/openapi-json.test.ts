@@ -301,6 +301,7 @@ describe("/openapi.json", () => {
             };
         };
         expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
+            "traffic",
             "minutes",
         ]);
 

@@ -33,6 +33,13 @@ export async function checkBalance(
     if (!auth.user?.id) return;
 
     const isPaidOnly = model.definition.paidOnly ?? false;
+    if (isPaidOnly && auth.apiKey?.metadata?.allowPaidOnly === false) {
+        throw new PaymentRequiredError(
+            "KEY_PAID_MODELS_FORBIDDEN",
+            "This API key is not allowed to use paid-only models. Enable them at https://enter.pollinations.ai/keys or use a different key.",
+            true,
+        );
+    }
     const estimatedCost = withByopMarkup(
         getEstimatedPrice(
             await getModelStats(env.KV, log),

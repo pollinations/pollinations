@@ -56,6 +56,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         simplified
             ? {
                   pollenBudget: 0,
+                  pollenBudgetTier: 0,
+                  pollenBudgetPaid: 0,
+                  allowPaidOnly: false,
                   expiryDays: null,
                   allowedModels: [],
                   accountPermissions: [],
@@ -66,6 +69,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setAllowedModels,
         setAccountPermissions,
         setPollenBudget,
+        setPollenBudgetTier,
+        setPollenBudgetPaid,
+        setAllowPaidOnly,
         setExpiryDays,
     } = keyPermissions;
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
@@ -118,6 +124,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 setAllowedModels(null);
                 setAccountPermissions([]);
                 setPollenBudget(null);
+                setPollenBudgetTier(null);
+                setPollenBudgetPaid(null);
+                setAllowPaidOnly(true);
                 setExpiryDays(null);
             }
             return;
@@ -140,6 +149,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setAllowedModels,
         setAccountPermissions,
         setPollenBudget,
+        setPollenBudgetTier,
+        setPollenBudgetPaid,
+        setAllowPaidOnly,
         setExpiryDays,
     ]);
 

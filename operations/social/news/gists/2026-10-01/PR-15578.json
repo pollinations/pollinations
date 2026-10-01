@@ -1,0 +1,37 @@
+{
+  "pr_number": 15578,
+  "title": "feat: add Krita image generation and editing with BYOP",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/15578",
+  "merged_at": "2026-10-01T00:14:04Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Fixes #15571\n\n- Adds a standalone Krita Python plug-in (`apps/krita-pollinations/`) with browser device authorization and restart-persistent private authorization (Windows DPAPI / owner-only POSIX file).\n- Loads the authenticated live `/image/models` catalog, including community models, so new models appear without a plug-in update.\n- Generates onto a new layer sized to the canvas or the current selection; with an image-input model, edits the active paint layer's selection (or whole layer) onto a new layer without changing the source.\n- Keeps network work off the Qt main thread; expired authorization, insufficient Pollen, and network errors each show a message that says what to do.\n- README covers install (zip import or manual copy) for Windows, macOS and Linux, account connection, and a `package.py` script to build the importable release zip.\n\nTesting:\n- `python -m unittest test_pollinations` — 11 tests against a real localhost server: catalog filtering, generate/edit payloads, device-flow polling/backoff/denial/expiry, credential redaction, persistent token storage. No external credentials or Pollen needed.\n- `QT_QPA_PLATFORM=offscreen python -m unittest test_image_codec` — 5 tests for the BGRA-pixel/PNG conversion bridging Krita's `Node.pixelData()` and the API payloads, including the documented BGRA byte order and scale-to-target-size behavior.\n- Not exercised: the Krita `Extension`/`Node`/`Document` calls in `pollinations_krita/extension.py` — this environment has no Krita install or display to run it against. The README documents the live acceptance check (connect, restart, generate, select-and-edit, disconnect) for a maintainer with a real Krita install.\n- No demo GIF/video is included for the same reason (no GUI environment available here).",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli picks up a paintbrush",
+    "blurb": "davealan74 brought image generation and editing into Krita. Polli can help with the painting without painting over the original.",
+    "summary": "davealan74 added a standalone Krita plug-in with browser-based authorization, a live /image/models catalog, and canvas- or selection-sized generation and editing that places results on new layers.",
+    "impact": "Krita artists get access to available image models inside their editor and can edit a selected area while keeping the source paint layer intact.",
+    "keywords": [
+      "Krita",
+      "community app",
+      "image generation",
+      "image editing",
+      "layers",
+      "BYOP"
+    ],
+    "visual_concept": "Depict Krita as a cozy digital painting workspace with a canvas, brush, and visible stack of paint layers. Polli paints beside the canvas while a fresh generated image appears on a new layer above an untouched original; lime-green code-plants and flowers tie the studio to pollinations.",
+    "image_prompt": "In a cozy Krita painting studio, a fresh landscape blooms on a separate canvas layer while the original sketch stays visible beneath it; lime green (#ecf874) flowers and code-plants grow beside a warm pastel-lit monitor. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny painter's beret, and holds a brush beside the canvas in strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15578.jpg",
+    "prompt": "In a cozy Krita painting studio, a fresh landscape blooms on a separate canvas layer while the original sketch stays visible beneath it; lime green (#ecf874) flowers and code-plants grow beside a warm pastel-lit monitor. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny painter's beret, and holds a brush beside the canvas in strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-01T00:15:02.069120+00:00"
+}

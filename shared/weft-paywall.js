@@ -155,7 +155,7 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
             .wallet-checkout summary:hover { color: var(--ink); border-color: var(--muted); }
             .wallet-checkout #root { margin-top: 12px; text-align: left; }
             .wallet-checkout #root .container { width: 100%; max-width: none; margin: 0; border: 1px solid var(--line); border-radius: 12px; box-shadow: none; }
-            .wallet-checkout #root h1 { display: none; }
+            .wallet-checkout #root h1, .wallet-checkout #root .instructions { display: none; }
             .wallet-checkout .button-primary { background: var(--pollen); color: var(--ink); }
             .wallet-checkout .button-primary:hover { background: #ffdc44; }
             .wallet-checkout button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -177,7 +177,7 @@ export function createWeftPaywall(resourceType, findAsset, allowWallet = true) {
         <main>
             <header class="brand">
                 <span class="wordmark">pollinations</span>
-                <span class="payment-label">Pay with Weft</span>
+                <span class="payment-label">Pay with x402</span>
             </header>
             <section class="hero" aria-labelledby="paywall-heading">
                 <img class="art" src="data:image/webp;base64,${illustration}" width="960" height="540" alt="The Pollinations bee and Weft mascot exchange a flower coin and a picture.">

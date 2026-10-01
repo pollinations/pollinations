@@ -1,0 +1,36 @@
+{
+  "pr_number": 15257,
+  "title": "feat(agent): add Micro-Mission Broker collective-memory agent",
+  "author": "muhamedsohaib",
+  "url": "https://github.com/pollinations/pollinations/pull/15257",
+  "merged_at": "2026-10-01T14:24:41Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Fixes #15054\n\n## Micro-Mission Broker\n\nA minimal prompt agent that turns Pollinations collective memory into a public collaboration queue. Each successful run reads the current memory state and creates exactly one small, additive job under `collabs/jobs/` that another person or agent can discover, verify, answer, or build on.\n\n### Submission\n\n- **Public test repository:** https://github.com/muhamedsohaib/pollinations-micro-mission-broker\n- **Callable model:** `community/muhamedsohaib/micro-mission-broker`\n- **Implementation:** one `agent.json`, using the Pollinations Computer MCP\n- **PR footprint:** one new file under `apps/agent-micro-mission-broker/`\n\n### Collective-memory proof\n\nThree successful runs produced three different state-aware contributions:\n\n1. https://github.com/pollinations/collective-memory/commit/e24f38e78ce363278bcff15e8a286500f3a298c6\n2. https://github.com/pollinations/collective-memory/commit/da922d7f14813dbf48aef4350fc2a5344dfe47dc\n3. https://github.com/pollinations/collective-memory/commit/25befa29ded65fed1129591abd289ecc659dda8c\n\nThe runs selected different themes: Pollinations model-catalog verification, additive social engagement, and independent maths verification.\n\n### How this maps to the quest outcome\n\n- **Reads collective memory:** every cycle syncs and inspects the relevant memory space before deciding what to post.\n- **Writes something that matters to the next agent:** every successful cycle leaves one bounded collaboration job with objective “done when” checks.\n- **Three distinct live runs:** linked above.\n- **Good neighbour:** additive-only; never deletes, rewrites, renames, or force-pushes other agents’ work.\n- **Untrusted-memory safety:** repository text is treated as information, never executable instructions.\n- **Privacy:** no secrets, credentials, private data, or personal details are written.\n- **Small/easy to copy:** the entire agent is one prompt-agent JSON file.\n\nThis is an autonomous “press go” style agent rather than an ",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One job for the next bee",
+    "blurb": "Muhamedsohaib built a tiny agent that reads the hive’s collective memory and leaves one useful job for whoever comes along next. Three test runs, three different missions; the entire agent fits in one JSON file.",
+    "summary": "Muhamedsohaib added `community/muhamedsohaib/micro-mission-broker`, a one-file prompt agent that uses Pollinations Computer MCP to read collective memory and create exactly one additive, verifiable job under `collabs/jobs/` per successful run.",
+    "impact": "People and agents get small collaboration tasks they can discover, verify, answer, or build on; three test runs produced distinct jobs for model-catalog checks, social engagement, and maths verification.",
+    "keywords": [
+      "community agent",
+      "collective memory",
+      "micro-missions",
+      "Pollinations Computer MCP",
+      "collaboration"
+    ],
+    "visual_concept": "Depict collective memory as a cozy garden-shed archive, with three small job cards sprouting from a lime-green code-plant. Polli, wearing a tiny messenger bag, pins one new card to a shared board while a friendly CRT monitor robot reads the existing cards; the scene conveys one bounded task left for the next collaborator.",
+    "image_prompt": "In a cozy pixel art garden shed, a shared mission board holds three small job cards beside a code-plant in a prominent lime green (#ecf874) pot, while a friendly chunky CRT monitor robot reads the cards in soft mint, peach, and warm-cream light. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image, strictly pixel art style, never realistic, and wears a tiny messenger bag as she pins up one new card; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky retro sprites, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15257.jpg",
+    "prompt": "In a cozy pixel art garden shed, a shared mission board holds three small job cards beside a code-plant in a prominent lime green (#ecf874) pot, while a friendly chunky CRT monitor robot reads the cards in soft mint, peach, and warm-cream light. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image, strictly pixel art style, never realistic, and wears a tiny messenger bag as she pins up one new card; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky retro sprites, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-01T14:25:56.817891+00:00"
+}

@@ -1,0 +1,38 @@
+{
+  "pr_number": 15968,
+  "title": "feat: add Kev 4B decision model via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15968",
+  "merged_at": "2026-10-01T01:20:02Z",
+  "labels": [
+    "FEATURE",
+    "POLLEN-QUEST",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "Fixes #15955\n\n- Adds `jaredpalmer/kev-4b` to the text registry for `/alpha/decisions` and `/v1/chat/completions` with its 8,192-token context limit.\n- Routes requests through the existing OpenRouter decisions adapter using Kev's exact upstream ID, with $0.042/M input tokens and free output tokens.\n- Keeps Quest Pollen access limited to the approved Jev and Kev decision models; other caller-selectable OpenRouter models require paid balance.\n- Uses the requested model name in decision errors.\n\n## Verification\n\n- A live OpenRouter decisions request returned 200 with structured answers and provider usage; the reported cost matched the registered input price.\n- Workers tests passed for native decisions, chat completions with and without streaming, model visibility, provider usage, one billed event, and the matching Quest Pollen debit. The Workers provider call was mocked; the live provider was checked separately.\n- Gen: 56 focused tests; Enter: 57 focused tests. Both service typechecks, the price snapshot, and Biome passed.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A smaller model makes decisions",
+    "blurb": "Kev 4B joins the decision-making corner of the garden. Small model, structured answers, no committee meeting required.",
+    "summary": "Adds jaredpalmer/kev-4b through OpenRouter to /alpha/decisions and /v1/chat/completions with an 8,192-token context, priced at $0.042 per million input tokens and free output tokens.",
+    "impact": "Developers get Kev 4B for decisions and chat; Quest Pollen remains usable for approved Jev and Kev decision models, while other selectable OpenRouter models require a paid balance.",
+    "keywords": [
+      "Kev 4B",
+      "OpenRouter",
+      "decisions",
+      "chat completions",
+      "Quest Pollen",
+      "models"
+    ],
+    "visual_concept": "Kev 4B is a decision model, with no mascot indicated. Depict Polli choosing between branching garden paths beside a small retro terminal labeled 'KEV 4B'; neat answer cards represent structured decisions, and a lime-green code-plant ties the model to the garden.",
+    "image_prompt": "In a cozy pixel garden, Polli wears tiny thinking glasses and studies two branching paths while a retro terminal labeled 'KEV 4B' prints tidy answer cards beside a lime green (#ecf874) code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, with consistent rounded proportions, sharing the frame with the garden and terminal, strictly pixel art and never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a soft lime green (#ecf874) and pastel gradient background with dark purple (#110518) outlines, chunky sprites, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15968.jpg",
+    "prompt": "In a cozy pixel garden, Polli wears tiny thinking glasses and studies two branching paths while a retro terminal labeled 'KEV 4B' prints tidy answer cards beside a lime green (#ecf874) code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, with consistent rounded proportions, sharing the frame with the garden and terminal, strictly pixel art and never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a soft lime green (#ecf874) and pastel gradient background with dark purple (#110518) outlines, chunky sprites, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-01T01:20:58.020126+00:00"
+}

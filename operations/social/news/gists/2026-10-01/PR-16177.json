@@ -1,0 +1,35 @@
+{
+  "pr_number": 16177,
+  "title": "feat: guide Polli users to two working tasks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16177",
+  "merged_at": "2026-10-01T20:34:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Guides new users through Connect OpenCode and Generate an image, each ending in a verified first result.\n- Adds a weekly Tinybird funnel for first success within 24 hours and a successful request on days 1–7; excludes immature return cohorts.\n- Serves `llms.txt` on the website, API, and account domains, pointing agents to existing docs, the CLI skill, OpenAPI, and MCP.\n- Serves the existing CLI README, skill, and task recipes as first-party plain text, with discovery links in the HTML head.\n\nThe analytics pipe depends on event fields in #16175. Deploy Tinybird after that PR. Starts are `harness on` completions or direct CLI image attempts, not anonymous site clicks.\n\nTests: website and Enter frontend builds; Gen typecheck and focused route test; Tinybird staging deployment dry run passed with #16175's datasource schema. No deployment was created.\n\nAddresses #16005.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two paths to first pixels",
+    "blurb": "Polli offers two small missions: connect OpenCode or generate an image. Both end with a verified result, rather than a reassuring button that says everything probably worked.",
+    "summary": "Polli guides newcomers through Connect OpenCode and Generate an image to a verified first result, publishes llms.txt across the website, API, and account domains, and adds a weekly Tinybird funnel for first success within 24 hours and successful requests on days 1–7.",
+    "impact": "New users get two concrete routes to a working result, agents get first-party links to the docs, CLI skill, OpenAPI, and MCP, and the project can measure task success without counting anonymous site clicks as starts.",
+    "keywords": [
+      "Polli",
+      "onboarding",
+      "OpenCode",
+      "image generation",
+      "llms.txt",
+      "Tinybird",
+      "CLI"
+    ],
+    "visual_concept": "Polli the bee is the guide for two short task paths: one leads to an OpenCode terminal with a verified connection, the other to a framed generated image. A small llms.txt sign points toward documentation, while a modest garden-path chart suggests the success funnel. Keep the tasks and their finished results central.",
+    "image_prompt": "In a cozy pixel garden, two short paths lead from a retro terminal labeled 'OpenCode' to a checkmark and from an image prompt to a finished framed picture; a little llms.txt sign points toward a stack of guides, with lime green (#ecf874) glowing warmly through the plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny guide's scarf and points a newcomer toward both results, small-to-medium sized and strictly pixel art, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16177.jpg",
+    "prompt": "In a cozy pixel garden, two short paths lead from a retro terminal labeled 'OpenCode' to a checkmark and from an image prompt to a finished framed picture; a little llms.txt sign points toward a stack of guides, with lime green (#ecf874) glowing warmly through the plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny guide's scarf and points a newcomer toward both results, small-to-medium sized and strictly pixel art, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-01T20:36:41.777956+00:00"
+}

@@ -10,10 +10,18 @@ import {
 } from "./constants.ts";
 import { getOrCreateStripeCustomerId } from "./customer.ts";
 
+/**
+ * "card": straight to adding a card, which Stripe makes the default, then
+ * back to us. Billing details have no such flow in our API version, so
+ * they are edited from the portal's home page.
+ */
+export type BillingPortalFlow = "card";
+
 export async function createBillingPortalSession(
     env: CloudflareBindings,
     userId: string,
     returnTo?: BillingReturn,
+    flow?: BillingPortalFlow,
 ): Promise<Stripe.BillingPortal.Session> {
     const stripe = createStripeClient(env);
     const customer = await getOrCreateStripeCustomerId(env, userId);
@@ -24,10 +32,20 @@ export async function createBillingPortalSession(
         env.STRIPE_AUTO_TOP_UP_PMC_ID || undefined,
     );
 
+    const back = getBillingReturnUrl(env, returnTo);
     return stripe.billingPortal.sessions.create({
         customer,
         configuration,
-        return_url: getBillingReturnUrl(env, returnTo),
+        return_url: back,
+        ...(flow === "card" && {
+            flow_data: {
+                type: "payment_method_update",
+                after_completion: {
+                    type: "redirect",
+                    redirect: { return_url: back },
+                },
+            },
+        }),
     });
 }
 

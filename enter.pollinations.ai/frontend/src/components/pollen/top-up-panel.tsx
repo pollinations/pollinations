@@ -19,10 +19,13 @@ import {
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
 import type { FC, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
-import { openBillingPortal } from "../../lib/billing-portal.ts";
+import {
+    type BillingPortalFlow,
+    openBillingPortal,
+} from "../../lib/billing-portal.ts";
 import {
     autoTopUpStatus,
     hasDefaultPaymentMethod,
@@ -48,8 +51,6 @@ type TopUpPanelProps = {
      * Billing never shows an older state than Top-up.
      */
     onWalletChange?: () => void;
-    /** Back from Stripe's setup page: wait for the webhook to enable it. */
-    setupReturn?: boolean;
     /** The pack a link or Stripe's return asked for, selected first. */
     initialPack?: PollenPackKey;
 };
@@ -130,22 +131,15 @@ const StableSlot: FC<{
 const SAVE_FAILED = "Couldn’t save";
 const PORTAL_FAILED = "Stripe error";
 
-const SETUP_POLL_MS = 1500;
-const SETUP_POLL_TRIES = 10;
-
 export const TopUpPanel: FC<TopUpPanelProps> = ({
     initialBilling,
     returnToTopUp,
     onWalletChange,
-    setupReturn = false,
     initialPack,
 }) => {
     const [billing, setBilling] = useState(initialBilling);
     const [chosenPack, setChosenPack] = useState<PollenPack | null>(
         () => (initialPack && getPollenPackByKey(initialPack)) || null,
-    );
-    const [confirmingSetup, setConfirmingSetup] = useState(
-        setupReturn && !initialBilling?.autoTopUp.enabled,
     );
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -166,40 +160,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (publishableKey) preloadStripe(publishableKey);
     }, [publishableKey]);
 
-    // Stripe's setup webhook enables auto-refill shortly after the return.
-    // Read by the setup poll without restarting it on every render.
-    const walletChanged = useRef(onWalletChange);
-    walletChanged.current = onWalletChange;
-    useEffect(() => {
-        if (!confirmingSetup) return;
-        let canceled = false;
-        let tries = 0;
-        const timer = setInterval(async () => {
-            tries += 1;
-            const next = await apiClient.stripe.billing
-                .$get()
-                .then((r) => (r.ok ? r.json() : null))
-                .catch(() => null);
-            if (canceled) return;
-            if (next) setBilling(next);
-            if (next?.autoTopUp.enabled) {
-                clearInterval(timer);
-                setConfirmingSetup(false);
-                walletChanged.current?.();
-            } else if (tries >= SETUP_POLL_TRIES) {
-                // The card may be saved, but auto top-up didn't turn on:
-                // say so rather than going quiet.
-                clearInterval(timer);
-                setConfirmingSetup(false);
-                setSlotError(SAVE_FAILED);
-            }
-        }, SETUP_POLL_MS);
-        return () => {
-            canceled = true;
-            clearInterval(timer);
-        };
-    }, [confirmingSetup]);
-
     const checkoutParams = new URLSearchParams();
     if (returnToTopUp) {
         checkoutParams.set("return", "top-up");
@@ -215,10 +175,13 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         POLLEN_PACKS.find((pack) => pack.packKey === "p20") ??
         null;
     const hasDefault = billing ? hasDefaultPaymentMethod(billing) : false;
-    // Missing a card or billing details: Stripe's setup page asks for both,
-    // then turns auto top-up on. Otherwise the switch saves at once.
-    const needsSetup =
-        Boolean(billing) && !(hasDefault && billing?.billingDetailsComplete);
+    // Auto top-up charges the default card and taxes by the billing
+    // address. Missing either, the switch first opens Stripe for it (adding
+    // a card, or the portal where the details are); back here the buyer
+    // turns it on themselves.
+    const needsCard = Boolean(billing) && !hasDefault;
+    const needsDetails =
+        Boolean(billing) && hasDefault && !billing?.billingDetailsComplete;
     const selectedRefillPack =
         selectedPack && isAutoTopUpPack(selectedPack) ? selectedPack : null;
     const packTooSmall = Boolean(
@@ -227,22 +190,14 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     // The one status the row shows under "Auto top-up".
     // Every problem that stops auto top-up, with its fix; Billing only
     // badges the card or address concerned.
-    const refillStatus = slotError
-        ? "failed"
-        : confirmingSetup
-          ? "saving"
-          : status?.text
-            ? "issue"
-            : "pack";
+    const refillStatus = slotError ? "failed" : status?.text ? "issue" : "pack";
 
-    function openPortal(): void {
+    function openPortal(flow?: BillingPortalFlow): void {
         setSlotError(null);
-        void openBillingPortal(returnToTopUp).then((message) => {
+        void openBillingPortal(returnToTopUp, flow).then((message) => {
             if (message) setSlotError(PORTAL_FAILED);
         });
     }
-    const setupHref = (pack: PollenPack) =>
-        `/api/stripe/auto-top-up/setup/${pack.packKey}${checkoutParams.toString() ? `?${checkoutParams}` : ""}`;
 
     async function saveAutoTopUp(
         enabled: boolean,
@@ -283,8 +238,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (!billing) return;
         if (enabled) {
             if (!selectedRefillPack) return;
-            if (needsSetup)
-                window.location.href = setupHref(selectedRefillPack);
+            if (needsCard) openPortal("card");
+            else if (needsDetails) openPortal();
             else void saveAutoTopUp(true, selectedRefillPack.amountUsd);
         } else {
             void saveAutoTopUp(false, billing.autoTopUp.packAmountUsd);
@@ -310,7 +265,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
             disabled={
                 !billing ||
                 saving ||
-                confirmingSetup ||
                 (!billing.autoTopUp.enabled && !selectedRefillPack)
             }
             className={packTooSmall ? "pointer-events-none" : undefined}
@@ -401,7 +355,10 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                                     <InlineLink
                                                         as="button"
                                                         type="button"
-                                                        onClick={openPortal}
+                                                        // Portal home: pick another saved card or add one.
+                                                        onClick={() =>
+                                                            openPortal()
+                                                        }
                                                     >
                                                         {status?.action
                                                             ?.label ??
@@ -409,11 +366,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                                     </InlineLink>
                                                 )}
                                             </>
-                                        ),
-                                        saving: (
-                                            <span className="text-theme-text-muted">
-                                                Saving…
-                                            </span>
                                         ),
                                         failed: (
                                             <span

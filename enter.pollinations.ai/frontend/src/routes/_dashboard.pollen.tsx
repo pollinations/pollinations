@@ -25,10 +25,7 @@ import {
     previewBilling,
 } from "../components/pollen/billing-preview.tsx";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
-import {
-    autoTopUpSetupSearch,
-    checkoutReturnSearch,
-} from "../lib/top-up-search.ts";
+import { checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
@@ -37,7 +34,6 @@ export const Route = createFileRoute("/_dashboard/pollen")({
     ): {
         pack?: PollenPackKey;
         session_id?: string;
-        auto_top_up_setup?: true;
         preview?: string;
     } => ({
         pack:
@@ -45,7 +41,6 @@ export const Route = createFileRoute("/_dashboard/pollen")({
                 ? search.pack
                 : undefined,
         ...checkoutReturnSearch(search),
-        ...autoTopUpSetupSearch(search),
         ...(import.meta.env.DEV ? billingPreviewSearch(search) : {}),
     }),
     beforeLoad: ({ context, location }) => {
@@ -73,12 +68,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 
 function PollenPage() {
     const retry = useDashboardRetry("balance");
-    const {
-        pack,
-        session_id: checkoutSessionId,
-        auto_top_up_setup: setupReturn,
-        preview,
-    } = Route.useSearch();
+    const { pack, session_id: checkoutSessionId, preview } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
     const router = useRouter();
     // Balance and billing both come from loaders; rerun them once credited.
@@ -133,7 +123,6 @@ function PollenPage() {
                         {(billingState) => (
                             <BuyPollenPanel
                                 initialBilling={billingState}
-                                setupReturn={setupReturn}
                                 onWalletChange={reloadWallet}
                                 initialPack={pack}
                             />

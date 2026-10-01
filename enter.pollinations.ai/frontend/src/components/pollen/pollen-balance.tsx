@@ -264,8 +264,6 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBilling: BillingOverview | null;
-    /** Back from Stripe's setup page for automatic top-up. */
-    setupReturn?: boolean;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
     /** Reload the wallet and billing after Top-up changed them. */
@@ -275,7 +273,6 @@ type BuyPollenPanelProps = {
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBilling,
-    setupReturn,
     returnToTopUp,
     onWalletChange,
     initialPack,
@@ -283,7 +280,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     <>
         <TopUpPanel
             initialBilling={initialBilling}
-            setupReturn={setupReturn}
             returnToTopUp={returnToTopUp}
             onWalletChange={onWalletChange}
             initialPack={initialPack}

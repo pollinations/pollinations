@@ -68,8 +68,7 @@ function TopUpPage() {
         if (
             search.stripe_success ||
             search.stripe_canceled ||
-            search.stripe_billing_return ||
-            search.auto_top_up_setup
+            search.stripe_billing_return
         )
             return;
         const from = preferredReturnUrl(search.redirect);
@@ -85,7 +84,6 @@ function TopUpPage() {
         search.stripe_success,
         search.stripe_canceled,
         search.stripe_billing_return,
-        search.auto_top_up_setup,
     ]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: loadAttempt retries the requests when the user selects Try again.
@@ -209,7 +207,6 @@ function TopUpPage() {
             {billing === undefined ? null : (
                 <BuyPollenPanel
                     initialBilling={billing}
-                    setupReturn={search.auto_top_up_setup}
                     returnToTopUp={{ redirect: search.redirect }}
                     onWalletChange={refreshWallet}
                     initialPack={search.pack}

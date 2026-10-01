@@ -1,18 +1,26 @@
 import { apiClient } from "../api.ts";
 
+/** "card": straight to adding a card (made the default), then back here. */
+export type BillingPortalFlow = "card";
+
 /**
  * Open Stripe's Billing Portal, where the buyer edits cards, name, company,
- * VAT ID and address. Navigates away on success; returns the error message
- * otherwise.
+ * VAT ID and address; with `flow`, straight to adding a card. Navigates away
+ * on success; returns the error message otherwise.
  */
-export async function openBillingPortal(returnToTopUp?: {
-    redirect?: string;
-}): Promise<string> {
+export async function openBillingPortal(
+    returnToTopUp?: { redirect?: string },
+    flow?: BillingPortalFlow,
+): Promise<string> {
     try {
         const response = await apiClient.stripe.billing.portal.$post({
-            json: returnToTopUp
-                ? { return: "top-up", redirect: returnToTopUp.redirect }
-                : {},
+            json: {
+                ...(returnToTopUp && {
+                    return: "top-up",
+                    redirect: returnToTopUp.redirect,
+                }),
+                ...(flow && { flow }),
+            },
         });
         const payload = (await response.json().catch(() => ({}))) as {
             url?: unknown;

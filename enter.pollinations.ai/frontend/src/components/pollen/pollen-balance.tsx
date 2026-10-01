@@ -1,10 +1,14 @@
 import {
     CardIcon,
+    CheckIcon,
+    ClipboardIcon,
     CopyButton,
-    GlobeIcon,
+    cn,
     InfoTip,
     InlineLink,
     MailIcon,
+    ReceiptIcon,
+    RefreshIcon,
     SproutIcon,
     Surface,
     WalletIcon,
@@ -14,11 +18,13 @@ import {
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
-import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
+import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import { PollenPackPurchase } from "./pollen-pack-purchase.tsx";
+import { TopUpPanel } from "./top-up-panel.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -30,8 +36,8 @@ type PollenBalanceProps = {
 };
 
 export const BALANCE_DISPLAY_EPSILON = 0.0001;
-const TERMS_URL = "https://pollinations.ai/terms";
-const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
+export const TERMS_URL = "https://pollinations.ai/terms";
+export const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
@@ -179,12 +185,11 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     </Surface>
 
                     {/* Footer: learn more */}
-                    <div className="mt-2 space-y-2 text-[13px] leading-snug text-theme-text-muted">
+                    <Footnotes className="mt-2">
                         <p className="flex items-start gap-1.5">
                             <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Your wallet holds Pollen you've purchased plus
-                                Pollen you've earned.{" "}
+                                What you've purchased plus what you've earned.{" "}
                                 <InlineLink
                                     as={Link}
                                     to="/news"
@@ -195,7 +200,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                                 </InlineLink>
                             </span>
                         </p>
-                    </div>
+                    </Footnotes>
                 </>
             )}
         </div>
@@ -258,66 +263,119 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 };
 
 type BuyPollenPanelProps = {
-    initialBillingState: BillingState | null;
-    selectedPackAmount: number;
-    onSelectedPackAmountChange: (amount: number) => void;
+    initialBilling: BillingOverview | null;
     /** Standalone /top-up: Stripe returns there, carrying the app link. */
     returnToTopUp?: { redirect?: string };
+    /** Reload the wallet and billing after Top-up changed them. */
+    onWalletChange?: () => void;
+    initialPack?: PollenPackKey;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
-    initialBillingState,
-    selectedPackAmount,
-    onSelectedPackAmountChange,
+    initialBilling,
     returnToTopUp,
-}) => {
-    return (
-        <>
-            <PollenPackPurchase
-                selectedPackAmount={selectedPackAmount}
-                onSelectedPackAmountChange={onSelectedPackAmountChange}
-                returnToTopUp={returnToTopUp}
-            />
-            <Surface>
-                <AutoTopUpPanel
-                    initialBillingState={initialBillingState}
-                    returnToTopUp={returnToTopUp}
+    onWalletChange,
+    initialPack,
+}) => (
+    <>
+        <TopUpPanel
+            initialBilling={initialBilling}
+            returnToTopUp={returnToTopUp}
+            onWalletChange={onWalletChange}
+            initialPack={initialPack}
+        />
+        <Footnotes>
+            {/* When auto top-up charges, stated before anyone turns it on.
+                "Paid": Quest Pollen doesn't trigger it. */}
+            <p className="flex items-start gap-1.5">
+                <RefreshIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
                 />
-            </Surface>
-            <div className="mt-4 space-y-2 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon
-                        aria-hidden="true"
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                    />
-                    <span>
-                        Taxes added at checkout.{" "}
-                        <InlineLink href={TERMS_URL}>Terms</InlineLink>
-                        {" · "}
-                        <InlineLink href={REFUND_POLICY_URL}>
-                            Refund Policy
-                        </InlineLink>
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon
-                        aria-hidden="true"
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                    />
-                    <span>
-                        Payment help:{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="polli-link"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>
-                    </span>
-                </p>
-            </div>
-        </>
-    );
-};
+                <span>
+                    Auto top-up buys its pack when your paid balance reaches{" "}
+                    {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
+                </span>
+            </p>
+            <p className="flex items-start gap-1.5">
+                <ReceiptIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                />
+                <span>
+                    Prices include the {SERVICE_FEE_NAME.toLowerCase()}, plus
+                    tax at payment
+                </span>
+            </p>
+            <PaymentTrustBadge className="mt-0 pt-0" />
+        </Footnotes>
+    </>
+);
+
+/**
+ * The dashboard's footnote block: 8px between lines, 4px inset. The section's
+ * own gap sets the space above it, as on every other page.
+ */
+export const Footnotes: FC<{ className?: string; children: ReactNode }> = ({
+    className,
+    children,
+}) => (
+    <div
+        className={cn(
+            "space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted",
+            className,
+        )}
+    >
+        {children}
+    </div>
+);
+
+/**
+ * Who to ask and the terms of buying, in Billing on the Pollen page. The
+ * standalone top-up page says it in its footer instead.
+ */
+export const PaymentHelp: FC = () => (
+    <p className="flex items-start gap-1.5">
+        <MailIcon aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+            Payment help:{" "}
+            {/* Styled like Terms and Refund; a copy icon where theirs has
+                the arrow. The icon says copy and the text says email
+                copied, so no tooltip. */}
+            <CopyButton
+                value="billing@pollinations.ai"
+                className="polli-link"
+                data-tone="accent"
+                tooltip={null}
+            >
+                {(copied) => (
+                    <>
+                        {copied ? "email copied" : "billing@pollinations.ai"}
+                        {copied ? (
+                            <CheckIcon
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        ) : (
+                            <ClipboardIcon
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        )}
+                    </>
+                )}
+            </CopyButton>
+            <LinkSeparator />
+            <InlineLink href={TERMS_URL}>Terms</InlineLink>
+            <LinkSeparator />
+            <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+        </span>
+    </p>
+);
+
+/** A dot between links, with room around it. */
+const LinkSeparator: FC = () => (
+    <span aria-hidden="true" className="mx-2 text-theme-text-muted">
+        ·
+    </span>
+);

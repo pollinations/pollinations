@@ -40,7 +40,7 @@ jobs:
               console.log('Skipping: app submission');
               return;
             }
-            if (issue.labels?.some(l => l.name === 'BEE-CENSUS')) {
+            if (issue.labels?.some(l => ['BEE-CENSUS', 'HONEY-CENSUS'].includes(l.name))) {
               console.log('Skipping: survey response');
               return;
             }

@@ -1,0 +1,263 @@
+import {
+    Chip,
+    ClockIcon,
+    cn,
+    GitHubIcon,
+    InlineLink,
+    LinkCard,
+    StarIcon,
+    TrendUpIcon,
+    WalletIcon,
+} from "@pollinations/ui";
+import { type ReactNode, useState } from "react";
+import { useArt } from "../../art";
+import {
+    appIdentity,
+    type DirectoryApp,
+    formatStars,
+    githubProfileUrl,
+    isBuzz,
+    isFresh,
+    isPollen,
+    platformsOf,
+} from "../../data/publicStats";
+
+/**
+ * The app tile and compact directory row share their signals, cover fallback,
+ * and link behavior here so the two views cannot drift apart.
+ */
+
+function AppSignals({ app }: { app: DirectoryApp }) {
+    if (!isBuzz(app) && !isPollen(app) && !isFresh(app)) return null;
+
+    return (
+        <span className="flex shrink-0 items-center gap-1.5 text-theme-text-muted">
+            {isFresh(app) ? (
+                <span role="img" title="New" aria-label="New">
+                    <ClockIcon className="size-4" />
+                </span>
+            ) : null}
+            {isBuzz(app) ? (
+                <span role="img" title="Popular" aria-label="Popular">
+                    <TrendUpIcon className="size-4" />
+                </span>
+            ) : null}
+            {isPollen(app) ? (
+                <span role="img" title="Pollen Pay" aria-label="Pollen Pay">
+                    <WalletIcon className="size-4" />
+                </span>
+            ) : null}
+        </span>
+    );
+}
+
+const appHref = (app: DirectoryApp) => app.web_url || app.github_repository_url;
+
+/**
+ * Real product screenshots come from the public app directory. A missing or
+ * broken one shows the art set's placeholder, which never pretends to be the
+ * app itself.
+ */
+function AppCoverImage({
+    src,
+    className,
+}: {
+    src: string | null;
+    className: string;
+}) {
+    const placeholder = useArt("apps", "placeholder");
+    const [failedSource, setFailedSource] = useState<string | null>(null);
+    const screenshot = src && src !== failedSource ? src : null;
+
+    return (
+        <img
+            src={screenshot ?? placeholder.src}
+            srcSet={screenshot ? undefined : placeholder.srcSet}
+            sizes={screenshot ? undefined : "(max-width: 640px) 100vw, 600px"}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            width={1200}
+            height={600}
+            onError={screenshot ? () => setFailedSource(screenshot) : undefined}
+            className={`block w-full bg-theme-bg-subtle object-cover ${screenshot?.startsWith("https://media.pollinations.ai/") ? "object-top" : "object-center"} ${className}`}
+        />
+    );
+}
+
+/** Image on top, name and description below; fills its rail slot. */
+export function AppTile({
+    app,
+    tabIndex,
+}: {
+    app: DirectoryApp;
+    tabIndex?: number;
+}) {
+    return (
+        <LinkCard
+            href={appHref(app)}
+            tabIndex={tabIndex}
+            showIcon={false}
+            className="h-full w-full"
+            surfaceClassName="overflow-hidden rounded-2xl p-0"
+        >
+            <AppCoverImage src={app.screenshot_url} className="h-30" />
+            <div className="flex flex-col gap-1.5 px-5 py-4">
+                <span className="font-body text-lg font-semibold text-theme-text-strong">
+                    {app.name}
+                </span>
+                <p className="line-clamp-2 text-sm leading-relaxed text-theme-text-base">
+                    {app.description}
+                </p>
+            </div>
+        </LinkCard>
+    );
+}
+
+export function SpotlightTile({
+    app,
+    action,
+    direction,
+}: {
+    app: DirectoryApp;
+    action?: ReactNode;
+    direction: "forward" | "back";
+}) {
+    const href = appHref(app);
+    const slideClassName = cn(
+        "apps-spotlight-slide",
+        direction === "back" && "apps-spotlight-slide-back",
+    );
+    const image = (
+        <AppCoverImage
+            src={app.screenshot_url}
+            className="aspect-[16/7] sm:aspect-[18/7]"
+        />
+    );
+
+    return (
+        <article>
+            {href ? (
+                <a
+                    key={`${appIdentity(app)}-image`}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open ${app.name}`}
+                    className={cn(
+                        "block focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-theme-border-strong",
+                        slideClassName,
+                    )}
+                >
+                    {image}
+                </a>
+            ) : (
+                image
+            )}
+            <div className="flex h-[8.5rem] items-start justify-between gap-3 px-5 py-4">
+                <div
+                    key={`${appIdentity(app)}-copy`}
+                    className={cn(
+                        "flex min-w-0 flex-1 flex-col gap-1.5",
+                        slideClassName,
+                    )}
+                >
+                    {href ? (
+                        <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="truncate rounded-sm font-body text-lg font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                        >
+                            {app.name}
+                        </a>
+                    ) : (
+                        <span className="truncate font-body text-lg font-semibold text-theme-text-strong">
+                            {app.name}
+                        </span>
+                    )}
+                    <p className="line-clamp-3 text-sm leading-relaxed text-theme-text-base">
+                        {app.description}
+                    </p>
+                </div>
+                <div className="shrink-0">{action}</div>
+            </div>
+        </article>
+    );
+}
+
+/** Compact directory row: the screenshot sets the mood without dominating. */
+export function AppRow({ app }: { app: DirectoryApp }) {
+    const stars = formatStars(app.github_repository_stars);
+    const profile = githubProfileUrl(app.github_username);
+    const platform = platformsOf(app)[0];
+    const href = appHref(app);
+
+    return (
+        <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-text-strong/10 border-b py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:py-4">
+            {href && (
+                <a
+                    href={href}
+                    aria-label={`Open ${app.name}`}
+                    className="overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                >
+                    <AppCoverImage
+                        src={app.screenshot_url}
+                        className="aspect-[16/10]"
+                    />
+                </a>
+            )}
+            <div className="flex min-h-full min-w-0 flex-col gap-1.5">
+                <div className="flex items-start justify-between gap-3">
+                    {href ? (
+                        <a
+                            href={href}
+                            className="rounded-sm font-body text-base font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong sm:text-lg"
+                        >
+                            {app.name}
+                        </a>
+                    ) : (
+                        <h3 className="font-body text-base font-semibold text-theme-text-strong sm:text-lg">
+                            {app.name}
+                        </h3>
+                    )}
+                    <AppSignals app={app} />
+                </div>
+                <p className="line-clamp-2 text-sm text-theme-text-base">
+                    {app.description}
+                </p>
+                <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-xs text-theme-text-muted">
+                    {profile && (
+                        <a
+                            href={profile}
+                            className="inline-flex items-center gap-1 hover:text-theme-text-strong"
+                        >
+                            <GitHubIcon className="size-3.5 shrink-0" />
+                            {app.github_username}
+                        </a>
+                    )}
+                    {stars && (
+                        <span className="inline-flex items-center gap-1">
+                            <StarIcon className="size-3.5 fill-current" />
+                            {stars}
+                        </span>
+                    )}
+                    {platform && (
+                        <Chip
+                            size="sm"
+                            className="h-auto px-1.5 py-0.5 font-pixel text-micro leading-none uppercase"
+                        >
+                            {platform}
+                        </Chip>
+                    )}
+                    {href && (
+                        <InlineLink href={href} className="ml-auto text-xs">
+                            Open
+                        </InlineLink>
+                    )}
+                </div>
+            </div>
+        </article>
+    );
+}

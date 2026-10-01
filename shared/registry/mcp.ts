@@ -191,7 +191,7 @@ export const MCP_SERVERS = [
     },
     {
         id: "composio",
-        name: "Connected Apps",
+        name: "Connectors",
         description:
             "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
         binding: "COMPOSIO_MCP",

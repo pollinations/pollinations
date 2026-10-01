@@ -28,6 +28,16 @@ Collection steps:
   Read "Spend by feature"; book one row per feature (Universal-2, Universal-3
   Pro, Universal-3.5 Pro, the Prompting add-ons on the same models).
 
+## Verified — 2026-10-01
+
+- The signed-in `Cost` page has a custom date picker and `Export breakdown`.
+  Select both endpoints of the requested calendar month. Sum the CSV's
+  `value` column and reconcile to the dashboard total. The relative date label
+  can understate the selected span by a day; verify coverage from the export.
+- `Billing` shows current prepaid balance and available invoices. A just-ended
+  month's invoice may be absent on the first day of the next month; record
+  this in the collection manifest and revisit.
+
 Known traps:
 
 - Dashboard totals and invoice periods may not use the same boundaries.

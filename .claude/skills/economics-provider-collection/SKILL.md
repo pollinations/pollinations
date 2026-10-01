@@ -8,6 +8,53 @@ description: Collect and reconcile Pollinations Economics vendor balances, month
 Use this skill when the user asks to refresh vendor data, inspect provider
 accounts, prepare a monthly close, or reconcile provider cost with Pollen.
 
+## Monthly Economics close entrypoint
+
+When asked to close Economics, use the requested completed UTC calendar month,
+or the last completed UTC month if none is named. Run the whole app close. Do
+not interpret the request as a single-vendor refresh or stop after a staging
+endpoint count.
+
+1. Open the Economics dashboard's Close, Runway, Unit Economics, and Ledgers
+   views and record what is missing or stale. Read the current registry and
+   the app's source contracts in `operations/economics/web/src/App.tsx` and
+   `worker/economics.ts`. Create a private task-specific `<collection-dir>`
+   outside Git with `evidence/` and a resumable upload manifest.
+2. Read the production and staging Economics endpoints with their respective
+   existing read credentials, in memory. Record month coverage for Bank, Vendor,
+   Pollen, Revenue Share, Stripe, user balances, and private forecast rules.
+   Production Pollen and Revenue Share can be live materializations while
+   staging Pollen is a snapshot; inspect the configured upstream pipe before
+   treating a staging gap as a production gap. Local dashboard development
+   still uses only `web.dev.json` and the staging workspace.
+3. Collect and reconcile the closed month's Wise settlement statements,
+   account-scoped Stripe balance activity, every active `monthlyReview` vendor
+   and account, Pollen usage, Revenue Share, D1 balances, and the accounting
+   Drive archive. Sweep the signed-in business mailbox for invoice and receipt
+   attachments received during the close window; also inspect vendor invoice
+   and receipt emails without attachments, since they may link to the original
+   document in a billing portal. Triage PDFs already in Downloads by supplier,
+   account, issue date, and service period. Include relevant late-issued
+   documents and older contracts or annual invoices that explicitly schedule
+   a payment in the close month; exclude personal files. Use the Wise and
+   Stripe provider guides even though those cash/revenue sources are not
+   monthly-review vendors. Preserve each source's
+   own time grain and funding identity. Complete a provider in one visit:
+   download its full month usage/model export, all original invoices and
+   receipts for the account and period, current balance and credit evidence,
+   and screenshots of dashboard facts that have no export. Verify account,
+   period, totals, file integrity, and Drive archive before moving on. An
+   invoice must be the provider's original document, not a recreated PDF.
+   Record any missing or not-yet-issued document immediately in the manifest.
+4. Compare the source evidence with effective ledgers and the app's Close,
+   Runway, Unit Economics, and Ledgers views. Refresh current balance snapshots
+   and the new month's reviewed forecast; keep missing evidence visible.
+5. Prepare exact task-scoped corrections with a complete raw backup, validate
+   staging first, and follow the separate batch/environment approval gate below
+   before any ledger append. Re-query written IDs, verify the app and archive
+   the evidence and after-snapshot. Record any verified procedure changes in
+   the relevant connector guide so the next close starts from current facts.
+
 ## Source of truth
 
 Read `operations/economics/provider-registry.json` first.

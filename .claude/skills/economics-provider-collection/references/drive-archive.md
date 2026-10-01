@@ -4,9 +4,11 @@ Verified — 2026-09-06.
 
 ## Layout
 
-Shared accounting Drive: `<YYYY>/<MM Month>/Invoices` holds the vendor
-invoices; `<YYYY>/<MM Month>/Supporting Evidence` holds exports, statements,
-and JSON evidence that are not invoices.
+Shared accounting Drive: `<YYYY>/<MM Month>/Invoices` holds original vendor
+invoices and their separate payment receipts; `<YYYY>/<MM Month>/Supporting
+Evidence` holds exports, bank statements, payment summaries, and JSON evidence
+that are not supplier invoices. Never relabel a payment summary or top-up
+receipt as a usage invoice.
 
 File name: `YYYY-MM-DD__Vendor__Number.pdf`, where the date is the invoice
 date (not the email or payment date) and the month folder is the invoice
@@ -31,6 +33,7 @@ Vendor spellings in use: `Anthropic`, `Automat-it`, `BytePlus`, `Cloudflare`,
 | 2026-07 | `1ELn-zo8mZhX3_fmH9YEKaaIoMHHkJVNL` |
 | 2026-08 | `1iyaTPqMgYVpvQVPJIHdnBXQlK17A8Eun` |
 | 2026-09 | `1xaedH3eoVwLKylYzCVl01k1rclt5rRGc` |
+| 2026-10 | `1Bd_awlPPJjduMsHtyFLdc-ChLUKBj_Cn` |
 
 The `2026` folder is `1t4Fpuf_3ga4mb2kIVe9JkZT43W0geFYO`; create a new month
 with the Drive connector (`create_file` with the folder MIME type), then an

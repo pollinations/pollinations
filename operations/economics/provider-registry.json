@@ -2013,7 +2013,6 @@
       "aliases": [],
       "connector": "mistral",
       "monthlyReview": true,
-      "activeTo": "2026-08",
       "accounts": [
         {
           "id": "myceli",
@@ -2022,8 +2021,7 @@
             "default"
           ],
           "loginEmail": "elliot@myceli.ai",
-          "activeFrom": "2026-01",
-          "activeTo": "2026-08"
+          "activeFrom": "2026-01"
         }
       ],
       "balanceTracking": true,
@@ -2561,6 +2559,17 @@
           "category": "balance_sheet"
         }
       ],
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "pollinations",
+      "label": "Pollinations API revenue",
+      "category": "revenue",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,

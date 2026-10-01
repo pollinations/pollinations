@@ -19,6 +19,12 @@ Primary evidence sources:
 - Dashboard/export: Wise Activities export; per-balance statement CSVs
   (Balances → statement) — complete settled truth incl. fees and running
   balance, and the workaround while the statement API's SCA key is unregistered.
+- In the signed-in Myceli.AI OÜ Business account, open any balance →
+  Download → Go to my statements → Statements → Create a statement. Select
+  Last month, all four currencies, CSV, and “Display transactions with fees
+  shown separately.” Download the resulting ZIP; it contains one CSV per
+  currency, including empty files for currencies with no movements. Confirm
+  the displayed period and currency list before download.
 - Local files: Wise CSV/JSON/screenshots already placed in `<collection-dir>/evidence/`.
 - Transaction context: `economics_bank_ledger`.
 

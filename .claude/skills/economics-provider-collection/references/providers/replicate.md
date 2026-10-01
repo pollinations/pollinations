@@ -98,3 +98,9 @@ Known traps:
   balance. Keep that usage in `paid`; it is not a promotional provider credit.
 - The billing overview can lag the open invoice; use the downloaded JSON total
   and retain its draft/final status and observation time.
+- At the start of the next month, the completed calendar month's invoice may
+  still say `In progress` and its JSON may say `DRAFT`. Download that original
+  JSON during the first visit and record its status; revisit when finalized.
+  Download every separate credit-purchase invoice PDF and receipt from the
+  billing page or Myceli mailbox. Those purchases are funding evidence, not
+  the month's model usage.

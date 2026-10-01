@@ -29,7 +29,9 @@ Required credential:
 Collection steps:
 
 1. Validate the key with `GET /auth/management-keys/validation`.
-2. Discover the team with `GET /auth/teams`.
+2. Read the scoped team ID from the validation response (`teamId`, or
+   `scopeId` when `scope` is `SCOPE_TEAM`). The older `GET /auth/teams`
+   route can return 403 for a valid scoped management key.
 3. Query `GET /v1/billing/teams/{teamId}/invoices` for cycle invoices.
 4. Query `GET /v1/billing/teams/{teamId}/prepaid/balance` for signed balance changes.
 5. In the Usage page, select the complete month and group by API key. Confirm

@@ -47,6 +47,25 @@ Collection steps:
   The Model API Usage table (two pages) lists every endpoint with quantity,
   unit and cost; book one row per endpoint with the endpoint slug as the label.
 
+## Verified — 2026-10-01
+
+- The signed-in `Usage & Billing` page can select the exact UTC month and
+  `Export CSV`. The export contains daily endpoint rows with amount, quantity,
+  unit, gross and net values. Sum `net_amount` and reconcile to the rounded
+  dashboard `Total Cost`; use endpoint slugs for model-level rows.
+- The `Invoices` tab lists both prepaid purchase invoices and monthly service
+  invoices. A first-of-month service invoice may cover the **previous** month;
+  keep issue date and service period distinct. At the start of a month, the
+  just-finished month's service invoice may not yet be listed. Download
+  originals from the invoice detail page and retain the provider-issued PDF.
+  Prepaid top-ups also have separate payment receipts.
+- `Credits & Tiers` shows the live balance and `Credit activity` shows each
+  purchase's original expiry, but that table does not show how much remains in
+  each lot. Do not assign the live balance to one expiry date without a
+  provider-backed remaining-lot breakdown. The [fal Terms of Service](https://fal.ai/legal/terms-of-service)
+  state the purchase and promotional credit expiry rules; verify current terms
+  during each close.
+
 Known traps:
 
 - Auth uses `Authorization: Key`, not `Bearer`.

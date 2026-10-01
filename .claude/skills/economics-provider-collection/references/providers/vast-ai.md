@@ -12,7 +12,7 @@ Primary evidence sources:
 
 - Invoice/payment: Vast.ai invoice PDF or billing receipt, often a transfer/top-up.
 - Dashboard/usage: Vast.ai console billing and instance usage views.
-- CLI: `vastai show invoices --raw -s <YYYY-MM-DD> -e <YYYY-MM-DD>`
+- CLI: `vastai show invoices-v1 --charges --raw -s <YYYY-MM-DD> -e <YYYY-MM-DD> -l 100` for usage; repeat with `--invoices` for funding.
 - Transaction context: `economics_bank_ledger` vendor `vast` (historically `vast.ai`), usually Wise EUR card charge.
 
 Required credential: `VAST_API_KEY`.
@@ -20,13 +20,18 @@ Required credential: `VAST_API_KEY`.
 Collection steps:
 
 1. For invoice evidence, place the PDF or receipt in `<collection-dir>/evidence/`.
-2. For usage evidence, prefer the CLI raw export:
+2. For usage evidence, prefer the paginated CLI raw export:
 
    ```bash
-   vastai --api-key "$VAST_API_KEY" show invoices --raw -s <period-start> -e <period-end>
+   vastai --api-key "$VAST_API_KEY" show invoices-v1 --charges --raw -s <period-start> -e <period-end> -l 100
    ```
 
-   Save stdout to `<collection-dir>/evidence/vast-ai-<period>.json`.
+   Save stdout to `<collection-dir>/evidence/vast-ai-<period>-charges-page-1.json`.
+   Follow `next_token` with `--next-token` and the same date/type filters until
+   it is empty. Query `--invoices` separately for balance funding or top-ups.
+   `vastai show invoices --raw` still returns legacy detailed rows in CLI
+   1.7.26, but it now warns that the command is deprecated. Retain it only
+   when the v1 charge `items` need a cross-check.
 
    Preserve one reviewed row per billed instance and charge kind. When replacing
    legacy instance rows, compare against a current effective

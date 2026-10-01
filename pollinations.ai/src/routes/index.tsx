@@ -32,7 +32,7 @@ function HelloPage() {
                 <ContentHeader
                     eyebrow="Open infrastructure for AI builders"
                     title="Models. Agents. Tools. One API."
-                    subtitle="Generate images, video, speech, music and text. Build agents and apps. Pay as you go, or let users pay and earn."
+                    subtitle="Generate images, video, speech, music and text. Build agents and apps. The AI-native builder community."
                     variant="page"
                     className="[&_h1]:text-balance sm:[&_h1]:max-w-[18ch]"
                 />

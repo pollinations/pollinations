@@ -1,0 +1,37 @@
+{
+  "pr_number": 16137,
+  "title": "fix: Krea Replicate fallback honors the requested aspect ratio",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16137",
+  "merged_at": "2026-10-01T13:12:17Z",
+  "labels": [
+    "BUG",
+    "MODEL"
+  ],
+  "pr_body_excerpt": "The `krea/krea-2-medium:replicate` fallback derived the ratio only from width/height, which the gateway always fills with 1024×1024 — so `aspectRatio=16:9` came back square whenever the fal primary was down.\n\n- The fallback now uses the primary's `resolveKreaAspectRatio`, so both routes resolve `aspectRatio` (and explicit width/height) identically. Replicate's `krea/krea-2-medium` accepts the same eight ratios as fal (checked against its schema), and the duplicate `KREA_RATIOS` list is removed.\n- No pricing change: Krea is billed per image.\n\n**Local E2E through gen (fal key broken to force the fallback):** `aspectRatio=16:9` → `x-model-used: krea/krea-2-medium:replicate`, 1376×768 (was 1:1), charged 0.03.\n\nTests: new fallback test, gen image suite (732), typecheck, Biome.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The fallback thinks in widescreen",
+    "blurb": "Krea’s backup route has learned that 16:9 is not a square. When fal is unavailable, Replicate follows the same aspect-ratio rules instead of quietly cropping the plan.",
+    "summary": "Krea’s Replicate fallback now uses the primary route’s resolveKreaAspectRatio logic, honoring aspectRatio and explicit dimensions instead of deriving a square ratio from the gateway’s default 1024×1024 size.",
+    "impact": "If fal is unavailable, a Krea request for aspectRatio=16:9 produces a widescreen image through Replicate; a forced-fallback test returned 1376×768 instead of 1:1, with billing unchanged at 0.03 per image.",
+    "keywords": [
+      "Krea",
+      "Replicate",
+      "fal",
+      "image generation",
+      "aspect ratio",
+      "fallback"
+    ],
+    "visual_concept": "Depict Krea image generation as two friendly routes, fal and Replicate, leading to the same wide landscape picture rather than a square one. Polli, wearing a tiny tool belt, adjusts the fallback route beside a glowing lime-green code-plant; no Krea mascot is indicated.",
+    "image_prompt": "In a cozy pixel art garden workshop, two little terminals labeled 'fal' and 'Replicate' point to matching widescreen landscape pictures while Polli adjusts the Replicate terminal beside a lime green (#ecf874) code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi warmth like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16137.jpg",
+    "prompt": "In a cozy pixel art garden workshop, two little terminals labeled 'fal' and 'Replicate' point to matching widescreen landscape pictures while Polli adjusts the Replicate terminal beside a lime green (#ecf874) code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi warmth like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-01T13:13:21.533791+00:00"
+}

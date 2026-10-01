@@ -70,6 +70,7 @@ function robotsTxt(): Response {
         [
             "User-agent: *",
             "Allow: /docs",
+            "Allow: /llms.txt",
             "Allow: /docs/llm.txt",
             "Disallow: /image/",
             "Disallow: /text/",
@@ -81,6 +82,37 @@ function robotsTxt(): Response {
             "Disallow: /api/",
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
+    );
+}
+
+function llmsTxt(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
+    return new Response(
+        `# Pollinations
+
+> Generate text, images, audio, video, 3D, and embeddings through the Pollinations API, CLI, or MCP server. API calls use a Pollinations key.
+
+## Start here
+
+- [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
+- [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
+- [Polli CLI guide](${origin}/docs/cli.md): Installation, login, usage, and harness setup.
+- [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
+- [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
+- [Live model catalog](${origin}/models): Current model IDs and capabilities.
+- [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
+
+## Account
+
+- [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
+`,
+        {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                "Cache-Control": "public, max-age=3600",
+            },
+        },
     );
 }
 
@@ -114,6 +146,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
+    .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .get("/", (c) => c.html(docsLandingHtml(c)))
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))

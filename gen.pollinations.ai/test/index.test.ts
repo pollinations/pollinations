@@ -216,6 +216,31 @@ describe("gen worker routing", () => {
         await expect(response.text()).resolves.toContain("Disallow: /api/");
     });
 
+    it("serves an agent index with reachable plain-text CLI and API guides", async () => {
+        const index = await fetchWorker("/llms.txt");
+        expect(index.status).toBe(200);
+        expect(index.headers.get("Content-Type")).toContain("text/plain");
+        expect(index.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await index.text();
+        expect(body).toContain("/docs/polli-skill.md");
+        expect(body).toContain("/docs/polli-tasks.md");
+        expect(body).toContain("/docs/llm.txt");
+
+        for (const path of [
+            "/docs/polli-skill.md",
+            "/docs/polli-tasks.md",
+            "/docs/cli.md",
+            "/docs/llm.txt",
+        ]) {
+            const response = await fetchWorker(path);
+            expect(response.status).toBe(200);
+            expect(response.headers.get("Content-Type")).toContain(
+                "text/plain",
+            );
+            expect(await response.text()).not.toContain("<html");
+        }
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 
@@ -428,24 +453,24 @@ describe("gen worker routing", () => {
         }
     });
 
-    it.each([
-        "/models",
-        "/audio/models",
-    ] as const)("advertises transcription endpoints on %s", async (path) => {
-        const response = await fetchWorker(path, envWithEnter());
+    it.each(["/models", "/audio/models"] as const)(
+        "advertises transcription endpoints on %s",
+        async (path) => {
+            const response = await fetchWorker(path, envWithEnter());
 
-        expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            supported_endpoints?: string[];
-        }[];
-        for (const name of TRANSCRIPTION_MODEL_IDS) {
-            expect(
-                models.find((model) => model.name === name)
-                    ?.supported_endpoints,
-            ).toEqual(["/v1/audio/transcriptions"]);
-        }
-    });
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as {
+                name: string;
+                supported_endpoints?: string[];
+            }[];
+            for (const name of TRANSCRIPTION_MODEL_IDS) {
+                expect(
+                    models.find((model) => model.name === name)
+                        ?.supported_endpoints,
+                ).toEqual(["/v1/audio/transcriptions"]);
+            }
+        },
+    );
 
     it("serves fixed request pricing without auth", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
@@ -653,31 +678,36 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it.each([
-        "all",
-        "regular",
-    ])("proxies %s traffic with a separate 60 second edge cache", async (traffic) => {
-        const upstream = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(
-                Response.json({ data: [{ model: "test" }] }),
+    it.each(["all", "regular"])(
+        "proxies %s traffic with a separate 60 second edge cache",
+        async (traffic) => {
+            const upstream = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(
+                    Response.json({ data: [{ model: "test" }] }),
+                );
+
+            const response = await fetchWorker(
+                `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
             );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("Cache-Control")).toBe(
+                "public, max-age=60",
+            );
+            expect(await response.json()).toEqual({
+                data: [{ model: "test" }],
+            });
 
-        const response = await fetchWorker(
-            `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
-        );
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Cache-Control")).toBe(
-            "public, max-age=60",
-        );
-        expect(await response.json()).toEqual({ data: [{ model: "test" }] });
-
-        const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
-        expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
-        expect(url.searchParams.get("minutes")).toBe("15");
-        expect(url.searchParams.get("traffic")).toBe(traffic);
-        expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
-    });
+            const [url, init] = upstream.mock.calls[0] as [
+                URL,
+                { cf?: unknown },
+            ];
+            expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
+            expect(url.searchParams.get("minutes")).toBe("15");
+            expect(url.searchParams.get("traffic")).toBe(traffic);
+            expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
+        },
+    );
 
     it("rejects unsupported traffic groups before contacting Tinybird", async () => {
         const response = await fetchWorker("/models/status?traffic=invalid");

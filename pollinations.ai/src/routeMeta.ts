@@ -4,7 +4,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
         title: "Pollinations.ai — Models, Agents, Open-Source for AI-native Builders",
         description:
-            "Generate images, video, speech, music and text. Build agents and apps. The AI-native builder community.",
+            "The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps.",
     },
     "/play": {
         title: "Play | pollinations.ai",

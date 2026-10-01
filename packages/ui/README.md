@@ -145,10 +145,12 @@ which remains capped by the shared frame.
 Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
 compact results stay centered. It inherits the shared viewport sizing.
 
-Authentication, payment, and creation-flow footers use a bordered primary
+Authentication and creation-flow footers use a bordered primary
 action (`intent="commit"`, or `brand` for sign-in) and a muted, borderless
 Cancel/Decline/Close action (`intent="neutral"`). Destructive confirmations
 keep `intent="danger"`. Ordinary buttons retain their default borderless style.
+Saved-card checkout preserves its dedicated footer: full-width Confirm with
+Cancel and the alternative payment-method link on the line below.
 
 ## What's exported
 

@@ -127,7 +127,7 @@ const honeyCensusQuest: QuestDefinition = {
     description: `For anyone who has bought Pollen: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
-    rewardAmount: 10,
+    rewardAmount: 5,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
 };

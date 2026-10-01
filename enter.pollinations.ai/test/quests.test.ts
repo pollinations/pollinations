@@ -2223,7 +2223,7 @@ test("Bee Census quest pays 3 Pollen once for the user's own labelled survey iss
     ]);
 });
 
-test("Honey Census quest pays 10 Pollen only once the survey author has bought Pollen", async ({
+test("Honey Census quest pays 5 Pollen only once the survey author has bought Pollen", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2277,7 +2277,7 @@ test("Honey Census quest pays 10 Pollen only once the survey author has bought P
     expect(await honeyCensusRewards()).toEqual([
         {
             idempotencyKey: `quest:honey_census:github:${user.githubId}`,
-            pollenAmount: 10,
+            pollenAmount: 5,
             balanceBucket: "tier",
         },
     ]);

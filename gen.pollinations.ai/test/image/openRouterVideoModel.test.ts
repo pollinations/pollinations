@@ -1,4 +1,5 @@
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { afterEach, assert, describe, expect, it, vi } from "vitest";
 import { type FallbackAttempt, withModelFallback } from "../../src/fallback.ts";
 import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
@@ -38,7 +39,10 @@ function setOpenRouterEnv() {
     );
 }
 
-function mockHappyHorseSuccess(requests: Record<string, unknown>[]) {
+function mockHappyHorseSuccess(
+    requests: Record<string, unknown>[],
+    providerCost?: number,
+) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
@@ -59,6 +63,9 @@ function mockHappyHorseSuccess(requests: Record<string, unknown>[]) {
                     polling_url: POLL_URL,
                     status: "completed",
                     unsigned_urls: [VIDEO_URL],
+                    ...(providerCost !== undefined && {
+                        usage: { cost: providerCost },
+                    }),
                 });
             }
             if (href === VIDEO_URL) {
@@ -76,7 +83,7 @@ afterEach(() => {
 });
 
 describe("openRouterVideoModel", () => {
-    it("sends HeyGen Video 1 at 480p by default and bills the requested seconds", async () => {
+    it("sends HeyGen Video 1 at 480p by default and falls back to requested seconds when cost is absent", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockHappyHorseSuccess(requests);
@@ -99,6 +106,34 @@ describe("openRouterVideoModel", () => {
             actualModel: "heygen/heygen-video-1",
             usage: { completionVideoSeconds: 7 },
         });
+    });
+
+    it("bills HeyGen from OpenRouter's reported cost", async () => {
+        setOpenRouterEnv();
+        mockHappyHorseSuccess([], 0.06);
+
+        const result = await callHeyGenVideoAPI("a paper boat", {
+            ...baseParams,
+            model: "heygen/heygen-video-1",
+            duration: 7,
+        });
+
+        expect(result.trackingData).toEqual({
+            actualModel: "heygen/heygen-video-1",
+            usage: { completionVideoSeconds: 7 },
+            providerBilling: { units: 0.06, unitCost: 1.055 },
+        });
+        const billing = calculateUsageBilling({
+            model: "heygen/heygen-video-1",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["heygen/heygen-video-1"],
+            input: {
+                resolution: "480p",
+                providerBilling: result.trackingData.providerBilling,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0633, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0633, 12);
     });
 
     it("maps HeyGen Video 1 resolution, portrait ratio and first frame", async () => {

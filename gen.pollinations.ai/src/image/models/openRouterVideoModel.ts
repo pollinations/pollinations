@@ -159,6 +159,14 @@ export async function callHeyGenVideoAPI(
         requestBody,
         HEYGEN_POLL_TIMEOUT_MS,
     );
+    if (
+        providerCost != null &&
+        (!Number.isFinite(providerCost) || providerCost < 0)
+    ) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter returned invalid HeyGen billing cost",
+        });
+    }
 
     logOps("HeyGen Video 1 generation complete", {
         duration,
@@ -173,6 +181,9 @@ export async function callHeyGenVideoAPI(
         trackingData: {
             actualModel: HEYGEN_VIDEO_MODEL,
             usage: { completionVideoSeconds: duration },
+            ...(providerCost != null && {
+                providerBilling: { units: providerCost, unitCost: 1.055 },
+            }),
         },
     };
 }

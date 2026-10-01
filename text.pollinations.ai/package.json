@@ -3,10 +3,9 @@
     "version": "1.0.0",
     "scripts": {
         "start": "tsx startServer.js",
-        "dev": "DEBUG=pollinations:* tsx --watch startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
-        "test": "tsx --test test/gen-bridge.test.js",
+        "test": "tsx --test test/gen-bridge.test.js test/weft-paywall.test.js",
         "dev": "clear && DEBUG=pollinations:* tsx startServer.js"
     },
     "keywords": [],

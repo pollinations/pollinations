@@ -1,17 +1,34 @@
 import { weftPaymentMiddleware } from "@weftlabs/sdk/facilitator/middleware";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { weftPaywall } from "../shared/weft-paywall.js";
 
 let paymentMiddleware;
 
 export function weftTextEnabled() {
-    return Boolean(process.env.WEFT_SELLER_API_KEY && process.env.WEFT_PAY_TO &&
-        process.env.WEFT_NETWORK && process.env.WEFT_FACILITATOR_URL);
+    return Boolean(
+        process.env.WEFT_SELLER_API_KEY &&
+            process.env.WEFT_PAY_TO &&
+            process.env.WEFT_NETWORK &&
+            process.env.WEFT_FACILITATOR_URL,
+    );
 }
 
 export function weftTextPayment(req, res, next) {
-    const { WEFT_SELLER_API_KEY, WEFT_PAY_TO, WEFT_NETWORK, WEFT_FACILITATOR_URL } = process.env;
-    if (!WEFT_SELLER_API_KEY || !WEFT_PAY_TO || !WEFT_NETWORK || !WEFT_FACILITATOR_URL) {
-        return res.status(503).json({ error: "x402 payments are not configured" });
+    const {
+        WEFT_SELLER_API_KEY,
+        WEFT_PAY_TO,
+        WEFT_NETWORK,
+        WEFT_FACILITATOR_URL,
+    } = process.env;
+    if (
+        !WEFT_SELLER_API_KEY ||
+        !WEFT_PAY_TO ||
+        !WEFT_NETWORK ||
+        !WEFT_FACILITATOR_URL
+    ) {
+        return res
+            .status(503)
+            .json({ error: "x402 payments are not configured" });
     }
 
     paymentMiddleware ??= weftPaymentMiddleware(
@@ -41,6 +58,7 @@ export function weftTextPayment(req, res, next) {
             name: "Pollinations legacy text",
             type: "api",
             tags: ["text"],
+            paywall: weftPaywall,
             schemes: [{ network: WEFT_NETWORK, server: new ExactEvmScheme() }],
         },
     );

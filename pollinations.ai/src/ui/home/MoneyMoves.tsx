@@ -1,41 +1,14 @@
 import {
-    AppIcon,
-    BeakerIcon,
-    BookIcon,
     ContentHeader,
     EarningsIcon,
-    ExternalLinkButton,
     Heading,
     InlineLink,
-    RobotIcon,
     Surface,
     TargetIcon,
     Text,
 } from "@pollinations/ui";
 import type { ComponentType, ReactNode } from "react";
 import { artFor } from "../../art";
-
-/** The only place on Home with the revenue-share rates. */
-const EARNINGS = [
-    {
-        text: "Model · 75% of its price",
-        icon: BeakerIcon,
-        href: "https://gen.pollinations.ai/docs#tag/publish-a-model",
-        docsLabel: "Model publishing documentation",
-    },
-    {
-        text: "App · 25% markup",
-        icon: AppIcon,
-        href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
-        docsLabel: "App payments documentation",
-    },
-    {
-        text: "Agent · Coming soon",
-        icon: RobotIcon,
-        href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
-        docsLabel: "Agent publishing documentation",
-    },
-];
 
 /** Pricing, free Quest credits and earnings in one panel. */
 export function MoneyMoves() {
@@ -48,7 +21,7 @@ export function MoneyMoves() {
                 <ContentHeader
                     eyebrow="Pricing"
                     title="Prepaid credits, priced in dollars."
-                    subtitle="Pollen is our prepaid API credit: 1 Pollen = $1, bought by card through Stripe, with a service fee added at checkout. It is not a cryptocurrency and can’t be traded."
+                    subtitle="Pollen is our API credit: 1 Pollen = $1. Pay only for what you use."
                 />
                 {/* Bleeds to the panel's edges: full width on phones, the
                     top-right corner on wide screens. */}
@@ -75,13 +48,12 @@ export function MoneyMoves() {
                         Get free Quest Pollen for solving GitHub Quests, trying
                         models, or building an app or agent.
                     </Text>
-                    <ExternalLinkButton
+                    <InlineLink
                         href="https://enter.pollinations.ai/quests"
-                        intent="brand"
-                        className="mt-auto self-start whitespace-nowrap"
+                        className="self-start text-brand-accent"
                     >
                         Explore Quests
-                    </ExternalLinkButton>
+                    </InlineLink>
                 </Surface>
 
                 <Surface variant="card" className="flex flex-col gap-3 p-5">
@@ -90,42 +62,6 @@ export function MoneyMoves() {
                         Get a share of what others spend on your models and
                         apps.
                     </Text>
-                    <ul className="flex flex-col gap-2 pt-1">
-                        {EARNINGS.map((earning) => {
-                            const EarningsTypeIcon = earning.icon;
-
-                            return (
-                                <Text
-                                    as="li"
-                                    key={earning.text}
-                                    size="sm"
-                                    weight="medium"
-                                    className="flex items-start gap-2.5 text-theme-text-strong"
-                                >
-                                    <EarningsTypeIcon
-                                        aria-hidden="true"
-                                        className="mt-0.5 size-4.5 shrink-0"
-                                    />
-                                    <span className="flex min-w-0 items-start gap-1">
-                                        <span className="min-w-0">
-                                            {earning.text}
-                                        </span>
-                                        <InlineLink
-                                            href={earning.href}
-                                            aria-label={earning.docsLabel}
-                                            title={earning.docsLabel}
-                                            className="inline-flex min-h-6 shrink-0 items-center gap-1 text-brand-accent"
-                                        >
-                                            <BookIcon
-                                                aria-hidden="true"
-                                                className="size-3.5"
-                                            />
-                                        </InlineLink>
-                                    </span>
-                                </Text>
-                            );
-                        })}
-                    </ul>
                 </Surface>
             </div>
         </section>

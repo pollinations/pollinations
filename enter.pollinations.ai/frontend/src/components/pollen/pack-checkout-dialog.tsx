@@ -22,6 +22,7 @@ import {
 import type { FC, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { config } from "../../config.ts";
+import { useResetWhenShownAgain } from "../../lib/billing-portal.ts";
 import { CheckoutConfirmation } from "./checkout-confirmation.tsx";
 import { formatCard } from "./payment-method-format.ts";
 
@@ -307,6 +308,7 @@ const WalletPay: FC<{
         "none" | "loading" | "ready" | "failed"
     >("none");
     const [openingDetails, setOpeningDetails] = useState(false);
+    useResetWhenShownAgain(() => setOpeningDetails(false));
     const callbacks = useRef({ onComplete, onLoadError });
     callbacks.current = { onComplete, onLoadError };
 

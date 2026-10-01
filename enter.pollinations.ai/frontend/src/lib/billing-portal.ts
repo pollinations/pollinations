@@ -1,5 +1,23 @@
 import type { PollenPackKey } from "@shared/pollen-packs.ts";
+import { useEffect, useRef } from "react";
 import { apiClient } from "../api.ts";
+
+/**
+ * A button that says "Opening…" while the page leaves for Stripe stays that
+ * way if the buyer comes Back: the browser restores the page as it was. Call
+ * `reset` then, so it works again.
+ */
+export function useResetWhenShownAgain(reset: () => void): void {
+    const latest = useRef(reset);
+    latest.current = reset;
+    useEffect(() => {
+        const onShow = (event: PageTransitionEvent) => {
+            if (event.persisted) latest.current();
+        };
+        window.addEventListener("pageshow", onShow);
+        return () => window.removeEventListener("pageshow", onShow);
+    }, []);
+}
 
 /** "card": straight to adding a card (made the default), then back here. */
 export type BillingPortalFlow = "card";

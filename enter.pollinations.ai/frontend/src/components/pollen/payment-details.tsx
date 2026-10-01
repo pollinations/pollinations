@@ -8,7 +8,10 @@ import {
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import type { BillingOverview } from "../../backend-types.ts";
-import { openBillingPortal } from "../../lib/billing-portal.ts";
+import {
+    openBillingPortal,
+    useResetWhenShownAgain,
+} from "../../lib/billing-portal.ts";
 import { hasDefaultPaymentMethod } from "./auto-top-up-status.ts";
 import {
     describePaymentMethod,
@@ -172,6 +175,7 @@ const PortalLink: FC<{
 }> = ({ returnToTopUp, children }) => {
     const [opening, setOpening] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    useResetWhenShownAgain(() => setOpening(false));
     return (
         <span className="flex flex-col items-end gap-1">
             <InlineLink

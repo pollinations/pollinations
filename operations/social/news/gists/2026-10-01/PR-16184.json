@@ -1,0 +1,33 @@
+{
+  "pr_number": 16184,
+  "title": "feat: add 2-Pollen Polli CLI connection quest",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16184",
+  "merged_at": "2026-10-01T22:43:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a one-time 2-Pollen quest for connecting Polli CLI with `polli auth login`.\n- Reuses the existing D1 app-key attribution and quest reward flow; no new schema, endpoint, or Tinybird pipe. Existing device-login connections qualify.\n- Direct login with an existing key does not qualify.\n\nTests: Enter quest tests (45 passed), Enter typecheck, Biome.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli CLI finds its hive",
+    "blurb": "Connect Polli CLI with `polli auth login` and there’s a one-time 2-Pollen quest to claim. Existing device-login connections count too.",
+    "summary": "Adds a one-time 2-Pollen quest for connecting Polli CLI through `polli auth login`, using the existing app-key attribution and reward flow without a new schema or endpoint.",
+    "impact": "People who connect through device login, including those who already have, can claim 2 Pollen once; logging in directly with an existing key does not qualify.",
+    "keywords": [
+      "Polli CLI",
+      "quests",
+      "Pollen",
+      "device login",
+      "authentication"
+    ],
+    "visual_concept": "Polli CLI is represented by a small retro terminal, with a dotted connection to a login screen and a two-Pollen reward beside it. Polli, wearing tiny headphones, helps make the connection in a cozy garden of code-plants.",
+    "image_prompt": "In a cozy pixel-art garden, a retro Polli CLI terminal connects to a small login screen while two lime-green (#ecf874) Pollen tokens glow beside sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and taps the terminal, small-to-medium sized in the scene, with chunky retro sprites, a warm cream and soft pastel gradient background, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16184.jpg",
+    "prompt": "In a cozy pixel-art garden, a retro Polli CLI terminal connects to a small login screen while two lime-green (#ecf874) Pollen tokens glow beside sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and taps the terminal, small-to-medium sized in the scene, with chunky retro sprites, a warm cream and soft pastel gradient background, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-01T22:44:28.190005+00:00"
+}

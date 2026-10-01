@@ -1,0 +1,37 @@
+{
+  "pr_number": 15160,
+  "title": "Pen — an Exquisite Corpse writer for collective memory",
+  "author": "Apollohzl",
+  "url": "https://github.com/pollinations/pollinations/pull/15160",
+  "merged_at": "2026-10-01T14:18:46Z",
+  "labels": [
+    "POLLEN-QUEST",
+    "APPS"
+  ],
+  "pr_body_excerpt": "Adds **Pen**, a prompt-agent continuation writer for [`games/exquisite-corpse/`](https://github.com/pollinations/collective-memory/tree/main/games/exquisite-corpse) in collective memory. Two files, no code: `agent.json` plus a README.\n\n**How it works.** One run is one move. The agent refreshes its clone, re-reads the space's README, finds the living story folder, reads **only its highest-numbered part** — never the earlier ones — and writes the next three-digit part as a single new file. One inherited detail, one surprise, one door left open.\n\nThe blindness is the point: because it may not read backwards, whatever it writes becomes the whole world the next writer gets to see. Every run changes what someone else will find.\n\n**Repository:** https://github.com/Apollohzl/pollinations\n**Callable model name:** `community/Creatneworld/pen`\n**Publish:** `npx @pollinations/cli agents create --config agent.json --name pen --title \"Pen\"`, then `agents update <id> --config agent.json --visibility public`. Base model `openai-large`, MCP server `computer`.\n\n### Three runs, three commits, three different choices\n\nSubmitted upstream as [collective-memory PR #1](https://github.com/pollinations/collective-memory/pull/1) (`Apollohzl:pen-exquisite-corpse`):\n\n| Run | Commit | The choice it made |\n| --- | --- | --- |\n| 1 | [`c441495`](https://github.com/Apollohzl/collective-memory/commit/c441495e6562dd458774014ea2005eaba771aaaa) | Handed `001-gardener.md`, it kept the slim volume and the fines; the atlas maps this same beach, one gull circled and captioned *returned*, and the lamp left mid-clause. |\n| 2 | [`34ad786`](https://github.com/Apollohzl/collective-memory/commit/34ad7865b4be10dd3c5acc3f12bb424630a758e6) | This time it was handed **its own part 002** and had to continue from there: the circled gull is overdue since 1974 and carrying the lighthouse's word, which has sprouted. A glasshouse rises from the sand. |\n| 3 | [`62b312a`](https://github.com/Apollohzl/collective-memory/commit",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pen writes with blinders on",
+    "blurb": "Apollohzl built Pen for an exquisite-corpse story where each writer inherits just one page. It keeps a detail, adds a surprise, and leaves the next writer a door.",
+    "summary": "Apollohzl adds Pen, a community writing agent configured with openai-large and the computer MCP server that reads only the highest-numbered story part and writes the next three-digit part as a new file.",
+    "impact": "Each run adds one continuation without consulting earlier chapters, so the newest part becomes the entire story context for the next writer.",
+    "keywords": [
+      "community",
+      "Pen",
+      "agents",
+      "exquisite corpse",
+      "collective memory",
+      "creative writing"
+    ],
+    "visual_concept": "Pen is a writing agent, not a character with an established mascot: depict it as a small enchanted pixel pen beside a stack of numbered story pages. Polli, wearing tiny writer's glasses, offers the pen the top page while earlier pages stay tucked away; a sprouting paper flower suggests the story growing one part at a time.",
+    "image_prompt": "In a cozy pixel art writing nook, Polli offers an enchanted pen the top sheet of a numbered manuscript while earlier pages rest closed in a drawer and a little flower sprouts from the fresh page; she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and tiny writer's glasses, small-to-medium in the scene and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream and lavender surroundings, dark purple (#110518) outlines, and an emotionally warm lo-fi feel like Stardew Valley."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15160.jpg",
+    "prompt": "In a cozy pixel art writing nook, Polli offers an enchanted pen the top sheet of a numbered manuscript while earlier pages rest closed in a drawer and a little flower sprouts from the fresh page; she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and tiny writer's glasses, small-to-medium in the scene and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream and lavender surroundings, dark purple (#110518) outlines, and an emotionally warm lo-fi feel like Stardew Valley."
+  },
+  "generated_at": "2026-10-01T14:19:53.142634+00:00"
+}

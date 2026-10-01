@@ -6,6 +6,7 @@ import {
     type EndpointAgentListingPayload,
     effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
+    legacyCommunityModelId,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
@@ -13,6 +14,7 @@ import {
     pendingCommunityEndpointChangeIsReady,
     resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { resolveModelName } from "@shared/registry/registry.ts";
@@ -25,6 +27,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { deleteCodeAgent } from "../services/code-agent.ts";
 import {
     type CommunityEndpointTestResult,
     listCommunityEndpointModels,
@@ -161,14 +164,18 @@ async function ensureModelNameAvailable(
     name: string,
     currentId?: string,
 ): Promise<void> {
-    const modelId = communityModelId(ownerGithubUsername, name);
-    let bundledModelExists = false;
-    try {
-        resolveModelName(modelId);
-        bundledModelExists = true;
-    } catch {
-        // Unknown IDs remain available within the owner's namespace.
-    }
+    const bundledModelExists = [
+        communityModelId(ownerGithubUsername, name),
+        legacyCommunityModelId(ownerGithubUsername, name),
+    ].some((modelId) => {
+        try {
+            resolveModelName(modelId);
+            return true;
+        } catch {
+            // Both the canonical ID and its generation alias must be available.
+            return false;
+        }
+    });
     if (bundledModelExists) {
         throw new HTTPException(400, {
             message:
@@ -276,8 +283,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .orderBy(desc(schema.communityEndpoint.createdAt));
             const owner = await db.query.user.findFirst({
                 columns: {
+                    id: true,
                     communityProviderName: true,
                     communityProviderUrl: true,
+                    communityProviderIconUrl: true,
                 },
                 where: eq(schema.user.id, user.id),
             });
@@ -292,6 +301,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     provider: {
                         name: owner?.communityProviderName ?? null,
                         url: owner?.communityProviderUrl ?? null,
+                        iconUrl: isCommunityProviderIconUrl(
+                            owner?.communityProviderIconUrl,
+                        )
+                            ? owner.communityProviderIconUrl
+                            : null,
                     },
                 }),
             );
@@ -303,7 +317,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update Community Provider Profile",
             description:
-                "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
+                "Set the public provider name, HTTPS service link, and optional media.pollinations.ai icon URL shared by all community models owned by the authenticated account. Publishing approval and `account:keys` are required.",
             responses: {
                 200: {
                     description: "Updated community provider profile",
@@ -343,14 +357,28 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     communityProviderUrl: url
                         ? normalizeInputProviderUrl(url)
                         : null,
+                    ...(input.iconUrl === undefined
+                        ? {}
+                        : {
+                              communityProviderIconUrl: input.iconUrl,
+                          }),
                     updatedAt: new Date(),
                 })
                 .where(eq(schema.user.id, user.id))
                 .returning({
                     name: schema.user.communityProviderName,
                     url: schema.user.communityProviderUrl,
+                    iconUrl: schema.user.communityProviderIconUrl,
                 });
-            return c.json(profile);
+            return c.json(
+                CommunityProviderProfileResponseSchema.parse({
+                    name: profile.name,
+                    url: profile.url,
+                    iconUrl: isCommunityProviderIconUrl(profile.iconUrl)
+                        ? profile.iconUrl
+                        : null,
+                }),
+            );
         },
     )
     .get(
@@ -482,6 +510,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
                 api: input.api,
+                inputModalities: input.inputModalities,
+                outputModalities: input.outputModalities,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -754,7 +784,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Code-agent names, titles, and descriptions come from GitHub; an empty description is ignored. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -814,7 +844,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             let pendingAt = pendingReady ? null : endpoint.pendingAt;
             if (input.name !== undefined) update.name = input.name;
             if (input.title !== undefined) update.title = input.title;
-            if (input.description !== undefined) {
+            if (
+                endpoint.type !== "code_agent" &&
+                input.description !== undefined
+            ) {
                 update.description = input.description || null;
             }
             if (input.requiredSafetyFeatures !== undefined) {
@@ -857,8 +890,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 pendingAt ??= new Date();
             }
             update.visibility = nextVisibility;
-            if (endpoint.type === "prompt_agent") {
-                // Prompt configuration is edited through /account/agents.
+            if (
+                endpoint.type === "prompt_agent" ||
+                endpoint.type === "code_agent"
+            ) {
+                // Managed configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
                 const current = parseListingPayload(
@@ -876,15 +912,18 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (input.perUserRpm !== undefined || input.api !== undefined) {
-                    update.payload = JSON.stringify({
-                        perUserRpm:
-                            input.perUserRpm === undefined
-                                ? current.perUserRpm
-                                : input.perUserRpm,
-                        api: input.api ?? current.api,
-                    });
-                }
+                update.payload = JSON.stringify({
+                    ...current,
+                    perUserRpm:
+                        input.perUserRpm === undefined
+                            ? current.perUserRpm
+                            : input.perUserRpm,
+                    api: input.api ?? current.api,
+                    inputModalities:
+                        input.inputModalities ?? current.inputModalities,
+                    outputModalities:
+                        input.outputModalities ?? current.outputModalities,
+                });
             } else {
                 const current = parseListingPayload("proxy", endpoint.payload);
                 if (!current) {
@@ -1037,7 +1076,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)
                 .where(
@@ -1046,6 +1085,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         eq(schema.communityEndpoint.ownerUserId, user.id),
                     ),
                 );
+            if (endpoint.type === "code_agent") {
+                await deleteCodeAgent(c.env, id).catch((error) => {
+                    console.error("Failed to remove code agent Worker", error);
+                });
+            }
             return c.json({ id });
         },
     );

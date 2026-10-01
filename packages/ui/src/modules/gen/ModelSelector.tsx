@@ -2,9 +2,9 @@ import type { ModelCategory, ModelInfo } from "@pollinations/sdk";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
-import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
+import { ModelAccessIcon } from "./ModelAccessIcon.tsx";
 
 export type ModelSelectorCategory = ModelCategory;
 
@@ -64,13 +64,12 @@ export function ModelSelector({
                     className="polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2"
                 >
                     <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                        {currentModel &&
-                            (currentModel.paid_only ? (
-                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                            ) : (
-                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                            ))}
                         <span className="polli:truncate">{modelLabel}</span>
+                        {currentModel && (
+                            <ModelAccessIcon
+                                paidOnly={currentModel.paid_only}
+                            />
+                        )}
                     </span>
                     <ChevronIcon expanded={open} />
                 </Button>
@@ -82,7 +81,7 @@ export function ModelSelector({
                         Loading models...
                     </p>
                 ) : (
-                    <ScrollArea className="polli:max-h-64 polli:pr-2">
+                    <ScrollArea className="polli:max-h-80 polli:pr-2">
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
                                 const id = modelId(model);
@@ -99,15 +98,20 @@ export function ModelSelector({
                                             close();
                                         }}
                                     >
-                                        <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                                            {model.paid_only ? (
-                                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                                            ) : (
-                                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                                            )}
-                                            <span className="polli:truncate">
-                                                {model.title ?? model.name}
+                                        <span className="polli:flex polli:min-w-0 polli:flex-col polli:gap-0.5">
+                                            <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                                                <span className="polli:truncate">
+                                                    {model.title ?? model.name}
+                                                </span>
+                                                <ModelAccessIcon
+                                                    paidOnly={model.paid_only}
+                                                />
                                             </span>
+                                            {model.description && (
+                                                <span className="polli:truncate polli:text-xs polli:font-normal polli:text-theme-text-muted">
+                                                    {model.description}
+                                                </span>
+                                            )}
                                         </span>
                                     </TabButton>
                                 );

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "check": "npm run build && wrangler deploy --dry-run",
+    "check": "npm test && npm run build && wrangler deploy --dry-run",
     "decrypt-vars": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} local'",
     "dev": "OBSERVABILITY_LOCAL=true vite dev",
     "deploy": "wrangler deploy",
@@ -12,7 +12,8 @@
     "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
     "containers:list": "wrangler containers list",
     "containers:images": "wrangler containers images list",
-    "build": "npm run build --prefix ../../packages/ui && vite build"
+    "build": "npm run build --prefix ../../packages/ui && vite build",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.7",

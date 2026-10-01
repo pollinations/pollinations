@@ -7,15 +7,17 @@ import { UpstreamError } from "@shared/error.ts";
 import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
+import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
 import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import {
     callMinimaxH3API,
+    callMinimaxH3MaxAPI,
     callMinimaxH3MaxTurboAPI,
 } from "./models/minimaxH3Model.ts";
-import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
+    callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
@@ -62,7 +64,6 @@ export function validateVideoFrameCount(safeParams: ImageParams): void {
 export async function createAndReturnVideo(
     prompt: string,
     safeParams: ImageParams,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
     logOps("Starting video generation:", { prompt, model: safeParams.model });
     validateVideoFrameCount(safeParams);
@@ -94,6 +95,9 @@ export async function createAndReturnVideo(
             result = await callSeedanceV2API(prompt, safeParams);
             break;
         case "alibaba/wan-2.6":
+            result = await callAlibabaVideo(prompt, safeParams, "2.6");
+            break;
+        case "alibaba/wan-2.6:replicate":
             result = await callWanAPI(prompt, safeParams);
             break;
         case "alibaba/wan-2.2-fast":
@@ -103,13 +107,13 @@ export async function createAndReturnVideo(
             result = await callWanProAPI(prompt, safeParams);
             break;
         case "alibaba/wan-3.0":
+            result = await callAlibabaVideo(prompt, safeParams, "3.0");
+            break;
+        case "alibaba/wan-3.0:fal":
             result = await callWan3FalAPI(prompt, safeParams);
             break;
         case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
-            break;
-        case "amazon/nova-reel-v1":
-            result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
         case "x-ai/grok-imagine-video:openrouter":
         case "x-ai/grok-imagine-video-1.5":
@@ -121,8 +125,14 @@ export async function createAndReturnVideo(
         case "alibaba/happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
             break;
+        case "heygen/heygen-video-1":
+            result = await callHeyGenVideoAPI(prompt, safeParams);
+            break;
         case "minimax/minimax-h3":
             result = await callMinimaxH3API(prompt, safeParams);
+            break;
+        case "minimax/minimax-h3-max":
+            result = await callMinimaxH3MaxAPI(prompt, safeParams);
             break;
         case "minimax/minimax-h3-max-turbo":
             result = await callMinimaxH3MaxTurboAPI(prompt, safeParams);

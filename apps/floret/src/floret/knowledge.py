@@ -7,7 +7,12 @@ the brain's system prompt and the `list_models` tool output.
 
 from __future__ import annotations
 
-from floret.registry import get_model_catalog, get_voices
+from floret.registry import (
+    auto_selection_summary,
+    find_model_meta,
+    get_model_catalog,
+    get_voices,
+)
 
 # Curated guidance, grounded in the live lineup (2026-07-10). Maintain this by hand.
 BEST_AT: dict[str, str] = {
@@ -38,7 +43,7 @@ BEST_AT: dict[str, str] = {
     "whisper": "speech-to-text",
     "scribe": "speech-to-text",
     # Text / brain
-    "glm": "agent brain (tool-calling)",
+    "z-ai/glm-5.3-flash": "agent brain (tool-calling)",
     "gemini-search": "web search with live results",
     "openai-large": "strong general reasoning/writing",
     "claude-large": "strong writing and reasoning",
@@ -69,11 +74,21 @@ def models_summary(kind: str | None = None) -> str:
 
 
 def _best_at_block() -> str:
-    return "\n".join(
-        f"  - {m}: {why}"
-        for m, why in BEST_AT.items()
-        if m in get_model_catalog() or True
-    )
+    catalog = get_model_catalog()
+    lines = []
+    for model, why in BEST_AT.items():
+        meta = find_model_meta(catalog, model)
+        if meta is not None:
+            model_id = next(
+                (
+                    candidate
+                    for candidate, candidate_meta in catalog.items()
+                    if candidate_meta is meta
+                ),
+                model,
+            )
+            lines.append(f"  - {model_id}: {why}")
+    return "\n".join(lines)
 
 
 def build_system_prompt() -> str:
@@ -85,9 +100,18 @@ def build_system_prompt() -> str:
             counts[mod] = counts.get(mod, 0) + 1
     inventory = ", ".join(f"{v} {k}" for k, v in sorted(counts.items())) or "loading"
 
-    return f"""You are Polli, an autonomous creative agent running on Pollinations. You can \
-generate text, images, video, and speech, transcribe audio, search the web, and run shell \
-commands — and you chain these freely to fully satisfy a request.
+    automatic = auto_selection_summary()
+    guidance = (
+        "Global routing choices (catalog-based advice, not measured quality):\n"
+        + automatic
+        + "\nFor image/video generation omit model to use the current global choice. "
+        "For specialized tasks choose a compatible model; explicit user pins take precedence."
+        if automatic is not None
+        else "Model strengths (curated):\n" + _best_at_block()
+    )
+    return f"""You are Floret, an autonomous creative agent running on Pollinations. You can \
+generate text, images, video, and speech, edit images, transcribe audio, search the web, \
+and run shell commands — and you chain these freely to fully satisfy a request.
 
 Available models right now: {inventory}. Call `list_models` for the full list or voices.
 
@@ -99,24 +123,27 @@ judgement and be generous; the user wants a complete result, not the minimum.
 call tools itself. Use canonical model IDs from `list_models`.
 - To create several illustrations (e.g. steps of a process), call `generate_image` with n>1 or \
 make multiple calls in one turn — they run in parallel.
+- To edit an existing image, use `edit_image` with its `image_url` and a `prompt` describing \
+the changes.
 - For narration: WRITE the script yourself, then pass that exact script to `text_to_speech`. \
 The audio reads your text verbatim, so never pass an instruction — pass the words to be spoken.
 - `text_to_speech` also generates music, sound effects, and dialogue when given the matching \
 audio model. For `eleven-dialogue`, format each line as `voice: text`.
+- Use `change_voice` to transform an audio clip to a target voice, or `isolate_voice` to \
+remove background sound from audio or video.
 - Pick models by strength (see below) or omit `model` to auto-select. Retry with a different \
 model if a tool returns an ERROR.
-- Media plumbing: `fetch_media` brings any media into the bash workspace (curl cannot \
-authenticate); `bash` has ffmpeg for post-processing (stitch, trim, extract frames, mux audio); \
-`upload_media` publishes a workspace file or data: URI as a public URL — the form other tools \
-need as image inputs. Frame refs you pass to `generate_video` are re-hosted automatically.
+- Media plumbing: use Computer `bash` with relative paths in this run's temporary directory and publish final \
+files with `assets publish` before the directory is removed. The caller's Computer filesystem is shared across runs, not isolated. Computer does not include ffmpeg. Use `runFfmpeg` with public source URLs for stitching, trimming, \
+frame extraction, and audio muxing; its output is already hosted. `upload_media` accepts only HTTP(S) \
+URLs or data: URIs. Frame refs passed to `generate_video` are re-hosted automatically.
 - Multi-scene video: generate keyframe images, then clip_i = generate_video(image=K_i, \
-end_image=K_i+1). Models drift off the requested end frame — for seamless joins extract the real \
-last frame (`ffmpeg -sseof -0.1 -i clip.mp4 -update 1 -q:v 1 last.jpg`), upload_media it, and \
-start the next clip from it. When concatenating, first drop each later clip's first frame \
-(duplicate of the previous clip's last), then upload_media the stitched file.
+end_image=K_i+1). Models drift off the requested end frame — for seamless joins use `runFfmpeg` \
+to extract the real last frame, then start the next clip from its returned URL. When concatenating, \
+first drop each later clip's first frame (duplicate of the previous clip's last); use the hosted \
+`runFfmpeg` result directly.
 - When done, write a clear final message. Reference the media you produced; it is attached \
 automatically for the user.
 
-Model strengths (curated):
-{_best_at_block()}
+{guidance}
 """

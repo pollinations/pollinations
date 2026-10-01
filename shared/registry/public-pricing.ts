@@ -1,3 +1,11 @@
+/** Values are keyed by rate-sheet name; the empty key selects base pricing. */
+export type PricingDimension = {
+    key: string;
+    label: string;
+    unit?: string;
+    values: Record<string, string>;
+};
+
 export type PublicPricingDefinition = {
     label: string;
     quantity: number;
@@ -8,6 +16,9 @@ export type PublicPricingDefinition = {
         value: string;
         label: string;
         default?: boolean;
+        groupLabel?: string;
+        valueLabel?: string;
+        unit?: string;
     };
 };
 

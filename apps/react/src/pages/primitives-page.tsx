@@ -283,15 +283,31 @@ export function PrimitivesPage() {
 
                     <PrimitiveExample
                         name="InlineLink"
-                        description="Text link with Pollinations underline, focus, and external icon rules."
+                        description="Text links inherit their size, use accent ink and an always-visible underline. Internal links stay in the app; external links have an arrow and open a new tab. Footer links are 13px and utility links 14px. Navigation has no button background; buttons are reserved for actions."
                     >
-                        <p className="text-sm text-theme-text-soft">
-                            Read the{" "}
-                            <InlineLink href="https://pollinations.ai">
-                                API guide
+                        <div className="space-y-3">
+                            <p>
+                                Read the{" "}
+                                <InlineLink href="/?view=compositions">
+                                    component guide
+                                </InlineLink>{" "}
+                                or{" "}
+                                <InlineLink href="https://pollinations.ai">
+                                    visit Pollinations
+                                </InlineLink>
+                                .
+                            </p>
+                            <p className="text-[13px]">
+                                Need help?{" "}
+                                <InlineLink href="mailto:hello@pollinations.ai">
+                                    Email us
+                                </InlineLink>
+                                .
+                            </p>
+                            <InlineLink href="/?view=modules" size="sm">
+                                Explore modules
                             </InlineLink>
-                            .
-                        </p>
+                        </div>
                     </PrimitiveExample>
 
                     <PrimitiveExample

@@ -17,6 +17,19 @@ Or run once: `/monitor-services`
 
 ---
 
+## Host Discovery
+
+To find where a service *currently* runs, check the host, not the laptop that
+once launched it. Local artifacts (launchd plists, `ps`, `/tmp` logs, old
+checkouts) show history or intent and can point at a dead dev setup.
+
+1. SSH to the candidate host and check `systemctl status` / `ps`.
+2. Cross-check the provider's inventory (`aws ec2 describe-instances`,
+   `runpodctl pod list`, `vastai show instances`).
+3. Use local artifacts only to corroborate.
+
+---
+
 ## Services
 
 ### 1. LTX-2.3 Video (GH200 - Lambda Labs)
@@ -356,10 +369,29 @@ When invoked, run checks in this order:
 8. **Sana worker** - curl health on GH200 port 8766
 9. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
 10. **Disk space** - check OVH disk usage
+11. **Scheduled workflows** - the `news-*` and README workflows open a `Workflow failing: …` issue when they fail; check `gh issue list --search "Workflow failing in:title"`
 
 For each:
 - If healthy: report OK with latency
 - If unhealthy: attempt restart, wait, re-check, report result
+
+### Interpreting failures: find who failed before acting
+
+A failing check is not automatically an outage. The same status (e.g. `402`)
+can come from different actors:
+
+- The probe credential (`TEST_TOKEN` from `.testingtokens`) running out of
+  balance looks the same on the wire as the provider account being suspended
+  or out of credits. Only the second is a backend problem.
+- Before tuning a threshold or excusing an error class, follow a few concrete
+  failing cases through the decision log and confirm which actor failed.
+- A request rescued by a fallback provider is a success, not a failure.
+
+To confirm something is really disabled (a cron, a job, a process), look for
+a live signal — data written, requests served, run history — not the config
+diff. Cloudflare Worker crons: deleting the `[triggers]` block in
+`wrangler.toml` does **not** remove deployed schedules; only `crons = []`
+does.
 
 ## Auth
 

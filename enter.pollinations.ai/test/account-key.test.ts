@@ -40,6 +40,9 @@ test(
         expect(response.status).toBe(200);
 
         const data = await response.json();
+        expect(typeof data.id).toBe("string");
+        expect(data.id.length).toBeGreaterThan(0);
+        expect(data.id).not.toBe(apiKey);
         expect(data.valid).toBe(true);
         expect(data.type).toBe("secret");
         expect(data.name).toBeTruthy();

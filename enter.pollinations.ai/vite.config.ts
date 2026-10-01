@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { codeAgentSdk } from "./scripts/code-agent-sdk.mjs";
 
 const frontendSrc = fileURLToPath(new URL("./frontend/src", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared", import.meta.url));
@@ -47,6 +48,7 @@ export default defineConfig(({ mode }) => ({
         dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [
+        codeAgentSdk(),
         tanstackRouter({
             target: "react",
             autoCodeSplitting: true,

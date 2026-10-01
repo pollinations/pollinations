@@ -254,9 +254,7 @@ class GitHubPRManager(PRReviewMixin):
             }
             """
             try:
-                result = await github_graphql._execute(
-                    query, {"query": native_query, "limit": limit, "after": cursor}
-                )
+                result = await github_graphql._execute(query, {"query": native_query, "limit": limit, "after": cursor})
                 if result.get("error"):
                     return {"error": result["error"], "partial": result.get("partial", False)}
                 connection = result.get("data", {}).get("search", {})
@@ -285,9 +283,11 @@ class GitHubPRManager(PRReviewMixin):
                     "fetched": len(prs_data),
                     "source_total": connection.get("issueCount", 0),
                     "truncated": bool(connection.get("pageInfo", {}).get("hasNextPage")),
-                    "next_cursor": connection.get("pageInfo", {}).get("endCursor")
-                    if connection.get("pageInfo", {}).get("hasNextPage")
-                    else None,
+                    "next_cursor": (
+                        connection.get("pageInfo", {}).get("endCursor")
+                        if connection.get("pageInfo", {}).get("hasNextPage")
+                        else None
+                    ),
                     "state": state,
                     "base": base,
                     "author": author,
@@ -1388,6 +1388,7 @@ async def tool_github_pr(
     comment: str | None = None,
     # AI Review
     post_review_to_github: bool = False,
+    complexity: str | None = None,
     # Inline comments
     path: str | None = None,
     line: int | None = None,
@@ -1658,7 +1659,7 @@ async def tool_github_pr(
     elif action == "review":
         if not pr_number:
             return {"error": "pr_number required"}
-        return await github_pr_manager.review_pr(pr_number, post_review_to_github, reporter)
+        return await github_pr_manager.review_pr(pr_number, post_review_to_github, reporter, complexity)
 
     else:
         return {

@@ -10,7 +10,11 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import type { Env } from "@/env.ts";
-import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import {
+    hashGenerationCacheIdentity,
+    normalizedJsonBody,
+    prepareGenerationRequest,
+} from "@/middleware/generation-cache.ts";
 import { imageCache } from "@/middleware/media-cache.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
 import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
@@ -312,8 +316,26 @@ describe("OpenAI image cache", () => {
         "b64_json",
     ])("serves %s and a file link for objects cached before model metadata was stored", async (response_format) => {
         const bucket = createTestR2Bucket();
+        // The request identifies itself: its own path plus a hash of the
+        // parameters that shape the file. Response format is not one of them.
         const cacheUrl = new URL(
-            "https://gen.pollinations.ai/image/a%20cat?model=flux&width=1024&height=1024&quality=medium&seed=7",
+            "https://gen.pollinations.ai/v1/images/generations",
+        );
+        cacheUrl.searchParams.set(
+            "__request_body",
+            await hashGenerationCacheIdentity(
+                "media",
+                normalizedJsonBody(
+                    JSON.stringify({
+                        prompt: "a cat",
+                        model: "flux",
+                        width: 1024,
+                        height: 1024,
+                        quality: "medium",
+                        seed: 7,
+                    }),
+                ),
+            ),
         );
         await bucket.put(
             await generateCacheKey(cacheUrl),

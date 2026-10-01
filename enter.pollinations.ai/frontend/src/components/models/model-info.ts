@@ -14,9 +14,13 @@ const BRAND_LOGOS: Record<string, string> = {
     "Fish Audio": "fish-audio",
     Google: "google",
     Hexgrad: "hexgrad",
+    HeyGen: "heygen",
     Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
+    InferencePort: "inferenceport",
+    inclusionAI: "inclusionai",
+    "Jared Palmer": "jared-palmer",
     Krea: "krea",
     Lykon: "lykon",
     Meituan: "meituan",
@@ -33,13 +37,26 @@ const BRAND_LOGOS: Record<string, string> = {
     Pruna: "pruna",
     Qwen: "qwen",
     Recraft: "recraft",
+    Respan: "respan",
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    Tencent: "tencent",
     "Thinking Machines": "thinking-machines",
+    TypeSafe: "typesafe",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
+};
+
+export const getFixedResolution = (
+    model: Pick<ModelPrice, "pricingDimensions">,
+): string | undefined => {
+    const resolution = model.pricingDimensions?.find(
+        ({ key }) => key === "resolution",
+    );
+    const values = new Set(Object.values(resolution?.values ?? {}));
+    return values.size === 1 ? [...values][0] : undefined;
 };
 
 const getInputModalities = (model: ModelPrice): string[] =>
@@ -59,7 +76,9 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return undefined;
+    if (model.community) {
+        return model.brandIconUrl;
+    }
     const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };

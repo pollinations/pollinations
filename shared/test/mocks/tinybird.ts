@@ -22,6 +22,7 @@ export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
     errorEvents: Record<string, unknown>[];
     referralEvents: Record<string, unknown>[];
+    productEvents: Record<string, unknown>[];
     stripeEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
@@ -30,6 +31,7 @@ export type MockTinybirdState = {
     appDirectoryResponse: UsageRow[];
     appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
+    agentUsageResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -38,6 +40,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         events: [],
         errorEvents: [],
         referralEvents: [],
+        productEvents: [],
         stripeEvents: [],
         dailyResponse: [],
         usageResponse: [],
@@ -46,6 +49,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         appDirectoryResponse: [],
         appUsageResponse: [],
         modelModalitiesResponse: [],
+        agentUsageResponse: [],
         pipeCalls: [],
     };
 
@@ -80,6 +84,8 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 state.referralEvents.push(...rows);
             } else if (eventName === "stripe_event") {
                 state.stripeEvents.push(...rows);
+            } else if (eventName === "product_event") {
+                state.productEvents.push(...rows);
             }
 
             return c.json(
@@ -115,6 +121,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.modelModalitiesResponse }, 200);
         })
+        .get("/v0/pipes/quest_agent_usage.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.agentUsageResponse }, 200);
+        })
         .post("/v0/datasources/:datasource/delete", (c) => {
             return c.json({ delete_id: "mock-delete" }, 200);
         });
@@ -130,6 +140,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.events = [];
         state.errorEvents = [];
         state.referralEvents = [];
+        state.productEvents = [];
         state.stripeEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
@@ -138,6 +149,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.appDirectoryResponse = [];
         state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
+        state.agentUsageResponse = [];
         state.pipeCalls = [];
     };
 

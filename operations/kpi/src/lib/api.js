@@ -9,6 +9,7 @@ async function getRows(path) {
 }
 
 export const registrations = () => getRows("/kpi/registrations");
+export const dailyRegistrations = () => getRows("/kpi/registrations/daily");
 export const activations = () => getRows("/kpi/activations");
 export const revenue = (weeks) => getRows(`/kpi/revenue?weeks_back=${weeks}`);
 export const dailyRevenue = () => getRows("/kpi/revenue/daily");
@@ -19,6 +20,6 @@ export const weekly = (pipe, weeks) =>
 
 export async function github() {
     const res = await dashboardFetch("/api/kpi/github");
-    if (!res.ok) return { stars: 0, forks: 0 };
+    if (!res.ok) return null;
     return res.json();
 }

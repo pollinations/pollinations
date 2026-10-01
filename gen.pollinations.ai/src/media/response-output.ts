@@ -1,6 +1,7 @@
 import {
     CreateChatCompletionResponseSchema,
     CreateResponseResponseSchema,
+    type ResponseUsage,
 } from "@shared/schemas/openai.ts";
 import { z } from "zod";
 
@@ -34,6 +35,14 @@ export function createMediaResponse(
             ? "Audio"
             : "3D model";
     const text = `${label === "Image" ? "!" : ""}[${label}](${url})\n\n${url}`;
+    return createTextResponse(model, text);
+}
+
+export function createTextResponse(
+    model: string,
+    text: string,
+    usage: ResponseUsage | null = null,
+) {
     return {
         id: `resp_${crypto.randomUUID()}`,
         object: "response" as const,
@@ -56,7 +65,7 @@ export function createMediaResponse(
         top_p: null,
         truncation: "disabled",
         metadata: {},
-        usage: null,
+        usage,
         output: [
             {
                 id: `msg_${crypto.randomUUID()}`,
@@ -77,8 +86,8 @@ export function createMediaResponse(
 }
 
 /** A completed generation presented as the normal Responses event lifecycle. */
-export function mediaResponseStream(
-    response: ReturnType<typeof createMediaResponse>,
+export function textResponseStream(
+    response: ReturnType<typeof createTextResponse>,
 ) {
     const item = response.output[0];
     const part = item.content[0];

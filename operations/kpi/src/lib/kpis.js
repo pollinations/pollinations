@@ -7,16 +7,17 @@ const margin = (week) =>
 
 // Cash in against cost incurred. The two are not matched — packs are bought in
 // one week and burned over later ones — so this is a coverage ratio, not margin.
+// Cash is company-wide, so the cost side covers every traffic group.
 const coverage = (week) =>
-    week.costUsd > 0 && Number.isFinite(week.revenue)
-        ? (week.revenue / week.costUsd) * 100
+    week.costUsdAll > 0 && Number.isFinite(week.revenue)
+        ? (week.revenue / week.costUsdAll) * 100
         : null;
 
 const failuresPerThousand = (availability) =>
     Number.isFinite(availability) ? (100 - availability) * 10 : null;
 
 // The KPI catalogue. Rows with `views` are the same measure in another
-// unit and cycle in place; the rest have a single definition.
+// unit or quantity and cycle in place; the rest have a single definition.
 export const KPIS = [
     {
         key: "registrations",
@@ -32,7 +33,7 @@ export const KPIS = [
             {
                 name: "Activated (D7)",
                 tooltip:
-                    "Users who made at least one API request within 7 days of registration. Source: D1 + Tinybird (generation_event_v2)",
+                    "Users who made their first regular API request within 7 days of registration. Source: D1 + Tinybird (generation_event_v2)",
             },
             {
                 name: "D7 activation rate",
@@ -111,6 +112,56 @@ export const KPIS = [
         ],
     },
     {
+        key: "pollenByCategory",
+        category: "Usage",
+        format: "currency",
+        views: [
+            ["pollenText", "Text"],
+            ["pollenImage", "Image"],
+            ["pollenVideo", "Video"],
+            ["pollenAudio", "Audio"],
+            ["pollenRealtime", "Realtime"],
+            ["pollenEmbedding", "Embeddings"],
+            ["pollen3d", "3D"],
+            ["pollenCommunity", "Community"],
+            ["pollenOther", "Tools / other"],
+        ].map(([key, label]) => ({
+            key,
+            label,
+            name: `Pollen spent · ${label}`,
+            tooltip:
+                "USD value of Paid + Quest Pollen consumed by successful billed final requests. Whole-request spend, not Stripe cash revenue or provider cost. Categories use recorded output usage and endpoint: video takes priority over audio, then image, then text; realtime, embeddings and 3D are separate. Community-served requests are in Community only. Tools / other includes MCP. Source: Tinybird (weekly_usage_stats).",
+        })),
+    },
+    {
+        key: "legacyRequests",
+        category: "Usage",
+        // Migration progress: less legacy traffic is the goal.
+        lowerIsBetter: true,
+        views: [
+            {
+                name: "Legacy · requests",
+                format: "compact",
+                tooltip:
+                    "Requests through the two legacy API bridges this week. Legacy is excluded from every other usage row. Source: Tinybird (weekly_traffic_totals).",
+            },
+            {
+                name: "Legacy · share of requests",
+                format: "percent",
+                calc: (w) => (w.legacyRequests / w.requestsAll) * 100,
+                tooltip:
+                    "Legacy requests / all requests (regular, legacy, operations and dev) × 100. The migration trend: falls as legacy callers move to the current API.",
+            },
+            {
+                key: "legacyCostUsd",
+                name: "Legacy · compute cost",
+                format: "currency",
+                tooltip:
+                    "Legacy is free for callers; this is what the requests cost us to serve, from the registry rate cards. Included in cash coverage, excluded from gross margin.",
+            },
+        ],
+    },
+    {
         key: "packPurchases",
         category: "Revenue",
         views: [
@@ -152,7 +203,7 @@ export const KPIS = [
         format: "percent",
         calc: coverage,
         tooltip:
-            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
+            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Cost covers all traffic — regular, legacy, operations and dev — because cash is company-wide. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted. Source: Tinybird (weekly_traffic_totals).",
     },
     {
         key: "availability",
@@ -234,6 +285,59 @@ export const KPIS = [
         ],
     },
     {
+        key: "agentUsage",
+        category: "Ecosystem",
+        views: [
+            {
+                key: "agentRequests",
+                name: "Agents · observed runs",
+                tooltip:
+                    "Distinct top-level agent runs with at least one recorded internal model/tool call, linked by the verified run token's parent request ID. All outcomes count. Excludes ordinary community models, nested runs, cache hits, and runs with no recorded child call. Comparable history starts Aug 24, 2026; earlier weeks show —. Source: Tinybird (weekly_agent_mcp_usage).",
+            },
+            {
+                key: "agentUsers",
+                name: "Agents · unique users",
+                tooltip:
+                    "Distinct authenticated users of observed top-level agent runs, deduplicated across agents. Only runs with a recorded internal model/tool call are covered; excludes ordinary community models, nested runs, and cache hits. Comparable history starts Aug 24, 2026; earlier weeks show —.",
+            },
+        ],
+    },
+    {
+        key: "mcpUsage",
+        category: "Ecosystem",
+        views: [
+            {
+                key: "mcpCalls",
+                name: "MCP · recorded calls",
+                tooltip:
+                    "Recorded MCP tool calls through Gen: Exa, FFmpeg, Computer, and Composio. Includes calls inside agents and recorded errors. Excludes Pollinations' own MCP server, discovery calls, and failures before a usage receipt. Not total MCP traffic. Source: Tinybird (weekly_agent_mcp_usage).",
+            },
+            {
+                key: "mcpUsers",
+                name: "MCP · unique users",
+                tooltip:
+                    "Distinct authenticated users of recorded MCP tool calls, deduplicated across Exa, FFmpeg, Computer, and Composio. Includes calls inside agents. Pollinations' own MCP server and discovery calls are not covered.",
+            },
+        ],
+    },
+    {
+        key: "githubStarGrowth",
+        category: "Community",
+        views: [
+            {
+                name: "GitHub stars · weekly growth",
+                tooltip:
+                    "Net change between daily Monday snapshots (UTC), including unstars. Current week compares Monday with the latest daily snapshot. Missing boundaries stay blank; history starts when collection begins.",
+            },
+            {
+                key: "githubStars",
+                name: "GitHub stars · total",
+                tooltip:
+                    "Observed total at the next Monday snapshot; current week uses the latest daily snapshot. Collection runs daily near 00:17 UTC, subject to GitHub Actions scheduling delays.",
+            },
+        ],
+    },
+    {
         key: "appSubmissions",
         name: "App submissions",
         category: "Community",
@@ -244,6 +348,24 @@ export const KPIS = [
 
 export function kpiValue(kpi, week) {
     return kpi.calc ? kpi.calc(week) : week[kpi.key];
+}
+
+export const POLLEN_CATEGORIES = KPIS.find(
+    (row) => row.key === "pollenByCategory",
+).views;
+
+export function pollenSpendSeries(weeks, selected = "top") {
+    if (selected !== "top")
+        return POLLEN_CATEGORIES.filter((view) => view.key === selected);
+    const latest = weeks.at(-1) ?? {};
+    return POLLEN_CATEGORIES.filter(
+        ({ key }) =>
+            key !== "pollenCommunity" &&
+            key !== "pollenOther" &&
+            Number.isFinite(latest[key]),
+    )
+        .sort((a, b) => latest[b.key] - latest[a.key])
+        .slice(0, 3);
 }
 
 /** The active definition of a row, given how many times it has been cycled. */

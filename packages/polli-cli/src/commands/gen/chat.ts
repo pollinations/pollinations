@@ -5,7 +5,13 @@ import { Command } from "commander";
 import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
-import { getOutputMode, printError, printResult } from "../../lib/output.js";
+import { numberOption } from "../../lib/number-option.js";
+import {
+    ExitSignal,
+    getOutputMode,
+    printError,
+    printResult,
+} from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface Message {
@@ -31,6 +37,20 @@ export function createChatCommand() {
         .option("--max-tokens <n>", "Maximum output tokens")
         .option("--save <path>", "Save conversation transcript on exit")
         .action(async (opts) => {
+            const temperature =
+                opts.temperature === undefined
+                    ? undefined
+                    : numberOption("--temperature", opts.temperature, 0, 2);
+            const maxTokens =
+                opts.maxTokens === undefined
+                    ? undefined
+                    : numberOption(
+                          "--max-tokens",
+                          opts.maxTokens,
+                          0,
+                          Number.MAX_SAFE_INTEGER,
+                          true,
+                      );
             const key = requireKey();
             const isJson = getOutputMode() !== "human";
 
@@ -66,10 +86,8 @@ export function createChatCommand() {
                     stream: !isJson,
                 };
                 if (opts.model) body.model = opts.model;
-                if (opts.temperature !== undefined)
-                    body.temperature = Number(opts.temperature);
-                if (opts.maxTokens !== undefined)
-                    body.max_tokens = Number(opts.maxTokens);
+                if (temperature !== undefined) body.temperature = temperature;
+                if (maxTokens !== undefined) body.max_tokens = maxTokens;
 
                 try {
                     const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
@@ -87,7 +105,11 @@ export function createChatCommand() {
                         if (hint) {
                             printError(hint);
                             rl.close();
-                            process.exit(1);
+                            // Set the code and let the loop unwind: an
+                            // immediate process.exit() aborts libuv on
+                            // Windows after network I/O (nodejs/node#56645).
+                            process.exitCode = 1;
+                            return;
                         }
                         throw new Error(`${res.status}: ${errText}`);
                     }
@@ -156,7 +178,7 @@ export function createChatCommand() {
                         );
                     }
                     rl.close();
-                    process.exit(0);
+                    process.exitCode = 0;
                 }
 
                 if (input === "/clear") {
@@ -187,7 +209,7 @@ export function createChatCommand() {
 
             rl.on("close", () => {
                 if (opts.save) saveTranscript(opts.save);
-                process.exit(0);
+                process.exitCode = 0;
             });
         });
 }

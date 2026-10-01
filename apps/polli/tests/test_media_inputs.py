@@ -31,6 +31,22 @@ class MediaExtractionTests(unittest.TestCase):
 
 
 class ImageDecodeTests(unittest.TestCase):
+    def test_default_attachment_limit_accepts_twenty_mib_and_rejects_more(self):
+        import base64
+
+        limit = 20 * 1024 * 1024
+        for size, expected in ((limit, 1), (limit + 1, 0)):
+            with self.subTest(size=size):
+                payload = b"\x89PNG\r\n\x1a\n" + b"x" * (size - 8)
+                encoded = base64.b64encode(payload).decode()
+                blocks = [{"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}}]
+                files = decode_base64_images(blocks)
+                try:
+                    self.assertEqual(len(files), expected)
+                finally:
+                    for attachment in files:
+                        attachment.close()
+
     def test_rejects_non_png_data_under_png_mime(self):
         blocks = [{"type": "image_url", "image_url": {"url": "data:image/png;base64,bm90LXBuZw=="}}]
 

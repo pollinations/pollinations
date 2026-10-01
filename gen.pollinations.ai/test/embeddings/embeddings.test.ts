@@ -475,7 +475,7 @@ describe("POST /v1/embeddings", () => {
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [TEST_OPENAI_LARGE_MODEL];
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
             await mocks.enable("tinybird", "tinybirdStats", "azureOpenAI");
             mocks.azureOpenAI.state.failModel =
                 TEST_OPENAI_SMALL_PROVIDER_MODEL;
@@ -504,7 +504,7 @@ describe("POST /v1/embeddings", () => {
             await wait();
         } finally {
             source.fallbacks = previousFallbacks;
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
         }
     });
 
@@ -878,6 +878,7 @@ describe("POST /v1/embeddings", () => {
         expect(billed).toHaveLength(1);
         expect(billed[0]).toMatchObject({
             modelRequested: TEST_COHERE_MODEL,
+            resolvedModelRequested: TEST_COHERE_MODEL,
             modelUsed: "cohere/embed-v4.0:azure:sweden",
             totalCost:
                 modality === "image"

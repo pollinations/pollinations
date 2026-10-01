@@ -254,7 +254,7 @@ def is_image_url(url: str) -> bool:
 def decode_base64_images(
     content_blocks: list[dict],
     max_images: int = 10,
-    max_bytes: int = 8 * 1024 * 1024,
+    max_bytes: int = 20 * 1024 * 1024,
 ) -> list[discord.File]:
     """
     Decode base64 images from content_blocks to discord.File objects.
@@ -554,7 +554,7 @@ class PolliBot(commands.Bot):
             api_app = create_api_app(pollinations_client, config, self)
             self._api_server = GranianServer(
                 target=api_app,
-                address="127.0.0.1",
+                address=config.api.bind,
                 port=config.api.port,
                 interface="asgi",
             )
@@ -566,7 +566,7 @@ class PolliBot(commands.Bot):
                     else None
                 )
             )
-            logger.info(f"Polli API started on port {config.api.port}")
+            logger.info(f"Polli API started on {config.api.bind}:{config.api.port}")
 
         # Pre-warm aiohttp connection pool (eliminates TLS cold-start on first request)
         try:

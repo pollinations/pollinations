@@ -17,9 +17,11 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 services = [
     { binding = "ENTER", service = "pollinations-enter" },
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
+    { binding = "ASK_JEV_MCP", service = "ask-jev-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
+    { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -39,11 +41,6 @@ id = "84512601e2a44679a4d3b0f7415d90ec"
 [[r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
-
-# Temporary read-through source; remove with legacy-media-cache.ts.
-[[r2_buckets]]
-binding = "LEGACY_MEDIA_BUCKET"
-bucket_name = "pollinations-images"
 
 [[durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -112,6 +109,10 @@ binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
 [[env.production.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp"
+
+[[env.production.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp"
 
@@ -122,6 +123,18 @@ service = "pollinations-exa-mcp"
 [[env.production.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
+
+[[env.production.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp"
+
+[[env.production.dispatch_namespaces]]
+binding = "CODE_AGENTS"
+namespace = "pollinations-code-agents-production"
+
+[env.production.dispatch_namespaces.outbound]
+service = "pollinations-enter-production"
+parameters = ["CODE_AGENT_CONTEXT"]
 
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
@@ -147,11 +160,6 @@ entrypoint = "MediaUpload"
 [[env.production.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
-
-# Temporary read-through source; remove with legacy-media-cache.ts.
-[[env.production.r2_buckets]]
-binding = "LEGACY_MEDIA_BUCKET"
-bucket_name = "pollinations-images"
 
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
@@ -213,7 +221,11 @@ service = "pollinations-enter-staging"
 
 [[env.staging.services]]
 binding = "POLLINATIONS_MCP"
-service = "pollinations-mcp"
+service = "pollinations-mcp-staging"
+
+[[env.staging.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp-staging"
 
 [[env.staging.services]]
 binding = "FFMPEG_MCP"
@@ -226,6 +238,18 @@ service = "pollinations-exa-mcp-staging"
 [[env.staging.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
+
+[[env.staging.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp-staging"
+
+[[env.staging.dispatch_namespaces]]
+binding = "CODE_AGENTS"
+namespace = "pollinations-code-agents-staging"
+
+[env.staging.dispatch_namespaces.outbound]
+service = "pollinations-enter-staging"
+parameters = ["CODE_AGENT_CONTEXT"]
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -245,11 +269,6 @@ entrypoint = "MediaUpload"
 [[env.staging.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
-
-# Temporary read-through source; remove with legacy-media-cache.ts.
-[[env.staging.r2_buckets]]
-binding = "LEGACY_MEDIA_BUCKET"
-bucket_name = "pollinations-images"
 
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
@@ -306,6 +325,10 @@ binding = "POLLINATIONS_MCP"
 service = "pollinations-mcp"
 
 [[env.test.services]]
+binding = "ASK_JEV_MCP"
+service = "ask-jev-mcp"
+
+[[env.test.services]]
 binding = "FFMPEG_MCP"
 service = "pollinations-ffmpeg-mcp"
 
@@ -316,6 +339,10 @@ service = "pollinations-exa-mcp"
 [[env.test.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
+
+[[env.test.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"
@@ -335,11 +362,6 @@ entrypoint = "MediaUpload"
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
-
-# Temporary read-through source; remove with legacy-media-cache.ts.
-[[env.test.r2_buckets]]
-binding = "LEGACY_MEDIA_BUCKET"
-bucket_name = "pollinations-images"
 
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"

@@ -1,5 +1,5 @@
 import { env, SELF } from "cloudflare:test";
-import { apikey } from "@shared/db/better-auth.ts";
+import { apikey, user as userTable } from "@shared/db/better-auth.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
@@ -18,11 +18,50 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
-import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
+import {
+    type AuthEnv,
+    authFromSnapshot,
+    keyPermissionsLink,
+} from "../src/middleware/auth.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+test("banned app owners block direct keys and existing BYOP keys", async () => {
+    const owner = await createTestApiKey();
+    const caller = await createTestApiKey();
+    const db = drizzle(env.DB);
+    await db
+        .update(apikey)
+        .set({ byopClientKeyId: owner.id })
+        .where(eq(apikey.id, caller.id));
+    await db
+        .update(userTable)
+        .set({ banned: true })
+        .where(eq(userTable.id, owner.userId));
+    for (const key of [owner.key, caller.key]) {
+        expect(
+            (
+                await fetchWorker("/v1/models", {
+                    headers: { Authorization: `Bearer ${key}` },
+                })
+            ).status,
+        ).toBe(403);
+    }
+    await db
+        .update(userTable)
+        .set({ banned: false })
+        .where(eq(userTable.id, owner.userId));
+    expect(
+        (
+            await fetchWorker("/v1/models", {
+                headers: { Authorization: `Bearer ${caller.key}` },
+            })
+        ).status,
+    ).toBe(200);
+});
 
 test("catalog metadata exposes publisher rather than author or brand", async () => {
     const response = await fetchWorker("/models");
@@ -88,6 +127,49 @@ test("legacy stored allowlists still filter catalogs after canonical promotion",
     });
 });
 
+test("stored MAI Image 2.5 permissions allow the 2.6 Flash catalog entry", async () => {
+    const currentModel = "microsoft/mai-image-2.6-flash";
+    const oldModel = "microsoft/mai-image-2.5-flash";
+    const { key, id } = await createTestApiKey({
+        allowedModels: [currentModel],
+        user: { packBalance: 100 },
+    });
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify({ models: [oldModel] }) })
+        .where(eq(apikey.id, id));
+
+    const response = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        aliases: string[];
+    }[];
+    expect(models).toEqual([
+        expect.objectContaining({ name: currentModel, aliases: [oldModel] }),
+    ]);
+    expect(resolveModelName(oldModel)).toBe(currentModel);
+
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: { id, permissions: { models: [oldModel] } },
+        }),
+    );
+    app.get("/check", (c) => {
+        c.set("model", { requested: oldModel, resolved: currentModel });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+    const allowed = await app.request("/check");
+    expect(allowed.status).toBe(200);
+    expect(await allowed.json()).toEqual({ models: [currentModel] });
+});
+
 test("restored auth snapshots normalize aliases once without expanding model or account scope", async () => {
     const snapshot = {
         user: { id: "permission-test", tier: "seed" },
@@ -118,7 +200,11 @@ test("restored auth snapshots normalize aliases once without expanding model or 
             account: ["profile"],
         });
     }
-    expect((await app.request("/other%2Fcustom")).status).toBe(403);
+    const forbidden = await app.request("/other%2Fcustom");
+    expect(forbidden.status).toBe(403);
+    expect(await forbidden.text()).toBe(
+        "Model 'other/custom' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
+    );
     expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
         403,
     );
@@ -218,15 +304,98 @@ test("restored auth allows old and future names without expanding account or com
         });
     }
     for (const model of ["other/custom", "flux"]) {
-        expect(
-            (await app.request(`/${encodeURIComponent(model)}`)).status,
-        ).toBe(403);
+        const res = await app.request(`/${encodeURIComponent(model)}`);
+        expect(res.status).toBe(403);
+        expect(await res.text()).toBe(
+            `Model '${model}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test`,
+        );
     }
     expect(snapshot.apiKey.permissions.models).toEqual([
         "openai-fast",
         "openai/gpt-5-nano",
         "owner/custom",
     ]);
+});
+
+test("keys allowed the retired Sonar Pro models still reach Sonar and nothing else", async () => {
+    // The canonical IDs migration 0062 stored before Sonar Pro and Reasoning
+    // Pro became aliases of Sonar.
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: {
+                id: "test",
+                permissions: {
+                    models: [
+                        "perplexity/sonar-pro",
+                        "perplexity/sonar-reasoning-pro",
+                    ],
+                },
+            },
+        }),
+    );
+    app.get("/:model", (c) => {
+        const requested = c.req.param("model");
+        c.set("model", { requested, resolved: resolveModelName(requested) });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+
+    for (const model of [
+        "perplexity/sonar-pro",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity",
+        "perplexity-reasoning",
+        "perplexity/sonar",
+    ]) {
+        const response = await app.request(`/${encodeURIComponent(model)}`);
+        expect(response.status, model).toBe(200);
+        expect(await response.json()).toEqual({
+            models: ["perplexity/sonar"],
+        });
+    }
+    const other = await app.request("/flux");
+    expect(other.status).toBe(403);
+});
+
+test("keyPermissionsLink resolves production and staging editor links", () => {
+    expect(keyPermissionsLink("key-1")).toBe(
+        "https://enter.pollinations.ai/edit-key?id=key-1",
+    );
+    expect(keyPermissionsLink("key-1", "staging")).toBe(
+        "https://staging.enter.pollinations.ai/edit-key?id=key-1",
+    );
+});
+
+test("requireModelAccess uses staging host for staging environment", async () => {
+    const snapshot = {
+        user: { id: "permission-test", tier: "seed" },
+        apiKey: {
+            id: "staging-key-id",
+            permissions: {
+                models: ["openai"],
+                account: ["profile"],
+            },
+        },
+    };
+    const app = new Hono<AuthEnv>();
+    app.use("*", authFromSnapshot(snapshot));
+    app.get("/:model", (c) => {
+        const model = c.req.param("model");
+        c.set("model", { requested: model, resolved: model });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+
+    const responseEnv = await app.request("/forbidden-model", undefined, {
+        ENVIRONMENT: "staging",
+    } as CloudflareBindings);
+    expect(responseEnv.status).toBe(403);
+    expect(await responseEnv.text()).toBe(
+        "Model 'forbidden-model' is not allowed for this API key. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
+    );
 });
 
 test("filters OpenAI-compatible model list by API key permissions", async ({
@@ -326,12 +495,17 @@ test("filters OpenRouter text models by paid balance", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const freeResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const paidResponse = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
-    });
+    const [freeResponse, paidResponse, generation] = await Promise.all([
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        fetchWorker("/text/paid-only-check?model=mistral", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+    ]);
 
     expect(freeResponse.status).toBe(200);
     expect(paidResponse.status).toBe(200);
@@ -342,11 +516,32 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    const openRouterModelNames = getVisibleTextModels().filter(
-        (model) => getRegistryModelDefinition(model).provider === "openrouter",
-    );
+    // Only the approved low-cost decision models are exempt from paid balance.
+    const questPollenModels = new Set([
+        "typesafe/jev-1.13",
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+    ]);
+    const openRouterModelNames = getVisibleTextModels().filter((model) => {
+        const definition = getRegistryModelDefinition(model);
+        return (
+            definition.provider === "openrouter" &&
+            !questPollenModels.has(model)
+        );
+    });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of questPollenModels) {
+        expect(
+            freeModelNames.has(model),
+            `${model} visible to Quest Pollen`,
+        ).toBe(true);
+        expect(
+            paidModelNames.has(model),
+            `${model} visible to paid users`,
+        ).toBe(true);
+    }
 
     expect(openRouterModelNames.length).toBeGreaterThan(0);
     expect(
@@ -356,12 +551,49 @@ test("filters OpenRouter text models by paid balance", async ({
         openRouterModelNames.every((model) => paidModelNames.has(model)),
     ).toBe(true);
 
-    const generation = await fetchWorker(
-        "/text/paid-only-check?model=mistral",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
-    expect(generation.status).toBe(402);
-});
+    expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
+    if (TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(await generation.text()).toContain(
+            "?ref=agent_low_balance_topup",
+        );
+        expect(generation.headers.get("cache-control")).toBe(
+            "private, no-store",
+        );
+    }
+}, 15_000);
+
+test("makes Azure GPT-6 models available to Quest Pollen accounts", async ({
+    apiKey,
+    paidApiKey,
+}) => {
+    const models = [
+        "openai/gpt-6-sol",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-luna",
+    ] as const;
+    const [freeResponse, paidResponse] = await Promise.all([
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/v1/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+    ]);
+    const freeModels = (await freeResponse.json()) as {
+        data: { id: string }[];
+    };
+    const paidModels = (await paidResponse.json()) as {
+        data: { id: string }[];
+    };
+    const freeNames = new Set(freeModels.data.map((model) => model.id));
+    const paidNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of models) {
+        expect(freeNames.has(model)).toBe(true);
+        expect(paidNames.has(model)).toBe(true);
+        expect(getRegistryModelDefinition(model).paidOnly).toBe(false);
+    }
+}, 15_000);
 
 test("filters paid-only audio models by paid balance", async ({
     apiKey,
@@ -421,12 +653,18 @@ test("requires paid balance for Recraft vector", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const freeCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const paidCatalog = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${paidApiKey}` },
-    });
+    const [freeCatalog, paidCatalog, generation] = await Promise.all([
+        fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        }),
+        fetchWorker("/image/models", {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        }),
+        fetchWorker(
+            "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
+            { headers: { Authorization: `Bearer ${apiKey}` } },
+        ),
+    ]);
     const freeModels = (await freeCatalog.json()) as { name: string }[];
     const paidModels = (await paidCatalog.json()) as { name: string }[];
 
@@ -441,9 +679,18 @@ test("requires paid balance for Recraft vector", async ({
         ),
     ).toBe(true);
 
-    const generation = await fetchWorker(
-        "/image/paid-only-check?model=recraft-v4.1-vector&seed=24072499",
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-    );
     expect(generation.status).toBe(402);
+}, 15_000);
+
+test("Scout catalog exposes its enforced output capabilities", async () => {
+    const response = await fetchWorker("/models");
+    const models = (await response.json()) as Record<string, unknown>[];
+    expect(
+        models.find((model) => model.name === "meta/llama-4-scout"),
+    ).toMatchObject({
+        tools: false,
+        supports_structured_output: false,
+        max_completion_tokens: 16384,
+        context_length: 131072,
+    });
 });

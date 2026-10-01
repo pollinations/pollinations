@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     downloadUserImage,
     readImageDimensions,
+    toDataUri,
 } from "../../src/image/utils/imageDownload.ts";
+import { MAX_IMAGE_SIZE } from "../../src/userImage.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -188,6 +190,88 @@ describe("downloadUserImage", () => {
             status: 400,
             errorCode: "unsupported_image_media_type",
         });
+    });
+});
+
+describe("toDataUri", () => {
+    it.each([
+        "data:image/png;base64,iVBORw0KGgo=",
+        "data:image/heic;base64,AA==",
+        "data:text/html;base64,YWJj",
+        "data:image/png;base64,",
+        "data:IMAGE/PNG;base64,iVBORw0KGgo=",
+        "data:image/png;BASE64,iVBORw0KGgo=",
+        "data:image/png;base64, iVBORw0K\nGgo ",
+        "data:image/png;base64,Zh==",
+        "data:image/png;base64,YWJj\n",
+        "data:;base64,iVBORw0KGgo=",
+    ])("preserves decoded bytes and MIME normalization for %s", async (uri) => {
+        const { buffer, mimeType } = await downloadUserImage(uri);
+        expect(await toDataUri(uri)).toBe(
+            `data:${mimeType};base64,${buffer.toString("base64")}`,
+        );
+    });
+
+    it.each([
+        "data:image/png,abc",
+        "data:image/png;base64,A===",
+        "data:image/png;base64,A",
+        "data:image/png;base64,AA=A",
+        "data:image/png;base64,AA-_",
+        "data:image/png;base64,!!!!",
+    ])("keeps invalid base64 a caller error: %s", async (uri) => {
+        await expect(toDataUri(uri)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
+    it("keeps untyped unrecognisable data a caller error", async () => {
+        await expect(toDataUri("data:;base64,YWJj")).rejects.toMatchObject({
+            status: 400,
+            errorCode: "unsupported_image_media_type",
+        });
+    });
+
+    it("reuses two large uploaded images without decoding their full payloads", async () => {
+        const inputs = [9_992_143, 12_285_506].map((size) => {
+            const bytes = Buffer.alloc(size);
+            bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+            return `data:image/png;base64,${bytes.toString("base64")}`;
+        });
+        const decode = vi.spyOn(globalThis, "atob");
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        const output = await Promise.all(inputs.map(toDataUri));
+
+        expect(output).toEqual(inputs);
+        expect(decode.mock.calls.every(([input]) => input.length <= 4)).toBe(
+            true,
+        );
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("keeps the per-image size limit without decoding an oversized upload", async () => {
+        const uri = `data:image/png;base64,${Buffer.alloc(MAX_IMAGE_SIZE + 1).toString("base64")}`;
+        const decode = vi.spyOn(globalThis, "atob");
+        await expect(toDataUri(uri)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "image_too_large",
+        });
+        expect(decode.mock.calls.every(([input]) => input.length <= 4)).toBe(
+            true,
+        );
+    });
+
+    it("still downloads remote images", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(new Uint8Array([1, 2, 3]), {
+                headers: { "content-type": "image/png" },
+            }),
+        );
+        expect(await toDataUri("https://example.com/input.png")).toBe(
+            "data:image/png;base64,AQID",
+        );
     });
 });
 

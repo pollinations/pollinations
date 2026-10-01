@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 
 from src.ai.client import PollinationsClient
-from src.api.server import create_api_app
+from src.api.server import ChatRequest, ResponsesRequest, _request_args, _responses_chat_request, create_api_app
 
 
 async def _empty_chunks():
@@ -115,6 +115,13 @@ class OpenAIAPITests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"]["type"], "invalid_request_error")
 
+    def test_health_does_not_require_discord_or_api_credentials(self):
+        response = self.client.get("/health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "healthy")
+        self.assertEqual(response.json()["bot_name"], "Polli")
+
     def test_models_lists_polli(self):
         response = self.client.get("/v1/models", headers=self.headers)
 
@@ -138,6 +145,32 @@ class OpenAIAPITests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["model"], "openai")
+
+    def test_metadata_model_is_resolved_by_polli(self):
+        config = SimpleNamespace(ai=SimpleNamespace(model="default-model"))
+        requests = [
+            ChatRequest(
+                messages=[{"role": "user", "content": "Hi"}], metadata={"model": "inner-model", "custom_key": "value"}
+            ),
+            _responses_chat_request(
+                ResponsesRequest(input="Hi", metadata={"model": "inner-model", "custom_key": "value"})
+            ),
+        ]
+        for request in requests:
+            params = _request_args(request, config)["api_params"]
+            self.assertEqual(params["model"], "inner-model")
+            self.assertTrue(params["_explicit_model"])
+            self.assertNotIn("metadata", params)
+
+    def test_metadata_validation_matches_between_endpoints(self):
+        for path, body in (
+            ("/v1/chat/completions", {"messages": [{"role": "user", "content": "Hi"}]}),
+            ("/v1/responses", {"input": "Hi"}),
+        ):
+            for metadata, status in ((None, 200), ({}, 200), ({"model": 123}, 400)):
+                with self.subTest(path=path, metadata=metadata):
+                    response = self.client.post(path, headers=self.headers, json={**body, "metadata": metadata})
+                    self.assertEqual(response.status_code, status)
 
     def test_blank_model_is_rejected(self):
         response = self.client.post(

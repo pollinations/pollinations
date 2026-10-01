@@ -1,6 +1,6 @@
 # Publish a Model
 
-Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
+Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `community/owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
 Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
@@ -76,7 +76,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 2. Choose **Add model**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
-5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
+5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
 
 ### Model names
@@ -130,14 +130,14 @@ Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot ex
 
 ## Call Your Model
 
-Use the generated `owner/model` id anywhere the corresponding Pollinations endpoint accepts a model:
+Use the generated `community/owner/model` id anywhere the corresponding Pollinations endpoint accepts a model:
 
 ```bash
 curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "owner/my-model",
+    "model": "community/owner/my-model",
     "messages": [{"role": "user", "content": "Hello"}]
   }'
 ```
@@ -152,7 +152,11 @@ Endpoint agents also select one upstream API and exact URL. Managed prompt agent
 
 Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.
 
-Pollinations monitors public text and image models using live traffic and active probes. Sustained failures can hide a model from listings while exact-ID calls continue to work. Owners can relist a fixed model, and the monitor can automatically relist models it hid after recovery is verified. View public model health at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
+Public model lists show community proxies with more than 80% success across their last 50 eligible final requests within seven days. Fallback rescues, owner requests, and monitor probes count. Final 4xx are excluded. There is no minimum sample size, and models without recent data remain listed. Private models remain visible to their owners.
+
+Models filtered for reliability still work by exact ID and can serve as fallbacks. Use `?reliability=all` on a model-list endpoint to include them. Manual hiding and private models remain separate; this option does not bypass access controls.
+
+The monitor helps diagnose issues and selectively probes text/image models, normally no more than once every four hours with longer gaps after repeated failures. It no longer hides or relists models. Listing visibility updates automatically as new requests change the sample. View time-windowed diagnostics at [model-monitor.pollinations.ai](https://model-monitor.pollinations.ai).
 
 ## Trust Boundary
 

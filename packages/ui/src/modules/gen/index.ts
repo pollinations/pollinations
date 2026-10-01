@@ -2,8 +2,16 @@ export { ModalityChip } from "./ModalityChip.tsx";
 export { ModalityDot } from "./ModalityDot.tsx";
 export { ModalityTab } from "./ModalityTab.tsx";
 export {
+    ModelAccessIcon,
+    type ModelAccessIconProps,
+} from "./ModelAccessIcon.tsx";
+export {
     categoryLabel,
     ModelSelector,
     type ModelSelectorCategory,
 } from "./ModelSelector.tsx";
-export { getModalityKey } from "./themes.ts";
+export {
+    getModalityKey,
+    modalityBgVar,
+    modalityTextColor,
+} from "./themes.ts";

@@ -14,7 +14,7 @@ import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
 const ID = "opencode";
 const LABEL = "OpenCode";
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 const PLUGIN_SPEC = "opencode-pollinations-plugin";
 
 /**
@@ -38,7 +38,7 @@ const pollinationsConfigDir = (ctx: HarnessContext) => {
     );
 };
 
-const opencodeConfigFile = (ctx: HarnessContext) => {
+export const opencodeConfigFile = (ctx: HarnessContext) => {
     if (ctx.env.OPENCODE_CONFIG?.trim()) {
         return resolveHomePath(ctx.home, ctx.env.OPENCODE_CONFIG);
     }

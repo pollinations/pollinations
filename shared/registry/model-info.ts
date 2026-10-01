@@ -138,7 +138,7 @@ export const ModelInfoSchema = z.object({
         .array(z.string())
         .optional()
         .describe(
-            "`aspectRatio` values the output follows; the first is the default. Omitted when the model ignores `aspectRatio` or it is unverified.",
+            "`aspectRatio` values the output follows on the model's primary route; the first is the default. Fallback routes may differ. Omitted when the primary route ignores `aspectRatio` or it is unverified.",
         ),
     image_size: z
         .object({

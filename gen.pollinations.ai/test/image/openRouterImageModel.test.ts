@@ -262,7 +262,20 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
 });
 
 describe("OpenRouter FLUX.2 Max", () => {
-    function mockFlux2MaxFetch(requests: Record<string, unknown>[]) {
+    // OpenRouter picks the output size from the aspect ratio; this is what a
+    // 1:1 request returns regardless of the requested width and height.
+    const SQUARE_PNG = Buffer.alloc(24);
+    SQUARE_PNG.set([0x89, 0x50, 0x4e, 0x47]);
+    SQUARE_PNG.writeUInt32BE(1024, 16);
+    SQUARE_PNG.writeUInt32BE(1024, 20);
+
+    function mockFlux2MaxFetch(
+        requests: Record<string, unknown>[],
+        body: Record<string, unknown> = {
+            data: [{ b64_json: SQUARE_PNG.toString("base64") }],
+            usage: { cost: 0.07 },
+        },
+    ) {
         return vi
             .spyOn(globalThis, "fetch")
             .mockImplementation(async (url, init) => {
@@ -282,10 +295,7 @@ describe("OpenRouter FLUX.2 Max", () => {
                 requests.push(
                     JSON.parse(init?.body as string) as Record<string, unknown>,
                 );
-                return Response.json({
-                    data: [{ b64_json: "AQID" }],
-                    usage: { cost: 0.05 },
-                });
+                return Response.json(body);
             });
     }
 
@@ -323,10 +333,55 @@ describe("OpenRouter FLUX.2 Max", () => {
                 },
             ],
         });
+        // Reference megapixels are charged like on the Replicate primary.
+        expect(result.trackingData?.usage.promptImageTokens).toBeCloseTo(
+            (1 * 1 + 2560 * 1440) / 1_000_000,
+            12,
+        );
+    });
+
+    it("bills the returned image size and OpenRouter's reported cost, not the requested size", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        mockFlux2MaxFetch([]);
+
+        const result = await callOpenRouterFlux2MaxAPI("test prompt", {
+            ...baseParams,
+            model: "black-forest-labs/flux.2-max:openrouter",
+            width: 2048,
+            height: 2048,
+        });
+
         expect(result.trackingData).toEqual({
             actualModel: "black-forest-labs/flux.2-max:openrouter",
+            providerBilling: { units: 0.07, unitCost: 1.055 },
             usage: { completionImageTokens: 1.048576 },
         });
+    });
+
+    it("rejects a response without a positive reported cost", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        for (const usage of [undefined, { cost: 0 }, { cost: null }]) {
+            vi.restoreAllMocks();
+            mockFlux2MaxFetch([], {
+                data: [{ b64_json: SQUARE_PNG.toString("base64") }],
+                usage,
+            });
+            await expect(
+                callOpenRouterFlux2MaxAPI("test prompt", {
+                    ...baseParams,
+                    model: "black-forest-labs/flux.2-max:openrouter",
+                }),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: "OpenRouter returned invalid image billing usage",
+            });
+        }
     });
 
     it("rejects more than 8 reference images", async () => {

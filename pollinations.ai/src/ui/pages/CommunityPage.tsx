@@ -1,6 +1,5 @@
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
-import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -22,7 +21,6 @@ interface VotingIssue {
 
 export default function CommunityPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(COMMUNITY_PAGE);
-    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],

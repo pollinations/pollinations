@@ -82,6 +82,20 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("accepts the one resolution a fixed-resolution video model produces", () => {
+        for (const [model, resolution] of [
+            ["alibaba/happyhorse-1.1", "720p"],
+            ["bytedance/seedance-2.0", "720p"],
+            ["alibaba/wan-2.2-fast", "480p"],
+            ["x-ai/grok-imagine-video", "720p"],
+            ["alibaba/wan-2.6", "720p"],
+        ] as const) {
+            expect(
+                ImageParamsSchema.safeParse({ model, resolution }).success,
+            ).toBe(true);
+        }
+    });
+
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({

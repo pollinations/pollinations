@@ -1,36 +1,35 @@
 # Focus areas
 
-The focus wall groups every issue and pull request into one of 18 areas. It shows where the team's work goes and whether that matches what we said we would focus on.
+The focus wall groups every issue and pull request into one of 15 areas. It shows where the team's work goes and whether that matches what we said we would focus on.
 
 ## How to assign an area
 
 - Pick **one** area per issue or PR: the area the change is mainly *for*.
 - Judge a PR by what it does and which files it changes, not by its title prefix alone.
 - When a change touches several areas, pick the one its reviewer would need to understand it.
+- Where a PR came from does not decide its area. A PR that completes a quest goes to the area of the code it changes; the `POLLEN-QUEST` label is never a reason to pick Quests & rewards.
 - PRs that only promote or sync `main` into `production` get no area. They carry other PRs' work and are counted separately as release overhead.
+- Automated PRs from the Pollinations bot (API docs regeneration, app metrics, README refreshes) get the area of what they refresh, but are left out when measuring effort.
 
 ## Overview
 
 | Area | In one line |
 |---|---|
 | [Models](#models) | Which models we serve, through which providers, at what price |
-| [Community models](#community-models) | Models and agents published by the community |
+| [Community models](#community-models) | Models, agents and MCP servers published by the community |
 | [Agents & agent tools](#agents--agent-tools) | Agents we host and the tools agents use |
-| [Developer tools](#developer-tools) | SDK, CLI, MCP package and third-party integrations |
+| [Developer tools](#developer-tools) | SDK, CLI, MCP package and plugins for other tools |
 | [Accounts & keys](#accounts--keys) | Sign-in, API keys, permissions and abuse handling |
-| [Payments & earnings](#payments--earnings) | Money in (packs, top-ups) and money out (creator payouts) |
+| [Billing & payments](#billing--payments) | What each request costs, and money in and out |
 | [Quests & rewards](#quests--rewards) | Quests, censuses, referrals and their Pollen rewards |
 | [Dashboard](#dashboard) | Shared Enter dashboard UI and `@pollinations/ui` |
 | [API & reliability](#api--reliability) | How generation requests are handled, and keeping them up |
-| [Metering & billing](#metering--billing) | Charging the right amount for each request |
 | [CI & releases](#ci--releases) | Tests, CI, deployments and secret syncs |
-| [Internal automation](#internal-automation) | Bots and agent guidance that run the repo for us |
-| [Website](#website) | The public pollinations.ai site and brand assets |
+| [Internal automation](#internal-automation) | Bots, internal agents and agent guidance that run our work |
+| [Website & social](#website--social) | The public site, brand, news and social posts |
 | [Docs & support](#docs--support) | API docs, guides, README and helping users |
-| [App catalog & showcase](#app-catalog--showcase) | Community apps listed on our site |
-| [Social & news](#social--news) | News posts and social media pipelines |
-| [Data pipelines](#data-pipelines) | Getting data into Tinybird |
-| [Insights](#insights) | KPIs, funnels, revenue and costs we read from that data |
+| [App catalog & showcase](#app-catalog--showcase) | Apps users submit, and apps we maintain for people to use or copy |
+| [Data & insights](#data--insights) | Getting data into Tinybird and what we learn from it |
 
 ## Areas
 
@@ -47,7 +46,7 @@ Which models we offer, how they are routed to providers, and what they cost.
 
 **Not here**
 - Community-published models → [Community models](#community-models)
-- A request charged the wrong amount → [Metering & billing](#metering--billing)
+- A request charged the wrong amount → [Billing & payments](#billing--payments)
 
 **Examples:** #15457 enable Azure GPT-6 · #15814 add Azure TTS models · #15413 bill MiniMax H3 Max Turbo at fal list rates
 
@@ -60,10 +59,11 @@ Models, agents and MCP servers that community members publish on Pollinations, a
 - The community model catalog and how it is listed
 - The community monitor (`operations/community-monitor/`) and its alerts to owners
 - Moving Quest models to community hosting
+- Community agents kept in `apps/agent-*` (quest submissions published as `community/<user>/<name>`)
 
 **Not here**
 - Models we run ourselves → [Models](#models)
-- Payouts to publishers → [Payments & earnings](#payments--earnings)
+- Payouts to publishers → [Billing & payments](#billing--payments)
 
 **Examples:** #15343 allow Saauf to publish community models · #15378 update community publisher access · #14983 community monitor relist and served-model notices
 
@@ -72,10 +72,10 @@ Models, agents and MCP servers that community members publish on Pollinations, a
 Agents as a product, and the tools agents use to get work done.
 
 **Covers**
-- Hosted agents and prompt agents
+- Agents we host for users, and prompt agents
 - Agent harnesses (Claude Code, Hermes, Codex) and their defaults
 - The agent computer: shell, git, sandboxes and VMs
-- Hosted MCP servers in `apps/` (FFmpeg, Ask Jev, Composio, Exa)
+- Hosted MCP servers in `apps/` (computer, FFmpeg, Exa, Composio, Ask Jev)
 - Client tools that agents can call
 
 **Not here**
@@ -95,6 +95,7 @@ What developers install or plug in to build on Pollinations.
 
 **Not here**
 - Guides on how to use them → [Docs & support](#docs--support)
+- Example and template apps → [App catalog & showcase](#app-catalog--showcase)
 
 **Examples:** #15917 SDK speech inputs and audioTransform · #15877 CLI staging environment · #15578 Krita image generation with BYOP
 
@@ -110,15 +111,16 @@ Who a user is, what their keys can do, and stopping abuse.
 
 **Not here**
 - Who may publish community models → [Community models](#community-models)
-- Payment fraud at checkout → [Payments & earnings](#payments--earnings)
+- Payment fraud at checkout → [Billing & payments](#billing--payments)
 
 **Examples:** #15450 let child keys create keys · #15159 stop sending "undefined" as client_id
 
-### Payments & earnings
+### Billing & payments
 
-Money moving in and out: users buying Pollen, and creators getting paid.
+Everything about money: what each request is charged, and money moving in and out.
 
 **Covers**
+- Per-request billing: usage parsing, debits, billing for fallbacks, streams and failed generations, billing event correctness
 - Stripe checkout, packs, top-ups and auto top-up
 - Wallet and balances (Quest Pollen and paid balance)
 - Payment methods: cards, crypto, x402, stablecoins
@@ -126,23 +128,24 @@ Money moving in and out: users buying Pollen, and creators getting paid.
 - Creator earnings and developer cash-out
 
 **Not here**
-- Debiting a single request → [Metering & billing](#metering--billing)
-- Revenue reporting → [Insights](#insights)
+- Setting a model's price → [Models](#models)
+- Revenue reporting → [Data & insights](#data--insights)
 
-**Examples:** #15700 auto top-up double credit fix · #15485 disable auto top-up after a decline · #14740 top-up pages linked from 402 notices
+**Examples:** #15996 bill the flux.2-max fallback from the image it returns · #15700 auto top-up double credit fix · #15485 disable auto top-up after a decline
 
 ### Quests & rewards
 
 Ways users earn Pollen by doing something for us.
 
 **Covers**
-- Quests and quest payouts
+- The quest system itself: quest rules, rewards and payouts
 - Bee Census and Honey Census surveys
 - Referral rewards
 - Linking app submissions and issue reports to quests
 
 **Not here**
-- Buying Pollen → [Payments & earnings](#payments--earnings)
+- Buying Pollen → [Billing & payments](#billing--payments)
+- Work done to complete a quest → the area of the code it changes, such as a community agent → [Community models](#community-models)
 
 **Examples:** #15934 Honey Census for Pollen buyers · #15809 pay only for written census answers · #15566 let an approved app submission close and pay a quest
 
@@ -156,7 +159,7 @@ Shared UI in the Enter dashboard (`enter.pollinations.ai/frontend/`) and the `@p
 - Dashboard pages not owned by one area, such as the model list
 
 **Not here**
-- A screen owned by one area goes to that area. For example, the key editor → [Accounts & keys](#accounts--keys), the top-up page → [Payments & earnings](#payments--earnings)
+- A screen owned by one area goes to that area. For example, the key editor → [Accounts & keys](#accounts--keys), the top-up page → [Billing & payments](#billing--payments)
 
 **Examples:** #15558 flat design for the Enter dashboard · #15907 shared UI changes from website v2 · #14940 show healthy models by default
 
@@ -176,21 +179,6 @@ How generation requests flow through `gen.pollinations.ai` and `enter.pollinatio
 
 **Examples:** #15680 add Anthropic Messages API at /v1/messages · #14999 keep the code and message of every terminal stream error · #15283 classify provider rejections
 
-### Metering & billing
-
-Charging each request the right amount, based on the usage the provider reports.
-
-**Covers**
-- Usage parsing and per-request debits
-- Billing for fallbacks, streams and failed generations
-- Billing event correctness
-
-**Not here**
-- Setting a model's price → [Models](#models)
-- Wallets and top-ups → [Payments & earnings](#payments--earnings)
-
-**Examples:** #15996 bill the flux.2-max fallback from the image it returns · #15454 bill the z-image fal fallback from billed megapixels · #14606 preserve stream usage across cost-only updates
-
 ### CI & releases
 
 Getting code tested and shipped safely.
@@ -204,7 +192,7 @@ Getting code tested and shipped safely.
 
 **Not here**
 - Promotion PRs (`main` → `production`): no area, counted as release overhead
-- An upgrade for one app → that app's area, such as the website's React 19 upgrade → [Website](#website)
+- An upgrade for one app → that app's area, such as the website's React 19 upgrade → [Website & social](#website--social)
 
 **Examples:** #14324 speed up pull request checks · #14598 migrate GitHub Actions off Node 20 · #14596 publish SDK through npm OIDC
 
@@ -214,30 +202,33 @@ Bots and agents that run the repository and community work for us.
 
 **Covers**
 - Issue and PR classifier and labelling (`operations/github/`)
-- Polli auto-fix agent
+- Internal agents: Polli (`apps/polli/`), Flow, and the Polli auto-fix agent
 - Operations agents and scheduled repo jobs
 - Agent guidance: `AGENTS.md`, `CLAUDE.md`, `.claude/skills/`
 
 **Not here**
 - Agents users can run → [Agents & agent tools](#agents--agent-tools)
-- What the news bots post → [Social & news](#social--news)
+- What the news bots post → [Website & social](#website--social)
 
 **Examples:** #15590 let the classifier label every new issue and PR · #14974 never let bots trigger the Polli auto-fix agent
 
-### Website
+### Website & social
 
-The public site at pollinations.ai (`pollinations.ai/`).
+How we present Pollinations in public: the site at pollinations.ai (`pollinations.ai/`) and what we post (`operations/social/`).
 
 **Covers**
 - Home, Apps, legal and marketing pages
 - Website framework and dependency upgrades
 - Brand assets: logo, art, brand kit
+- Daily, weekly and monthly news, and the pipelines that publish it
+- Discord, Reddit, LinkedIn and X posts
+- Newsletter
 
 **Not here**
 - The Enter dashboard → [Dashboard](#dashboard)
 - Which apps are listed → [App catalog & showcase](#app-catalog--showcase)
 
-**Examples:** #15983 new shell, home and legal pages · #15997 new Apps page · #15846 one smooth lotus everywhere
+**Examples:** #15983 new shell, home and legal pages · #15846 one smooth lotus everywhere · #14448 restore weekly publishing and add monthly news
 
 ### Docs & support
 
@@ -255,57 +246,40 @@ Helping developers and users use Pollinations.
 
 ### App catalog & showcase
 
-Community apps built on Pollinations, and how we show them.
+Apps built on Pollinations: the ones users submit and we list, and the ones we maintain for people to use or copy.
 
 **Covers**
 - App submissions and review (`operations/app-management/`)
 - Catalog entries, app metrics, screenshots, ranking and pruning
-- The showcase and a "Made with Pollinations" badge
+- The "Made with Pollinations" badge
+- Template and example apps we maintain in `apps/` (CatGPT, AI Dungeon Master, Virtual Makeup, the OAuth demos)
+- Reference apps we run: Open WebUI, chat, websim
+- The playground
 
 **Not here**
-- Apps we maintain in `apps/` → the area they serve, such as hosted MCP servers → [Agents & agent tools](#agents--agent-tools)
+- Plugins people install into other tools → [Developer tools](#developer-tools)
+- Hosted MCP servers and hosted agents → [Agents & agent tools](#agents--agent-tools)
+- Community agents → [Community models](#community-models)
+- Internal agents such as Polli → [Internal automation](#internal-automation)
 
-**Examples:** #15919 rank listed apps in app_top_weekly · #15695 remove unavailable community apps · #15694 backfill app screenshots
+**Examples:** #15695 remove unavailable community apps · #15919 rank listed apps in app_top_weekly · #14372 host Open WebUI with Pollinations as the only login · #14957 update the CatGPT selfie reference
 
-### Social & news
+### Data & insights
 
-What we publish about Pollinations, and the pipelines that publish it (`operations/social/`).
-
-**Covers**
-- Daily, weekly and monthly news
-- Discord, Reddit, LinkedIn and X posts
-- Newsletter
-
-**Examples:** #14448 restore weekly publishing and add monthly news · #15859 don't announce merged PRs before the production release
-
-### Data pipelines
-
-Getting data into Tinybird correctly (`enter.pollinations.ai/observability/`).
+Getting data into Tinybird (`enter.pollinations.ai/observability/`), and what we read from it to run the business (`operations/kpi/`, `operations/economics/`).
 
 **Covers**
 - Datasources, pipes and the generation event schema
 - Traffic syncs: GitHub, Cloudflare, Search Console
 - Product event recording: page views, sign-in sources
-
-**Not here**
-- Dashboards and KPIs built on the data → [Insights](#insights)
-
-**Examples:** #15823 dedicated Cloudflare token for traffic sync · #15155 stop rejecting page-view beacons with 415 · #15180 attribute sign-ins to the real URL
-
-### Insights
-
-What we read from the data to run the business (`operations/kpi/`, `operations/economics/`).
-
-**Covers**
-- KPIs and growth metrics
-- Funnels: sign-in, signup, conversion
+- KPIs, growth metrics and funnels
 - Revenue, provider costs, invoices and the economics ledger
 - Analysis of user research, such as census answers
 
 **Not here**
-- Collecting the raw data → [Data pipelines](#data-pipelines)
+- Service health, alerts and monitors → [API & reliability](#api--reliability)
 
-**Examples:** #15778 weekly GitHub star growth KPI · #15170 split sign-in loss into GitHub's side and ours · #14471 reconcile revenue, forecasts and ledger evidence
+**Examples:** #15823 dedicated Cloudflare token for traffic sync · #15778 weekly GitHub star growth KPI · #14471 reconcile revenue, forecasts and ledger evidence
 
 ---
 
@@ -313,11 +287,10 @@ What we read from the data to run the business (`operations/kpi/`, `operations/e
 
 | When it's unclear between… | Rule |
 |---|---|
-| Models · Metering & billing | A model's price or route → Models. A request charged the wrong amount → Metering & billing |
+| Models · Billing & payments | A model's price or route → Models. A request charged the wrong amount → Billing & payments |
 | Models · Community models | We run it → Models. A community member publishes it → Community models |
 | Agents & agent tools · Developer tools | Runs as an agent or hosted MCP server → Agents. Installed by a developer (SDK, CLI, MCP package, plugin) → Developer tools |
 | Dashboard · any area | A screen owned by one area → that area. Shared or cross-cutting UI → Dashboard |
-| Payments & earnings · Metering & billing | Wallet, checkout, payouts → Payments. Debiting a single request → Metering |
-| Data pipelines · Insights | Getting data in → Data pipelines. Reading or reporting on it → Insights |
 | Agents & agent tools · Internal automation | Users run it → Agents. It runs our repo or community → Internal automation |
-| CI & releases · any area | Secret or key sync → CI & releases, unless the PR is mainly about a feature (the x402 key → Payments) |
+| Apps | Users submit it, or we maintain it for people to use or copy → App catalog & showcase. People install it into their own code or tools → Developer tools. An agent or MCP server we host → Agents & agent tools. A community member publishes it as an agent → Community models. It runs our own work → Internal automation |
+| CI & releases · any area | Secret or key sync → CI & releases, unless the PR is mainly about a feature (the x402 key → Billing & payments) |

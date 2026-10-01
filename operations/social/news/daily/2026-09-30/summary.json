@@ -1,0 +1,123 @@
+{
+  "date": "2026-09-30",
+  "period_start": "2026-09-30",
+  "period_end": "2026-09-30",
+  "title": "A new front door for finding apps",
+  "summary": "A busy day for app discovery, model and audio tools, community projects, staging workflows, and numbers that mean what they say.\n\nWebsite v2 brought a new home page, navigation, legal pages, and day/night scenes. The rebuilt Apps page adds weekly-ranked listings and searchable filters you can share by URL; ranking now follows catalog listings rather than App Key redirects. Search keeps your scroll position, the homepage shows GitHub and Discord activity, and the shared UI and lotus icons got smaller consistency fixes.\n\nGPT-6.1 Sol joined the text model lineup. The SDK now passes speech controls through and supports voice-changing and voice-isolation uploads; five video models accept their documented fixed resolutions. New Polli harness setups default to GPT-6 Sol, while flux.2-max’s OpenRouter fallback now charges for the image it returns rather than the size requested.\n\nThe app directory gained a Godot 4 addon for text, image, and speech generation, a speech-to-text app, and two Arabic RTL apps with browser-only BYOP sign-in. Community model creators’ GitHub handles now appear in the key model picker. The Honey Census also gives eligible Pollen buyers a rewarded way to say what would help them build more.",
+  "pr_count": 28,
+  "prs": [
+    {
+      "number": 15546,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15641,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15846,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15864,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15873,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15874,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15875,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15877,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15879,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15887,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15895,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15907,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15910,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15917,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15919,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15931,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15934,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15950,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15958,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15960,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15964,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15965,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15972,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15973,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15983,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15986,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15996,
+      "date": "2026-09-30"
+    },
+    {
+      "number": 15997,
+      "date": "2026-09-30"
+    }
+  ],
+  "generated_at": "2026-10-01T06:32:47.090824+00:00"
+}

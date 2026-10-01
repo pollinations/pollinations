@@ -33,6 +33,13 @@ Collection steps:
    1.7.26, but it now warns that the command is deprecated. Retain it only
    when the v1 charge `items` need a cross-check.
 
+   Query the exact UTC month (`-s YYYY-MM-01 -e <next-month>-01`) and verify
+   every returned charge `start`/`end` lies within it. The v1 endpoint clips
+   instance charges and their item amounts to the requested window; do not
+   prorate those amounts again. Sum each top-level `amount` once to check the
+   provider total, and check that its item amounts sum to that top-level amount
+   before writing rows by charge kind.
+
    Preserve one reviewed row per billed instance and charge kind. When replacing
    legacy instance rows, compare against a current effective
    `economics_vendor_ledger` snapshot so every old entry ID is neutralized and
@@ -48,8 +55,9 @@ Known traps:
 - The invoice may be a balance transfer or charged top-up, not exact usage.
 - Wise charges may be EUR while the invoice or Vast usage is USD.
 - Vast.ai CLI invoice rows can be posting-time rollups. A charge may cover usage before its posting date.
-- For usage attribution, charge rows with `quantity` hours cover `[timestamp - quantity hours, timestamp]`.
-- When a charge window crosses calendar months, split the amount by overlap across those months. If `quantity` is missing or unusable, fall back to the posting month and explain that caveat.
-- Upload/download quantities are network units, not hours; assign them to the
-  posting month instead of splitting them over time.
+- The legacy `show invoices` rows use posting timestamps and can include hours
+  outside the queried month. Use v1's clipped charges for calendar-month
+  attribution; retain legacy rows only as a cross-check.
+- Upload/download quantities are network units, not hours. Use their v1 item
+  amounts within the same exact month query.
 - Always pass explicit `-s` and `-e`; the CLI can otherwise default to too narrow a window.

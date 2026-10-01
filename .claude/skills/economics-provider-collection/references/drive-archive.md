@@ -7,8 +7,12 @@ Verified — 2026-09-06.
 Shared accounting Drive: `<YYYY>/<MM Month>/Invoices` holds original vendor
 invoices and their separate payment receipts; `<YYYY>/<MM Month>/Supporting
 Evidence` holds exports, bank statements, payment summaries, and JSON evidence
-that are not supplier invoices. Never relabel a payment summary or top-up
-receipt as a usage invoice.
+that are not supplier invoices. When a billing email has no PDF attachment,
+save its original RFC822 `.eml`; if it links to a provider-hosted receipt,
+save that original HTML response too. File these in Supporting Evidence and
+keep a missing-invoice entry until the supplier's invoice is obtained or its
+absence is verified. Never render an email or receipt into a replacement
+invoice PDF, or relabel a payment summary or top-up receipt as a usage invoice.
 
 File name: `YYYY-MM-DD__Vendor__Number.pdf`, where the date is the invoice
 date (not the email or payment date) and the month folder is the invoice

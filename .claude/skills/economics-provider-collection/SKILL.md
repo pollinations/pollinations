@@ -33,7 +33,9 @@ endpoint count.
    Drive archive. Sweep the signed-in business mailbox for invoice and receipt
    attachments received during the close window; also inspect vendor invoice
    and receipt emails without attachments, since they may link to the original
-   document in a billing portal. Triage PDFs already in Downloads by supplier,
+   document in a billing portal. Preserve the original email and any genuine
+   provider-hosted receipt when no supplier PDF exists; keep the invoice gap
+   visible. Triage PDFs already in Downloads by supplier,
    account, issue date, and service period. Include relevant late-issued
    documents and older contracts or annual invoices that explicitly schedule
    a payment in the close month; exclude personal files. Use the Wise and

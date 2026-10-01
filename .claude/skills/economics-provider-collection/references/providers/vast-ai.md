@@ -48,7 +48,13 @@ Collection steps:
    `vast-ai-workloads.json`; update that registry when the GPU fleet changes.
 
 3. If using dashboard screenshots, save them under `<collection-dir>/evidence/`.
-4. Use this skill for saved raw evidence.
+4. For the current balance, run `vastai show user --raw` with the existing
+   authorized account and verify the team ID and Myceli email alias. `credit`
+   is the team prepaid balance; keep `balance_referrals` separate. The raw user
+   response also contains unrelated account details, so archive a focused
+   extract with the checked time, account identity, balance fields, and a hash
+   of the private raw response. Keep expiry blank until its terms are verified.
+5. Use this skill for saved raw evidence.
 
 Known traps:
 

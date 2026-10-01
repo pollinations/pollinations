@@ -29,6 +29,16 @@ describe("TabButton", () => {
         expect(inactive).toContain("polli:text-theme-text-base");
     });
 
+    test("marks a partly selected toggle as mixed with its own tint", () => {
+        const mixed = renderToStaticMarkup(
+            <TabButton active="mixed">Partial</TabButton>,
+        );
+
+        expect(mixed).toContain('aria-pressed="mixed"');
+        expect(mixed).toContain("polli:bg-theme-bg-active/45");
+        expect(mixed).not.toContain("polli:bg-theme-bg-subtle");
+    });
+
     test("fills only the selected green tab with the Quest colours", () => {
         const active = renderToStaticMarkup(
             <TabButton active intent="green" variant="ghost">

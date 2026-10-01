@@ -13,7 +13,13 @@ type TabButtonOwnProps = {
     children: ReactNode;
     size?: "lg" | "md" | "sm" | "xs";
     variant?: "soft" | "ghost";
-    intent?: "neutral";
+    /**
+     * `amber` and `green` fill the selected pill with the wallet's pale paid
+     * and Quest Pollen chip colours, which read at the same strength together.
+     */
+    intent?: "neutral" | "amber" | "green";
+    /** Muted secondary text after the label, e.g. a model's creator. */
+    detail?: ReactNode;
     ariaLabel?: string;
     disabled?: boolean;
     className?: string;
@@ -42,7 +48,7 @@ const tabButtonBaseClass =
     "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-colors polli:duration-200";
 
 const tabButtonSizeClass = {
-    xs: "polli:px-3 polli:py-1.5 polli:text-xs",
+    xs: "polli:px-2.5 polli:py-1 polli:text-xs",
     lg: "polli:px-5 polli:py-2 polli:text-lg",
     md: "polli:px-4 polli:py-1.5 polli:text-base",
     sm: "polli:px-3 polli:py-1.5 polli:text-sm",
@@ -69,6 +75,22 @@ const variantClasses = {
     },
 } as const;
 
+// Wallet chip pairs: selected fills with the pale tint and deep label; hover
+// previews that fill. Unselected green keeps its green label so it stays
+// recognisable next to amber; unselected amber keeps the neutral label.
+const intentClasses = {
+    amber: {
+        active: "polli:bg-paid-pale polli:text-paid-deep",
+        inactive:
+            "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-paid-pale/60",
+    },
+    green: {
+        active: "polli:bg-tier-pale polli:text-tier-deep",
+        inactive:
+            "polli:bg-transparent polli:text-tier-deep polli:hover:bg-tier-pale/60",
+    },
+} as const;
+
 export function TabButton<T extends ElementType = "button">({
     as,
     active,
@@ -77,6 +99,7 @@ export function TabButton<T extends ElementType = "button">({
     size = "md",
     variant = "soft",
     intent,
+    detail,
     ariaLabel,
     disabled = false,
     className,
@@ -84,7 +107,12 @@ export function TabButton<T extends ElementType = "button">({
 }: TabButtonProps<T>) {
     const Component: ElementType = as || "button";
     const isButton = Component === "button";
-    const colors = variantClasses[intent === "neutral" ? "soft" : variant];
+    const colors =
+        intent === "neutral"
+            ? variantClasses.soft
+            : intent
+              ? intentClasses[intent]
+              : variantClasses[variant];
     const handleClick = disabled
         ? (event: ReactMouseEvent) => {
               event.preventDefault();
@@ -118,6 +146,11 @@ export function TabButton<T extends ElementType = "button">({
             )}
         >
             {children}
+            {detail != null && (
+                <span className="polli:ml-1 polli:font-normal polli:opacity-70">
+                    {detail}
+                </span>
+            )}
         </Component>
     );
 }

@@ -18,6 +18,11 @@ type SystemOneResponse = {
     usage: { input_tokens: number; output_tokens: number };
 };
 
+type SystemOneRequest = {
+    state: unknown;
+    questions: Record<string, unknown>;
+};
+
 function serviceError(message: string, status: number): ServiceError {
     const error = new Error(message) as ServiceError;
     error.status = status;
@@ -31,7 +36,10 @@ function nativeRequestError(detail: string): ServiceError {
     );
 }
 
-function parseNativeRequest(messages: ChatMessage[]): {
+function parseNativeRequest(
+    messages: ChatMessage[],
+    model: unknown,
+): {
     state: unknown;
     questions: Record<string, unknown>;
 } {
@@ -40,7 +48,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
     const message = messages.findLast((item) => item?.role === "user");
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "typesafe/jev requires a user message with string content.",
+            `${model} requires a user message with string content.`,
         );
     }
     let payload: unknown;
@@ -48,7 +56,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         payload = JSON.parse(message.content);
     } catch {
         throw nativeRequestError(
-            "typesafe/jev could not parse the user message content as JSON.",
+            `${model} could not parse the user message content as JSON.`,
         );
     }
     if (
@@ -57,7 +65,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         !isPlainObject(payload.questions)
     ) {
         throw nativeRequestError(
-            'typesafe/jev expects a JSON object with "state" and a "questions" map.',
+            `${model} expects a JSON object with "state" and a "questions" map.`,
         );
     }
     return { state: payload.state, questions: payload.questions };
@@ -95,20 +103,25 @@ function toStreamedCompletion(completion: ChatCompletion): ChatCompletion {
     };
 }
 
-export async function callSystemOne(
-    messages: ChatMessage[],
+/**
+ * The single upstream call, shared by the native `/alpha/decisions` route and
+ * the chat-completions adapter below. Returns the provider's response along
+ * with the URL it came from, which callers attach for error attribution.
+ */
+export async function requestDecision(
+    request: SystemOneRequest,
     options: TransformOptions,
-): Promise<ChatCompletion> {
-    const { state, questions } = parseNativeRequest(messages);
+): Promise<{ result: SystemOneResponse; requestUrl: URL }> {
+    const { state, questions } = request;
     const apiKey = options.modelConfig?.authKey;
     const endpoint = options.modelConfig?.directEndpoint;
+    const model = options.modelConfig?.model;
     if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
-            "The decisions route is not configured for typesafe/jev.",
+            `The decisions route is not configured for ${model}.`,
             500,
         );
     }
-    const model = options.modelConfig?.model;
     const requestUrl = new URL(endpoint);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -131,36 +144,11 @@ export async function callSystemOne(
             typeof result?.usage?.output_tokens !== "number"
         ) {
             throw serviceError(
-                "Jev returned a response without valid answers or usage.",
+                `${model} returned a response without valid answers or usage.`,
                 502,
             );
         }
-        const completion: ChatCompletion = {
-            id: `systemone-${crypto.randomUUID()}`,
-            object: "chat.completion",
-            created: Math.floor(Date.now() / 1000),
-            model: result.model,
-            choices: [
-                {
-                    index: 0,
-                    message: {
-                        role: "assistant",
-                        content: JSON.stringify(result.answers),
-                    },
-                    finish_reason: "stop",
-                },
-            ],
-            usage: {
-                prompt_tokens: result.usage.input_tokens,
-                completion_tokens: result.usage.output_tokens,
-                total_tokens:
-                    result.usage.input_tokens + result.usage.output_tokens,
-            },
-        };
-        return withUpstreamRequestUrl(
-            options.stream ? toStreamedCompletion(completion) : completion,
-            requestUrl,
-        );
+        return { result, requestUrl };
     } catch (thrown) {
         const error =
             thrown instanceof Error
@@ -172,4 +160,45 @@ export async function callSystemOne(
     } finally {
         clearTimeout(timeout);
     }
+}
+
+/**
+ * Chat-completions adapter: the native request travels as JSON in the last
+ * user message and the answers come back as the assistant's content. Callers
+ * that can post the native shape should use `/alpha/decisions` instead.
+ */
+export async function callSystemOne(
+    messages: ChatMessage[],
+    options: TransformOptions,
+): Promise<ChatCompletion> {
+    const { result, requestUrl } = await requestDecision(
+        parseNativeRequest(messages, options.modelConfig?.model),
+        options,
+    );
+    const completion: ChatCompletion = {
+        id: `systemone-${crypto.randomUUID()}`,
+        object: "chat.completion",
+        created: Math.floor(Date.now() / 1000),
+        model: result.model,
+        choices: [
+            {
+                index: 0,
+                message: {
+                    role: "assistant",
+                    content: JSON.stringify(result.answers),
+                },
+                finish_reason: "stop",
+            },
+        ],
+        usage: {
+            prompt_tokens: result.usage.input_tokens,
+            completion_tokens: result.usage.output_tokens,
+            total_tokens:
+                result.usage.input_tokens + result.usage.output_tokens,
+        },
+    };
+    return withUpstreamRequestUrl(
+        options.stream ? toStreamedCompletion(completion) : completion,
+        requestUrl,
+    );
 }

@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
+import { isExternalHref } from "../lib/link.ts";
 import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 import { Surface } from "../primitives/Surface.tsx";
 
@@ -14,10 +15,6 @@ export type LinkCardProps<T extends React.ElementType = "a"> =
     PropsWithChildren<BaseLinkCardProps> & {
         as?: T;
     } & Omit<React.ComponentPropsWithoutRef<T>, keyof BaseLinkCardProps | "as">;
-
-function isExternalHref(href: unknown): boolean {
-    return typeof href === "string" && /^https?:\/\//.test(href);
-}
 
 export function LinkCard<T extends React.ElementType = "a">({
     as,

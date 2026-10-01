@@ -82,6 +82,59 @@ console.log(response.choices[0].message.content);
 
 Model IDs come from `GET /v1/models`. IDs such as `openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `mistralai/mistral-small-4`, and `deepseek/deepseek-v4-flash` route to the corresponding provider on our side — you don't need separate keys per provider.
 
+## ▲ Vercel AI SDK
+
+The [AI SDK](https://ai-sdk.dev) connects through its OpenAI-compatible provider. Keep the `sk_…` key on the server.
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```ts
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { generateText, streamText } from "ai";
+
+const pollinations = createOpenAICompatible({
+    name: "pollinations",
+    baseURL: "https://gen.pollinations.ai/v1",
+    apiKey: process.env.POLLINATIONS_KEY,
+    includeUsage: true,
+});
+
+const { text } = await generateText({
+    model: pollinations.chatModel("openai/gpt-5.4-nano"),
+    prompt: "Summarise the theory of relativity in one sentence.",
+});
+console.log(text);
+
+const result = streamText({
+    model: pollinations.chatModel("openai/gpt-5.4-nano"),
+    prompt: "Count to five, one word per line.",
+});
+for await (const delta of result.textStream) {
+    process.stdout.write(delta);
+}
+```
+
+The same provider creates image and embedding models:
+
+```ts
+import { embed, generateImage } from "ai";
+
+const { image } = await generateImage({
+    model: pollinations.imageModel("black-forest-labs/flux.1-schnell"),
+    prompt: "A lighthouse at dusk, watercolor",
+    size: "1024x1024",
+});
+
+const { embedding } = await embed({
+    model: pollinations.embeddingModel("openai/text-embedding-3-small"),
+    value: "Sunny day at the beach",
+});
+```
+
+Chat, image, and embedding model IDs come from `GET /v1/models`.
+
 ## 🌊 Streaming chat completions
 
 Set `stream: true` to receive Server-Sent Events (SSE) deltas as the model writes. The wire format is byte-for-byte the OpenAI streaming format, so any OpenAI SDK that supports streaming works unchanged.
@@ -135,7 +188,7 @@ curl "https://gen.pollinations.ai/v1/chat/completions" \
 
 `image_url.url` accepts either a public URL or a `data:image/...;base64,…` data URI. Use `detail: "high"` for fine-grained reasoning and `"low"` for quick takes — see the [`MessageContentPart`](#messagecontentpart) schema for every supported part.
 
-For audio or video input, swap in `input_audio` or `video_url` parts on models that advertise the matching capability in their `/v1/models` entry.
+For audio or video input, swap in `input_audio` or `video_url` parts on models that advertise the matching capability in their `/v1/models` entry. `video_url.url` accepts a public `https://` URL or a `data:video/...;base64,...` data URI; Gemini models additionally accept YouTube and `gs://` URLs.
 
 ## 📤 Multipart uploads in depth
 

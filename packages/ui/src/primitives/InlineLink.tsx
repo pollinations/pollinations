@@ -1,13 +1,15 @@
 import type { PropsWithChildren } from "react";
-import { cn } from "../lib/cn.ts";
-import { ArrowRightIcon, ExternalLinkIcon } from "./icons/index.tsx";
+import { isExternalHref } from "../lib/link.ts";
+import { ExternalLinkIcon } from "./icons/index.tsx";
 
 type BaseInlineLinkProps = {
     /** Set explicitly for non-http external links, or false for custom routing components. */
     external?: boolean;
     showIcon?: boolean;
-    /** Show a right arrow for internal destinations. External links keep the external-link icon. */
-    directional?: boolean;
+    /** Inline text inherits its size; footers use 13px and standalone links 14px. */
+    size?: "inherit" | "footer" | "sm";
+    /** Accent for prominent links; quiet for secondary navigation. */
+    tone?: "accent" | "quiet";
     className?: string;
 };
 
@@ -19,15 +21,16 @@ export type InlineLinkProps<T extends React.ElementType = "a"> =
             keyof BaseInlineLinkProps | "as"
         >;
 
-function isExternalHref(href: unknown): boolean {
-    return typeof href === "string" && /^https?:\/\//.test(href);
-}
-
+/** Shared text-link rule: surrounding font, selectable ink, persistent underline,
+ * visible keyboard focus, and an external arrow only when leaving the app.
+ * Navigation and button-shaped actions use their own primitives.
+ */
 export function InlineLink<T extends React.ElementType = "a">({
     as,
     external,
     showIcon = true,
-    directional = false,
+    size = "inherit",
+    tone = "accent",
     className,
     children,
     ...linkProps
@@ -38,27 +41,22 @@ export function InlineLink<T extends React.ElementType = "a">({
 
     return (
         <Component
-            target={isExternal ? "_blank" : undefined}
-            rel={isExternal ? "noopener noreferrer" : undefined}
-            className={cn(
-                "polli-control polli:inline-flex polli:items-center polli:gap-1 polli:rounded-sm polli:font-medium polli:text-theme-text-soft",
-                "polli:underline polli:underline-offset-2",
-                "polli:transition-colors polli:hover:text-theme-text-strong",
-                className,
-            )}
+            target={isExternal && as !== "button" ? "_blank" : undefined}
+            rel={
+                isExternal && as !== "button"
+                    ? "noopener noreferrer"
+                    : undefined
+            }
+            className={["polli-link", className].filter(Boolean).join(" ")}
+            data-size={size}
+            data-tone={tone}
             {...linkProps}
         >
             {children}
             {showIcon && isExternal && (
                 <ExternalLinkIcon
                     aria-hidden="true"
-                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0 polli:opacity-65"
-                />
-            )}
-            {showIcon && directional && !isExternal && (
-                <ArrowRightIcon
-                    aria-hidden="true"
-                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0 polli:opacity-65"
+                    className="polli-link-external-icon"
                 />
             )}
         </Component>

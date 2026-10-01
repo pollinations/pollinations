@@ -26,7 +26,6 @@ import {
     DownloadIcon,
     Dropdown,
     DropdownItem,
-    ExternalLinkButton,
     ExternalLinkIcon,
     EyeIcon,
     FieldStack,
@@ -39,6 +38,7 @@ import {
     type IconProps,
     ImageIcon,
     InfoTip,
+    InlineLink,
     Input,
     KeyIcon,
     LockIcon,
@@ -454,12 +454,12 @@ export const ButtonsDemo: FC = () => (
                 <Button intent="danger">Delete</Button>
             </Row>
             <Row label="External link">
-                <ExternalLinkButton href="https://pollinations.ai">
+                <InlineLink href="https://pollinations.ai">
                     Pollinations
-                </ExternalLinkButton>
-                <ExternalLinkButton href="https://pollinations.ai" size="sm">
+                </InlineLink>
+                <InlineLink href="https://pollinations.ai" size="sm">
                     Small link
-                </ExternalLinkButton>
+                </InlineLink>
             </Row>
             <Row label="Icon button">
                 <IconButton title="Copy" onClick={noop}>
@@ -498,6 +498,17 @@ export const ButtonsDemo: FC = () => (
                 </TabButton>
                 <TabButton active={false} disabled onClick={noop}>
                     Disabled
+                </TabButton>
+                <TabButton active intent="amber" onClick={noop}>
+                    Amber
+                </TabButton>
+                <TabButton
+                    active
+                    intent="green"
+                    detail="@creator"
+                    onClick={noop}
+                >
+                    Green
                 </TabButton>
             </Row>
             <Row label="Chip">

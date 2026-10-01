@@ -157,7 +157,7 @@ export function TopContributors() {
                                 className="group flex flex-col items-center text-center transition hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                                 <div
-                                    className={`w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24_/_0.15)] group-hover:shadow-none transition`}
+                                    className={`w-16 h-16 mb-2 overflow-hidden rounded-full border-2 border-r-4 border-b-4 ${colorClass} shadow-[3px_3px_0_rgb(17_5_24/0.15)] group-hover:shadow-none transition`}
                                 >
                                     <img
                                         src={contributor.avatar_url}

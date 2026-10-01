@@ -185,14 +185,14 @@ function buildServer(env, dependencies, reportUsage) {
         { name: "pollinations-ffmpeg-mcp", version: "0.1.0" },
         {
             instructions:
-                "Run native FFmpeg commands against public HTTPS media. Sources are saved as input0, input1, and so on; pass ordinary FFmpeg arguments and Pollinations hosts the output.",
+                'Run native FFmpeg commands against public HTTPS media. Sources are saved as input0, input1, and so on. Reference those exact names in arguments, for example ["-i", "input0", "-vf", "scale=1280:-2"]; never repeat source URLs. Pollinations hosts the output.',
             capabilities: { tools: {} },
         },
     );
     server.registerTool(
         "runFfmpeg",
         {
-            description: `Run native FFmpeg arguments against public HTTPS media and return an unlisted hosted resource link. Sources are available as input0, input1, and so on. Include each needed -i argument, but omit ffmpeg and the output path. Maximum size per input/output is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
+            description: `Run native FFmpeg arguments against public HTTPS media and return an unlisted hosted resource link. Sources are available as input0, input1, and so on. Reference those exact names, include each needed -i argument, and omit ffmpeg, source URLs, and the output path. Example: ["-i", "input0", "-vf", "scale=1280:-2"]. Maximum size per input/output is 100 MB and runtime is ${FFMPEG_MAX_RUN_MS / 1000} seconds. Billed at ${FFMPEG_COST_PER_SECOND.toFixed(8)} Pollen per active second.`,
             inputSchema: z.object({
                 sources: z
                     .array(
@@ -208,7 +208,13 @@ function buildServer(env, dependencies, reportUsage) {
                     .describe(
                         "Ordered source URLs, saved as input0, input1, and so on.",
                     ),
-                args: z.array(z.string().min(1).max(1024)).max(64),
+                args: z
+                    .array(z.string().min(1).max(1024))
+                    .min(2, "args must include at least -i and input0")
+                    .max(64)
+                    .describe(
+                        'FFmpeg arguments before the output path. Reference downloaded sources by their exact names, such as ["-i", "input0"]. Do not include ffmpeg, source URLs, or an output path.',
+                    ),
                 outputExtension: z
                     .string()
                     .regex(

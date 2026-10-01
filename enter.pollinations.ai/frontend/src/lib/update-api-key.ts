@@ -1,4 +1,5 @@
 import { apiClient } from "../api.ts";
+import { readError } from "../components/community-endpoints/types.ts";
 import type { ApiKeyUpdateParams } from "../components/keys/types.ts";
 
 /** Server-side fields of a key (budget, models, expiry, permissions). */
@@ -17,9 +18,6 @@ export async function updateApiKey(
         },
     });
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-            (error as { message?: string }).message || "Update failed",
-        );
+        throw new Error(await readError(response));
     }
 }

@@ -12,9 +12,8 @@
     --font-pixel: var(--polli-font-pixel);
     --text-micro: var(--polli-text-micro);
     --text-base: var(--polli-text-base);
-
-    --shadow-container: var(--polli-shadow-container);
-    --shadow-well: var(--polli-shadow-well);
+    --radius-block: var(--polli-radius-block);
+    --radius-card: var(--polli-radius-card);
 
     --color-transparent: transparent;
     --color-current: currentColor;
@@ -85,7 +84,9 @@
     --color-switch-track-on: var(--polli-color-switch-track-on);
     --color-switch-track-invalid: var(--polli-color-switch-track-invalid);
 
+    --color-surface-block: var(--polli-color-surface-block);
     --color-surface-opaque: var(--polli-color-surface-opaque);
+    --color-surface-menu: var(--polli-color-surface-menu);
     --color-surface-translucent: var(--polli-color-surface-translucent);
     --color-surface-white: var(--polli-color-surface-translucent);
 }

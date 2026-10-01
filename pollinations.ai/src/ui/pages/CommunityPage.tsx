@@ -1,6 +1,5 @@
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
-import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
@@ -22,7 +21,6 @@ interface VotingIssue {
 
 export default function CommunityPage() {
     const { copy: pageCopy, isTranslating } = usePageCopy(COMMUNITY_PAGE);
-    useDocumentMeta(pageCopy.pageTitle, pageCopy.pageDescription);
 
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],
@@ -85,7 +83,7 @@ export default function CommunityPage() {
                             href={LINKS.githubSubmitApp}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                            className="p-4 bg-primary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-px hover:translate-y-px hover:shadow-none block"
                         >
                             <Heading
                                 variant="subsection"
@@ -102,7 +100,7 @@ export default function CommunityPage() {
                             href={LINKS.githubNewIssue}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                            className="p-4 bg-tertiary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-px hover:translate-y-px hover:shadow-none block"
                         >
                             <Heading
                                 variant="subsection"
@@ -119,7 +117,7 @@ export default function CommunityPage() {
                             href={SOCIAL_LINKS.discord.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none block"
+                            className="p-4 bg-secondary-light rounded-sub-card border-2 border-dark border-r-4 border-b-4 transition hover:translate-x-px hover:translate-y-px hover:shadow-none block"
                         >
                             <Heading
                                 variant="subsection"
@@ -288,9 +286,9 @@ export default function CommunityPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {translatedVotingIssues.map((issue, i) => {
                             const colors = [
-                                "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)_/_0.3)]",
-                                "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)_/_0.3)]",
-                                "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                "border-primary-strong shadow-[1px_1px_0_rgb(var(--primary-strong)/0.3)]",
+                                "border-secondary-strong shadow-[1px_1px_0_rgb(var(--secondary-strong)/0.3)]",
+                                "border-tertiary-strong shadow-[1px_1px_0_rgb(var(--tertiary-strong)/0.3)]",
                             ];
                             return (
                                 <a
@@ -298,7 +296,7 @@ export default function CommunityPage() {
                                     href={issue.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+                                    className={`block bg-white/60 p-4 rounded-sub-card border-r-2 border-b-2 ${colors[i]} transition hover:translate-x-px hover:translate-y-px hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
                                 >
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
@@ -345,10 +343,10 @@ export default function CommunityPage() {
                         {COMMUNITY_PAGE.supportersList.map(
                             (supporter, index) => {
                                 const borderColors = [
-                                    "border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
-                                    "border-secondary-strong shadow-[2px_2px_0_rgb(var(--secondary-strong)_/_0.3)]",
-                                    "border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
-                                    "border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
+                                    "border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)/0.3)]",
+                                    "border-secondary-strong shadow-[2px_2px_0_rgb(var(--secondary-strong)/0.3)]",
+                                    "border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)/0.3)]",
+                                    "border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)/0.3)]",
                                 ];
                                 return (
                                     <a
@@ -357,7 +355,7 @@ export default function CommunityPage() {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         aria-label={supporter.name}
-                                        className={`group flex aspect-square w-full flex-col items-center justify-center gap-2 bg-white/60 rounded-sub-card border-r-2 border-b-2 p-2 text-center ${borderColors[index % borderColors.length]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+                                        className={`group flex aspect-square w-full flex-col items-center justify-center gap-2 bg-white/60 rounded-sub-card border-r-2 border-b-2 p-2 text-center ${borderColors[index % borderColors.length]} transition hover:translate-x-px hover:translate-y-px hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
                                     >
                                         <span
                                             aria-hidden="true"

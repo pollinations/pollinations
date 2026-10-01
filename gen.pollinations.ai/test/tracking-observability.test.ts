@@ -2384,6 +2384,102 @@ describe("tracking observability", () => {
         );
     });
 
+    it("rejects multiple Qwen references on the Replicate fallback without billing", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const db = drizzle(env.DB);
+        const before = await getUserBalance(db, caller.userId);
+        const events: TinybirdEvent[] = [];
+        const upstreamHosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (url.hostname === "media.example.test") {
+                    return new Response(
+                        Buffer.from(
+                            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZRXcAAAAASUVORK5CYII=",
+                            "base64",
+                        ),
+                        { headers: { "content-type": "image/png" } },
+                    );
+                }
+                if (url.hostname === "api.europe-west2.gcp.tinybird.co") {
+                    return Response.json({ data: [] });
+                }
+                if (url.hostname === "tinybird.test") {
+                    if (
+                        url.searchParams.get("name") === "generation_event_v2"
+                    ) {
+                        events.push(
+                            ...(await request.text())
+                                .trim()
+                                .split("\n")
+                                .filter(Boolean)
+                                .map((line) => JSON.parse(line)),
+                        );
+                    }
+                    return Response.json({});
+                }
+                upstreamHosts.push(url.hostname);
+                return Response.json(
+                    { error: "provider unavailable" },
+                    { status: 503 },
+                );
+            },
+        );
+        const bindings = withInlineGenerationCoordinator({
+            ...env,
+            DASHSCOPE_API_KEY: "test-dashscope-key",
+            FAL_KEY: "test-fal-key",
+            REPLICATE_API_TOKEN: "test-replicate-key",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test-tinybird-token",
+        });
+        const image = "https://media.example.test/reference.png";
+        const url = new URL(
+            "https://gen.pollinations.ai/image/qwen-reference-rejection",
+        );
+        url.searchParams.set("model", "qwen/qwen-image-3");
+        url.searchParams.set("image", `${image}|${image}`);
+        url.searchParams.set("seed", "16136");
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(url, {
+                headers: { Authorization: `Bearer ${caller.key}` },
+            }),
+            bindings,
+            ctx,
+        );
+        const body = await response.text();
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status, body).toBe(400);
+        expect(body).toContain(
+            "Qwen Image 3 on Replicate supports at most 1 reference image",
+        );
+        expect(upstreamHosts).toEqual([
+            "dashscope-intl.aliyuncs.com",
+            "fal.run",
+        ]);
+        expect(events).toHaveLength(3);
+        expect(events[2]).toMatchObject({
+            modelRequested: "qwen/qwen-image-3",
+            modelUsed: "qwen/qwen-image-3:replicate",
+            responseStatus: 400,
+            isBilledUsage: false,
+            totalPrice: 0,
+        });
+        expect(
+            events.every(
+                (event) => !event.isBilledUsage && event.totalPrice === 0,
+            ),
+        ).toBe(true);
+        expect(await getUserBalance(db, caller.userId)).toEqual(before);
+    });
+
     it("bills a failed video for the usage the provider charged", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

@@ -100,18 +100,30 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
-    it("passes every Qwen Image 3 reference to Replicate instead of dropping extras", async () => {
-        const fetchSpy = mockPrediction();
+    it.each([
+        2, 3,
+    ])("rejects %i Qwen Image 3 references before downloading or submitting them", async (count) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await callReplicateFallbackImage(
-            "make it blue",
-            params("qwen/qwen-image-3:replicate", [PNG, PNG]),
-        );
-
-        const body = JSON.parse(
-            (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
-        );
-        expect(body.input.image).toEqual([PNG, PNG]);
+        await expect(
+            callReplicateFallbackImage(
+                "make it blue",
+                params(
+                    "qwen/qwen-image-3:replicate",
+                    Array.from(
+                        { length: count },
+                        (_, index) =>
+                            `https://media.example.test/reference-${index}.png`,
+                    ),
+                ),
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message:
+                "Qwen Image 3 on Replicate supports at most 1 reference image",
+            billedUsage: undefined,
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("maps FLUX.2 Max generation to the exact Replicate model", async () => {

@@ -1,7 +1,8 @@
+import { createInterface } from "node:readline/promises";
 import { ApiError, gen, requireKey } from "./api.js";
 import { POLLI_CLIENT } from "./client.js";
-import { BASE_URL } from "./config.js";
-import { ExitSignal, printError } from "./output.js";
+import { BASE_URL, resolveApiKey } from "./config.js";
+import { ExitSignal, getOutputMode, printError } from "./output.js";
 
 // Returns null for non-402 so callers fall through to their generic error path.
 export async function budgetHint(
@@ -31,7 +32,9 @@ export async function budgetHint(
         code === "INSUFFICIENT_BALANCE"
             ? "Insufficient pollen balance."
             : "Check your pollen balance and API key budget.",
-        "Top up: https://enter.pollinations.ai/pollen",
+        "Balance: https://enter.pollinations.ai/pollen",
+        "Earn Quest Pollen: https://enter.pollinations.ai/quests",
+        "Top up: https://enter.pollinations.ai/pollen#buy-pollen",
         ...(code === "INSUFFICIENT_BALANCE"
             ? []
             : ["Manage key budget: https://enter.pollinations.ai/keys"]),
@@ -42,12 +45,41 @@ export async function budgetHint(
     return lines.join("\n");
 }
 
+async function generationKey(): Promise<string> {
+    const key = resolveApiKey();
+    if (key) return key;
+    if (
+        getOutputMode() !== "human" ||
+        !process.stdin.isTTY ||
+        !process.stderr.isTTY
+    ) {
+        return requireKey();
+    }
+
+    const prompt = createInterface({
+        input: process.stdin,
+        output: process.stderr,
+    });
+    let answer: string;
+    try {
+        answer = await prompt.question("Not logged in. Log in now? [Y/n] ");
+    } finally {
+        prompt.close();
+    }
+    if (answer.trim() && !/^y(es)?$/i.test(answer.trim())) {
+        throw new ApiError(401, "Login required. Run: polli auth login");
+    }
+
+    const { loginWithDeviceFlow } = await import("../commands/auth.js");
+    return loginWithDeviceFlow();
+}
+
 export async function fetchGen(
     path: string,
     init: RequestInit = {},
 ): Promise<Response> {
     const headers = new Headers(init.headers);
-    headers.set("Authorization", `Bearer ${requireKey()}`);
+    headers.set("Authorization", `Bearer ${await generationKey()}`);
     headers.set("X-Polli-Client", POLLI_CLIENT);
     const response = await fetch(`${BASE_URL}${path}`, {
         ...init,
@@ -63,6 +95,7 @@ export async function fetchGen(
 }
 
 export function exitWithError(error: unknown): never {
+    if (error instanceof ExitSignal) throw error;
     printError(error instanceof Error ? error.message : "unknown error");
     throw new ExitSignal(1);
 }

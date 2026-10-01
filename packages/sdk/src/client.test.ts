@@ -158,6 +158,62 @@ function bodyOf(call: unknown[]): Record<string, unknown> {
 }
 
 describe("Pollinations request attempts", () => {
+    it.each([
+        ["text", undefined],
+        ["text", new Error("Caller cancelled")],
+        ["chat", undefined],
+        ["chat", new Error("Caller cancelled")],
+    ] as const)("%s rejects an already-aborted signal before dispatch (reason: %s)", async (method, reason) => {
+        const client = newClient();
+        const controller = new AbortController();
+        controller.abort(reason);
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                choices: [{ message: { content: "unexpected response" } }],
+            }),
+        );
+
+        const options = { signal: controller.signal };
+        const request =
+            method === "text"
+                ? client.text("hello", options)
+                : client.chat([{ role: "user", content: "hello" }], options);
+
+        await expect(request).rejects.toBeInstanceOf(PollinationsError);
+        await expect(request).rejects.toMatchObject({
+            code: "CANCELLED",
+            status: 499,
+            message: "Request was cancelled",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("cancels an in-flight request when the caller aborts", async () => {
+        const controller = new AbortController();
+        fetchMock.mockImplementation(
+            (_url: string, init: RequestInit) =>
+                new Promise<Response>((_, reject) => {
+                    init.signal?.addEventListener("abort", () => {
+                        reject(new DOMException("Aborted", "AbortError"));
+                    });
+                }),
+        );
+
+        const request = newClient().text("hello", {
+            signal: controller.signal,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        controller.abort();
+
+        await expect(request).rejects.toBeInstanceOf(PollinationsError);
+        await expect(request).rejects.toMatchObject({
+            code: "CANCELLED",
+            status: 499,
+            message: "Request was cancelled",
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     it("keeps video requests alive until the 20-minute default timeout", async () => {
         vi.useFakeTimers();
         let aborted = false;

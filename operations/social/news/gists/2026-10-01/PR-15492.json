@@ -1,0 +1,36 @@
+{
+  "pr_number": 15492,
+  "title": "[2026-10-01] feat: retire MAI Image 2.5 Flash into 2.6 alias",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15492",
+  "merged_at": "2026-10-01T14:58:54Z",
+  "labels": [
+    "MODEL"
+  ],
+  "pr_body_excerpt": "- Retires the separate MAI Image 2.5 Flash catalog entry and Azure route; its old ID resolves to `microsoft/mai-image-2.6-flash`. Keeps Azure East US `MAI-Image-2.6-Flash`, multiplier 0.75, Quest access, and no fallback. Azure confirms 36 deployment RPM; per-user limit stays 12.\n- Resolves current-main conflicts and replaces the outdated upcoming-change announcement with the completed cutover notice.\n- Verified October 1: 85 focused Gen tests, Enter price snapshot, both typechecks, Biome; real local old-ID generation at 768²/1536², editing, invalid-input rejection, cache reuse, and staging usage/billing reconciliation. Seeded disconnect/rejoin returns identical bytes, one wallet debit and one billed event. Authenticated production 2.6 generation/cache probe passes.\n- Rollout: alias-aware authorization remains required. Updated read-only audit: 654 production keys and 0 staging keys store the old ID. Run a separate permissions cleanup after deployment and prove zero remaining references.\n- Corrects public width/height descriptions to the existing 2.6 Flash limits. Existing unseeded image requests choose a new cache identity; disconnect/rejoin validation used an explicit seed. Pre-existing Content Safety host no longer resolves in dev/production configuration; secrets unchanged. Azure generation succeeds and moderation regressions pass.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Flash gets a new name",
+    "blurb": "The old MAI Image 2.5 Flash ID leads to 2.6 Flash instead of its own Azure route. Existing requests keep working; the catalog has one less nearly identical signpost.",
+    "summary": "The MAI Image 2.5 Flash ID becomes an alias for `microsoft/mai-image-2.6-flash`, consolidating generation on the Azure East US 2.6 Flash deployment while retaining Quest access, a 0.75 multiplier, and the per-user limit of 12.",
+    "impact": "Requests using the old ID resolve to 2.6 Flash, and the public width and height descriptions reflect 2.6 Flash’s existing limits.",
+    "keywords": [
+      "MAI Image",
+      "2.6 Flash",
+      "image generation",
+      "model alias",
+      "Azure",
+      "Quest"
+    ],
+    "visual_concept": "Depict the MAI image-model cutover as two small pixel signposts: the old 2.5 Flash ID points toward a single glowing 2.6 Flash image-making easel. Polli, wearing a tiny painter’s beret, guides the sign into place; a friendly CRT monitor robot admires the generated picture, with code-plants and flowers around them.",
+    "image_prompt": "In a cozy pixel garden studio, a sign marked '2.5' points to a glowing '2.6 FLASH' easel where a friendly CRT monitor robot admires a pixel landscape; lime green (#ecf874) flower pots and code-plants surround them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never dominating the scene, and wears a tiny painter’s beret as she adjusts the sign—strictly pixel art, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and a soft lime green (#ecf874) and pastel gradient background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15492.jpg",
+    "prompt": "In a cozy pixel garden studio, a sign marked '2.5' points to a glowing '2.6 FLASH' easel where a friendly CRT monitor robot admires a pixel landscape; lime green (#ecf874) flower pots and code-plants surround them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never dominating the scene, and wears a tiny painter’s beret as she adjusts the sign—strictly pixel art, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and a soft lime green (#ecf874) and pastel gradient background."
+  },
+  "generated_at": "2026-10-01T15:01:16.117985+00:00"
+}

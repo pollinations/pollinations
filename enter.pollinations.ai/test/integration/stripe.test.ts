@@ -1404,7 +1404,6 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
         body: JSON.stringify({
             enabled: true,
             packAmountUsd: 100,
-            immediateService: true,
         }),
     });
 
@@ -1418,11 +1417,6 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
     expect(data.autoTopUp.enabled).toBe(true);
     expect(data.autoTopUp.packAmountUsd).toBe(100);
 
-    expect(customer.metadata.auto_top_up_consent_version).toBe("2026-10-01");
-    expect(customer.metadata.auto_top_up_consent_text).toContain("each refill");
-    expect(
-        Number.isNaN(Date.parse(customer.metadata.auto_top_up_consent_at)),
-    ).toBe(false);
     expect(mocks.stripe.state.invoices).toHaveLength(0);
     expect(
         mocks.stripe.state.requests.some(
@@ -1440,44 +1434,6 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
         .limit(1);
     expect(updatedUser?.packBalance).toBe(1);
     expect(updatedUser?.autoTopUpEnabled).toBe(true);
-
-    // The next refill carries the original request, rather than inventing
-    // a fresh acceptance date when an automatic payment happens.
-    const trigger = await SELF.fetch(`${base}/auto-top-up/trigger`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
-        },
-        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
-    });
-    expect(trigger.status).toBe(200);
-    const invoice = mocks.stripe.state.requests.find(
-        (request) => request.path === "/v1/invoices",
-    )?.body;
-    expect(invoice?.["metadata[auto_top_up_consent_at]"]).toBe(
-        customer.metadata.auto_top_up_consent_at,
-    );
-    expect(invoice?.["metadata[auto_top_up_consent_text]"]).toBe(
-        customer.metadata.auto_top_up_consent_text,
-    );
-    expect(invoice?.footer).toContain("Where immediate service was requested");
-    // Re-enabling through a caller that did not ask for immediate service
-    // cannot carry forward the earlier opt-in as evidence.
-    for (const enabled of [false, true]) {
-        const saved = await SELF.fetch(`${base}/auto-top-up`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: JSON.stringify({ enabled, packAmountUsd: 100 }),
-        });
-        expect(saved.status).toBe(200);
-    }
-    expect(customer.metadata.auto_top_up_consent_version).toBeFalsy();
-    expect(customer.metadata.auto_top_up_consent_at).toBeFalsy();
-    expect(invoice?.["metadata[auto_top_up_consent_at]"]).toBeTruthy();
 });
 
 test.for([

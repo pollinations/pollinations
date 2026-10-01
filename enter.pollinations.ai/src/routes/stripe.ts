@@ -263,7 +263,6 @@ export const stripeRoutes = new Hono<Env>()
         const body = (await c.req.json().catch(() => null)) as {
             enabled?: boolean;
             packAmountUsd?: number;
-            immediateService?: boolean;
         } | null;
 
         if (!body || typeof body.enabled !== "boolean") {
@@ -284,7 +283,6 @@ export const stripeRoutes = new Hono<Env>()
         const result = await updateAutoTopUpSettings(c.env, user.id, {
             enabled: body.enabled,
             packAmountUsd: body.packAmountUsd,
-            immediateService: body.immediateService === true,
         });
 
         if (!result.ok) {

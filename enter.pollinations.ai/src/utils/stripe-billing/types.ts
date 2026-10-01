@@ -26,7 +26,6 @@ export type AutoTopUpAttemptRow = {
 };
 
 export type AutoTopUpInput = {
-    immediateService?: boolean;
     enabled: boolean;
     packAmountUsd?: number;
 };

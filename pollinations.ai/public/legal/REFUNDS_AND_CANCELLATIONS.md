@@ -38,7 +38,7 @@ Approval is discretionary except where required by law. On any approved refund, 
 
 If you buy as a consumer in the EEA, you generally have 14 days from purchase to withdraw. Crediting Pollen to your wallet does not by itself remove that right.
 
-At pack checkout, we ask you to expressly request immediate API service. When you enable auto top-up, the request covers each refill while it remains enabled. If you withdraw after making that request, you must pay the proportionate amount for service supplied before you notified us, as permitted by applicable law. The withdrawal right ends once the service is fully performed, provided you gave the required prior request and acknowledgement.
+At pack checkout, we ask you to expressly request immediate API service. If you withdraw after making that request, you must pay the proportionate amount for service supplied before you notified us, as permitted by applicable law. The withdrawal right ends once the service is fully performed, provided you gave the required prior request and acknowledgement.
 
 To withdraw, email billing@pollinations.ai with your order ID and a clear statement that you wish to withdraw. You do not need to give a reason. We refund any amount due within 14 days of receiving your notice using the original payment method, unless you expressly agree otherwise, and reverse the corresponding unused purchased Pollen.
 

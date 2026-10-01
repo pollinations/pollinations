@@ -4,11 +4,6 @@ import {
     AUTO_TOP_UP_PACK_MIN_USD,
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
-import {
-    AUTO_TOP_UP_CONSENT_TEXT,
-    CHECKOUT_CONSENT_VERSION,
-    CHECKOUT_INVOICE_FOOTER,
-} from "@shared/billing/checkout-consent.ts";
 import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import {
     calculateServiceFeeCents,
@@ -114,22 +109,6 @@ export async function updateAutoTopUpSettings(
             error: "Add billing details in Stripe before enabling auto top-up.",
         };
     }
-
-    // A new enable without an express request must not reuse consent from
-    // an earlier period. Existing invoices retain their own record.
-    await stripe.customers.update(customerId, {
-        metadata: {
-            auto_top_up_consent_version: input.immediateService
-                ? CHECKOUT_CONSENT_VERSION
-                : "",
-            auto_top_up_consent_at: input.immediateService
-                ? new Date().toISOString()
-                : "",
-            auto_top_up_consent_text: input.immediateService
-                ? AUTO_TOP_UP_CONSENT_TEXT
-                : "",
-        },
-    });
 
     const updated = await env.DB.prepare(
         `UPDATE user
@@ -251,14 +230,6 @@ export async function processAutoTopUpForUser(
             [METADATA_USER_ID]: userId,
             [METADATA_PURPOSE]: AUTO_TOP_UP_PURPOSE,
             autoTopUpAttemptId: attemptId,
-            ...(customer.metadata.auto_top_up_consent_version && {
-                auto_top_up_consent_version:
-                    customer.metadata.auto_top_up_consent_version,
-                auto_top_up_consent_at:
-                    customer.metadata.auto_top_up_consent_at,
-                auto_top_up_consent_text:
-                    customer.metadata.auto_top_up_consent_text,
-            }),
         };
 
         // auto_advance: false keeps collection explicit: one manual pay()
@@ -272,7 +243,6 @@ export async function processAutoTopUpForUser(
                 automatic_tax: { enabled: true },
                 default_payment_method: paymentMethod.id,
                 description: pack.checkoutName,
-                footer: CHECKOUT_INVOICE_FOOTER,
                 metadata,
                 rendering: {
                     amount_tax_display: "exclude_tax",

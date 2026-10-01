@@ -12,17 +12,12 @@ import {
     AUTO_TOP_UP_PACK_MIN_USD,
 } from "@shared/billing/auto-top-up.ts";
 import {
-    AUTO_TOP_UP_CONSENT_PREFIX,
-    WITHDRAWAL_NOTICE,
-} from "@shared/billing/checkout-consent.ts";
-import {
     formatPollenPackValue,
     getPollenPackByKey,
     POLLEN_PACKS,
     type PollenPack,
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
-import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -214,7 +209,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         setSlotError(null);
         try {
             const response = await apiClient.stripe["auto-top-up"].$patch({
-                json: { enabled, packAmountUsd, immediateService: enabled },
+                json: { enabled, packAmountUsd },
             });
             const payload = (await response.json().catch(() => ({}))) as
                 | BillingOverview
@@ -450,25 +445,6 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         )}
                     </div>
                 </div>
-                <p className="text-[13px] leading-snug text-theme-text-muted">
-                    {AUTO_TOP_UP_CONSENT_PREFIX}
-                    <InlineLink
-                        href={`${PUBLIC_URLS.root}/terms`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Terms
-                    </InlineLink>{" "}
-                    and{" "}
-                    <InlineLink
-                        href={`${PUBLIC_URLS.root}/refunds`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Refund Policy
-                    </InlineLink>
-                    . {WITHDRAWAL_NOTICE}
-                </p>
             </section>
 
             <PackCheckoutDialog

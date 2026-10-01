@@ -3,8 +3,8 @@ import {
     Button,
     ConfirmationDialog,
     CopyField,
+    EditableCombobox,
     InlineLink,
-    Input,
     Section,
     Surface,
     Text,
@@ -38,6 +38,17 @@ async function e2b<T>(path: string, init?: RequestInit): Promise<T> {
     return (response.status === 204 ? undefined : await response.json()) as T;
 }
 
+// The most useful of E2B's public templates. Any other name works too.
+const TEMPLATES: Record<string, string> = {
+    pollinations:
+        "polli, Node.js 24 and Python, ready for ssh · 2 vCPU, 512 MB",
+    claude: "Claude Code · 2 vCPU, 2 GB",
+    codex: "OpenAI Codex · 2 vCPU, 2 GB",
+    opencode: "OpenCode · 2 vCPU, 2 GB",
+    amp: "Amp · 2 vCPU, 2 GB",
+};
+const DEFAULT_TEMPLATE = "pollinations";
+
 const errorMessage = (error: unknown) =>
     error instanceof Error ? error.message : "Something went wrong.";
 
@@ -45,7 +56,7 @@ export function Sandboxes() {
     const [sandboxes, setSandboxes] = useState<Sandbox[] | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
-    const [template, setTemplate] = useState("pollinations");
+    const [template, setTemplate] = useState("");
     const [pending, setPending] = useState<string | null>(null);
     const [killing, setKilling] = useState<Sandbox | null>(null);
 
@@ -82,12 +93,14 @@ export function Sandboxes() {
                 // Same lease as `polli sandbox create`: 10 paid minutes, then
                 // paused until the next ssh session resumes it.
                 body: JSON.stringify({
-                    templateID: template.trim(),
+                    templateID,
                     timeout: 600,
                     autoPause: true,
                 }),
             }),
         );
+
+    const templateID = template.trim() || DEFAULT_TEMPLATE;
 
     const kill = (sandbox: Sandbox) =>
         run(sandbox.sandboxID, () =>
@@ -109,22 +122,35 @@ export function Sandboxes() {
             }
         >
             <form
-                className="flex flex-wrap gap-2"
+                className="flex flex-wrap items-start gap-2"
                 onSubmit={(event) => {
                     event.preventDefault();
                     void create();
                 }}
             >
-                <Input
-                    value={template}
-                    aria-label="E2B template"
-                    className="min-w-48 flex-1"
-                    onChange={(event) => setTemplate(event.currentTarget.value)}
-                />
+                <div className="min-w-48 flex-1 space-y-1">
+                    <EditableCombobox
+                        value={template}
+                        options={Object.keys(TEMPLATES)}
+                        onChange={setTemplate}
+                        aria-label="E2B template"
+                        placeholder={DEFAULT_TEMPLATE}
+                        emptyMessage="Not in this list. You can still type any E2B template."
+                        autoComplete="off"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                    />
+                    <Text size="sm" tone="muted">
+                        {TEMPLATES[templateID] ?? "Your own pick."}{" "}
+                        <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
+                            More E2B templates
+                        </InlineLink>
+                    </Text>
+                </div>
                 <Button
                     type="submit"
                     intent="commit"
-                    disabled={pending !== null || !template.trim()}
+                    disabled={pending !== null}
                 >
                     {pending === "create" ? "Creating..." : "Create sandbox"}
                 </Button>

@@ -1462,6 +1462,22 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
         customer.metadata.auto_top_up_consent_text,
     );
     expect(invoice?.footer).toContain("Where immediate service was requested");
+    // Re-enabling through a caller that did not ask for immediate service
+    // cannot carry forward the earlier opt-in as evidence.
+    for (const enabled of [false, true]) {
+        const saved = await SELF.fetch(`${base}/auto-top-up`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ enabled, packAmountUsd: 100 }),
+        });
+        expect(saved.status).toBe(200);
+    }
+    expect(customer.metadata.auto_top_up_consent_version).toBeFalsy();
+    expect(customer.metadata.auto_top_up_consent_at).toBeFalsy();
+    expect(invoice?.["metadata[auto_top_up_consent_at]"]).toBeTruthy();
 });
 
 test.for([

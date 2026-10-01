@@ -115,17 +115,21 @@ export async function updateAutoTopUpSettings(
         };
     }
 
-    // Only record an express request supplied by the buyer. Existing
-    // settings and API callers without it are not evidence of consent.
-    if (input.immediateService) {
-        await stripe.customers.update(customerId, {
-            metadata: {
-                auto_top_up_consent_version: CHECKOUT_CONSENT_VERSION,
-                auto_top_up_consent_at: new Date().toISOString(),
-                auto_top_up_consent_text: AUTO_TOP_UP_CONSENT_TEXT,
-            },
-        });
-    }
+    // A new enable without an express request must not reuse consent from
+    // an earlier period. Existing invoices retain their own record.
+    await stripe.customers.update(customerId, {
+        metadata: {
+            auto_top_up_consent_version: input.immediateService
+                ? CHECKOUT_CONSENT_VERSION
+                : "",
+            auto_top_up_consent_at: input.immediateService
+                ? new Date().toISOString()
+                : "",
+            auto_top_up_consent_text: input.immediateService
+                ? AUTO_TOP_UP_CONSENT_TEXT
+                : "",
+        },
+    });
 
     const updated = await env.DB.prepare(
         `UPDATE user

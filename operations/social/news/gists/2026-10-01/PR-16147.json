@@ -1,0 +1,33 @@
+{
+  "pr_number": 16147,
+  "title": "fix: keep Express priority to community issues",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16147",
+  "merged_at": "2026-10-01T14:35:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- The Express job counted team members as paying customers (our own test purchases), so a log-only run on main would have moved the team's REVENUE issues to Express\n- Now only issues whose Dev Source is Community can move to Express; reuses the Source the project manager sets, no separate team list\n- The workflow is paused until this merges; it will be re-enabled afterwards\n\nDry-run locally on 72 hours of issues with every author treated as a customer: 69 Community issues would move, no team-authored ones.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Express takes the community lane",
+    "blurb": "The Express queue checks the Community label on the project board before waving an issue through. Team issues stay in their own lane.",
+    "summary": "Express-priority selection uses the project manager's Dev Source = Community field to route community issues while excluding team-authored issues.",
+    "impact": "In a 72-hour dry run, 69 Community issues qualified for Express and no team-authored issues did.",
+    "keywords": [
+      "GitHub",
+      "Express priority",
+      "community issues",
+      "issue triage",
+      "automation"
+    ],
+    "visual_concept": "Depict GitHub issue triage as a cozy garden path: Polli guides Community-tagged issue cards toward a small Express sign, while team issue cards remain on a separate path. A CRT monitor robot helps sort the cards; the project board's Dev Source field is the visual cue.",
+    "image_prompt": "In a cozy pixel art garden, a CRT monitor robot sorts tiny issue cards marked 'Community' toward an 'Express' sign while Polli, wearing a tiny mail-carrier cap, guides the way beside lime green (#ecf874) code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16147.jpg",
+    "prompt": "In a cozy pixel art garden, a CRT monitor robot sorts tiny issue cards marked 'Community' toward an 'Express' sign while Polli, wearing a tiny mail-carrier cap, guides the way beside lime green (#ecf874) code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-01T14:36:43.072378+00:00"
+}

@@ -45,7 +45,6 @@ async function tinybird<T>(pipe: string, params = ""): Promise<T[]> {
 }
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** An app lists several platforms, comma-separated. */
 export const platformsOf = (app: DirectoryApp): string[] =>
@@ -188,8 +187,6 @@ type PlatformStats = {
      * `community`.
      */
     newest: Record<string, string[]>;
-    /** Catalog entries added in the last 7 days, per group, agents included. */
-    addedThisWeek: Record<string, number>;
 };
 
 type CatalogModel = {
@@ -226,31 +223,14 @@ export const loadPlatformStats = cachePublic(
         for (const { category } of official) {
             if (category) kinds[category] = (kinds[category] ?? 0) + 1;
         }
-        const addedThisWeek: Record<string, number> = {};
-        const weekAgo = Date.now() - WEEK_MS;
-        for (const model of catalog) {
-            const group = groupOf(model);
-            if (group && (model.added_date ?? 0) >= weekAgo) {
-                addedThisWeek[group] = (addedThisWeek[group] ?? 0) + 1;
-            }
-        }
         return {
             agents: catalog.length - models.length,
             community: models.length - official.length,
             kinds,
             newest: newestByGroup(models),
-            addedThisWeek,
         };
     },
 );
-
-/** Agents, community models, or an official model's category. */
-const groupOf = (model: CatalogModel) =>
-    model.agent === true
-        ? "agents"
-        : model.community === true
-          ? "community"
-          : model.category;
 
 function newestByGroup(models: CatalogModel[]) {
     const newest: Record<string, string[]> = {};
@@ -260,7 +240,7 @@ function newestByGroup(models: CatalogModel[]) {
         .filter((model) => !model.is_specialized)
         .sort((a, b) => (b.added_date ?? 0) - (a.added_date ?? 0));
     for (const model of sorted) {
-        const group = groupOf(model);
+        const group = model.community === true ? "community" : model.category;
         if (!group || seen.has(`${group}/${model.publisher}`)) continue;
         seen.add(`${group}/${model.publisher}`);
         newest[group] = [

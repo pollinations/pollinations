@@ -293,39 +293,6 @@ describe("platform stats", () => {
         });
     });
 
-    it("counts this week's additions per official category, community and agents", async () => {
-        vi.resetModules();
-        const { loadPlatformStats } = await import("./publicStats");
-        const today = Date.now();
-        const lastMonth = today - 30 * 24 * 60 * 60 * 1000;
-        const catalog = [
-            { name: "new-image", category: "image", added_date: today },
-            { name: "old-image", category: "image", added_date: lastMonth },
-            { name: "undated", category: "text" },
-            {
-                name: "owner/model",
-                category: "text",
-                community: true,
-                added_date: today,
-            },
-            {
-                name: "owner/agent",
-                category: "text",
-                agent: true,
-                community: true,
-                added_date: today,
-            },
-        ];
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => Response.json(catalog)),
-        );
-
-        await expect(loadPlatformStats()).resolves.toMatchObject({
-            addedThisWeek: { image: 1, community: 1, agents: 1 },
-        });
-    });
-
     it("retries a failed catalog rather than reporting zero models or caching failure", async () => {
         vi.resetModules();
         const { loadPlatformStats } = await import("./publicStats");
@@ -383,7 +350,6 @@ describe("platform stats", () => {
             community: 0,
             kinds: {},
             newest: {},
-            addedThisWeek: {},
         });
         await loadPlatformStats();
         expect(fetchMock).toHaveBeenCalledTimes(1);

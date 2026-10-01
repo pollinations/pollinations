@@ -35,12 +35,12 @@ const FAVICON_DATA_URI =
 import COMMUNITY_MODELS_MD from "../../../BRING_YOUR_OWN_MODEL.md?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
-import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
+import CODING_HARNESSES_MD from "../docs/coding-harnesses.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";

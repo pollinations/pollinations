@@ -80,7 +80,11 @@ const PaymentMethods: FC<{
 }> = ({ methods, declined = false }) =>
     methods.length === 0 ? (
         <p className="text-sm text-theme-text-muted">
-            None saved yet: tick “Save” at your next card payment
+            No payment method saved yet. Add a card using{" "}
+            <strong className="font-semibold text-theme-text-base">
+                Edit on Stripe
+            </strong>
+            , or save one at checkout.
         </p>
     ) : (
         <ul className="flex flex-col gap-2">

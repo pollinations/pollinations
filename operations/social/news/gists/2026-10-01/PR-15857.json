@@ -1,0 +1,40 @@
+{
+  "pr_number": 15857,
+  "title": "feat: wallet top-up with saved-card checkout and auto top-up",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15857",
+  "merged_at": "2026-10-01T13:23:29Z",
+  "labels": [
+    "FEATURE",
+    "API",
+    "BILLING",
+    "REVENUE"
+  ],
+  "pr_body_excerpt": "Reworks the Pollen page top-up so a returning buyer pays in two taps and turns on auto top-up from the same screen.\n\n- Adds one pack grid with a filled Buy button and an auto top-up switch. With a saved card, Buy opens a modal (Checkout Sessions, `ui_mode: custom`) that leads with the total and one Confirm. Confirm waits for Stripe's currency selector (Stripe's page if it fails), and missing tax details point to completing them on Stripe. Without a saved card, Buy goes to Stripe's hosted page.\n- Turning auto top-up on saves at once when a default card and billing details exist. Otherwise the switch opens the Stripe Billing Portal (adding a card deep-links and makes it the default) and the buyer turns auto top-up on after returning, with the chosen pack kept. A missing card or details makes auto top-up unavailable without changing the saved setting; an actual failed charge attempt turns it off.\n- Auto top-up problems show under the switch as an icon and the fix (Update card, Approve, Add details); Approve stays visible after switching off. Billing is read-only and badges the card or address concerned (Declined, Incomplete).\n- After paying, the page shows \"added\" only once the webhook credited the session; a bank payment refused after checkout shows as failed with Buy again.\n- Adds sm/md/lg sizes to the `@pollinations/ui` Switch.\n\n| | Before | After |\n|---|---|---|\n| Repeat purchase | Stripe page, re-enter card | Modal, Confirm |\n| Auto top-up, no card | Buy a pack first | Add a card on Stripe, no charge |\n\nProduction needs no migration, Tinybird or secret change; the public `STRIPE_PUBLISHABLE_KEY` is added to the wrangler vars.\n\nReplaces #15837. Validated on staging with the Stripe sandbox.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two taps to more Pollen",
+    "blurb": "Returning buyers get a saved-card Confirm instead of another trip through checkout. Auto top-up lives beside the pack grid, with a clear path to add a card without buying a pack first.",
+    "summary": "The Pollen page adds saved-card checkout through a Stripe custom Checkout Session, an auto top-up switch beside the pack grid, and payment confirmation that waits for the webhook to credit the wallet.",
+    "impact": "Returning buyers can choose a pack and confirm with their saved card; buyers without one go to Stripe, while auto top-up offers card setup and shows actionable payment issues under its switch.",
+    "keywords": [
+      "Pollen",
+      "wallet",
+      "top-up",
+      "saved card",
+      "auto top-up",
+      "Stripe",
+      "checkout"
+    ],
+    "visual_concept": "Depict the Pollen wallet as a small garden: a saved card and Confirm button feed a lime-green Pollen flower, while a nearby switch controls a watering can for auto top-up. Polli, wearing a tiny cashier visor, tends the flower; a friendly CRT robot holds the confirmation screen.",
+    "image_prompt": "In a cozy pixel art garden checkout, Polli wears a tiny cashier visor and tends a lime green (#ecf874) Pollen flower beside a saved-card Confirm screen and a watering-can switch, while a friendly CRT monitor robot holds up the receipt; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium within the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, warm lighting, retro gaming vibes like Stardew Valley, chunky sprites, subtle CRT glow, and dark purple (#110518) outlines; nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15857.jpg",
+    "prompt": "In a cozy pixel art garden checkout, Polli wears a tiny cashier visor and tends a lime green (#ecf874) Pollen flower beside a saved-card Confirm screen and a watering-can switch, while a friendly CRT monitor robot holds up the receipt; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium within the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, warm lighting, retro gaming vibes like Stardew Valley, chunky sprites, subtle CRT glow, and dark purple (#110518) outlines; nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-01T13:25:06.731753+00:00"
+}

@@ -11,10 +11,12 @@ import {
 } from "@pollinations/ui";
 import type { ComponentType, ReactNode } from "react";
 import { useArt } from "../../art";
+import { useQuestLeaderboard } from "../../data/community";
 
 /** What Pollen is: pay as you go, free Quest credits, and earnings. */
 export function MoneyMoves() {
     const scene = useArt("home", "quests");
+    const { data: quests } = useQuestLeaderboard();
 
     return (
         <Surface
@@ -44,6 +46,16 @@ export function MoneyMoves() {
                     <Item icon={TargetIcon} title="Free credits">
                         Get free Quest Pollen for solving GitHub Quests, trying
                         models, or building an app or agent.{" "}
+                        {quests ? (
+                            <>
+                                {quests.totals.contributors.toLocaleString()}{" "}
+                                builders have earned{" "}
+                                {Math.floor(
+                                    quests.totals.totalPollen,
+                                ).toLocaleString()}{" "}
+                                Pollen from GitHub Quests so far.{" "}
+                            </>
+                        ) : null}
                         <InlineLink href="https://enter.pollinations.ai/quests">
                             Explore Quests
                         </InlineLink>

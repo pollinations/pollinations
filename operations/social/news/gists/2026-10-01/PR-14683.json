@@ -1,0 +1,33 @@
+{
+  "pr_number": 14683,
+  "title": "docs: allow secret changes in feature PRs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14683",
+  "merged_at": "2026-10-01T22:58:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the rule requiring encrypted secret changes to use a dedicated PR\n- Keeps explicit secret-mutation approval and production deployment safeguards unchanged",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less PR detour",
+    "blurb": "Feature PRs can include encrypted secret changes without taking a separate trip. Approval and production deployment safeguards stay put.",
+    "summary": "AGENTS.md no longer requires encrypted secret changes to use a dedicated PR, while explicit secret-mutation approval and production deployment safeguards remain unchanged.",
+    "impact": "Contributors can keep encrypted secret changes with the feature they support, subject to the same approval and deployment checks.",
+    "keywords": [
+      "docs",
+      "contributors",
+      "feature PRs",
+      "encrypted secrets",
+      "approval"
+    ],
+    "visual_concept": "Depict an internal contributor guide beside a feature PR containing a small locked secret file; Polli brings them together while an unchanged approval gate remains in view. Use a cozy garden workbench rather than implying a security issue or a user-facing feature.",
+    "image_prompt": "At a cozy pixel-art garden workbench, Polli clips a tiny locked file to a feature PR page while a friendly approval gate stands beside a flowering code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the frame with the workbench. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-14683.jpg",
+    "prompt": "At a cozy pixel-art garden workbench, Polli clips a tiny locked file to a feature PR page while a friendly approval gate stands beside a flowering code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the frame with the workbench. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-01T22:59:43.988872+00:00"
+}

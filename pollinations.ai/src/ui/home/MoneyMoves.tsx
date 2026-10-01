@@ -1,102 +1,112 @@
 import {
-    AppIcon,
-    BeakerIcon,
-    BookIcon,
+    CardIcon,
+    Chip,
     ContentHeader,
     EarningsIcon,
     Heading,
     InlineLink,
-    RobotIcon,
     Surface,
+    TargetIcon,
     Text,
 } from "@pollinations/ui";
+import type { ComponentType, ReactNode } from "react";
+import { useArt } from "../../art";
 
-/** Users' side is covered by the panel intro; the card holds the rates. */
-const EARNINGS = {
-    title: "Value flows back to builders",
-    body: "Earn Pollen when others use your published model or your app with developer earnings enabled.",
-    earnings: [
-        {
-            text: "Model · 75% of its listed price",
-            icon: BeakerIcon,
-            href: "https://gen.pollinations.ai/docs#tag/publish-a-model",
-            docsLabel: "Model publishing documentation",
-        },
-        {
-            text: "App · 25% markup on usage",
-            icon: AppIcon,
-            href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
-            docsLabel: "App wallet integration documentation",
-        },
-        {
-            text: "Agent · Earnings coming soon",
-            icon: RobotIcon,
-            href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
-            docsLabel: "Agent publishing documentation",
-        },
-    ],
-    note: "With app earnings enabled, 1 Pollen of usage costs the user 1.25 Pollen. Your app earns 0.25 Pollen.",
-};
-
+/** What Pollen is: pay as you go, free Quest credits, and earnings. */
 export function MoneyMoves() {
+    const scene = useArt("home", "quests");
+
     return (
-        <section className="dark -mx-5 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-none bg-brand-dark px-5 py-14 sm:-mx-2 sm:rounded-3xl sm:px-8 md:-mx-12 md:px-14">
-            <ContentHeader
-                eyebrow="How the money moves"
-                title="Users spend Pollen. Builders earn a share."
-                subtitle="With connected wallets, users pay for model usage from their own Pollen balance. App developers can add a markup, and community model publishers receive a share of their model’s usage."
-            />
-
-            <Surface variant="card" className="flex flex-col gap-3 p-5">
-                <div className="flex items-center gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-theme-bg-active text-brand-accent">
-                        <EarningsIcon className="size-5" />
-                    </div>
-                    <Heading as="h3" size="card" className="text-brand-accent">
-                        {EARNINGS.title}
-                    </Heading>
-                </div>
-                <Text size="sm">{EARNINGS.body}</Text>
-                <ul className="flex flex-col gap-2 pt-1">
-                    {EARNINGS.earnings.map((earning) => {
-                        const EarningsTypeIcon = earning.icon;
-
-                        return (
-                            <Text
-                                as="li"
-                                key={earning.text}
-                                size="sm"
-                                weight="medium"
-                                className="flex items-start gap-2.5 text-theme-text-strong"
+        <Surface
+            variant="card"
+            className="relative flex flex-col overflow-hidden p-5 sm:p-8 lg:min-h-[30rem] lg:justify-center"
+        >
+            <div className="relative z-10 flex flex-col gap-10 lg:max-w-[46%]">
+                <ContentHeader
+                    eyebrow={null}
+                    title="One credit for every model, agent and tool."
+                />
+                <ul className="flex flex-col gap-6">
+                    <Item
+                        icon={CardIcon}
+                        title="Pay as you go"
+                        badge={
+                            <Chip
+                                size="lg"
+                                className="bg-brand-accent font-semibold text-brand-dark"
                             >
-                                <EarningsTypeIcon
-                                    aria-hidden="true"
-                                    className="mt-0.5 size-4.5 shrink-0"
-                                />
-                                <span className="flex min-w-0 items-start gap-1">
-                                    <span className="min-w-0">
-                                        {earning.text}
-                                    </span>
-                                    <InlineLink
-                                        href={earning.href}
-                                        aria-label={earning.docsLabel}
-                                        title={earning.docsLabel}
-                                        className="inline-flex min-h-6 shrink-0 items-center gap-1 text-brand-accent"
-                                    >
-                                        <BookIcon
-                                            aria-hidden="true"
-                                            className="size-3.5"
-                                        />
-                                    </InlineLink>
-                                </span>
-                            </Text>
-                        );
-                    })}
+                                1 Pollen = $1
+                            </Chip>
+                        }
+                    >
+                        Top up any time and pay only for what you use.
+                    </Item>
+                    <Item icon={TargetIcon} title="Free credits">
+                        Get free Quest Pollen for solving GitHub Quests, trying
+                        models, or building an app or agent.{" "}
+                        <InlineLink href="https://enter.pollinations.ai/quests">
+                            Explore Quests
+                        </InlineLink>
+                    </Item>
+                    <Item icon={EarningsIcon} title="Earnings">
+                        Get a share of what others spend on your{" "}
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/publish-a-model">
+                            models
+                        </InlineLink>{" "}
+                        and{" "}
+                        {/* Keep the link's arrow and the full stop on its line. */}
+                        <span className="whitespace-nowrap">
+                            <InlineLink href="https://gen.pollinations.ai/docs#tag/connect-user-wallets">
+                                apps
+                            </InlineLink>
+                            .
+                        </span>
+                    </Item>
                 </ul>
-                <Text size="xs" tone="muted">
-                    {EARNINGS.note}
-                </Text>
-            </Surface>
-        </section>
+            </div>
+            {/* Under the copy on phones, reaching the card's edges; the right
+                side of the card on wide screens. */}
+            <img
+                src={scene.src}
+                srcSet={scene.srcSet}
+                sizes="(min-width: 1024px) 640px, 100vw"
+                alt=""
+                aria-hidden="true"
+                width={2048}
+                height={1024}
+                loading="lazy"
+                decoding="async"
+                className="first-call-scene pointer-events-none -mx-5 -mb-5 mt-8 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-8 sm:-mb-8 sm:w-[calc(100%+4rem)] lg:absolute lg:right-0 lg:bottom-0 lg:m-0 lg:w-[58%]"
+            />
+        </Surface>
+    );
+}
+
+function Item({
+    icon: Icon,
+    title,
+    badge,
+    children,
+}: {
+    icon: ComponentType<{ className?: string }>;
+    title: string;
+    badge?: ReactNode;
+    children: ReactNode;
+}) {
+    return (
+        <li className="flex gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
+                <Icon className="size-6" />
+            </div>
+            <div className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Heading as="h3" size="card">
+                        {title}
+                    </Heading>
+                    {badge}
+                </div>
+                <Text size="sm">{children}</Text>
+            </div>
+        </li>
     );
 }

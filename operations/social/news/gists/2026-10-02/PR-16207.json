@@ -1,0 +1,35 @@
+{
+  "pr_number": 16207,
+  "title": "docs: update README — 2026-10-02",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16207",
+  "merged_at": "2026-10-02T07:28:30Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh news, growing stars",
+    "blurb": "The README gets its daily garden check: fresh Latest News and updated star-history charts.",
+    "summary": "Refreshes the README's Latest News section and both light and dark star-history SVGs to keep the repository's project snapshot current.",
+    "impact": "README visitors get updated news and a current view of the project's GitHub star history in either theme.",
+    "keywords": [
+      "README",
+      "Latest News",
+      "star history",
+      "documentation",
+      "GitHub"
+    ],
+    "visual_concept": "Depict the pollinations.ai bee updating a garden noticeboard labeled 'NEWS' beside two small star-history charts representing light and dark themes. Stars grow like flowers; the scene should feel like a routine, cheerful update rather than a major launch.",
+    "image_prompt": "In a cozy pixel art garden, a small bee wearing a tiny editor's cap pins a 'NEWS' note to a board beside two star-history charts, while lime green (#ecf874) flowers bloom around them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she shares the frame with the board, never dominates it, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16207.jpg",
+    "prompt": "In a cozy pixel art garden, a small bee wearing a tiny editor's cap pins a 'NEWS' note to a board beside two star-history charts, while lime green (#ecf874) flowers bloom around them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she shares the frame with the board, never dominates it, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-02T07:29:30.034080+00:00"
+}

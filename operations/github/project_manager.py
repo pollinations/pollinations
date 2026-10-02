@@ -62,7 +62,9 @@ TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
 RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?\d+`?\)\s*$", re.MULTILINE)
 TYPES = ["Bug", "Feature", "Question", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
-SOURCES = ["Team", "Community", "Agent"]
+SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
+# Workflow sources, in order: an issue with the label, or a PR that closes one.
+LABEL_SOURCES = [("Apps", "APP-SUBMISSION"), ("Quests", "POLLEN-QUEST")]
 NOT_WORK_LABELS = {"BEE-CENSUS", "HONEY-CENSUS"}
 APP_SUBMISSION_AREA = "App catalog & showcase"
 
@@ -195,6 +197,27 @@ def author_source() -> str:
     if ITEM_DATA.get("user", {}).get("type") == "Bot" and not is_relayed():
         return "Agent"
     return "Community"
+
+
+def closing_issue_labels() -> set:
+    """Labels of the issues this PR closes ("Fixes #123")."""
+    data = graphql_request(
+        """query($id: ID!) { node(id: $id) { ... on PullRequest { closingIssuesReferences(first: 10) { nodes {
+            labels(first: 20) { nodes { name } }
+        } } } } }""",
+        {"id": ISSUE_NODE_ID},
+    )
+    issues = data.get("node", {}).get("closingIssuesReferences", {}).get("nodes", [])
+    return {l["name"].upper() for i in issues for l in i["labels"]["nodes"]}
+
+
+def item_source(labels: set) -> str:
+    """Exactly one source: Apps, then Quests, then who opened it."""
+    linked = closing_issue_labels() if IS_PULL_REQUEST else set()
+    for name, label in LABEL_SOURCES:
+        if label in labels or label in linked:
+            return name
+    return author_source()
 
 
 def current_priority() -> Optional[str]:
@@ -334,6 +357,13 @@ def main():
     areas = area_names(brief)
     fields = dev_fields(areas)
 
+    # A workflow label added after opening only changes the Source.
+    if GITHUB_EVENT.get("action") == "labeled":
+        source = item_source(labels)
+        print(f"{'DRY-RUN ' if DRY_RUN else ''}#{ISSUE_NUMBER}\t{source}\t(label added)\t{ISSUE_TITLE}")
+        set_field(add_to_dev(), fields["Source"], source)
+        return
+
     if not IS_PULL_REQUEST and "APP-SUBMISSION" in labels:
         answer = {"area": APP_SUBMISSION_AREA, "type": None, "priority": None}
     else:
@@ -342,7 +372,7 @@ def main():
             log_debug(f"#{ISSUE_NUMBER} is not work (census response); skipping")
             return
 
-    source = author_source()
+    source = item_source(labels)
     # A priority that is already set (by a person, an earlier run or the Express job) is kept.
     existing = current_priority() if answer["priority"] else None
     priority = existing or answer["priority"]

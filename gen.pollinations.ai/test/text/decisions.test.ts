@@ -260,6 +260,43 @@ test("routes Span-01 Lite under its own id and bills nothing", async ({
     });
 });
 
+test("routes Liquid D1 under its own id and bills input tokens", async ({
+    mocks,
+}) => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "liquid/d1",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "liquid/d1",
+        provider: "Liquid AI",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "liquid/d1" },
+    });
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "liquid/d1",
+        modelProviderUsed: "openrouter",
+        tokenCountPromptText: 452,
+        tokenCountCompletionText: 73,
+        isBilledUsage: true,
+    });
+    expect(event.totalCost).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 12);
+    const { tierBalance } = await getUserBalance(drizzle(env.DB), userId);
+    expect(tierBalance).toBeCloseTo(1 - (452 * 0.04 * 1.055) / 1_000_000, 7);
+});
+
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",

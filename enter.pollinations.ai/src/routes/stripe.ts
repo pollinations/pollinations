@@ -153,7 +153,10 @@ export const stripeRoutes = new Hono<Env>()
      */
     .get("/billing", async (c) => {
         const user = await requireSessionUser(c);
-        return c.json(await getBillingOverview(c.env, user.id));
+        return c.json({
+            ...(await getBillingOverview(c.env, user.id)),
+            ipCountry: c.req.header("cf-ipcountry") ?? null,
+        });
     })
 
     /**

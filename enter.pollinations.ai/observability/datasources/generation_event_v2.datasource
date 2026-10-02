@@ -35,6 +35,9 @@ SCHEMA >
 `api_key_created_for_app` String                `json:$.apiKeyCreatedForApp` DEFAULT 'undefined',
 `api_key_created_for_user_id` String            `json:$.apiKeyCreatedForUserId` DEFAULT 'undefined',
 `api_key_client_id`     String                  `json:$.apiKeyClientId` DEFAULT 'undefined',
+`api_key_created_by_id` String                  `json:$.apiKeyCreatedById` DEFAULT '',
+`api_key_origin_app_id` String                  `json:$.apiKeyOriginAppId` DEFAULT '',
+`polli_client_version`  LowCardinality(String)  `json:$.polliClientVersion` DEFAULT '',
 
 -- Meter
 `selected_meter_id`     LowCardinality(String)  `json:$.selectedMeterId` DEFAULT 'undefined',

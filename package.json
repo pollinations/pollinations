@@ -9,8 +9,7 @@
     "packages/sdk",
     "packages/ui",
     "apps/react",
-    "operations/economics/web",
-    "operations/flow"
+    "operations/economics/web"
   ],
   "scripts": {
     "install:all": "npm install && npm install --prefix packages/sdk && npm install --prefix packages/mcp",

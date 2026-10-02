@@ -381,6 +381,7 @@ describe("static provider fallbacks", () => {
 
     it.each([
         "openai/gpt-6-luna",
+        "openai/gpt-6.1-sol",
         "openai/gpt-6-sol",
     ] as const)("keeps the same price and Quest access when %s falls back to OpenAI", (model) => {
         const primary = TEXT_SERVICES[model];
@@ -810,6 +811,55 @@ describe("static provider fallbacks", () => {
         ]) {
             expect(textCapabilityError(sonar, request)).toBeUndefined();
         }
+    });
+
+    it("rejects image input only for models without image input", () => {
+        const chat = {
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "What color is this?" },
+                        {
+                            type: "image_url",
+                            image_url: { url: "https://example.com/a.png" },
+                        },
+                    ],
+                },
+            ],
+        };
+        const responses = {
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_image",
+                            image_url: "https://example.com/a.png",
+                        },
+                    ],
+                },
+            ],
+        };
+        for (const request of [chat, responses]) {
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-oss-20b"],
+                    request,
+                ),
+            ).toBe("This model does not support image input");
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-5.4-nano"],
+                    request,
+                ),
+            ).toBeUndefined();
+        }
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-oss-20b"], {
+                messages: [{ role: "user", content: "Hello" }],
+            }),
+        ).toBeUndefined();
     });
 
     it("uses the same primary and single fallback for both API formats", () => {

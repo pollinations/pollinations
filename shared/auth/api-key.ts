@@ -154,7 +154,8 @@ export function createApiKeyPlugin() {
         },
         keyExpiration: {
             minExpiresIn: 0,
-            maxExpiresIn: 365,
+            // Override Better Auth's 365-day default with JavaScript Date's range.
+            maxExpiresIn: 100_000_000,
         },
         rateLimit: {
             enabled: false,
@@ -191,6 +192,10 @@ export function extractApiKey(request: Request): string | null {
     const auth = request.headers.get("authorization");
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
+
+    // E2B's SDKs send the key in X-API-KEY.
+    const headerKey = request.headers.get("x-api-key");
+    if (headerKey) return headerKey;
 
     // Query keys end up in access logs, referrers and browser history. Their
     // owner can rotate them; an agent run token is handed to a third party

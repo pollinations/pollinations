@@ -4,6 +4,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { Buffer } from "node:buffer";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
@@ -3566,6 +3567,345 @@ fixtureTest(
             models.data.find((model) => model.id === modelId)
                 ?.supported_endpoints,
         ).toContain("/v1/responses");
+    },
+);
+
+fixtureTest(
+    "rejects image input for text-only community models on Chat and Responses",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const listings = [
+            { name: "text-only", type: "proxy" as const },
+            {
+                name: "vision",
+                type: "proxy" as const,
+                inputModalities: ["text", "image"] as ModelInputModality[],
+            },
+            { name: "agent", type: "endpoint_agent" as const },
+        ].map((listing) => ({
+            ...listing,
+            modelId: communityModelId(ownerGithubUsername, listing.name),
+            url: `https://${listing.name}.example.com/v1/responses`,
+        }));
+        const bearerTokenCiphertext = await encryptSecret(
+            "Bearer image-token",
+            env.BETTER_AUTH_SECRET,
+        );
+        await insertCommunityEndpoints(
+            listings.map(({ modelId: _modelId, url, ...listing }) => ({
+                ...listing,
+                bearerTokenCiphertext,
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                api: "responses",
+                baseUrl: url,
+                upstreamModel: "provider-model",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+
+        const upstreamUrls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (listings.some((listing) => listing.url === request.url)) {
+                    upstreamUrls.push(request.url);
+                    return Response.json({
+                        id: "resp_image",
+                        object: "response",
+                        created_at: 1,
+                        model: "provider-model",
+                        status: "completed",
+                        output: [
+                            {
+                                id: "msg_image",
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "green",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const image = `data:image/png;base64,${TEST_PNG_BASE64}`;
+        const post = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                }),
+            );
+        for (const listing of listings) {
+            const responses = [
+                await post("/v1/chat/completions", {
+                    model: listing.modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "What color?" },
+                                {
+                                    type: "image_url",
+                                    image_url: { url: image },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+                await post("/v1/responses", {
+                    model: listing.modelId,
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "input_text", text: "What color?" },
+                                { type: "input_image", image_url: image },
+                            ],
+                        },
+                    ],
+                }),
+            ];
+            for (const response of responses) {
+                const body = await response.text();
+                if (listing.name === "text-only") {
+                    expect(response.status, body).toBe(400);
+                    expect(body).toContain(
+                        "This model does not support image input",
+                    );
+                } else {
+                    expect(response.status, body).toBe(200);
+                }
+            }
+        }
+        expect(upstreamUrls.sort()).toEqual(
+            [
+                listings[1].url,
+                listings[1].url,
+                listings[2].url,
+                listings[2].url,
+            ].sort(),
+        );
+    },
+);
+
+fixtureTest(
+    "stores large inline chat media once per user and sends their URLs upstream",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `vision-${crypto.randomUUID().slice(0, 8)}`;
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            }),
+            visibility: "public",
+            name: modelName,
+            inputModalities: ["text", "image", "video"],
+            baseUrl: "https://vision.example.com/v1",
+            upstreamModel: "vision-upstream",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        type Part = {
+            type: string;
+            image_url?: { url: string };
+            video_url?: { url: string };
+            file?: { file_url?: string };
+        };
+        const upstreamMediaUrls: string[][] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isChatCompletionsRequest(request)) {
+                    const { messages } = (await request.json()) as {
+                        messages: { content: string | Part[] }[];
+                    };
+                    upstreamMediaUrls.push(
+                        messages.flatMap(({ content }) =>
+                            typeof content === "string"
+                                ? []
+                                : content.flatMap(
+                                      (part) =>
+                                          part.image_url?.url ??
+                                          part.video_url?.url ??
+                                          part.file?.file_url ??
+                                          [],
+                                  ),
+                        ),
+                    );
+                    return Response.json({
+                        id: "chatcmpl_images",
+                        object: "chat.completion",
+                        model: "vision-upstream",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const media = env.MEDIA;
+        const uploads: string[] = [];
+        const bindings = withInlineGenerationCoordinator({
+            ...env,
+            MEDIA: {
+                has: (id: string) => media.has(id),
+                get: (id: string) => media.get(id),
+                upload: async (...args: Parameters<typeof media.upload>) => {
+                    const result = await media.upload(...args);
+                    uploads.push(result.id);
+                    return result;
+                },
+            } as unknown as typeof media,
+        });
+        const send = async (body: string, contentLength = body.length) => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                        "Content-Length": String(contentLength),
+                    },
+                    body,
+                }),
+                bindings,
+                ctx,
+            );
+            const text = await response.text();
+            await waitOnExecutionContext(ctx);
+            return { status: response.status, text };
+        };
+
+        const first = new Uint8Array(9 * 1024 * 1024).fill(1);
+        const second = new Uint8Array(9 * 1024 * 1024).fill(2);
+        const image = (bytes: Uint8Array) => ({
+            type: "image_url",
+            image_url: {
+                url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
+            },
+        });
+        const video = {
+            type: "video_url",
+            video_url: { url: "data:video/mp4;base64,AQID" },
+        };
+        const file = {
+            type: "file",
+            file: { file_url: "data:application/pdf;base64,JVBERg==" },
+        };
+        const turn = {
+            role: "user",
+            content: [
+                { type: "text", text: "Compare these" },
+                image(first),
+                image(second),
+                image(first),
+                video,
+                file,
+            ],
+        };
+        const model = communityModelId(ownerGithubUsername, modelName);
+        // Each body is above the 32 MiB text limit; the next turn re-sends
+        // the same images, as chat clients do.
+        const conversations = [
+            [turn],
+            [
+                turn,
+                { role: "assistant", content: "ok" },
+                { role: "user", content: "And the second one?" },
+            ],
+        ];
+        for (const messages of conversations) {
+            const body = JSON.stringify({ model, messages });
+            expect(body.length).toBeGreaterThan(32 * 1024 * 1024);
+            const response = await send(body);
+            expect(response.status, response.text).toBe(200);
+        }
+
+        const repeated = await send(
+            JSON.stringify({ model, messages: conversations[1] }),
+        );
+        expect(repeated.status, repeated.text).toBe(200);
+
+        expect(uploads).toHaveLength(4);
+        const [firstUrl, secondUrl, videoUrl, fileUrl] = uploads.map(
+            (id) => `https://media.pollinations.ai/${id}`,
+        );
+        expect(upstreamMediaUrls).toEqual([
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
+        ]);
+        const stored = await media.get(uploads[0]);
+        expect(stored?.headers.get("content-type")).toBe("image/png");
+        const storedBytes = Buffer.from(
+            await (stored as Response).arrayBuffer(),
+        );
+        expect(storedBytes.equals(first)).toBe(true);
+        for (const [index, contentType] of [
+            "video/mp4",
+            "application/pdf",
+        ].entries()) {
+            const response = await media.get(uploads[index + 2]);
+            expect(response?.headers.get("content-type")).toBe(contentType);
+            await response?.arrayBuffer();
+        }
+
+        const oversized = await send("{}", 100 * 1024 * 1024 + 1);
+        expect(oversized.status).toBe(413);
+        expect(oversized.text).toContain(
+            "Request body exceeds the 100 MiB limit",
+        );
     },
 );
 

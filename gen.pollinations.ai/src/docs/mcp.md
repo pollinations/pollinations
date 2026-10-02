@@ -15,7 +15,7 @@ then choose a server:
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
-| Connected Apps | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 
 Send the key with every request:
@@ -47,7 +47,8 @@ npx @pollinations/cli mcp remove cursor         # remove all Pollinations entrie
 ```
 
 Supported clients: Claude Code, Codex CLI, VS Code, Cursor, OpenCode, Gemini
-CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp.
+CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, Warp, Hermes Agent,
+and Pi (0.99+).
 
 Keys are stored locally in plaintext in client configs and reused on reinstall.
 Codex instead references `POLLI_MCP_CODEX_API_KEY` in `~/.codex/.env`.
@@ -151,9 +152,9 @@ path.
 - `web_fetch_exa` reads one or more known URLs as clean text when the search
   highlights are not enough.
 
-### Connected Apps MCP
+### Connectors MCP
 
-Connected Apps uses Composio to discover and run tools in each user's own
+The Connectors MCP uses Composio to discover and run tools in each user's own
 accounts. Enable it in your agent or connect the MCP endpoint, then ask for a
 specific task, such as “Summarize my unread Gmail” or “Find open issues in my
 GitHub repository.”

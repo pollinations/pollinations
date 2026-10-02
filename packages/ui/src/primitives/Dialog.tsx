@@ -23,8 +23,6 @@ export type DialogProps = {
     ariaLabel?: string;
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
-    /** Fill narrow viewports; disable for compact confirmations. */
-    fullscreenOnMobile?: boolean;
     showBackdrop?: boolean;
     backdropBlur?: boolean;
     positionerClassName?: string;
@@ -42,7 +40,6 @@ export const Dialog: FC<DialogProps> = ({
     ariaLabel,
     labelledBy,
     size = "md",
-    fullscreenOnMobile = true,
     showBackdrop = true,
     backdropBlur = true,
     positionerClassName,
@@ -71,18 +68,18 @@ export const Dialog: FC<DialogProps> = ({
                         // Scrim must DARKEN in both modes — ink-950 inverts
                         // (near-white in dark) and would brighten the page.
                         // Fixed black + a soft blur dims and de-focuses.
+                        // Ark numbers nested dialogs (--layer-index), so a
+                        // dialog opened from another dims and covers it.
                         className={cn(
-                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-[#000]/50",
+                            "polli:fixed polli:inset-0 polli:z-[calc(100_+_var(--layer-index,0)_*_20)] polli:bg-[#000]/50",
                             backdropBlur && "polli:backdrop-blur-sm",
                         )}
                     />
                 )}
                 <ArkDialog.Positioner
                     className={cn(
-                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden",
-                        fullscreenOnMobile
-                            ? "polli:p-0 polli:sm:p-4"
-                            : "polli:p-4",
+                        "polli:fixed polli:inset-0 polli:z-[calc(110_+_var(--layer-index,0)_*_20)] polli:flex polli:max-h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
+                        "polli-dialog-mobile-positioner",
                         positionerClassName,
                     )}
                 >
@@ -91,10 +88,8 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
-                            fullscreenOnMobile
-                                ? "polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container"
-                                : "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-2xl polli:shadow-container",
+                            "polli:my-auto polli:flex polli:h-auto polli:max-h-full polli:w-full polli:flex-col polli:overflow-y-auto polli:rounded-block polli:bg-surface-block polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli-dialog-mobile-page",
                             sizeClasses[size],
                             contentClassName,
                         )}
@@ -137,7 +132,7 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
             className={cn(
                 inBody
                     ? "polli:shrink-0 polli:pt-2 polli:pb-4"
-                    : "polli:shrink-0 polli:p-6 polli:pb-4",
+                    : "polli:shrink-0 polli:px-(--polli-dialog-gutter) polli:pt-6 polli:pb-4",
                 className,
             )}
             {...props}
@@ -172,7 +167,10 @@ export type DialogBodyProps = ScrollAreaProps & {
     bodyClassName?: string;
 };
 
-/** Full-height scroll area with floating actions and an optional bottom link. */
+/**
+ * Scroll area whose actions follow the content and stay pinned to the bottom
+ * once the content scrolls, so a short screen never opens a gap above them.
+ */
 export function DialogBody({
     children,
     actions,
@@ -191,14 +189,17 @@ export function DialogBody({
         >
             <div
                 className={cn(
-                    "polli:grow polli:space-y-4 polli:px-6 polli:py-4",
+                    "polli:space-y-3 polli:px-(--polli-dialog-gutter) polli:py-4",
                     bodyClassName,
                 )}
             >
                 {children}
             </div>
             {(actions || footnote) && (
-                <div className="polli-dialog-floating-controls polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
+                // The size container lets the footer follow the dialog's width.
+                // It sits on the footer alone so pickers and tooltips in the
+                // body keep their positioning.
+                <div className="polli-dialog-floating-controls polli:@container polli:pointer-events-none polli:sticky polli:bottom-0 polli:z-10">
                     {actions && (
                         <DialogFooter className="polli:pointer-events-auto">
                             {actions}
@@ -223,7 +224,11 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-center polli:justify-end polli:gap-3 polli:bg-transparent polli:p-6 polli:pt-4",
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-center polli:justify-end polli:gap-3 polli:bg-transparent polli:px-(--polli-dialog-gutter) polli:pt-4 polli:pb-6",
+                // Actions are the screen's main controls: touch-sized, sharing
+                // the row in a narrow dialog (below 36rem, phones included), and
+                // spanning it when there is only one.
+                "polli:[&>.polli-control]:min-h-12 polli:[&>.polli-control]:text-base polli:@max-xl:[&>.polli-control]:flex-auto polli:[&>.polli-control:only-child]:flex-auto",
                 className,
             )}
             {...props}

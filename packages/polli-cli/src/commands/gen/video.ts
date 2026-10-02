@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    ExitSignal,
     getOutputMode,
     printError,
     printInfo,
@@ -41,7 +42,7 @@ export function createVideoCommand() {
                     printError(
                         `--image requires a public http(s) URL, not a local path: ${opts.image}`,
                     );
-                    process.exit(1);
+                    throw new ExitSignal(1);
                 }
                 params.set("image", opts.image);
             }

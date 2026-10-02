@@ -172,6 +172,11 @@ name or an undocumented ratio.
   available; a legacy untyped link does not certify invoice completeness.
   For cross-currency payments, match the invoice to Wise's original/exchanged
   amount, not a monthly FX estimate. Preserve the bank debit and its fees.
+  When recurring charges repeat the same amount, match each invoice by payment
+  date, currency, card identity, and supplier reference; leave other charges
+  unlinked until their own document is found. A verified hosted invoice or
+  original receipt can support a payment, but label a blocked or absent supplier
+  PDF explicitly instead of implying that it was archived.
   A split-currency card payment has multiple Bank rows but one supplier invoice.
 - `economics_stripe_sales` stores reviewed Stripe account-month-currency sales,
   refunds, reversals, fees, stream, and coverage. It never stores customer or

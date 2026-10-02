@@ -355,3 +355,24 @@ describe("platform stats", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });
+
+describe("requests in the last hour", () => {
+    it("sums each model's rollup row once, not its retried route attempts", async () => {
+        vi.resetModules();
+        const { loadRequestsLastHour } = await import("./publicStats");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        { model: "a", is_rollup: 1, total_requests: 10 },
+                        { model: "a", is_rollup: 0, total_requests: 12 },
+                        { model: "b", is_rollup: 1, total_requests: 5 },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(loadRequestsLastHour()).resolves.toBe(15);
+    });
+});

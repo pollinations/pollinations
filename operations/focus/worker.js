@@ -169,8 +169,10 @@ const PAGE = `<!doctype html>
   a{color:inherit;text-decoration:none}
   button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
   svg{width:16px;height:16px;flex:none}
-  .row{display:flex;align-items:center;gap:12px;padding:10px 12px;width:100%;box-sizing:border-box;border-radius:10px}
-  .cells{display:grid;grid-template-columns:repeat(4,46px) repeat(4,58px);align-items:center;flex:none}
+  .row{--py:10px;display:flex;align-items:center;gap:12px;padding:var(--py) 12px;width:100%;box-sizing:border-box;border-radius:10px}
+  /* The cells stretch over the row padding so the line before the PR columns runs unbroken from row to row. */
+  .cells{display:grid;grid-template-columns:repeat(4,46px) repeat(2,58px) repeat(2,72px);align-items:center;flex:none;align-self:stretch;margin:calc(-1 * var(--py)) 0;padding:var(--py) 0;background:linear-gradient(var(--polli-color-border),var(--polli-color-border)) 300px 0/1px 100% no-repeat}
+  .pr{padding-left:14px}
   .row:hover{background:var(--polli-color-bg-subtle)}
   .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .n{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;color:var(--polli-color-text-base)}
@@ -179,7 +181,7 @@ const PAGE = `<!doctype html>
   .area{border:1px solid transparent;border-top-color:var(--polli-color-border)}
   .area.on{border-color:var(--polli-color-border);border-radius:14px;background:var(--polli-color-surface-white);margin:6px 0}
   .kids{margin:0 0 8px 34px}
-  .kids .row{padding:7px 12px}
+  .kids .row{--py:7px}
   .leaf{margin-left:28px}
   .bar{width:60px;height:6px;border-radius:3px;background:var(--polli-color-bg-subtle);overflow:hidden;flex:none}
   .bar>span{display:block;height:100%;background:#1a7f37}
@@ -190,7 +192,7 @@ const PAGE = `<!doctype html>
   .toggle button.sel{background:var(--polli-color-bg-subtle);color:var(--polli-color-text-strong);font-weight:600}
   .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;font-size:12px}
   .legend span{display:inline-flex;align-items:center;gap:5px}
-  @media (max-width:640px){.cells{grid-template-columns:repeat(4,0) repeat(4,46px)}.type{visibility:hidden}}
+  @media (max-width:640px){.cells{grid-template-columns:repeat(4,0) repeat(2,46px) repeat(2,60px);background-position:92px 0}.type{visibility:hidden}}
 </style>
 <script crossorigin="anonymous" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin="anonymous" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -223,7 +225,7 @@ const PAGE = `<!doctype html>
   const icon = (name, cls) => h(I[name], { className: cls });
   // Columns 1–4: issue types. 5: open issues, 6: closed issues, 7: open PRs, 8: merged PRs. The icons sit once in the header row.
   const COLUMNS = [["bug"], ["feature"], ["task"], ["question"], ["issue", "open"], ["closed", "done"], ["pr", "open"], ["merged", "done"]];
-  const n = (value, col) => h("span", { key: col, className: "n" + (value ? "" : " zero"), style: { gridColumn: col } }, value || 0);
+  const n = (value, col) => h("span", { key: col, className: "n" + (value ? "" : " zero") + (col > 6 ? " pr" : ""), style: { gridColumn: col } }, value || 0);
   const cells = (...children) => h("span", { className: "cells" }, children);
 
   // Source is the Dev board's field: exactly one per item (set by the project manager).
@@ -254,11 +256,14 @@ const PAGE = `<!doctype html>
     for (const p of prs) if (live(p, since)) p.state === "open" ? c.openPrs++ : c.merged++;
     return c;
   }
-  // Issue types stay empty when zero.
-  const typeCells = (c) => TYPES.map(([t], i) => c[t] ? h("span", { key: t, className: "n soft type", style: { gridColumn: i + 1 } }, c[t]) : null);
+  // Issue types as a share of the row's typed issues; empty when zero.
+  const typeCells = (c) => {
+    const total = TYPES.reduce((sum, [t]) => sum + c[t], 0);
+    return TYPES.map(([t], i) => c[t] ? h("span", { key: t, className: "n soft type", style: { gridColumn: i + 1 } }, Math.round((100 * c[t]) / total) + "%") : null);
+  };
   const prCells = (c) => [n(c.openPrs, 7), n(c.merged, 8)];
   const header = () => h("div", { className: "row head" }, h("span", { style: { width: 16 } }), h("span", { className: "grow" }),
-    cells(...COLUMNS.map(([name, cls], i) => h("span", { key: i, className: "n" + (i < 4 ? " soft type" : ""), style: { gridColumn: i + 1 } }, icon(name, cls)))));
+    cells(...COLUMNS.map(([name, cls], i) => h("span", { key: i, className: "n" + (i < 4 ? " soft type" : "") + (i > 5 ? " pr" : ""), style: { gridColumn: i + 1 } }, icon(name, cls)))));
 
   function build(since, source) {
     const items = pick(source);

@@ -184,7 +184,9 @@ const PAGE = `<!doctype html>
   const stroke = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" };
   const svg = (...d) => (p) => h("svg", Object.assign({}, stroke, p), d.map((x, i) => x.startsWith("c") ? h("circle", { key: i, cx: +x.split(",")[1], cy: +x.split(",")[2], r: +x.split(",")[3] }) : h("path", { key: i, d: x })));
   const I = {
-    bug: UI.BugIcon, feature: UI.SparklesIcon, task: UI.ClipboardIcon, question: UI.ChatIcon,
+    bug: UI.BugIcon, feature: UI.SparklesIcon,
+    task: svg("M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z", "m8 12 3 3 5-6"),
+    question: svg("c,12,12,9", "M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6", "M12 17h.01"),
     pr: UI.GitPullRequestIcon, parent: UI.TargetIcon, chevron: UI.ChevronIcon,
     issue: svg("c,12,12,9", "c,12,12,1.5"),
     closed: svg("c,12,12,9", "m8.5 12 2.5 2.5 4.5-5"),

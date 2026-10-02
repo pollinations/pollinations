@@ -10,6 +10,16 @@ body:
 
         The app must work, visibly use Pollinations, have a clear purpose, credit Pollinations, and avoid spam, scams, or deceptive behavior.
 
+        **Credit:** add the badge to your repository README. Without a repository, show the badge or a visible link to pollinations.ai on the app page.
+
+        ```markdown
+        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+        ```
+
+        ```html
+        <a href="https://pollinations.ai/?ref=badge"><img src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg" alt="Made with pollinations.ai"></a>
+        ```
+
   - type: input
     id: app-name
     attributes:

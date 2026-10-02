@@ -131,6 +131,14 @@ const overHundredPollenSinceLaunchQuest = {
     goal: { target: 100, unit: "pollen" },
 } satisfies QuestDefinition;
 
+/** Quests earned by buying Pollen; the monthly standings mark their earners. */
+export const TOP_UP_QUEST_IDS = [
+    legacyFirstTopUpQuest.id,
+    legacyOverHundredPollenQuest.id,
+    topUpSinceLaunchQuest.id,
+    overHundredPollenSinceLaunchQuest.id,
+];
+
 const QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,

@@ -14,20 +14,6 @@ export async function fetchTextModels({ baseUrl, key }) {
     return res.json();
 }
 
-/** Account balance in Pollen, or null when the key can't read it. */
-export async function fetchBalance({ baseUrl, key }) {
-    try {
-        const res = await fetch(`${baseUrl}/account/balance`, {
-            headers: authHeaders(key),
-        });
-        if (!res.ok) return null;
-        const { balance } = await res.json();
-        return typeof balance === "number" ? balance : null;
-    } catch {
-        return null;
-    }
-}
-
 const price = (pricing, field) => Number(pricing?.[field] ?? 0);
 
 /** Pollen for one reply: the usage gen reports times the catalog's prices. */
@@ -95,7 +81,11 @@ export async function ask({
                 );
                 continue;
             }
-            if (!res.ok) return { error: `http_${res.status}` };
+            if (!res.ok)
+                return {
+                    error: `http_${res.status}`,
+                    fatal: [401, 402, 403].includes(res.status),
+                };
             const body = await res.json();
             const text = replyText(body.choices?.[0]?.message);
             return text

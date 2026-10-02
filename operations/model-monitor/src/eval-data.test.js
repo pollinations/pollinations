@@ -7,10 +7,11 @@ import {
     officialTwin,
 } from "./eval-data.js";
 
-const model = (name, rate, moe, extra = {}) => ({
+const model = (name, rate, margin, extra = {}) => ({
     name,
     rate,
-    moe,
+    lower: Math.max(0, rate - margin),
+    upper: Math.min(1, rate + margin),
     cost: 0.01,
     status: "scored",
     community: name.startsWith("community/"),
@@ -60,13 +61,19 @@ describe("officialTwin", () => {
 });
 
 describe("compareToTwin", () => {
-    test("flags a gap only when it beats the combined margin of error", () => {
+    test("flags a gap only when the 95% intervals do not overlap", () => {
         const official = model("openai/x", 0.9, 0.1);
         const far = compareToTwin(model("community/a/x", 0.3, 0.15), official);
         assert.ok(far.significant);
         assert.ok(Math.abs(far.gap + 0.6) < 1e-9);
         const near = compareToTwin(model("community/a/x", 0.8, 0.15), official);
         assert.ok(!near.significant);
+        // Three right versus three wrong still has overlapping Wilson intervals.
+        const tiny = compareToTwin(
+            model("community/a/x", 1, 0.562),
+            model("openai/x", 0, 0.562),
+        );
+        assert.ok(!tiny.significant);
     });
 });
 

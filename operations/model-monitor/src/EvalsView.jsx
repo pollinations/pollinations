@@ -65,7 +65,9 @@ function ScoreCell({ model }) {
     return (
         <span className="tabular-nums">
             {percent(model.rate)}{" "}
-            <span className="opacity-60">±{percent(model.moe)}</span>
+            <span className="opacity-60">
+                ({percent(model.lower)}–{percent(model.upper)})
+            </span>
         </span>
     );
 }
@@ -79,8 +81,8 @@ function TwinPairs({ pairs }) {
             </Heading>
             <Text size="xs" tone="soft" className="m-0">
                 Community models named after an official model, next to it. A
-                gap is highlighted when it is bigger than the two margins of
-                error combined.
+                gap is highlighted when their 95% confidence intervals do not
+                overlap.
             </Text>
             <Surface variant="card" className="max-w-full overflow-x-auto p-0">
                 <Table className="min-w-[40rem]">
@@ -88,11 +90,11 @@ function TwinPairs({ pairs }) {
                         <tr>
                             <TableHeaderCell>Community model</TableHeaderCell>
                             <TableHeaderCell align="right">
-                                Score
+                                Score (95% CI)
                             </TableHeaderCell>
                             <TableHeaderCell>Official model</TableHeaderCell>
                             <TableHeaderCell align="right">
-                                Score
+                                Score (95% CI)
                             </TableHeaderCell>
                             <TableHeaderCell align="right">Gap</TableHeaderCell>
                         </tr>
@@ -141,7 +143,9 @@ function Ranking({ evalResult, ranking }) {
                     <tr>
                         <TableHeaderCell className="w-10">#</TableHeaderCell>
                         <TableHeaderCell>Model</TableHeaderCell>
-                        <TableHeaderCell align="right">Score</TableHeaderCell>
+                        <TableHeaderCell align="right">
+                            Score (95% CI)
+                        </TableHeaderCell>
                         {evalResult.families.map((family) => (
                             <TableHeaderCell key={family} align="right">
                                 {family}
@@ -226,8 +230,7 @@ export default function EvalsView() {
                 <Text size="xs" tone="soft" className="m-0">
                     Run of {new Date(run.date).toISOString().slice(0, 10)} ·
                     seed {run.seed} · {run.samples} questions per family ·{" "}
-                    {(run.cost.balanceChange ?? run.cost.estimated).toFixed(2)}{" "}
-                    Pollen
+                    {run.cost.toFixed(2)} Pollen
                 </Text>
                 <span className="inline-flex flex-wrap gap-1">
                     {index.slice(0, PAST_RUNS_SHOWN).map((entry) => (

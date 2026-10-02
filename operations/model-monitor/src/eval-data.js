@@ -30,12 +30,13 @@ export function officialTwin(model, officialModels) {
 
 /**
  * Community score against its official twin. The gap is significant when it
- * exceeds the two margins of error combined, so noise is not flagged.
+ * exceeds the 95% Wilson intervals, so noise is not flagged.
  */
 export function compareToTwin(community, official) {
     const gap = community.rate - official.rate;
-    const margin = Math.hypot(community.moe, official.moe);
-    return { gap, margin, significant: Math.abs(gap) > margin };
+    const significant =
+        community.lower > official.upper || official.lower > community.upper;
+    return { gap, significant };
 }
 
 /** Scored models best first, plus every community model next to its twin. */

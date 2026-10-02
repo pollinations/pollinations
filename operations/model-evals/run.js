@@ -8,7 +8,6 @@ import {
     ask,
     defaultBaseUrl,
     estimateCost,
-    fetchBalance,
     fetchTextModels,
 } from "./lib/gen.js";
 import { createRng } from "./lib/rng.js";
@@ -100,6 +99,10 @@ async function scoreModel({
             prompt: question.prompt,
             seed: (seed + index) % 2147483647,
         });
+        if (reply.fatal)
+            throw new Error(
+                `${reply.error}: check the eval API key or balance`,
+            );
         const spent = estimateCost(reply.usage, model.pricing);
         cost += spent;
         onCost(spent);
@@ -190,11 +193,11 @@ export function formatTable(evalResult) {
     const width = Math.max(5, ...rows.map((row) => row.name.length));
     const lines = [
         `${evalResult.title}: ${rows.length} scored, ${evalResult.models.length - rows.length} skipped`,
-        `${"model".padEnd(width)}  score       failed  cost (Pollen)`,
+        `${"model".padEnd(width)}  score (95% CI)        failed  cost (Pollen)`,
     ];
     for (const row of rows) {
         lines.push(
-            `${row.name.padEnd(width)}  ${`${percent(row.rate)} ±${percent(row.moe)}`.padEnd(10)}  ${String(row.failed).padStart(6)}  ${row.cost.toFixed(4)}`,
+            `${row.name.padEnd(width)}  ${`${percent(row.rate)} (${percent(row.lower)}–${percent(row.upper)})`.padEnd(21)}  ${String(row.failed).padStart(6)}  ${row.cost.toFixed(4)}`,
         );
     }
     return lines.join("\n");
@@ -214,7 +217,7 @@ function saveRun(outDir, run) {
         {
             id: run.id,
             date: run.date,
-            cost: run.cost.balanceChange ?? run.cost.estimated,
+            cost: run.cost,
             evals: run.evals.map((entry) => entry.id),
             scored: run.evals[0].models.filter((m) => m.status === "scored")
                 .length,
@@ -271,7 +274,6 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     if (!key) throw new Error("Set POLLINATIONS_API_KEY.");
 
     const api = { baseUrl, key, timeoutMs: Number(opts.timeout) * 1000 };
-    const balanceBefore = await fetchBalance(api);
     const startedAt = new Date();
     const { results, estimatedCost } = await runEvals({
         models,
@@ -286,19 +288,13 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
                 `${entry.status === "scored" ? `${percent(entry.rate)} (${entry.failed} failed)` : "skipped"}  ${name}  [${evalId}]`,
             ),
     });
-    const balanceAfter = await fetchBalance(api);
-    const balanceChange =
-        balanceBefore !== null && balanceAfter !== null
-            ? Number((balanceBefore - balanceAfter).toFixed(6))
-            : null;
-
     const run = {
         version: 1,
         id: startedAt.toISOString().replace(/[:.]/g, "-"),
         date: startedAt.toISOString(),
         seed,
         samples,
-        cost: { estimated: Number(estimatedCost.toFixed(6)), balanceChange },
+        cost: Number(estimatedCost.toFixed(6)),
         evals: results,
     };
     saveRun(opts.out, run);
@@ -306,7 +302,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     for (const evalResult of results)
         console.log(`\n${formatTable(evalResult)}`);
     console.log(
-        `\nCost: ${estimatedCost.toFixed(4)} Pollen estimated from reported usage and catalog prices${balanceChange === null ? "" : `; account balance changed by ${balanceChange} Pollen`}.`,
+        `\nCost: ${estimatedCost.toFixed(4)} Pollen estimated from reported usage and catalog prices.`,
     );
     console.log(`Saved ${join(opts.out, "runs", `${run.id}.json`)}`);
 }

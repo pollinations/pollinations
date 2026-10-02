@@ -13,8 +13,8 @@ Real-time health monitoring for Pollinations model endpoints.
 ## Evals tab
 
 `#evals` shows the weekly model evals: the latest ranking, past runs, and each
-community model next to the official model it is named after (a gap bigger than
-both margins of error combined is highlighted). Results come from the `evals`
+community model next to the official model it is named after (a gap is
+highlighted when their 95% Wilson intervals do not overlap). Results come from the `evals`
 data branch, written by `.github/workflows/evals-run-weekly.yml`, which runs
 `operations/model-evals` (see `node operations/model-evals/run.js --help`).
 Locally, set `VITE_EVALS_DATA_URL` to serve results from another location.

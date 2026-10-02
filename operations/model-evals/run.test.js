@@ -72,13 +72,17 @@ describe("aiw grading", () => {
 });
 
 describe("scores", () => {
-    test("margin of error follows Wilson's interval", () => {
+    test("Wilson interval keeps its asymmetric bounds", () => {
         const half = scoreOf(5, 10);
         assert.equal(half.rate, 0.5);
-        assert.ok(Math.abs(half.moe - 0.2634) < 0.001);
-        assert.ok(scoreOf(0, 10).moe > 0.1, "0% is not certain at n=10");
-        assert.ok(scoreOf(10, 10).moe > 0.1, "100% is not certain at n=10");
-        assert.ok(scoreOf(50, 100).moe < scoreOf(5, 10).moe);
+        assert.ok(Math.abs(half.lower - 0.2366) < 0.001);
+        assert.ok(Math.abs(half.upper - 0.7634) < 0.001);
+        assert.ok(scoreOf(0, 3).upper > 0.5, "0/3 is not certain");
+        assert.ok(scoreOf(3, 3).lower < 0.5, "3/3 is not certain");
+        assert.ok(
+            scoreOf(50, 100).upper - scoreOf(50, 100).lower <
+                half.upper - half.lower,
+        );
     });
 
     test("cost is reported usage times catalog prices, cached tokens discounted", () => {
@@ -185,6 +189,10 @@ describe("runEvals against a real HTTP server", () => {
                     });
                     res.end(JSON.stringify(payload));
                 };
+                if (model === "vendor/auth")
+                    return send(401, { error: "invalid key" });
+                if (model === "vendor/no-balance")
+                    return send(402, { error: "insufficient balance" });
                 if (model === "vendor/broken")
                     return send(500, { error: "boom" });
                 if (model === "vendor/limited" && !limited.has(seed)) {
@@ -245,7 +253,7 @@ describe("runEvals against a real HTTP server", () => {
 
         assert.equal(byName["vendor/right"].correct, 12);
         assert.equal(byName["vendor/right"].rate, 1);
-        assert.ok(byName["vendor/right"].moe > 0);
+        assert.ok(byName["vendor/right"].lower < 1);
         assert.equal(byName["vendor/wrong"].correct, 0);
         assert.equal(byName["vendor/wrong"].community, true);
         // Errors count as wrong answers, not as skipped questions.
@@ -322,5 +330,10 @@ describe("runEvals against a real HTTP server", () => {
             stalled.closeAllConnections();
             stalled.close();
         }
+    });
+
+    test("account errors abort the run instead of publishing wrong model scores", async () => {
+        await assert.rejects(run([model("vendor/auth")]), /http_401/);
+        await assert.rejects(run([model("vendor/no-balance")]), /http_402/);
     });
 });

@@ -22,10 +22,30 @@ async function fetchModels(url, context) {
     return response.json();
 }
 
-export function getModels(type = "all", context, filters) {
+/**
+ * Build the Gen model-list URL for a type with optional server-side filters.
+ * The MCP layer stays a thin proxy: Gen performs the filtering, so this
+ * function only forwards parameters. `capabilities` is a comma-separated
+ * list (duplicates collapse) and `community` is the legacy boolean source
+ * filter; both are passed through unchanged.
+ */
+export function getModels(type = "all", context, filters = {}) {
     const path = MODEL_PATHS[type];
     if (!path) throw new Error(`Unknown model type: ${type}`);
-    return fetchModels(buildUrl(path, filters), context);
+    const { community, capabilities, ...rest } = filters;
+    const params = {
+        ...rest,
+        ...(capabilities?.length
+            ? { capabilities: [...new Set(capabilities)].join(",") }
+            : {}),
+        ...(community !== undefined ? { community: String(community) } : {}),
+    };
+    return fetchModels(buildUrl(path, params), context);
+}
+
+/** Backwards-compatible boolean shorthand: getModels(type, context, true) */
+export function getModelsByCommunity(type, context, community) {
+    return getModels(type, context, { community });
 }
 
 export const getImageModels = (context) => getModels("image", context);

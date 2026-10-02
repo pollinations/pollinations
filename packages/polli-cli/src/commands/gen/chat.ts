@@ -154,6 +154,7 @@ export function createChatCommand() {
             };
 
             let closed = false;
+            let pendingTurns = 0;
 
             rl.prompt();
 
@@ -199,14 +200,22 @@ export function createChatCommand() {
                     return;
                 }
 
-                await sendMessage(input);
+                pendingTurns++;
+                try {
+                    await sendMessage(input);
+                } finally {
+                    pendingTurns--;
+                    if (closed && pendingTurns === 0 && opts.save) {
+                        saveTranscript(opts.save);
+                    }
+                }
                 // A fatal API error or EOF may have closed readline mid-turn.
                 if (!closed) rl.prompt();
             });
 
             rl.on("close", () => {
                 closed = true;
-                if (opts.save) saveTranscript(opts.save);
+                if (opts.save && pendingTurns === 0) saveTranscript(opts.save);
                 process.exitCode ??= 0;
             });
         });

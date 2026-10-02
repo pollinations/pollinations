@@ -192,8 +192,6 @@ const PAGE = `<!doctype html>
   .head{position:sticky;top:0;z-index:1;background:var(--polli-color-app-bg);padding-top:6px;padding-bottom:6px}.head:hover{background:var(--polli-color-app-bg)}
   .toggle button{padding:6px 10px;border-radius:8px;color:var(--polli-color-text-muted)}
   .toggle button.sel{background:var(--polli-color-bg-subtle);color:var(--polli-color-text-strong);font-weight:600}
-  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;font-size:12px}
-  .legend span{display:inline-flex;align-items:center;gap:5px}
   @media (max-width:640px){.cells{grid-template-columns:repeat(4,0) repeat(2,46px) repeat(2,60px);background-position:92px 0}.type{visibility:hidden}}
 </style>
 <script crossorigin="anonymous" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
@@ -228,7 +226,8 @@ const PAGE = `<!doctype html>
   const tint = (name, color) => h(I[name], { style: { color } });
   const icon = (name, cls) => h(I[name], { className: cls });
   // Columns 1–4: issue types. 5: open issues, 6: closed issues, 7: open PRs, 8: merged PRs. The icons sit once in the header row.
-  const COLUMNS = [["issue", "open"], ["closed", "done"], ["pr", "open"], ["merged", "done"]];
+  const COLUMNS = [["issue", "open", "Open issues"], ["closed", "done", "Closed issues"], ["pr", "open", "Open PRs"], ["merged", "done", "Merged PRs"]];
+  const tip = (label, child) => h(UI.Tooltip, { content: label, ariaLabel: label, triggerAs: "span", align: "center", tapEnabled: true }, child);
   const n = (value, col) => h("span", { key: col, className: "n" + (value ? "" : " zero") + (col > 6 ? " pr" : ""), style: { gridColumn: col } }, value || 0);
   const cells = (...children) => h("span", { className: "cells" }, children);
 
@@ -269,8 +268,8 @@ const PAGE = `<!doctype html>
   };
   const prCells = (c) => [n(c.openPrs, 7), n(c.merged, 8)];
   const header = () => h("div", { className: "row head" }, h("span", { style: { width: 16 } }), h("span", { className: "grow" }),
-    cells(h("span", { key: "mix", className: "mixhead type", style: { gridColumn: "1 / 5" } }, TYPES.map(([t, name, color]) => h("span", { key: t, className: "n" }, tint(name, color)))),
-      ...COLUMNS.map(([name, cls], i) => h("span", { key: i, className: "n" + (i > 1 ? " pr" : ""), style: { gridColumn: i + 5 } }, icon(name, cls)))));
+    cells(h("span", { key: "mix", className: "mixhead type", style: { gridColumn: "1 / 5" } }, TYPES.map(([t, name, color]) => h("span", { key: t, className: "n" }, tip(t + "s", tint(name, color))))),
+      ...COLUMNS.map(([name, cls, label], i) => h("span", { key: i, className: "n" + (i > 1 ? " pr" : ""), style: { gridColumn: i + 5 } }, tip(label, icon(name, cls))))));
 
   function build(since, source) {
     const items = pick(source);
@@ -351,11 +350,6 @@ const PAGE = `<!doctype html>
       on ? h("div", { className: "kids" }, [...a.parents.values()].map((p) => parentRow(p, s, prsFor, since)), looseRow(a, s, prsFor, since)) : null);
   }
 
-  const legend = () => h("div", { className: "legend soft" },
-    TYPES.map(([t, name, color]) => h("span", { key: name }, tint(name, color), t)).concat(
-      [["parent", "Parent issue", "done"], ["issue", "Open issue", "open"], ["closed", "Closed issue", "done"], ["pr", "Open PR", "open"], ["merged", "Merged PR", "done"]]
-        .map(([name, label, cls]) => h("span", { key: name }, icon(name, cls), label))));
-
   function render() {
     if (error) return root.render(h("p", { className: "soft" }, "Could not load: " + error));
     if (!data) return root.render(h("p", { className: "soft" }, "Loading the Dev board from GitHub…"));
@@ -369,7 +363,6 @@ const PAGE = `<!doctype html>
           h("div", { className: "toggle" }, [7, 30, 90].map((d) => h("button", { key: d, className: d === s.days ? "sel" : "", onClick: () => setState(Object.assign(s, { days: d })) }, d + "d"))))),
       header(),
       areas.map((a) => areaBlock(a, s, prsFor, since)),
-      legend(),
       h("p", { className: "soft", style: { fontSize: 12, marginTop: 10 } }, "Updated " + new Date(data.fetchedAt).toLocaleString())));
   }
 

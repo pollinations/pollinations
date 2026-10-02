@@ -1,0 +1,8 @@
+name: "Jev Verdict"
+description: "Paste a startup idea — Jev scores it on novelty, feasibility, demand and differentiation, picks a Ship / Fix / Kill verdict via POST /alpha/decisions, and the app's code executes the verdict into concrete next steps. Users pay with their own Pollen (Bring your own Pollen)."
+url: "https://jev-verdict.pollinations.ai"
+category: "Creative"
+language: "en"
+quest: "#15722"
+uses_pollinations: true
+bring_your_own_pollen: true

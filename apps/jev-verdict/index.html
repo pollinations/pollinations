@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Jev Verdict — paste a startup idea, Jev scores it, the code ships the verdict. Bring your own Pollen." />
+  <title>Jev Verdict — Ship, Fix or Kill</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⚖️</span>
+      <div>
+        <h1>Jev Verdict</h1>
+        <p class="tagline">Jev decides. The code executes.</p>
+      </div>
+    </div>
+    <div class="byop">
+      <button id="btn-login" class="btn btn-primary btn-sm">Connect Pollen</button>
+      <button id="btn-logout" class="btn btn-ghost btn-sm hidden">Disconnect</button>
+      <span id="byop-status" class="byop-status">Not connected</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card intro">
+      <h2>Ship, Fix or Kill your idea</h2>
+      <p>
+        Describe a startup idea. <strong>Jev</strong> scores it on novelty, feasibility, demand and
+        differentiation, gives an urgency probability and picks one verdict — then this app's code
+        executes that verdict and shows you what to do next.
+      </p>
+      <ol class="steps">
+        <li><span>1</span> Connect your Pollen (your key pays, you stay in control)</li>
+        <li><span>2</span> Paste your idea below</li>
+        <li><span>3</span> <code>POST /alpha/decisions</code> → Jev answers, code renders the verdict</li>
+      </ol>
+    </section>
+
+    <section class="card input-card">
+      <label for="idea">Your startup idea</label>
+      <textarea id="idea" rows="4" placeholder="Example: A web app that turns any podcast episode into a single-page illustrated comic strip in one click."></textarea>
+      <div class="row">
+        <button id="btn-verdict" class="btn btn-primary btn-lg" disabled>Get Jev's Verdict</button>
+        <span id="cost-hint" class="hint">Uses your own Pollen · cheapest model (jev)</span>
+      </div>
+      <div id="error-box" class="error hidden"></div>
+    </section>
+
+    <section id="result" class="hidden">
+      <div id="verdict-banner" class="verdict-banner">
+        <div class="verdict-emoji" id="verdict-emoji">⚖️</div>
+        <div>
+          <h2 id="verdict-title">—</h2>
+          <p id="verdict-reason" class="verdict-reason">—</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <section class="card">
+          <h3>Jev's scores</h3>
+          <div id="score-bars" class="score-bars"></div>
+        </section>
+        <section class="card">
+          <h3>Execution — what the code does next</h3>
+          <ul id="action-list" class="action-list"></ul>
+        </section>
+      </div>
+
+      <section class="card evidence">
+        <div class="row between">
+          <h3>Decision evidence</h3>
+          <button id="btn-poster" class="btn btn-ghost btn-sm">Generate poster (optional)</button>
+        </div>
+        <p class="hint">Real request &amp; response from <code>POST https://gen.pollinations.ai/alpha/decisions</code></p>
+        <details>
+          <summary>View raw request / response JSON</summary>
+          <pre id="raw-json" class="raw"></pre>
+        </details>
+        <div id="poster-box" class="poster-box hidden"></div>
+      </section>
+    </section>
+
+    <footer class="foot">
+      <p>
+        Powered by <a href="https://gen.pollinations.ai/docs" target="_blank" rel="noopener">Pollinations</a> ·
+        <code>/alpha/decisions</code> with <code>typesafe/jev</code> · Bring your own Pollen
+      </p>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="script.js"></script>
+</body>
+</html>

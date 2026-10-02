@@ -4,6 +4,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { Buffer } from "node:buffer";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
@@ -3712,6 +3713,171 @@ fixtureTest(
                 listings[2].url,
                 listings[2].url,
             ].sort(),
+        );
+    },
+);
+
+fixtureTest(
+    "stores large inline chat images once per user and sends their URLs upstream",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `vision-${crypto.randomUUID().slice(0, 8)}`;
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            }),
+            visibility: "public",
+            name: modelName,
+            inputModalities: ["text", "image"],
+            baseUrl: "https://vision.example.com/v1",
+            upstreamModel: "vision-upstream",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        type Part = { type: string; image_url?: { url: string } };
+        const upstreamImageUrls: string[][] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isChatCompletionsRequest(request)) {
+                    const { messages } = (await request.json()) as {
+                        messages: { content: string | Part[] }[];
+                    };
+                    upstreamImageUrls.push(
+                        messages.flatMap(({ content }) =>
+                            typeof content === "string"
+                                ? []
+                                : content.flatMap(
+                                      (part) => part.image_url?.url ?? [],
+                                  ),
+                        ),
+                    );
+                    return Response.json({
+                        id: "chatcmpl_images",
+                        object: "chat.completion",
+                        model: "vision-upstream",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const media = env.MEDIA;
+        const uploads: string[] = [];
+        const bindings = withInlineGenerationCoordinator({
+            ...env,
+            MEDIA: {
+                has: (id: string) => media.has(id),
+                get: (id: string) => media.get(id),
+                upload: async (...args: Parameters<typeof media.upload>) => {
+                    const result = await media.upload(...args);
+                    uploads.push(result.id);
+                    return result;
+                },
+            } as unknown as typeof media,
+        });
+        const send = async (body: string, contentLength = body.length) => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                        "Content-Length": String(contentLength),
+                    },
+                    body,
+                }),
+                bindings,
+                ctx,
+            );
+            const text = await response.text();
+            await waitOnExecutionContext(ctx);
+            return { status: response.status, text };
+        };
+
+        const first = new Uint8Array(9 * 1024 * 1024).fill(1);
+        const second = new Uint8Array(9 * 1024 * 1024).fill(2);
+        const image = (bytes: Uint8Array) => ({
+            type: "image_url",
+            image_url: {
+                url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
+            },
+        });
+        const turn = {
+            role: "user",
+            content: [
+                { type: "text", text: "Compare these" },
+                image(first),
+                image(second),
+                image(first),
+            ],
+        };
+        const model = communityModelId(ownerGithubUsername, modelName);
+        // Each body is above the 32 MiB text limit; the next turn re-sends
+        // the same images, as chat clients do.
+        const conversations = [
+            [turn],
+            [
+                turn,
+                { role: "assistant", content: "ok" },
+                { role: "user", content: "And the second one?" },
+            ],
+        ];
+        for (const messages of conversations) {
+            const body = JSON.stringify({ model, messages });
+            expect(body.length).toBeGreaterThan(32 * 1024 * 1024);
+            const response = await send(body);
+            expect(response.status, response.text).toBe(200);
+        }
+
+        const repeated = await send(
+            JSON.stringify({ model, messages: conversations[1] }),
+        );
+        expect(repeated.status, repeated.text).toBe(200);
+
+        expect(uploads).toHaveLength(2);
+        const [firstUrl, secondUrl] = uploads.map(
+            (id) => `https://media.pollinations.ai/${id}`,
+        );
+        expect(upstreamImageUrls).toEqual([
+            [firstUrl, secondUrl, firstUrl],
+            [firstUrl, secondUrl, firstUrl],
+        ]);
+        const stored = await media.get(uploads[0]);
+        expect(stored?.headers.get("content-type")).toBe("image/png");
+        const storedBytes = Buffer.from(
+            await (stored as Response).arrayBuffer(),
+        );
+        expect(storedBytes.equals(first)).toBe(true);
+
+        const oversized = await send("{}", 100 * 1024 * 1024 + 1);
+        expect(oversized.status).toBe(413);
+        expect(oversized.text).toContain(
+            "Request body exceeds the 100 MiB limit",
         );
     },
 );

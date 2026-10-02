@@ -100,7 +100,11 @@ export function createChatCommand() {
                         if (hint) {
                             printError(hint);
                             rl.close();
-                            process.exit(1);
+                            // Set the code and let the loop unwind: an
+                            // immediate process.exit() aborts libuv on
+                            // Windows after network I/O (nodejs/node#56645).
+                            process.exitCode = 1;
+                            return;
                         }
                         throw new Error(`${res.status}: ${errText}`);
                     }
@@ -149,6 +153,8 @@ export function createChatCommand() {
                 }
             };
 
+            let closed = false;
+
             rl.prompt();
 
             rl.on("line", async (line) => {
@@ -160,7 +166,6 @@ export function createChatCommand() {
 
                 // Slash commands
                 if (input === "/exit" || input === "/quit") {
-                    if (opts.save) saveTranscript(opts.save);
                     if (!isJson) {
                         process.stderr.write(
                             chalk.dim(
@@ -169,7 +174,7 @@ export function createChatCommand() {
                         );
                     }
                     rl.close();
-                    process.exit(0);
+                    return;
                 }
 
                 if (input === "/clear") {
@@ -195,12 +200,14 @@ export function createChatCommand() {
                 }
 
                 await sendMessage(input);
-                rl.prompt();
+                // A fatal API error or EOF may have closed readline mid-turn.
+                if (!closed) rl.prompt();
             });
 
             rl.on("close", () => {
+                closed = true;
                 if (opts.save) saveTranscript(opts.save);
-                process.exit(0);
+                process.exitCode ??= 0;
             });
         });
 }

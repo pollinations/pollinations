@@ -1,0 +1,36 @@
+name: Data / Sync Cloudflare traffic to Tinybird
+
+on:
+  schedule:
+    # Sync each finished UTC day for every *.pollinations.ai host before Cloudflare drops its detail
+    - cron: "15 5 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Complete UTC days to fetch (1-7, for a missed run)"
+        default: "1"
+
+permissions: {}
+
+concurrency:
+  group: cloudflare-traffic-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Sync traffic
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_TRAFFIC_ANALYTICS }}
+          TINYBIRD_SYNC_TOKEN: ${{ secrets.TINYBIRD_SYNC_TOKEN }}
+          DAYS: ${{ inputs.days || '1' }}
+        run: node operations/cloudflare/sync-traffic-to-tinybird.mjs --days "$DAYS"

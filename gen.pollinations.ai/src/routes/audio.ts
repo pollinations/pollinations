@@ -50,6 +50,7 @@ import {
     callCommunitySpeechEndpoint,
     callCommunityTranscriptionEndpoint,
 } from "../audio/communityEndpoint.ts";
+import { generateLyria35 } from "../audio/lyria.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -87,7 +88,7 @@ const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3-clip-preview and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -1062,6 +1063,348 @@ function groupXaiWordsBySpeaker(
         }
     }
     return segments;
+}
+
+const OPENROUTER_STT_ENDPOINT =
+    "https://openrouter.ai/api/v1/audio/transcriptions";
+const GEMINI_TRANSCRIBE_MODEL = "google/gemini-3.5-transcribe";
+// Google meters audio at $0.003/min against $2 per 1M tokens: 25 tokens/s.
+const GEMINI_TRANSCRIBE_TOKENS_PER_SECOND = 25;
+const GEMINI_STT_FORMATS = [
+    "wav",
+    "mp3",
+    "flac",
+    "m4a",
+    "ogg",
+    "webm",
+    "aac",
+] as const;
+const GEMINI_STT_FORMAT_ALIASES: Record<string, string> = {
+    mpeg: "mp3",
+    mpga: "mp3",
+    wave: "wav",
+};
+
+function resolveGeminiSttFormat(file: File): string {
+    const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
+    const subtype = file.type.split("/")[1]?.toLowerCase().replace(/^x-/, "");
+    for (const candidate of [extension, subtype ?? ""]) {
+        const format = GEMINI_STT_FORMAT_ALIASES[candidate] ?? candidate;
+        if ((GEMINI_STT_FORMATS as readonly string[]).includes(format)) {
+            return format;
+        }
+    }
+    throw new UpstreamError(400 as ContentfulStatusCode, {
+        message: `Unsupported audio format for ${GEMINI_TRANSCRIBE_MODEL}. Supported: ${GEMINI_STT_FORMATS.join(", ")}`,
+    });
+}
+
+interface VertexTranscriptionResponse {
+    candidates?: {
+        content?: {
+            parts?: {
+                text?: string;
+                audioTranscription?: {
+                    text: string;
+                    speakerLabel?: string;
+                    words?: {
+                        word: string;
+                        startOffset?: string;
+                        endOffset: string;
+                    }[];
+                };
+            }[];
+        };
+    }[];
+    usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        promptTokensDetails?: { modality: string; tokenCount: number }[];
+    };
+}
+
+export async function transcribeWithVertexGemini(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    accessToken: string;
+    projectId: string;
+}): Promise<Response> {
+    const {
+        file,
+        language,
+        responseFormat = "json",
+        accessToken,
+        projectId,
+    } = opts;
+    assertTranscriptionResponseFormat(responseFormat, GEMINI_TRANSCRIBE_MODEL);
+    const format = resolveGeminiSttFormat(file);
+    if (!accessToken || !projectId) {
+        throw new UpstreamError(500, {
+            message: "Vertex transcription is not configured",
+        });
+    }
+    const mimeTypes: Record<string, string> = {
+        wav: "audio/wav",
+        mp3: "audio/mpeg",
+        flac: "audio/flac",
+        m4a: "audio/mp4",
+        ogg: "audio/ogg",
+        webm: "audio/webm",
+        aac: "audio/aac",
+    };
+    const wantsWords =
+        responseFormat === "verbose_json" || responseFormat === "diarized_json";
+    const endpoint = `https://aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/global/publishers/google/models/gemini-3.5-transcribe-preview:generateContent`;
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            {
+                                inlineData: {
+                                    mimeType: mimeTypes[format],
+                                    data: arrayBufferToBase64(
+                                        await file.arrayBuffer(),
+                                    ),
+                                },
+                            },
+                        ],
+                    },
+                ],
+                generationConfig: {
+                    audioTranscriptionConfig: {
+                        ...(language ? { languageCodes: [language] } : {}),
+                        ...(wantsWords ? { wordTimestamp: true } : {}),
+                        ...(responseFormat === "diarized_json"
+                            ? { diarization: true }
+                            : {}),
+                    },
+                },
+            }),
+        }),
+        endpoint,
+    );
+    const data = (await response
+        .json()
+        .catch(() => null)) as VertexTranscriptionResponse | null;
+    const usage = data?.usageMetadata;
+    const audioTokens = usage?.promptTokensDetails?.find(
+        (part) => part.modality === "AUDIO",
+    )?.tokenCount;
+    const textTokens =
+        usage?.promptTokensDetails?.find((part) => part.modality === "TEXT")
+            ?.tokenCount ?? 0;
+    const outputTokens = usage?.candidatesTokenCount;
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (
+        !parts ||
+        typeof audioTokens !== "number" ||
+        audioTokens <= 0 ||
+        !Number.isInteger(audioTokens) ||
+        typeof outputTokens !== "number" ||
+        outputTokens < 0 ||
+        !Number.isInteger(outputTokens) ||
+        !Number.isInteger(textTokens) ||
+        textTokens < 0 ||
+        usage?.promptTokenCount !== audioTokens + textTokens
+    ) {
+        throw new UpstreamError(502, {
+            message:
+                "Vertex transcription response did not include valid token usage.",
+        });
+    }
+    const turns = parts.flatMap((part) =>
+        part.audioTranscription ? [part.audioTranscription] : [],
+    );
+    const words = turns.flatMap((turn) =>
+        (turn.words ?? []).map((word) => ({
+            word: word.word,
+            start: Number.parseFloat(word.startOffset ?? "0s"),
+            end: Number.parseFloat(word.endOffset),
+        })),
+    );
+    const segments = turns
+        .filter((turn) => turn.words?.length)
+        .map((turn) => ({
+            text: turn.text,
+            start: Number.parseFloat(turn.words?.[0].startOffset ?? "0s"),
+            end: Number.parseFloat(turn.words?.at(-1)?.endOffset ?? "0s"),
+            speaker: turn.speakerLabel?.replace(/^spk:/, "") ?? null,
+        }));
+    return buildTranscriptionResponse({
+        normalized: {
+            text: parts
+                .map((part) => part.audioTranscription?.text ?? part.text ?? "")
+                .join(" "),
+            duration:
+                Math.round(
+                    (audioTokens / GEMINI_TRANSCRIBE_TOKENS_PER_SECOND) * 100,
+                ) / 100,
+            words,
+            segments,
+            diarizedSegments: segments,
+        },
+        responseFormat,
+        usage: {
+            type: "tokens",
+            input_tokens: audioTokens + textTokens,
+            input_token_details: {
+                audio_tokens: audioTokens,
+                text_tokens: textTokens,
+            },
+            output_tokens: outputTokens,
+            total_tokens: audioTokens + textTokens + outputTokens,
+        },
+        usageHeaders: buildUsageHeaders(GEMINI_TRANSCRIBE_MODEL, {
+            promptAudioTokens: audioTokens,
+            promptTextTokens: textTokens,
+            completionTextTokens: outputTokens,
+        }),
+    });
+}
+
+interface OpenRouterSttResponse {
+    text: string;
+    usage?: { input_tokens?: number; output_tokens?: number };
+    segments?: { start: number; end: number; text: string }[];
+    words?: { word: string; start: number; end: number; speaker?: number }[];
+}
+
+export async function transcribeWithOpenRouterGemini(opts: {
+    file: File;
+    language?: string;
+    responseFormat?: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { file, language, responseFormat = "json", apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+    assertTranscriptionResponseFormat(responseFormat, GEMINI_TRANSCRIBE_MODEL);
+    const format = resolveGeminiSttFormat(file);
+
+    // Timestamps and speaker labels are opt-in upstream: Google notes that
+    // word timestamps can reduce accuracy, so plain formats skip them.
+    const wantsWords =
+        responseFormat === "verbose_json" || responseFormat === "diarized_json";
+    const body = {
+        model: GEMINI_TRANSCRIBE_MODEL,
+        input_audio: {
+            data: arrayBufferToBase64(await file.arrayBuffer()),
+            format,
+        },
+        ...(language ? { language } : {}),
+        ...(wantsWords
+            ? {
+                  response_format: "verbose_json",
+                  timestamp_granularities: ["segment", "word"],
+              }
+            : {}),
+        ...(responseFormat === "diarized_json"
+            ? {
+                  provider: {
+                      options: {
+                          "google-ai-studio": { diarization_mode: "speaker" },
+                      },
+                  },
+              }
+            : {}),
+    };
+
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_STT_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        }),
+        OPENROUTER_STT_ENDPOINT,
+    );
+    const transcript = (await response
+        .json()
+        .catch(() => null)) as OpenRouterSttResponse | null;
+    const inputTokens = transcript?.usage?.input_tokens;
+    const outputTokens = transcript?.usage?.output_tokens ?? 0;
+    if (
+        !transcript ||
+        typeof transcript.text !== "string" ||
+        typeof inputTokens !== "number" ||
+        !Number.isInteger(inputTokens) ||
+        inputTokens <= 0 ||
+        !Number.isInteger(outputTokens) ||
+        outputTokens < 0
+    ) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "OpenRouter transcription response did not include valid token usage.",
+        });
+    }
+
+    log.info(
+        "OpenRouter Gemini transcription: {chars} chars, {tokens} tokens",
+        {
+            chars: transcript.text.length,
+            tokens: inputTokens,
+        },
+    );
+
+    const words = transcript.words ?? [];
+    const diarizedSegments = groupXaiWordsBySpeaker(
+        words.map((word) => ({
+            text: word.word,
+            start: word.start,
+            end: word.end,
+            speaker: word.speaker,
+        })),
+    );
+    return buildTranscriptionResponse({
+        normalized: {
+            // With diarization the provider joins speaker turns without a
+            // separator ("numbers?Yes"), so rebuild the text from the turns.
+            text:
+                responseFormat === "diarized_json" && diarizedSegments.length
+                    ? diarizedSegments.map((segment) => segment.text).join(" ")
+                    : transcript.text,
+            // The provider reports tokens, not seconds; the documented 25
+            // tokens/s rate recovers the duration to within a token.
+            duration:
+                Math.round(
+                    (inputTokens / GEMINI_TRANSCRIBE_TOKENS_PER_SECOND) * 100,
+                ) / 100,
+            words: words.map(({ word, start, end }) => ({ word, start, end })),
+            segments: transcript.segments ?? [],
+            diarizedSegments,
+        },
+        responseFormat,
+        usage: {
+            type: "tokens",
+            input_tokens: inputTokens,
+            input_token_details: { audio_tokens: inputTokens, text_tokens: 0 },
+            output_tokens: outputTokens,
+            total_tokens: inputTokens + outputTokens,
+        },
+        usageHeaders: buildUsageHeaders(
+            `${GEMINI_TRANSCRIBE_MODEL}:openrouter`,
+            {
+                promptAudioTokens: inputTokens,
+                completionTextTokens: outputTokens,
+            },
+        ),
+    });
 }
 
 export async function transcribeWithElevenLabs(opts: {
@@ -2526,6 +2869,49 @@ export async function generateXaiSpeech(opts: {
     });
 }
 
+export async function generateAzureSpeech(opts: {
+    modelName: "openai/tts-1" | "openai/tts-1-hd";
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+}): Promise<Response> {
+    const { modelName, text, voice, responseFormat, apiKey } = opts;
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Azure speech service is not configured",
+        });
+    }
+    const characters = [...text].length;
+    if (characters > 4096) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "Azure TTS input must be 4096 characters or fewer",
+        });
+    }
+    const deployment = modelName === "openai/tts-1" ? "tts" : "tts-hd";
+    const endpoint = `https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/${deployment}/audio/speech?api-version=2025-04-01-preview`;
+    const response = await ensureUpstreamOk(
+        await fetch(endpoint, {
+            method: "POST",
+            headers: { "api-key": apiKey, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: modelName.slice("openai/".length),
+                input: text,
+                voice,
+                response_format: responseFormat,
+            }),
+        }),
+        endpoint,
+    );
+    return new Response(response.body, {
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") || "audio/mpeg",
+            ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
+        },
+    });
+}
+
 export async function generateDeepInfraSpeech(opts: {
     modelName: DeepInfraTtsModelName;
     text: string;
@@ -3010,6 +3396,21 @@ async function dispatchAudioGeneration(
         );
     }
 
+    if (model === "google/lyria-3.5" || model === "google/lyria-3.5:fal") {
+        return withSafetyHeaders(
+            c,
+            await generateLyria35({
+                model,
+                prompt: text,
+                responseFormat,
+                durationSeconds: duration,
+                referenceAudio,
+                geminiApiKey: c.env.GEMINI_API_KEY,
+                falKey: c.env.FAL_KEY,
+            }),
+        );
+    }
+
     if (model === "google/lyria-3-clip-preview") {
         const googleEnvKeys = [
             "GOOGLE_PRIVATE_KEY",
@@ -3120,6 +3521,18 @@ async function dispatchAudioGeneration(
                     responseFormat,
                     apiKey: xaiApiKey,
                     log,
+                }),
+            );
+        case "openai/tts-1":
+        case "openai/tts-1-hd":
+            return withSafetyHeaders(
+                c,
+                await generateAzureSpeech({
+                    modelName: model,
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                 }),
             );
         case "fish-audio/s2.1-pro":
@@ -3416,7 +3829,7 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
-    const file = formData.get("file") as File;
+    const file = formData.get("file");
     const language = formData.get("language") as string | null;
     const prompt = formData.get("prompt") as string | null;
     const responseFormat = formData.get("response_format") as string | null;
@@ -3433,6 +3846,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
     if (!file) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "Missing required field: file",
+        });
+    }
+    if (!(file instanceof File) || file.size === 0) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "The file field must contain a non-empty audio file",
         });
     }
     if (speakersExpected !== undefined && responseFormat !== "diarized_json") {
@@ -3466,6 +3884,32 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 language: language || undefined,
                 responseFormat: responseFormat || undefined,
                 apiKey: c.env.XAI_API_KEY,
+                log,
+            });
+        }
+        if (candidate.id === GEMINI_TRANSCRIBE_MODEL) {
+            for (const key of [
+                "GOOGLE_PRIVATE_KEY",
+                "GOOGLE_PRIVATE_KEY_ID",
+                "GOOGLE_CLIENT_EMAIL",
+            ] as const) {
+                const value = c.env[key];
+                if (typeof value === "string") process.env[key] = value;
+            }
+            return transcribeWithVertexGemini({
+                file,
+                language: language || undefined,
+                responseFormat: responseFormat || undefined,
+                accessToken: (await googleCloudAuth.getAccessToken()) ?? "",
+                projectId: c.env.GOOGLE_PROJECT_ID,
+            });
+        }
+        if (candidate.id === `${GEMINI_TRANSCRIBE_MODEL}:openrouter`) {
+            return transcribeWithOpenRouterGemini({
+                file,
+                language: language || undefined,
+                responseFormat: responseFormat || undefined,
+                apiKey: c.env.OPENROUTER_API_KEY,
                 log,
             });
         }
@@ -3743,7 +4187,7 @@ export const audioRoutes = new Hono<Env>()
             description: [
                 "Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.",
                 "",
-                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
+                "Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria Clip returns one fixed 30-second MP3 clip. For `google/lyria-3.5`, describe song structure and approximate length in the prompt; the output is MP3 and the `duration` parameter is not supported. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.",
                 "",
                 "For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.",
                 "",
@@ -4024,6 +4468,7 @@ export const audioRoutes = new Hono<Env>()
                 "- `openai/gpt-transcribe` — Fast multilingual speech recognition with prompt context",
                 "- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
                 "- `x-ai/grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
+                "- `google/gemini-3.5-transcribe` — Google speech recognition with word timestamps and speaker labels (wav, mp3, flac, m4a, ogg, webm, aac; `prompt` is ignored)",
                 "- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)",
                 "- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
             ].join("\n"),
@@ -4045,7 +4490,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "openai/whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
+                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `google/gemini-3.5-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",

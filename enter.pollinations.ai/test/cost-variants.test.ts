@@ -485,23 +485,6 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
-    it.each([
-        [1024, 1024, 0.04, undefined],
-        [1008, 1040, 0.06, "2048"],
-        [1024, 1040, 0.06, "2048"],
-        [2048, 2048, 0.06, "2048"],
-    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
-        const billing = bill(
-            "amazon/nova-canvas-v1",
-            { completionImageTokens: 1 },
-            { maxImageDimension: Math.max(width, height) },
-        );
-
-        expect(billing.costVariant).toBe(variant);
-        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
-    });
-
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
             bill("prunaai/p-video", { completionVideoSeconds: 10 }).cost
@@ -743,6 +726,26 @@ describe("selection safety and composition", () => {
         expect(billing.servedPrice).toBeCloseTo(0.006, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.01, 12);
         expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(1e-5, 15);
+    });
+
+    it("applies the serving multiplier to provider cost while preserving the fallback quote", () => {
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { completionVideoSeconds: 5 },
+            servedBy: fakeModel({
+                cost: { completionVideoSeconds: 0.025 },
+                priceMultiplier: 2,
+            }),
+            quotedBy: fakeModel({
+                cost: { completionVideoSeconds: 0.08 },
+                priceMultiplier: 2,
+            }),
+            input: { providerBilling: { units: 8, unitCost: 0.0125 } },
+        });
+        expect(billing.cost).toEqual({ totalCost: 0.1 });
+        expect(billing.servedPrice).toBe(0.2);
+        expect(billing.price.totalPrice).toBe(0.8);
+        expect(billing.priceDefinition.completionVideoSeconds).toBe(0.16);
     });
 
     it("reports a served-side selector failure while preserving the quoted price variant", () => {

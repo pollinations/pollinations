@@ -3,10 +3,12 @@ import { gen } from "../lib/api.js";
 import {
     clearCredentials,
     ENTER_URL,
+    LOGIN_CLIENT_ID,
     resolveApiKey,
     saveCredentials,
 } from "../lib/config.js";
 import {
+    ExitSignal,
     printError,
     printInfo,
     printResult,
@@ -85,7 +87,7 @@ function assertApiKey(key: string): string {
     const trimmed = key.trim();
     if (!trimmed.startsWith("pk_") && !trimmed.startsWith("sk_")) {
         printError("Invalid key format. Must start with pk_ or sk_");
-        process.exit(1);
+        throw new ExitSignal(1);
     }
     return trimmed;
 }
@@ -95,7 +97,7 @@ async function readStdinToken(): Promise<string> {
         printError(
             "--with-token expects a key on stdin, e.g. printf '%s' \"$KEY\" | polli auth login --with-token",
         );
-        process.exit(1);
+        throw new ExitSignal(1);
     }
 
     let text = "";
@@ -136,7 +138,7 @@ export async function loginWithDeviceFlow(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            client_id: "pk_VZF38YW4tQX36SEn",
+            client_id: LOGIN_CLIENT_ID,
             scope: "generate profile usage keys",
         }),
     }).catch((err) => {
@@ -147,14 +149,14 @@ export async function loginWithDeviceFlow(
             "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
         );
         printInfo("Get your key at: https://enter.pollinations.ai/keys");
-        process.exit(1);
+        throw new ExitSignal(1);
     });
 
     if (!res.ok) {
         printError(
             `Failed to start device flow: ${res.status} ${await res.text()}`,
         );
-        process.exit(1);
+        throw new ExitSignal(1);
     }
 
     const deviceResp = (await res.json()) as DeviceCodeResponse;
@@ -191,7 +193,7 @@ export async function loginWithDeviceFlow(
                 errMsg = `Login failed: ${tokenResp.error_description ?? tokenResp.error}`;
         }
         printError(errMsg);
-        process.exit(1);
+        throw new ExitSignal(1);
     }
 
     const key = tokenResp.access_token;

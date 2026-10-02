@@ -258,6 +258,23 @@ test("catalog distinguishes flat image rates from image-token rates", () => {
     });
 });
 
+test("catalog displays Lyria 3.5 as a flat per-song rate", () => {
+    const models = getCatalogModels();
+    const prices = getCatalogModelPrices();
+    const model = models.find(({ name }) => name === "google/lyria-3.5");
+    const price = prices.find(({ name }) => name === "google/lyria-3.5");
+
+    expect(model?.flat_rate).toBe(true);
+    expect(price?.prices).toEqual([
+        {
+            direction: "output",
+            kind: "audioOut",
+            price: "0.08",
+            unit: "request",
+        },
+    ]);
+});
+
 test("catalog prices keep community text models flagged for display", () => {
     const [communityModel] = getModelPricesFromCatalog([
         {
@@ -1178,9 +1195,13 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-// Jev is the one exception: Quest Pollen must pay for it, and its $0.042/M
-// input with free output bounds what a free-tier account can spend.
-const OPENROUTER_FREE_TIER_MODELS = new Set(["typesafe/jev-1.13"]);
+// These low-cost decision models are approved for Quest Pollen. A new
+// OpenRouter decision model must be reviewed before it joins this exception.
+const OPENROUTER_QUEST_POLLEN_MODELS = new Set([
+    "typesafe/jev-1.13",
+    "jaredpalmer/kev-4b",
+    "respan/span-01-lite",
+]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {
@@ -1188,7 +1209,7 @@ test("caller-selectable OpenRouter models require paid balance", () => {
         if (
             definition.provider === "openrouter" &&
             definition.fallbackOnly !== true &&
-            !OPENROUTER_FREE_TIER_MODELS.has(model)
+            !OPENROUTER_QUEST_POLLEN_MODELS.has(model)
         ) {
             expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
         }

@@ -29,6 +29,56 @@ describe("TabButton", () => {
         expect(inactive).toContain("polli:text-theme-text-base");
     });
 
+    test("marks a partly selected toggle as mixed with its own tint", () => {
+        const mixed = renderToStaticMarkup(
+            <TabButton active="mixed">Partial</TabButton>,
+        );
+
+        expect(mixed).toContain('aria-pressed="mixed"');
+        expect(mixed).toContain("polli:bg-theme-bg-active/45");
+        expect(mixed).not.toContain("polli:bg-theme-bg-subtle");
+    });
+
+    test("fills only the selected green tab with the Quest colours", () => {
+        const active = renderToStaticMarkup(
+            <TabButton active intent="green" variant="ghost">
+                Active
+            </TabButton>,
+        );
+        const inactive = renderToStaticMarkup(
+            <TabButton active={false} intent="green" variant="ghost">
+                Inactive
+            </TabButton>,
+        );
+
+        expect(active).toContain("polli:bg-tier-pale");
+        expect(active).toContain("polli:text-tier-deep");
+        expect(inactive).toContain("polli:bg-transparent");
+        expect(inactive).toContain("polli:text-tier-deep");
+    });
+
+    test("fills the selected amber tab with the pale paid colours", () => {
+        const active = renderToStaticMarkup(
+            <TabButton active intent="amber" variant="ghost">
+                Active
+            </TabButton>,
+        );
+
+        expect(active).toContain("polli:bg-paid-pale");
+        expect(active).toContain("polli:text-paid-deep");
+        expect(active).not.toContain("polli:bg-theme-bg-active");
+    });
+
+    test("renders the detail after the label", () => {
+        const html = renderToStaticMarkup(
+            <TabButton active={false} detail="@alice">
+                Tiny LLM
+            </TabButton>,
+        );
+
+        expect(html).toMatch(/Tiny LLM<span[^>]*>@alice<\/span>/);
+    });
+
     test("makes disabled polymorphic links inert", () => {
         const element = TabButton({
             as: "a",

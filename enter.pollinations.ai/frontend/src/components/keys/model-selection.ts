@@ -1,9 +1,15 @@
+import type { ModelCategoryModel } from "../models/model-categories.ts";
+
+/** A full selection means "all models" only when the catalog is complete;
+ * otherwise picking every visible model could grant ones never shown. */
 export function normalizeAllowedModelSelection(
     next: string[],
     allModelIds: string[],
+    catalogLoaded = true,
 ): string[] | null {
     const uniqueNext = new Set(next);
     const hasExactFullSelection =
+        catalogLoaded &&
         uniqueNext.size > 0 &&
         uniqueNext.size === allModelIds.length &&
         allModelIds.every((id) => uniqueNext.has(id));
@@ -11,8 +17,24 @@ export function normalizeAllowedModelSelection(
     return hasExactFullSelection ? null : next;
 }
 
-/** Consent may narrow a request, but reselecting every offered model must not
- * turn a finite request into an unrestricted key. */
+/** Catalog models plus selected IDs it lacks (retired, misspelled or not yet
+ * loaded), so bulk toggles can reach every model the selection holds. */
+export function withUncataloguedModels(
+    catalogModels: ModelCategoryModel[],
+    selectedIds: string[] | null,
+): ModelCategoryModel[] {
+    const catalogIds = new Set(catalogModels.map(({ id }) => id));
+    const missingIds = new Set(
+        (selectedIds ?? []).filter((id) => !catalogIds.has(id)),
+    );
+    return [
+        ...catalogModels,
+        ...[...missingIds].map((id) => ({ id, label: id })),
+    ];
+}
+
+/** Toggle one offered model; an unrestricted (null) selection first expands
+ * to the offered list. Callers decide whether a full list means "all". */
 export function toggleConsentModel(
     current: string[] | null,
     requestedIds: string[],
@@ -40,4 +62,16 @@ export function setConsentModelGroup(
         else selected.delete(id);
     }
     return [...selected];
+}
+
+/** One click per category: an empty group fills, a full or partial one clears. */
+export function toggleConsentModelGroup(
+    current: string[] | null,
+    requestedIds: string[],
+    groupIds: string[],
+): string[] {
+    const isEmpty = !groupIds.some(
+        (id) => requestedIds.includes(id) && (current?.includes(id) ?? true),
+    );
+    return setConsentModelGroup(current, requestedIds, groupIds, isEmpty);
 }

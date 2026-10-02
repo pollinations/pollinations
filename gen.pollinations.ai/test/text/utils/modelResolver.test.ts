@@ -101,6 +101,7 @@ describe("resolveModelConfig", () => {
 
     it.each([
         "gpt-6-sol",
+        "gpt-6.1-sol",
         "gpt-6-luna",
     ])("routes %s through Azure with direct OpenAI fallback", (model) => {
         const canonical = `openai/${model}`;
@@ -232,6 +233,16 @@ describe("resolveModelConfig", () => {
             only: ["xai"],
             allow_fallbacks: false,
         });
+    });
+
+    it("routes Claude Sonnet 5.5 to the Bedrock global inference profile", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-sonnet-5.5",
+        });
+
+        expect(result.options.model).toBe("global.anthropic.claude-sonnet-5-5");
+        expect(result.options.modelConfig?.provider).toBe("bedrock");
+        expect(result.options.max_tokens).toBe(128000);
     });
 
     it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {

@@ -12,6 +12,8 @@ interface FileSnapshot {
 
 interface Snapshot {
     complete: boolean;
+    /** Once edited between `on` calls, only strip our config on `off`. */
+    edited?: boolean;
     files: Record<string, FileSnapshot>;
 }
 
@@ -82,6 +84,16 @@ export const applyWithSnapshot = (
         files: rollback,
     };
 
+    if (
+        snapshot.complete &&
+        Object.entries(snapshot.files).some(
+            ([path, file]) =>
+                contentHash(rollback[path].before) !== file.afterHash,
+        )
+    ) {
+        snapshot.edited = true;
+    }
+
     if (!existing) writeSnapshot(ctx, id, paths, snapshot);
 
     try {
@@ -116,6 +128,7 @@ export const restoreOrStrip = (
     const snapshot = loadSnapshot(ctx, id, paths);
     if (
         snapshot &&
+        !snapshot.edited &&
         (!snapshot.complete ||
             Object.entries(snapshot.files).every(
                 ([path, file]) =>

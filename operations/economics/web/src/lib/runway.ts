@@ -1208,23 +1208,41 @@ export function buildRunway(
             row.kind === "opening_balance" &&
             !unsupportedBankRows.includes(row),
     );
-    const openingDates = [
-        ...new Set(openingRows.map((row) => row.date)),
-    ].sort();
-    const openingBalanceDate =
-        openingDates.length === 1 ? openingDates[0] : null;
+    const openingDatesByCurrency = new Map<string, string>();
+    const conflictingCurrencies = new Set<string>();
+    for (const row of openingRows) {
+        const previous = openingDatesByCurrency.get(row.currency);
+        if (previous && previous !== row.date) {
+            conflictingCurrencies.add(row.currency);
+        }
+        openingDatesByCurrency.set(row.currency, row.date);
+    }
+    const openingBalanceDate = conflictingCurrencies.size
+        ? null
+        : ([...openingDatesByCurrency.values()].sort().at(-1) ?? null);
     const openingBalances = new Map<string, number>();
-    if (openingDates.length === 0) {
+    if (openingRows.length === 0) {
         flags.push(
             "No opening bank balance; cash balance and runway are unavailable.",
         );
-    } else if (openingDates.length > 1) {
+    } else if (conflictingCurrencies.size) {
         flags.push(
-            `${openingDates.length} opening-balance dates found; keep one statement-backed anchor before calculating cash.`,
+            `Conflicting opening-balance dates for ${[...conflictingCurrencies].sort().join(", ")}; keep one statement-backed anchor per currency before calculating cash.`,
         );
     } else if (openingBalanceDate) {
         for (const row of openingRows) {
             addAmount(openingBalances, row.currency, Number(row.amount));
+        }
+        for (const [currency, date] of openingDatesByCurrency) {
+            for (const row of bankRows) {
+                if (
+                    row.currency === currency &&
+                    row.date >= date &&
+                    row.date < openingBalanceDate
+                ) {
+                    addAmount(openingBalances, currency, Number(row.amount));
+                }
+            }
         }
         observedMonths.add(openingBalanceDate.slice(0, 7));
         if (openingBalanceDate.slice(8, 10) !== "01") {

@@ -321,6 +321,49 @@ describe("buildRunway", () => {
         expect(result.openingBalanceUsd).toBe(1_000);
     });
 
+    it("rolls older currency anchors forward to the latest opening date", () => {
+        const result = buildRunway(
+            [
+                opening(100, { entry_id: "eur-opening", currency: "EUR" }),
+                transaction({
+                    entry_id: "eur-august",
+                    date: "2026-08-31",
+                    currency: "EUR",
+                    amount: -100,
+                }),
+                opening(30, {
+                    entry_id: "usd-opening",
+                    date: "2026-09-01",
+                }),
+                transaction({
+                    entry_id: "usd-september",
+                    date: "2026-09-10",
+                    amount: -10,
+                }),
+            ],
+            new Date("2026-09-15T12:00:00.000Z"),
+        );
+
+        expect(result.openingBalanceDate).toBe("2026-09-01");
+        expect(result.openingBalanceUsd).toBe(30);
+        expect(result.currentCashUsd).toBe(20);
+    });
+
+    it("keeps cash unavailable for conflicting anchors in one currency", () => {
+        const result = buildRunway(
+            [
+                opening(100),
+                opening(30, { entry_id: "later", date: "2026-09-01" }),
+            ],
+            new Date("2026-09-15T12:00:00.000Z"),
+        );
+
+        expect(result.currentCashUsd).toBeNull();
+        expect(result.flags.join(" ")).toContain(
+            "Conflicting opening-balance dates for USD",
+        );
+    });
+
     it("uses Stripe sales for P&L revenue and Wise payouts for cash", () => {
         const result = buildRunway(
             [

@@ -61,9 +61,13 @@ export class OpenWebUIContainer extends Container {
         // get_filtered_models() shows unconfigured models to admins only. Without
         // this every non-admin gets an empty model picker.
         BYPASS_MODEL_ACCESS_CONTROL: "true",
-        // Without this the model picker defaults to the alphabetically first
-        // community model.
-        DEFAULT_MODELS: "openai",
+        // Without a Selected model the picker falls back to the alphabetically
+        // first community model. Set a short, sensible default list (first
+        // available wins) and pin a few staples to the sidebar for new users.
+        // Model IDs must exist in the gen catalog (/v1/models).
+        DEFAULT_MODELS: "openai/gpt-5.5,openai/gpt-5.4-nano,openai/gpt-6-luna",
+        DEFAULT_PINNED_MODELS:
+            "openai/gpt-5.5,openai/gpt-5.4-nano,openai/gpt-6-luna,openai/gpt-5.3-codex",
         // Titles, tags and follow-ups need text, even when the chat model generates media.
         // Non-reasoning on purpose: gpt-5-nano spent 256-1024 reasoning tokens and
         // 3-12 s per title/tags/follow-up call. Seed value only; the live value is
@@ -148,6 +152,32 @@ export class OpenWebUIContainer extends Container {
         // so every page load refetched and rebuilt the ~360-model list, which
         // took 6-8 s on the 0.5 vCPU instance and gated the whole page.
         MODELS_CACHE_TTL: "300",
+
+        // Clear, dismissible banners for signed-in users: chats bill their own
+        // wallet, and optional features (Pollinations tools, knowledge base)
+        // are opt-in per chat / per collection. Seed value only; on an
+        // already-booted database add these from Settings → Admin → System →
+        // General → Banners (or update the `ui.banners` config row).
+        WEBUI_BANNERS: JSON.stringify([
+            {
+                id: "pollen-wallet-billing",
+                type: "info",
+                title: "Your chats bill your own Pollen wallet",
+                content:
+                    "Every chat here is paid from your own Pollinations wallet. Check your balance at <a href=\"https://enter.pollinations.ai/pollen\" target=\"_blank\">enter.pollinations.ai/pollen</a> and top up at <a href=\"https://enter.pollinations.ai/top-up\" target=\"_blank\">/top-up</a>.",
+                dismissible: true,
+                timestamp: 1791072000,
+            },
+            {
+                id: "pollinations-power-ups",
+                type: "success",
+                title: "Power-up your workspace",
+                content:
+                    "Turn on the <b>Pollinations</b> tool in any chat to generate images, video and audio from your own wallet, or add documents to a Knowledge Base and chat with them. See the README for how.",
+                dismissible: true,
+                timestamp: 1791072000,
+            },
+        ]),
     };
 }
 

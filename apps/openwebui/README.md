@@ -54,7 +54,36 @@ and staging Enter, and has no external MCP tool server. Both discover the full
 model catalog (`MODEL_IDS=[]`). Managed agents' own configured MCP tools are independent of Open
 WebUI's external tool servers.
 
-Titles, tags and follow-up suggestions use `openai/gpt-5-nano`, not the selected
+### Defaults & discovery
+
+- `DEFAULT_MODELS` (Selected) picks the model a new chat starts with; the
+  first *available* ID in the list wins, so the list is ordered
+  `openai/gpt-5.5, openai/gpt-5.4-nano, openai/gpt-6-luna`. Before this change
+  the value was the bare prefix `openai`, which did not match any catalog ID
+  and let the picker fall back to the alphabetically first community model.
+- `DEFAULT_PINNED_MODELS` seeds sidebar shortcuts for users who have not pinned
+  anything themselves (a one-time seed, see below). Both env vars map to
+  `ui.default_models` / `ui.default_pinned_models` in the config table.
+- Discovery is otherwise unfiltered: `MODEL_IDS=[]` + `BYPASS_MODEL_ACCESS_CONTROL=true`
+  show the whole `/v1/models` catalog (see #16140: a community ID the models
+  page links to may simply not exist in the catalog, or have been renamed —
+  verify against https://gen.pollinations.ai/v1/models).
+- `MODELS_CACHE_TTL=300` keeps the per-user model list fetch fast; changing
+  `models.base_models_cache` is not needed for these seeds.
+
+### Banners (wallet clarity & optional features)
+
+`WEBUI_BANNERS` seeds two dismissible banners for signed-in users:
+
+1. **Pollen wallet billing** — every chat is paid from the signed-in user's own
+   wallet, with links to the balance page (`enter.pollinations.ai/pollen`) and
+   top-up (`/top-up`).
+2. **Power-up your workspace** — points to the opt-in Pollinations tool server
+   and the knowledge base feature (both already configured, see below).
+
+These map to `ui.banners` in the config table.
+
+Titles, tags and follow-up suggestions use `openai/gpt-5.4-nano`, not the selected
 chat model. For existing databases, set `task.model.external` to that ID; this
 global setting applies to existing users too.
 
@@ -78,6 +107,21 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
   psql -U openwebui -d openwebui -c \
   \"select key, value::text from config where key = 'tool_server.connections';\""
 ```
+
+For the settings added by this PR (`DEFAULT_MODELS`, `DEFAULT_PINNED_MODELS`,
+`WEBUI_BANNERS`), the same seed-once rule applies: they are only written to
+`ui.default_models`, `ui.default_pinned_models` and `ui.banners` on a first
+boot. On an already-booted database, set them through the Admin UI:
+
+- **Banners**: Settings → Admin → System → General → Banners → add the two
+  entries defined in `worker.js` (wallet billing + power-ups), or update the
+  `ui.banners` config row.
+- **Selected / pinned models**: Settings → Admin → Models → open the model's
+  `...` menu → Set as Selected Model / Set as Pinned Model, or update the
+  `ui.default_models` / `ui.default_pinned_models` config rows.
+
+Both env vars and Admin-UI edits converge on the same config rows, so the UI
+path is preferred for a database that has already booted.
 
 ## Restarting the container
 

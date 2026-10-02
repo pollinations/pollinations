@@ -16,6 +16,21 @@ const relation = {
 };
 const seed = () => call("write", { nodes, relations: [relation] });
 
+it("validates IDs server-side while allowing Unicode", async () => {
+    expect(
+        (await call("write", { nodes: [{ id: "記憶", name: "Memory" }] }))
+            .error,
+    ).toBeUndefined();
+    expect((await call("read", { ids: ["記憶"] })).data?.nodes).toHaveLength(1);
+    expect(
+        (
+            await call("write", {
+                nodes: [{ id: "invalid id", name: "Invalid" }],
+            })
+        ).result.isError,
+    ).toBe(true);
+});
+
 it("shares current memory within a user and isolates other users", async () => {
     expect((await seed()).error).toBeUndefined();
     const read = await call("read", { ids: ["user", "project", "absent"] });

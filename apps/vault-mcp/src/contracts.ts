@@ -4,7 +4,8 @@ const id = z
     .string()
     .min(1)
     .max(128)
-    .regex(/^[\p{L}\p{N}_.:-]+$/u);
+    // Keep Unicode validation server-side: Python MCP clients cannot compile \p.
+    .refine((value) => /^[\p{L}\p{N}_.:-]+$/u.test(value), "Invalid ID");
 const relationKey = { subject: id, predicate: id, target: id };
 const nodeWrite = z.union([
     z

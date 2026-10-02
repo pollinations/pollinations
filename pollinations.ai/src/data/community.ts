@@ -1,8 +1,9 @@
 /**
  * Anonymous community signals.
  *
- * GitHub feeds and the Discord widget are requested anonymously from each
- * visitor's browser. Failures surface as `failed`, and live counts hide.
+ * GitHub feeds, the Discord widget and the Quest leaderboard are requested
+ * anonymously from each visitor's browser. Failures surface as `failed`, and
+ * live counts hide.
  */
 import { cachePublic } from "./cachePublic";
 import { type UseAsyncOptions, useAsync } from "./useAsync";
@@ -53,4 +54,33 @@ export const loadDiscordPresence = cachePublic(async () => {
 
 export function useDiscordPresence(options?: UseAsyncOptions) {
     return useAsync(loadDiscordPresence, null, options);
+}
+
+/* ── Quests ─────────────────────────────────────────────────────────────── */
+
+/** Completed GitHub Quest rewards: global totals plus the top contributors. */
+export type QuestLeaderboardData = {
+    leaderboard: {
+        githubLogin: string;
+        completedQuests: number;
+        totalPollen: number;
+    }[];
+    totals: {
+        contributors: number;
+        completedQuests: number;
+        totalPollen: number;
+    };
+};
+
+const loadQuestLeaderboard = cachePublic(async () => {
+    const response = await fetch(
+        "https://enter.pollinations.ai/api/quests/leaderboard",
+        { headers: { Accept: "application/json" } },
+    );
+    if (!response.ok) throw new Error(`quests: ${response.status}`);
+    return (await response.json()) as QuestLeaderboardData;
+});
+
+export function useQuestLeaderboard() {
+    return useAsync<QuestLeaderboardData | null>(loadQuestLeaderboard, null);
 }

@@ -1,0 +1,34 @@
+{
+  "pr_number": 16199,
+  "title": "feat: support 100 MiB inline-image chat requests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16199",
+  "merged_at": "2026-10-02T18:11:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Accepts chat JSON up to 100 MiB with inline images through the existing API; the media service stores large images before the request reaches the generation coordinator.\n- Reuses account-scoped image IDs, so later turns referencing the same image skip the media upload.\n- Uses the rewritten request body directly for caching and deduplication, removing the extra raw-body digest and Hono request overrides.\n- Keeps the existing 32 MiB path for smaller requests and random media IDs by default.\n- Tests 96 MiB parsing and full-route repeated-image behavior, provider URLs, response caching, and the 100 MiB rejection. Gen staging deploy of commit 71fbaa9ec4 succeeded. Two authenticated 33.13 MiB chat turns returned 200; media metadata confirmed the second turn did not re-upload the image.\n\nAddresses #15889. Related: #16020.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A bigger picture fits",
+    "blurb": "Chat makes room for hefty inline images—up to 100 MiB of JSON. Bring the same image back in a later turn, and the media service remembers it.",
+    "summary": "The chat API accepts JSON requests up to 100 MiB by storing large inline images in the media service before generation, reusing account-scoped image IDs across turns while retaining the existing 32 MiB path for smaller requests.",
+    "impact": "Developers can send larger inline-image chats, and repeated references to the same image avoid another media upload while remaining eligible for response caching.",
+    "keywords": [
+      "chat API",
+      "inline images",
+      "100 MiB",
+      "media uploads",
+      "image reuse",
+      "caching"
+    ],
+    "visual_concept": "A cozy chat terminal represents the existing API; a media shelf holds a large image parcel labeled 100 MiB, while a return arrow shows the same parcel being referenced on a later turn without carrying it again. Polli delivers the parcel with a tiny messenger satchel, and a CRT monitor robot welcomes it beside code-plants.",
+    "image_prompt": "In a cozy pixel art garden workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing a tiny messenger satchel and placing a large image parcel marked '100 MiB' on a media shelf beside a friendly CRT monitor robot and a chat terminal, with a small return arrow suggesting the image can be reused. Strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, blooming code-plants, a prominent soft lime green (#ecf874) glow, warm cream and lavender tones, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16199.jpg",
+    "prompt": "In a cozy pixel art garden workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing a tiny messenger satchel and placing a large image parcel marked '100 MiB' on a media shelf beside a friendly CRT monitor robot and a chat terminal, with a small return arrow suggesting the image can be reused. Strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, blooming code-plants, a prominent soft lime green (#ecf874) glow, warm cream and lavender tones, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-02T18:12:59.263428+00:00"
+}

@@ -211,9 +211,9 @@ const PAGE = `<!doctype html>
   const live = (i, since) => i.state === "open" || ((i.state === "closed" && i.kind === "issue") || i.state === "merged") && Date.parse(i.closedAt) >= since;
 
   function counts(issues, prs, since) {
-    const c = { open: 0, openPrs: 0, merged: 0 };
+    const c = { open: 0, closed: 0, openPrs: 0, merged: 0 };
     for (const [type] of TYPES) c[type] = 0;
-    for (const i of issues) if (live(i, since)) { if (i.type in c) c[i.type]++; if (i.state === "open") c.open++; }
+    for (const i of issues) if (live(i, since)) { if (i.type in c) c[i.type]++; i.state === "open" ? c.open++ : c.closed++; }
     for (const p of prs) if (live(p, since)) p.state === "open" ? c.openPrs++ : c.merged++;
     return c;
   }
@@ -285,7 +285,8 @@ const PAGE = `<!doctype html>
     const on = s.open.has(a.name);
     return h("div", { key: a.name, className: "area" + (on ? " on" : "") },
       h("button", { className: "row", onClick: () => toggle(a.name) },
-        icon("chevron", "chev soft"), h("b", { className: "grow" }, a.name), typeCounts(a.c), ...statusCounts(a.c)),
+        icon("chevron", "chev soft"), h("b", { className: "grow" }, a.name), typeCounts(a.c),
+        n("issue", a.c.open, "open", "Open issues"), n("closed", a.c.closed, "done", "Closed issues"), ...statusCounts(a.c).slice(1)),
       on ? h("div", { className: "kids" }, [...a.parents.values()].map((p) => parentRow(p, s, prsFor, since)), looseRow(a, s, prsFor, since)) : null);
   }
 

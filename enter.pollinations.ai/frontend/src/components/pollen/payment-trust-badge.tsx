@@ -98,6 +98,7 @@ const LOCAL_CURRENCY_WITHOUT_PAYPAL = new Set([
     "GW",
     "GY",
     "HN",
+    "HT",
     "HU",
     "ID",
     "IL",

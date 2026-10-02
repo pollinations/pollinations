@@ -41,7 +41,7 @@ async function e2b<T>(path: string, init?: RequestInit): Promise<T> {
 // The most useful of E2B's public templates. Any other name works too.
 const TEMPLATES: Record<string, string> = {
     pollinations:
-        "polli, Node.js 24 and Python, ready for ssh · 2 vCPU, 512 MB",
+        "polli and the coding harnesses, logged in to your account · 2 vCPU, 2 GB",
     claude: "Claude Code · 2 vCPU, 2 GB",
     codex: "OpenAI Codex · 2 vCPU, 2 GB",
     opencode: "OpenCode · 2 vCPU, 2 GB",

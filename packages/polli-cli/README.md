@@ -158,6 +158,7 @@ polli harness openclaw on         # adds the Pollinations provider + Polli skill
 polli harness pi on               # native provider, key, startup model, and Polli skill
 polli harness prime on            # native Prime Agent provider support
 polli harness tgpt on             # authenticated Pollinations text models in tgpt
+polli harness pi on --use-login-key  # use polli's own key instead of minting one
 polli harness <harness> status
 polli harness <harness> off
 ```
@@ -185,7 +186,7 @@ polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
 polli sandbox kill <id>
 ```
 
-See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
+The default template comes logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

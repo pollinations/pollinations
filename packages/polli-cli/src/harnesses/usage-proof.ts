@@ -9,9 +9,11 @@ export const keyUsageCount = async (apiKey: string): Promise<number> => {
     return Number(result.count ?? result.usage?.length ?? 0);
 };
 
+// The harness key may be the login key itself (`--use-login-key`), which can
+// list itself when it has `keys`.
 const accountLastRequest = async (apiKey: string): Promise<number | null> => {
     const accountKey = resolveApiKey();
-    if (!accountKey || accountKey === apiKey) return null;
+    if (!accountKey) return null;
     try {
         const result = await gen<{
             data: {

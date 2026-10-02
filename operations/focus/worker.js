@@ -199,13 +199,17 @@ const PAGE = `<!doctype html>
   const n = (name, value, cls, title, col) => h("span", { key: col, className: "n" + (value ? "" : " zero"), title, style: { gridColumn: col } }, icon(name, cls), value || 0);
   const cells = (...children) => h("span", { className: "cells" }, children);
 
-  // State lives in the hash: #days=30&open=Models|p15935
+  const SOURCES = ["All", "Team", "Community", "Agent"];
+
+  // State lives in the hash: #days=30&source=Team&open=Models|p15935
   function state() {
     const p = new URLSearchParams(location.hash.slice(1));
-    return { days: Number(p.get("days")) || 30, open: new Set((p.get("open") || "").split("|").filter(Boolean)) };
+    const source = SOURCES.includes(p.get("source")) ? p.get("source") : "All";
+    return { days: Number(p.get("days")) || 30, source, open: new Set((p.get("open") || "").split("|").filter(Boolean)) };
   }
   function setState(s) {
     const p = new URLSearchParams({ days: s.days });
+    if (s.source !== "All") p.set("source", s.source);
     if (s.open.size) p.set("open", [...s.open].join("|"));
     location.hash = p.toString();
   }
@@ -225,13 +229,14 @@ const PAGE = `<!doctype html>
   const typeCells = (c) => TYPES.map(([t, name], i) => c[t] ? h("span", { key: t, className: "n soft type", title: t + "s", style: { gridColumn: i + 1 } }, icon(name), c[t]) : null);
   const prCells = (c) => [n("pr", c.openPrs, "open", "Open PRs", 7), n("merged", c.merged, "done", "Merged PRs", 8)];
 
-  function build(since) {
-    const byNumber = new Map(data.items.map((i) => [i.number, i]));
+  function build(since, source) {
+    const items = source === "All" ? data.items : data.items.filter((i) => i.source === source);
+    const byNumber = new Map(items.map((i) => [i.number, i]));
     const prsFor = new Map();
-    for (const p of data.items) if (p.kind === "pr") for (const k of p.fixes) (prsFor.get(k) || prsFor.set(k, []).get(k)).push(p);
+    for (const p of items) if (p.kind === "pr") for (const k of p.fixes) (prsFor.get(k) || prsFor.set(k, []).get(k)).push(p);
     const areas = new Map();
     const area = (name) => areas.get(name) || areas.set(name, { name, issues: [], prs: [], parents: new Map(), loose: [] }).get(name);
-    for (const i of data.items) {
+    for (const i of items) {
       if (i.kind === "pr") { area(i.area).prs.push(i); continue; }
       area(i.area).issues.push(i);
       const parent = i.parent && i.parent.state === "OPEN" ? i.parent : null;
@@ -301,11 +306,13 @@ const PAGE = `<!doctype html>
     if (error) return root.render(h("p", { className: "soft" }, "Could not load: " + error));
     if (!data) return root.render(h("p", { className: "soft" }, "Loading the Dev board from GitHub…"));
     const s = state(), since = Date.now() - s.days * 86400000;
-    const { areas, prsFor } = build(since);
+    const { areas, prsFor } = build(since, s.source);
     root.render(h("div", null,
       h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 12, flexWrap: "wrap" } },
         h("h1", { style: { margin: 0, fontSize: 24 } }, "Where the effort goes"),
-        h("div", { className: "toggle" }, [7, 30, 90].map((d) => h("button", { key: d, className: d === s.days ? "sel" : "", onClick: () => setState(Object.assign(s, { days: d })) }, d + "d")))),
+        h("div", { style: { display: "flex", gap: 16, flexWrap: "wrap" } },
+          h("div", { className: "toggle" }, SOURCES.map((x) => h("button", { key: x, className: x === s.source ? "sel" : "", onClick: () => setState(Object.assign(s, { source: x })) }, x))),
+          h("div", { className: "toggle" }, [7, 30, 90].map((d) => h("button", { key: d, className: d === s.days ? "sel" : "", onClick: () => setState(Object.assign(s, { days: d })) }, d + "d"))))),
       areas.map((a) => areaBlock(a, s, prsFor, since)),
       legend(),
       h("p", { className: "soft", style: { fontSize: 12, marginTop: 10 } }, "Updated " + new Date(data.fetchedAt).toLocaleString())));

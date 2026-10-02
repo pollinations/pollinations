@@ -26,7 +26,7 @@ if [ "$(id -u)" != 0 ] &&
     for harness in opencode pi hermes openclaw claude-code; do
         (
             log=~/.pollinations/harnesses/$harness.log
-            if polli harness "$harness" on --use-login-key >"$log" 2>&1; then
+            if polli harness "$harness" on >"$log" 2>&1; then
                 echo "  $harness: ready"
             else
                 echo "  $harness: failed, see $log"

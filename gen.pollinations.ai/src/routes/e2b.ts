@@ -15,7 +15,7 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -319,8 +319,6 @@ async function extendLease(
     return new Response(response.body, response);
 }
 
-const sandboxKeyName = (sandboxID: string) => `polli-sandbox-${sandboxID}`;
-
 // Writes polli's login into a new sandbox: a key of its own, never more than
 // the caller's. envd, the agent in every sandbox, writes the file as `user`.
 async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
@@ -338,7 +336,7 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
         authClient: createApiKeyAuth(c.env, c.executionCtx),
         dbBinding: c.env.DB,
         userId: c.var.auth.requireUser().id,
-        name: sandboxKeyName(sandbox.sandboxID),
+        name: `polli-sandbox-${sandbox.sandboxID}`,
         type: "secret",
         ...childKeyLimits(parent, POLLI_PERMISSIONS),
         defaultCreatedVia: "sandbox",
@@ -367,17 +365,6 @@ async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
         },
     );
     if (!response.ok) throw await upstreamError(response);
-}
-
-async function deleteSandboxKey(c: E2bContext, sandboxID: string) {
-    await drizzle(c.env.DB)
-        .delete(apikey)
-        .where(
-            and(
-                eq(apikey.referenceId, c.var.auth.requireUser().id),
-                eq(apikey.name, sandboxKeyName(sandboxID)),
-            ),
-        );
 }
 
 async function ownerOnly(c: E2bContext) {
@@ -475,7 +462,6 @@ export const e2bRoutes = new Hono<Env>()
                     error:
                         error instanceof Error ? error.message : String(error),
                 });
-                await deleteSandboxKey(c, created.sandboxID).catch(() => {});
             }
         }
         return c.json(created, 201);
@@ -491,13 +477,7 @@ export const e2bRoutes = new Hono<Env>()
         return forward(c, url.search);
     })
     .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
-    .delete("/sandboxes/:id", async (c) => {
-        await ownedSandbox(c);
-        const response = await forward(c);
-        // The sandbox's own key goes with it.
-        if (response.ok) await deleteSandboxKey(c, c.req.param("id"));
-        return response;
-    })
+    .delete("/sandboxes/:id", ownerOnly)
     .get("/sandboxes/:id/metrics", ownerOnly)
     // `e2b sandbox logs` reads this deprecated v1 path.
     .get("/sandboxes/:id/logs", ownerOnly)

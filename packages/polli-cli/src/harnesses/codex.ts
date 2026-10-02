@@ -314,7 +314,7 @@ const status = (ctx: HarnessContext): HarnessResult => {
 export const configureCodex = async (
     ctx: HarnessContext,
     model: string,
-    options: { browser?: boolean; useLoginKey?: boolean } = {},
+    options: { browser?: boolean } = {},
 ): Promise<HarnessResult> => {
     const current = provider(ctx);
     if (current && !ownsProvider(current)) {
@@ -340,7 +340,7 @@ export const configureCodex = async (
                 label: LABEL,
                 existingKey: previousKey,
             },
-            options,
+            { browser: options.browser },
         );
         if (key !== previousKey || !credentialConfigured(ctx)) {
             setCredential(ctx, key);
@@ -419,7 +419,7 @@ export const codex: HarnessAdapter = {
         }
         const model = options.model ?? DEFAULT_MODEL;
         await fetchHarnessModels(model);
-        return configureCodex(ctx, model, options);
+        return configureCodex(ctx, model, { browser: options.browser });
     },
 
     off(ctx) {

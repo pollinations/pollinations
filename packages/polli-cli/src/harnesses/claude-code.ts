@@ -343,7 +343,7 @@ export const claudeCode: HarnessAdapter = {
                 label: LABEL,
                 existingKey: current?.api_key?.trim() || null,
             },
-            options,
+            { browser: options.browser },
         );
         return configureClaudeCode(ctx, { apiKey, model, models });
     },

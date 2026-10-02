@@ -232,7 +232,7 @@ export const pi: HarnessAdapter = {
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
-            options,
+            { browser: options.browser },
         );
         return configurePi(ctx, { apiKey, model, models });
     },

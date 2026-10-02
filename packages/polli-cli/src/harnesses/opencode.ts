@@ -242,7 +242,7 @@ export const opencode: HarnessAdapter = {
                 existingKey: readApiKey(ctx),
                 accountPermissions: ["profile", "usage"],
             },
-            options,
+            { browser: options.browser },
         );
         return configureOpenCode(ctx, { apiKey, model });
     },

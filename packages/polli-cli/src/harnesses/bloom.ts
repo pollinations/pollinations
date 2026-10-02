@@ -87,7 +87,7 @@ export const bloom: HarnessAdapter = {
         }
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
-            options,
+            { browser: options.browser },
         );
         return configureBloom(ctx, apiKey);
     },

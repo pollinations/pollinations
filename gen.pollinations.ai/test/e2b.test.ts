@@ -484,9 +484,5 @@ test("the pollinations template comes logged in with a key no stronger than the 
         Date.now() + 3600_000,
     );
 
-    // The key works, and is deleted with its sandbox.
     expect((await call(apiKey, "/v2/sandboxes")).status).toBe(200);
-    await call(owner.key, `/sandboxes/${sandboxID}`, { method: "DELETE" });
-    expect(await keyNamed(`polli-sandbox-${sandboxID}`)).toBeUndefined();
-    expect((await call(apiKey, "/v2/sandboxes")).status).toBe(401);
 });

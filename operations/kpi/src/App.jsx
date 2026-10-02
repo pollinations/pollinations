@@ -175,6 +175,7 @@ function Dashboard({ accountUser }) {
     return (
         <div className="min-h-screen bg-app-bg">
             <AppHeader
+                appName="KPI"
                 navLabel="KPI dashboard links"
                 autoHide
                 innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-between"
@@ -195,17 +196,13 @@ function Dashboard({ accountUser }) {
             </AppHeader>
 
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 md:py-7">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <div className="flex flex-col gap-1">
-                        <Heading as="h1" size="title">
-                            KPI
-                        </Heading>
-                        <Text as="p" tone="base">
-                            Weekly KPIs for pollinations.ai. Figures are the
-                            last full week ({weekLabel(currentWeek?.week)})
-                            against the one before it.
-                        </Text>
-                    </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Text as="p" tone="base">
+                        Weekly KPIs for pollinations.ai. Figures are the last
+                        full week ({weekLabel(currentWeek?.week)}) against the
+                        one before it. Usage excludes legacy APIs, company
+                        operations and development tests.
+                    </Text>
                     <label className="flex items-center gap-2 text-sm text-theme-text-muted">
                         Range
                         <select

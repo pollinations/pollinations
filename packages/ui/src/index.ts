@@ -9,6 +9,7 @@ export {
     type AccountMenuProps,
 } from "./compositions/AccountMenu.tsx";
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
+export { AppBrand, type AppBrandProps } from "./compositions/AppBrand.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
 export {
@@ -107,6 +108,7 @@ export {
     periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export { BrandMark, type BrandMarkProps } from "./primitives/BrandMark.tsx";
 export {
     Button,
     type ButtonAppearance,
@@ -159,6 +161,7 @@ export { Surface, type SurfaceProps } from "./primitives/Surface.tsx";
 export {
     Switch,
     type SwitchProps,
+    type SwitchSize,
     type SwitchStatus,
 } from "./primitives/Switch.tsx";
 export {

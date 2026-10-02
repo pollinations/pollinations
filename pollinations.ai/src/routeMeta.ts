@@ -1,0 +1,92 @@
+type RouteMeta = { title: string; description: string };
+
+export const ROUTE_META: Record<string, RouteMeta> = {
+    "/": {
+        title: "Pollinations.ai — Open infrastructure for AI-natives. Models. Agents. Tools. One API.",
+        description:
+            "The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps.",
+    },
+    "/play": {
+        title: "Play | pollinations.ai",
+        description:
+            "Chat with agents or generate images, video and audio in your browser using your own Pollen.",
+    },
+    "/apps": {
+        title: "Apps | pollinations.ai",
+        description:
+            "Discover apps listed by the Pollinations community, from creative experiments to tools used at scale.",
+    },
+    "/community": {
+        title: "Community | pollinations.ai",
+        description:
+            "Contribute to Pollinations, vote on ideas and meet the builders.",
+    },
+    "/terms": {
+        title: "Terms | pollinations.ai",
+        description: "Terms of service for pollinations.ai",
+    },
+    "/privacy": {
+        title: "Privacy | pollinations.ai",
+        description: "Privacy policy for pollinations.ai",
+    },
+    "/refunds": {
+        title: "Refunds | pollinations.ai",
+        description: "Refunds and cancellations policy for pollinations.ai",
+    },
+};
+
+export const NOT_FOUND_META: RouteMeta = {
+    title: "Page not found | pollinations.ai",
+    description: "The requested page could not be found.",
+};
+
+export function routeHead(path?: string) {
+    const known = path ? ROUTE_META[path] : undefined;
+    const meta = known ?? NOT_FOUND_META;
+    const canonical = known
+        ? `https://pollinations.ai${path === "/" ? "" : path}`
+        : null;
+    const jsonLd = path ? getJsonLd(path) : null;
+    return {
+        meta: [
+            { title: meta.title },
+            { name: "description", content: meta.description },
+            { property: "og:title", content: meta.title },
+            { property: "og:description", content: meta.description },
+            { name: "twitter:title", content: meta.title },
+            { name: "twitter:description", content: meta.description },
+            ...(canonical ? [{ property: "og:url", content: canonical }] : []),
+        ],
+        links: canonical ? [{ rel: "canonical", href: canonical }] : [],
+        scripts: jsonLd
+            ? [{ type: "application/ld+json", children: jsonLd }]
+            : [],
+    };
+}
+
+export function getJsonLd(path: string): string | null {
+    if (path === "/")
+        return JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "pollinations.ai",
+            url: "https://pollinations.ai",
+            logo: "https://pollinations.ai/icon-512.png",
+            sameAs: [
+                "https://github.com/pollinations",
+                "https://discord.gg/pollinations-ai-885844321461485618",
+                "https://x.com/pollinations_ai",
+            ],
+            description: ROUTE_META["/"].description,
+        });
+    if (path === "/play")
+        return JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "Pollinations Play",
+            url: "https://pollinations.ai/play",
+            applicationCategory: "MultimediaApplication",
+            description: ROUTE_META["/play"].description,
+        });
+    return null;
+}

@@ -37,6 +37,8 @@ import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
 import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
+import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
+import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
@@ -1014,6 +1016,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
+        .get("/polli-skill.md", (c) => c.text(CLI_SKILL))
+        .get("/polli-tasks.md", (c) => c.text(CLI_TASKS))
         .get("/open-api/generate-schema", async (c) => {
             const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {

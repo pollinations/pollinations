@@ -1,8 +1,8 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useId } from "react";
-import logoUrl from "../../brand/mark.svg";
 import { Alert } from "../../compositions/Alert.tsx";
 import { cn } from "../../lib/cn.ts";
+import { BrandMark } from "../../primitives/BrandMark.tsx";
 import {
     Dialog,
     DialogBody,
@@ -13,19 +13,6 @@ import { CheckIcon } from "../../primitives/icons/index.tsx";
 import { LoadingStatus } from "../../primitives/LoadingStatus.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { Heading, Text } from "../../primitives/Typography.tsx";
-
-const brandMask = (url: string): CSSProperties => ({
-    WebkitMaskImage: `url('${url}')`,
-    WebkitMaskPosition: "left center",
-    WebkitMaskRepeat: "no-repeat",
-    WebkitMaskSize: "contain",
-    maskImage: `url('${url}')`,
-    maskPosition: "left center",
-    maskRepeat: "no-repeat",
-    maskSize: "contain",
-});
-
-const authMarkMask = brandMask(logoUrl);
 
 export type AuthModalProps = {
     children: ReactNode;
@@ -184,11 +171,7 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>
-            <span
-                aria-hidden="true"
-                className="polli:block polli:h-8 polli:w-8 polli:bg-current"
-                style={authMarkMask}
-            />
+            <BrandMark className="polli:h-8 polli:w-8" />
         </a>
     );
     return (

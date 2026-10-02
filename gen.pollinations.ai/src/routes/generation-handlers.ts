@@ -7,6 +7,7 @@ import {
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import {
@@ -29,7 +30,12 @@ import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../utils/upstream-response.ts";
 
 export const textBodyLimit = bodyLimit({
-    maxSize: 20 * 1024 * 1024,
+    maxSize: 32 * 1024 * 1024,
+    onError: () => {
+        throw new HTTPException(413, {
+            message: "Request body exceeds the 32 MiB limit",
+        });
+    },
 });
 
 export const simpleAudioQuerySchema = z.object({

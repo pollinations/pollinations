@@ -362,7 +362,7 @@ const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
             <span>
                 Your next top-up adds{" "}
                 <strong className="font-semibold text-theme-text-strong">
-                    {formatPollen(bonus)} Quest Pollen
+                    ${formatPollen(bonus)} quest credit
                 </strong>
             </span>
         </p>

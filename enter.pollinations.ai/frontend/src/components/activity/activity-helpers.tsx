@@ -192,7 +192,7 @@ export function PollenUsageBadges(usage: {
         : usage.tierRequests.toLocaleString();
     const unit = isPollen ? "credit" : "requests";
     return (
-        <div className="ml-auto grid min-w-40 grid-cols-2 items-center justify-items-end gap-1">
+        <div className="ml-auto grid min-w-40 grid-cols-[repeat(2,minmax(max-content,1fr))] items-center justify-items-end gap-1">
             <PaidChip
                 size="sm"
                 className="cursor-help gap-2 whitespace-nowrap tabular-nums"

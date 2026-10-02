@@ -266,7 +266,7 @@ function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
                 <span>
                     Visibility: {VISIBILITY_LABELS[visibility]}
                     {pendingProxy &&
-                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                        ` · ${pendingProxy.paidOnly ? "Paid credit only" : "Quest and paid credit"}`}
                 </span>
                 {pendingProxy && (
                     <span className="flex flex-wrap items-center gap-1.5">

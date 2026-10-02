@@ -51,12 +51,8 @@
     color: var(--polli-color-tier-deep);
 }
 
+/* Scales with the card (an inline-size container) so a dollar balance like
+   "$1,234.56" stays on one line in a half-width phone card. */
 .polli-wallet-balance-value {
-    font-size: 2.25rem;
-}
-
-@media (min-width: 640px) {
-    .polli-wallet-balance-value {
-        font-size: 3rem;
-    }
+    font-size: clamp(1.5rem, 20cqi, 3rem);
 }

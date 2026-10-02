@@ -377,8 +377,8 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 />
             </div>
             <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {formatValue(progress.current)} / {formatValue(progress.target)}
+                {progress.unit !== "pollen" && ` ${progress.unit}`}
             </span>
         </div>
     );

@@ -92,6 +92,14 @@ function inferPlatform(name, appUrl, description) {
     return hostname ? "web" : "api";
 }
 
+// Issue-form uploads (and images dragged in when editing) are hosted by GitHub.
+function parseScreenshotUrl(value) {
+    const match = value.match(
+        /https:\/\/github\.com\/user-attachments\/(?:assets|files)\/[A-Za-z0-9._/-]+/,
+    );
+    return match ? match[0] : "";
+}
+
 function parseSubmission(body) {
     const name = clean(section(body, "App Name"), 80);
     const description = clean(section(body, "App Description"), 200);
@@ -101,6 +109,7 @@ function parseSubmission(body) {
     const language = normalizeLanguage(section(body, "App Language"));
     const discord = clean(section(body, "Discord Username"), 80);
     const quest = clean(section(body, "Quest"), 20).replace(/^#/, "");
+    const screenshotUrl = parseScreenshotUrl(section(body, "Screenshot"));
 
     return {
         name,
@@ -111,6 +120,7 @@ function parseSubmission(body) {
         language,
         discord,
         quest,
+        screenshotUrl,
         platform: inferPlatform(name, appUrl || repoUrl, description),
         emoji: CATEGORY_EMOJI[category] || "🚀",
     };
@@ -125,6 +135,10 @@ function validateSubmission(submission) {
         );
     if (!submission.appUrl)
         errors.push("App URL must be a valid public HTTP(S) URL.");
+    if (!submission.screenshotUrl)
+        errors.push(
+            "Screenshot is required: upload an image of the app in the Screenshot field.",
+        );
     if (!CATEGORIES.has(submission.category))
         errors.push("App Category must be selected from the submission form.");
     if (!submission.language)

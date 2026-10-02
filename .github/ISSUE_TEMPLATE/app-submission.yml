@@ -53,6 +53,15 @@ body:
       description: Optional public source repository.
       placeholder: https://github.com/username/repository
 
+  - type: upload
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: "The app's real screen, not a logo or banner. PNG, JPEG, or WebP, at most 5 MB, 16:9 landscape, at least 1280×720. Keep the key content in the top half; the catalog crops from the top. Mobile apps: place the phone screen on a 16:9 canvas."
+    validations:
+      required: true
+      accept: ".png,.jpg,.jpeg,.webp"
+
   - type: dropdown
     id: app-category
     attributes:

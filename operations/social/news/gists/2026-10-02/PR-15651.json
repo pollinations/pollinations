@@ -1,0 +1,33 @@
+{
+  "pr_number": 15651,
+  "title": "[2026-10-02] feat: add ga_raw table for the one-time GA history backup",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15651",
+  "merged_at": "2026-10-02T15:44:29Z",
+  "labels": [],
+  "pr_body_excerpt": "The old pollinations.ai GA4 property (tag `G-LPZ9GEJVHR`, property 277369924) belongs to the Google Workspace that is being retired. The tag no longer runs anywhere since old.pollinations.ai redirects to pollinations.ai. This adds the Tinybird table that holds one copy of its history, so the data survives the switch.\n\n**What we get** (by day, June 2021 → 28 Sep 2026)\n- `traffic`: sessions, users, new users, page views and engaged sessions by source, medium, campaign, country and device\n- `hosts`: sessions, users and page views by site and country\n- `pages`: page views, sessions and users by site and page, for the site's own 52 pages (every path with at least 100 views, 99.85% of all page views). The rest are content ids and prompts typed into the URL\n- `users_monthly`: unique users, new users and sessions per month and country, with GA's monthly total (daily users cannot be added up into monthly uniques)\n- `events`: event counts by name, including the API's own events (`imageRequested`, `textGenerated`, …) since 2021\n\n**What we don't get**: event-level detail (GA keeps it two months), and Google Ads click detail before Oct 2023 (GA's own limit).\n\n**Changes**\n- `ga_raw`: Data API responses as returned, one row per dataset, calendar month and `start_row` (`dataset, start_date, end_date, start_row, row_count, fetched_at, body`). `row_count` makes each month's completeness checkable. No pipe until we decide how to analyse it\n\nThe export runs once, outside the repo: staging first, then production, checked against GA's monthly totals. Staging run: all 69 months of every report, line counts equal to GA's; April 2023 and April 2025 unique users and page views match GA exactly. Largest response 2.4 MB, no sampling.\n\n**Access**: the shared service account `google-data-sync@stellar-verve-465920-b7.iam.gserviceaccount.com` is a Viewer on the property. Add a Myceli admin before the Workspace switch.\n\n`tb deployment create --check` against staging is valid.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A shelf for old signals",
+    "blurb": "Five years of site history need somewhere to land. A raw Tinybird table gives the old GA reports a tidy shelf, with row counts to check that every month made it across.",
+    "summary": "Added a Tinybird ga_raw datasource to hold one-time backups of five GA4 report datasets from June 2021 through September 2026, storing each dataset’s monthly API responses and row counts for completeness checks.",
+    "impact": "The team can preserve historical traffic, page, user and event reports before the old Google Workspace is retired, then verify the backup month by month before deciding how to analyse it.",
+    "keywords": [
+      "GA4",
+      "Tinybird",
+      "analytics",
+      "history backup",
+      "observability"
+    ],
+    "visual_concept": "Depict the old GA4 history as monthly report folders being placed on a Tinybird-labelled archive shelf, with a small checklist for row counts. Polli, wearing tiny librarian glasses, carefully files a folder beside a code-plant; this is an internal data backup, not a new analytics dashboard.",
+    "image_prompt": "In a cozy pixel art archive, Polli wears tiny librarian glasses and files monthly report folders onto a Tinybird-labelled shelf beside a growing code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with consistent rounded proportions. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) shelves and glow, warm cream and mint background, dark purple (#110518) outlines, chunky sprites and a subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-15651.jpg",
+    "prompt": "In a cozy pixel art archive, Polli wears tiny librarian glasses and files monthly report folders onto a Tinybird-labelled shelf beside a growing code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with consistent rounded proportions. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) shelves and glow, warm cream and mint background, dark purple (#110518) outlines, chunky sprites and a subtle CRT glow."
+  },
+  "generated_at": "2026-10-02T15:45:36.010706+00:00"
+}

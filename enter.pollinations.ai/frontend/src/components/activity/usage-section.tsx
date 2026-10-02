@@ -246,7 +246,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                             align="right"
                             className="px-2 py-1 font-normal"
                         >
-                            {metric === "pollen" ? "Pollen" : "Requests"}
+                            {metric === "pollen" ? "Credit" : "Requests"}
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>

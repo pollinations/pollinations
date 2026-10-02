@@ -365,15 +365,15 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For apps where users sign in with their own
-                            Pollinations account and spend their own Pollen.
+                            Pollinations account and spend their own credit.
                             Connect your app with the Pollinations SDK.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Turn on earnings to receive 20% of the Pollen users
-                            spend in your app.
+                            Turn on earnings to receive 20% of what users spend
+                            in your app.
                         </span>
                     </p>
                 </div>

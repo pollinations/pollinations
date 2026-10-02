@@ -1,5 +1,5 @@
 import { cn } from "@pollinations/ui";
-import { formatPollen } from "@pollinations/ui/wallet";
+import { formatUsd } from "@pollinations/ui/wallet";
 import { type FormatDistanceToken, formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 
@@ -74,8 +74,7 @@ function formatExpiry(expiresAt: Date | null | undefined): string {
 
 function formatBudget(pollenBudget: number | null | undefined): string {
     if (pollenBudget == null) return "∞";
-    if (pollenBudget === 0) return "0";
     if (pollenBudget < 0) return "empty";
 
-    return `${formatPollen(pollenBudget)}p`;
+    return formatUsd(pollenBudget);
 }

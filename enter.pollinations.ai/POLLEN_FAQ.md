@@ -2,9 +2,9 @@
 
 ## 🪷 What is Pollen?
 
-Pollen is the prepaid credit used by the Pollinations API. **$1 ≈ 1 Pollen**; a generation spends Pollen according to the selected model's price and usage.
+Pollen is the old name for the prepaid credit used by the Pollinations API. The dashboard shows credit in US dollars: **1 Pollen = $1**. A generation spends credit according to the selected model's price and usage. Some API field names still say pollen (for example `pollenBudget`); their values are dollars.
 
-Pollen stays inside your Pollinations wallet. It is not transferable between accounts or redeemable outside Pollinations.
+Credit stays inside your Pollinations account. It is not transferable between accounts or redeemable outside Pollinations.
 
 ## 🧩 Is Pollinations a coding tool or app builder?
 
@@ -19,14 +19,14 @@ You build and host the application. Pollinations provides model access, account 
 
 ## 🛒 How do I get Pollen?
 
-- **Buy Pollen** from the [Pollen dashboard](https://enter.pollinations.ai/pollen) through Stripe Checkout.
+- **Buy credit** from the [Credit page](https://enter.pollinations.ai/pollen) through Stripe Checkout.
 - **Complete Quests** and claim eligible rewards from the [Quests dashboard](https://enter.pollinations.ai/quests).
 - **Earn from an app** by enabling Developer earnings on its App Key. Users pay a 25% markup on that app's model usage, which is credited to the developer.
 - **Publish a community model** with a price. The model owner receives 75% of the Pollen spent on it.
 
 ## 🆓 Can I try Pollinations without a credit card?
 
-Yes. Create an account, complete eligible Quests, and claim the rewards to receive Quest Pollen. Available Quests and rewards are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
+Yes. Create an account, complete eligible Quests, and claim the rewards to receive Quest credit. Available Quests and rewards are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
 
 ## 🎯 How do Quests work?
 
@@ -43,13 +43,13 @@ Quest availability and reward amounts can change, so the dashboard and the linke
 
 Your wallet has two balances:
 
-- **Quest Pollen** — earned from Quests and eligible developer rewards.
-- **Paid Pollen** — purchased through Stripe and eligible developer rewards.
+- **Quest credit** — earned from Quests and eligible developer rewards.
+- **Paid credit** — purchased through Stripe and eligible developer rewards.
 
 Every request is charged to one balance, never split across both:
 
-- A regular model uses Quest Pollen when that balance can cover the estimated charge; otherwise it uses Paid Pollen.
-- A paid-only model requires Paid Pollen.
+- A regular model uses Quest credit when that balance can cover the estimated charge; otherwise it uses Paid credit.
+- A paid-only model requires Paid credit.
 - The final cost can exceed the estimate and make the selected balance negative.
 
 Developer rewards are credited to the matching balance type used by the paying user.
@@ -99,9 +99,9 @@ Public community models can set prices and compatible fallback models. Pollinati
 
 ## 💳 What payment options are available?
 
-Paid Pollen is available as a one-time purchase through Stripe Checkout. Stripe displays the payment methods and local pricing available for the buyer's region and checkout session. Pollinations does not currently require a monthly subscription.
+Paid credit is available as a one-time purchase through Stripe Checkout. Stripe displays the payment methods and local pricing available for the buyer's region and checkout session. Pollinations does not currently require a monthly subscription.
 
-You can also configure automatic top-up from the Pollen dashboard after adding a supported default payment method.
+You can also configure automatic top-up from the Credit page after adding a supported default payment method.
 
 ## 🆘 Where can I get help?
 

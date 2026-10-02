@@ -4,7 +4,7 @@ import type { Metric } from "./types";
 
 const METRIC_LABELS: Record<Metric, string> = {
     requests: "Requests",
-    pollen: "Pollen",
+    pollen: "Credit",
 };
 
 const METRIC_OPTIONS: Metric[] = ["pollen", "requests"];

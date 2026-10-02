@@ -1,7 +1,7 @@
 import { Chip } from "../../primitives/Chip.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { KeyIcon, WalletIcon } from "../../primitives/icons/index.tsx";
-import { formatPollen } from "./format-pollen.ts";
+import { formatUsd } from "./format-pollen.ts";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
 export type AccountPollenSource =
@@ -25,7 +25,7 @@ type PollenStatus = "limit-reached" | "no-pollen" | "unlimited";
 
 const labels: Record<PollenStatus, string> = {
     "limit-reached": "Limit reached",
-    "no-pollen": "No Pollen",
+    "no-pollen": "No credit",
     unlimited: "Unlimited",
 };
 
@@ -92,7 +92,7 @@ export function AccountPollen({
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
                 <span className="polli:sr-only">App budget: </span>
-                {formatPollen(remaining)} pollen
+                {formatUsd(remaining)}
             </span>
         );
     }
@@ -114,9 +114,9 @@ export function AccountPollen({
                             kind={kind === "paid" ? "paid" : "tier"}
                         />
                         <span className="polli:sr-only">
-                            {kind === "paid" ? "Paid" : "Quest"} Pollen:{" "}
+                            {kind === "paid" ? "Paid" : "Quest"} credit:{" "}
                         </span>
-                        {formatPollen(Math.max(0, amount))}
+                        {formatUsd(Math.max(0, amount))}
                     </span>
                 );
             })}

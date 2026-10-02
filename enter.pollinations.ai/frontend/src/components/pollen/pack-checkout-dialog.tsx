@@ -134,7 +134,7 @@ export const PackCheckoutDialog: FC<PackCheckoutDialogProps> = ({
             open={open}
             onOpenChange={onOpenChange}
             size="md"
-            title={`Buy ${formatPollenPackValue(pack.amountUsd)} Pollen`}
+            title={`Buy $${formatPollenPackValue(pack.amountUsd)} credit`}
         >
             {open && (
                 <CheckoutBody

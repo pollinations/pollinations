@@ -1,4 +1,4 @@
-import { formatPollen } from "@pollinations/ui/wallet";
+import { formatPollen, formatUsd } from "@pollinations/ui/wallet";
 
 const TINY_POLLEN_THRESHOLD = 0.0001;
 const MIN_PRECISE_POLLEN_LABEL = "0.000000000001";
@@ -32,10 +32,21 @@ export function formatActivityPollen(value: number): string {
     return formatted;
 }
 
-export function formatActivityPollenThreshold(value: number): string {
-    if (!Number.isFinite(value) || value === 0) return "0";
-    if (Math.abs(value) < TINY_POLLEN_THRESHOLD) {
-        return value > 0 ? "<0.0001" : ">-0.0001";
+// Dollar labels for chips and tables; the chart axis keeps bare numbers.
+export function formatActivityUsd(value: number): string {
+    const abs = Math.abs(value);
+    if (abs > 0 && abs < Number(MIN_PRECISE_POLLEN_LABEL)) {
+        return value > 0
+            ? `<$${MIN_PRECISE_POLLEN_LABEL}`
+            : `>-$${MIN_PRECISE_POLLEN_LABEL}`;
     }
-    return formatActivityPollen(value);
+    return formatUsd(value, decimalsForActivityPollen(abs));
+}
+
+export function formatActivityPollenThreshold(value: number): string {
+    if (!Number.isFinite(value) || value === 0) return "$0.00";
+    if (Math.abs(value) < TINY_POLLEN_THRESHOLD) {
+        return value > 0 ? "<$0.0001" : ">-$0.0001";
+    }
+    return formatActivityUsd(value);
 }

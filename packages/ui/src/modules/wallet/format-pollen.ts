@@ -41,3 +41,22 @@ export function formatPollen(value: number): string {
     if (floored === 0) return "0";
     return Number(floored.toFixed(decimals)).toString();
 }
+
+// Credit in US dollars: cents from $1 up, up to `maxDecimals` below $1 so a
+// small amount never reads $0.00, compact from $100K. "-$1.20" for negatives.
+export function formatUsd(value: number, maxDecimals = MAX_DECIMALS): string {
+    if (!Number.isFinite(value) || value === 0) return "$0.00";
+    const sign = value < 0 ? "-" : "";
+    const abs = Math.abs(value);
+    if (abs >= COMPACT_THRESHOLD) return `${sign}$${formatCompact(abs)}`;
+    const decimals = abs >= 1 ? 2 : maxDecimals;
+    // The epsilon keeps 1.15 from flooring to 1.14 through float error.
+    const factor = 10 ** decimals;
+    const floored = Math.floor(abs * factor + 1e-6) / factor;
+    if (floored === 0) return "$0.00";
+    const digits = floored.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: decimals,
+    });
+    return `${sign}$${digits}`;
+}

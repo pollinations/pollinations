@@ -4,8 +4,11 @@ DESCRIPTION >
     Google Analytics Data API responses for the retired pollinations.ai GA4 property 277369924
     (tag G-LPZ9GEJVHR), copied once before the old Google Workspace goes away. One row per
     dataset, calendar month and start_row, body as returned. Datasets: traffic (day, source,
-    medium, campaign, country, device), hosts (day, site, country). No page paths. row_count
-    is GA's total for the report, so a month is complete when its bodies hold row_count rows.
+    medium, campaign, country, device), hosts (day, site, country), pages (day, site, page;
+    site pages only, no content or prompt paths), users_monthly (month, country; the TOTAL
+    aggregation is the month's unique users), events (day, event name, including the API's
+    own events). row_count is GA's total for the report, so a month is complete when its
+    bodies hold row_count rows.
 
 SCHEMA >
     `dataset` LowCardinality(String) `json:$.dataset`,

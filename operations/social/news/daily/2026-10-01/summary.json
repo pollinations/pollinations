@@ -1,0 +1,139 @@
+{
+  "date": "2026-10-01",
+  "period_start": "2026-10-01",
+  "period_end": "2026-10-01",
+  "title": "More ways to make and edit images",
+  "summary": "A busy day for getting started and making things: editor integrations, clearer first runs, new community agents, Quest improvements, and roomier APIs.\n\nA new Krita plug-in generates and edits on fresh layers, and a Figma image studio joined the app catalog. Requests to the old MAI Image 2.5 Flash ID now reach 2.6 Flash, while Krea's fallback preserves requested aspect ratios instead of quietly making squares.\n\nPolli now guides newcomers toward a working OpenCode connection or generated image, and the CLI offers device login without making them restart their first command. Home shows live activity and app discovery tabs; Play and Community share the refreshed design. Model permissions are quicker to select, phone dialogs fit better, and a failed session refresh no longer hides an already-open dashboard. The hosted MCP has a clearer name—Connectors—with its endpoint unchanged.\n\nThe Quests page gained monthly standings and a suggested open Quest to reach the next rank. Connecting Polli CLI through device login earns a one-time 2-Pollen reward, and pagination now brings bounties beyond GitHub's first 100 results into reward evaluation. The Pollen page also supports saved-card checkout and auto top-up.",
+  "pr_count": 32,
+  "prs": [
+    {
+      "number": 15093,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15160,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15257,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15492,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15578,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15857,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15891,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15956,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15968,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 15970,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16103,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16107,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16115,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16119,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16120,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16123,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16130,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16137,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16139,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16143,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16144,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16146,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16149,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16151,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16154,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16176,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16177,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16184,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16185,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16186,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16188,
+      "date": "2026-10-01"
+    },
+    {
+      "number": 16189,
+      "date": "2026-10-01"
+    }
+  ],
+  "generated_at": "2026-10-02T06:31:28.156247+00:00"
+}

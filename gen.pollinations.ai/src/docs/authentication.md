@@ -1,6 +1,6 @@
 ## Authentication
 
-All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys). Model listing endpoints work without authentication.
+Generation requests use an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys), or [x402 payments](/docs#tag/x402-payments) for supported requests. Model listing endpoints work without authentication.
 
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|

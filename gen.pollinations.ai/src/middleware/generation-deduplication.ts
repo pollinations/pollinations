@@ -42,7 +42,7 @@ export type GenerationJob = {
     request: GenerationRequestSnapshot;
     auth: GenerationAuthSnapshot;
     requestId: string;
-    balanceCheckResult: BalanceCheckResult;
+    balanceCheckResult?: BalanceCheckResult;
     apiKeyBudgetEstimate?: number;
 };
 
@@ -65,6 +65,7 @@ type DeduplicationEnv = {
 function createAuthSnapshot(
     auth: AuthVariables["auth"],
 ): GenerationAuthSnapshot {
+    if (auth.paymentPayer) return { paymentPayer: auth.paymentPayer };
     const user = auth.requireUser();
     let apiKey: GenerationAuthSnapshot["apiKey"];
     if (auth.apiKey) {
@@ -84,7 +85,7 @@ async function createJob(
     key: string,
 ): Promise<GenerationJob> {
     const balanceCheckResult = c.var.balance.balanceCheckResult;
-    if (!balanceCheckResult) {
+    if (!balanceCheckResult && !c.var.auth.paymentPayer) {
         throw new Error("Generation balance snapshot is missing");
     }
 

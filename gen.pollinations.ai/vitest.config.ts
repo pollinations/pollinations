@@ -53,6 +53,7 @@ const genAliases = [
     "utils/model-stats.ts",
     "utils/safety-features.ts",
     "utils/text-cache.ts",
+    "x402/payment.ts",
 ];
 
 const baseConfig = defineWorkersConfig({

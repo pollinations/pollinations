@@ -31,6 +31,7 @@ export type MockTinybirdState = {
     appDirectoryResponse: UsageRow[];
     appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
+    modelStatsResponse: UsageRow[];
     agentUsageResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
@@ -49,6 +50,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         appDirectoryResponse: [],
         appUsageResponse: [],
         modelModalitiesResponse: [],
+        modelStatsResponse: [],
         agentUsageResponse: [],
         pipeCalls: [],
     };
@@ -121,6 +123,10 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.modelModalitiesResponse }, 200);
         })
+        .get("/v0/pipes/public_model_stats.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.modelStatsResponse }, 200);
+        })
         .get("/v0/pipes/quest_agent_usage.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.agentUsageResponse }, 200);
@@ -149,6 +155,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.appDirectoryResponse = [];
         state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
+        state.modelStatsResponse = [];
         state.agentUsageResponse = [];
         state.pipeCalls = [];
     };

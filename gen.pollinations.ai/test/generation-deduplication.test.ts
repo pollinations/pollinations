@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AuthVariables } from "@/middleware/auth.ts";
+import { authFromSnapshot } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import {
     createGenerationCache,
@@ -128,6 +129,54 @@ function createApp(
 }
 
 describe("generation request deduplication", () => {
+    it("carries verified payment identity through the same coordinator without a Pollen balance", async () => {
+        const cache = new Map<string, string>();
+        const jobs: GenerationJob[] = [];
+        const adapter = createAdapter(cache);
+        const paymentPayer =
+            "eip155:84532|0x0000000000000000000000000000000000000002";
+        const app = new Hono<TestEnv>()
+            .use("*", authFromSnapshot({ paymentPayer }))
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "paid-request");
+                c.set("balance", {
+                    getBalance: async () => {
+                        throw new Error("Must not read Pollen");
+                    },
+                });
+                expect(() => c.var.auth.requireUser()).toThrow();
+                await next();
+            })
+            .get(
+                "/generate",
+                createGenerationCache(adapter),
+                deduplicateGeneration,
+            );
+        const response = await app.request(
+            "/generate",
+            {},
+            {
+                GENERATION_COORDINATOR: {
+                    getByName: () => ({
+                        startAndWait: async (job: GenerationJob) => {
+                            jobs.push(job);
+                            cache.set("same-request", "paid result");
+                            return { status: "cached" };
+                        },
+                    }),
+                },
+            } as unknown as CloudflareBindings,
+            executionContext(),
+        );
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe("paid result");
+        expect(jobs).toHaveLength(1);
+        expect(jobs[0].auth).toEqual({ paymentPayer });
+        expect(jobs[0].balanceCheckResult).toBeUndefined();
+        expect(jobs[0].apiKeyBudgetEstimate).toBeUndefined();
+    });
+
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
@@ -218,7 +267,7 @@ describe("generation request deduplication", () => {
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
         expect(jobs[0].requestId).toBe("request-1");
-        expect(jobs[0].balanceCheckResult.balances).toEqual({
+        expect(jobs[0].balanceCheckResult?.balances).toEqual({
             "v1:meter:tier": 1,
             "v1:meter:pack": 2,
         });
@@ -580,7 +629,9 @@ describe("generation request deduplication", () => {
                 TINYBIRD_INGEST_URL:
                     "https://tinybird.test/v0/events?name=generation_event_v2",
                 TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-                GENERATION_COORDINATOR: { getByName: () => ({ startAndWait }) },
+                GENERATION_COORDINATOR: {
+                    getByName: () => ({ startAndWait }),
+                },
             } as unknown as CloudflareBindings,
             ctx,
         );

@@ -2,23 +2,16 @@
 // a fresh database; scripts/apply-ui-defaults.mjs writes the same values into
 // an existing one.
 
-// Shown first in the model picker, in this order: everyday text models (the
-// first three need no paid balance), then two image models. The full catalog
-// follows; ids that leave it are skipped.
-export const STARTER_MODELS = [
+// Pinned for users who have not pinned any: everyday text models that need no
+// paid balance, cheapest first. The first one is also the default for new
+// chats. The rest of the picker keeps the order gen serves it in. Ids that
+// leave the catalog drop out.
+export const PINNED_MODELS = [
     "openai/gpt-5.4-nano",
     "openai/gpt-6-luna",
     "openai/gpt-6.1-sol",
-    "google/gemini-3.8-flash",
-    "anthropic/claude-sonnet-5.5",
-    "deepseek/deepseek-v4.1-flash",
     "moonshotai/kimi-k3",
-    "black-forest-labs/flux.1.1-pro",
-    "tongyi-mai/z-image-turbo",
 ];
-
-// The first few are pinned for users who have not pinned any.
-export const PINNED_MODELS = STARTER_MODELS.slice(0, 4);
 
 // Ideas that work with any chat model (the upstream set is about options
 // trading and kids' art).

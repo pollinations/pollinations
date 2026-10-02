@@ -1,9 +1,4 @@
-import {
-    BANNERS,
-    PINNED_MODELS,
-    PROMPT_SUGGESTIONS,
-    STARTER_MODELS,
-} from "../ui-defaults.js";
+import { BANNERS, PINNED_MODELS, PROMPT_SUGGESTIONS } from "../ui-defaults.js";
 
 // Open WebUI stores these settings on first boot and ignores the env vars
 // afterwards, so an existing install has to be changed through the admin API:
@@ -37,9 +32,8 @@ async function api(path, body) {
 // reject.
 await api("/configs/models", {
     ...(await api("/configs/models")),
-    DEFAULT_MODELS: STARTER_MODELS[0],
+    DEFAULT_MODELS: PINNED_MODELS[0],
     DEFAULT_PINNED_MODELS: PINNED_MODELS.join(","),
-    MODEL_ORDER_LIST: STARTER_MODELS,
 });
 await api("/configs/suggestions", { suggestions: PROMPT_SUGGESTIONS });
 await api("/configs/banners", { banners: BANNERS });

@@ -1,11 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
 import { Container, getContainer } from "@cloudflare/containers";
-import {
-    BANNERS,
-    PINNED_MODELS,
-    PROMPT_SUGGESTIONS,
-    STARTER_MODELS,
-} from "./ui-defaults.js";
+import { BANNERS, PINNED_MODELS, PROMPT_SUGGESTIONS } from "./ui-defaults.js";
 
 const CONTAINER_NAME = "primary";
 const WEBUI_URL = required("WEBUI_URL");
@@ -68,13 +63,11 @@ export class OpenWebUIContainer extends Container {
         // this every non-admin gets an empty model picker.
         BYPASS_MODEL_ACCESS_CONTROL: "true",
         // The picker lists the whole catalog (300+ entries, media models
-        // included). ui-defaults.js puts everyday models first, pins a few and
-        // opens new chats on the cheap default; without the order the rest sort
-        // by name and a community model comes first. Seeded once: see the
-        // README for existing installs.
-        DEFAULT_MODELS: STARTER_MODELS[0],
+        // included). ui-defaults.js pins a few everyday models and opens new
+        // chats on the cheap default; the rest keeps gen's order. Seeded once:
+        // see the README for existing installs.
+        DEFAULT_MODELS: PINNED_MODELS[0],
         DEFAULT_PINNED_MODELS: PINNED_MODELS.join(","),
-        MODEL_ORDER_LIST: JSON.stringify(STARTER_MODELS),
         DEFAULT_PROMPT_SUGGESTIONS: JSON.stringify(PROMPT_SUGGESTIONS),
         WEBUI_BANNERS: JSON.stringify(BANNERS),
         // This is a shared host: no "share to Open WebUI Community" button

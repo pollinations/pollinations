@@ -17,7 +17,7 @@ paid from the signed-in user's own wallet.
 | File | Role |
 |------|------|
 | `worker.js` | Container class with every Open WebUI setting as env vars, plus a keepalive cron |
-| `ui-defaults.js` | Model order, pins, prompt suggestions and banner new users see first |
+| `ui-defaults.js` | Pinned models, prompt suggestions and banner new users see first |
 | `scripts/apply-ui-defaults.mjs` | Write those defaults into an existing database through the admin API |
 | `wrangler.jsonc` | Container (pre-built image), custom domains, staging env |
 | `scripts/push-image.sh` | Mirror the upstream image into the Cloudflare registry |
@@ -87,9 +87,9 @@ The catalog behind the connection has 300+ entries, media and community models
 included, so the defaults in [`ui-defaults.js`](ui-defaults.js) shape the first
 minute:
 
-- The picker lists nine everyday models first (three of them need no paid
-  balance), then the rest by name. New chats open on `openai/gpt-5.4-nano`, and
-  the first four are pinned for users who have not pinned any.
+- Four everyday models that need no paid balance are pinned for users who have
+  not pinned any, and new chats open on `openai/gpt-5.4-nano`. The rest of the
+  picker keeps the order gen serves it in.
 - Four prompt suggestions replace the upstream ones.
 - A dismissible banner says chats are paid from the user's own Pollen and links
   to Enter.

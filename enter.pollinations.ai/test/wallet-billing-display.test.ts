@@ -220,17 +220,13 @@ describe("saved payment methods and billing details", () => {
 });
 
 describe("payment logos before checkout", () => {
-    it("puts the local method first and drops PayPal where checkout hides it", () => {
+    it("puts the local method first and keeps general methods", () => {
         expect(paymentMethods("IN")[0]).toBe("upi");
-        expect(paymentMethods("IN")).not.toContain("paypal");
+        expect(paymentMethods("IN")).toContain("paypal");
         expect(paymentMethods("NL")).toEqual(
             expect.arrayContaining(["ideal-wero", "paypal"]),
         );
         expect(paymentMethods(null)).toContain("paypal");
-    });
-
-    it("keeps PayPal when Argentina's checkout falls back to USD", () => {
-        expect(paymentMethods("AR")).toContain("paypal");
     });
 
     it.each([
@@ -240,8 +236,4 @@ describe("payment logos before checkout", () => {
         "T1",
     ])("keeps the general list when the location is unknown (%s)", (country) =>
         expect(paymentMethods(country)).toEqual(paymentMethods(null)));
-
-    it("omits PayPal for Haiti's localized gourde checkout", () => {
-        expect(paymentMethods("HT")).not.toContain("paypal");
-    });
 });

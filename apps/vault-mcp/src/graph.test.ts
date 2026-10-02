@@ -15,9 +15,6 @@ const relation = {
     evidence: "Planning a greenhouse",
 };
 const seed = () => call("write", { nodes, relations: [relation] });
-const nodeVersion = (data: Record<string, unknown> | undefined, id: string) =>
-    (data?.nodes as { id: string; version: string }[]).find((n) => n.id === id)
-        ?.version;
 
 it("shares current memory within a user and isolates other users", async () => {
     expect((await seed()).error).toBeUndefined();
@@ -31,43 +28,40 @@ it("shares current memory within a user and isolates other users", async () => {
     ).toEqual(["user"]);
 });
 
-it("uses opaque versions for updates and rejects stale concurrent writes", async () => {
-    const first = await seed();
-    const version = nodeVersion(first.data, "user");
-    const results = await Promise.all(
-        ["a", "b"].map((text) =>
-            call("write", {
-                nodes: [{ ...nodes[0], text, expectedVersion: version }],
-            }),
-        ),
-    );
-    expect(results.filter((r) => !r.error)).toHaveLength(1);
-    expect(results.find((r) => r.error)?.error).toBe("version_conflict");
-    expect(nodeVersion(results.find((r) => !r.error)?.data, "user")).not.toBe(
-        version,
-    );
+it("replaces node fields with the last write and updates its search index", async () => {
+    await seed();
+    expect(
+        (await call("write", { nodes: [{ id: "user", name: "Updated" }] }))
+            .error,
+    ).toBeUndefined();
+    const read = await call("read", { ids: ["user"] });
+    expect(read.data?.nodes).toEqual([
+        expect.objectContaining({
+            id: "user",
+            name: "Updated",
+            text: "",
+            aliases: [],
+        }),
+    ]);
+    expect((await call("search", { query: "hiking" })).data?.nodes).toEqual([]);
+    expect(
+        (await call("search", { query: "Updated" })).data?.nodes,
+    ).toHaveLength(1);
+    expect(read.data?.relations).toHaveLength(1);
 });
 
-it("identifies relationships by their triple and updates evidence and its search index", async () => {
-    const first = await seed();
+it("upserts relationships by their triple and updates evidence and its search index", async () => {
+    await seed();
+    expect(
+        (await call("write", { relations: [relation] })).error,
+    ).toBeUndefined();
     expect(
         (
             await call("write", {
-                relations: [relation],
+                relations: [{ ...relation, evidence: "Building a telescope" }],
             })
         ).error,
-    ).toBe("version_conflict");
-    const version = (first.data?.relations as { version: string }[])[0].version;
-    const update = await call("write", {
-        relations: [
-            {
-                ...relation,
-                evidence: "Building a telescope",
-                expectedVersion: version,
-            },
-        ],
-    });
-    expect(update.error).toBeUndefined();
+    ).toBeUndefined();
     expect((await call("search", { query: "greenhouse" })).data?.nodes).toEqual(
         [],
     );
@@ -75,52 +69,36 @@ it("identifies relationships by their triple and updates evidence and its search
         (await call("search", { query: "telescope" })).data?.nodes,
     ).toHaveLength(2);
     expect((await call("search", { mode: "count" })).data?.count).toBe(1);
-    const removed = await call("write", {
+    const deletion = {
         relations: [
             {
                 subject: relation.subject,
                 predicate: relation.predicate,
                 target: relation.target,
                 delete: true,
-                expectedVersion: (
-                    update.data?.relations as { version: string }[]
-                )[0].version,
             },
         ],
-    });
-    expect(removed.error).toBeUndefined();
+    };
+    expect((await call("write", deletion)).error).toBeUndefined();
+    expect((await call("write", deletion)).error).toBeUndefined();
     expect((await call("search", { query: "telescope" })).data?.nodes).toEqual(
         [],
     );
 });
 
-it("deletes a node with its relationships and prevents stale writes after recreation", async () => {
-    const first = await seed();
-    const version = nodeVersion(first.data, "user");
-    expect(
-        (
-            await call("write", {
-                nodes: [{ id: "user", delete: true, expectedVersion: version }],
-            })
-        ).error,
-    ).toBeUndefined();
+it("deletes a node with its relationships and allows recreation", async () => {
+    await seed();
+    const deletion = { nodes: [{ id: "user", delete: true }] };
+    expect((await call("write", deletion)).error).toBeUndefined();
+    expect((await call("write", deletion)).error).toBeUndefined();
     const read = await call("read", { ids: ["user", "project"] });
     expect(read.data?.nodes).toHaveLength(1);
     expect(read.data?.relations).toEqual([]);
     expect((await call("search", { query: "greenhouse" })).data?.nodes).toEqual(
         [],
     );
-    const recreated = await call("write", {
-        nodes: [nodes[0]],
-    });
-    expect(nodeVersion(recreated.data, "user")).not.toBe(version);
-    expect(
-        (
-            await call("write", {
-                nodes: [{ ...nodes[0], expectedVersion: version }],
-            })
-        ).error,
-    ).toBe("version_conflict");
+    expect((await call("write", { nodes: [nodes[0]] })).error).toBeUndefined();
+    expect((await call("read", { ids: ["user"] })).data?.nodes).toHaveLength(1);
 });
 
 it("rolls back all records and search indexes when a relationship has a missing endpoint", async () => {
@@ -151,8 +129,12 @@ it("searches names, aliases, text and relationship evidence with all terms", asy
         offset: first.data?.nextOffset,
     });
     expect(second.data?.nextOffset).toBeNull();
-    expect(nodeVersion(first.data, "project")).toEqual(expect.any(String));
-    expect(nodeVersion(second.data, "user")).toEqual(expect.any(String));
+    expect(first.data?.nodes).toEqual([
+        expect.objectContaining({ id: "project" }),
+    ]);
+    expect(second.data?.nodes).toEqual([
+        expect.objectContaining({ id: "user" }),
+    ]);
 });
 
 it("counts relationships and distinct targets exactly and pages neighborhoods", async () => {
@@ -280,8 +262,7 @@ it("enforces write and read limits and resets them each minute", async () => {
 it("rolls back a write that would exceed the current-record quota", async () => {
     await runInDurableObject(ownerStub(), async (_instance, state) => {
         state.storage.sql.exec(
-            "WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<20000) INSERT INTO graph_nodes SELECT 'n'||x,'Node','','[]',?,0 FROM n",
-            crypto.randomUUID(),
+            "WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<20000) INSERT INTO graph_nodes SELECT 'n'||x,'Node','','[]',0 FROM n",
         );
         expect(() =>
             graphOperation(

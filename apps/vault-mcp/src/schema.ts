@@ -1,8 +1,8 @@
 export function migrate(storage: DurableObjectStorage) {
     storage.transactionSync(() => {
         for (const statement of [
-            "CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, name TEXT NOT NULL, text TEXT NOT NULL, aliases TEXT NOT NULL, version TEXT NOT NULL, recordedAt INTEGER NOT NULL)",
-            "CREATE TABLE IF NOT EXISTS graph_relations (subject TEXT NOT NULL REFERENCES graph_nodes(id) ON DELETE CASCADE, predicate TEXT NOT NULL, target TEXT NOT NULL REFERENCES graph_nodes(id) ON DELETE CASCADE, evidence TEXT NOT NULL, version TEXT NOT NULL, recordedAt INTEGER NOT NULL, PRIMARY KEY(subject,predicate,target))",
+            "CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, name TEXT NOT NULL, text TEXT NOT NULL, aliases TEXT NOT NULL, recordedAt INTEGER NOT NULL)",
+            "CREATE TABLE IF NOT EXISTS graph_relations (subject TEXT NOT NULL REFERENCES graph_nodes(id) ON DELETE CASCADE, predicate TEXT NOT NULL, target TEXT NOT NULL REFERENCES graph_nodes(id) ON DELETE CASCADE, evidence TEXT NOT NULL, recordedAt INTEGER NOT NULL, PRIMARY KEY(subject,predicate,target))",
             "CREATE INDEX IF NOT EXISTS graph_target ON graph_relations(target)",
             "CREATE INDEX IF NOT EXISTS graph_predicate ON graph_relations(predicate)",
             "CREATE TABLE IF NOT EXISTS rate_limits (operation TEXT PRIMARY KEY, minute INTEGER NOT NULL, count INTEGER NOT NULL)",

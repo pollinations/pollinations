@@ -5,7 +5,6 @@ const id = z
     .min(1)
     .max(128)
     .regex(/^[\p{L}\p{N}_.:-]+$/u);
-const expectedVersion = z.uuid().nullable().default(null);
 const relationKey = { subject: id, predicate: id, target: id };
 const nodeWrite = z.union([
     z
@@ -14,26 +13,21 @@ const nodeWrite = z.union([
             name: z.string().min(1).max(256),
             text: z.string().max(4096).default(""),
             aliases: z.array(z.string().min(1).max(128)).max(16).default([]),
-            expectedVersion,
         })
         .strict(),
-    z
-        .object({ id, delete: z.literal(true), expectedVersion: z.uuid() })
-        .strict(),
+    z.object({ id, delete: z.literal(true) }).strict(),
 ]);
 const relationWrite = z.union([
     z
         .object({
             ...relationKey,
             evidence: z.string().min(1).max(2048),
-            expectedVersion,
         })
         .strict(),
     z
         .object({
             ...relationKey,
             delete: z.literal(true),
-            expectedVersion: z.uuid(),
         })
         .strict(),
 ]);

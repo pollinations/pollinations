@@ -215,7 +215,7 @@ test("allows publishable keys to use their owner's Vault", async () => {
     });
     expect(result.response.status).toBe(200);
     expect(result.body.result?.structuredContent?.data?.nodes).toEqual([
-        expect.objectContaining({ version: expect.any(String) }),
+        { id: "fact" },
     ]);
 });
 
@@ -264,7 +264,6 @@ test("isolates users and shares memory across keys through the real gateway bind
                 name: "Gateway Node",
                 text: "private vault test",
                 aliases: [],
-                expectedVersion: null,
             },
         ],
         relations: [],
@@ -295,7 +294,6 @@ test("isolates users and shares memory across keys through the real gateway bind
             {
                 ...node.nodes[0],
                 id: "agent-node",
-                expectedVersion: null,
             },
         ],
     };

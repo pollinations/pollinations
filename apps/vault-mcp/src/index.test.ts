@@ -39,14 +39,13 @@ it("bounds streamed requests even without Content-Length", async () => {
     expect(response.status).toBe(413);
 });
 
-it("rejects a repeated creation instead of overwriting it", async () => {
+it("accepts concurrent writes to the same node without duplicating it", async () => {
     const command = { nodes: [{ id: "fact", name: "Fact" }] };
     const results = await Promise.all([
         call("write", command),
         call("write", command),
     ]);
-    expect(results.filter((r) => !r.error)).toHaveLength(1);
-    expect(results.find((r) => r.error)?.error).toBe("version_conflict");
+    expect(results.every((r) => !r.error)).toBe(true);
     expect((await call("read", { ids: ["fact"] })).data?.nodes).toHaveLength(1);
 });
 

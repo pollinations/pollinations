@@ -7,7 +7,7 @@ import type {
 
 export class GraphError extends Error {}
 type Row = Record<string, SqlStorageValue>;
-type NodeRow = Row & { id: string; aliases: string; version: string };
+type NodeRow = Row & { id: string; aliases: string };
 const encoder = new TextEncoder();
 const fail = (code: string): never => {
     throw new GraphError(code);
@@ -32,16 +32,6 @@ function consumeRate(
         )
         .one();
     if (Number(count) > limit) fail("rate_limited");
-}
-
-function checkVersion(
-    sql: SqlStorage,
-    query: string,
-    keys: string[],
-    expected: string | null,
-) {
-    const previous = sql.exec(query, ...keys).toArray()[0];
-    if ((previous?.version ?? null) !== expected) fail("version_conflict");
 }
 
 // Separate budgets ensure that even large nodes leave room to page relationships.
@@ -98,37 +88,22 @@ export function graphOperation(
             const nodes = [];
             const relations = [];
             for (const value of command.nodes) {
-                checkVersion(
-                    sql,
-                    "SELECT version FROM graph_nodes WHERE id=?",
-                    [value.id],
-                    value.expectedVersion,
-                );
-                const version = "delete" in value ? null : crypto.randomUUID();
                 if ("delete" in value) {
                     sql.exec("DELETE FROM graph_nodes WHERE id=?", value.id);
                 } else {
                     sql.exec(
-                        "INSERT INTO graph_nodes(id,name,text,aliases,version,recordedAt) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,text=excluded.text,aliases=excluded.aliases,version=excluded.version,recordedAt=excluded.recordedAt",
+                        "INSERT INTO graph_nodes(id,name,text,aliases,recordedAt) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,text=excluded.text,aliases=excluded.aliases,recordedAt=excluded.recordedAt",
                         value.id,
                         value.name,
                         value.text,
                         JSON.stringify(value.aliases),
-                        version,
                         now,
                     );
                 }
-                nodes.push({ id: value.id, version });
+                nodes.push({ id: value.id });
             }
             for (const value of command.relations) {
                 const keys = [value.subject, value.predicate, value.target];
-                checkVersion(
-                    sql,
-                    "SELECT version FROM graph_relations WHERE subject=? AND predicate=? AND target=?",
-                    keys,
-                    value.expectedVersion,
-                );
-                const version = "delete" in value ? null : crypto.randomUUID();
                 if ("delete" in value) {
                     sql.exec(
                         "DELETE FROM graph_relations WHERE subject=? AND predicate=? AND target=?",
@@ -136,10 +111,9 @@ export function graphOperation(
                     );
                 } else {
                     sql.exec(
-                        "INSERT INTO graph_relations(subject,predicate,target,evidence,version,recordedAt) VALUES(?,?,?,?,?,?) ON CONFLICT(subject,predicate,target) DO UPDATE SET evidence=excluded.evidence,version=excluded.version,recordedAt=excluded.recordedAt",
+                        "INSERT INTO graph_relations(subject,predicate,target,evidence,recordedAt) VALUES(?,?,?,?,?) ON CONFLICT(subject,predicate,target) DO UPDATE SET evidence=excluded.evidence,recordedAt=excluded.recordedAt",
                         ...keys,
                         value.evidence,
-                        version,
                         now,
                     );
                 }
@@ -147,7 +121,6 @@ export function graphOperation(
                     subject: value.subject,
                     predicate: value.predicate,
                     target: value.target,
-                    version,
                 });
             }
             const { total } = sql

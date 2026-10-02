@@ -54,7 +54,6 @@ import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
 import { Chat } from "./Chat";
 import { errorMessage } from "./chat-models";
 import { MediaFact, MediaModelOption } from "./MediaModelDetails";
-import { downloadMedia } from "./media-download";
 import {
     type MediaModelMetadata,
     mediaModelSettings,
@@ -144,6 +143,7 @@ type PlaygroundResult =
     | {
           type: "image" | "video" | "audio";
           url: string;
+          filename: string;
       }
     | {
           type: "text";
@@ -165,13 +165,24 @@ function promptPlaceholder(
     return "Describe what you want…";
 }
 
+/** MIME subtypes that are not the usual file extension. */
+const FILE_EXTENSIONS: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/svg+xml": "svg",
+    "audio/mpeg": "mp3",
+    "audio/x-wav": "wav",
+    "video/quicktime": "mov",
+};
+
 function mediaResult(
     type: "image" | "video" | "audio",
     { buffer, contentType }: { buffer: ArrayBuffer; contentType: string },
 ): PlaygroundResult {
+    const mime = contentType.split(";")[0].trim();
     return {
         type,
         url: URL.createObjectURL(new Blob([buffer], { type: contentType })),
+        filename: `pollinations-playground.${FILE_EXTENSIONS[mime] ?? mime.split("/")[1]}`,
     };
 }
 
@@ -397,64 +408,37 @@ function ModelPicker({
     );
 }
 
-/** Text has no URL to point a download at, so it becomes one on the spot. */
-function downloadHref(result: PlaygroundResult): string {
-    if (result.type === "text")
-        return `data:text/plain;charset=utf-8,${encodeURIComponent(result.text)}`;
-    return result.url;
-}
-
+/** Results are local blob or data URLs, so a plain download link works. */
 function ResultDownloadButton({
     result,
     className,
-    onError,
 }: {
     result: PlaygroundResult;
     className?: string;
-    onError: (message: string | null) => void;
 }) {
-    const [downloading, setDownloading] = useState(false);
-    const downloadRef = useRef<AbortController | null>(null);
-    useEffect(() => () => downloadRef.current?.abort(), []);
     const label = `Download ${result.type}`;
-
-    async function download() {
-        if (downloadRef.current) return;
-        const controller = new AbortController();
-        downloadRef.current = controller;
-        setDownloading(true);
-        onError(null);
-        try {
-            await downloadMedia(
-                downloadHref(result),
-                "pollinations-playground",
-                controller.signal,
-            );
-        } catch {
-            if (!controller.signal.aborted)
-                onError("Could not download this file. Try again.");
-        } finally {
-            downloadRef.current = null;
-            setDownloading(false);
-        }
-    }
-
     return (
         <Button
-            type="button"
+            as="a"
+            href={
+                result.type === "text"
+                    ? `data:text/plain;charset=utf-8,${encodeURIComponent(result.text)}`
+                    : result.url
+            }
+            download={
+                result.type === "text"
+                    ? "pollinations-playground.txt"
+                    : result.filename
+            }
             size="sm"
-            aria-label={downloading ? "Downloading…" : label}
+            aria-label={label}
             title={label}
-            disabled={downloading}
             className={cn(
                 "h-10 w-10 shrink-0 self-auto rounded-full p-0",
                 className,
             )}
-            onClick={() => void download()}
         >
-            <DownloadIcon
-                className={cn("size-4", downloading && "animate-pulse")}
-            />
+            <DownloadIcon className="size-4" />
         </Button>
     );
 }
@@ -514,34 +498,23 @@ function Lightbox({
 
 function ResultPanel({ result }: { result: PlaygroundResult }) {
     const [expanded, setExpanded] = useState(false);
-    const [downloadError, setDownloadError] = useState<string | null>(null);
 
     const zoomButtonClass =
         "flex h-full w-full cursor-zoom-in items-center justify-center border-0 bg-transparent p-0";
 
     if (result.type === "audio") {
         return (
-            <>
-                <div className="flex items-center gap-3 bg-surface-white p-4">
-                    {/* biome-ignore lint/a11y/useMediaCaption: Generated audio has no timed caption file; an empty track creates a broken native menu. */}
-                    <audio
-                        src={result.url}
-                        controls
-                        controlsList="nodownload noplaybackrate"
-                        autoPlay
-                        className="polli-playground-audio min-w-0 flex-1"
-                    />
-                    <ResultDownloadButton
-                        result={result}
-                        onError={setDownloadError}
-                    />
-                </div>
-                {downloadError && (
-                    <Text size="xs" role="alert">
-                        {downloadError}
-                    </Text>
-                )}
-            </>
+            <div className="flex items-center gap-3 bg-surface-white p-4">
+                {/* biome-ignore lint/a11y/useMediaCaption: Generated audio has no timed caption file; an empty track creates a broken native menu. */}
+                <audio
+                    src={result.url}
+                    controls
+                    controlsList="nodownload noplaybackrate"
+                    autoPlay
+                    className="polli-playground-audio min-w-0 flex-1"
+                />
+                <ResultDownloadButton result={result} />
+            </div>
         );
     }
 
@@ -551,7 +524,6 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                 <div className="relative min-h-0 flex-1 overflow-auto rounded-xl bg-surface-white p-4 pr-16 text-theme-text-strong">
                     <ResultDownloadButton
                         result={result}
-                        onError={setDownloadError}
                         className="absolute top-3 right-3"
                     />
                     <Text
@@ -566,7 +538,6 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                 <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-white p-3 text-theme-text-strong">
                     <ResultDownloadButton
                         result={result}
-                        onError={setDownloadError}
                         className="absolute top-3 right-3 z-10"
                     />
                     {result.type === "image" && (
@@ -611,11 +582,6 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                 </div>
             )}
 
-            {downloadError && (
-                <Text size="xs" role="alert">
-                    {downloadError}
-                </Text>
-            )}
             <Lightbox
                 result={result}
                 open={expanded}

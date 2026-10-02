@@ -140,21 +140,31 @@ const PAGE = `<!doctype html>
 <link rel="stylesheet" href="/styles.css">
 <style>
   html,body{margin:0;background:var(--polli-color-app-bg);min-height:100%;color:var(--polli-color-text-base)}
-  body{font-family:"Uncut Sans",ui-sans-serif,system-ui,sans-serif}
-  #root{max-width:1180px;margin:0 auto;padding:24px 20px 56px}
+  body{font-family:"Uncut Sans",ui-sans-serif,system-ui,sans-serif;font-size:14px}
+  #root{max-width:980px;margin:0 auto;padding:28px 20px 56px}
   a{color:inherit;text-decoration:none}
-  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-  .row{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:10px}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+  svg{width:16px;height:16px;flex:none}
+  .row{display:flex;align-items:center;gap:14px;padding:10px 12px;width:100%;box-sizing:border-box;border-radius:10px}
   .row:hover{background:var(--polli-color-bg-subtle)}
-  .num{font-variant-numeric:tabular-nums}
-  .bar{height:6px;border-radius:3px;background:var(--polli-color-bg-subtle);overflow:hidden;display:flex}
-  .bar>span{display:block;height:100%}
-  .muted{color:var(--polli-color-text-muted)}
-  .card{cursor:pointer}
-  @media (max-width:600px){.meta{display:none}}
-  .card:hover{outline:2px solid var(--polli-color-border)}
-  .toggle button{font:inherit;border:0;background:transparent;padding:6px 10px;border-radius:8px;cursor:pointer;color:var(--polli-color-text-muted)}
-  .toggle button.on{background:var(--polli-color-bg-subtle);color:var(--polli-color-text-strong);font-weight:600}
+  .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .n{display:inline-flex;align-items:center;gap:4px;min-width:42px;font-variant-numeric:tabular-nums;color:var(--polli-color-text-base)}
+  .soft{color:var(--polli-color-text-muted)}
+  .open{color:#1a7f37}.done{color:#8250df}
+  .area{border-top:1px solid var(--polli-color-border)}
+  .area.on{border:1px solid var(--polli-color-border);border-radius:14px;background:var(--polli-color-surface-white);margin:6px 0}
+  .kids{margin:0 0 8px 34px}
+  .kids .row{padding:7px 10px;gap:12px}
+  .leaf{margin-left:28px}
+  .bar{width:60px;height:6px;border-radius:3px;background:var(--polli-color-bg-subtle);overflow:hidden;flex:none}
+  .bar>span{display:block;height:100%;background:#1a7f37}
+  .chev{transition:transform .15s;transform:rotate(-90deg)}.on>.row .chev,.chev.on{transform:none}
+  .zero{opacity:.35}
+  .toggle button{padding:6px 10px;border-radius:8px;color:var(--polli-color-text-muted)}
+  .toggle button.sel{background:var(--polli-color-bg-subtle);color:var(--polli-color-text-strong);font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;font-size:12px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  @media (max-width:640px){.types{display:none}.n{min-width:34px}}
 </style>
 <script crossorigin="anonymous" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin="anonymous" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -167,164 +177,139 @@ const PAGE = `<!doctype html>
   const UI = window.PollinationsUI;
   const React = window.React, ReactDOM = window.ReactDOM;
   const h = React.createElement;
-  const { Surface, StatCard, Chip, Text } = UI;
   const root = ReactDOM.createRoot(document.getElementById("root"));
-  const num = (n) => (n || 0).toLocaleString();
-  const count = (n, word) => num(n) + " " + word + (n === 1 ? "" : "s");
   let data = null, error = null;
 
-  // Route lives in the hash: #/ , #/area/<name> , #/parent/<number> ; ?days=7|30|90
-  function route() {
-    const [path, qs] = location.hash.slice(1).split("?");
-    const parts = (path || "/").split("/").filter(Boolean).map(decodeURIComponent);
-    const days = Number(new URLSearchParams(qs).get("days")) || 30;
-    return { view: parts[0] || "overview", key: parts[1], days };
-  }
-  const link = (view, key, days) => "#/" + (view === "overview" ? "" : view + "/" + encodeURIComponent(key)) + "?days=" + days;
+  // Icons: @pollinations/ui where it has one, otherwise the same 24px stroke style inline.
+  const stroke = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" };
+  const svg = (...d) => (p) => h("svg", Object.assign({}, stroke, p), d.map((x, i) => x.startsWith("c") ? h("circle", { key: i, cx: +x.split(",")[1], cy: +x.split(",")[2], r: +x.split(",")[3] }) : h("path", { key: i, d: x })));
+  const I = {
+    bug: UI.BugIcon, feature: UI.SparklesIcon, task: UI.ClipboardIcon, question: UI.ChatIcon,
+    pr: UI.GitPullRequestIcon, parent: UI.TargetIcon, chevron: UI.ChevronIcon,
+    issue: svg("c,12,12,9", "c,12,12,1.5"),
+    closed: svg("c,12,12,9", "m8.5 12 2.5 2.5 4.5-5"),
+    merged: svg("c,6,5,2", "c,6,19,2", "c,18,12,2", "M6 7v10", "M6 7c0 4 4 5 10 5"),
+    stack: svg("m12 3 9 5-9 5-9-5 9-5z", "m3 13 9 5 9-5"),
+  };
+  const TYPES = [["Bug", "bug"], ["Feature", "feature"], ["Task", "task"], ["Question", "question"]];
+  const icon = (name, cls) => h(I[name], { className: cls });
+  const n = (name, value, cls, title) => h("span", { className: "n" + (value ? "" : " zero"), title }, icon(name, cls), value || 0);
 
-  function stats(items, since) {
-    const s = { openIssues: 0, closedIssues: 0, openPrs: 0, mergedPrs: 0, mergedByPeople: 0, commits: 0, lines: 0 };
-    for (const i of items) {
-      const recent = i.closedAt && Date.parse(i.closedAt) >= since;
-      if (i.kind === "issue") {
-        if (i.state === "open") s.openIssues++;
-        else if (recent) s.closedIssues++;
-      } else if (i.state === "open") s.openPrs++;
-      else if (i.state === "merged" && recent) {
-        s.mergedPrs++;
-        if (i.source !== "Agent") s.mergedByPeople++;
-        s.commits += i.commits;
-        s.lines += i.additions + i.deletions;
+  // State lives in the hash: #days=30&open=Models|p15935
+  function state() {
+    const p = new URLSearchParams(location.hash.slice(1));
+    return { days: Number(p.get("days")) || 30, open: new Set((p.get("open") || "").split("|").filter(Boolean)) };
+  }
+  function setState(s) {
+    const p = new URLSearchParams({ days: s.days });
+    if (s.open.size) p.set("open", [...s.open].join("|"));
+    location.hash = p.toString();
+  }
+  const toggle = (key) => { const s = state(); s.open.has(key) ? s.open.delete(key) : s.open.add(key); setState(s); };
+
+  // Open items, plus issues closed and PRs merged inside the window.
+  const live = (i, since) => i.state === "open" || ((i.state === "closed" && i.kind === "issue") || i.state === "merged") && Date.parse(i.closedAt) >= since;
+
+  function counts(issues, prs, since) {
+    const c = { open: 0, openPrs: 0, merged: 0 };
+    for (const [type] of TYPES) c[type] = 0;
+    for (const i of issues) if (live(i, since)) { if (i.type in c) c[i.type]++; if (i.state === "open") c.open++; }
+    for (const p of prs) if (live(p, since)) p.state === "open" ? c.openPrs++ : c.merged++;
+    return c;
+  }
+  // One fixed slot per type, empty when zero, so the columns line up across rows.
+  const typeCounts = (c) => h("span", { className: "types", style: { display: "inline-flex", gap: 6 } },
+    TYPES.map(([t, name]) => h("span", { key: t, className: "n soft", title: t + "s", style: { minWidth: 46, visibility: c[t] ? "visible" : "hidden" } }, icon(name), c[t])));
+  const statusCounts = (c) => [n("issue", c.open, "open", "Open issues"), n("pr", c.openPrs, "open", "Open PRs"), n("merged", c.merged, "done", "Merged PRs")];
+
+  function build(since) {
+    const byNumber = new Map(data.items.map((i) => [i.number, i]));
+    const prsFor = new Map();
+    for (const p of data.items) if (p.kind === "pr") for (const k of p.fixes) (prsFor.get(k) || prsFor.set(k, []).get(k)).push(p);
+    const areas = new Map();
+    const area = (name) => areas.get(name) || areas.set(name, { name, issues: [], prs: [], parents: new Map(), loose: [] }).get(name);
+    for (const i of data.items) {
+      if (i.kind === "pr") { area(i.area).prs.push(i); continue; }
+      area(i.area).issues.push(i);
+      const parent = i.parent && i.parent.state === "OPEN" ? i.parent : null;
+      if (parent) {
+        const owner = area((byNumber.get(parent.number) || i).area);
+        (owner.parents.get(parent.number) || owner.parents.set(parent.number, { parent, item: byNumber.get(parent.number), children: [] }).get(parent.number)).children.push(i);
       }
     }
-    return s;
-  }
-
-  function header(r, title, back) {
-    return h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 18, flexWrap: "wrap" } },
-      h("div", null,
-        back ? h("a", { href: back, className: "muted", style: { fontSize: 13 } }, "← All areas") : h(Text, { as: "div", size: "xs", tone: "muted" }, "pollinations/pollinations · Dev board"),
-        h("h1", { style: { margin: "4px 0 0", fontSize: 26 } }, title)),
-      h("div", { className: "toggle" }, [7, 30, 90].map((d) =>
-        h("button", { key: d, className: d === r.days ? "on" : "", onClick: () => { location.hash = link(r.view, r.key, d); } }, d + " days"))));
-  }
-
-  function statRow(s) {
-    const tile = (label, value) => h(Surface, { variant: "card", className: "polli:p-4" }, h(StatCard, { label, value }));
-    return h("div", { className: "grid", style: { gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", marginBottom: 22 } },
-      tile("Open issues", num(s.openIssues)), tile("Closed issues", num(s.closedIssues)),
-      tile("Open PRs", num(s.openPrs)), tile("Merged PRs", num(s.mergedPrs)),
-      tile("Commits", num(s.commits)), tile("Lines changed", num(s.lines)));
-  }
-
-  function areaCard(name, s, r) {
-    const people = s.mergedByPeople, agents = s.mergedPrs - people, total = Math.max(s.mergedPrs, 1);
-    return h("a", { key: name, href: link("area", name, r.days) },
-      h(Surface, { variant: "card", className: "polli:p-4 card" },
-        h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 } },
-          h("b", { style: { fontSize: 15 } }, name),
-          h("span", { className: "num", style: { fontSize: 22, fontWeight: 700 } }, num(s.mergedPrs))),
-        h(Text, { as: "div", size: "xs", tone: "muted" }, "merged PRs"),
-        h("div", { className: "bar", style: { margin: "10px 0" } },
-          h("span", { style: { width: (100 * people / total) + "%", background: "var(--polli-color-text-strong)" } }),
-          h("span", { style: { width: (100 * agents / total) + "%", background: "var(--polli-color-border)" } })),
-        h("div", { className: "num muted", style: { fontSize: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 } },
-          h("span", null, count(s.openPrs, "open PR")), h("span", null, count(s.openIssues, "open issue")),
-          h("span", null, count(s.closedIssues, "closed issue")), h("span", null, count(s.commits, "commit")))));
-  }
-
-  function overview(r, since) {
-    const byArea = new Map();
-    for (const i of data.items) if (i.area) (byArea.get(i.area) || byArea.set(i.area, []).get(i.area)).push(i);
-    const areas = [...byArea].map(([name, list]) => [name, stats(list, since)]).sort((a, b) => b[1].mergedPrs - a[1].mergedPrs || b[1].openIssues - a[1].openIssues);
-    return h("div", null, header(r, "Where the effort goes"), statRow(stats(data.items, since)),
-      h(Text, { as: "div", size: "xs", tone: "muted", className: "polli:mb-3" }, "Bar: merged PRs by people (dark) and by agents (light)."),
-      h("div", { className: "grid" }, areas.map(([name, s]) => areaCard(name, s, r))));
-  }
-
-  function itemRow(i, extra) {
-    const state = i.kind === "pr" ? i.state : (i.state === "open" ? "open" : "closed");
-    return h("a", { key: i.kind + i.number, href: i.url, target: "_blank", rel: "noopener", className: "row" },
-      h(Chip, { size: "sm", intent: state === "open" ? "alpha" : "news" }, (i.kind === "pr" ? "PR " : "") + state),
-      h("span", { className: "num muted", style: { width: 56 } }, "#" + i.number),
-      h("span", { style: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, i.title),
-      i.type ? h("span", { className: "muted meta", style: { fontSize: 12 } }, i.type) : null,
-      i.priority ? h("span", { className: "muted meta", style: { fontSize: 12, width: 60, textAlign: "right" } }, i.priority) : null,
-      extra || null);
-  }
-
-  function section(title, children, note) {
-    return h(Surface, { variant: "card", className: "polli:p-4", style: { marginBottom: 14 } },
-      h("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 6 } },
-        h("b", null, title), note ? h("span", { className: "muted", style: { fontSize: 12 } }, note) : null),
-      children.length ? children : h(Text, { as: "div", size: "sm", tone: "muted" }, "Nothing here in this window."));
-  }
-
-  // PRs that close an issue, by issue number.
-  function prsByIssue() {
-    const m = new Map();
-    for (const i of data.items) if (i.kind === "pr") for (const n of i.fixes) (m.get(n) || m.set(n, []).get(n)).push(i);
-    return m;
-  }
-  // Everything open, plus issues closed and PRs merged in the window (PRs closed unmerged are left out).
-  const relevant = (i, since) => i.state === "open" || (i.closedAt && Date.parse(i.closedAt) >= since && i.state !== "closed") || (i.kind === "issue" && i.state === "closed" && i.closedAt && Date.parse(i.closedAt) >= since);
-
-  function areaView(r, since) {
-    const inArea = data.items.filter((i) => i.area === r.key);
-    const prs = prsByIssue();
-    const parents = new Map();
-    for (const i of data.items) {
-      if (i.kind !== "issue" || !i.parent || i.parent.state !== "OPEN") continue;
-      const parent = data.items.find((p) => p.number === i.parent.number);
-      if ((parent ? parent.area : i.area) !== r.key) continue;
-      const entry = parents.get(i.parent.number) || parents.set(i.parent.number, { parent: i.parent, children: [] }).get(i.parent.number);
-      entry.children.push(i);
+    for (const a of areas.values()) {
+      const inParent = new Set([...a.parents.values()].flatMap((p) => p.children.map((c) => c.number)));
+      a.loose = a.issues.filter((i) => !inParent.has(i.number) && !a.parents.has(i.number) && live(i, since));
+      const parentPrs = new Set([...inParent].flatMap((k) => (prsFor.get(k) || []).map((p) => p.number)));
+      a.loosePrs = a.prs.filter((p) => !parentPrs.has(p.number));
+      a.c = counts(a.issues, a.prs, since);
     }
-    const parentRows = [...parents.values()].map(({ parent, children }) => {
-      const done = children.filter((c) => c.state === "closed").length;
-      const linked = children.flatMap((c) => prs.get(c.number) || []);
-      const open = linked.filter((p) => p.state === "open").length, merged = linked.filter((p) => p.state === "merged").length;
-      return h("a", { key: parent.number, href: link("parent", parent.number, r.days), className: "row" },
-        h("span", { className: "num muted", style: { width: 56 } }, "#" + parent.number),
-        h("span", { style: { flex: 1, minWidth: 0 } }, parent.title),
-        h("div", { className: "bar", style: { width: 120 } }, h("span", { style: { width: (100 * done / children.length) + "%", background: "var(--polli-color-text-strong)" } })),
-        h("span", { className: "num muted", style: { fontSize: 12, width: 210, textAlign: "right", whiteSpace: "nowrap" } }, done + "/" + children.length + " done · " + open + " open · " + merged + " merged PRs"));
-    });
-    const underParent = new Set([...parents.values()].flatMap((p) => p.children.map((c) => c.number)));
-    const parentNumbers = new Set(parents.keys());
-    const issues = inArea.filter((i) => i.kind === "issue" && !underParent.has(i.number) && !parentNumbers.has(i.number) && relevant(i, since));
-    const issueNumbers = new Set(data.items.filter((i) => i.kind === "issue").map((i) => i.number));
-    const direct = inArea.filter((i) => i.kind === "pr" && relevant(i, since) && !i.fixes.some((n) => issueNumbers.has(n)));
-    return h("div", null, header(r, r.key, link("overview", null, r.days)), statRow(stats(inArea, since)),
-      section("Parent issues", parentRows),
-      section("Other issues", issues.map((i) => itemRow(i)), issues.length + " open or recently closed"),
-      section("Direct PRs", direct.map((i) => itemRow(i)), "PRs that close no issue"));
+    return { areas: [...areas.values()].sort((x, y) => y.c.merged - x.c.merged || y.c.open - x.c.open), prsFor };
   }
 
-  function parentView(r, since) {
-    const number = Number(r.key);
-    const parent = data.items.find((i) => i.number === number);
-    const children = data.items.filter((i) => i.kind === "issue" && i.parent && i.parent.number === number);
-    const prs = prsByIssue();
-    const rows = children.flatMap((c) => [itemRow(c), ...(prs.get(c.number) || []).filter((p) => relevant(p, since)).map((p) => h("div", { key: "p" + p.number, style: { paddingLeft: 28 } }, itemRow(p)))]);
-    const title = parent ? parent.title : (children[0] && children[0].parent.title) || "#" + number;
-    return h("div", null, header(r, title, link("overview", null, r.days)),
-      section("Sub-issues and their PRs", rows, children.filter((c) => c.state === "closed").length + "/" + children.length + " done"));
+  function issueRow(i, prsFor, since) {
+    const prs = (prsFor.get(i.number) || []).filter((p) => live(p, since));
+    const open = prs.filter((p) => p.state === "open").length, merged = prs.length - open;
+    return h("a", { key: i.number, href: i.url, target: "_blank", rel: "noopener", className: "row" },
+      icon(i.state === "open" ? "issue" : "closed", i.state === "open" ? "open" : "done"),
+      h("span", { className: "grow" + (i.state === "open" ? "" : " soft") }, i.title),
+      open ? n("pr", open, "open", "Open PRs") : null, merged ? n("merged", merged, "done", "Merged PRs") : null);
   }
+
+  function parentRow(p, s, prsFor, since) {
+    const key = "p" + p.parent.number, on = s.open.has(key);
+    const kids = p.children.slice().sort((a, b) => (a.state === "open" ? 0 : 1) - (b.state === "open" ? 0 : 1));
+    const summary = p.item && p.item.subIssues;
+    const total = summary ? summary.total : kids.length, done = summary ? summary.completed : kids.filter((k) => k.state !== "open").length;
+    const c = counts(kids, kids.flatMap((k) => prsFor.get(k.number) || []), since);
+    return h("div", { key },
+      h("button", { className: "row", onClick: () => toggle(key) },
+        icon("chevron", "chev soft" + (on ? " on" : "")), icon("parent", "done"),
+        h("span", { className: "grow" }, p.parent.title),
+        h("span", { className: "bar", title: done + " of " + total + " done" }, h("span", { style: { width: (total ? 100 * done / total : 0) + "%" } })),
+        h("span", { className: "n soft" }, done + "/" + total), ...statusCounts(c).slice(1)),
+      on ? h("div", { className: "leaf" }, kids.map((k) => issueRow(k, prsFor, since))) : null);
+  }
+
+  function looseRow(a, s, prsFor, since) {
+    const key = "l" + a.name, on = s.open.has(key);
+    if (!a.loose.length && !a.loosePrs.some((p) => live(p, since))) return null;
+    return h("div", { key },
+      h("button", { className: "row", onClick: () => toggle(key) },
+        icon("chevron", "chev soft" + (on ? " on" : "")), icon("stack", "soft"),
+        h("span", { className: "grow soft" }, "No parent"), ...statusCounts(counts(a.loose, a.loosePrs, since))),
+      on ? h("div", { className: "leaf" }, a.loose.map((i) => issueRow(i, prsFor, since))) : null);
+  }
+
+  function areaBlock(a, s, prsFor, since) {
+    const on = s.open.has(a.name);
+    return h("div", { key: a.name, className: "area" + (on ? " on" : "") },
+      h("button", { className: "row", onClick: () => toggle(a.name) },
+        icon("chevron", "chev soft"), h("b", { className: "grow" }, a.name), typeCounts(a.c), ...statusCounts(a.c)),
+      on ? h("div", { className: "kids" }, [...a.parents.values()].map((p) => parentRow(p, s, prsFor, since)), looseRow(a, s, prsFor, since)) : null);
+  }
+
+  const legend = () => h("div", { className: "legend soft" },
+    [["bug", "Bug"], ["feature", "Feature"], ["task", "Task"], ["question", "Question"], ["parent", "Parent issue", "done"], ["issue", "Open issue", "open"], ["closed", "Closed issue", "done"], ["pr", "Open PR", "open"], ["merged", "Merged PR", "done"]]
+      .map(([name, label, cls]) => h("span", { key: name }, icon(name, cls), label)));
 
   function render() {
-    const r = route();
-    const since = Date.now() - r.days * 86400000;
-    if (error) return root.render(h(Text, { tone: "muted" }, "Could not load: " + error));
-    if (!data) return root.render(h(Text, { tone: "muted" }, "Loading the Dev board from GitHub…"));
-    const body = r.view === "area" ? areaView(r, since) : r.view === "parent" ? parentView(r, since) : overview(r, since);
-    root.render(h("div", null, body,
-      h(Text, { as: "div", size: "xs", tone: "muted", className: "polli:mt-6" }, "Updated " + new Date(data.fetchedAt).toLocaleString() + " · " + num(data.items.length) + " items")));
+    if (error) return root.render(h("p", { className: "soft" }, "Could not load: " + error));
+    if (!data) return root.render(h("p", { className: "soft" }, "Loading the Dev board from GitHub…"));
+    const s = state(), since = Date.now() - s.days * 86400000;
+    const { areas, prsFor } = build(since);
+    root.render(h("div", null,
+      h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 12, flexWrap: "wrap" } },
+        h("h1", { style: { margin: 0, fontSize: 24 } }, "Where the effort goes"),
+        h("div", { className: "toggle" }, [7, 30, 90].map((d) => h("button", { key: d, className: d === s.days ? "sel" : "", onClick: () => setState(Object.assign(s, { days: d })) }, d + "d")))),
+      areas.map((a) => areaBlock(a, s, prsFor, since)),
+      legend(),
+      h("p", { className: "soft", style: { fontSize: 12, marginTop: 10 } }, "Updated " + new Date(data.fetchedAt).toLocaleString())));
   }
 
   window.addEventListener("hashchange", render);
   render();
-  fetch("/data").then((res) => res.json()).then((d) => { if (d.error) error = d.error; else data = d; render(); }).catch((e) => { error = String(e); render(); });
+  fetch("/data").then((r) => r.json()).then((d) => { if (d.error) error = d.error; else data = d; render(); }).catch((e) => { error = String(e); render(); });
 })();
 </script>
 </body>

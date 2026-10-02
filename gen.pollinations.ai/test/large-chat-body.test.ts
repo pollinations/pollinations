@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { createHmac } from "node:crypto";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { describe, expect, it } from "vitest";
 import { readLargeChatBody } from "../src/middleware/large-chat-body.ts";
@@ -71,7 +72,7 @@ describe("large chat bodies", () => {
 
 describe("large chat route", () => {
     it("accepts a 40 MiB inline-image request through the real media service", async () => {
-        const { key } = await createTestApiKey({
+        const { key, userId } = await createTestApiKey({
             user: { packBalance: 100 },
         });
         const imageBytes = new Uint8Array(3 * 1024 * 1024);
@@ -99,6 +100,12 @@ describe("large chat route", () => {
         );
         expect(response.status).toBe(400);
         expect(await response.text()).toContain("not-a-model");
-        expect(env.MEDIA).toBeDefined();
+        const id = createHmac("sha256", env.BETTER_AUTH_SECRET)
+            .update("chat-input\0")
+            .update(userId)
+            .update("\0image/jpeg\0")
+            .update(imageBytes)
+            .digest("hex");
+        expect(await env.MEDIA.has(id)).toBe(true);
     });
 });

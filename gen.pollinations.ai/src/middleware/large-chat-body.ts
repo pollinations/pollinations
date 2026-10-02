@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { JSONParser } from "@streamparser/json";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -147,9 +147,21 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
                 });
             }
             const bytes = Buffer.from(match[2], "base64");
+            const id = createHmac("sha256", c.env.BETTER_AUTH_SECRET)
+                .update("chat-input\0")
+                .update(user.id)
+                .update("\0")
+                .update(match[1])
+                .update("\0")
+                .update(bytes)
+                .digest("hex");
+            if (await c.env.MEDIA.has(id)) {
+                return `https://media.pollinations.ai/${id}`;
+            }
             const upload = await c.env.MEDIA.upload(
                 new Blob([bytes]).stream(),
                 {
+                    id,
                     contentType: match[1],
                     size: bytes.byteLength,
                     uploadedBy: user.id,

@@ -416,6 +416,48 @@ describe("media.pollinations.ai", () => {
         expect(bucket.putCount).toBe(0);
     });
 
+    it("reuses a caller-provided internal ID without replacing its bytes", async () => {
+        const id = "d".repeat(64);
+        const storage = new MediaUpload(createExecutionContext(), env);
+        const input = {
+            id,
+            contentType: "image/png",
+            size: TINY_PNG.length,
+            keyType: "chat-input",
+        };
+        const first = await storage.upload(
+            new Blob([TINY_PNG]).stream(),
+            input,
+        );
+        const second = await storage.upload(
+            new Blob([new Uint8Array(TINY_PNG.length)]).stream(),
+            input,
+        );
+        expect(second.url).toBe(first.url);
+        const stored = await storage.get(id);
+        expect(stored).not.toBeNull();
+        expect(new Uint8Array(await stored?.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("keeps one object when internal uploads race for the same ID", async () => {
+        const id = `${"d".repeat(63)}e`;
+        const storage = new MediaUpload(createExecutionContext(), env);
+        const input = { id, contentType: "image/png", size: 1 };
+        const results = await Promise.all(
+            [1, 2].map((value) =>
+                storage.upload(
+                    new Blob([new Uint8Array([value])]).stream(),
+                    input,
+                ),
+            ),
+        );
+        expect(results[0].url).toBe(results[1].url);
+        const stored = await storage.get(id);
+        expect([1, 2]).toContain(
+            new Uint8Array(await stored?.arrayBuffer())[0],
+        );
+    });
+
     it("POST /upload without key returns 401", async () => {
         const res = await SELF.fetch("https://media.pollinations.ai/upload", {
             method: "POST",

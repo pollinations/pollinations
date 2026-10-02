@@ -186,9 +186,7 @@ test("lists the MCP servers exposed through Gen", async () => {
 });
 
 test("proxies Vault through the real service binding with the hosted MCP client", async () => {
-    const { key } = await createTestApiKey({
-        memoryPermissions: ["read", "write"],
-    });
+    const { key } = await createTestApiKey();
     const client = await createMCPClient({
         clientName: "vault-gateway-test",
         transport: {
@@ -210,50 +208,28 @@ test("proxies Vault through the real service binding with the hosted MCP client"
     }
 });
 
-test("denies Vault discovery without an explicit memory grant", async () => {
+test("allows publishable keys to use their owner's Vault", async () => {
+    const { key } = await createTestApiKey({ type: "publishable" });
+    const result = await callVault(key, "write", {
+        nodes: [{ id: "fact", name: "Fact" }],
+    });
+    expect(result.response.status).toBe(200);
+    expect(result.body.result?.structuredContent?.data?.nodes).toEqual([
+        expect.objectContaining({ version: expect.any(String) }),
+    ]);
+});
+
+test("rejects unauthenticated Vault requests", async () => {
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/vault", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+    });
+    expect(response.status).toBe(401);
+});
+
+test("bounds a streaming request inside Vault", async () => {
     const { key } = await createTestApiKey();
-    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/vault", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "tools/list",
-        }),
-    });
-    expect(response.status).toBe(403);
-});
-
-test("denies Vault to publishable keys even with stored memory fields", async () => {
-    const published = await createTestApiKey({
-        type: "publishable",
-        memoryPermissions: null,
-    });
-    await drizzle(env.DB)
-        .update(apiKeyTable)
-        .set({ permissions: JSON.stringify({ memory: ["read", "write"] }) })
-        .where(eq(apiKeyTable.id, published.id));
-
-    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/vault", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${published.key}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "tools/list",
-        }),
-    });
-    expect(response.status).toBe(403);
-});
-
-test("bounds a streaming Vault request before forwarding", async () => {
-    const { key } = await createTestApiKey({ memoryPermissions: ["write"] });
     const response = await Promise.race([
         SELF.fetch("https://gen.pollinations.ai/mcp/vault", {
             method: "POST",
@@ -273,25 +249,22 @@ test("bounds a streaming Vault request before forwarding", async () => {
         ),
     ]);
     expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: "limit_exceeded" });
 });
 
-test("enforces Vault permissions and identity through the real gateway binding", async () => {
-    const writer = await createTestApiKey({
-        memoryPermissions: ["read", "write"],
-    });
+test("isolates users and shares memory across keys through the real gateway binding", async () => {
+    const writer = await createTestApiKey();
     const reader = await createTestApiKey({
         userId: writer.userId,
-        memoryPermissions: ["read"],
     });
     const node = {
-        idempotencyKey: "gateway-writer",
         nodes: [
             {
                 id: "gateway-node",
                 name: "Gateway Node",
                 text: "private vault test",
                 aliases: [],
-                expectedVersion: 0,
+                expectedVersion: null,
             },
         ],
         relations: [],
@@ -318,12 +291,11 @@ test("enforces Vault permissions and identity through the real gateway binding",
 
     const agentCommand = {
         ...node,
-        idempotencyKey: "stable-agent-receipt",
         nodes: [
             {
                 ...node.nodes[0],
                 id: "agent-node",
-                expectedVersion: 0,
+                expectedVersion: null,
             },
         ],
     };
@@ -339,26 +311,26 @@ test("enforces Vault permissions and identity through the real gateway binding",
         parentRequestId: crypto.randomUUID(),
         managedAgentId: "stable-agent",
     });
-    const firstReceipt = await callVault(agentOne, "write", agentCommand);
-    const renewedReceipt = await callVault(agentTwo, "write", agentCommand);
-    expect(firstReceipt.response.status).toBe(200);
-    expect(renewedReceipt.body.result?.structuredContent?.data).toEqual(
-        firstReceipt.body.result?.structuredContent?.data,
-    );
+    const firstWrite = await callVault(agentOne, "write", agentCommand);
+    const renewedRead = await callVault(agentTwo, "read", {
+        ids: ["agent-node"],
+    });
+    expect(firstWrite.response.status).toBe(200);
+    expect(renewedRead.body.result?.structuredContent?.data?.nodes).toEqual([
+        expect.objectContaining({ id: "agent-node", name: "Gateway Node" }),
+    ]);
     expect(
         (await callVault(agentTwo, "read", { ids: ["gateway-node"] })).body
             .result?.structuredContent?.data?.nodes,
     ).toEqual([expect.objectContaining({ id: "gateway-node" })]);
 
-    const otherUser = await createTestApiKey({ memoryPermissions: ["read"] });
+    const otherUser = await createTestApiKey();
     const isolated = await callVault(
         otherUser.key,
         "read",
         { ids: ["gateway-node"] },
         {
             "x-pollinations-user-id": writer.userId,
-            "x-pollinations-vault-actor": JSON.stringify([writer.id, null]),
-            "x-pollinations-vault-permissions": JSON.stringify(["read"]),
         },
     );
     expect(isolated.body.result?.structuredContent?.data?.nodes).toEqual([]);
@@ -366,9 +338,12 @@ test("enforces Vault permissions and identity through the real gateway binding",
         "gateway-node",
     ]);
 
-    expect((await callVault(reader.key, "write", node)).response.status).toBe(
-        403,
-    );
+    const readerWrite = await callVault(reader.key, "write", {
+        nodes: [{ id: "reader-node", name: "Reader can also write" }],
+    });
+    expect(readerWrite.body.result?.structuredContent?.data?.nodes).toEqual([
+        expect.objectContaining({ id: "reader-node" }),
+    ]);
     await drizzle(env.DB)
         .update(apiKeyTable)
         .set({ enabled: false })

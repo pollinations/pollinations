@@ -1,634 +1,307 @@
+import { runInDurableObject } from "cloudflare:test";
 import { expect, it } from "vitest";
-import { call } from "./test-client";
-
-it("keeps requested nodes readable when evidence or history exceeds the response budget", async () => {
-    const leaf = { id: "leaf", name: "Leaf" };
-    const root = { id: "root", name: "Root", text: "記".repeat(4096) };
-    await call("write", { idempotencyKey: "nodes", nodes: [root, leaf] });
-    for (let batch = 0; batch < 2; batch++) {
-        const written = await call("write", {
-            idempotencyKey: `edges-${batch}`,
-            relations: Array.from({ length: 16 }, (_, i) => ({
-                id: `edge-${batch}-${i}`,
-                subject: "root",
-                predicate: "links",
-                target: "leaf",
-                evidence: "e".repeat(2048),
-            })),
-        });
-        expect(written.error).toBeUndefined();
-    }
-    const evidence = await call("read", { ids: ["root", "leaf"] });
-    expect(evidence.data?.nodes).toHaveLength(2);
-    expect(evidence.data?.truncated).toBe(true);
-    expect(evidence.data?.omissions).toContainEqual({
-        id: "root",
-        kind: "relations",
-    });
-    expect(
-        new TextEncoder().encode(JSON.stringify(evidence.data)).length,
-    ).toBeLessThan(65_536);
-    for (let version = 1; version <= 6; version++) {
-        await call("write", {
-            idempotencyKey: `revision-${version}`,
-            nodes: [{ ...leaf, text: root.text, expectedVersion: version }],
-        });
-    }
-    const history = await call("read", { ids: ["leaf"], includeHistory: true });
-    expect(history.data?.nodes).toHaveLength(1);
-    expect(history.data?.omissions).toContainEqual({
-        id: "leaf",
-        kind: "history",
-    });
-    expect(
-        new TextEncoder().encode(JSON.stringify(history.data)).length,
-    ).toBeLessThan(65_536);
-});
+import { graphReadSchema, graphWriteSchema } from "./contracts";
+import { graphOperation } from "./graph";
+import { call, ownerStub } from "./test-client";
 
 const nodes = [
     { id: "user", name: "User", text: "likes hiking", aliases: ["me"] },
     { id: "project", name: "Orchid", text: "garden project" },
 ];
-it("shares one graph between authorized agents but never between users", async () => {
-    const written = await call("write", {
-        idempotencyKey: "first",
-        nodes,
-        relations: [
-            {
-                id: "owns",
-                subject: "user",
-                predicate: "owns",
-                target: "project",
-                evidence: "I own Orchid",
-            },
-        ],
-    });
-    expect(written.result?.isError, JSON.stringify(written)).not.toBe(true);
-    expect(written.data?.head).toBe(1);
-    const read = await call(
-        "read",
-        { ids: ["user"] },
-        "hive-owner",
-        "different-model",
-    );
-    expect(read.data?.nodes).toHaveLength(1);
-    expect(read.data?.relations).toHaveLength(1);
-    const other = await call("read", { ids: ["user"] }, "other-owner");
-    expect(other.data?.nodes).toEqual([]);
-    const found = await call("search", { query: "garden" });
-    expect(found.data?.nodes).toHaveLength(1);
-    const alias = await call("search", { query: "me" });
-    expect(alias.data?.nodes).toHaveLength(1);
-});
-it("retries once, rejects conflicts, and rolls back dangling batches", async () => {
-    const input = { idempotencyKey: "once", nodes };
-    const first = await call("write", input);
-    const retry = await call("write", input);
-    expect(retry.data).toEqual(first.data);
+const relation = {
+    subject: "user",
+    predicate: "works_on",
+    target: "project",
+    evidence: "Planning a greenhouse",
+};
+const seed = () => call("write", { nodes, relations: [relation] });
+const nodeVersion = (data: Record<string, unknown> | undefined, id: string) =>
+    (data?.nodes as { id: string; version: string }[]).find((n) => n.id === id)
+        ?.version;
+
+it("shares current memory within a user and isolates other users", async () => {
+    expect((await seed()).error).toBeUndefined();
+    const read = await call("read", { ids: ["user", "project", "absent"] });
+    expect(read.data?.nodes).toHaveLength(2);
+    expect(read.data?.relations).toEqual([expect.objectContaining(relation)]);
+    expect(read.data?.missingIds).toEqual(["absent"]);
+    expect((await call("search", {}, "other")).data?.nodes).toEqual([]);
     expect(
-        (await call("write", { ...input, nodes: [{ id: "x", name: "X" }] }))
-            .error,
-    ).toBe("idempotency_conflict");
+        (await call("read", { ids: ["user"] }, "other")).data?.missingIds,
+    ).toEqual(["user"]);
+});
+
+it("uses opaque versions for updates and rejects stale concurrent writes", async () => {
+    const first = await seed();
+    const version = nodeVersion(first.data, "user");
+    const results = await Promise.all(
+        ["a", "b"].map((text) =>
+            call("write", {
+                nodes: [{ ...nodes[0], text, expectedVersion: version }],
+            }),
+        ),
+    );
+    expect(results.filter((r) => !r.error)).toHaveLength(1);
+    expect(results.find((r) => r.error)?.error).toBe("version_conflict");
+    expect(nodeVersion(results.find((r) => !r.error)?.data, "user")).not.toBe(
+        version,
+    );
+});
+
+it("identifies relationships by their triple and updates evidence and its search index", async () => {
+    const first = await seed();
     expect(
         (
             await call("write", {
-                idempotencyKey: "bad",
-                nodes: [{ id: "rolled-back", name: "Oops" }],
-                relations: [
-                    {
-                        id: "bad",
-                        subject: "rolled-back",
-                        predicate: "owns",
-                        target: "missing",
-                        evidence: "test",
-                    },
-                ],
-            })
-        ).error,
-    ).toBe("not_found");
-    expect((await call("read", { ids: ["rolled-back"] })).data?.nodes).toEqual(
-        [],
-    );
-});
-it("supports shared corrections with version conflicts, exact counts and head-bound paging", async () => {
-    await call("write", {
-        idempotencyKey: "seed",
-        nodes,
-        relations: [
-            {
-                id: "owns",
-                subject: "user",
-                predicate: "owns",
-                target: "project",
-                evidence: "I own Orchid",
-            },
-        ],
-    });
-    expect(
-        (await call("search", { mode: "count", predicate: "owns" })).data
-            ?.count,
-    ).toBe(1);
-    const page = await call("search", { limit: 1 });
-    expect(page.data?.nextCursor).toBeTruthy();
-    const updated = await call(
-        "write",
-        {
-            idempotencyKey: "edit",
-            nodes: [
-                {
-                    id: "project",
-                    name: "Orchid",
-                    text: "updated garden",
-                    expectedVersion: 1,
-                },
-            ],
-        },
-        "hive-owner",
-        "agent-b",
-    );
-    expect(updated.data?.head).toBe(2);
-    expect(
-        (
-            await call("write", {
-                idempotencyKey: "stale",
-                nodes: [{ id: "project", name: "Wrong", expectedVersion: 1 }],
+                relations: [relation],
             })
         ).error,
     ).toBe("version_conflict");
-    expect(
-        (await call("search", { limit: 1, cursor: page.data?.nextCursor }))
-            .error,
-    ).toBe("restart_required");
-    await call("write", {
-        idempotencyKey: "retract",
+    const version = (first.data?.relations as { version: string }[])[0].version;
+    const update = await call("write", {
         relations: [
             {
-                id: "owns",
-                subject: "user",
-                predicate: "owns",
-                target: "project",
-                evidence: "no longer owns",
-                status: "retracted",
-                expectedVersion: 1,
+                ...relation,
+                evidence: "Building a telescope",
+                expectedVersion: version,
             },
         ],
     });
+    expect(update.error).toBeUndefined();
+    expect((await call("search", { query: "greenhouse" })).data?.nodes).toEqual(
+        [],
+    );
     expect(
-        (await call("search", { mode: "count", predicate: "owns" })).data
-            ?.count,
-    ).toBe(0);
-});
-it("denies missing graph scopes and rejects caller-selected identity and oversized inputs", async () => {
-    expect(
-        (
-            await call(
-                "write",
-                { idempotencyKey: "denied", nodes },
-                "hive-owner",
-                "agent",
-                ["read"],
-            )
-        ).result?.isError,
-    ).toBe(true);
-    expect(
-        (
-            await call("write", {
-                idempotencyKey: "identity",
-                nodes,
-                owner: "someone",
-            })
-        ).data,
-    ).toBeUndefined();
-    expect(
-        (await call("search", { query: '" OR *' })).result?.isError,
-    ).not.toBe(true);
-    expect(
-        (
-            await call("write", {
-                idempotencyKey: "big",
-                nodes: [{ id: "x", name: "x", text: "x".repeat(5000) }],
-            })
-        ).data,
-    ).toBeUndefined();
+        (await call("search", { query: "telescope" })).data?.nodes,
+    ).toHaveLength(2);
+    expect((await call("search", { mode: "count" })).data?.count).toBe(1);
+    const removed = await call("write", {
+        relations: [
+            {
+                subject: relation.subject,
+                predicate: relation.predicate,
+                target: relation.target,
+                delete: true,
+                expectedVersion: (
+                    update.data?.relations as { version: string }[]
+                )[0].version,
+            },
+        ],
+    });
+    expect(removed.error).toBeUndefined();
+    expect((await call("search", { query: "telescope" })).data?.nodes).toEqual(
+        [],
+    );
 });
 
-it("shares managed-agent writes and arbitrates simultaneous corrections", async () => {
-    await call("write", { idempotencyKey: "seed", nodes });
-    const updates = await Promise.all(
-        ["one", "two"].map((name) =>
-            call(
-                "write",
-                {
-                    idempotencyKey: name,
-                    nodes: [{ id: "project", name, expectedVersion: 1 }],
-                },
-                "hive-owner",
-                name,
-                ["write", "search", "read"],
-            ),
-        ),
-    );
-    expect(updates.filter((v) => v.data)).toHaveLength(1);
-    expect(updates.filter((v) => v.error === "version_conflict")).toHaveLength(
-        1,
-    );
-    const result = await call("read", {
-        ids: ["project"],
-        includeHistory: true,
-    });
-    expect(result.data?.head).toBe(2);
-    expect(result.data?.history).toHaveLength(2);
-    expect((result.data?.nodes as { version: number }[])[0]?.version).toBe(2);
-});
-it("pages without omissions and distinguishes relation and target counts", async () => {
-    await call("write", {
-        idempotencyKey: "seed",
-        nodes,
-        relations: [
-            {
-                id: "r1",
-                subject: "user",
-                predicate: "owns",
-                target: "project",
-                evidence: "claim one",
-            },
-            {
-                id: "r2",
-                subject: "user",
-                predicate: "owns",
-                target: "project",
-                evidence: "claim two",
-            },
-        ],
-    });
+it("deletes a node with its relationships and prevents stale writes after recreation", async () => {
+    const first = await seed();
+    const version = nodeVersion(first.data, "user");
     expect(
-        (await call("search", { mode: "count", predicate: "owns" })).data
-            ?.count,
-    ).toBe(2);
+        (
+            await call("write", {
+                nodes: [{ id: "user", delete: true, expectedVersion: version }],
+            })
+        ).error,
+    ).toBeUndefined();
+    const read = await call("read", { ids: ["user", "project"] });
+    expect(read.data?.nodes).toHaveLength(1);
+    expect(read.data?.relations).toEqual([]);
+    expect((await call("search", { query: "greenhouse" })).data?.nodes).toEqual(
+        [],
+    );
+    const recreated = await call("write", {
+        nodes: [nodes[0]],
+    });
+    expect(nodeVersion(recreated.data, "user")).not.toBe(version);
+    expect(
+        (
+            await call("write", {
+                nodes: [{ ...nodes[0], expectedVersion: version }],
+            })
+        ).error,
+    ).toBe("version_conflict");
+});
+
+it("rolls back all records and search indexes when a relationship has a missing endpoint", async () => {
+    const result = await call("write", {
+        nodes: [nodes[0]],
+        relations: [{ ...relation }],
+    });
+    expect(result.error).toBe("not_found");
+    expect((await call("search", {})).data?.nodes).toEqual([]);
+    expect((await seed()).error).toBeUndefined();
+});
+
+it("searches names, aliases, text and relationship evidence with all terms", async () => {
+    await seed();
+    for (const query of ["me", "hiking", "Orchid", "Planning greenhouse"]) {
+        expect((await call("search", { query })).data?.nodes).not.toHaveLength(
+            0,
+        );
+    }
+    expect(
+        (await call("search", { query: "hiking nonexistent" })).data?.nodes,
+    ).toEqual([]);
+    expect((await call("search", { query: '***"' })).data?.nodes).toEqual([]);
+    const first = await call("search", { limit: 1 });
+    expect(first.data?.nextOffset).toBe(1);
+    const second = await call("search", {
+        limit: 1,
+        offset: first.data?.nextOffset,
+    });
+    expect(second.data?.nextOffset).toBeNull();
+    expect(nodeVersion(first.data, "project")).toEqual(expect.any(String));
+    expect(nodeVersion(second.data, "user")).toEqual(expect.any(String));
+});
+
+it("counts relationships and distinct targets exactly and pages neighborhoods", async () => {
+    await seed();
+    for (let batch = 0; batch < 2; batch++) {
+        expect(
+            (
+                await call("write", {
+                    relations: Array.from({ length: 20 }, (_, i) => ({
+                        ...relation,
+                        predicate: `link_${batch}_${i.toString().padStart(2, "0")}`,
+                    })),
+                })
+            ).error,
+        ).toBeUndefined();
+    }
+    expect(
+        (await call("search", { mode: "count", subject: "user" })).data?.count,
+    ).toBe(41);
     expect(
         (
             await call("search", {
                 mode: "count",
-                predicate: "owns",
+                subject: "user",
                 countUnit: "targets",
             })
         ).data?.count,
     ).toBe(1);
-    const first = await call("search", { limit: 1 });
-    const second = await call("search", {
-        limit: 1,
-        cursor: first.data?.nextCursor,
-    });
-    expect(second.data?.truncated).toBe(false);
     expect(
-        new Set(
-            [
-                ...(first.data?.nodes as { id: string }[]),
-                ...(second.data?.nodes as { id: string }[]),
-            ].map((v) => v.id),
-        ).size,
-    ).toBe(2);
+        (await call("search", { mode: "count", predicate: "works_on" })).data
+            ?.count,
+    ).toBe(1);
+    const first = await call("read", { ids: ["user"] });
+    expect(first.data?.relations).toHaveLength(32);
+    expect(first.data?.nextRelationOffset).toBe(32);
+    const next = await call("read", {
+        ids: ["user"],
+        relationOffset: first.data?.nextRelationOffset,
+    });
+    expect(next.data?.relations).toHaveLength(9);
+    expect(next.data?.nextRelationOffset).toBeNull();
+    expect(next.data?.truncated).toBe(false);
 });
 
-it("treats malformed cursors as invalid input and finds exact node IDs", async () => {
+it("bounds output while always making progress for maximum escaped field sizes", async () => {
+    const large = {
+        id: "large",
+        name: "\u0000".repeat(256),
+        text: "\u0000".repeat(4096),
+        aliases: Array.from({ length: 16 }, () => "\u0000".repeat(128)),
+    };
+    await call("write", { nodes: [large] });
     await call("write", {
-        idempotencyKey: "id",
-        nodes: [{ id: "unique-id", name: "Other" }],
-    });
-    expect(
-        (await call("search", { query: "unique-id" })).data?.nodes,
-    ).toHaveLength(1);
-    expect((await call("search", { cursor: "%%%" })).error).toBe(
-        "invalid_request",
-    );
-});
-
-it("requires all search terms instead of injecting unrelated context", async () => {
-    await call("write", {
-        idempotencyKey: "precise",
-        nodes: [
-            { id: "colleague", name: "Sam", text: "Sam maintains the parser" },
-            { id: "cousin", name: "Sam", text: "Sam lives in Rome" },
-            {
-                id: "meeting",
-                name: "Staff meeting",
-                text: "Staff meeting starts on Thursday",
-            },
-            {
-                id: "noise",
-                name: "Other meeting",
-                text: "Routine meeting logs",
-            },
-        ],
-    });
-    expect((await call("search", { query: "Sam parser" })).data?.nodes).toEqual(
-        [expect.objectContaining({ id: "colleague" })],
-    );
-    expect(
-        (await call("search", { query: "Staff meeting Thursday" })).data?.nodes,
-    ).toHaveLength(1);
-    const miss = await call("search", { query: "nonexistent parser" });
-    expect(miss.data?.nodes).toEqual([]);
-    expect(miss.data?.contextStatus).toBe("no_evidence");
-    expect(miss.data?.absenceProven).toBe(false);
-});
-it("uses bounded caller reformulations without inventing semantic matches", async () => {
-    await call("write", {
-        idempotencyKey: "variants",
-        nodes: [
-            {
-                id: "n1",
-                name: "Food limits",
-                text: "Avoid almonds",
-                aliases: ["diet restrictions"],
-            },
-            { id: "n2", name: "Coding tools", text: "Rust for automation" },
-            {
-                id: "noise",
-                name: "Admin",
-                text: "Procedures for office management",
-            },
-        ],
-    });
-    const found = await call("search", {
-        query: "What should I avoid eating?",
-        queryVariants: ["diet restrictions", "food limits"],
-    });
-    expect(found.data?.nodes).toEqual([expect.objectContaining({ id: "n1" })]);
-    expect(found.data?.retrieval).toMatchObject({
-        method: "lexical_graph",
-        semanticVerification: false,
-    });
-    const page = await call("search", {
-        queryVariants: ["food", "coding"],
-        limit: 1,
-    });
-    expect(page.data?.truncated).toBe(true);
-    expect(
-        (
-            await call("search", {
-                queryVariants: ["food", "coding"],
-                limit: 1,
-                cursor: page.data?.nextCursor,
-            })
-        ).data?.nodes,
-    ).toHaveLength(1);
-    expect(
-        (
-            await call("search", {
-                queryVariants: ["food", "management"],
-                limit: 1,
-                cursor: page.data?.nextCursor,
-            })
-        ).error,
-    ).toBe("restart_required");
-    expect(
-        (await call("search", { query: Array(17).fill("food").join(" ") }))
-            .error,
-    ).toBe("limit_exceeded");
-});
-it("refuses stale context packets and exposes missing IDs and provenance", async () => {
-    await call("write", {
-        idempotencyKey: "first",
-        nodes: [{ id: "setting", name: "Setting", text: "Value four" }],
-    });
-    const found = await call("search", { query: "setting" });
-    const packet = await call("read", {
-        ids: ["setting", "missing"],
-        expectedHead: found.data?.head,
-    });
-    expect(packet.data?.missingIds).toEqual(["missing"]);
-    expect(packet.data?.trust).toBe("untrusted_memory");
-    expect((packet.data?.nodes as unknown[])[0]).toMatchObject({
-        validTime: { kind: "unknown" },
-        recordedAt: expect.any(Number),
+        nodes: [{ ...large, id: "other" }],
     });
     await call("write", {
-        idempotencyKey: "second",
-        nodes: [
-            {
-                id: "setting",
-                name: "Setting",
-                text: "Value six",
-                expectedVersion: 1,
-            },
-        ],
-    });
-    expect(
-        (
-            await call("read", {
-                ids: ["setting"],
-                expectedHead: found.data?.head,
-            })
-        ).error,
-    ).toBe("restart_required");
-    expect((await call("search", { query: "four" })).data?.nodes).toEqual([]);
-    expect((await call("search", { query: "six" })).data?.nodes).toHaveLength(
-        1,
-    );
-});
-
-it("reports omitted graph evidence instead of claiming a complete neighborhood", async () => {
-    await call("write", {
-        idempotencyKey: "nodes",
-        nodes: [
-            { id: "root", name: "Root" },
-            { id: "leaf", name: "Leaf" },
-        ],
-    });
-    const edges = Array.from({ length: 33 }, (_, i) => ({
-        id: `edge-${i}`,
-        subject: "root",
-        predicate: "linked",
-        target: "leaf",
-        evidence: `Source statement ${i}`,
-    }));
-    await call("write", {
-        idempotencyKey: "edges-1",
-        relations: edges.slice(0, 32),
-    });
-    await call("write", {
-        idempotencyKey: "edges-2",
-        relations: edges.slice(32),
-    });
-    const packet = await call("read", { ids: ["root"] });
-    expect(packet.data?.relations).toHaveLength(32);
-    expect(packet.data?.truncated).toBe(true);
-    expect(packet.data?.omissions).toEqual([{ id: "root", kind: "relations" }]);
-});
-
-it("rejects malformed cursor records at the boundary", async () => {
-    for (const cursor of [
-        null,
-        [],
-        {},
-        { head: 0, offset: -1, digest: "bad" },
-    ]) {
-        expect(
-            (await call("search", { cursor: btoa(JSON.stringify(cursor)) }))
-                .error,
-        ).toBe("invalid_request");
-    }
-});
-
-it("discovers relation evidence and supplies its current graph context in one search", async () => {
-    await call("write", {
-        idempotencyKey: "evidence",
-        nodes: [
-            { id: "app", name: "Orchid", text: "Application" },
-            { id: "host", name: "Platform", text: "Workers deployment" },
-        ],
-        relations: [
-            {
-                id: "deployment",
-                subject: "app",
-                predicate: "runs_on",
-                target: "host",
-                evidence: "Production release uses the edge runtime",
-            },
-        ],
-    });
-    const result = await call("search", { query: "edge runtime", limit: 1 });
-    expect(result.data?.nodes).toHaveLength(1);
-    expect(result.data?.relations).toEqual([
-        expect.objectContaining({
-            id: "deployment",
-            evidence: "Production release uses the edge runtime",
-            version: 1,
-        }),
-    ]);
-    expect(result.data?.linkedNodes).toHaveLength(1);
-    expect(result.data?.retrieval).toMatchObject({
-        method: "lexical_graph",
-        graphDepth: 1,
-        semanticVerification: false,
-    });
-    const next = await call("search", {
-        query: "edge runtime",
-        limit: 1,
-        cursor: result.data?.nextCursor,
-    });
-    expect(next.data?.nodes).toHaveLength(1);
-    expect(next.data?.nodes).not.toEqual(result.data?.nodes);
-    expect(
-        (await call("search", { query: "edge runtime" }, "other-owner")).data
-            ?.nodes,
-    ).toEqual([]);
-    await call("write", {
-        idempotencyKey: "correct-evidence",
-        relations: [
-            {
-                id: "deployment",
-                subject: "app",
-                predicate: "runs_on",
-                target: "host",
-                evidence: "Production release uses a container cluster",
-                expectedVersion: 1,
-            },
-        ],
-    });
-    expect(
-        (await call("search", { query: "edge runtime" })).data?.nodes,
-    ).toEqual([]);
-    expect(
-        (await call("search", { query: "container cluster" })).data?.relations,
-    ).toEqual([expect.objectContaining({ version: 2 })]);
-    expect(
-        (
-            await call("search", {
-                query: "edge runtime",
-                limit: 1,
-                cursor: result.data?.nextCursor,
-            })
-        ).error,
-    ).toBe("restart_required");
-    await call("write", {
-        idempotencyKey: "retract-evidence",
-        relations: [
-            {
-                id: "deployment",
-                subject: "app",
-                predicate: "runs_on",
-                target: "host",
-                evidence: "Production release uses a container cluster",
-                status: "retracted",
-                expectedVersion: 2,
-            },
-        ],
-    });
-    expect(
-        (await call("search", { query: "container cluster" })).data?.nodes,
-    ).toEqual([]);
-    expect((await call("search", { query: "Orchid" })).data?.relations).toEqual(
-        [],
-    );
-});
-
-it("bounds search neighborhoods and reports omitted evidence without expanding unrelated history", async () => {
-    await call("write", {
-        idempotencyKey: "context",
-        nodes: [
-            { id: "root", name: "Central" },
-            { id: "leaf", name: "Leaf" },
-            { id: "other", name: "Independent" },
-        ],
-        relations: Array.from({ length: 6 }, (_, i) => ({
-            id: `link-${i}`,
-            subject: "root",
-            predicate: "linked",
-            target: "leaf",
-            evidence: `Support ${i}`,
+        relations: Array.from({ length: 3 }, (_, i) => ({
+            subject: "large",
+            predicate: `p${i}`,
+            target: "other",
+            evidence: "\u0000".repeat(2048),
         })),
     });
-    const result = await call("search", { query: "Central", limit: 1 });
-    expect(result.data?.nodes).toEqual([
-        expect.objectContaining({ id: "root" }),
-    ]);
-    expect(result.data?.relations).toHaveLength(4);
-    expect(result.data?.linkedNodes).toEqual([
-        expect.objectContaining({ id: "leaf" }),
-    ]);
-    expect(result.data?.contextTruncated).toBe(true);
-    expect(result.data?.omissions).toContainEqual({
-        id: "root",
-        kind: "relations",
-    });
-    expect(result.data?.nextCursor).toBeNull();
+    const first = await call("read", { ids: ["large", "other"] });
+    expect(first.data?.nodes).toHaveLength(1);
+    expect(first.data?.missingIds).toEqual([]);
+    expect(first.data?.nextRelationOffset).toBe(1);
+    expect(first.data?.truncated).toBe(true);
+    const second = await call("read", { ids: ["large"], relationOffset: 1 });
+    expect(second.data?.relations).toHaveLength(1);
+    expect(second.data?.nextRelationOffset).toBe(2);
     expect(
-        new TextEncoder().encode(JSON.stringify(result.data)).length,
-    ).toBeLessThan(65_536);
-    const evidence = await call("search", { query: "Support 5", limit: 1 });
-    expect(evidence.data?.relations).toContainEqual(
-        expect.objectContaining({ id: "link-5" }),
-    );
+        new TextEncoder().encode(JSON.stringify(first.data)).length,
+    ).toBeLessThan(80_000);
+    const search = await call("search", {});
+    expect(search.data?.nextOffset).toBe(1);
+    expect((await call("search", { offset: 1 })).data?.nextOffset).toBeNull();
 });
 
-it("rolls back relation discovery together with a rejected graph batch", async () => {
-    await call("write", { idempotencyKey: "seed", nodes });
-    const result = await call("write", {
-        idempotencyKey: "rejected",
-        relations: [
-            {
-                id: "rolled-edge",
-                subject: "user",
-                predicate: "owns",
-                target: "project",
-                evidence: "Rollback marker",
-            },
-            {
-                id: "invalid-edge",
-                subject: "user",
-                predicate: "owns",
-                target: "absent",
-                evidence: "Invalid endpoint",
-            },
-        ],
+it("rejects ownership overrides, empty writes and excessive input", async () => {
+    for (const input of [
+        {},
+        { nodes, owner: "someone-else" },
+        {
+            nodes: [{ ...nodes[0], text: "x".repeat(4097) }],
+        },
+    ]) {
+        expect((await call("write", input)).result.isError).toBe(true);
+    }
+    expect(
+        (
+            await call("write", {
+                nodes: Array.from({ length: 8 }, (_, i) => ({
+                    id: `n${i}`,
+                    name: "Large",
+                    text: "記".repeat(4096),
+                })),
+            })
+        ).error,
+    ).toBe("limit_exceeded");
+});
+
+it("enforces write and read limits and resets them each minute", async () => {
+    await runInDurableObject(ownerStub(), async (_instance, state) => {
+        state.storage.sql.exec(
+            "INSERT INTO rate_limits VALUES ('write',0,120),('read',0,600)",
+        );
+        const write = graphWriteSchema.parse({ nodes: [nodes[0]] });
+        const read = graphReadSchema.parse({ ids: ["user"] });
+        expect(() => graphOperation(state.storage, "write", write, 0)).toThrow(
+            "rate_limited",
+        );
+        expect(() => graphOperation(state.storage, "read", read, 0)).toThrow(
+            "rate_limited",
+        );
+        expect(() =>
+            graphOperation(state.storage, "write", write, 60_000),
+        ).not.toThrow();
+        expect(() =>
+            graphOperation(state.storage, "read", read, 60_000),
+        ).not.toThrow();
     });
-    expect(result.error).toBe("not_found");
-    expect(
-        (await call("search", { query: "Rollback marker" })).data?.nodes,
-    ).toEqual([]);
-    expect(
-        (await call("read", { ids: ["rolled-edge"] })).data?.missingIds,
-    ).toEqual(["rolled-edge"]);
+});
+
+it("rolls back a write that would exceed the current-record quota", async () => {
+    await runInDurableObject(ownerStub(), async (_instance, state) => {
+        state.storage.sql.exec(
+            "WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<20000) INSERT INTO graph_nodes SELECT 'n'||x,'Node','','[]',?,0 FROM n",
+            crypto.randomUUID(),
+        );
+        expect(() =>
+            graphOperation(
+                state.storage,
+                "write",
+                graphWriteSchema.parse({ nodes: [nodes[0]] }),
+                0,
+            ),
+        ).toThrow("quota_exceeded");
+        expect(
+            state.storage.sql
+                .exec("SELECT COUNT(*) AS count FROM graph_nodes")
+                .one().count,
+        ).toBe(20000);
+        expect(
+            state.storage.sql
+                .exec(
+                    "SELECT COUNT(*) AS count FROM graph_fts WHERE graph_fts MATCH 'hiking'",
+                )
+                .one().count,
+        ).toBe(0);
+    });
 });

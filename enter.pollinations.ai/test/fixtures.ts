@@ -68,7 +68,6 @@ export const createApiKeyViaApi = async (
         type?: "secret" | "publishable";
         allowedModels?: string[];
         accountPermissions?: string[];
-        memoryPermissions?: string[];
     },
 ) => {
     const response = await SELF.fetch(

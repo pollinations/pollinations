@@ -2,43 +2,24 @@ import { evictDurableObject, runInDurableObject, SELF } from "cloudflare:test";
 import { expect, it } from "vitest";
 import { call, connect, ownerStub } from "./test-client";
 
-it("negotiates the MCP SDK protocol and exposes only the granted tools", async () => {
-    for (const [permissions, tools] of [
-        [
-            ["read", "write"],
-            ["read", "search", "write"],
-        ],
-        [["read"], ["read", "search"]],
-        [["write"], ["write"]],
-    ]) {
-        const client = await connect("tools", "key", permissions);
+it("exposes all memory tools for an authenticated user", async () => {
+    const client = await connect();
+    try {
         expect(
             (await client.listTools()).tools.map((tool) => tool.name).sort(),
-        ).toEqual(tools);
+        ).toEqual(["read", "search", "write"]);
+    } finally {
         await client.close();
     }
 });
 
-it("requires the complete gateway identity and rejects alternate routes", async () => {
+it("requires the gateway user identity and rejects alternate routes", async () => {
     const response = await SELF.fetch("https://mcp.internal/", {
         method: "POST",
         body: "{}",
     });
     expect(response.status).toBe(401);
     expect((await SELF.fetch("https://mcp.internal/mcp")).status).toBe(404);
-    expect(
-        (
-            await SELF.fetch("https://mcp.internal/", {
-                method: "POST",
-                body: "{}",
-                headers: {
-                    "x-pollinations-user-id": "user",
-                    "x-pollinations-vault-actor": '["key",null]',
-                    "x-pollinations-vault-permissions": '["admin"]',
-                },
-            })
-        ).status,
-    ).toBe(401);
 });
 
 it("bounds streamed requests even without Content-Length", async () => {
@@ -47,8 +28,6 @@ it("bounds streamed requests even without Content-Length", async () => {
         headers: {
             "content-type": "application/json",
             "x-pollinations-user-id": "bounded",
-            "x-pollinations-vault-actor": '["key",null]',
-            "x-pollinations-vault-permissions": '["write"]',
         },
         body: new ReadableStream({
             start(controller) {
@@ -60,40 +39,37 @@ it("bounds streamed requests even without Content-Length", async () => {
     expect(response.status).toBe(413);
 });
 
-it("arbitrates concurrent exact retries into one revision and receipt", async () => {
-    const command = {
-        idempotencyKey: "concurrent",
-        nodes: [{ id: "fact", name: "Fact" }],
-    };
-    const [first, second] = await Promise.all([
+it("rejects a repeated creation instead of overwriting it", async () => {
+    const command = { nodes: [{ id: "fact", name: "Fact" }] };
+    const results = await Promise.all([
         call("write", command),
         call("write", command),
     ]);
-    expect(first.data?.head).toBe(1);
-    expect(second.data).toEqual(first.data);
-    const read = await call("read", { ids: ["fact"], includeHistory: true });
-    expect(read.data?.history).toHaveLength(1);
+    expect(results.filter((r) => !r.error)).toHaveLength(1);
+    expect(results.find((r) => r.error)?.error).toBe("version_conflict");
+    expect((await call("read", { ids: ["fact"] })).data?.nodes).toHaveLength(1);
 });
 
-it("rolls back the complete write on receipt failure and preserves committed memory across eviction", async () => {
+it("rolls back a partially completed write on SQL failure and preserves committed memory across eviction", async () => {
     const stub = ownerStub();
     await runInDurableObject(stub, (_instance, state) => {
         state.storage.sql.exec(
-            "CREATE TRIGGER fail_receipt BEFORE INSERT ON receipts BEGIN SELECT RAISE(ABORT,'test'); END",
+            "CREATE TRIGGER fail_node BEFORE INSERT ON graph_nodes WHEN new.id='second' BEGIN SELECT RAISE(ABORT,'test'); END",
         );
     });
     const command = {
-        idempotencyKey: "atomic",
-        nodes: [{ id: "fact", name: "Persistent fact" }],
+        nodes: [
+            { id: "fact", name: "Persistent fact" },
+            { id: "second", name: "Second" },
+        ],
     };
     expect((await call("write", command)).error).toBe("internal");
     await runInDurableObject(stub, (_instance, state) => {
         for (const table of [
             "graph_nodes",
             "graph_relations",
-            "graph_revisions",
+            "graph_relation_fts",
             "graph_fts",
-            "receipts",
         ]) {
             expect(
                 state.storage.sql
@@ -101,17 +77,12 @@ it("rolls back the complete write on receipt failure and preserves committed mem
                     .one().count,
             ).toBe(0);
         }
-        expect(
-            state.storage.sql
-                .exec("SELECT value FROM meta WHERE key='graph_head'")
-                .one().value,
-        ).toBe("0");
-        state.storage.sql.exec("DROP TRIGGER fail_receipt");
+        state.storage.sql.exec("DROP TRIGGER fail_node");
     });
-    const first = await call("write", command);
-    expect(first.data?.head).toBe(1);
+    expect((await call("write", command)).error).toBeUndefined();
+    const before = await call("read", { ids: ["fact"] });
     await evictDurableObject(stub);
-    expect((await call("write", command)).data).toEqual(first.data);
+    expect((await call("read", { ids: ["fact"] })).data).toEqual(before.data);
     expect(
         (await call("search", { query: "Persistent fact" })).data?.nodes,
     ).toHaveLength(1);

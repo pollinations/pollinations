@@ -16,25 +16,13 @@ export function ownerStub(owner = "hive-owner") {
     );
 }
 
-export async function connect(
-    owner = "hive-owner",
-    credential = "agent-a",
-    permissions = ["read", "write"],
-) {
+export async function connect(owner = "hive-owner") {
     const client = new Client({ name: "vault-test", version: "1" });
     await client.connect(
         new StreamableHTTPClientTransport(new URL("https://mcp.internal/"), {
             fetch: (input, init) => {
                 const headers = new Headers(init?.headers);
                 headers.set("x-pollinations-user-id", `${namespace}:${owner}`);
-                headers.set(
-                    "x-pollinations-vault-actor",
-                    JSON.stringify([credential, null]),
-                );
-                headers.set(
-                    "x-pollinations-vault-permissions",
-                    JSON.stringify(permissions),
-                );
                 return SELF.fetch(input, { ...init, headers });
             },
         }),
@@ -42,18 +30,8 @@ export async function connect(
     return client;
 }
 
-export async function call(
-    name: string,
-    args: unknown,
-    owner = "hive-owner",
-    credential = "agent-a",
-    permissions = ["read", "write"],
-) {
-    const client = await connect(
-        owner,
-        credential,
-        permissions.filter((p) => p !== "search"),
-    );
+export async function call(name: string, args: unknown, owner = "hive-owner") {
+    const client = await connect(owner);
     try {
         const result = await client.callTool({
             name,

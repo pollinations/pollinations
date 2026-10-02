@@ -263,19 +263,16 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    // The token inherits the parent's model and memory access but never its account scope:
+    // The token inherits the parent's model access but never its account scope:
     // it is a generation credential held by a third party, so it must not be
     // able to manage the owner's keys, endpoints or account.
-    const { models, memory } = parent.apiKey.permissions ?? {};
+    const models = parent.apiKey.permissions?.models;
 
     return {
         ...parent,
         apiKey: {
             ...parent.apiKey,
-            permissions:
-                models || memory
-                    ? { ...(models && { models }), ...(memory && { memory }) }
-                    : undefined,
+            permissions: models ? { models } : undefined,
         },
         agentRun: claims,
     };
@@ -338,7 +335,6 @@ async function loadActiveApiKeyAuthResult(opts: {
             name: row.apiKey.name ?? undefined,
             permissions: normalizePermissions(
                 parseMetadata(row.apiKey.permissions),
-                row.apiKey.prefix === "sk",
             ),
             metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
             pollenBalance: row.apiKey.pollenBalance ?? null,
@@ -363,7 +359,6 @@ async function loadActiveApiKeyAuthResult(opts: {
 
 function normalizePermissions(
     value: unknown,
-    allowsMemory: boolean,
 ): Record<string, string[]> | undefined {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
         return undefined;
@@ -371,7 +366,6 @@ function normalizePermissions(
 
     const permissions: Record<string, string[]> = {};
     for (const [key, scopes] of Object.entries(value)) {
-        if (key === "memory" && !allowsMemory) continue;
         if (!Array.isArray(scopes)) continue;
         const safeScopes = scopes.filter(
             (scope): scope is string => typeof scope === "string",

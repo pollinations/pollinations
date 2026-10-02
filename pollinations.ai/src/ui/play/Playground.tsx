@@ -15,6 +15,7 @@ import {
     ButtonGroup,
     ChevronIcon,
     ClockIcon,
+    CodeBlock,
     cn,
     Dialog,
     DownloadIcon,
@@ -25,6 +26,7 @@ import {
     FileUpload,
     type FileUploadProps,
     ImageIcon,
+    Input,
     LockIcon,
     MicIcon,
     RobotIcon,
@@ -657,7 +659,10 @@ export function Playground() {
     const [selectedResolution, setSelectedResolution] = useState(
         search.size ?? "",
     );
+    const [width, setWidth] = useState(search.width ?? "");
+    const [height, setHeight] = useState(search.height ?? "");
     const [duration, setDuration] = useState(Number(search.duration) || 0);
+    const [seed, setSeed] = useState(search.seed ?? "");
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
     const [selectedVoice, setSelectedVoice] = useState(search.voice ?? "");
@@ -701,7 +706,10 @@ export function Playground() {
             model: selectedModel,
             prompt,
             size: selectedResolution,
+            width,
+            height,
             duration: duration ? String(duration) : undefined,
+            seed,
             voice: selectedVoice,
         });
     }, [
@@ -711,7 +719,10 @@ export function Playground() {
         selectedModel,
         prompt,
         selectedResolution,
+        width,
+        height,
         duration,
+        seed,
         selectedVoice,
     ]);
 
@@ -883,6 +894,39 @@ export function Playground() {
     });
     const videoDuration =
         currentModel?.category === "video" ? mediaSettings.duration : undefined;
+    const isVisualModel =
+        currentModel?.category === "image" ||
+        currentModel?.category === "video";
+    // Few image models declare resolutions, but /image accepts width and
+    // height for all of them. Blank keeps the model's default size.
+    const customSize =
+        currentModel?.category === "image" &&
+        currentModel.resolutions.length === 0;
+    const imageSize = customSize
+        ? {
+              width: Number(width) || undefined,
+              height: Number(height) || undefined,
+          }
+        : {};
+    // Blank means a new random seed each run; a fixed seed repeats a result.
+    const fixedSeed = Number(seed) || undefined;
+    // The same request as a GET URL, without uploaded reference images.
+    const apiUrl = isVisualModel
+        ? `${API_BASE_URL}/${currentModel.category}/${encodeURIComponent(
+              prompt.trim() || "your-prompt-here",
+          )}?${new URLSearchParams(
+              Object.entries({
+                  model: currentModel.id,
+                  ...imageSize,
+                  resolution: mediaSettings.resolution,
+                  duration: videoDuration?.value,
+                  seed: fixedSeed,
+                  key: "YOUR_API_KEY",
+              }).flatMap(([name, value]) =>
+                  value ? [[name, String(value)]] : [],
+              ),
+          )}`
+        : null;
 
     useEffect(() => {
         setReferenceImages((current) => {
@@ -945,7 +989,7 @@ export function Playground() {
                 apiKey,
                 baseUrl: API_BASE_URL,
             });
-            const requestSeed = randomGenerationSeed();
+            const requestSeed = fixedSeed ?? randomGenerationSeed();
             const referenceUrls = supportsReferenceImages
                 ? await uploadReferenceImages(client, referenceImages)
                 : [];
@@ -966,6 +1010,7 @@ export function Playground() {
             if (currentModel.category === "image") {
                 const response = await client.image(trimmedPrompt, {
                     model: currentModel.id,
+                    ...imageSize,
                     resolution: mediaSettings.resolution,
                     seed: requestSeed,
                     referenceImage:
@@ -1283,152 +1328,182 @@ export function Playground() {
                             <UploadPrivacyNote />
                         )}
 
-                        {(currentModel?.category === "image" ||
-                            currentModel?.category === "video") &&
-                            (mediaSettings.resolution || videoDuration) && (
-                                <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-                                    {currentModel.resolutions.length > 1 ? (
-                                        <FieldStack
-                                            label="Resolution"
-                                            className="w-fit min-w-0 max-w-full"
-                                        >
-                                            <ButtonGroup aria-label="Resolution">
-                                                {currentModel.resolutions.map(
-                                                    (resolution) => (
-                                                        <TabButton
-                                                            key={resolution}
-                                                            active={
-                                                                mediaSettings.resolution ===
-                                                                resolution
-                                                            }
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                setSelectedResolution(
-                                                                    resolution,
-                                                                )
-                                                            }
-                                                        >
-                                                            {resolution.toUpperCase()}
-                                                        </TabButton>
-                                                    ),
-                                                )}
-                                            </ButtonGroup>
-                                        </FieldStack>
-                                    ) : mediaSettings.resolution ? (
+                        {isVisualModel && (
+                            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+                                {currentModel.resolutions.length > 1 ? (
+                                    <FieldStack
+                                        label="Resolution"
+                                        className="w-fit min-w-0 max-w-full"
+                                    >
+                                        <ButtonGroup aria-label="Resolution">
+                                            {currentModel.resolutions.map(
+                                                (resolution) => (
+                                                    <TabButton
+                                                        key={resolution}
+                                                        active={
+                                                            mediaSettings.resolution ===
+                                                            resolution
+                                                        }
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setSelectedResolution(
+                                                                resolution,
+                                                            )
+                                                        }
+                                                    >
+                                                        {resolution.toUpperCase()}
+                                                    </TabButton>
+                                                ),
+                                            )}
+                                        </ButtonGroup>
+                                    </FieldStack>
+                                ) : mediaSettings.resolution ? (
+                                    <MediaFact
+                                        label={`Fixed resolution: ${mediaSettings.resolution}`}
+                                    >
+                                        <ExpandIcon aria-hidden="true" />
+                                        <span aria-hidden="true">
+                                            {mediaSettings.resolution.toUpperCase()}
+                                        </span>
+                                    </MediaFact>
+                                ) : null}
+
+                                {videoDuration &&
+                                    (videoDuration.min === videoDuration.max ? (
                                         <MediaFact
-                                            label={`Fixed resolution: ${mediaSettings.resolution}`}
+                                            label={`Fixed duration: ${videoDuration.value} seconds`}
                                         >
-                                            <ExpandIcon aria-hidden="true" />
+                                            <ClockIcon aria-hidden="true" />
                                             <span aria-hidden="true">
-                                                {mediaSettings.resolution.toUpperCase()}
+                                                {videoDuration.value}s
                                             </span>
                                         </MediaFact>
-                                    ) : null}
-
-                                    {videoDuration &&
-                                        (videoDuration.min ===
-                                        videoDuration.max ? (
-                                            <MediaFact
-                                                label={`Fixed duration: ${videoDuration.value} seconds`}
-                                            >
-                                                <ClockIcon aria-hidden="true" />
-                                                <span aria-hidden="true">
-                                                    {videoDuration.value}s
-                                                </span>
-                                            </MediaFact>
-                                        ) : (
-                                            <FieldStack
-                                                label="Duration"
-                                                className="w-56 max-w-full"
-                                                action={
-                                                    <MediaFact
-                                                        label={`Selected duration: ${videoDuration.value} seconds`}
-                                                    >
-                                                        <ClockIcon aria-hidden="true" />
-                                                        <span aria-hidden="true">
-                                                            {
-                                                                videoDuration.value
-                                                            }
-                                                            s
-                                                        </span>
-                                                    </MediaFact>
-                                                }
-                                            >
-                                                <div className="flex flex-col gap-1">
-                                                    <Slider
-                                                        aria-label="Video duration"
-                                                        aria-valuetext={`${videoDuration.value} seconds`}
-                                                        style={
-                                                            {
-                                                                "--polli-slider-fill":
-                                                                    "var(--polli-color-text-soft)",
-                                                                "--polli-slider-track":
-                                                                    "var(--polli-color-bg-active)",
-                                                            } as CSSProperties
-                                                        }
-                                                        min={
-                                                            videoDuration
-                                                                .options.length
-                                                                ? 0
-                                                                : videoDuration.min
-                                                        }
-                                                        max={
+                                    ) : (
+                                        <FieldStack
+                                            label="Duration"
+                                            className="w-56 max-w-full"
+                                            action={
+                                                <MediaFact
+                                                    label={`Selected duration: ${videoDuration.value} seconds`}
+                                                >
+                                                    <ClockIcon aria-hidden="true" />
+                                                    <span aria-hidden="true">
+                                                        {videoDuration.value}s
+                                                    </span>
+                                                </MediaFact>
+                                            }
+                                        >
+                                            <div className="flex flex-col gap-1">
+                                                <Slider
+                                                    aria-label="Video duration"
+                                                    aria-valuetext={`${videoDuration.value} seconds`}
+                                                    style={
+                                                        {
+                                                            "--polli-slider-fill":
+                                                                "var(--polli-color-text-soft)",
+                                                            "--polli-slider-track":
+                                                                "var(--polli-color-bg-active)",
+                                                        } as CSSProperties
+                                                    }
+                                                    min={
+                                                        videoDuration.options
+                                                            .length
+                                                            ? 0
+                                                            : videoDuration.min
+                                                    }
+                                                    max={
+                                                        videoDuration.options
+                                                            .length
+                                                            ? videoDuration
+                                                                  .options
+                                                                  .length - 1
+                                                            : videoDuration.max
+                                                    }
+                                                    step={
+                                                        videoDuration.options
+                                                            .length
+                                                            ? 1
+                                                            : videoDuration.step
+                                                    }
+                                                    value={
+                                                        videoDuration.options
+                                                            .length
+                                                            ? videoDuration.options.indexOf(
+                                                                  videoDuration.value,
+                                                              )
+                                                            : videoDuration.value
+                                                    }
+                                                    onChange={(event) => {
+                                                        const value = Number(
+                                                            event.target.value,
+                                                        );
+                                                        setDuration(
                                                             videoDuration
                                                                 .options.length
                                                                 ? videoDuration
-                                                                      .options
-                                                                      .length -
-                                                                  1
-                                                                : videoDuration.max
-                                                        }
-                                                        step={
-                                                            videoDuration
-                                                                .options.length
-                                                                ? 1
-                                                                : videoDuration.step
-                                                        }
-                                                        value={
-                                                            videoDuration
-                                                                .options.length
-                                                                ? videoDuration.options.indexOf(
-                                                                      videoDuration.value,
-                                                                  )
-                                                                : videoDuration.value
-                                                        }
-                                                        onChange={(event) => {
-                                                            const value =
-                                                                Number(
-                                                                    event.target
-                                                                        .value,
-                                                                );
-                                                            setDuration(
-                                                                videoDuration
-                                                                    .options
-                                                                    .length
-                                                                    ? videoDuration
-                                                                          .options[
-                                                                          value
-                                                                      ]
-                                                                    : value,
-                                                            );
-                                                        }}
-                                                    />
-                                                    <div
-                                                        aria-hidden="true"
-                                                        className="flex justify-between text-xs tabular-nums text-theme-text-muted"
-                                                    >
-                                                        <span>
-                                                            {videoDuration.min}s
-                                                        </span>
-                                                        <span>
-                                                            {videoDuration.max}s
-                                                        </span>
-                                                    </div>
+                                                                      .options[
+                                                                      value
+                                                                  ]
+                                                                : value,
+                                                        );
+                                                    }}
+                                                />
+                                                <div
+                                                    aria-hidden="true"
+                                                    className="flex justify-between text-xs tabular-nums text-theme-text-muted"
+                                                >
+                                                    <span>
+                                                        {videoDuration.min}s
+                                                    </span>
+                                                    <span>
+                                                        {videoDuration.max}s
+                                                    </span>
                                                 </div>
-                                            </FieldStack>
-                                        ))}
-                                </div>
-                            )}
+                                            </div>
+                                        </FieldStack>
+                                    ))}
+
+                                {customSize &&
+                                    (
+                                        [
+                                            ["Width", width, setWidth],
+                                            ["Height", height, setHeight],
+                                        ] as const
+                                    ).map(([label, value, setValue]) => (
+                                        <FieldStack
+                                            key={label}
+                                            label={label}
+                                            className="w-28"
+                                        >
+                                            <Input
+                                                aria-label={label}
+                                                type="number"
+                                                min={1}
+                                                step={1}
+                                                placeholder="Auto"
+                                                value={value}
+                                                onChange={(event) =>
+                                                    setValue(event.target.value)
+                                                }
+                                            />
+                                        </FieldStack>
+                                    ))}
+
+                                <FieldStack label="Seed" className="w-36">
+                                    <Input
+                                        aria-label="Seed"
+                                        type="number"
+                                        min={1}
+                                        step={1}
+                                        placeholder="Random"
+                                        value={seed}
+                                        onChange={(event) =>
+                                            setSeed(event.target.value)
+                                        }
+                                    />
+                                </FieldStack>
+                            </div>
+                        )}
 
                         {error && <Alert intent="danger">{error}</Alert>}
 
@@ -1472,6 +1547,15 @@ export function Playground() {
                                       ? connectLabel
                                       : generateLabel}
                             </Button>
+                        )}
+
+                        {apiUrl && (
+                            <CodeBlock
+                                language="API URL"
+                                code={apiUrl}
+                                // A URL has no spaces to wrap at on phones.
+                                codeClassName="break-all"
+                            />
                         )}
                     </div>
 

@@ -14,7 +14,10 @@ export const PLAY_SEARCH_KEYS = [
     "model",
     "prompt",
     "size",
+    "width",
+    "height",
     "duration",
+    "seed",
     "voice",
 ] as const;
 

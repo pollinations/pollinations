@@ -18,13 +18,15 @@ model inference): usage rows use `type: infra`.
 - The balance is made of expiring lots. On the billing page, the clock button
   next to "Remaining Balance" opens the "View expiring credits" dialog, which
   lists each lot with its amount and expiry date ("Credits expiring soonest
-  are used first"). Two lots are in play: the Free tier's monthly credit, which
-  renews on the 1st, and a promotional grant with a much later expiry.
+  are used first"). The Free tier's monthly credit renews on the 1st, and a
+  promotional grant has a much later expiry.
 - Record one `balance` row per lot with the same `start`, `resource_sku`
   `current-balance-lot`, `resource_id` `lot-<expiry>`, and the expiry in `end`;
   the app merges them into one snapshot and consumes the earliest lot first.
-  A single `current-balance` row with an empty `end` leaves the credit terms
-  unverified and blocks the cash forecast.
+  First check that the displayed lots sum to the header balance. If they do
+  not, preserve the unlisted residual as an explicit funding/expiry gap rather
+  than assigning it to a displayed lot or adding an account-total row that
+  would double-count credit.
 - No payment method and no invoices exist, so usage rows are credit-funded
   (`credit` negative, `paid` 0), never cash.
 - Usage page with an explicit UTC range and spend view:
@@ -47,6 +49,12 @@ Collection steps:
 
 Known traps:
 
+- The signed-in team switcher can say `Thomas Haferlach's Personal` under
+  `elliot@myceli.ai`; the user confirmed this is the authorized business team
+  for Economics on 2026-10-02. Verify both before collection.
+- The expiring-lots dialog did not account for the full balance at the latest
+  check. Do not assume it lists every active credit or invent an expiry for
+  the residual.
 - Do not classify the promotional balance as prepaid cash.
 - A balance snapshot is not monthly usage evidence.
 - No activity was visible for August 19–26 at verification time.

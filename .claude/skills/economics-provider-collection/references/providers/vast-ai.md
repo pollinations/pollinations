@@ -64,6 +64,11 @@ Known traps:
 - The legacy `show invoices` rows use posting timestamps and can include hours
   outside the queried month. Use v1's clipped charges for calendar-month
   attribution; retain legacy rows only as a cross-check.
+- For a v1 instance described as `Charges - 1 day`, the provider can report
+  identical midnight `start` and `end` values despite positive billed hours.
+  Represent its reviewed item rows as that UTC day bucket with an exclusive
+  next-midnight end; retain the raw equal timestamps and billed hours in the
+  archived source. This bucket does not assert an exact instance lifetime.
 - Upload/download quantities are network units, not hours. Use their v1 item
   amounts within the same exact month query.
 - Always pass explicit `-s` and `-e`; the CLI can otherwise default to too narrow a window.

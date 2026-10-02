@@ -1,0 +1,36 @@
+{
+  "pr_number": 15745,
+  "title": "feat: add x402 prepaid API key purchases",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15745",
+  "merged_at": "2026-10-02T16:36:18Z",
+  "labels": [
+    "REVENUE"
+  ],
+  "pr_body_excerpt": "- Adds x402 checkout for existing Pollen packs. A settled payment returns a new budgeted `sk_` key; retries return the same key without double-crediting.\n- Uses the dedicated holding account and approved Weft seller-key bindings for Enter staging and production. The production key reuses the existing seller credential; it was not rotated.\n- Allows the synthetic holding account through the staging-only invite gate in Enter and Gen. Production has no allowlist.\n- Live staging (Oct 2): the earlier $2 purchase key read its balance and completed a non-cached text generation (HTTP 200, provider usage recorded); its balance fell from 2 to 1.999991 Pollen. Both staging Workers were then restored to their prior versions.\n- Focused x402 and staging-access tests passed (18/18); Enter and Gen typechecks and staging builds passed. Production Worker is unchanged. Promote to production separately through GitHub Actions after merge.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pollen packs grow keys",
+    "blurb": "An x402 checkout path pairs Pollen packs with fresh API keys. If a payment response gets retried, the same key comes back—no duplicate Pollen.",
+    "summary": "Adds x402 checkout for existing Pollen packs: a settled payment creates a budgeted sk_ API key, and retries return that same key without crediting it twice.",
+    "impact": "Developers get a budgeted sk_ key from a completed x402 Pollen-pack purchase, with payment retries resolving to the original key.",
+    "keywords": [
+      "x402",
+      "Pollen",
+      "checkout",
+      "API keys",
+      "payments",
+      "idempotency"
+    ],
+    "visual_concept": "Depict an x402 purchase as a small payment token becoming a key beside a Pollen-filled flower pot. Polli helps the CRT robot inspect the key; a looping arrow returning to the same key represents safe retries.",
+    "image_prompt": "In a cozy pixel art garden checkout, Polli, wearing a tiny cashier visor, helps a cheerful CRT monitor robot turn a payment token into one sk_ key beside a Pollen-filled flower pot; a gentle looping arrow points back to that same key. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, never oversized or dominating; strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent lime green (#ecf874) glow, warm cream and lavender surroundings, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-15745.jpg",
+    "prompt": "In a cozy pixel art garden checkout, Polli, wearing a tiny cashier visor, helps a cheerful CRT monitor robot turn a payment token into one sk_ key beside a Pollen-filled flower pot; a gentle looping arrow points back to that same key. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, never oversized or dominating; strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent lime green (#ecf874) glow, warm cream and lavender surroundings, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-02T16:37:24.605132+00:00"
+}

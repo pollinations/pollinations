@@ -56,9 +56,6 @@ export async function uploadUnlistedMedia(
     try {
         await Promise.all([
             env.MEDIA_BUCKET.put(id, upload.readable, {
-                ...(input.id && {
-                    onlyIf: new Headers({ "If-None-Match": "*" }),
-                }),
                 httpMetadata: {
                     contentType,
                     cacheControl: IMMUTABLE_CACHE_CONTROL,

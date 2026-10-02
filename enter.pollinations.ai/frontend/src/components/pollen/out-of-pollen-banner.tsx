@@ -15,15 +15,15 @@ export const OutOfPollenBanner: FC<OutOfPollenBannerProps> = ({
 }) => {
     if (tierBalance + packBalance >= BALANCE_DISPLAY_EPSILON) return null;
     return (
-        <Alert intent="advisory" title="Out of Pollen" className="mb-4">
-            API requests fail until you add Pollen.{" "}
+        <Alert intent="advisory" title="Out of credit" className="mb-4">
+            API requests fail until you add credit.{" "}
             <InlineLink
                 as={Link}
                 to="/pollen"
                 hash="buy-pollen"
                 external={false}
             >
-                Buy Pollen
+                Buy credit
             </InlineLink>{" "}
             or{" "}
             <InlineLink as={Link} to="/quests" external={false}>

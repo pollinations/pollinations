@@ -1,168 +1,293 @@
-import type {
-    Message,
-    MessageContentPart,
-    Pollinations,
-} from "@pollinations/sdk";
-import type { ChatTransport, FileUIPart, UIMessage, UIMessageChunk } from "ai";
 import {
-    audioFormat,
-    buildUserContent,
-    errorMessage,
-    fileKind,
-    isCancellation,
-} from "./chat-models";
+    type ChatTransport,
+    type InferUIMessageChunk,
+    jsonSchema,
+    parseJsonEventStream,
+    type UIMessage,
+} from "ai";
+import { API_BASE_URL } from "../../config";
+import { errorMessage, isCancellation } from "./chat-models";
 
-type PollinationsChatData = {
-    activity: { name: string };
-    responseStatus: { status: "cancelled" };
+/** A raw Responses output item. Replies send theirs back unchanged. */
+type OutputItem = { type: string; id?: string };
+
+/** A tool the agent ran on the server. */
+interface McpCall {
+    type: "mcp_call";
+    id: string;
+    name: string;
+    arguments: string;
+    status: string;
+    output: string | null;
+    error: { message: string } | { content: unknown } | null;
+}
+
+type ResponseEvent =
+    | { type: "response.output_text.delta"; item_id: string; delta: string }
+    | {
+          type: "response.output_item.added" | "response.output_item.done";
+          item: OutputItem;
+      }
+    | {
+          type: "response.completed" | "response.incomplete";
+          response: { output: OutputItem[] };
+      }
+    | {
+          type: "response.failed";
+          response: { error: { message: string } | null };
+      }
+    | { type: "error"; message: string };
+
+type ChatMetadata = { output: OutputItem[] };
+
+type ChatData = { responseStatus: { status: "cancelled" } };
+
+export type PollinationsUIMessage = UIMessage<ChatMetadata, ChatData>;
+
+type ChatChunk = InferUIMessageChunk<PollinationsUIMessage>;
+
+type McpContent = {
+    type: string;
+    text?: string;
+    uri?: string;
+    mimeType?: string;
 };
 
-export type PollinationsUIMessage = UIMessage<unknown, PollinationsChatData>;
-
-type PollinationsChatClient = Pick<Pollinations, "chatStream">;
-
-interface PollinationsChatTransportOptions {
-    client: PollinationsChatClient | null;
-    model: string | null;
+function isMcpCall(item: OutputItem): item is McpCall {
+    return item.type === "mcp_call";
 }
 
-function messageText(message: PollinationsUIMessage): string {
-    return message.parts
-        .flatMap((part) => (part.type === "text" ? [part.text] : []))
-        .join("\n");
-}
-
-/** Uploaded files go by URL; audio travels inline because the API takes it as base64. */
-function filePart({
-    url,
-    mediaType,
-    filename = "",
-}: FileUIPart): MessageContentPart {
-    const file = { name: filename, type: mediaType };
-    const kind = fileKind(file);
-    if (kind === "image")
-        return { type: "image_url", image_url: { url, mime_type: mediaType } };
-    if (kind === "video")
-        return { type: "video_url", video_url: { url, mime_type: mediaType } };
-    if (kind === "audio") {
-        const format = audioFormat(file);
-        if (!format)
-            throw new Error(`${filename} uses an unsupported audio format.`);
-        return {
-            type: "input_audio",
-            input_audio: { data: url.slice(url.indexOf(",") + 1), format },
-        };
+function parseJson(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return text;
     }
-    return {
-        type: "file",
-        file: { file_url: url, file_name: filename, mime_type: mediaType },
-    };
 }
 
-/**
- * Convert UI messages to the OpenAI-compatible Pollinations input. Agent
- * replies go back verbatim, tool markup included.
- */
-export function messagesForPollinations(
-    messages: PollinationsUIMessage[],
-): Message[] {
-    return messages.flatMap((message): Message[] => {
-        const text = messageText(message);
-        if (message.role === "user") {
-            return [
-                {
-                    role: "user",
-                    content: buildUserContent(
-                        text,
-                        message.parts.flatMap((part) =>
-                            part.type === "file" ? [filePart(part)] : [],
-                        ),
-                    ),
-                },
-            ];
-        }
-        const content = text.trim();
-        return content ? [{ role: message.role, content }] : [];
+function mcpContent(value: unknown): McpContent[] | undefined {
+    return value &&
+        typeof value === "object" &&
+        "content" in value &&
+        Array.isArray(value.content)
+        ? value.content
+        : undefined;
+}
+
+/** MCP results show their text and links; other tools show their JSON. */
+function readable(value: unknown): unknown {
+    const content = mcpContent(value);
+    if (!content) return value;
+    return content.flatMap((part) => part.text ?? part.uri ?? []).join("\n");
+}
+
+function toolError({ error }: McpCall): string {
+    if (!error) return "Tool failed";
+    if ("message" in error) return error.message;
+    const value = readable(error.content);
+    return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+/** Generated media arrives as MCP resource links; show it as files. */
+function mediaFiles(value: unknown): ChatChunk[] {
+    return (mcpContent(value) ?? []).flatMap((part): ChatChunk[] => {
+        const mediaType = part.mimeType ?? "";
+        return part.type === "resource_link" &&
+            part.uri?.startsWith("https://") &&
+            /^(image|audio|video)\//.test(mediaType)
+            ? [{ type: "file", url: part.uri, mediaType }]
+            : [];
     });
 }
 
+async function failureMessage(response: Response): Promise<string> {
+    const body = await response.json().catch(() => null);
+    const error = body?.error ?? body;
+    return typeof error?.message === "string"
+        ? error.message
+        : `Request failed with status ${response.status}`;
+}
+
+type InputContent =
+    | { type: "input_text"; text: string }
+    | { type: "input_image"; image_url: string; detail: "auto" };
+
+function userContent(part: PollinationsUIMessage["parts"][number]) {
+    const content: InputContent[] = [];
+    if (part.type === "text")
+        content.push({ type: "input_text", text: part.text });
+    if (part.type === "file")
+        content.push({
+            type: "input_image",
+            image_url: part.url,
+            detail: "auto",
+        });
+    return content;
+}
+
 /**
- * Vercel AI SDK transport for the Pollinations chat stream. The reply stays
- * one raw text part; Chat draws tool cards from its markup.
+ * Responses input for a chat: user turns from their parts, agent turns as
+ * the raw output items they produced. Failed or stopped replies have none.
+ */
+export function responsesInput(messages: PollinationsUIMessage[]) {
+    return messages.flatMap((message) =>
+        message.role === "user"
+            ? [
+                  {
+                      type: "message",
+                      role: "user",
+                      content: message.parts.flatMap(userContent),
+                  },
+              ]
+            : (message.metadata?.output ?? []),
+    );
+}
+
+/**
+ * Vercel AI SDK transport for the stateless Responses API. Text streams as
+ * text parts, server-run tools as dynamic tool parts, and the finished
+ * reply's output items ride along as message metadata for the next turn.
  */
 export function pollinationsChatTransport({
-    client,
+    apiKey,
     model,
-}: PollinationsChatTransportOptions): ChatTransport<PollinationsUIMessage> {
+}: {
+    apiKey: string | null;
+    model: string | null;
+}): ChatTransport<PollinationsUIMessage> {
     return {
         async sendMessages({ messages, abortSignal }) {
-            if (!client || !model)
+            if (!apiKey || !model)
                 throw new Error("Select an agent and connect first.");
-            return new ReadableStream<UIMessageChunk>({
+            return new ReadableStream<ChatChunk>({
                 async start(controller) {
-                    const textId = crypto.randomUUID();
-                    let textStarted = false;
+                    const send = (chunk: ChatChunk) =>
+                        controller.enqueue(chunk);
+                    const openText = new Set<string>();
                     const endText = () => {
-                        if (textStarted)
-                            controller.enqueue({
-                                type: "text-end",
-                                id: textId,
-                            });
-                        textStarted = false;
+                        for (const id of openText)
+                            send({ type: "text-end", id });
+                        openText.clear();
                     };
+                    const tool = { dynamic: true, providerExecuted: true };
 
-                    controller.enqueue({
-                        type: "start",
-                        messageId: crypto.randomUUID(),
-                    });
-                    controller.enqueue({ type: "start-step" });
+                    send({ type: "start", messageId: crypto.randomUUID() });
+                    send({ type: "start-step" });
                     try {
-                        for await (const chunk of client.chatStream(
-                            messagesForPollinations(messages),
-                            { model, signal: abortSignal },
-                        )) {
-                            const delta = chunk.choices[0]?.delta;
-                            for (const toolCall of delta?.tool_calls ?? []) {
-                                const name = toolCall.function?.name?.trim();
-                                if (!name) continue;
-                                controller.enqueue({
-                                    type: "data-activity",
-                                    id:
-                                        toolCall.id?.trim() ||
-                                        `openai-tool-${toolCall.index}`,
-                                    data: { name },
+                        const response = await fetch(
+                            `${API_BASE_URL}/v1/responses`,
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${apiKey}`,
+                                },
+                                body: JSON.stringify({
+                                    model,
+                                    input: responsesInput(messages),
+                                    stream: true,
+                                    store: false,
+                                }),
+                                signal: abortSignal,
+                            },
+                        );
+                        if (!response.ok || !response.body)
+                            throw new Error(await failureMessage(response));
+                        const reader = parseJsonEventStream({
+                            stream: response.body,
+                            schema: jsonSchema<ResponseEvent>({}),
+                        }).getReader();
+                        let finished = false;
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            if (!value.success) throw value.error;
+                            const event = value.value;
+                            if (event.type === "response.output_text.delta") {
+                                if (!openText.has(event.item_id)) {
+                                    openText.add(event.item_id);
+                                    send({
+                                        type: "text-start",
+                                        id: event.item_id,
+                                    });
+                                }
+                                send({
+                                    type: "text-delta",
+                                    id: event.item_id,
+                                    delta: event.delta,
                                 });
-                            }
-                            if (!delta?.content) continue;
-                            if (!textStarted) {
-                                textStarted = true;
-                                controller.enqueue({
-                                    type: "text-start",
-                                    id: textId,
+                            } else if (
+                                event.type === "response.output_item.added" &&
+                                isMcpCall(event.item)
+                            ) {
+                                endText();
+                                send({
+                                    type: "tool-input-available",
+                                    toolCallId: event.item.id,
+                                    toolName: event.item.name,
+                                    input: parseJson(event.item.arguments),
+                                    ...tool,
                                 });
+                            } else if (
+                                event.type === "response.output_item.done" &&
+                                isMcpCall(event.item)
+                            ) {
+                                const item = event.item;
+                                const output =
+                                    item.output === null
+                                        ? null
+                                        : parseJson(item.output);
+                                if (item.status === "failed" || item.error) {
+                                    send({
+                                        type: "tool-output-error",
+                                        toolCallId: item.id,
+                                        errorText: toolError(item),
+                                        ...tool,
+                                    });
+                                } else {
+                                    send({
+                                        type: "tool-output-available",
+                                        toolCallId: item.id,
+                                        output: readable(output),
+                                        ...tool,
+                                    });
+                                    for (const file of mediaFiles(output))
+                                        send(file);
+                                }
+                            } else if (
+                                event.type === "response.completed" ||
+                                event.type === "response.incomplete"
+                            ) {
+                                finished = true;
+                                endText();
+                                send({ type: "finish-step" });
+                                send({
+                                    type: "finish",
+                                    messageMetadata: {
+                                        output: event.response.output,
+                                    },
+                                });
+                            } else if (event.type === "response.failed") {
+                                throw new Error(
+                                    event.response.error?.message ??
+                                        "The agent could not finish this response.",
+                                );
+                            } else if (event.type === "error") {
+                                throw new Error(event.message);
                             }
-                            controller.enqueue({
-                                type: "text-delta",
-                                id: textId,
-                                delta: delta.content,
-                            });
                         }
-                        endText();
-                        controller.enqueue({ type: "finish-step" });
-                        controller.enqueue({ type: "finish" });
+                        if (!finished)
+                            throw new Error("The response ended early.");
                         controller.close();
                     } catch (error) {
                         endText();
                         if (isCancellation(error) || abortSignal?.aborted) {
-                            controller.enqueue({
+                            send({
                                 type: "data-responseStatus",
                                 id: "response-status",
                                 data: { status: "cancelled" },
                             });
-                            controller.enqueue({
-                                type: "abort",
-                                reason: "cancelled",
-                            });
+                            send({ type: "abort", reason: "cancelled" });
                             controller.close();
                             return;
                         }

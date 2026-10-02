@@ -2,7 +2,7 @@ import type { ModelInfo } from "@pollinations/sdk";
 import { PolliProvider } from "@pollinations/sdk/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { attachmentKinds, Chat, MessageCard, welcomeMessage } from "./Chat";
+import { Chat, MessageCard, welcomeMessage } from "./Chat";
 import { FLORET_MODEL_ID } from "./chat-models";
 import type { PollinationsUIMessage } from "./pollinations-chat-transport";
 
@@ -31,19 +31,6 @@ describe("Floret identity", () => {
             { type: "text", text: expect.stringContaining("Hi, I’m Floret") },
         ]);
     });
-
-    it("enables Floret attachments without granting them to unrelated text-only agents", () => {
-        expect([...attachmentKinds(floret)]).toEqual([
-            "image",
-            "video",
-            "audio",
-            "file",
-        ]);
-        expect([
-            ...attachmentKinds({ ...floret, id: "unrelated/floret" }),
-        ]).toEqual([]);
-        expect([...attachmentKinds(undefined)]).toEqual([]);
-    });
 });
 
 describe("agent selection UI", () => {
@@ -54,6 +41,7 @@ describe("agent selection UI", () => {
         agent: true,
         input_modalities: ["text"],
         output_modalities: ["text"],
+        supported_endpoints: ["/v1/responses"],
     });
     const renderChat = (models: ModelInfo[]) =>
         renderToStaticMarkup(
@@ -162,12 +150,6 @@ describe("chat media placement", () => {
                             filename: "photo.png",
                             url: "https://example.test/photo.png",
                         },
-                        {
-                            type: "file",
-                            mediaType: "audio/mpeg",
-                            filename: "voice.mp3",
-                            url: "data:audio/mpeg;base64,AAEC",
-                        },
                         { type: "text", text: "What is this?" },
                     ],
                 }}
@@ -179,7 +161,6 @@ describe("chat media placement", () => {
         );
         expect(html).toContain("What is this?");
         expect(html).toContain('alt="photo.png"');
-        expect(html).toContain('<audio src="data:audio/mpeg;base64,AAEC"');
     });
 
     it("renders a media-only response inside the message", () => {
@@ -194,22 +175,42 @@ describe("chat media placement", () => {
         expect(html).toContain('aria-label="Copy response"');
     });
 
-    it("draws a tool card between the text around its markup", () => {
+    it("draws tool cards and generated media in reply order", () => {
         const html = renderMessage([
+            { type: "text", text: "Drawing bees." },
             {
-                type: "text",
-                text:
-                    "Searching.\n\n" +
-                    '<details type="tool_calls" done="true" id="call-1" ' +
-                    'name="SEARCH_WEB" arguments="{&quot;query&quot;:&quot;bees&quot;}">\n' +
-                    "<summary>Tool Executed</summary>\n[]\n</details>\n\nFound bees.",
+                type: "dynamic-tool",
+                toolCallId: "mcp_1",
+                toolName: "generateImage",
+                state: "output-available",
+                input: { prompt: "bees" },
+                output: "https://media.example.test/bees.png",
+                providerExecuted: true,
             },
+            {
+                type: "file",
+                mediaType: "image/png",
+                url: "https://media.example.test/bees.png",
+            },
+            {
+                type: "dynamic-tool",
+                toolCallId: "mcp_2",
+                toolName: "searchWeb",
+                state: "output-error",
+                input: { query: "bees" },
+                errorText: "Search unavailable",
+                providerExecuted: true,
+            },
+            { type: "text", text: "Here they are." },
         ]);
-        const positions = [">Searching.<", "SEARCH_WEB", ">Found bees.<"].map(
-            (text) => html.indexOf(text),
-        );
+        const positions = [
+            ">Drawing bees.<",
+            "generateImage",
+            'alt="Generated media"',
+            "searchWeb",
+            ">Here they are.<",
+        ].map((text) => html.indexOf(text));
         expect(positions.every((position) => position >= 0)).toBe(true);
         expect(positions).toEqual([...positions].sort((a, b) => a - b));
-        expect(html).not.toContain("&lt;details");
     });
 });

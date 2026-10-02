@@ -35,7 +35,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import type { FileUIPart } from "ai";
+import type { DynamicToolUIPart, FileUIPart } from "ai";
 import {
     type ClipboardEvent,
     type DragEvent,
@@ -51,13 +51,8 @@ import type { PlaySearch } from "../../routes/-play-search";
 import {
     type AgentChoice,
     agentChoices,
-    agentMessageParts,
-    arrayBufferToBase64,
-    audioFormat,
-    type ChatAttachmentKind,
     errorMessage,
     FLORET_MODEL_ID,
-    fileKind,
     isCancellation,
     selectedAgentChoice,
 } from "./chat-models";
@@ -69,12 +64,6 @@ import { UploadPrivacyNote } from "./UploadPrivacyNote";
 
 const MAX_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-const ATTACHMENT_ACCEPT: Record<ChatAttachmentKind, string> = {
-    image: "image/*",
-    video: "video/*",
-    audio: "audio/*",
-    file: ".pdf,.txt,.md,.csv,.json,.doc,.docx",
-};
 
 export function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
     return {
@@ -92,36 +81,11 @@ export function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
     };
 }
 
-export function attachmentKinds(agent: AgentChoice | undefined) {
-    if (!agent) return new Set<ChatAttachmentKind>();
-    if (agent.id === FLORET_MODEL_ID)
-        return new Set<ChatAttachmentKind>(["image", "video", "audio", "file"]);
-    return new Set(
-        agent.inputModalities.filter(
-            (modality): modality is ChatAttachmentKind =>
-                modality === "image" ||
-                modality === "video" ||
-                modality === "audio" ||
-                modality === "file",
-        ),
-    );
-}
-
-/** Upload a file for the agent. Audio stays inline: the API takes it as base64. */
 async function attachmentFile(
     client: Pollinations,
     file: File,
     signal: AbortSignal,
 ): Promise<FileUIPart> {
-    if (fileKind(file) === "audio") {
-        const data = arrayBufferToBase64(await file.arrayBuffer());
-        return {
-            type: "file",
-            mediaType: file.type,
-            filename: file.name,
-            url: `data:${file.type};base64,${data}`,
-        };
-    }
     const upload = await client.upload(file, { name: file.name, signal });
     return {
         type: "file",
@@ -131,10 +95,10 @@ async function attachmentFile(
     };
 }
 
+/** Files are the user's images or media an agent generated. */
 function AttachmentView({ file }: { file: FileUIPart }) {
-    const name = file.filename ?? "Attachment";
-    const kind = fileKind({ name, type: file.mediaType });
-    if (kind === "image") {
+    const name = file.filename ?? "Generated media";
+    if (file.mediaType.startsWith("image/")) {
         return (
             <a href={file.url} target="_blank" rel="noopener noreferrer">
                 <img
@@ -146,10 +110,10 @@ function AttachmentView({ file }: { file: FileUIPart }) {
             </a>
         );
     }
-    if (kind === "video") {
+    if (file.mediaType.startsWith("video/")) {
         return (
             <>
-                {/* biome-ignore lint/a11y/useMediaCaption: User-provided media has no caption track. */}
+                {/* biome-ignore lint/a11y/useMediaCaption: Generated media has no caption track. */}
                 <video
                     src={file.url}
                     controls
@@ -159,34 +123,34 @@ function AttachmentView({ file }: { file: FileUIPart }) {
             </>
         );
     }
-    if (kind === "audio") {
-        return (
-            <>
-                {/* biome-ignore lint/a11y/useMediaCaption: User-provided media has no caption track. */}
-                <audio
-                    src={file.url}
-                    controls
-                    preload="metadata"
-                    className="max-w-full"
-                />
-            </>
-        );
-    }
     return (
-        <a
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="break-all text-sm font-semibold underline"
-        >
-            {name}
-        </a>
+        <>
+            {/* biome-ignore lint/a11y/useMediaCaption: Generated media has no caption track. */}
+            <audio
+                src={file.url}
+                controls
+                preload="metadata"
+                className="max-w-full"
+            />
+        </>
     );
 }
 
+const TOOL_STATUS = {
+    "input-streaming": "running",
+    "input-available": "running",
+    "approval-requested": "approval-requested",
+    "approval-responded": "approval-responded",
+    "output-available": "complete",
+    "output-error": "error",
+    "output-denied": "denied",
+} as const satisfies Record<DynamicToolUIPart["state"], string>;
+
 function activeTool(message: PollinationsUIMessage): string | undefined {
     const names = message.parts.flatMap((part) =>
-        part.type === "data-activity" ? [part.data.name] : [],
+        part.type === "dynamic-tool" && part.state === "input-available"
+            ? [part.toolName]
+            : [],
     );
     return names[names.length - 1];
 }
@@ -208,22 +172,26 @@ export function MessageCard({
 }) {
     const isUser = message.role === "user";
     const files = message.parts.filter((part) => part.type === "file");
-    const text = message.parts
-        .flatMap((part) => (part.type === "text" ? [part.text] : []))
-        .join("\n");
-    const contentParts = isUser ? [] : agentMessageParts(text);
+    const texts = message.parts.flatMap((part) =>
+        part.type === "text" && part.text.trim() ? [part.text.trim()] : [],
+    );
+    const contentParts = isUser
+        ? []
+        : message.parts.filter(
+              (part) =>
+                  (part.type === "text" && part.text.trim()) ||
+                  part.type === "dynamic-tool" ||
+                  part.type === "file",
+          );
     const cancelled = message.parts.some(
         (part) => part.type === "data-responseStatus",
     );
     const retryable = canRetry && (cancelled || Boolean(responseError));
     const activity = activeTool(message);
-    const copyText = contentParts
-        .flatMap((part) => (part.type === "text" ? [part.text.trim()] : []))
-        .join("\n\n");
+    const copyText = isUser ? "" : texts.join("\n\n");
     const showArticle =
         isUser ||
         contentParts.length > 0 ||
-        files.length > 0 ||
         isStreaming ||
         cancelled ||
         responseError;
@@ -245,35 +213,37 @@ export function MessageCard({
                     }
                 >
                     <ChatMessageContent className="flex flex-col gap-3">
-                        {isUser && text && (
+                        {isUser && texts.length > 0 && (
                             <p className="whitespace-pre-wrap break-words">
-                                {text}
+                                {texts.join("\n")}
                             </p>
                         )}
                         {contentParts.map((part, index) =>
-                            part.type === "text" ? (
+                            part.type === "dynamic-tool" ? (
+                                <ToolCallDetails
+                                    key={part.toolCallId}
+                                    name={part.toolName}
+                                    input={part.input}
+                                    output={part.output}
+                                    error={part.errorText}
+                                    status={TOOL_STATUS[part.state]}
+                                />
+                            ) : part.type === "file" ? (
+                                <AttachmentView
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
+                                    key={`file:${index}`}
+                                    file={part}
+                                />
+                            ) : part.type === "text" ? (
                                 <Markdown
                                     // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
                                     key={`text:${index}`}
                                 >
                                     {part.text}
                                 </Markdown>
-                            ) : (
-                                <ToolCallDetails
-                                    key={part.toolCallId}
-                                    name={part.toolName}
-                                    input={part.args}
-                                    output={
-                                        part.isError ? undefined : part.result
-                                    }
-                                    error={
-                                        part.isError ? part.result : undefined
-                                    }
-                                    status={part.isError ? "error" : "complete"}
-                                />
-                            ),
+                            ) : null,
                         )}
-                        {files.length > 0 && (
+                        {isUser && files.length > 0 && (
                             <div className="grid gap-3 sm:grid-cols-2">
                                 {files.map((file, index) => (
                                     <AttachmentView
@@ -458,11 +428,8 @@ export function Chat({
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const selectedAgent = selectedAgentChoice(agents, selectedAgentId);
     const assistantName = selectedAgent?.title ?? "Agent";
-    const acceptedAttachmentKinds = attachmentKinds(selectedAgent);
-    const attachmentAccept = [...acceptedAttachmentKinds]
-        .map((kind) => ATTACHMENT_ACCEPT[kind])
-        .join(",");
-    const supportsAttachments = acceptedAttachmentKinds.size > 0;
+    const supportsAttachments =
+        selectedAgent?.inputModalities.includes("image") ?? false;
 
     const client = useMemo(
         () =>
@@ -472,10 +439,10 @@ export function Chat({
     const transport = useMemo(
         () =>
             pollinationsChatTransport({
-                client,
+                apiKey,
                 model: selectedAgent?.id ?? null,
             }),
-        [client, selectedAgent?.id],
+        [apiKey, selectedAgent?.id],
     );
     const {
         messages,
@@ -489,7 +456,7 @@ export function Chat({
     } = useChat<PollinationsUIMessage>({
         id: "pollinations-play-agent-chat",
         transport,
-        // Each update re-parses the whole reply, so cap the render rate.
+        // Each update re-renders the reply's Markdown, so cap the render rate.
         throttle: 50,
     });
     const streaming = status === "submitted" || status === "streaming";
@@ -604,12 +571,8 @@ export function Chat({
         for (const file of nextFiles.slice(0, MAX_ATTACHMENTS)) {
             if (file.size > MAX_ATTACHMENT_BYTES) {
                 problems.push(`${file.name} is larger than 20 MB.`);
-            } else if (!acceptedAttachmentKinds.has(fileKind(file))) {
-                problems.push(
-                    `${file.name} is not supported by ${assistantName}.`,
-                );
-            } else if (fileKind(file) === "audio" && !audioFormat(file)) {
-                problems.push(`${file.name} uses an unsupported audio format.`);
+            } else if (!file.type.startsWith("image/")) {
+                problems.push(`${file.name} is not an image.`);
             } else {
                 accepted.push(file);
             }
@@ -839,7 +802,7 @@ export function Chat({
                                 onChange={handleFiles}
                                 maxFiles={MAX_ATTACHMENTS}
                                 maxSizeBytes={MAX_ATTACHMENT_BYTES}
-                                accept={attachmentAccept}
+                                accept="image/*"
                                 variant="inline"
                                 disabled={!canAttach}
                                 className="play-chat-attachments px-3 pt-4 pb-1"
@@ -865,7 +828,7 @@ export function Chat({
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept={attachmentAccept}
+                                    accept="image/*"
                                     multiple
                                     hidden
                                     onChange={(event) => {
@@ -881,7 +844,7 @@ export function Chat({
                                     type="button"
                                     size="lg"
                                     intent="info"
-                                    aria-label="Add media"
+                                    aria-label="Add images"
                                     aria-describedby={
                                         files.length > 0
                                             ? "play-chat-upload-privacy"
@@ -891,8 +854,8 @@ export function Chat({
                                         !supportsAttachments
                                             ? `${assistantName} accepts text only`
                                             : isLoggedIn
-                                              ? "Add media"
-                                              : "Connect to add media"
+                                              ? "Add images"
+                                              : "Connect to add images"
                                     }
                                     disabled={
                                         !canAttach ||

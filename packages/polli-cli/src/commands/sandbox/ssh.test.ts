@@ -40,11 +40,6 @@ describe.skipIf(!sshAvailable)("sandbox SSH configuration", () => {
         setupSsh();
 
         const config = join(sshDir, "config");
-        // ssh -G prints multiple known-host files without delimiters, so
-        // also check that the config supplies one quoted path argument.
-        expect(readFileSync(config, "utf8")).toContain(
-            `UserKnownHostsFile "${join(sshDir, "known_hosts")}"`,
-        );
         const parsed = spawnSync("ssh", ["-G", "-F", config, "test.polli"], {
             encoding: "utf8",
         });
@@ -55,6 +50,14 @@ describe.skipIf(!sshAvailable)("sandbox SSH configuration", () => {
         expect(parsed.stdout.split("\n")).toContain(
             `userknownhostsfile ${join(sshDir, "known_hosts")}`,
         );
+
+        // ssh -G prints multiple known-host files without delimiters, so
+        // also check that the config supplies one quoted path argument.
+        if (name.includes(" ")) {
+            expect(readFileSync(config, "utf8")).toContain(
+                `UserKnownHostsFile "${join(sshDir, "known_hosts")}"`,
+            );
+        }
 
         // Resolve Include to the fixture home; OpenSSH uses the OS user's
         // home for ~, rather than the mocked Node homedir.

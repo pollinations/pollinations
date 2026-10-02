@@ -466,6 +466,22 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "nvidia/nemotron-3-ultra": {
+        "nvidia/nemotron-3-ultra:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-10-02").getTime(),
+            // Same checkpoint and public contract as the Fireworks primary
+            // (tools, reasoning, 262K context), so it only rescues primary
+            // failures. DeepInfra standard-tier rates (2026-07-27); Flex stays
+            // excluded because requests may wait up to ten minutes.
+            cost: {
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(2.2),
+            },
+        },
+    },
     "nvidia/nemotron-3.5-lightning": {
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
             supportedParameters: CHAT_PARAMETERS.openRouterNemotron,

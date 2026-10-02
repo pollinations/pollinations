@@ -517,6 +517,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
+    // Hidden fallback for nvidia/nemotron-3-ultra (nvidia/nemotron-3-ultra:deepinfra).
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
         createDeepInfraModelConfig({
             model: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
@@ -859,6 +860,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
+        }),
+    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
         }),
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({

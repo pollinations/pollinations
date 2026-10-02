@@ -317,9 +317,24 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Nemotron directly to DeepInfra without fallback", () => {
+    it("routes Nemotron 3 Ultra directly to Fireworks NVFP4", () => {
         const result = resolveModelConfig(messages, {
             model: "nvidia/nemotron-3-ultra",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes the Nemotron 3 Ultra fallback to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3-ultra:deepinfra",
         });
 
         expect(result.options.model).toBe(

@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { commandExists } from "../harnesses/fs.js";
@@ -30,7 +30,7 @@ const freshCtx = (): McpContext => ({
 });
 
 describe("client table", () => {
-    it("covers all 14 clients in the issue's priority order", () => {
+    it("lists the supported clients in priority order", () => {
         expect(MCP_CLIENTS.map((client) => client.id)).toEqual([
             "claude-code",
             "codex",
@@ -46,11 +46,75 @@ describe("client table", () => {
             "zed",
             "warp",
             "hermes",
+            "pi",
         ]);
     });
 });
 
 describe("json config clients", () => {
+    it.each([
+        undefined,
+        "~/custom-pi",
+    ])("Pi preserves unrelated config and supports its agent directory (%s)", async (agentDir) => {
+        const ctx = freshCtx();
+        ctx.env.PI_CODING_AGENT_DIR = agentDir;
+        const file = join(
+            ctx.home,
+            agentDir ? "custom-pi" : ".pi/agent",
+            "mcp.json",
+        );
+        const foreign = { url: "https://example.org/mcp" };
+        writeJsonObject(file, {
+            autoEnableCodemode: false,
+            mcpServers: { personal: foreign, ffmpeg: foreign },
+        });
+        const client = findClient("pi");
+        if (!client) throw new Error("Missing Pi adapter");
+        await client.install(ctx, SERVERS, "sk-test");
+        await client.install(ctx, SERVERS, "sk-test");
+        const config = JSON.parse(readFileSync(file, "utf8"));
+        expect(config.mcpServers.pollinations).toEqual({
+            url: SERVERS[0].url,
+            headers: { Authorization: "Bearer sk-test" },
+        });
+        expect(client.status(ctx).installed).toEqual(["pollinations"]);
+        expect(client.existingKey?.(ctx)).toBe("sk-test");
+        expect((await client.remove(ctx)).removed).toEqual(["pollinations"]);
+        expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
+            autoEnableCodemode: false,
+            mcpServers: { personal: foreign, ffmpeg: foreign },
+        });
+    });
+
+    it.each([
+        ["0.84.4", 0, false],
+        ["0.98.9", 0, false],
+        ["0.99.0", 0, true],
+        ["1.0.0", 0, true],
+        ["unrecognized", 0, false],
+        ["1.0.0", 1, false],
+    ])("Pi MCP preflight checks %s (exit %s)", (version, exit, supported) => {
+        const ctx = freshCtx();
+        const bin = join(ctx.home, "pi");
+        writeFileSync(
+            bin,
+            `#!/usr/bin/env node\nprocess.stdout.write(${JSON.stringify(version)}); process.exit(${exit});\n`,
+            { mode: 0o700 },
+        );
+        ctx.env.PATH = [ctx.home, dirname(process.execPath)].join(delimiter);
+        const check = () => findClient("pi")?.preflight?.(ctx);
+        if (supported) expect(check).not.toThrow();
+        else expect(check).toThrow("Pi 0.99+ is required");
+    });
+
+    it("Pi MCP preflight fails when Pi is not installed", () => {
+        const ctx = freshCtx();
+        ctx.env.PATH = ctx.home;
+        expect(() => findClient("pi")?.preflight?.(ctx)).toThrow(
+            "Install or upgrade:",
+        );
+    });
+
     it("preserves settings when installing into OpenCode's existing JSONC file", async () => {
         const ctx = freshCtx();
         const dir = join(ctx.home, ".config", "opencode");

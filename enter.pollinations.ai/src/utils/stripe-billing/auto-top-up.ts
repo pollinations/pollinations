@@ -370,8 +370,32 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: verification.reason };
     }
 
+    // Credit only while the attempt is still unpaid, then mark it paid in the
+    // same transaction, so a concurrent caller for this invoice credits nothing.
     const now = Date.now();
-    const [attemptUpdate] = await env.DB.batch([
+    const [walletUpdate] = await env.DB.batch([
+        env.DB.prepare(
+            `UPDATE user
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) + ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
+                WHERE id = ?
+                    AND EXISTS (
+                        SELECT 1
+                        FROM stripe_auto_top_up_attempt
+                        WHERE stripe_invoice_id = ?
+                            AND user_id = ?
+                            AND status IN (?, ?)
+                    )`,
+        ).bind(
+            attempt.amountUsd,
+            attempt.userId,
+            invoice.id,
+            attempt.userId,
+            AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+        ),
         env.DB.prepare(
             `UPDATE stripe_auto_top_up_attempt
                 SET status = ?,
@@ -388,33 +412,9 @@ export async function creditAutoTopUpInvoice(
             AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
             AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
         ),
-        env.DB.prepare(
-            `UPDATE user
-                SET pack_balance = ROUND(
-                    COALESCE(pack_balance, 0) + ?,
-                    ${POLLEN_BILLING_PRECISION}
-                )
-                WHERE id = ?
-                    AND EXISTS (
-                        SELECT 1
-                        FROM stripe_auto_top_up_attempt
-                        WHERE stripe_invoice_id = ?
-                            AND user_id = ?
-                            AND status = ?
-                            AND completed_at = ?
-                    )`,
-        ).bind(
-            attempt.amountUsd,
-            attempt.userId,
-            invoice.id,
-            attempt.userId,
-            AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-            now,
-        ),
     ]);
 
-    const attemptChanges = attemptUpdate.meta.changes ?? 0;
-    if (attemptChanges === 0) {
+    if ((walletUpdate.meta.changes ?? 0) === 0) {
         return { credited: false, reason: "invoice already credited" };
     }
 

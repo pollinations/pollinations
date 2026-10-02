@@ -31,11 +31,21 @@ POLLINATIONS_MARKERS = (
     "text.pollinations.ai",
     "@pollinations/sdk",
 )
-BADGE_MARKERS = ("pollinations.ai/?ref=badge", "badge-made-with.svg")
 # A link to the pollinations.ai site itself (not an API host), in HTML or a JS bundle.
 CREDIT_LINK = re.compile(
     r"""href["']?\s*[:=]\s*["'`]https?://(?:www\.)?pollinations\.ai(?![\w.-])""",
     re.I,
+)
+# The badge image wrapped in a pollinations.ai link, as Markdown or HTML.
+BADGE_LINK = re.compile(
+    r"\[!\[[^\]]*\]\([^)\s]*badge-made-with\.svg[^)]*\)\]\(\s*https?://(?:www\.)?pollinations\.ai(?![\w.-])[^)]*\)"
+    r"|<a\s[^>]*href=[\"']https?://(?:www\.)?pollinations\.ai(?![\w.-])[^>]*>\s*<img\s[^>]*badge-made-with\.svg",
+    re.I,
+)
+# Markdown that does not render as visible content: comments and code.
+HIDDEN_MARKDOWN = re.compile(
+    r"<!--.*?-->|^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1|`[^`\n]+`",
+    re.S | re.M,
 )
 BADGE_SNIPPET = (
     "```markdown\n"
@@ -145,13 +155,12 @@ def marker_hits(text):
     return sorted({marker for marker in POLLINATIONS_MARKERS if marker in lowered})
 
 
-def has_badge(text):
-    lowered = text.lower()
-    return any(marker in lowered for marker in BADGE_MARKERS)
+def has_badge(readme):
+    return bool(BADGE_LINK.search(HIDDEN_MARKDOWN.sub("", readme)))
 
 
 def has_credit_link(text):
-    return has_badge(text) or bool(CREDIT_LINK.search(text))
+    return bool(CREDIT_LINK.search(re.sub(r"<!--.*?-->", "", text, flags=re.S)))
 
 
 def normalized_origin(value):

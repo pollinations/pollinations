@@ -28,7 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🛠️ Pollinations for Unity](https://github.com/Marcus-Mok-GH/pollinations-unity) | A dependency-free Unity Package Manager package that adds Pollinations text, image, and speech generation to Unity games. Async Task-based C# helpers cover chat completions, image generation (returns | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
+| [🛠️ Pollinations for Unity](https://github.com/Marcus-Mok-GH/pollinations-unity) | A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene. | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
 | [🖼️ Pollinations for Krita](https://github.com/xiaotian1171/pollinations-krita) | A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🖼️ Pollinations for Figma - AI Image Studio](https://guest453.github.io/pollinations-figma/) | A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi | [@Guest453](https://github.com/Guest453) |
 | [🎮 Pollinations for Godot 4](https://github.com/davealan74/godot-pollinations) | A Godot 4 editor addon that adds a global Pollinations node for GDScript. Call generate_text() , generate_image() and generate_speech() directly from any script to hit gen.pollinations.ai's text, imag | [@davealan74](https://github.com/davealan74) |

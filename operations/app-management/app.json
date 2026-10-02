@@ -3,7 +3,7 @@
     "emoji": "🛠️",
     "name": "Pollinations for Unity",
     "url": "https://github.com/Marcus-Mok-GH/pollinations-unity",
-    "description": "A dependency-free Unity Package Manager package that adds Pollinations text, image, and speech generation to Unity games. Async Task-based C# helpers cover chat completions, image generation (returns ",
+    "description": "A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene.",
     "language": "en",
     "category": "build",
     "platform": "web",

@@ -1,0 +1,33 @@
+{
+  "pr_number": 16238,
+  "title": "fix: don't fail Biome CI step when every changed file is ignored",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16238",
+  "merged_at": "2026-10-02T15:13:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `--no-errors-on-unmatched` to the \"Run Biome on changed files\" step in `ci-pull-request-checks.yml`\n- Before: a PR that only touches files ignored by `biome.json`, such as the generated `enter.pollinations.ai/worker-bindings.d.ts`, fails with \"No files were processed\" (exit 123), which also fails the required \"Check formatting and linting\" check. Seen on #16236\n- Real lint errors still fail the step; the flag only silences the empty-match error\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Nothing to lint, nothing to fix",
+    "blurb": "An empty Biome file list no longer trips the required CI check. Actual lint errors still get the usual attention.",
+    "summary": "The Biome CI step adds `--no-errors-on-unmatched` so PRs changing only ignored files, such as generated `enter.pollinations.ai/worker-bindings.d.ts`, avoid the empty-match exit 123 while real lint errors still fail.",
+    "impact": "Contributors can pass the required formatting and linting check when Biome has no changed files to process, without weakening checks on files it does inspect.",
+    "keywords": [
+      "CI",
+      "Biome",
+      "linting",
+      "GitHub Actions",
+      "ignored files"
+    ],
+    "visual_concept": "Depict Biome as a lint-checking terminal, not a character: its empty input tray holds a generated file marked as ignored, and its check light stays green. Polli, wearing a tiny maintainer cap, calmly points the monitor robot toward a separate lint error that still needs fixing; code-plants soften the workspace.",
+    "image_prompt": "In a cozy pixel art hackerspace, a Biome terminal glows lime green (#ecf874) beside an empty file tray and a little code-plant, while a chunky CRT monitor robot spots a separate lint error. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny maintainer cap and points warmly toward the robot, small-to-medium in the scene, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16238.jpg",
+    "prompt": "In a cozy pixel art hackerspace, a Biome terminal glows lime green (#ecf874) beside an empty file tray and a little code-plant, while a chunky CRT monitor robot spots a separate lint error. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny maintainer cap and points warmly toward the robot, small-to-medium in the scene, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-02T15:14:49.148525+00:00"
+}

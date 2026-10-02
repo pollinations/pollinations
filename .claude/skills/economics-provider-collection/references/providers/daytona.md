@@ -10,22 +10,21 @@ Canonical vendor: `daytona`
   discover the organization needed for resource usage. The billing wallet
   is not available to this API-key scope.
 - Keep invoices/dashboard screenshots as the authoritative dollar source.
-- The signed-in `Myceli AI` wallet showed $0.00 free credit and $10,023.01
-  paid credit on October 2. Its only displayed lot was `Prepaid Commit`,
-  labeled `Mixed credit`, with $0.00 used and no expiry. The wallet label
-  does not establish whether the commit was cash-funded or awarded; preserve
-  that distinction as unresolved until the credit agreement or transaction
-  history proves it.
+- The signed-in `Myceli AI` wallet showed a material balance under Paid
+  credit. Its only displayed lot was `Prepaid Commit`, labeled `Mixed credit`,
+  with no usage or expiry. The wallet label does not establish whether the
+  commit was cash-funded or awarded; preserve that distinction as unresolved
+  until the credit agreement or transaction history proves it.
 - A custom September 1–30, 2026 Spending view showed no resource or sandbox
-  usage. The September 1 subscription invoice list row was paid for $0.00.
+  usage. The September subscription invoice list row was paid for zero.
   The portal's invoice View action opened a browser blob that could not be
   archived through the connected browser; the original PDF remains a source
   gap. The Myceli mailbox search found no September Daytona invoice email.
-- The original February 8 $25 invoice is already archived in the accounting
-  Drive and matches its Wise card settlement. The effective vendor ledger has
-  $1.99 February usage. The wallet amount is exactly $10,000 + $25 - $1.99;
-  this supports a $10,000 grant plus $23.01 paid remainder, but still needs
-  the original credit-award terms to confirm the split.
+- The original February top-up invoice is already archived in the accounting
+  Drive and matches its Wise card settlement. The wallet amount exactly
+  reconciles to a round grant plus that top-up less historical provider usage;
+  this supports a mixed funding split, but still needs the original credit
+  award terms to confirm it. The exact arithmetic is in the private evidence.
 
 Primary evidence sources:
 

@@ -48,6 +48,12 @@ endpoint count.
    period, totals, file integrity, and Drive archive before moving on. An
    invoice must be the provider's original document, not a recreated PDF.
    Record any missing or not-yet-issued document immediately in the manifest.
+   For invoices published later in the month (some arrive around the 9th),
+   record the provider's observed status and a dated recheck. Reconcile
+   calendar-month dashboard/API usage now when its source is complete; keep the
+   invoice match provisional until the original document arrives. Append any
+   source-backed provisional rows only through the normal batch approval gate,
+   and correct the same `entry_id` after the invoice review if needed.
 4. Compare the source evidence with effective ledgers and the app's Close,
    Runway, Unit Economics, and Ledgers views. Refresh current balance snapshots
    and the new month's reviewed forecast; keep missing evidence visible.

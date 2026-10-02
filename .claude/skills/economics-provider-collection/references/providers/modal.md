@@ -56,6 +56,12 @@ Collection steps:
 
 Known traps:
 
+- As of 2026-10-02, the user says Modal is no longer used. Keep historical
+  usage, and track any remaining startup grant until its account, amount, and
+  expiry are verified; do not project new usage from September's last value.
+- The $30 monthly included plan credit is separate from a startup grant. Check
+  the grant in the exact workspace's Credits view and record each grant lot
+  with its own expiry; a historical monthly-plan balance cannot prove a grant.
 - Modal billing reports are app/deployment oriented; model attribution depends on app naming or an internal deployment map.
 - A successful CLI call can return zero rows for a quiet or still-open period.
 - Record a verified-zero month when a bounded closed-month call succeeds with

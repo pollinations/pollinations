@@ -232,4 +232,41 @@ describe("payment logos before checkout", () => {
     it("keeps PayPal when Argentina's checkout falls back to USD", () => {
         expect(paymentMethods("AR")).toContain("paypal");
     });
+
+    it.each([
+        "EG",
+        "NG",
+        "FJ",
+        "AX",
+    ])("keeps PayPal for the USD fallback in %s", (country) =>
+        expect(paymentMethods(country)).toContain("paypal"));
+
+    it.each([
+        undefined,
+        null,
+        "XX",
+        "T1",
+    ])("keeps the general list when the location is unknown (%s)", (country) =>
+        expect(paymentMethods(country)).toEqual(paymentMethods(null)));
+
+    it.each([
+        "BR",
+        "CN",
+        "TR",
+        "ID",
+        "KE",
+        "JP",
+    ])("omits PayPal for the unsupported local currency in %s", (country) =>
+        expect(paymentMethods(country)).not.toContain("paypal"));
+
+    it.each([
+        ["AT", ["eps"]],
+        ["PL", ["blik", "p24"]],
+        ["DK", ["mobilepay"]],
+        ["FI", ["mobilepay"]],
+        ["PT", ["mb-way", "multibanco"]],
+        ["KR", ["kakao-pay", "naver-pay", "payco", "samsung-pay"]],
+    ] as const)("puts the local methods first in %s", (country, local) => {
+        expect(paymentMethods(country).slice(0, local.length)).toEqual(local);
+    });
 });

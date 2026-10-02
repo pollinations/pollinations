@@ -203,15 +203,22 @@ const PAGE = `<!doctype html>
   const cells = (...children) => h("span", { className: "cells" }, children);
 
   const SOURCES = ["All", "Team", "Community", "Agent", "Apps", "Quests"];
-  // Workflow tabs: issues with the label, plus the PRs that close them.
-  const LABEL_TABS = { Apps: "APP-SUBMISSION", Quests: "POLLEN-QUEST" };
+  // Workflow sources come from labels: the labelled issues, plus the PRs that close them.
+  const LABEL_SOURCES = [["Apps", "APP-SUBMISSION"], ["Quests", "POLLEN-QUEST"]];
+
+  // Exactly one source per item: Apps, then Quests, then the Dev Source field (Agent, Team, Community).
+  function sourceOf(i, labelled) {
+    for (const [name, label] of LABEL_SOURCES) {
+      if (i.labels.includes(label) || (i.kind === "pr" && i.fixes.some((k) => labelled[name].has(k)))) return name;
+    }
+    return i.source || "Community";
+  }
 
   function pick(source) {
     if (source === "All") return data.items;
-    const label = LABEL_TABS[source];
-    if (!label) return data.items.filter((i) => i.source === source);
-    const issues = new Set(data.items.filter((i) => i.kind === "issue" && i.labels.includes(label)).map((i) => i.number));
-    return data.items.filter((i) => i.labels.includes(label) || (i.kind === "pr" && i.fixes.some((k) => issues.has(k))));
+    const labelled = Object.fromEntries(LABEL_SOURCES.map(([name, label]) =>
+      [name, new Set(data.items.filter((i) => i.kind === "issue" && i.labels.includes(label)).map((i) => i.number))]));
+    return data.items.filter((i) => sourceOf(i, labelled) === source);
   }
 
   // State lives in the hash: #days=30&source=Team&open=Models|p15935

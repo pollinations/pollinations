@@ -185,6 +185,8 @@ const PAGE = `<!doctype html>
   .leaf{margin-left:28px}
   .bar{width:60px;height:6px;border-radius:3px;background:var(--polli-color-bg-subtle);overflow:hidden;flex:none}
   .bar>span{display:block;height:100%;background:#1a7f37}
+  .mix{display:flex;width:160px;height:8px;border-radius:4px;overflow:hidden;gap:2px}
+  .mixhead{display:flex;justify-content:space-between;width:160px}
   .chev{transition:transform .15s;transform:rotate(-90deg)}.on>.row .chev,.chev.on{transform:none}
   .zero{opacity:.35}
   .head{position:sticky;top:0;z-index:1;background:var(--polli-color-app-bg);padding-top:6px;padding-bottom:6px}.head:hover{background:var(--polli-color-app-bg)}
@@ -221,10 +223,12 @@ const PAGE = `<!doctype html>
     merged: svg("c,6,5,2", "c,6,19,2", "c,18,12,2", "M6 7v10", "M6 7c0 4 4 5 10 5"),
     stack: svg("m12 3 9 5-9 5-9-5 9-5z", "m3 13 9 5 9-5"),
   };
-  const TYPES = [["Bug", "bug"], ["Feature", "feature"], ["Task", "task"], ["Question", "question"]];
+  // Issue type, icon, and its colour in the type bar.
+  const TYPES = [["Bug", "bug", "#cf222e"], ["Feature", "feature", "#0969da"], ["Task", "task", "#bf8700"], ["Question", "question", "#8c959f"]];
+  const tint = (name, color) => h(I[name], { style: { color } });
   const icon = (name, cls) => h(I[name], { className: cls });
   // Columns 1–4: issue types. 5: open issues, 6: closed issues, 7: open PRs, 8: merged PRs. The icons sit once in the header row.
-  const COLUMNS = [["bug"], ["feature"], ["task"], ["question"], ["issue", "open"], ["closed", "done"], ["pr", "open"], ["merged", "done"]];
+  const COLUMNS = [["issue", "open"], ["closed", "done"], ["pr", "open"], ["merged", "done"]];
   const n = (value, col) => h("span", { key: col, className: "n" + (value ? "" : " zero") + (col > 6 ? " pr" : ""), style: { gridColumn: col } }, value || 0);
   const cells = (...children) => h("span", { className: "cells" }, children);
 
@@ -257,13 +261,16 @@ const PAGE = `<!doctype html>
     return c;
   }
   // Issue types as a share of the row's typed issues; empty when zero.
-  const typeCells = (c) => {
+  // One bar split by issue type; empty when no issue has a type.
+  const typeBar = (c) => {
     const total = TYPES.reduce((sum, [t]) => sum + c[t], 0);
-    return TYPES.map(([t], i) => c[t] ? h("span", { key: t, className: "n soft type", style: { gridColumn: i + 1 } }, Math.round((100 * c[t]) / total) + "%") : null);
+    return total ? h("span", { key: "mix", className: "mix type", style: { gridColumn: "1 / 5" } },
+      TYPES.map(([t, , color]) => c[t] ? h("span", { key: t, style: { flex: c[t], background: color } }) : null)) : null;
   };
   const prCells = (c) => [n(c.openPrs, 7), n(c.merged, 8)];
   const header = () => h("div", { className: "row head" }, h("span", { style: { width: 16 } }), h("span", { className: "grow" }),
-    cells(...COLUMNS.map(([name, cls], i) => h("span", { key: i, className: "n" + (i < 4 ? " soft type" : "") + (i > 5 ? " pr" : ""), style: { gridColumn: i + 1 } }, icon(name, cls)))));
+    cells(h("span", { key: "mix", className: "mixhead type", style: { gridColumn: "1 / 5" } }, TYPES.map(([t, name, color]) => h("span", { key: t, className: "n" }, tint(name, color)))),
+      ...COLUMNS.map(([name, cls], i) => h("span", { key: i, className: "n" + (i > 1 ? " pr" : ""), style: { gridColumn: i + 5 } }, icon(name, cls)))));
 
   function build(since, source) {
     const items = pick(source);
@@ -340,13 +347,14 @@ const PAGE = `<!doctype html>
     return h("div", { key: a.name, className: "area" + (on ? " on" : "") },
       h("button", { className: "row", onClick: () => toggle(a.name) },
         icon("chevron", "chev soft"), h("b", { className: "grow" }, a.name),
-        cells(...typeCells(a.c), n(a.c.open, 5), n(a.c.closed, 6), ...prCells(a.c))),
+        cells(typeBar(a.c), n(a.c.open, 5), n(a.c.closed, 6), ...prCells(a.c))),
       on ? h("div", { className: "kids" }, [...a.parents.values()].map((p) => parentRow(p, s, prsFor, since)), looseRow(a, s, prsFor, since)) : null);
   }
 
   const legend = () => h("div", { className: "legend soft" },
-    [["bug", "Bug"], ["feature", "Feature"], ["task", "Task"], ["question", "Question"], ["parent", "Parent issue", "done"], ["issue", "Open issue", "open"], ["closed", "Closed issue", "done"], ["pr", "Open PR", "open"], ["merged", "Merged PR", "done"]]
-      .map(([name, label, cls]) => h("span", { key: name }, icon(name, cls), label)));
+    TYPES.map(([t, name, color]) => h("span", { key: name }, tint(name, color), t)).concat(
+      [["parent", "Parent issue", "done"], ["issue", "Open issue", "open"], ["closed", "Closed issue", "done"], ["pr", "Open PR", "open"], ["merged", "Merged PR", "done"]]
+        .map(([name, label, cls]) => h("span", { key: name }, icon(name, cls), label))));
 
   function render() {
     if (error) return root.render(h("p", { className: "soft" }, "Could not load: " + error));

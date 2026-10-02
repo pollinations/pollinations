@@ -1,12 +1,13 @@
 import { env, SELF } from "cloudflare:test";
 import { SESSION_TOKEN_HEADER } from "@shared/auth/session.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { session } from "@shared/db/better-auth.ts";
+import { apikey, session } from "@shared/db/better-auth.ts";
 import {
     createTestApiKey,
     createTestUser,
     test,
 } from "@shared/test/fixtures/index.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 
@@ -24,16 +25,27 @@ type Sandbox = {
     memoryMB: number;
     state: "running" | "paused";
     metadata: Record<string, string>;
+    secure?: boolean;
+};
+
+type WrittenFile = {
+    sandboxID: string;
+    path: string | null;
+    username: string | null;
+    accessToken: string | null;
+    content: string;
 };
 
 const inSeconds = (seconds: number) =>
     new Date(Date.now() + seconds * 1000).toISOString();
 
-// A tiny in-memory E2B control API that also records Tinybird events.
-// Everything else goes to the real fetch, which the test environment needs.
+// A tiny in-memory E2B control API that also records Tinybird events and
+// files written into sandboxes. Everything else goes to the real fetch, which
+// the test environment needs.
 function stubE2b() {
     const sandboxes: Sandbox[] = [];
     const events: Record<string, unknown>[] = [];
+    const files: WrittenFile[] = [];
     let created = 0;
     const realFetch = globalThis.fetch;
     vi.stubGlobal("fetch", async (input: RequestInfo, init?: RequestInit) => {
@@ -42,6 +54,18 @@ function stubE2b() {
         if (url.origin === new URL(env.TINYBIRD_INGEST_URL).origin) {
             events.push(JSON.parse(await request.text()));
             return new Response(null, { status: 202 });
+        }
+        const envd = url.hostname.match(/^49983-(\w+)\.e2b\.app$/);
+        if (envd && url.pathname === "/files") {
+            const file = (await request.formData()).get("file") as File;
+            files.push({
+                sandboxID: envd[1],
+                path: url.searchParams.get("path"),
+                username: url.searchParams.get("username"),
+                accessToken: request.headers.get("x-access-token"),
+                content: await file.text(),
+            });
+            return Response.json([{ type: "file" }]);
         }
         if (url.origin !== E2B) return realFetch(input, init);
         // The team key replaces the caller's key.
@@ -53,6 +77,7 @@ function stubE2b() {
             templateID?: string;
             timeout?: number;
             metadata?: Record<string, string>;
+            secure?: boolean;
         };
 
         if (
@@ -77,6 +102,7 @@ function stubE2b() {
                 memoryMB: 512,
                 state: "running",
                 metadata: body.metadata ?? {},
+                secure: body.secure,
             };
             sandboxes.push(sandbox);
             return Response.json(
@@ -146,6 +172,7 @@ function stubE2b() {
     });
     return {
         sandboxes,
+        files,
         leases: () => events.filter((e) => e.eventType === "sandbox.lease"),
     };
 }
@@ -195,6 +222,8 @@ test("create pays the lease up front and hides the sandbox from other users", as
         app: "demo",
         pollinations_user: owner.userId,
     });
+    // envd in the sandbox needs its access token.
+    expect(e2b.sandboxes[0].secure).toBe(true);
     expect(await questPollen(owner.userId)).toBeCloseTo(10 - LEASE_300S, 8);
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
     expect(e2b.leases()[0]).toMatchObject({
@@ -411,4 +440,53 @@ test("the dashboard session enter forwards pays from the wallet", async () => {
     const expired = await login(-60);
     expect((await asSession(expired, "/v2/sandboxes")).status).toBe(401);
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
+});
+
+const keyNamed = (name: string) =>
+    drizzle(env.DB).select().from(apikey).where(eq(apikey.name, name)).get();
+
+test("the pollinations template comes logged in with a key no stronger than the caller's", async () => {
+    const e2b = stubE2b();
+    const owner = await createTestApiKey({
+        accountPermissions: ["machines", "usage"],
+        allowedModels: ["black-forest-labs/flux.1-schnell"],
+        pollenBudget: 5,
+        expiresIn: 3600,
+        user: { tierBalance: 10 },
+    });
+
+    // Other templates get no login.
+    await createSandbox(owner.key);
+    expect(e2b.files).toEqual([]);
+
+    const created = await createSandbox(owner.key, {
+        templateID: "pollinations",
+    });
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    expect(e2b.files).toMatchObject([
+        {
+            sandboxID,
+            path: "/home/user/.pollinations/credentials.staging.json",
+            username: "user",
+            accessToken: "envd",
+        },
+    ]);
+    const { apiKey } = JSON.parse(e2b.files[0].content);
+    const key = await keyNamed(`polli-sandbox-${sandboxID}`);
+    expect(key?.referenceId).toBe(owner.userId);
+    // What is left of the caller's budget after the two leases.
+    expect(key?.pollenBalance).toBeCloseTo(5 - 2 * LEASE_300S, 8);
+    expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
+        account: ["usage", "machines"],
+        models: ["black-forest-labs/flux.1-schnell"],
+    });
+    expect(key?.expiresAt?.getTime()).toBeLessThanOrEqual(
+        Date.now() + 3600_000,
+    );
+
+    // The key works, and is deleted with its sandbox.
+    expect((await call(apiKey, "/v2/sandboxes")).status).toBe(200);
+    await call(owner.key, `/sandboxes/${sandboxID}`, { method: "DELETE" });
+    expect(await keyNamed(`polli-sandbox-${sandboxID}`)).toBeUndefined();
+    expect((await call(apiKey, "/v2/sandboxes")).status).toBe(401);
 });

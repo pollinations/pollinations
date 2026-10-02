@@ -1,7 +1,13 @@
+import { createApiKeyAuth } from "@shared/auth/api-key.ts";
+import {
+    childKeyLimits,
+    createApiKeyForUser,
+} from "@shared/auth/api-key-creation.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { apikey } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
@@ -9,6 +15,7 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -35,6 +42,11 @@ const GIB_SECOND = 0.0000045;
 const PRICE_MULTIPLIER = 0.25;
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
+// Gen logs polli in inside this template, which has polli and the coding
+// harnesses, with a key of the sandbox's own that is deleted with it.
+const LOGGED_IN_TEMPLATE = "pollinations";
+// What `polli auth login` asks for.
+const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
 
 type SandboxDetail = {
     sandboxID: string;
@@ -47,10 +59,17 @@ type SandboxDetail = {
 };
 
 type NewSandbox = {
+    templateID?: string;
     metadata?: Record<string, string>;
     autoResume?: { enabled?: boolean };
     iam?: unknown;
     volumeMounts?: unknown[];
+};
+
+type CreatedSandbox = {
+    sandboxID: string;
+    domain?: string | null;
+    envdAccessToken?: string;
 };
 
 type E2bContext = Context<Env>;
@@ -300,6 +319,67 @@ async function extendLease(
     return new Response(response.body, response);
 }
 
+const sandboxKeyName = (sandboxID: string) => `polli-sandbox-${sandboxID}`;
+
+// Writes polli's login into a new sandbox: a key of its own, never more than
+// the caller's. envd, the agent in every sandbox, writes the file as `user`.
+async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
+    // Auth read the caller's key budget before this sandbox's lease was paid.
+    const caller = c.var.auth.apiKey;
+    const parent = caller && {
+        ...caller,
+        ...(await drizzle(c.env.DB)
+            .select({ pollenBalance: apikey.pollenBalance })
+            .from(apikey)
+            .where(eq(apikey.id, caller.id))
+            .get()),
+    };
+    const { key } = await createApiKeyForUser({
+        authClient: createApiKeyAuth(c.env, c.executionCtx),
+        dbBinding: c.env.DB,
+        userId: c.var.auth.requireUser().id,
+        name: sandboxKeyName(sandbox.sandboxID),
+        type: "secret",
+        ...childKeyLimits(parent, POLLI_PERMISSIONS),
+        defaultCreatedVia: "sandbox",
+    });
+    // polli keeps a staging login apart from a production one.
+    const file =
+        c.env.ENVIRONMENT === "production"
+            ? "credentials.json"
+            : "credentials.staging.json";
+    const form = new FormData();
+    form.append(
+        "file",
+        new Blob([JSON.stringify({ apiKey: key, keyType: "sk" })]),
+        file,
+    );
+    const query = new URLSearchParams({
+        path: `/home/user/.pollinations/${file}`,
+        username: "user",
+    });
+    const response = await fetch(
+        `https://49983-${sandbox.sandboxID}.${sandbox.domain || "e2b.app"}/files?${query}`,
+        {
+            method: "POST",
+            headers: { "x-access-token": sandbox.envdAccessToken ?? "" },
+            body: form,
+        },
+    );
+    if (!response.ok) throw await upstreamError(response);
+}
+
+async function deleteSandboxKey(c: E2bContext, sandboxID: string) {
+    await drizzle(c.env.DB)
+        .delete(apikey)
+        .where(
+            and(
+                eq(apikey.referenceId, c.var.auth.requireUser().id),
+                eq(apikey.name, sandboxKeyName(sandboxID)),
+            ),
+        );
+}
+
 async function ownerOnly(c: E2bContext) {
     await ownedSandbox(c);
     return forward(c);
@@ -349,6 +429,9 @@ export const e2bRoutes = new Hono<Env>()
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
                 ...body,
+                // Otherwise envd lets anyone who knows the sandbox ID run
+                // commands and read files in it.
+                secure: true,
                 metadata: {
                     ...body.metadata,
                     [OWNER_KEY]: c.var.auth.requireUser().id,
@@ -356,7 +439,7 @@ export const e2bRoutes = new Hono<Env>()
             }),
         });
         if (!response.ok) return new Response(response.body, response);
-        const created = await response.json<{ sandboxID: string }>();
+        const created = await response.json<CreatedSandbox>();
 
         // The template sets the size, so the price is known only now.
         let bill: Lease;
@@ -383,6 +466,18 @@ export const e2bRoutes = new Hono<Env>()
         }
         await charge(c, bill, startTime);
         await savePaidUntil(c, created.sandboxID, paidUntil);
+        if (body.templateID === LOGGED_IN_TEMPLATE) {
+            try {
+                await logIn(c, created);
+            } catch (error) {
+                // The sandbox still works; `polli auth login` in it logs in.
+                c.var.log.error("Sandbox login failed: {error}", {
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                });
+                await deleteSandboxKey(c, created.sandboxID).catch(() => {});
+            }
+        }
         return c.json(created, 201);
     })
     .get("/v2/sandboxes", (c) => {
@@ -396,7 +491,13 @@ export const e2bRoutes = new Hono<Env>()
         return forward(c, url.search);
     })
     .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
-    .delete("/sandboxes/:id", ownerOnly)
+    .delete("/sandboxes/:id", async (c) => {
+        await ownedSandbox(c);
+        const response = await forward(c);
+        // The sandbox's own key goes with it.
+        if (response.ok) await deleteSandboxKey(c, c.req.param("id"));
+        return response;
+    })
     .get("/sandboxes/:id/metrics", ownerOnly)
     // `e2b sandbox logs` reads this deprecated v1 path.
     .get("/sandboxes/:id/logs", ownerOnly)

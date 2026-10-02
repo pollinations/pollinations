@@ -290,7 +290,7 @@ export const dsh: HarnessAdapter = {
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
-            { browser: options.browser },
+            options,
         );
         return configureDsh(ctx, {
             apiKey,

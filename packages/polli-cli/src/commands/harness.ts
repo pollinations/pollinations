@@ -55,6 +55,10 @@ const withOnOptions = (command: Command) =>
         .option(
             "--no-browser",
             "Print the login URL instead of opening a browser",
+        )
+        .option(
+            "--use-login-key",
+            "Use polli's own key instead of creating one for the harness",
         );
 
 const harnessSubcommand = (harness: HarnessAdapter) => {

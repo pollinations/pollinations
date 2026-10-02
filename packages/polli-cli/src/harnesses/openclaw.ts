@@ -242,7 +242,7 @@ export const openclaw: HarnessAdapter = {
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
-            { browser: options.browser },
+            options,
         );
         return configureOpenClaw(ctx, models, apiKey, model);
     },

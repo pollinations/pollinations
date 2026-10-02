@@ -89,6 +89,20 @@ describe("harness keys", () => {
         ).rejects.toMatchObject({ status: 503 });
         expect(requests).toEqual(["GET /account/key"]);
     });
+
+    it("hands over the polli login instead of minting a key", async () => {
+        const { setKeyOverride } = await import("../lib/config.js");
+        setKeyOverride("sk_login");
+        requests.length = 0;
+        await expect(
+            resolveHarnessKey(
+                { id: "pi", label: "Pi", existingKey: null },
+                { useLoginKey: true },
+            ),
+        ).resolves.toBe("sk_login");
+        expect(requests).toEqual([]);
+        setKeyOverride(undefined);
+    });
 });
 
 describe("harness models", () => {

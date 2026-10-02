@@ -8,6 +8,8 @@ export interface HarnessOnOptions {
     model?: string;
     browser?: boolean;
     mcp?: boolean;
+    /** Call gen with polli's own key instead of creating one for the harness. */
+    useLoginKey?: boolean;
 }
 
 export interface HarnessModel {

@@ -104,7 +104,7 @@ export const tgpt: HarnessAdapter = {
         const existingKey = readConfig(ctx).POLLINATIONS_API_KEY || null;
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey },
-            { browser: options.browser },
+            options,
         );
         return configureTgpt(ctx, apiKey, options.model ?? DEFAULT_MODEL);
     },

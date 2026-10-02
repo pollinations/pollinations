@@ -248,7 +248,7 @@ export const hermes: HarnessAdapter = {
         await fetchHarnessModels(model);
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
-            { browser: options.browser },
+            options,
         );
         return configureHermes(ctx, { apiKey, model });
     },

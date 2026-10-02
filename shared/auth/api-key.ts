@@ -25,6 +25,7 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    expiresAt?: Date | null;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
@@ -342,6 +343,7 @@ async function loadActiveApiKeyAuthResult(opts: {
             ),
             metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
             pollenBalance: row.apiKey.pollenBalance ?? null,
+            expiresAt: row.apiKey.expiresAt ?? null,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,

@@ -20,7 +20,9 @@ const keyIsValid = async (key: string) => {
 /**
  * Key the harness will call gen with: the one already in its config if still
  * valid, otherwise a child key named after the harness, minted from the polli
- * login (logging in first if needed).
+ * login (logging in first if needed). With `useLoginKey`, the polli login
+ * itself: a sandbox's own key, which is deleted with the sandbox, would
+ * otherwise leave one orphan key per harness behind.
  *
  * `accountPermissions` are forwarded to the key creation endpoint. Harness
  * integrations that surface usage or balance (like the Pollinations OpenCode
@@ -33,7 +35,7 @@ export const resolveHarnessKey = async (
         existingKey: string | null;
         accountPermissions?: string[];
     },
-    options: { browser?: boolean },
+    options: { browser?: boolean; useLoginKey?: boolean },
 ): Promise<string> => {
     const existing = harness.existingKey;
     if (existing && (await keyIsValid(existing))) {
@@ -46,6 +48,7 @@ export const resolveHarnessKey = async (
     const accountKey =
         resolveApiKey() ??
         (await loginWithDeviceFlow({ browser: options.browser }));
+    if (options.useLoginKey) return accountKey;
     const name = `polli-harness-${harness.id}`;
     const created = await gen<{ key: string }>("/account/keys", {
         method: "POST",

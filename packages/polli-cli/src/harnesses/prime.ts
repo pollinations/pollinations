@@ -223,7 +223,7 @@ export const prime: HarnessAdapter = {
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
-            { browser: options.browser },
+            options,
         );
         return configurePrime(ctx, models, apiKey, model);
     },

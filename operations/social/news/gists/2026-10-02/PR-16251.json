@@ -1,0 +1,34 @@
+{
+  "pr_number": 16251,
+  "title": "fix: keep weekly evals running past model rate limits",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16251",
+  "merged_at": "2026-10-02T16:41:00Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16247\n\n- Pace questions for models that advertise `per_user_rpm`, including the one-request-per-minute community model that stopped the full run.\n- Mark a model unscored if it still exhausts 429 retries; publish other scores and show that state separately from budget skips.\n- Keep key, balance, permission, and missing-usage failures fatal.\n\nChecks: 21 focused tests pass; Biome and `git diff --check` pass. The local Model Monitor build could not start because this worktree lacks `tsup`.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One slow model, no pileup",
+    "blurb": "Weekly evals learn to wait for models with tight rate limits. If one still runs out of 429 retries, the other scores carry on.",
+    "summary": "Weekly evals pace questions using each model's advertised per_user_rpm, including one-request-per-minute models, and mark models that exhaust 429 retries as unscored while publishing the other scores.",
+    "impact": "Model Monitor can show the remaining weekly scores and distinguish a rate-limited, unscored model from one skipped for budget; key, balance, permission, and missing-usage failures remain fatal.",
+    "keywords": [
+      "weekly evals",
+      "Model Monitor",
+      "per_user_rpm",
+      "rate limits",
+      "429",
+      "scores"
+    ],
+    "visual_concept": "A cozy evaluation garden with a clock beside a slow-growing code-plant marked '1/min'; Polli, wearing a tiny stopwatch, tends it while a friendly CRT robot carries completed scorecards past a separate unscored card. The scene represents paced questions and a weekly run that continues when one model hits its retry limit.",
+    "image_prompt": "In a cozy pixel art evaluation garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny stopwatch, she tends a code-plant beside a '1/min' clock while a friendly CRT robot carries scorecards past one marked 'UNSCORED'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) leaves and glow, dark purple (#110518) outlines, and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16251.jpg",
+    "prompt": "In a cozy pixel art evaluation garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny stopwatch, she tends a code-plant beside a '1/min' clock while a friendly CRT robot carries scorecards past one marked 'UNSCORED'. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) leaves and glow, dark purple (#110518) outlines, and a warm cream background."
+  },
+  "generated_at": "2026-10-02T16:42:05.078477+00:00"
+}

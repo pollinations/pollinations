@@ -2,6 +2,7 @@ import type { ModelInfo } from "@pollinations/sdk";
 import { describe, expect, it } from "vitest";
 import {
     agentChoices,
+    agentMessageParts,
     arrayBufferToBase64,
     audioFormat,
     buildUserContent,
@@ -233,6 +234,32 @@ describe("agent tool-call rendering", () => {
             "<details><summary>More</summary>Not a tool call</details>";
         expect(parseAgentMessage(content)).toEqual([
             { type: "text", text: content },
+        ]);
+    });
+
+    it("hides tool markup and half tags until they close", () => {
+        const tool =
+            '<details type="tool_calls" done="true" id="call-1" ' +
+            'name="SEARCH_WEB" arguments="{}">\n' +
+            "<summary>Tool Executed</summary>\n[]\n</details>";
+
+        for (const streaming of [
+            "Looking <",
+            "Looking <deta",
+            `Looking ${tool.slice(0, 60)}`,
+        ]) {
+            expect(agentMessageParts(streaming)).toEqual([
+                { type: "text", text: "Looking " },
+            ]);
+        }
+        expect(
+            agentMessageParts(`Looking ${tool}\n\n${tool.slice(0, 30)}`),
+        ).toEqual([
+            { type: "text", text: "Looking " },
+            expect.objectContaining({
+                type: "tool-call",
+                toolCallId: "call-1",
+            }),
         ]);
     });
 });

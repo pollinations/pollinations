@@ -39,7 +39,6 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import type { DynamicToolUIPart } from "ai";
 import {
     type ClipboardEvent,
     type DragEvent,
@@ -55,6 +54,7 @@ import type { PlaySearch } from "../../routes/-play-search";
 import {
     type AgentChoice,
     agentChoices,
+    agentMessageParts,
     arrayBufferToBase64,
     audioFormat,
     type ChatAttachmentKind,
@@ -224,24 +224,6 @@ function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
     );
 }
 
-function ToolPart({ part }: { part: DynamicToolUIPart }) {
-    return (
-        <ToolCallDetails
-            name={part.toolName}
-            input={part.input}
-            output={part.state === "output-available" ? part.output : undefined}
-            error={part.state === "output-error" ? part.errorText : undefined}
-            status={
-                part.state === "output-available"
-                    ? "complete"
-                    : part.state === "output-error"
-                      ? "error"
-                      : "running"
-            }
-        />
-    );
-}
-
 function activeTool(message: PollinationsUIMessage): string | undefined {
     const names = message.parts.flatMap((part) =>
         part.type === "data-activity" ? [part.data.name] : [],
@@ -266,16 +248,17 @@ export function MessageCard({
 }) {
     const isUser = message.role === "user";
     const attachments = message.metadata?.attachments ?? [];
-    const contentParts = message.parts.filter(
-        (part) => part.type === "text" || part.type === "dynamic-tool",
-    );
+    const text = message.parts
+        .flatMap((part) => (part.type === "text" ? [part.text] : []))
+        .join("\n");
+    const contentParts = isUser ? [] : agentMessageParts(text);
     const cancelled = message.parts.some(
         (part) => part.type === "data-responseStatus",
     );
     const retryable = canRetry && (cancelled || Boolean(responseError));
     const activity = activeTool(message);
-    const copyText = message.parts
-        .flatMap((part) => (part.type === "text" ? [part.text] : []))
+    const copyText = contentParts
+        .flatMap((part) => (part.type === "text" ? [part.text.trim()] : []))
         .join("\n\n");
     const showArticle =
         isUser ||
@@ -302,26 +285,32 @@ export function MessageCard({
                     }
                 >
                     <ChatMessageContent className="flex flex-col gap-3">
+                        {isUser && text && (
+                            <p className="whitespace-pre-wrap break-words">
+                                {text}
+                            </p>
+                        )}
                         {contentParts.map((part, index) =>
                             part.type === "text" ? (
-                                isUser ? (
-                                    <p
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
-                                        key={`text:${index}`}
-                                        className="whitespace-pre-wrap break-words"
-                                    >
-                                        {part.text}
-                                    </p>
-                                ) : (
-                                    <Markdown
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
-                                        key={`text:${index}`}
-                                    >
-                                        {part.text}
-                                    </Markdown>
-                                )
+                                <Markdown
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
+                                    key={`text:${index}`}
+                                >
+                                    {part.text}
+                                </Markdown>
                             ) : (
-                                <ToolPart key={part.toolCallId} part={part} />
+                                <ToolCallDetails
+                                    key={part.toolCallId}
+                                    name={part.toolName}
+                                    input={part.args}
+                                    output={
+                                        part.isError ? undefined : part.result
+                                    }
+                                    error={
+                                        part.isError ? part.result : undefined
+                                    }
+                                    status={part.isError ? "error" : "complete"}
+                                />
                             ),
                         )}
                         {attachments.length > 0 && (

@@ -39,6 +39,11 @@ async function chunksFrom(events: ChatStreamChunk[]) {
     return chunks;
 }
 
+const TOOL_MARKUP =
+    '<details type="tool_calls" done="true" id="call-1" name="SEARCH_WEB" ' +
+    'arguments="{&quot;query&quot;:&quot;flowers&quot;}">\n' +
+    "<summary>Tool Executed</summary>\n{&quot;count&quot;:1}\n</details>";
+
 function contentChunk(content: string, id: string): ChatStreamChunk {
     return {
         id,
@@ -56,7 +61,7 @@ function contentChunk(content: string, id: string): ChatStreamChunk {
 }
 
 describe("messagesForPollinations", () => {
-    it("preserves attachments and server-executed tool history", () => {
+    it("preserves attachments and returns agent replies verbatim", () => {
         const messages: PollinationsUIMessage[] = [
             {
                 id: "welcome",
@@ -88,18 +93,7 @@ describe("messagesForPollinations", () => {
             {
                 id: "assistant-1",
                 role: "assistant",
-                parts: [
-                    { type: "text", text: "Done." },
-                    {
-                        type: "dynamic-tool",
-                        toolName: "SEARCH_WEB",
-                        toolCallId: "call-1",
-                        state: "output-available",
-                        input: { query: "flowers" },
-                        output: { count: 1 },
-                        providerExecuted: true,
-                    },
-                ],
+                parts: [{ type: "text", text: `Done.\n\n${TOOL_MARKUP}` }],
             },
         ];
 
@@ -115,9 +109,10 @@ describe("messagesForPollinations", () => {
                 },
             ],
         });
-        expect(result[1].content).toContain(
-            '<details type="tool_calls" done="true"',
-        );
+        expect(result[1]).toEqual({
+            role: "assistant",
+            content: `Done.\n\n${TOOL_MARKUP}`,
+        });
     });
 });
 
@@ -150,23 +145,11 @@ describe("pollinationsChatTransport", () => {
         });
     });
 
-    it("normalizes tool markup into UI Message Stream chunks, leaving media markdown inline", async () => {
-        const content =
-            "Found it.\n\n" +
-            '<details type="tool_calls" done="true" id="call-1" ' +
-            'name="SEARCH_WEB" arguments="{&quot;query&quot;:&quot;flowers&quot;}">\n' +
-            "<summary>Tool Executed</summary>\n" +
-            "{&quot;count&quot;:1}\n</details>\n\n" +
-            "![Result](<https://example.test/result.png>)";
+    it("streams the reply as one verbatim text part, tool markup included", async () => {
+        const source = `Found it.\n\n${TOOL_MARKUP}\n\n![Result](https://example.test/result.png)`;
         const chunks = await chunksFrom([
-            contentChunk(content, "chunk-1"),
-            {
-                id: "chunk-2",
-                object: "chat.completion.chunk",
-                created: 1,
-                model: "floret",
-                choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
-            },
+            contentChunk(source.slice(0, 15), "chunk-1"),
+            contentChunk(source.slice(15), "chunk-2"),
         ]);
 
         expect(chunks.map((chunk) => chunk.type)).toEqual([
@@ -174,177 +157,17 @@ describe("pollinationsChatTransport", () => {
             "start-step",
             "text-start",
             "text-delta",
-            "text-end",
-            "tool-input-available",
-            "tool-output-available",
-            "text-start",
             "text-delta",
             "text-end",
             "finish-step",
             "finish",
         ]);
         expect(
-            chunks.find((chunk) => chunk.type === "tool-input-available"),
-        ).toMatchObject({
-            toolCallId: "call-1",
-            toolName: "SEARCH_WEB",
-            input: { query: "flowers" },
-            providerExecuted: true,
-            dynamic: true,
-        });
-        expect(
             chunks
                 .filter((chunk) => chunk.type === "text-delta")
                 .map((chunk) => chunk.delta)
                 .join(""),
-        ).toBe("Found it.\n\n\n\n![Result](<https://example.test/result.png>)");
-    });
-
-    it("buffers tool markup split across provider chunks", async () => {
-        const chunks = await chunksFrom([
-            contentChunk("Found it.\n\n<det", "chunk-1"),
-            contentChunk(
-                'ails type="tool_calls" done="true" id="call-1" name="SEARCH_WEB" ',
-                "chunk-2",
-            ),
-            contentChunk(
-                'arguments="{&quot;query&quot;:&quot;flowers&quot;}"><summary>Tool Executed</summary>{&quot;count&quot;:1}</details>',
-                "chunk-3",
-            ),
-        ]);
-
-        expect(
-            chunks.find((chunk) => chunk.type === "tool-input-available"),
-        ).toMatchObject({
-            toolCallId: "call-1",
-            toolName: "SEARCH_WEB",
-            input: { query: "flowers" },
-        });
-        expect(
-            chunks
-                .filter((chunk) => chunk.type === "text-delta")
-                .map((chunk) => chunk.delta)
-                .join(""),
-        ).toBe("Found it.\n\n");
-    });
-
-    it("passes plain code straight through without splitting on brackets", async () => {
-        const chunks = await chunksFrom([
-            contentChunk("const a = [\n", "chunk-1"),
-            contentChunk("  1,\n", "chunk-2"),
-            contentChunk("];", "chunk-3"),
-        ]);
-
-        expect(
-            chunks
-                .filter((chunk) => chunk.type === "text-delta")
-                .map((chunk) => chunk.delta)
-                .join(""),
-        ).toBe("const a = [\n  1,\n];");
-    });
-
-    it("preserves text and image order across streamed chunk boundaries", async () => {
-        const source =
-            "Before\n\n![Day](https://example.test/day.png)\n\nBetween\n\n![Night](https://example.test/night.png)\n\nAfter";
-        const partitions = [
-            [source],
-            [...source],
-            ...Array.from({ length: source.length - 1 }, (_, index) => [
-                source.slice(0, index + 1),
-                source.slice(index + 1),
-            ]),
-        ];
-        for (const partition of partitions) {
-            const chunks = await chunksFrom(
-                partition.map((text, index) =>
-                    contentChunk(text, String(index)),
-                ),
-            );
-            const content = chunks
-                .map((chunk) => {
-                    if (chunk.type === "text-delta") return chunk.delta;
-                    return "";
-                })
-                .join("");
-            expect(content).toBe(source);
-        }
-    });
-
-    it("passes markdown image links straight through as text, split across provider chunks", async () => {
-        const chunks = await chunksFrom([
-            contentChunk("![Res", "chunk-1"),
-            contentChunk("ult](<https://example.test/result", "chunk-2"),
-            contentChunk(".png>)", "chunk-3"),
-        ]);
-
-        expect(
-            chunks
-                .filter((chunk) => chunk.type === "text-delta")
-                .map((chunk) => chunk.delta)
-                .join(""),
-        ).toBe("![Result](<https://example.test/result.png>)");
-    });
-
-    it.each([
-        '\\<details type="tool_calls" done="true" id="sample" name="EXAMPLE" arguments="{}"><summary>Tool Executed</summary>{}</details>',
-        "![Result](https://example.test/result.png)",
-        "[Video](<https://example.test/result.mp4>)",
-    ])("renders markdown media links independently of every chunk boundary: %s", async (content) => {
-        const partitions = [
-            ...Array.from({ length: content.length - 1 }, (_, index) => [
-                content.slice(0, index + 1),
-                content.slice(index + 1),
-            ]),
-            [...content],
-        ];
-        for (const partition of partitions) {
-            const chunks = await chunksFrom(
-                partition.map((text, index) =>
-                    contentChunk(text, String(index)),
-                ),
-            );
-            expect(
-                chunks
-                    .filter((chunk) => chunk.type === "text-delta")
-                    .map((chunk) => chunk.delta)
-                    .join(""),
-            ).toBe(content);
-        }
-    });
-
-    it.each([
-        "```markdown\n![Result](https://example.test/result.png)\n```",
-        "~~~markdown\n![Result](https://example.test/result.png)\n~~~",
-        "Use `![Result](https://example.test/result.png)` in Markdown.",
-        "Use ``a ` tick and ![Result](https://example.test/result.png)``.",
-        '```html\n<details type="tool_calls" done="true" id="sample" name="EXAMPLE" arguments="{}"><summary>Tool Executed</summary>{}</details>\n```',
-    ])("preserves literal code at every chunk boundary: %s", async (content) => {
-        const media = "![Actual result](https://example.test/actual.png)";
-        const source = `${content}\n\n${media}`;
-        const partitions = [
-            [source],
-            ...Array.from({ length: source.length - 1 }, (_, index) => [
-                source.slice(0, index + 1),
-                source.slice(index + 1),
-            ]),
-            [...source],
-        ];
-        for (const partition of partitions) {
-            const chunks = await chunksFrom(
-                partition.map((text, index) =>
-                    contentChunk(text, String(index)),
-                ),
-            );
-            expect(
-                chunks
-                    .filter((chunk) => chunk.type === "text-delta")
-                    .map((chunk) => chunk.delta)
-                    .join(""),
-            ).toBe(source);
-            expect(
-                chunks.filter((chunk) => chunk.type === "tool-input-available"),
-            ).toHaveLength(0);
-        }
+        ).toBe(source);
     });
 
     it("marks an aborted response stopped while preserving received text", async () => {

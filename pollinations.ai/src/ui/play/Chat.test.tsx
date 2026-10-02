@@ -162,4 +162,23 @@ describe("chat media placement", () => {
         expect(html).toContain('alt="Result"');
         expect(html).toContain('aria-label="Copy response"');
     });
+
+    it("draws a tool card between the text around its markup", () => {
+        const html = renderMessage([
+            {
+                type: "text",
+                text:
+                    "Searching.\n\n" +
+                    '<details type="tool_calls" done="true" id="call-1" ' +
+                    'name="SEARCH_WEB" arguments="{&quot;query&quot;:&quot;bees&quot;}">\n' +
+                    "<summary>Tool Executed</summary>\n[]\n</details>\n\nFound bees.",
+            },
+        ]);
+        const positions = [">Searching.<", "SEARCH_WEB", ">Found bees.<"].map(
+            (text) => html.indexOf(text),
+        );
+        expect(positions.every((position) => position >= 0)).toBe(true);
+        expect(positions).toEqual([...positions].sort((a, b) => a - b));
+        expect(html).not.toContain("&lt;details");
+    });
 });

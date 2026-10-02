@@ -129,6 +129,16 @@ export function parseAgentMessage(content: string): AgentMessagePart[] {
     return parts.length > 0 ? parts : [{ type: "text", text: content }];
 }
 
+/** Tool markup still streaming in at the end of a reply, or half a tag. */
+const PENDING_MARKUP = /<(?:details\b(?![\s\S]*<\/details>)[\s\S]*|[a-z]*)$/i;
+
+/** What to draw for a reply: text and tool cards, hiding markup until it closes. */
+export function agentMessageParts(content: string): AgentMessagePart[] {
+    return parseAgentMessage(content.replace(PENDING_MARKUP, "")).filter(
+        (part) => part.type === "tool-call" || part.text.trim(),
+    );
+}
+
 interface FileDescriptor {
     name: string;
     type: string;

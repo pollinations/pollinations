@@ -825,14 +825,14 @@ export function CommunityEndpointDialog({
                         <div className="space-y-3">
                             {isShared && (
                                 <ModelFormRow
-                                    label="Accepted Pollen"
+                                    label="Accepted credit"
                                     help={
                                         form.paidOnly
-                                            ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
-                                            : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                                            ? "Paid only: callers must spend paid credit. Use this when your upstream bills per use, so free quest credit cannot cover the price."
+                                            : "Any credit: callers can pay with quest or paid credit."
                                     }
                                 >
-                                    <ButtonGroup aria-label="Accepted Pollen">
+                                    <ButtonGroup aria-label="Accepted credit">
                                         <TabButton
                                             active={!form.paidOnly}
                                             onClick={() =>
@@ -847,7 +847,7 @@ export function CommunityEndpointDialog({
                                             {!form.paidOnly && (
                                                 <CheckIcon className="h-3.5 w-3.5" />
                                             )}
-                                            Any Pollen
+                                            Any credit
                                         </TabButton>
                                         <TabButton
                                             active={form.paidOnly}

@@ -91,7 +91,7 @@ export async function ask({
             if (!res.ok)
                 return {
                     error: `http_${res.status}`,
-                    fatal: [401, 402, 403, 429].includes(res.status),
+                    fatal: [401, 402, 403].includes(res.status),
                 };
             const body = await res.json();
             if (

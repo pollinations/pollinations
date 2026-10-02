@@ -73,6 +73,8 @@ const inPool = async (items, size, work) => {
     );
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function scoreModel({
     model,
     evalDef,
@@ -88,10 +90,22 @@ async function scoreModel({
     const errors = {};
     let cost = 0;
     let stopped = false;
-    await inPool(questions.entries(), 4, async ([index, question]) => {
+    let rateLimited = false;
+    let lastRequestAt = 0;
+    const intervalMs = model.per_user_rpm ? 60_000 / model.per_user_rpm : 0;
+    await inPool(questions.entries(), intervalMs ? 1 : 4, async ([index, question]) => {
+        if (rateLimited) return;
         if (overBudget()) {
             stopped = true;
             return;
+        }
+        if (intervalMs) {
+            await sleep(Math.max(0, lastRequestAt + intervalMs - Date.now()));
+            if (overBudget()) {
+                stopped = true;
+                return;
+            }
+            lastRequestAt = Date.now();
         }
         const reply = await ask({
             ...api,
@@ -101,6 +115,10 @@ async function scoreModel({
         });
         if (reply.fatal)
             throw new Error(`${reply.error}: evaluation cannot continue`);
+        if (reply.error === "http_429") {
+            rateLimited = true;
+            return;
+        }
         const spent = estimateCost(reply.usage, model.pricing);
         cost += spent;
         onCost(spent);
@@ -109,6 +127,7 @@ async function scoreModel({
         if (reply.error) errors[reply.error] = (errors[reply.error] ?? 0) + 1;
         else if (evalDef.grade(reply.text, question)) family.correct++;
     });
+    if (rateLimited) return { status: "unscored", reason: "rate_limited", cost };
     // A model the budget cut off mid-way is not scored on the questions it did get.
     if (stopped) return { status: "skipped", cost };
     const correct = Object.values(families).reduce((n, f) => n + f.correct, 0);
@@ -130,7 +149,8 @@ async function scoreModel({
  * estimated spend reaches `budget` no further question is sent and the models
  * still unfinished are reported as skipped, so a run never overshoots the
  * budget by more than the requests already in flight.
- * An error or timeout counts as a wrong answer, never as a skipped question.
+ * An error or timeout counts as a wrong answer, except an exhausted per-user
+ * rate limit, which leaves that model unscored.
  */
 export async function runEvals({
     models,
@@ -188,9 +208,13 @@ export function formatTable(evalResult) {
     const rows = evalResult.models
         .filter((model) => model.status === "scored")
         .sort((a, b) => b.rate - a.rate || a.cost - b.cost);
+    const unscored = evalResult.models.filter(
+        (model) => model.status === "unscored",
+    ).length;
+    const skipped = evalResult.models.length - rows.length - unscored;
     const width = Math.max(5, ...rows.map((row) => row.name.length));
     const lines = [
-        `${evalResult.title}: ${rows.length} scored, ${evalResult.models.length - rows.length} skipped`,
+        `${evalResult.title}: ${rows.length} scored, ${unscored} unscored, ${skipped} skipped`,
         `${"model".padEnd(width)}  score (95% CI)        failed  cost (Pollen)`,
     ];
     for (const row of rows) {
@@ -283,7 +307,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
         api,
         log: (name, evalId, entry) =>
             console.error(
-                `${entry.status === "scored" ? `${percent(entry.rate)} (${entry.failed} failed)` : "skipped"}  ${name}  [${evalId}]`,
+                `${entry.status === "scored" ? `${percent(entry.rate)} (${entry.failed} failed)` : entry.status === "unscored" ? "unscored (rate limited)" : "skipped"}  ${name}  [${evalId}]`,
             ),
     });
     const run = {

@@ -5,7 +5,7 @@ import aiw from "./evals/aiw.js";
 import { estimateCost } from "./lib/gen.js";
 import { createRng } from "./lib/rng.js";
 import { scoreOf } from "./lib/stats.js";
-import { runEvals, selectModels } from "./run.js";
+import { formatTable, runEvals, selectModels } from "./run.js";
 
 // Re-derives each answer from the prompt text alone, so a template edit that
 // breaks its own ground truth fails here instead of grading models wrongly.
@@ -196,6 +196,7 @@ describe("runEvals against a real HTTP server", () => {
     let server;
     let baseUrl;
     let limited = new Set();
+    let pacedAt = 0;
 
     before(async () => {
         server = createServer((req, res) => {
@@ -220,6 +221,12 @@ describe("runEvals against a real HTTP server", () => {
                     return send(402, { error: "insufficient balance" });
                 if (model === "vendor/always-limited")
                     return send(429, { error: "slow down" });
+                if (model === "vendor/paced") {
+                    const now = Date.now();
+                    if (now - pacedAt < 16)
+                        return send(429, { error: "too fast" });
+                    pacedAt = now;
+                }
                 if (model === "vendor/no-usage")
                     return send(200, {
                         choices: [
@@ -309,6 +316,39 @@ describe("runEvals against a real HTTP server", () => {
         assert.ok(requests.every((r) => r.auth === "Bearer sk_test"));
     });
 
+    test("paces a model by its advertised per-user RPM", async () => {
+        pacedAt = 0;
+        const { results } = await run(
+            [model("vendor/paced", { per_user_rpm: 3000 })],
+            { samples: 1 },
+        );
+        assert.equal(results[0].models[0].status, "scored");
+        assert.equal(results[0].models[0].correct, 3);
+    });
+
+    test("an exhausted model limit leaves other model results publishable", async () => {
+        const { results } = await run(
+            [model("vendor/always-limited"), model("vendor/right")],
+            {
+                samples: 1,
+                api: { baseUrl, key: "sk_test", rateLimitRetries: 0 },
+            },
+        );
+        const byName = Object.fromEntries(
+            results[0].models.map((entry) => [entry.name, entry]),
+        );
+        assert.deepEqual(byName["vendor/always-limited"], {
+            name: "vendor/always-limited",
+            community: false,
+            aliases: [],
+            status: "unscored",
+            reason: "rate_limited",
+            cost: 0,
+        });
+        assert.equal(byName["vendor/right"].correct, 3);
+        assert.match(formatTable(results[0]), /1 scored, 1 unscored, 0 skipped/);
+    });
+
     test("every question of a run gets its own seed, so nothing is served from gen's cache", async () => {
         requests.length = 0;
         await run([model("vendor/right")]);
@@ -374,11 +414,5 @@ describe("runEvals against a real HTTP server", () => {
         await assert.rejects(run([model("vendor/auth")]), /http_401/);
         await assert.rejects(run([model("vendor/no-balance")]), /http_402/);
         await assert.rejects(run([model("vendor/no-usage")]), /missing_usage/);
-        await assert.rejects(
-            run([model("vendor/always-limited")], {
-                api: { baseUrl, key: "sk_test", rateLimitRetries: 0 },
-            }),
-            /http_429/,
-        );
     });
 });

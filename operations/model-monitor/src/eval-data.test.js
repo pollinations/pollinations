@@ -79,12 +79,13 @@ describe("compareToTwin", () => {
 
 describe("buildLeaderboard", () => {
     test("ranks scored models, pairs community models with their twins, and lists the skipped", () => {
-        const { ranking, pairs, skipped } = buildLeaderboard([
+        const { ranking, pairs, skipped, unscored } = buildLeaderboard([
             model("openai/gpt-6-luna", 0.93, 0.14),
             model("community/v/gpt-6-luna:stable", 0.27, 0.21),
             model("google/gemma", 0.93, 0.14, { cost: 0.001 }),
             model("community/v/original", 0.5, 0.2),
             { name: "vendor/pricey", status: "skipped", community: false },
+            { name: "vendor/limited", status: "unscored", reason: "rate_limited" },
         ]);
         assert.deepEqual(
             ranking.map((m) => m.name),
@@ -102,5 +103,6 @@ describe("buildLeaderboard", () => {
             skipped.map((m) => m.name),
             ["vendor/pricey"],
         );
+        assert.deepEqual(unscored.map((m) => m.name), ["vendor/limited"]);
     });
 });

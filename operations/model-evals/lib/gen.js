@@ -1,3 +1,5 @@
+import { openaiUsageToUsage } from "../../../shared/registry/usage-headers.ts";
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const defaultBaseUrl = () =>
@@ -19,14 +21,17 @@ const price = (pricing, field) => Number(pricing?.[field] ?? 0);
 /** Pollen for one reply: the usage gen reports times the catalog's prices. */
 export function estimateCost(usage, pricing) {
     if (!usage) return 0;
-    const cached = usage.prompt_tokens_details?.cached_tokens ?? 0;
-    const prompt = (usage.prompt_tokens ?? 0) - cached;
-    return (
-        prompt * price(pricing, "promptTextTokens") +
-        cached *
-            (price(pricing, "promptCachedTokens") ||
-                price(pricing, "promptTextTokens")) +
-        (usage.completion_tokens ?? 0) * price(pricing, "completionTextTokens")
+    return Object.entries(openaiUsageToUsage(usage)).reduce(
+        (total, [type, count]) =>
+            total +
+            count *
+                price(
+                    pricing,
+                    type === "completionReasoningTokens"
+                        ? "completionTextTokens"
+                        : type,
+                ),
+        0,
     );
 }
 
@@ -75,7 +80,9 @@ export async function ask({
                 const seconds = header === null ? Number.NaN : Number(header);
                 await wait(
                     Math.min(
-                        Number.isNaN(seconds) ? attempt * 5000 : seconds * 1000,
+                        Number.isFinite(seconds) && seconds > 0
+                            ? seconds * 1000
+                            : attempt * 5000,
                         60_000,
                     ),
                 );
@@ -84,9 +91,14 @@ export async function ask({
             if (!res.ok)
                 return {
                     error: `http_${res.status}`,
-                    fatal: [401, 402, 403].includes(res.status),
+                    fatal: [401, 402, 403, 429].includes(res.status),
                 };
             const body = await res.json();
+            if (
+                !Number.isFinite(body.usage?.prompt_tokens) ||
+                !Number.isFinite(body.usage?.completion_tokens)
+            )
+                return { error: "missing_usage", fatal: true };
             const text = replyText(body.choices?.[0]?.message);
             return text
                 ? { text, usage: body.usage }

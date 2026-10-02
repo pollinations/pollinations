@@ -100,9 +100,7 @@ async function scoreModel({
             seed: (seed + index) % 2147483647,
         });
         if (reply.fatal)
-            throw new Error(
-                `${reply.error}: check the eval API key or balance`,
-            );
+            throw new Error(`${reply.error}: evaluation cannot continue`);
         const spent = estimateCost(reply.usage, model.pricing);
         cost += spent;
         onCost(spent);

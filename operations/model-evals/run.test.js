@@ -104,6 +104,31 @@ describe("scores", () => {
         );
         assert.equal(estimateCost(undefined, pricing), 0);
     });
+
+    test("cost includes cache writes and additive reasoning like gateway billing", () => {
+        const pricing = {
+            promptTextTokens: 0.001,
+            promptCachedTokens: 0.0001,
+            promptCacheWriteTokens: 0.002,
+            completionTextTokens: 0.01,
+        };
+        const usage = {
+            prompt_tokens: 100,
+            completion_tokens: 10,
+            total_tokens: 114,
+            prompt_tokens_details: {
+                cached_tokens: 20,
+                cache_write_tokens: 30,
+            },
+            completion_tokens_details: { reasoning_tokens: 4 },
+        };
+        assert.ok(
+            Math.abs(
+                estimateCost(usage, pricing) -
+                    (50 * 0.001 + 20 * 0.0001 + 30 * 0.002 + 14 * 0.01),
+            ) < 1e-9,
+        );
+    });
 });
 
 const CATALOG = [
@@ -193,6 +218,19 @@ describe("runEvals against a real HTTP server", () => {
                     return send(401, { error: "invalid key" });
                 if (model === "vendor/no-balance")
                     return send(402, { error: "insufficient balance" });
+                if (model === "vendor/always-limited")
+                    return send(429, { error: "slow down" });
+                if (model === "vendor/no-usage")
+                    return send(200, {
+                        choices: [
+                            {
+                                message: {
+                                    content:
+                                        "Please top up your account before trying again.",
+                                },
+                            },
+                        ],
+                    });
                 if (model === "vendor/broken")
                     return send(500, { error: "boom" });
                 if (model === "vendor/limited" && !limited.has(seed)) {
@@ -200,7 +238,7 @@ describe("runEvals against a real HTTP server", () => {
                     return send(
                         429,
                         { error: "slow down" },
-                        { "retry-after": "0" },
+                        { "retry-after": "0.001" },
                     );
                 }
                 const truth = answerFromPrompt(prompt);
@@ -335,5 +373,12 @@ describe("runEvals against a real HTTP server", () => {
     test("account errors abort the run instead of publishing wrong model scores", async () => {
         await assert.rejects(run([model("vendor/auth")]), /http_401/);
         await assert.rejects(run([model("vendor/no-balance")]), /http_402/);
+        await assert.rejects(run([model("vendor/no-usage")]), /missing_usage/);
+        await assert.rejects(
+            run([model("vendor/always-limited")], {
+                api: { baseUrl, key: "sk_test", rateLimitRetries: 0 },
+            }),
+            /http_429/,
+        );
     });
 });

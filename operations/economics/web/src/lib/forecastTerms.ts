@@ -140,12 +140,8 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
-    // Modal usage is covered by the $30 monthly plan credit per workspace.
-    "modal|compute": {
-        method: "last",
-        paymentTiming: "prepaid",
-        automaticUsage: true,
-    },
+    // Modal is no longer used; retain historical usage and any remaining credit.
+    "modal|compute": { method: "one_off", paymentTiming: "prepaid" },
     "openrouter|compute": {
         method: "last",
         paymentTiming: "prepaid",

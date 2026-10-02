@@ -185,6 +185,7 @@ const PAGE = `<!doctype html>
   .bar>span{display:block;height:100%;background:#1a7f37}
   .chev{transition:transform .15s;transform:rotate(-90deg)}.on>.row .chev,.chev.on{transform:none}
   .zero{opacity:.35}
+  .head{position:sticky;top:0;z-index:1;background:var(--polli-color-app-bg);padding-top:6px;padding-bottom:6px}.head:hover{background:var(--polli-color-app-bg)}
   .toggle button{padding:6px 10px;border-radius:8px;color:var(--polli-color-text-muted)}
   .toggle button.sel{background:var(--polli-color-bg-subtle);color:var(--polli-color-text-strong);font-weight:600}
   .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;font-size:12px}
@@ -220,7 +221,9 @@ const PAGE = `<!doctype html>
   };
   const TYPES = [["Bug", "bug"], ["Feature", "feature"], ["Task", "task"], ["Question", "question"]];
   const icon = (name, cls) => h(I[name], { className: cls });
-  const n = (name, value, cls, title, col) => h("span", { key: col, className: "n" + (value ? "" : " zero"), title, style: { gridColumn: col } }, icon(name, cls), value || 0);
+  // Columns 1–4: issue types. 5: open issues, 6: closed issues, 7: open PRs, 8: merged PRs. The icons sit once in the header row.
+  const COLUMNS = [["bug"], ["feature"], ["task"], ["question"], ["issue", "open"], ["closed", "done"], ["pr", "open"], ["merged", "done"]];
+  const n = (value, col) => h("span", { key: col, className: "n" + (value ? "" : " zero"), style: { gridColumn: col } }, value || 0);
   const cells = (...children) => h("span", { className: "cells" }, children);
 
   // Source is the Dev board's field: exactly one per item (set by the project manager).
@@ -251,9 +254,11 @@ const PAGE = `<!doctype html>
     for (const p of prs) if (live(p, since)) p.state === "open" ? c.openPrs++ : c.merged++;
     return c;
   }
-  // Columns 1–4: issue types (empty when zero). 5: open issues, 6: closed issues, 7: open PRs, 8: merged PRs.
-  const typeCells = (c) => TYPES.map(([t, name], i) => c[t] ? h("span", { key: t, className: "n soft type", title: t + "s", style: { gridColumn: i + 1 } }, icon(name), c[t]) : null);
-  const prCells = (c) => [n("pr", c.openPrs, "open", "Open PRs", 7), n("merged", c.merged, "done", "Merged PRs", 8)];
+  // Issue types stay empty when zero.
+  const typeCells = (c) => TYPES.map(([t], i) => c[t] ? h("span", { key: t, className: "n soft type", style: { gridColumn: i + 1 } }, c[t]) : null);
+  const prCells = (c) => [n(c.openPrs, 7), n(c.merged, 8)];
+  const header = () => h("div", { className: "row head" }, h("span", { style: { width: 16 } }), h("span", { className: "grow" }),
+    cells(...COLUMNS.map(([name, cls], i) => h("span", { key: i, className: "n" + (i < 4 ? " soft type" : ""), style: { gridColumn: i + 1 } }, icon(name, cls)))));
 
   function build(since, source) {
     const items = pick(source);
@@ -297,7 +302,7 @@ const PAGE = `<!doctype html>
     return h("a", { key: i.number, href: i.url, target: "_blank", rel: "noopener", className: "row" },
       icon(i.state === "open" ? "issue" : "closed", i.state === "open" ? "open" : "done"),
       h("span", { className: "grow" + (i.state === "open" ? "" : " soft") }, i.title),
-      cells(open ? n("pr", open, "open", "Open PRs", 7) : null, merged ? n("merged", merged, "done", "Merged PRs", 8) : null));
+      cells(open ? n(open, 7) : null, merged ? n(merged, 8) : null));
   }
 
   function parentRow(p, s, prsFor, since) {
@@ -310,7 +315,7 @@ const PAGE = `<!doctype html>
       h("button", { className: "row", onClick: () => toggle(key) },
         icon("chevron", "chev soft" + (on ? " on" : "")), icon("parent", "done"),
         h("span", { className: "grow" }, p.parent.title),
-        cells(h("span", { key: "p", style: { gridColumn: "1 / 7", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, paddingRight: 12 }, title: done + " of " + total + " done" },
+        cells(h("span", { key: "p", style: { gridColumn: "1 / 7", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, paddingRight: 12 } },
           h("span", { className: "bar" }, h("span", { style: { width: (total ? 100 * done / total : 0) + "%" } })), h("span", { className: "n soft" }, done + "/" + total)), ...prCells(c))),
       on ? h("div", { className: "leaf" }, kids.map((k) => issueRow(k, prsFor, since))) : null);
   }
@@ -321,7 +326,7 @@ const PAGE = `<!doctype html>
     return h("div", { key },
       h("button", { className: "row", onClick: () => toggle(key) },
         icon("chevron", "chev soft" + (on ? " on" : "")), icon("stack", "soft"),
-        h("span", { className: "grow soft" }, "No parent"), (() => { const c = counts(a.loose, a.loosePrs, since); return cells(n("issue", c.open, "open", "Open issues", 5), ...prCells(c)); })()),
+        h("span", { className: "grow soft" }, "No parent"), (() => { const c = counts(a.loose, a.loosePrs, since); return cells(n(c.open, 5), ...prCells(c)); })()),
       on ? h("div", { className: "leaf" }, a.loose.map((i) => issueRow(i, prsFor, since))) : null);
   }
 
@@ -330,7 +335,7 @@ const PAGE = `<!doctype html>
     return h("div", { key: a.name, className: "area" + (on ? " on" : "") },
       h("button", { className: "row", onClick: () => toggle(a.name) },
         icon("chevron", "chev soft"), h("b", { className: "grow" }, a.name),
-        cells(...typeCells(a.c), n("issue", a.c.open, "open", "Open issues", 5), n("closed", a.c.closed, "done", "Closed issues", 6), ...prCells(a.c))),
+        cells(...typeCells(a.c), n(a.c.open, 5), n(a.c.closed, 6), ...prCells(a.c))),
       on ? h("div", { className: "kids" }, [...a.parents.values()].map((p) => parentRow(p, s, prsFor, since)), looseRow(a, s, prsFor, since)) : null);
   }
 
@@ -349,6 +354,7 @@ const PAGE = `<!doctype html>
         h("div", { style: { display: "flex", gap: 16, flexWrap: "wrap" } },
           h("div", { className: "toggle" }, SOURCES.map((x) => h("button", { key: x, className: x === s.source ? "sel" : "", onClick: () => setState(Object.assign(s, { source: x })) }, x))),
           h("div", { className: "toggle" }, [7, 30, 90].map((d) => h("button", { key: d, className: d === s.days ? "sel" : "", onClick: () => setState(Object.assign(s, { days: d })) }, d + "d"))))),
+      header(),
       areas.map((a) => areaBlock(a, s, prsFor, since)),
       legend(),
       h("p", { className: "soft", style: { fontSize: 12, marginTop: 10 } }, "Updated " + new Date(data.fetchedAt).toLocaleString())));

@@ -145,16 +145,17 @@ const PAGE = `<!doctype html>
   a{color:inherit;text-decoration:none}
   button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
   svg{width:16px;height:16px;flex:none}
-  .row{display:flex;align-items:center;gap:14px;padding:10px 12px;width:100%;box-sizing:border-box;border-radius:10px}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 12px;width:100%;box-sizing:border-box;border-radius:10px}
+  .cells{display:grid;grid-template-columns:repeat(4,46px) repeat(4,58px);align-items:center;flex:none}
   .row:hover{background:var(--polli-color-bg-subtle)}
   .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .n{display:inline-flex;align-items:center;gap:4px;min-width:42px;font-variant-numeric:tabular-nums;color:var(--polli-color-text-base)}
+  .n{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;color:var(--polli-color-text-base)}
   .soft{color:var(--polli-color-text-muted)}
   .open{color:#1a7f37}.done{color:#8250df}
-  .area{border-top:1px solid var(--polli-color-border)}
-  .area.on{border:1px solid var(--polli-color-border);border-radius:14px;background:var(--polli-color-surface-white);margin:6px 0}
+  .area{border:1px solid transparent;border-top-color:var(--polli-color-border)}
+  .area.on{border-color:var(--polli-color-border);border-radius:14px;background:var(--polli-color-surface-white);margin:6px 0}
   .kids{margin:0 0 8px 34px}
-  .kids .row{padding:7px 10px;gap:12px}
+  .kids .row{padding:7px 12px}
   .leaf{margin-left:28px}
   .bar{width:60px;height:6px;border-radius:3px;background:var(--polli-color-bg-subtle);overflow:hidden;flex:none}
   .bar>span{display:block;height:100%;background:#1a7f37}
@@ -164,7 +165,7 @@ const PAGE = `<!doctype html>
   .toggle button.sel{background:var(--polli-color-bg-subtle);color:var(--polli-color-text-strong);font-weight:600}
   .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;font-size:12px}
   .legend span{display:inline-flex;align-items:center;gap:5px}
-  @media (max-width:640px){.types{display:none}.n{min-width:34px}}
+  @media (max-width:640px){.cells{grid-template-columns:repeat(4,0) repeat(4,46px)}.type{visibility:hidden}}
 </style>
 <script crossorigin="anonymous" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin="anonymous" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -195,7 +196,8 @@ const PAGE = `<!doctype html>
   };
   const TYPES = [["Bug", "bug"], ["Feature", "feature"], ["Task", "task"], ["Question", "question"]];
   const icon = (name, cls) => h(I[name], { className: cls });
-  const n = (name, value, cls, title) => h("span", { className: "n" + (value ? "" : " zero"), title }, icon(name, cls), value || 0);
+  const n = (name, value, cls, title, col) => h("span", { key: col, className: "n" + (value ? "" : " zero"), title, style: { gridColumn: col } }, icon(name, cls), value || 0);
+  const cells = (...children) => h("span", { className: "cells" }, children);
 
   // State lives in the hash: #days=30&open=Models|p15935
   function state() {
@@ -219,10 +221,9 @@ const PAGE = `<!doctype html>
     for (const p of prs) if (live(p, since)) p.state === "open" ? c.openPrs++ : c.merged++;
     return c;
   }
-  // One fixed slot per type, empty when zero, so the columns line up across rows.
-  const typeCounts = (c) => h("span", { className: "types", style: { display: "inline-flex", gap: 6 } },
-    TYPES.map(([t, name]) => h("span", { key: t, className: "n soft", title: t + "s", style: { minWidth: 46, visibility: c[t] ? "visible" : "hidden" } }, icon(name), c[t])));
-  const statusCounts = (c) => [n("issue", c.open, "open", "Open issues"), n("pr", c.openPrs, "open", "Open PRs"), n("merged", c.merged, "done", "Merged PRs")];
+  // Columns 1–4: issue types (empty when zero). 5: open issues, 6: closed issues, 7: open PRs, 8: merged PRs.
+  const typeCells = (c) => TYPES.map(([t, name], i) => c[t] ? h("span", { key: t, className: "n soft type", title: t + "s", style: { gridColumn: i + 1 } }, icon(name), c[t]) : null);
+  const prCells = (c) => [n("pr", c.openPrs, "open", "Open PRs", 7), n("merged", c.merged, "done", "Merged PRs", 8)];
 
   function build(since) {
     const byNumber = new Map(data.items.map((i) => [i.number, i]));
@@ -255,7 +256,7 @@ const PAGE = `<!doctype html>
     return h("a", { key: i.number, href: i.url, target: "_blank", rel: "noopener", className: "row" },
       icon(i.state === "open" ? "issue" : "closed", i.state === "open" ? "open" : "done"),
       h("span", { className: "grow" + (i.state === "open" ? "" : " soft") }, i.title),
-      open ? n("pr", open, "open", "Open PRs") : null, merged ? n("merged", merged, "done", "Merged PRs") : null);
+      cells(open ? n("pr", open, "open", "Open PRs", 7) : null, merged ? n("merged", merged, "done", "Merged PRs", 8) : null));
   }
 
   function parentRow(p, s, prsFor, since) {
@@ -268,8 +269,8 @@ const PAGE = `<!doctype html>
       h("button", { className: "row", onClick: () => toggle(key) },
         icon("chevron", "chev soft" + (on ? " on" : "")), icon("parent", "done"),
         h("span", { className: "grow" }, p.parent.title),
-        h("span", { className: "bar", title: done + " of " + total + " done" }, h("span", { style: { width: (total ? 100 * done / total : 0) + "%" } })),
-        h("span", { className: "n soft" }, done + "/" + total), ...statusCounts(c).slice(1)),
+        cells(h("span", { key: "p", style: { gridColumn: "1 / 7", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, paddingRight: 12 }, title: done + " of " + total + " done" },
+          h("span", { className: "bar" }, h("span", { style: { width: (total ? 100 * done / total : 0) + "%" } })), h("span", { className: "n soft" }, done + "/" + total)), ...prCells(c))),
       on ? h("div", { className: "leaf" }, kids.map((k) => issueRow(k, prsFor, since))) : null);
   }
 
@@ -279,7 +280,7 @@ const PAGE = `<!doctype html>
     return h("div", { key },
       h("button", { className: "row", onClick: () => toggle(key) },
         icon("chevron", "chev soft" + (on ? " on" : "")), icon("stack", "soft"),
-        h("span", { className: "grow soft" }, "No parent"), ...statusCounts(counts(a.loose, a.loosePrs, since))),
+        h("span", { className: "grow soft" }, "No parent"), (() => { const c = counts(a.loose, a.loosePrs, since); return cells(n("issue", c.open, "open", "Open issues", 5), ...prCells(c)); })()),
       on ? h("div", { className: "leaf" }, a.loose.map((i) => issueRow(i, prsFor, since))) : null);
   }
 
@@ -287,8 +288,8 @@ const PAGE = `<!doctype html>
     const on = s.open.has(a.name);
     return h("div", { key: a.name, className: "area" + (on ? " on" : "") },
       h("button", { className: "row", onClick: () => toggle(a.name) },
-        icon("chevron", "chev soft"), h("b", { className: "grow" }, a.name), typeCounts(a.c),
-        n("issue", a.c.open, "open", "Open issues"), n("closed", a.c.closed, "done", "Closed issues"), ...statusCounts(a.c).slice(1)),
+        icon("chevron", "chev soft"), h("b", { className: "grow" }, a.name),
+        cells(...typeCells(a.c), n("issue", a.c.open, "open", "Open issues", 5), n("closed", a.c.closed, "done", "Closed issues", 6), ...prCells(a.c))),
       on ? h("div", { className: "kids" }, [...a.parents.values()].map((p) => parentRow(p, s, prsFor, since)), looseRow(a, s, prsFor, since)) : null);
   }
 

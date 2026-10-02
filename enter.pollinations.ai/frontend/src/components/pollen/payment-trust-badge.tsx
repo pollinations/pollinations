@@ -35,13 +35,14 @@ const LOCAL_METHODS: Record<string, string[]> = {
     KR: ["kakao-pay", "naver-pay"],
 };
 
-/** Countries whose currency PayPal accepts; elsewhere checkout hides PayPal. */
+/** Countries whose checkout currency PayPal accepts, including USD fallback. */
 const PAYPAL_COUNTRIES = new Set([
     ...["AT", "BE", "BG", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR"],
     ...["IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"],
     ...["AD", "MC", "ME", "SM", "VA", "US", "PR", "EC", "SV"],
     ...["GB", "CH", "LI", "CZ", "DK", "NO", "PL", "SE"],
     ...["AU", "CA", "HK", "NZ", "SG"],
+    "AR", // Argentina's checkout stays in USD.
 ]);
 
 /** The methods checkout offers a buyer in this country, local ones first. */

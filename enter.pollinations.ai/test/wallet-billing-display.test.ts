@@ -228,4 +228,8 @@ describe("payment logos before checkout", () => {
         );
         expect(paymentMethods(null)).toContain("paypal");
     });
+
+    it("keeps PayPal when Argentina's checkout falls back to USD", () => {
+        expect(paymentMethods("AR")).toContain("paypal");
+    });
 });

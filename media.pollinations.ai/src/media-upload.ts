@@ -10,6 +10,7 @@ type MediaStorageEnv = {
 };
 
 export type UnlistedMediaUpload = {
+    id?: string;
     contentType: string;
     fileName?: string;
     size: number;
@@ -37,8 +38,19 @@ export async function uploadUnlistedMedia(
         throw new Error(`Media exceeds ${maxSize} bytes`);
     }
 
-    const id = crypto.randomUUID();
+    if (input.id !== undefined && !/^[a-f0-9]{64}$/.test(input.id)) {
+        throw new Error("Invalid media ID");
+    }
+    const id = input.id ?? crypto.randomUUID();
     const contentType = input.contentType || "application/octet-stream";
+    if (input.id && (await env.MEDIA_BUCKET.head(id))) {
+        return {
+            id,
+            url: `https://media.pollinations.ai/${id}`,
+            contentType,
+            size: input.size,
+        };
+    }
     const upload = new FixedLengthStream(input.size);
     const pipe = body.pipeTo(upload.writable);
     try {

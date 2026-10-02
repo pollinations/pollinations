@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { largeChatBody } from "../middleware/large-chat-body.ts";
 import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
@@ -215,7 +216,7 @@ const model3dHandlers = factory.createHandlers(
 
 // Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
-    textBodyLimit,
+    every(largeChatBody, textBodyLimit),
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
     resolveModel("generate.text", {
@@ -680,7 +681,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
-                "JSON request bodies may be up to 32 MiB, including inline images.",
+                "JSON request bodies may be up to 100 MiB when inline images are present. For requests over 32 MiB, each inline image data URL may be up to 20 MiB and the chat JSON must shrink below 16 MiB after images are replaced with URLs. Those images are stored as unlisted public media for provider access; media retention is 30 days.",
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",

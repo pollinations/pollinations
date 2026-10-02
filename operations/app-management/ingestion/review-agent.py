@@ -426,7 +426,7 @@ def main():
     if review["status"] == "ready":
         body = (
             f"{COMMENT_MARKER}\n## App pre-review: ready for human review\n\n{mention}{summary}\n\n"
-            "A maintainer can verify the app and add `APP-APPROVED` to publish it."
+            "A maintainer can verify the app, confirm the badge or pollinations.ai link is visible, and add `APP-APPROVED` to publish it."
         )
         label = "APP-REVIEW"
     else:

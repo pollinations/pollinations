@@ -27,9 +27,7 @@ describe("Floret identity", () => {
 
     it("uses the Floret welcome with the current public identity", () => {
         expect(floret.id).toBe(FLORET_MODEL_ID);
-        const welcome = welcomeMessage(floret);
-        expect(welcome.metadata?.localOnly).toBe(true);
-        expect(welcome.parts).toEqual([
+        expect(welcomeMessage(floret).parts).toEqual([
             { type: "text", text: expect.stringContaining("Hi, I’m Floret") },
         ]);
     });
@@ -149,6 +147,39 @@ describe("chat media placement", () => {
         expect(positions.every((position) => position >= 0)).toBe(true);
         expect(positions).toEqual([...positions].sort((a, b) => a - b));
         expect(html.match(/<img /g)).toHaveLength(2);
+    });
+
+    it("shows a user's files with their text", () => {
+        const html = renderToStaticMarkup(
+            <MessageCard
+                message={{
+                    id: "user-files",
+                    role: "user",
+                    parts: [
+                        {
+                            type: "file",
+                            mediaType: "image/png",
+                            filename: "photo.png",
+                            url: "https://example.test/photo.png",
+                        },
+                        {
+                            type: "file",
+                            mediaType: "audio/mpeg",
+                            filename: "voice.mp3",
+                            url: "data:audio/mpeg;base64,AAEC",
+                        },
+                        { type: "text", text: "What is this?" },
+                    ],
+                }}
+                assistantName="Floret"
+                isStreaming={false}
+                canRetry={false}
+                onRetry={() => {}}
+            />,
+        );
+        expect(html).toContain("What is this?");
+        expect(html).toContain('alt="photo.png"');
+        expect(html).toContain('<audio src="data:audio/mpeg;base64,AAEC"');
     });
 
     it("renders a media-only response inside the message", () => {

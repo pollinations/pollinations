@@ -61,34 +61,32 @@ function contentChunk(content: string, id: string): ChatStreamChunk {
 }
 
 describe("messagesForPollinations", () => {
-    it("preserves attachments and returns agent replies verbatim", () => {
+    it("sends file parts as Pollinations content and agent replies verbatim", () => {
         const messages: PollinationsUIMessage[] = [
-            {
-                id: "welcome",
-                role: "assistant",
-                metadata: { localOnly: true },
-                parts: [{ type: "text", text: "Welcome" }],
-            },
             {
                 id: "user-1",
                 role: "user",
-                metadata: {
-                    attachments: [
-                        {
-                            id: "upload-1",
-                            name: "photo.png",
-                            kind: "image",
-                            url: "https://example.test/photo.png",
-                            contentPart: {
-                                type: "image_url",
-                                image_url: {
-                                    url: "https://example.test/photo.png",
-                                },
-                            },
-                        },
-                    ],
-                },
-                parts: [{ type: "text", text: "Describe this" }],
+                parts: [
+                    {
+                        type: "file",
+                        mediaType: "image/png",
+                        filename: "photo.png",
+                        url: "https://example.test/photo.png",
+                    },
+                    {
+                        type: "file",
+                        mediaType: "audio/mpeg",
+                        filename: "voice.mp3",
+                        url: "data:audio/mpeg;base64,AAEC",
+                    },
+                    {
+                        type: "file",
+                        mediaType: "application/pdf",
+                        filename: "notes.pdf",
+                        url: "https://example.test/notes.pdf",
+                    },
+                    { type: "text", text: "Describe these" },
+                ],
             },
             {
                 id: "assistant-1",
@@ -97,22 +95,34 @@ describe("messagesForPollinations", () => {
             },
         ];
 
-        const result = messagesForPollinations(messages);
-        expect(result).toHaveLength(2);
-        expect(result[0]).toEqual({
-            role: "user",
-            content: [
-                { type: "text", text: "Describe this" },
-                {
-                    type: "image_url",
-                    image_url: { url: "https://example.test/photo.png" },
-                },
-            ],
-        });
-        expect(result[1]).toEqual({
-            role: "assistant",
-            content: `Done.\n\n${TOOL_MARKUP}`,
-        });
+        expect(messagesForPollinations(messages)).toEqual([
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "Describe these" },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: "https://example.test/photo.png",
+                            mime_type: "image/png",
+                        },
+                    },
+                    {
+                        type: "input_audio",
+                        input_audio: { data: "AAEC", format: "mp3" },
+                    },
+                    {
+                        type: "file",
+                        file: {
+                            file_url: "https://example.test/notes.pdf",
+                            file_name: "notes.pdf",
+                            mime_type: "application/pdf",
+                        },
+                    },
+                ],
+            },
+            { role: "assistant", content: `Done.\n\n${TOOL_MARKUP}` },
+        ]);
     });
 });
 

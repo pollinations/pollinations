@@ -1,9 +1,5 @@
 import { useChat } from "@ai-sdk/react";
-import {
-    type AudioFormat,
-    type MessageContentPart,
-    Pollinations,
-} from "@pollinations/sdk";
+import { Pollinations } from "@pollinations/sdk";
 import {
     type UseModelCatalogValue,
     useAuthActions,
@@ -39,6 +35,7 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
+import type { FileUIPart } from "ai";
 import {
     type ClipboardEvent,
     type DragEvent,
@@ -66,7 +63,6 @@ import {
 } from "./chat-models";
 import {
     type PollinationsUIMessage,
-    type PreparedAttachment,
     pollinationsChatTransport,
 } from "./pollinations-chat-transport";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
@@ -84,7 +80,6 @@ export function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
     return {
         id: `${agent.id}-welcome`,
         role: "assistant",
-        metadata: { localOnly: true },
         parts: [
             {
                 type: "text",
@@ -112,86 +107,51 @@ export function attachmentKinds(agent: AgentChoice | undefined) {
     );
 }
 
-async function prepareAttachment(
+/** Upload a file for the agent. Audio stays inline: the API takes it as base64. */
+async function attachmentFile(
     client: Pollinations,
     file: File,
     signal: AbortSignal,
-): Promise<PreparedAttachment> {
-    const kind = fileKind(file);
-    const format = kind === "audio" ? audioFormat(file) : null;
-    if (kind === "audio" && !format) {
-        throw new Error(`${file.name} uses an unsupported audio format.`);
-    }
-
-    const [upload, audioBuffer] = await Promise.all([
-        client.upload(file, {
-            name: file.name,
-            signal,
-        }),
-        kind === "audio" ? file.arrayBuffer() : Promise.resolve(null),
-    ]);
-    const mimeType = upload.contentType || file.type;
-    return {
-        id: upload.id,
-        name: file.name,
-        kind,
-        url: upload.url,
-        contentPart: attachmentPart(
-            kind,
-            upload.url,
-            file,
-            mimeType,
-            format,
-            audioBuffer,
-        ),
-    };
-}
-
-function attachmentPart(
-    kind: ChatAttachmentKind,
-    url: string,
-    file: File,
-    mimeType: string,
-    format: AudioFormat | null,
-    audioBuffer: ArrayBuffer | null,
-): MessageContentPart {
-    if (kind === "image") {
-        return { type: "image_url", image_url: { url, mime_type: mimeType } };
-    }
-    if (kind === "video") {
-        return { type: "video_url", video_url: { url, mime_type: mimeType } };
-    }
-    if (kind === "audio" && format && audioBuffer) {
+): Promise<FileUIPart> {
+    if (fileKind(file) === "audio") {
+        const data = arrayBufferToBase64(await file.arrayBuffer());
         return {
-            type: "input_audio",
-            input_audio: { data: arrayBufferToBase64(audioBuffer), format },
+            type: "file",
+            mediaType: file.type,
+            filename: file.name,
+            url: `data:${file.type};base64,${data}`,
         };
     }
+    const upload = await client.upload(file, { name: file.name, signal });
     return {
         type: "file",
-        file: { file_url: url, file_name: file.name, mime_type: mimeType },
+        mediaType: upload.contentType || file.type,
+        filename: file.name,
+        url: upload.url,
     };
 }
 
-function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
-    if (attachment.kind === "image") {
+function AttachmentView({ file }: { file: FileUIPart }) {
+    const name = file.filename ?? "Attachment";
+    const kind = fileKind({ name, type: file.mediaType });
+    if (kind === "image") {
         return (
-            <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+            <a href={file.url} target="_blank" rel="noopener noreferrer">
                 <img
-                    src={attachment.url}
-                    alt={attachment.name}
+                    src={file.url}
+                    alt={name}
                     loading="lazy"
                     className="play-chat-media rounded-lg"
                 />
             </a>
         );
     }
-    if (attachment.kind === "video") {
+    if (kind === "video") {
         return (
             <>
                 {/* biome-ignore lint/a11y/useMediaCaption: User-provided media has no caption track. */}
                 <video
-                    src={attachment.url}
+                    src={file.url}
                     controls
                     preload="metadata"
                     className="play-chat-media rounded-lg"
@@ -199,12 +159,12 @@ function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
             </>
         );
     }
-    if (attachment.kind === "audio") {
+    if (kind === "audio") {
         return (
             <>
                 {/* biome-ignore lint/a11y/useMediaCaption: User-provided media has no caption track. */}
                 <audio
-                    src={attachment.url}
+                    src={file.url}
                     controls
                     preload="metadata"
                     className="max-w-full"
@@ -214,12 +174,12 @@ function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
     }
     return (
         <a
-            href={attachment.url}
+            href={file.url}
             target="_blank"
             rel="noopener noreferrer"
             className="break-all text-sm font-semibold underline"
         >
-            {attachment.name}
+            {name}
         </a>
     );
 }
@@ -247,7 +207,7 @@ export function MessageCard({
     onRetry: () => void;
 }) {
     const isUser = message.role === "user";
-    const attachments = message.metadata?.attachments ?? [];
+    const files = message.parts.filter((part) => part.type === "file");
     const text = message.parts
         .flatMap((part) => (part.type === "text" ? [part.text] : []))
         .join("\n");
@@ -263,7 +223,7 @@ export function MessageCard({
     const showArticle =
         isUser ||
         contentParts.length > 0 ||
-        attachments.length > 0 ||
+        files.length > 0 ||
         isStreaming ||
         cancelled ||
         responseError;
@@ -313,12 +273,13 @@ export function MessageCard({
                                 />
                             ),
                         )}
-                        {attachments.length > 0 && (
+                        {files.length > 0 && (
                             <div className="grid gap-3 sm:grid-cols-2">
-                                {attachments.map((attachment) => (
+                                {files.map((file, index) => (
                                     <AttachmentView
-                                        key={attachment.id}
-                                        attachment={attachment}
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
+                                        key={`file:${index}`}
+                                        file={file}
                                     />
                                 ))}
                             </div>
@@ -528,6 +489,8 @@ export function Chat({
     } = useChat<PollinationsUIMessage>({
         id: "pollinations-play-agent-chat",
         transport,
+        // Each update re-parses the whole reply, so cap the render rate.
+        throttle: 50,
     });
     const streaming = status === "submitted" || status === "streaming";
     const sending = uploading || streaming;
@@ -557,7 +520,7 @@ export function Chat({
         activeAgentRef.current = selectedAgent.id;
         uploadAbortRef.current?.abort();
         void stop();
-        setMessages([welcomeMessage(selectedAgent)]);
+        setMessages([]);
         if (switchingAgent) {
             setDraft("");
             setFiles([]);
@@ -595,9 +558,9 @@ export function Chat({
         setLocalError(null);
         clearError();
         try {
-            const attachments = await Promise.all(
+            const fileParts = await Promise.all(
                 files.map((file) =>
-                    prepareAttachment(client, file, controller.signal),
+                    attachmentFile(client, file, controller.signal),
                 ),
             );
             controller.signal.throwIfAborted();
@@ -606,13 +569,10 @@ export function Chat({
             followOutputRef.current = true;
             setUploading(false);
             uploadAbortRef.current = null;
-            await sendMessage({
-                role: "user",
-                metadata: { attachments },
-                parts: draft.trim()
-                    ? [{ type: "text", text: draft.trim() }]
-                    : [],
-            });
+            const text = draft.trim();
+            await sendMessage(
+                text ? { text, files: fileParts } : { files: fileParts },
+            );
             composerRef.current?.focus();
         } catch (caught) {
             if (!isCancellation(caught)) setLocalError(errorMessage(caught));
@@ -759,15 +719,11 @@ export function Chat({
                         disabled={sending}
                         onSelectAgent={selectAgent}
                         onClearChat={
-                            messages.some(
-                                (message) => !message.metadata?.localOnly,
-                            )
+                            messages.length > 0
                                 ? () => {
                                       uploadAbortRef.current?.abort();
                                       void stop();
-                                      setMessages([
-                                          welcomeMessage(selectedAgent),
-                                      ]);
+                                      setMessages([]);
                                       setDraft("");
                                       setFiles([]);
                                       setLocalError(null);
@@ -807,6 +763,13 @@ export function Chat({
                     }}
                 >
                     <ChatConversationContent>
+                        <MessageCard
+                            message={welcomeMessage(selectedAgent)}
+                            assistantName={assistantName}
+                            isStreaming={false}
+                            canRetry={false}
+                            onRetry={() => {}}
+                        />
                         {messages.map((message, index) => {
                             const isLast = index === messages.length - 1;
                             return (

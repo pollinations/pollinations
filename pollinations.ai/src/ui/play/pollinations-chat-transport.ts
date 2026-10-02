@@ -3,36 +3,21 @@ import type {
     MessageContentPart,
     Pollinations,
 } from "@pollinations/sdk";
-import type { ChatTransport, UIMessage, UIMessageChunk } from "ai";
+import type { ChatTransport, FileUIPart, UIMessage, UIMessageChunk } from "ai";
 import {
+    audioFormat,
     buildUserContent,
-    type ChatAttachmentKind,
     errorMessage,
+    fileKind,
     isCancellation,
 } from "./chat-models";
-
-export interface PreparedAttachment {
-    id: string;
-    name: string;
-    kind: ChatAttachmentKind;
-    url: string;
-    contentPart: MessageContentPart;
-}
-
-interface PollinationsMessageMetadata {
-    attachments?: PreparedAttachment[];
-    localOnly?: boolean;
-}
 
 type PollinationsChatData = {
     activity: { name: string };
     responseStatus: { status: "cancelled" };
 };
 
-export type PollinationsUIMessage = UIMessage<
-    PollinationsMessageMetadata,
-    PollinationsChatData
->;
+export type PollinationsUIMessage = UIMessage<unknown, PollinationsChatData>;
 
 type PollinationsChatClient = Pick<Pollinations, "chatStream">;
 
@@ -47,6 +32,33 @@ function messageText(message: PollinationsUIMessage): string {
         .join("\n");
 }
 
+/** Uploaded files go by URL; audio travels inline because the API takes it as base64. */
+function filePart({
+    url,
+    mediaType,
+    filename = "",
+}: FileUIPart): MessageContentPart {
+    const file = { name: filename, type: mediaType };
+    const kind = fileKind(file);
+    if (kind === "image")
+        return { type: "image_url", image_url: { url, mime_type: mediaType } };
+    if (kind === "video")
+        return { type: "video_url", video_url: { url, mime_type: mediaType } };
+    if (kind === "audio") {
+        const format = audioFormat(file);
+        if (!format)
+            throw new Error(`${filename} uses an unsupported audio format.`);
+        return {
+            type: "input_audio",
+            input_audio: { data: url.slice(url.indexOf(",") + 1), format },
+        };
+    }
+    return {
+        type: "file",
+        file: { file_url: url, file_name: filename, mime_type: mediaType },
+    };
+}
+
 /**
  * Convert UI messages to the OpenAI-compatible Pollinations input. Agent
  * replies go back verbatim, tool markup included.
@@ -55,7 +67,6 @@ export function messagesForPollinations(
     messages: PollinationsUIMessage[],
 ): Message[] {
     return messages.flatMap((message): Message[] => {
-        if (message.metadata?.localOnly) return [];
         const text = messageText(message);
         if (message.role === "user") {
             return [
@@ -63,8 +74,8 @@ export function messagesForPollinations(
                     role: "user",
                     content: buildUserContent(
                         text,
-                        (message.metadata?.attachments ?? []).map(
-                            (attachment) => attachment.contentPart,
+                        message.parts.flatMap((part) =>
+                            part.type === "file" ? [filePart(part)] : [],
                         ),
                     ),
                 },

@@ -19,8 +19,6 @@ export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
 // The caller's linked GitHub account as `id+username`, the local part of its
 // noreply address. Gen overwrites it too.
 export const MCP_USER_GITHUB_HEADER = "x-pollinations-user-github";
-export const MCP_VAULT_ACTOR_HEADER = "x-pollinations-vault-actor";
-export const MCP_VAULT_PERMISSIONS_HEADER = "x-pollinations-vault-permissions";
 
 type McpServerDefinitionBase = {
     id: string;

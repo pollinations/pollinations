@@ -48,6 +48,9 @@ export const user = sqliteTable("user", {
     .default(sql`0`)
     .notNull(),
   autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
+  // Account-notice emails, in epoch milliseconds (services/account-notices.ts).
+  lowBalanceNotifiedAt: integer("low_balance_notified_at"),
+  paymentRequiredNotifiedAt: integer("payment_required_notified_at"),
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),

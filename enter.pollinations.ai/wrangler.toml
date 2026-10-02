@@ -26,6 +26,9 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[send_email]]
+name = "EMAIL"
+
 [[kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
@@ -66,6 +69,9 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[env.local.send_email]]
+name = "EMAIL"
+
 [[env.local.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
@@ -96,11 +102,9 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUG
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
-# Explicitly detach cron schedules. Deleting the [triggers] block leaves
-# previously-deployed crons attached (crons undefined = unchanged); only
-# `crons = []` removes them. See Cloudflare Workers cron-triggers docs.
 [env.production.triggers]
-crons = []
+# Hourly account notices (src/services/account-notices.ts).
+crons = ["0 * * * *"]
 
 [env.production.observability]
 enabled = true
@@ -122,6 +126,9 @@ binding = "DB"
 database_name = "production-pollinations-enter-db"
 database_id = "fc771b05-4e24-48bf-980c-d09f21279bd1"
 migrations_dir = "drizzle"
+
+[[env.production.send_email]]
+name = "EMAIL"
 
 [[env.production.kv_namespaces]]
 binding = "KV"
@@ -152,9 +159,8 @@ STRIPE_PUBLISHABLE_KEY = "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS7
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
-# See production note above: explicit empty crons detaches the schedule.
 [env.staging.triggers]
-crons = []
+crons = ["0 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.enter.myceli.ai"
@@ -171,6 +177,9 @@ binding = "DB"
 database_name = "staging-pollinations-enter-db"
 database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "drizzle"
+
+[[env.staging.send_email]]
+name = "EMAIL"
 
 [[env.staging.kv_namespaces]]
 # staging-pollinations-enter-kv
@@ -216,6 +225,9 @@ database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
 
+[[env.dev.send_email]]
+name = "EMAIL"
+
 [[env.dev.kv_namespaces]]
 # development-pollinations-enter-kv
 binding = "KV"
@@ -253,6 +265,9 @@ binding = "DB"
 database_name = "development-pollinations-enter-db"
 database_id = "2b844596-9890-4a2e-9da9-6c65681fa24d"
 migrations_dir = "drizzle"
+
+[[env.test.send_email]]
+name = "EMAIL"
 
 [[env.test.kv_namespaces]]
 # development-pollinations-enter-kv

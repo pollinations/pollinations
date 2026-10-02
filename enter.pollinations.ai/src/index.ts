@@ -1,4 +1,5 @@
 import { handleError } from "@shared/error.ts";
+import { ensureConfigured } from "@shared/logger.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import type { Context } from "hono";
@@ -10,6 +11,7 @@ import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
+import { runAccountNotices } from "./services/account-notices.ts";
 import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
 
 function stripTrailingSlash(path: string): string {
@@ -91,5 +93,13 @@ export default {
             return handleCodeAgentOutbound(request, env.CODE_AGENT_CONTEXT);
         }
         return app.fetch(request, env, ctx);
+    },
+    async scheduled(_controller, env) {
+        await ensureConfigured({
+            level: env.LOG_LEVEL || "debug",
+            format: env.LOG_FORMAT || "text",
+        });
+        // Awaited so a failed run shows as a failed cron invocation.
+        await runAccountNotices(env);
     },
 } satisfies ExportedHandler<Env["Bindings"]>;

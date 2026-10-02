@@ -1,0 +1,26 @@
+DESCRIPTION >
+    API keys with at least 10 payment errors (HTTP 402) in the last 24 hours,
+    one row per key and error code. Read hourly by Enter to email the key
+    owner (src/services/account-notices.ts).
+
+TOKEN tinybird_read READ
+
+NODE failing_keys
+SQL >
+    %
+    SELECT
+        user_id,
+        api_key_id,
+        any(api_key_name) AS api_key_name,
+        error_response_code AS error_code,
+        count() AS failures
+    FROM generation_event_v2
+    WHERE start_time >= now() - INTERVAL 24 HOUR
+      AND environment = {{String(environment, 'production')}}
+      AND response_status = 402
+      AND error_response_code IN ('KEY_BUDGET_EXHAUSTED', 'INSUFFICIENT_BALANCE')
+      AND user_id != 'undefined'
+    GROUP BY user_id, api_key_id, error_code
+    HAVING failures >= 10
+
+TYPE endpoint

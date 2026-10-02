@@ -17,14 +17,12 @@ const ITEMS = `query($cursor: String, $q: String!) {
           __typename
           ... on Issue {
             number title url state createdAt closedAt
-            labels(first: 10) { nodes { name } }
             issueType { name }
             parent { number title url state }
             subIssuesSummary { total completed }
           }
           ... on PullRequest {
             number title url state createdAt mergedAt closedAt additions deletions
-            labels(first: 10) { nodes { name } }
             commits { totalCount }
             closingIssuesReferences(first: 10) { nodes { number } }
           }
@@ -74,7 +72,6 @@ function toItem(node) {
         source: node.source?.name || null,
         priority: node.priority?.name || null,
         type: c.issueType?.name || null,
-        labels: c.labels.nodes.map((l) => l.name),
         parent: c.parent || null,
         subIssues: c.subIssuesSummary?.total ? c.subIssuesSummary : null,
         fixes: isPr ? c.closingIssuesReferences.nodes.map((n) => n.number) : [],
@@ -202,24 +199,9 @@ const PAGE = `<!doctype html>
   const n = (name, value, cls, title, col) => h("span", { key: col, className: "n" + (value ? "" : " zero"), title, style: { gridColumn: col } }, icon(name, cls), value || 0);
   const cells = (...children) => h("span", { className: "cells" }, children);
 
+  // Source is the Dev board's field: exactly one per item (set by the project manager).
   const SOURCES = ["All", "Team", "Community", "Agent", "Apps", "Quests"];
-  // Workflow sources come from labels: the labelled issues, plus the PRs that close them.
-  const LABEL_SOURCES = [["Apps", "APP-SUBMISSION"], ["Quests", "POLLEN-QUEST"]];
-
-  // Exactly one source per item: Apps, then Quests, then the Dev Source field (Agent, Team, Community).
-  function sourceOf(i, labelled) {
-    for (const [name, label] of LABEL_SOURCES) {
-      if (i.labels.includes(label) || (i.kind === "pr" && i.fixes.some((k) => labelled[name].has(k)))) return name;
-    }
-    return i.source || "Community";
-  }
-
-  function pick(source) {
-    if (source === "All") return data.items;
-    const labelled = Object.fromEntries(LABEL_SOURCES.map(([name, label]) =>
-      [name, new Set(data.items.filter((i) => i.kind === "issue" && i.labels.includes(label)).map((i) => i.number))]));
-    return data.items.filter((i) => sourceOf(i, labelled) === source);
-  }
+  const pick = (source) => (source === "All" ? data.items : data.items.filter((i) => i.source === source));
 
   // State lives in the hash: #days=30&source=Team&open=Models|p15935
   function state() {

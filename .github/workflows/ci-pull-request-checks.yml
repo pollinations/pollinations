@@ -4,6 +4,9 @@ name: CI / Pull request checks
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 # HEAD is the pull request merge commit. With fetch-depth 2 its first parent
 # (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
 # request diff without fetching the full repository history.
@@ -76,6 +79,9 @@ jobs:
 
       - name: Test SDK
         run: npm test --workspace @pollinations/sdk
+
+      - name: Test UI
+        run: npm test --workspace @pollinations/ui
 
       - name: Test maintenance scripts
         run: >-
@@ -227,13 +233,55 @@ jobs:
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm run typecheck --workspace pollinations-gen
 
+  website:
+    name: Build pollinations.ai
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files that affect the website
+        id: website-files
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(pollinations.ai/|packages/(sdk|ui)/)'; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        if: steps.website-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.website-files.outputs.any_changed == 'true'
+        run: |
+          npm ci
+          npm ci --prefix pollinations.ai
+
+      # Builds packages/sdk and packages/ui first, then typechecks and bundles.
+      - name: Build pollinations.ai
+        if: steps.website-files.outputs.any_changed == 'true'
+        working-directory: pollinations.ai
+        run: npm run build
+
+      - name: Test pollinations.ai
+        if: steps.website-files.outputs.any_changed == 'true'
+        run: npm test --prefix pollinations.ai
+
   # Carries the status-check name required by the main branch ruleset so the
-  # three jobs above gate merges without a ruleset change.
+  # jobs above gate merges without a ruleset change.
   gate:
     name: Check formatting and linting
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, enter, gen]
+    needs: [lint, enter, gen, website]
     if: always()
 
     steps:

@@ -35,6 +35,8 @@ type CreateApiKeyForUserInput = {
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
     defaultCreatedVia: string;
+    createdByApiKeyId?: string;
+    originAppKeyId?: string;
 };
 
 type CreateApiKeyAuthClient = {
@@ -220,6 +222,8 @@ export async function createApiKeyForUser({
     accountPermissions,
     metadata,
     defaultCreatedVia,
+    createdByApiKeyId,
+    originAppKeyId,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
     const attribution = await validateClientRedirectBinding(
@@ -261,6 +265,8 @@ export async function createApiKeyForUser({
         ...callerMetadata,
         keyType: type,
         createdVia: defaultCreatedVia,
+        ...(createdByApiKeyId && { createdByApiKeyId }),
+        ...(originAppKeyId && { originAppKeyId }),
     };
 
     const created = await authClient.api.createApiKey({

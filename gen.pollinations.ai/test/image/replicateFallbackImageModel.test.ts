@@ -100,6 +100,20 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
+    it("sends Krea's requested aspect ratio like the primary route", async () => {
+        const fetchSpy = mockPrediction();
+
+        await callReplicateFallbackImage("a lighthouse", {
+            ...params("krea/krea-2-medium:replicate"),
+            aspectRatio: "16:9",
+        });
+
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+        );
+        expect(body.input.aspect_ratio).toBe("16:9");
+    });
+
     it("maps FLUX.2 Max generation to the exact Replicate model", async () => {
         const fetchSpy = mockPrediction();
 

@@ -3,7 +3,8 @@ name: Evals / Run weekly model evals
 # Scores every text model in /text/models (community models included) with
 # operations/model-evals and publishes the results to the `evals` data branch,
 # which the Evals tab of model-monitor.pollinations.ai reads. Needs the repo
-# secret PLN_EVALS_KEY: a Pollinations key with room for ~20 Pollen.
+# key PLN_EVALS_KEY in the encrypted evals secrets file: a Pollinations key
+# with room for ~20 Pollen.
 
 on:
   schedule:
@@ -52,6 +53,8 @@ jobs:
         with:
           node-version: '24'
 
+      - uses: nhedger/setup-sops@v3
+
       - name: Check out the evals data branch
         run: |
           if git ls-remote --exit-code --heads origin evals >/dev/null 2>&1; then
@@ -63,18 +66,19 @@ jobs:
 
       - name: Score models
         env:
-          POLLINATIONS_API_KEY: ${{ secrets.PLN_EVALS_KEY }}
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           SCOPE: ${{ inputs.scope || 'all' }}
           MODELS: ${{ inputs.models }}
           SAMPLES: ${{ inputs.samples || '10' }}
           BUDGET: ${{ inputs.budget || '12' }}
         run: |
-          node operations/model-evals/run.js \
-            --out "$RUNNER_TEMP/evals/data" \
-            --scope "$SCOPE" \
-            --samples "$SAMPLES" \
-            --budget "$BUDGET" \
-            ${MODELS:+--models "$MODELS"}
+          sops exec-env operations/model-evals/secrets/prod.vars.json \
+            'POLLINATIONS_API_KEY="$PLN_EVALS_KEY" node operations/model-evals/run.js \
+              --out "$RUNNER_TEMP/evals/data" \
+              --scope "$SCOPE" \
+              --samples "$SAMPLES" \
+              --budget "$BUDGET" \
+              ${MODELS:+--models "$MODELS"}'
 
       - name: Publish results to the evals branch
         working-directory: ${{ runner.temp }}/evals

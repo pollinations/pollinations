@@ -1,0 +1,34 @@
+{
+  "pr_number": 16260,
+  "title": "docs: drop the dedicated secrets PR rule from skills",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16260",
+  "merged_at": "2026-10-02T17:40:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Drops \"secret changes use their own dedicated PR\" from the `model-management` and `manage-vast-gpu-fleet` skills\n- #14683 already removed the rule from `AGENTS.md`; these were the remaining copies\n- The approval phrase, execution order and production-sync rules in `AGENTS.md` are unchanged\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_011LgiC2X1edxD4TcXeX9sXo\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less rule to prune",
+    "blurb": "Two skill guides shed a leftover instruction about secrets PRs. The approval and production-sync rules stay where they are.",
+    "summary": "Removed the dedicated-secrets-PR instruction from the model-management and manage-vast-gpu-fleet skills, aligning them with its earlier removal from AGENTS.md in #14683.",
+    "impact": "The skill guides no longer repeat the dedicated-PR rule; AGENTS.md’s approval phrase, execution order, and production-sync rules remain unchanged.",
+    "keywords": [
+      "documentation",
+      "Claude Code",
+      "skills",
+      "model management",
+      "GPU fleet",
+      "operating policy"
+    ],
+    "visual_concept": "Depict an internal documentation tidy-up: Polli gently prunes a duplicate instruction from two small skill-guide code-plants beside a retro terminal. Keep the scene about consistent guidance, not a change to production behavior.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears tiny gardening gloves and prunes a duplicate paper leaf from two labeled skill-guide code-plants beside a glowing retro terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16260.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny gardening gloves and prunes a duplicate paper leaf from two labeled skill-guide code-plants beside a glowing retro terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-10-02T17:41:52.337612+00:00"
+}

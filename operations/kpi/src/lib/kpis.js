@@ -180,6 +180,13 @@ export const KPIS = [
         ],
     },
     {
+        key: "newPayers",
+        name: "New Stripe payers",
+        category: "Revenue",
+        tooltip:
+            "Unique users making their first recorded successful live Stripe payment in this UTC week, regardless of signup date. Searches all recorded Stripe history (since January 2026), not just the selected range. Repeat payments, test payments, zero-value payments and events without a user ID are excluded. Previous Polar payments do not disqualify a user. This counts first payments, not payments remaining after refunds.",
+    },
+    {
         key: "paidPollenPct",
         name: "Paid Pollen share",
         category: "Revenue",

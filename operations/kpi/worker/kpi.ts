@@ -322,6 +322,30 @@ kpiRoutes.get("/revenue/daily", async (c) => {
     return c.json({ data: result.data });
 });
 
+kpiRoutes.get("/new-payers", async (c) => {
+    const mondays = getWeekMondays(parseWeeksBack(c));
+    const result = await fetchTinybird(c.env, "weekly_new_stripe_payers", {
+        start_date: mondays[0],
+    });
+    if (result.error)
+        return c.json(
+            { error: "New Stripe payers unavailable", data: [] },
+            503,
+        );
+    const counts = new Map(
+        (result.data as Array<{ week: string; new_payers: number }>).map(
+            (row) => [row.week, row.new_payers],
+        ),
+    );
+    // A successful query with no first payments is zero; failed reads stay blank.
+    return c.json({
+        data: mondays.map((week) => ({
+            week,
+            new_payers: counts.get(week) ?? 0,
+        })),
+    });
+});
+
 // Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout
 kpiRoutes.get("/user-segments", async (c) => {
     const result = await fetchTinybirdByWeek(

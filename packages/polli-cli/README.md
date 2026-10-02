@@ -178,6 +178,9 @@ stores its provider and skill under `$HERMES_HOME` (default `~/.hermes`, or
 install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
+Pi 0.99+ also supports `polli mcp install pi --all` for native hosted MCP
+servers. Run `/reload` in Pi afterward; remove them with `polli mcp remove pi`.
+Model setup remains compatible with older Pi versions.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

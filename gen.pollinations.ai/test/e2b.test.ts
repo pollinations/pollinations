@@ -445,18 +445,20 @@ test("the dashboard session enter forwards pays from the wallet", async () => {
 const keyNamed = (name: string) =>
     drizzle(env.DB).select().from(apikey).where(eq(apikey.name, name)).get();
 
-test("the pollinations template comes logged in with a key no stronger than the caller's", async () => {
+test("the pollinations template comes logged in when the caller may create keys", async () => {
     const e2b = stubE2b();
     const owner = await createTestApiKey({
-        accountPermissions: ["machines", "usage"],
-        allowedModels: ["black-forest-labs/flux.1-schnell"],
-        pollenBudget: 5,
-        expiresIn: 3600,
+        accountPermissions: ["machines", "keys"],
+        user: { tierBalance: 10 },
+    });
+    const machinesOnly = await createTestApiKey({
+        accountPermissions: ["machines"],
         user: { tierBalance: 10 },
     });
 
-    // Other templates get no login.
+    // Other templates, and callers who may not create keys, get no login.
     await createSandbox(owner.key);
+    await createSandbox(machinesOnly.key, { templateID: "pollinations" });
     expect(e2b.files).toEqual([]);
 
     const created = await createSandbox(owner.key, {
@@ -474,15 +476,9 @@ test("the pollinations template comes logged in with a key no stronger than the 
     const { apiKey } = JSON.parse(e2b.files[0].content);
     const key = await keyNamed(`polli-sandbox-${sandboxID}`);
     expect(key?.referenceId).toBe(owner.userId);
-    // What is left of the caller's budget after the two leases.
-    expect(key?.pollenBalance).toBeCloseTo(5 - 2 * LEASE_300S, 8);
     expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
-        account: ["usage", "machines"],
-        models: ["black-forest-labs/flux.1-schnell"],
+        account: ["profile", "usage", "keys", "machines"],
     });
-    expect(key?.expiresAt?.getTime()).toBeLessThanOrEqual(
-        Date.now() + 3600_000,
-    );
 
     expect((await call(apiKey, "/v2/sandboxes")).status).toBe(200);
 });

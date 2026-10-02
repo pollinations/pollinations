@@ -1,13 +1,9 @@
 import { createApiKeyAuth } from "@shared/auth/api-key.ts";
-import {
-    childKeyLimits,
-    createApiKeyForUser,
-} from "@shared/auth/api-key-creation.ts";
+import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
-import { apikey } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
@@ -15,7 +11,6 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -319,26 +314,17 @@ async function extendLease(
     return new Response(response.body, response);
 }
 
-// Writes polli's login into a new sandbox: a key of its own, never more than
-// the caller's. envd, the agent in every sandbox, writes the file as `user`.
+// Writes polli's login into a new sandbox: a key of its own, made like
+// `polli harness ... on` makes one. envd, the agent in every sandbox, writes
+// the file as `user`.
 async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
-    // Auth read the caller's key budget before this sandbox's lease was paid.
-    const caller = c.var.auth.apiKey;
-    const parent = caller && {
-        ...caller,
-        ...(await drizzle(c.env.DB)
-            .select({ pollenBalance: apikey.pollenBalance })
-            .from(apikey)
-            .where(eq(apikey.id, caller.id))
-            .get()),
-    };
     const { key } = await createApiKeyForUser({
         authClient: createApiKeyAuth(c.env, c.executionCtx),
         dbBinding: c.env.DB,
         userId: c.var.auth.requireUser().id,
         name: `polli-sandbox-${sandbox.sandboxID}`,
         type: "secret",
-        ...childKeyLimits(parent, POLLI_PERMISSIONS),
+        accountPermissions: POLLI_PERMISSIONS,
         defaultCreatedVia: "sandbox",
     });
     // polli keeps a staging login apart from a production one.
@@ -453,7 +439,12 @@ export const e2bRoutes = new Hono<Env>()
         }
         await charge(c, bill, startTime);
         await savePaidUntil(c, created.sandboxID, paidUntil);
-        if (body.templateID === LOGGED_IN_TEMPLATE) {
+        // Like POST /account/keys, only a caller who may create keys gets one.
+        const caller = c.var.auth.apiKey;
+        if (
+            body.templateID === LOGGED_IN_TEMPLATE &&
+            (!caller || caller.permissions?.account?.includes("keys"))
+        ) {
             try {
                 await logIn(c, created);
             } catch (error) {

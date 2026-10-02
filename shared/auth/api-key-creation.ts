@@ -208,38 +208,6 @@ async function validateClientRedirectBinding(
     return attribution;
 }
 
-type ParentKey = {
-    permissions?: Record<string, string[]>;
-    pollenBalance?: number | null;
-    expiresAt?: Date | null;
-};
-
-/**
- * Limits for a key created on another key's behalf: the requested account
- * permissions the parent also has, and the parent's models, remaining budget
- * and expiry. A dashboard session has no parent key, so nothing to inherit.
- * The budget is a copy, not a share: each key can spend it.
- */
-export function childKeyLimits(
-    parent: ParentKey | undefined,
-    accountPermissions: string[],
-) {
-    if (!parent) return { accountPermissions };
-    return {
-        accountPermissions: accountPermissions.filter((permission) =>
-            parent.permissions?.account?.includes(permission),
-        ),
-        allowedModels: parent.permissions?.models ?? null,
-        pollenBudget: parent.pollenBalance ?? null,
-        expiresIn: parent.expiresAt
-            ? Math.max(
-                  1,
-                  Math.floor((parent.expiresAt.getTime() - Date.now()) / 1000),
-              )
-            : undefined,
-    };
-}
-
 export async function createApiKeyForUser({
     authClient,
     dbBinding,

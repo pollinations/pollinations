@@ -1,0 +1,37 @@
+{
+  "pr_number": 16258,
+  "title": "Add Pollinations for Unity to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16258",
+  "merged_at": "2026-10-02T17:30:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollinations for Unity](https://github.com/Marcus-Mok-GH/pollinations-unity) to build\n- A dependency-free Unity Package Manager package that adds Pollinations text, image, and speech generation to Unity games. Async Task-based C# helpers cover chat completions, image generation (returns \n\nFixes #15622, fixes #15580",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A bee enters Unity",
+    "blurb": "Pollinations for Unity joins the app collection. It brings text, image, and speech generation into games without bringing a pile of dependencies along for the ride.",
+    "summary": "Added Marcus-Mok-GH’s dependency-free Pollinations for Unity package to the app collection, with async Task-based C# helpers for chat completions, image generation, and speech generation.",
+    "impact": "Unity developers get a package they can install through Unity Package Manager to add Pollinations-powered chat, images, and speech to games.",
+    "keywords": [
+      "Unity",
+      "Unity Package Manager",
+      "C#",
+      "chat",
+      "image generation",
+      "speech generation",
+      "community"
+    ],
+    "visual_concept": "Depict Pollinations for Unity as a cozy game-building desk: a Unity-style geometric cube beside a game screen, with a chat bubble, picture, and sound-wave icon representing the package’s three capabilities. Polli, wearing a tiny developer tool belt, helps assemble the scene among pixel flowers and code-plants.",
+    "image_prompt": "In a cozy pixel art game workshop, Polli uses a tiny developer tool belt to arrange a chat bubble, a little landscape picture, and a sound-wave icon around a Unity-style cube on a glowing game screen, with code-plants growing beside the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, a prominent soft lime green (#ecf874) glow against warm cream, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16258.jpg",
+    "prompt": "In a cozy pixel art game workshop, Polli uses a tiny developer tool belt to arrange a chat bubble, a little landscape picture, and a sound-wave icon around a Unity-style cube on a glowing game screen, with code-plants growing beside the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, a prominent soft lime green (#ecf874) glow against warm cream, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-02T17:31:20.443579+00:00",
+  "app_name": "Pollinations for Unity",
+  "app_url": "https://github.com/Marcus-Mok-GH/pollinations-unity"
+}

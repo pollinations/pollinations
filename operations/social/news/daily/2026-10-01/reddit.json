@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-01",
+  "period_start": "2026-10-01",
+  "period_end": "2026-10-01",
+  "generated_at": "2026-10-02T06:31:28.156247+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-01/images/reddit.jpg"
+    }
+  ],
+  "title": "Krita editing, Quest updates, and larger requests merged today",
+  "text": "32 PRs merged today. The ones most likely to affect what you can build:\n\n- Images: there’s now a [Krita plug-in for generation and editing](https://github.com/pollinations/pollinations/pull/15578). Krea’s Replicate fallback also [preserves aspect ratios](https://github.com/pollinations/pollinations/pull/16137), and the MAI Image 2.5 Flash ID now [routes to 2.6 Flash](https://github.com/pollinations/pollinations/pull/15492).\n- Getting started: Home is [easier to scan](https://github.com/pollinations/pollinations/pull/16103) and now [shows live community numbers and app tabs](https://github.com/pollinations/pollinations/pull/16185). Newcomers get a path to [OpenCode or a first image](https://github.com/pollinations/pollinations/pull/16177). Polli CLI device login now [works during the first command](https://github.com/pollinations/pollinations/pull/16176), rather than requiring a separate detour.\n- Quests: issue search is [paginated for reward evaluation](https://github.com/pollinations/pollinations/pull/15891). There are [monthly standings and next-step suggestions](https://github.com/pollinations/pollinations/pull/16188), plus a one-time [2-Pollen CLI connection Quest](https://github.com/pollinations/pollinations/pull/16184). Quests are still in alpha, so rewards and availability may change.\n- Agents: [Lamplighter](https://github.com/pollinations/pollinations/pull/15093), [Pen](https://github.com/pollinations/pollinations/pull/15160), and [Micro-Mission Broker](https://github.com/pollinations/pollinations/pull/15257) landed. Two collective-memory authors can now [publish agents](https://github.com/pollinations/pollinations/pull/16144).\n- API/SDK: FormData and raw uploads can [stream up to 400 MiB](https://github.com/pollinations/pollinations/pull/15956); text JSON requests now allow [32 MiB](https://github.com/pollinations/pollinations/pull/16186). SDK cancellation now covers [response downloads](https://github.com/pollinations/pollinations/pull/16139). Kev 4B and Span-01 Lite were added to decisions and chat.\n\nCode and the rest of today’s merges are in the [repo](https://github.com/pollinations/pollinations). If you hit a rough edge in the Krita plug-in or upload path, an issue with a reproducible request would help."
+}

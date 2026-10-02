@@ -1,0 +1,34 @@
+{
+  "pr_number": 16226,
+  "title": "feat: Apps and Quests as Source values",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16226",
+  "merged_at": "2026-10-02T10:37:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Source now has exactly one value per item: Apps, then Quests, then Agent / Team / Community\n- Apps: issues with `APP-SUBMISSION` and PRs that close one; Quests: issues with `POLLEN-QUEST` and PRs that close one\n- When one of those labels is added after an issue is opened, the workflow reruns and updates only the Source (no AI call)\n- The Dev Source field already has the Apps and Quests options\n\nThe Express job keeps applying to Community issues only.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A place for every seed",
+    "blurb": "App submissions and Pollen Quests get their own Source values on the project board. Add a label later, and the workflow quietly fixes the filing.",
+    "summary": "The GitHub project organizer assigns exactly one Source per issue or PR, prioritizing Apps for APP-SUBMISSION, then Quests for POLLEN-QUEST, then Agent, Team, or Community; adding either label later updates Source without an AI call.",
+    "impact": "App submissions and Pollen Quests, including PRs that close them, are filed under their own Source values, while the Express job remains limited to Community issues.",
+    "keywords": [
+      "GitHub",
+      "project board",
+      "Apps",
+      "Quests",
+      "Source",
+      "automation"
+    ],
+    "visual_concept": "A cozy GitHub-style project board with distinct Apps, Quests, and Community trays. Polli, wearing a tiny librarian hat, sorts a flower-shaped app card and a quest scroll into their trays; a small code-plant grows beside the board.",
+    "image_prompt": "In a cozy pixel art garden office, Polli sorts an app card and a quest scroll into separate trays labeled 'APPS' and 'QUESTS' on a lime green (#ecf874) project board, with a code-plant growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat and is small-to-medium sized, sharing the scene rather than dominating it, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, warm cream and lavender accents, and dark purple (#110518) lettering."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16226.jpg",
+    "prompt": "In a cozy pixel art garden office, Polli sorts an app card and a quest scroll into separate trays labeled 'APPS' and 'QUESTS' on a lime green (#ecf874) project board, with a code-plant growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny librarian hat and is small-to-medium sized, sharing the scene rather than dominating it, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, warm cream and lavender accents, and dark purple (#110518) lettering."
+  },
+  "generated_at": "2026-10-02T10:38:46.703412+00:00"
+}

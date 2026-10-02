@@ -1,0 +1,36 @@
+{
+  "pr_number": 15674,
+  "title": "feat: weekly model evals with an Evals tab, starting with the Alice puzzle",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15674",
+  "merged_at": "2026-10-02T12:27:52Z",
+  "labels": [
+    "POLLEN-QUEST"
+  ],
+  "pr_body_excerpt": "Fixes #15547\n\n- `node operations/model-evals/run.js` scores every model in `/text/models`, community models included. `--scope official|community` or `--models a,b` scores a subset.\n- First eval: LAION's AIW, AIW+ and Bowls families (STANDARD wording from the AIW repo). Every run draws new numbers from a seed (printed and saved); each question also gets its own request `seed`, so gen's cross-user cache can't answer. Answers are graded by code from the last `### Answer:`; each template re-derives its answer from its own prompt in tests, and LAION's AIW+ example (answer 5) checks out.\n- Score = correct / asked with a 95% Wilson margin of error. An error, empty reply or timeout counts as a wrong answer, never as skipped. A 429 (our per-user limit) is retried slowly.\n- Cost: models run cheapest first; no new question is sent once estimated spend reaches `--budget` (default 12), so a run overshoots by at most the requests in flight. It prints the estimate (reported usage × catalog prices) and the account balance change.\n- `.github/workflows/evals-run-weekly.yml` runs Mondays and on dispatch, and pushes results to an `evals` data branch (no new service). **Maintainers need to add the `PLN_EVALS_KEY` secret** (about 20 Pollen of headroom); the failure-issue step reports a missing key.\n- Model Monitor gets an **Evals** tab (`#evals`): latest ranking, past runs, and each community model next to the official model it is named after, highlighted when the gap beats both margins of error combined.\n- A second eval is one file exporting `{ id, title, families, questions(), grade() }` (see `evals/aiw.js`) plus one line in `evals/index.js`.\n\n## Real run\n\nSix models, 5 questions per family, real Pollinations key:\n\n```\n$ node operations/model-evals/run.js --samples 5 --budget 1 --models openai/gpt-oss-20b,qwen/qwen3.7-flash,google/gemma-4-31b-it,deepseek/deepseek-v4-flash,openai/gpt-6-luna,community/vendouple/gpt-6-luna:stable\nmodel                                  score       failed ",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The models meet Alice",
+    "blurb": "Alice has a puzzle for the models. A new Evals tab keeps score, with community models sitting beside their official counterparts.",
+    "summary": "Weekly seeded evaluations score official and community models on LAION's AIW, AIW+, and Bowls puzzles; Model Monitor's Evals tab presents rankings, past runs, and community-versus-official comparisons with 95% Wilson margins of error.",
+    "impact": "Visitors get puzzle scores with uncertainty shown, and can spot when a community model's gap from its official counterpart exceeds both margins of error combined.",
+    "keywords": [
+      "model evals",
+      "Model Monitor",
+      "Alice puzzle",
+      "community models",
+      "rankings",
+      "Wilson margin"
+    ],
+    "visual_concept": "Depict the Alice puzzle as a cozy tabletop challenge, with paired scorecards for official and community models and a small history of past runs on a CRT screen. Polli compares the cards with a tiny pencil while the Monitor Robot studies the rankings; flowers and lime-green code-plants soften the scene.",
+    "image_prompt": "In a cozy pixel art garden study, Polli compares two puzzle scorecards beside a CRT-headed robot showing a simple model ranking, with lime green (#ecf874) code-plants and soft pastel flowers around them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny pencil tucked behind one antenna; she is small-to-medium sized, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-15674.jpg",
+    "prompt": "In a cozy pixel art garden study, Polli compares two puzzle scorecards beside a CRT-headed robot showing a simple model ranking, with lime green (#ecf874) code-plants and soft pastel flowers around them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny pencil tucked behind one antenna; she is small-to-medium sized, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-02T12:28:56.217580+00:00"
+}

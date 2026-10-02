@@ -38,7 +38,7 @@ const PRICE_MULTIPLIER = 0.25;
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
 // Gen logs polli in inside this template, which has polli and the coding
-// harnesses, with a key of the sandbox's own that is deleted with it.
+// harnesses, with a key of the sandbox's own.
 const LOGGED_IN_TEMPLATE = "pollinations";
 // What `polli auth login` asks for.
 const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
@@ -143,40 +143,6 @@ async function requireCapacity(c: E2bContext) {
     }
 }
 
-// E2B forgets a lease when its sandbox pauses (it then reports the pause time
-// as endAt), so gen keeps the time each sandbox is paid until. Keys expire
-// once that time has passed. A lost write or a stale read only charges again;
-// it never hands out unpaid time.
-const paidUntilKey = (sandboxID: string) => `e2b-paid-until:${sandboxID}`;
-
-async function readPaidUntil(
-    c: E2bContext,
-    sandbox: SandboxDetail,
-    now: number,
-): Promise<number> {
-    const stored = await c.env.KV.get(paidUntilKey(sandbox.sandboxID)).catch(
-        () => null,
-    );
-    // A running sandbox's lease was paid too, which covers a stale read.
-    const leaseEnd =
-        sandbox.state === "running" ? Date.parse(sandbox.endAt) : 0;
-    return Math.max(Number(stored) || 0, leaseEnd, now);
-}
-
-async function savePaidUntil(
-    c: E2bContext,
-    sandboxID: string,
-    paidUntil: number,
-) {
-    // KV expirations must be at least 60 s ahead.
-    const expiration = Math.ceil(
-        Math.max(paidUntil, Date.now() + 60_000) / 1000,
-    );
-    await c.env.KV.put(paidUntilKey(sandboxID), String(paidUntil), {
-        expiration,
-    }).catch(() => {});
-}
-
 type Lease = { cost: number; price: number };
 
 // E2B's list cost for `seconds` of this sandbox, and what the caller pays.
@@ -278,13 +244,12 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
 
 // Timeout and connect end the lease at now + timeout (connect never shortens
 // a running sandbox's lease). The caller pays in advance for the seconds past
-// what the sandbox is already paid until, so shortening, pausing and resuming
-// within paid time cost nothing. Nothing is refunded.
+// the running sandbox's current lease. Pausing or shortening a lease gives up
+// the rest of it: nothing is refunded.
 async function extendLease(
     c: E2bContext,
     sandbox: SandboxDetail,
     timeout: unknown,
-    { keepPaidTime = false } = {},
 ) {
     const startTime = new Date();
     if (typeof timeout !== "number" || !(timeout >= 0)) {
@@ -293,24 +258,19 @@ async function extendLease(
         });
     }
     const now = startTime.getTime();
-    const paidUntil = await readPaidUntil(c, sandbox, now);
-    // E2B resumes a sandbox for `timeout` alone; connect keeps it running
-    // through the time it is already paid for.
-    const seconds = keepPaidTime
-        ? Math.max(timeout, Math.floor((paidUntil - now) / 1000))
-        : timeout;
-    const endAt = now + seconds * 1000;
+    const paidUntil =
+        sandbox.state === "running"
+            ? Math.max(Date.parse(sandbox.endAt), now)
+            : now;
+    const endAt = now + timeout * 1000;
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
     if (bill.price > 0) await requireFunds(c, bill.price);
     const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ timeout: seconds }),
+        body: JSON.stringify({ timeout }),
     });
-    if (response.ok && bill.price > 0) {
-        await charge(c, bill, startTime);
-        await savePaidUntil(c, sandbox.sandboxID, endAt);
-    }
+    if (response.ok && bill.price > 0) await charge(c, bill, startTime);
     return new Response(response.body, response);
 }
 
@@ -427,7 +387,6 @@ export const e2bRoutes = new Hono<Env>()
 
         // The template sets the size, so the price is known only now.
         let bill: Lease;
-        let paidUntil: number;
         try {
             const sandbox = await getSandbox(c, created.sandboxID);
             if (!sandbox) {
@@ -435,10 +394,10 @@ export const e2bRoutes = new Hono<Env>()
                     message: `Sandbox ${created.sandboxID} vanished after create`,
                 });
             }
-            paidUntil = Date.parse(sandbox.endAt);
             bill = lease(
                 sandbox,
-                (paidUntil - Date.parse(sandbox.startedAt)) / 1000,
+                (Date.parse(sandbox.endAt) - Date.parse(sandbox.startedAt)) /
+                    1000,
             );
             await requireFunds(c, bill.price);
         } catch (error) {
@@ -449,7 +408,6 @@ export const e2bRoutes = new Hono<Env>()
             throw error;
         }
         await charge(c, bill, startTime);
-        await savePaidUntil(c, created.sandboxID, paidUntil);
         if (body.templateID === LOGGED_IN_TEMPLATE) {
             try {
                 await logIn(c, created);
@@ -492,9 +450,7 @@ export const e2bRoutes = new Hono<Env>()
             const sandbox = await ownedSandbox(c);
             if (sandbox.state === "paused") await requireCapacity(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
-            return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS, {
-                keepPaidTime: true,
-            });
+            return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS);
         },
     )
     // Everything else (templates, snapshots, forks, volumes, secrets,

@@ -24,7 +24,7 @@ polli sandbox kill <id>
 ### Cost and limits
 
 - Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, paid in advance: 10 minutes at creation, 10 minutes at a time while an ssh session is open, and the time you add with `polli sandbox timeout`.
-- Pausing and resuming within paid time is free. Unused time is not refunded.
+- Unused time is not refunded. Pausing a sandbox early, or shortening its timeout, gives up the rest of its paid time; resuming pays again. To stop paying, let the paid time run out or kill the sandbox.
 - A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
 - At most 3 sandboxes run at once per account.
 

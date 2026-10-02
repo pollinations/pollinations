@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-01",
+  "period_start": "2026-10-01",
+  "period_end": "2026-10-01",
+  "generated_at": "2026-10-02T06:31:28.156247+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-01/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: Krita image generation + editing, uploads streamed up to 400 MiB, and SDK cancellation that still works during downloads. first-command CLI login works now too. the setup step no longer needs its own setup step."
+}

@@ -66,15 +66,15 @@ export function balanceNoticeMessage(
             "The API key used for this request has reached its budget. " +
             "Please " +
             `[raise the key budget](${enterLink(environment, "/edit-key", { id: keyId, ref: "agent_key_budget", redirect })}), then try again.\n\n` +
-            `Topping up the wallet does not raise this limit. ${NOT_YOUR_ACCOUNT}`
+            `Topping up does not raise this limit. ${NOT_YOUR_ACCOUNT}`
         );
     }
     const topUp = `[top up](${enterLink(environment, "/top-up", { ref: "agent_low_balance_topup", redirect })})`;
     const remedy = error.paidOnly
-        ? `This model needs paid Pollen. Please ${topUp}, then try again.`
+        ? `This model needs paid credit. Please ${topUp}, then try again.`
         : `Please ${topUp} or [complete a quest](${enterLink(environment, "/quests", { ref: "agent_low_balance_quests" })}), then try again.`;
     return (
-        "The account behind this API key doesn't have enough credits. " +
+        "The account behind this API key doesn't have enough credit. " +
         `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
     );
 }

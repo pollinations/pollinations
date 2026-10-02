@@ -17,7 +17,7 @@ All errors return JSON with a consistent shape:
 |--------|---------|
 | `400` | Invalid parameters or malformed request |
 | `401` | Missing or invalid API key |
-| `402` | Insufficient pollen balance |
+| `402` | Insufficient credit or API key budget exhausted |
 | `403` | API key lacks required permission |
 | `500` | Internal server error |
 

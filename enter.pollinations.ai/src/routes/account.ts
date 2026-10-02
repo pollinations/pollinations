@@ -127,7 +127,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+            "Budget cap in US dollars. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
     accountPermissions: z
         .array(z.string())
@@ -426,7 +426,7 @@ const dailyUsageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
+            "Billing source: 'tier' = quest credit, 'pack' = paid credit",
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
@@ -518,7 +518,7 @@ const developerEarningsRowSchema = z.object({
         .describe("Developer credit earned from paid-balance spend"),
     tier_earned: z
         .number()
-        .describe("Developer credit earned from Quest Pollen spend"),
+        .describe("Developer credit earned from quest credit spend"),
     cost_usd: z
         .number()
         .describe(
@@ -549,7 +549,7 @@ const developerEarningsTransactionSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = quest credit, 'pack' = paid credit",
         ),
     pollen_earned: z.number().describe("Developer credit earned"),
 });
@@ -701,22 +701,26 @@ const accountBalanceSchema = z.object({
     total: z
         .number()
         .describe(
-            "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
+            "Quest credit + paid credit in US dollars that the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
         ),
-    tier: z.number().describe("Quest Pollen remaining, never below 0"),
-    paid: z.number().describe("Paid Pollen remaining, never below 0"),
+    tier: z
+        .number()
+        .describe("Quest credit remaining in US dollars, never below 0"),
+    paid: z
+        .number()
+        .describe("Paid credit remaining in US dollars, never below 0"),
 });
 
 const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid).",
+            "Credit remaining for this caller, in US dollars. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (quest credit + paid credit).",
         ),
     accountBalance: accountBalanceSchema
         .optional()
         .describe(
-            "Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked.",
+            "Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account balances are not leaked.",
         ),
 });
 
@@ -777,7 +781,7 @@ const usageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
+            "Billing source: 'tier' = quest credit, 'pack' = paid credit",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
     input_cached_tokens: z.number().describe("Number of cached input tokens"),
@@ -983,10 +987,10 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
+                "Returns the credit balance, in US dollars, visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
             responses: {
                 200: {
-                    description: "Pollen balance",
+                    description: "Credit balance in US dollars",
                     content: {
                         "application/json": {
                             schema: resolver(balanceResponseSchema),
@@ -1663,7 +1667,7 @@ export const accountRoutes = new Hono<Env>()
                                         .number()
                                         .nullable()
                                         .describe(
-                                            "Remaining pollen budget for this key, null = unlimited (uses user balance)",
+                                            "Remaining budget for this key in US dollars, null = unlimited (uses user balance)",
                                         ),
                                     rateLimitEnabled: z
                                         .boolean()

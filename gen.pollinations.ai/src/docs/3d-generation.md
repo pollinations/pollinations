@@ -9,8 +9,8 @@ https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftr
 
 **Available models:** {{3D_MODELS}}
 
-> **Note:** `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen. `microsoft/trellis-2` (the default)
-> supports `low`, `medium`, and `high` resolution and works with Quest Pollen.
+> **Note:** `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require paid credit. `microsoft/trellis-2` (the default)
+> supports `low`, `medium`, and `high` resolution and works with quest credit.
 
 ### NVIDIA Asset Harvester
 

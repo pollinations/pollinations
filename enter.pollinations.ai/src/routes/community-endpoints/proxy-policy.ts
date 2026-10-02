@@ -35,23 +35,23 @@ export type ProxyPolicy = Pick<
 const PRICE_LIMIT_BY_UNIT = {
     image: {
         maximum: MAX_COMMUNITY_PRICE_PER_IMAGE,
-        label: `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`,
+        label: `$${MAX_COMMUNITY_PRICE_PER_IMAGE} per image`,
     },
     second: {
         maximum: MAX_COMMUNITY_PRICE_PER_SECOND,
-        label: `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`,
+        label: `$${MAX_COMMUNITY_PRICE_PER_SECOND} per second`,
     },
     video_second: {
         maximum: MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
-        label: `${MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND} Pollen per second`,
+        label: `$${MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND} per second`,
     },
     token: {
         maximum: MAX_COMMUNITY_PRICE_PER_TOKEN,
-        label: `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+        label: `$${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`,
     },
     million: {
         maximum: MAX_COMMUNITY_PRICE_PER_TOKEN,
-        label: `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+        label: `$${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`,
     },
 } as const;
 

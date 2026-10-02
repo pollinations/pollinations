@@ -54,7 +54,15 @@ const textCacheAdapter: GenerationCacheAdapter = {
         );
     },
     get: getCachedResponse,
-    shouldCache(response) {
+    shouldCache(c, response) {
+        // Managed agents may execute MCP tools whose results change between
+        // identical prompts. Serving the final answer from the response cache
+        // would skip those tools and return stale state.
+        const model = (c.var as Partial<ModelVariables>).model;
+        const endpointType = model?.communityEndpoint?.type;
+        if (endpointType === "prompt_agent" || endpointType === "code_agent") {
+            return false;
+        }
         return response.status === 200 && response.body !== null;
     },
     capture(c, cacheKey, response) {

@@ -425,6 +425,11 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 0.25,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("connect_polli_cli", {
+        state: "available",
+        rewardAmount: 2,
+        balanceBucket: "tier",
+    });
     expectStableCatalogFields("join_discord", {
         state: "available",
         rewardAmount: 1,
@@ -1211,6 +1216,43 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
     ]);
 });
 
+test("Polli CLI quest rewards its device-login keys, not other app keys", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const owner = await getOnlyUser();
+    const [polliUserId, otherUserId] = await seedByopConnections(
+        owner.id,
+        2,
+        "polli-quest",
+    );
+    if (!polliUserId || !otherUserId) throw new Error("Expected BYOP users");
+
+    await db
+        .update(schema.apikey)
+        .set({ byopClientKeyId: "jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0" })
+        .where(eq(schema.apikey.referenceId, polliUserId));
+
+    await checkQuestsForUser(env, polliUserId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+    await checkQuestsForUser(env, otherUserId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+    await checkQuestsForUser(env, polliUserId, [
+        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+    ]);
+
+    const rewards = await db
+        .select({
+            userId: schema.rewards.userId,
+            amount: schema.rewards.pollenAmount,
+        })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "connect_polli_cli"));
+    expect(rewards).toEqual([{ userId: polliUserId, amount: 2 }]);
+});
+
 test("app milestones award their rewards at inclusive thresholds", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -1938,6 +1980,46 @@ test("two lazy GitHub issue bounties each record independently", async ({
         issueRewards.find((g) => g.userId === "community-issue-second-user")
             ?.pollenAmount,
     ).toBeCloseTo(13);
+});
+
+// Regression guard: GitHub search returns at most 100 issues per page, so a
+// bounty ranked past the first page must still be loaded and rewarded.
+test("issue bounties beyond the first 100 quest issues still record", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    mocks.github.state.user.created_at = new Date().toISOString();
+    await mocks.enable("github", "tinybird");
+
+    for (let issueNumber = 2000; issueNumber < 2100; issueNumber++) {
+        seedQuestIssue(mocks.github.state, {
+            issueNumber,
+            title: `Open bounty #${issueNumber}`,
+            goal: "Merge a focused PR.",
+            reward: 1,
+        });
+    }
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 1999,
+        title: "Bounty on the second page",
+        goal: "Merge the linked PR.",
+        reward: 9,
+        completedByPrNumber: 3999,
+        completedByGithubId: user.githubId,
+        completedByLogin: user.githubUsername,
+    });
+
+    await checkQuestsForUser(env, user.id);
+
+    const rewards = await db
+        .select({ idempotencyKey: schema.rewards.idempotencyKey })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.questId, "github:issue:1999"));
+    expect(rewards.map((reward) => reward.idempotencyKey)).toEqual([
+        `quest:github:issue:1999:github:${user.githubId}`,
+    ]);
 });
 
 // An approved app submission closes a quest through the bot's catalog PR, which

@@ -1442,6 +1442,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.00000062,
     },
   },
+  "heygen/heygen-video-1": {
+    "cost": {
+      "completionVideoSeconds": 0.01055,
+    },
+    "costVariants": {
+      "768p": {
+        "completionVideoSeconds": 0.015825,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.01055,
+    },
+  },
   "hyper3d/rodin-2.5": {
     "cost": {
       "completionImageTokens": 0.1,
@@ -1660,18 +1673,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000425,
       "promptCachedTokens": 0.00000015,
       "promptTextTokens": 0.00000125,
-    },
-  },
-  "microsoft/mai-image-2.5-flash": {
-    "cost": {
-      "completionImageTokens": 0.0000195,
-      "promptImageTokens": 0.00000175,
-      "promptTextTokens": 0.00000175,
-    },
-    "price": {
-      "completionImageTokens": 0.000014625,
-      "promptImageTokens": 0.0000013125,
-      "promptTextTokens": 0.0000013125,
     },
   },
   "microsoft/mai-image-2.6": {
@@ -3233,6 +3234,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.0844,
+    },
+  },
+  "respan/span-01-lite": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
     },
   },
   "sesame/csm-1b": {

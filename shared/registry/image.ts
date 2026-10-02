@@ -333,6 +333,27 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
+    "bytedance/seedream-5.0-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-10-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter Seed endpoint, verified 2026-10-02: a flat $0.018 per
+            // image at both 1K and 2K, plus the 5.5% credit fee.
+            completionImageTokens: 0.018 * 1.055, // per image
+        },
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.0 Flash",
+        description:
+            "Fast, low-cost image generation and editing at 1K or 2K with up to fourteen references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14,
+    },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
         provider: "replicate",

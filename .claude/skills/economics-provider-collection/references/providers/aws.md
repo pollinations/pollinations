@@ -25,6 +25,10 @@ Collection steps:
    Never append the summed account total alongside its lots.
 3. For a closed month, archive the Glass settlement/invoice and use `You Pay`
    as the cash obligation after credits and reseller discounts.
+   In the signed-in `myceliai-aws` Glass account, check Invoices and the
+   Dashboard's AWS Consumption month selector. Record their latest available
+   billing month; if the requested month is absent, keep its settlement and
+   original invoice pending instead of using the previous month's figures.
    Check AWS Billing and Cost Management → Bills for the same service month:
    record whether its grand total is still estimated and whether the Invoices
    tab has issued originals. Do not present an estimated bill as an invoice.

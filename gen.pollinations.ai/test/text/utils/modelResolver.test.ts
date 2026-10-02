@@ -347,6 +347,20 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it.each([
+        ["inferenceport-ai/lightning-text-v2", "lightning"],
+        ["inferenceport-ai/lightning-text-v2.1", "lightning-text-v2.1"],
+    ])("routes %s directly to InferencePort without fallback", (model, upstream) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(upstream);
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.inferenceport.ai/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes Step Flash directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "stepfun/step-3.7-flash",

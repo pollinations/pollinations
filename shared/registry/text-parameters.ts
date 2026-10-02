@@ -190,6 +190,9 @@ export const CHAT_PARAMETERS = {
         "n",
         "prediction",
     ],
+    // InferencePort Lightning routers: /v1/models lists temperature, stop and
+    // max_tokens as the sampling controls, plus tools and JSON mode.
+    inferenceportLightning: [...TOOL_CHAT, "temperature", "stop"],
     deepinfraReasoning: [...EXTENDED_CHAT, "reasoning_effort", "n"],
     openRouterGemma: [
         ...EXTENDED_CHAT,

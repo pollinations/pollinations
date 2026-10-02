@@ -695,6 +695,14 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "inferenceport-ai/lightning-text-v2.1",
+        config: portkeyConfig["inferenceport-lightning-text-v2.1"],
+    },
+    {
+        name: "inferenceport-ai/lightning-text-v2",
+        config: portkeyConfig["inferenceport-lightning-text-v2"],
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(

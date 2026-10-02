@@ -19,7 +19,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/community": {
         title: "Community | pollinations.ai",
         description:
-            "Contribute to Pollinations, vote on ideas and explore monthly and daily build updates.",
+            "Contribute to Pollinations, vote on ideas and meet the builders.",
     },
     "/terms": {
         title: "Terms | pollinations.ai",

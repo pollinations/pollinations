@@ -6,12 +6,7 @@ import { requireKey } from "../../lib/api.js";
 import { BASE_URL } from "../../lib/config.js";
 import { budgetHint } from "../../lib/errors.js";
 import { numberOption } from "../../lib/number-option.js";
-import {
-    ExitSignal,
-    getOutputMode,
-    printError,
-    printResult,
-} from "../../lib/output.js";
+import { getOutputMode, printError, printResult } from "../../lib/output.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface Message {
@@ -158,6 +153,8 @@ export function createChatCommand() {
                 }
             };
 
+            let closed = false;
+
             rl.prompt();
 
             rl.on("line", async (line) => {
@@ -169,7 +166,6 @@ export function createChatCommand() {
 
                 // Slash commands
                 if (input === "/exit" || input === "/quit") {
-                    if (opts.save) saveTranscript(opts.save);
                     if (!isJson) {
                         process.stderr.write(
                             chalk.dim(
@@ -178,7 +174,7 @@ export function createChatCommand() {
                         );
                     }
                     rl.close();
-                    process.exitCode = 0;
+                    return;
                 }
 
                 if (input === "/clear") {
@@ -204,12 +200,14 @@ export function createChatCommand() {
                 }
 
                 await sendMessage(input);
-                rl.prompt();
+                // A fatal API error or EOF may have closed readline mid-turn.
+                if (!closed) rl.prompt();
             });
 
             rl.on("close", () => {
+                closed = true;
                 if (opts.save) saveTranscript(opts.save);
-                process.exitCode = 0;
+                process.exitCode ??= 0;
             });
         });
 }

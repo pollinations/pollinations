@@ -3,40 +3,57 @@ import {
     Button,
     ContentHeader,
     ScrollArea,
+    TabButton,
 } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
-import { useWeeklyApps } from "../../data/publicStats";
+import { useState } from "react";
+import { useNewestApps, useWeeklyApps } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
 
+const TABS = ["Most used this week", "Newest"] as const;
+
 /**
- * A compact shelf of the busiest community apps that use connected wallets.
- * Missing screenshots use the shared Polli fallback, so the shelf remains
- * visual without pretending generated art is the real app.
+ * A compact shelf of community apps: the busiest ones over the last 7 days
+ * (counting only users who pay with their own Pollen), or the newest
+ * listings. Missing screenshots use the shared Polli fallback, so the shelf
+ * remains visual without pretending generated art is the real app.
  */
 export function LiveApps() {
-    const { data: featured, loading, failed } = useWeeklyApps();
+    const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
+    const weekly = useWeeklyApps();
+    const newest = useNewestApps();
+    const { data: apps, loading, failed } = tab === TABS[0] ? weekly : newest;
 
     // Only disappears when the ranking loaded fine and genuinely had
     // nothing to show — a failure gets a line, not a silent hole.
-    if (!loading && !failed && featured.length === 0) return null;
+    if (!weekly.loading && !weekly.failed && weekly.data.length === 0)
+        return null;
 
     return (
         <section className="flex flex-col gap-5">
-            <ContentHeader
-                eyebrow="Live now"
-                title="Apps from the community."
-                subtitle="The most-used Pollen Pay apps over the last 7 days."
-            />
-            <Button
-                as={Link}
-                to="/apps"
-                intent="neutral"
-                size="md"
-                className="self-start gap-2"
-            >
-                See all apps
-                <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
-            </Button>
+            <ContentHeader eyebrow={null} title="Apps from the community." />
+            <div className="flex flex-wrap items-center gap-2">
+                {TABS.map((label) => (
+                    <TabButton
+                        key={label}
+                        active={tab === label}
+                        size="sm"
+                        onClick={() => setTab(label)}
+                    >
+                        {label}
+                    </TabButton>
+                ))}
+                <Button
+                    as={Link}
+                    to="/apps"
+                    intent="neutral"
+                    size="md"
+                    className="ml-auto gap-2"
+                >
+                    See all apps
+                    <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+                </Button>
+            </div>
             {loading ? (
                 <ScrollArea
                     axis="x"
@@ -54,10 +71,10 @@ export function LiveApps() {
                 </ScrollArea>
             ) : failed ? (
                 <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
-                    Featured apps couldn’t be loaded right now.
+                    Apps couldn’t be loaded right now.
                 </p>
             ) : (
-                <AppCarousel apps={featured} />
+                <AppCarousel key={tab} apps={apps} />
             )}
         </section>
     );

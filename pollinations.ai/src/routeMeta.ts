@@ -2,9 +2,9 @@ type RouteMeta = { title: string; description: string };
 
 export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
-        title: "Pollinations.ai — Models. Agents. Tools. One wallet.",
+        title: "Pollinations.ai — Open infrastructure for AI-natives. Models. Agents. Tools. One API.",
         description:
-            "One API for official and community models, agents and hosted tools. Pay with Pollen credits, or let users bring theirs. Publish your own models and agents; earn from your models and apps.",
+            "The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps.",
     },
     "/play": {
         title: "Play | pollinations.ai",
@@ -19,7 +19,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/community": {
         title: "Community | pollinations.ai",
         description:
-            "Contribute to Pollinations, vote on ideas and explore monthly and daily build updates.",
+            "Contribute to Pollinations, vote on ideas and meet the builders.",
     },
     "/terms": {
         title: "Terms | pollinations.ai",

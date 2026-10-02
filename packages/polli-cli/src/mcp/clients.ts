@@ -8,6 +8,7 @@ import {
 } from "../harnesses/fs.js";
 import { hermesHome } from "../harnesses/hermes.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
+import { piAgentDir } from "../harnesses/pi.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
 import {
@@ -471,6 +472,36 @@ const jsonClients: McpClientAdapter[] = [
         file: (ctx) => join(hermesHome(ctx), "config.yaml"),
         table: "mcp_servers",
     }),
+    {
+        ...jsonClient({
+            id: "pi",
+            label: "Pi",
+            description: "Pi native MCP (0.99+, ~/.pi/agent/mcp.json)",
+            target: {
+                file: (ctx) => join(piAgentDir(ctx), "mcp.json"),
+                table: "mcpServers",
+                entry: urlEntry,
+                notes: () => ["Run /reload in Pi, or start a new session."],
+            },
+        }),
+        preflight: (ctx) => {
+            const result = spawnSync("pi", ["--version"], {
+                env: ctx.env,
+                encoding: "utf8",
+                timeout: 5000,
+            });
+            const version = result.stdout?.trim().match(/^(\d+)\.(\d+)\.\d+/);
+            if (
+                result.status !== 0 ||
+                !version ||
+                (Number(version[1]) === 0 && Number(version[2]) < 99)
+            ) {
+                throw new Error(
+                    "Pi 0.99+ is required for native MCP. Install or upgrade: npm install -g --ignore-scripts @earendil-works/pi-coding-agent@latest",
+                );
+            }
+        },
+    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -830,6 +861,7 @@ const PRIORITY = [
     "zed",
     "warp",
     "hermes",
+    "pi",
 ];
 
 const byId = new Map(

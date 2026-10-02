@@ -24,6 +24,8 @@ Collection steps:
 3. Archive each new invoice separately; record explicit invoice-list coverage.
 4. Open Usage, select the complete calendar month in UTC, and record usage cost,
    started and resumed sandboxes, vCPU hours, and RAM hours.
+   The range picker has a `Last month` preset; verify its resulting UTC start
+   and end in the displayed range before recording totals.
 5. Preserve sandbox or template detail when the dashboard or API exposes it.
 6. Record E2B usage in the Compute & Infra ledger as `infrastructure`, never as
    model inference.

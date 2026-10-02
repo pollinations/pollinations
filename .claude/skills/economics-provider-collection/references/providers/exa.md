@@ -38,6 +38,9 @@ Collection steps:
 1. Open the billing page in the `myceli.ai` browser workspace.
 2. Record the remaining balance as provider credit and the exact check time.
 3. Open the usage page and select the complete calendar month in UTC.
+   The date picker accepts start and end dates directly. Verify the `Daily
+   Spend` heading shows the full month after applying them; its endpoint
+   breakdown is rounded and need not sum exactly to the displayed total.
 4. Save any available usage export separately from the balance snapshot.
 5. Archive invoices when they exist; the account had no payment method or
    invoices at verification time.

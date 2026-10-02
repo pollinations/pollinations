@@ -70,6 +70,14 @@ Known traps:
 - Collect `PollinationsAI` only in its matching signed-in browser workspace.
   Never reuse the Myceli browser or management key for that account.
 - Read the grant's displayed expiry; a grant receipt date is not an expiry.
+- On the organization's Credits page, inspect each transaction separately:
+  `Receipt` opens the original Stripe-hosted receipt; `Get invoice` may create
+  a supplier invoice and then change to `View Invoice`. From the hosted invoice,
+  use `Download invoice` for the original PDF. Verify the transaction date,
+  invoice issue date, receipt number, and account independently; a newly
+  generated invoice can have a later issue date than its credit purchase.
+  If Chrome blocks the supplier PDF download, keep the original hosted
+  receipt and email, and mark the PDF missing rather than recreating one.
 - Never proportionally allocate completed-month totals. Keep missing detail as
   an explicit gap.
 - Do not reproduce the retired mutable month-open usage cache. Prefer bounded

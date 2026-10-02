@@ -86,6 +86,13 @@ Collection endpoints:
   Preserve the original RFC822 notice in the issue month's Supporting Evidence
   folder, record the PDF as missing, and download the supplier PDF from the
   matching signed-in manager account.
+- In the manager, verify `Myceli.AI OÜ` and the account identifier, then open
+  `My bills` → `Invoices`. Each invoice row has an actions menu with `See PDF
+  version`; this downloads `Invoice_<reference>.pdf` into Downloads. Verify
+  its PDF structure, invoice number, issue date, and service period before
+  archiving. An invoice issued on October 1 for September service belongs in
+  October's `Invoices` folder by issue date, while its usage belongs to
+  September's vendor ledger.
 
 Known traps:
 

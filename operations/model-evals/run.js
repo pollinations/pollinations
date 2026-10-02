@@ -93,41 +93,49 @@ async function scoreModel({
     let rateLimited = false;
     let lastRequestAt = 0;
     const intervalMs = model.per_user_rpm ? 60_000 / model.per_user_rpm : 0;
-    await inPool(questions.entries(), intervalMs ? 1 : 4, async ([index, question]) => {
-        if (rateLimited) return;
-        if (overBudget()) {
-            stopped = true;
-            return;
-        }
-        if (intervalMs) {
-            await sleep(Math.max(0, lastRequestAt + intervalMs - Date.now()));
+    await inPool(
+        questions.entries(),
+        intervalMs ? 1 : 4,
+        async ([index, question]) => {
+            if (rateLimited) return;
             if (overBudget()) {
                 stopped = true;
                 return;
             }
-            lastRequestAt = Date.now();
-        }
-        const reply = await ask({
-            ...api,
-            model: model.name,
-            prompt: question.prompt,
-            seed: (seed + index) % 2147483647,
-        });
-        if (reply.fatal)
-            throw new Error(`${reply.error}: evaluation cannot continue`);
-        if (reply.error === "http_429") {
-            rateLimited = true;
-            return;
-        }
-        const spent = estimateCost(reply.usage, model.pricing);
-        cost += spent;
-        onCost(spent);
-        const family = families[question.family];
-        family.total++;
-        if (reply.error) errors[reply.error] = (errors[reply.error] ?? 0) + 1;
-        else if (evalDef.grade(reply.text, question)) family.correct++;
-    });
-    if (rateLimited) return { status: "unscored", reason: "rate_limited", cost };
+            if (intervalMs) {
+                await sleep(
+                    Math.max(0, lastRequestAt + intervalMs - Date.now()),
+                );
+                if (overBudget()) {
+                    stopped = true;
+                    return;
+                }
+                lastRequestAt = Date.now();
+            }
+            const reply = await ask({
+                ...api,
+                model: model.name,
+                prompt: question.prompt,
+                seed: (seed + index) % 2147483647,
+            });
+            if (reply.fatal)
+                throw new Error(`${reply.error}: evaluation cannot continue`);
+            if (reply.error === "http_429") {
+                rateLimited = true;
+                return;
+            }
+            const spent = estimateCost(reply.usage, model.pricing);
+            cost += spent;
+            onCost(spent);
+            const family = families[question.family];
+            family.total++;
+            if (reply.error)
+                errors[reply.error] = (errors[reply.error] ?? 0) + 1;
+            else if (evalDef.grade(reply.text, question)) family.correct++;
+        },
+    );
+    if (rateLimited)
+        return { status: "unscored", reason: "rate_limited", cost };
     // A model the budget cut off mid-way is not scored on the questions it did get.
     if (stopped) return { status: "skipped", cost };
     const correct = Object.values(families).reduce((n, f) => n + f.correct, 0);

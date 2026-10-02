@@ -346,7 +346,10 @@ describe("runEvals against a real HTTP server", () => {
             cost: 0,
         });
         assert.equal(byName["vendor/right"].correct, 3);
-        assert.match(formatTable(results[0]), /1 scored, 1 unscored, 0 skipped/);
+        assert.match(
+            formatTable(results[0]),
+            /1 scored, 1 unscored, 0 skipped/,
+        );
     });
 
     test("every question of a run gets its own seed, so nothing is served from gen's cache", async () => {

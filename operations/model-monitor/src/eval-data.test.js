@@ -85,7 +85,11 @@ describe("buildLeaderboard", () => {
             model("google/gemma", 0.93, 0.14, { cost: 0.001 }),
             model("community/v/original", 0.5, 0.2),
             { name: "vendor/pricey", status: "skipped", community: false },
-            { name: "vendor/limited", status: "unscored", reason: "rate_limited" },
+            {
+                name: "vendor/limited",
+                status: "unscored",
+                reason: "rate_limited",
+            },
         ]);
         assert.deepEqual(
             ranking.map((m) => m.name),
@@ -103,6 +107,9 @@ describe("buildLeaderboard", () => {
             skipped.map((m) => m.name),
             ["vendor/pricey"],
         );
-        assert.deepEqual(unscored.map((m) => m.name), ["vendor/limited"]);
+        assert.deepEqual(
+            unscored.map((m) => m.name),
+            ["vendor/limited"],
+        );
     });
 });

@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { JSONParser } from "@streamparser/json";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -31,11 +31,10 @@ function imagePart(value: unknown): value is ImagePart {
 export async function readLargeChatBody(
     stream: ReadableStream<Uint8Array>,
     uploadImage: (dataUrl: string) => Promise<string>,
-): Promise<{ body: string; digest: string }> {
+): Promise<string> {
     const parser = new JSONParser({
         paths: ["$.messages.*.content.*", "$"],
     });
-    const hash = createHash("sha256");
     const pending: Array<{ part: ImagePart; dataUrl: string }> = [];
     let parsed: unknown;
     let totalBytes = 0;
@@ -70,7 +69,6 @@ export async function readLargeChatBody(
                     message: "Request body exceeds the 100 MiB limit",
                 });
             }
-            hash.update(value);
             for (
                 let offset = 0;
                 offset < value.length;
@@ -113,7 +111,7 @@ export async function readLargeChatBody(
                     : "Request body exceeds the 32 MiB limit",
         });
     }
-    return { body, digest: hash.digest("hex") };
+    return body;
 }
 
 /** Large inline images become URLs before Hono or the provider constructs another JSON copy. */
@@ -133,44 +131,38 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
     const stream = c.req.raw.body;
     if (!stream) return next();
 
-    const { body, digest } = await readLargeChatBody(
-        stream,
-        async (dataUrl) => {
-            const user = c.var.auth.requireUser();
-            const match =
-                /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/]+={0,2})$/.exec(
-                    dataUrl,
-                );
-            if (!match) {
-                throw new HTTPException(400, {
-                    message: "Invalid inline image data URL",
-                });
-            }
-            const bytes = Buffer.from(match[2], "base64");
-            const id = createHmac("sha256", c.env.BETTER_AUTH_SECRET)
-                .update("chat-input\0")
-                .update(user.id)
-                .update("\0")
-                .update(match[1])
-                .update("\0")
-                .update(bytes)
-                .digest("hex");
-            if (await c.env.MEDIA.has(id)) {
-                return `https://media.pollinations.ai/${id}`;
-            }
-            const upload = await c.env.MEDIA.upload(
-                new Blob([bytes]).stream(),
-                {
-                    id,
-                    contentType: match[1],
-                    size: bytes.byteLength,
-                    uploadedBy: user.id,
-                    keyType: "chat-input",
-                },
+    const body = await readLargeChatBody(stream, async (dataUrl) => {
+        const user = c.var.auth.requireUser();
+        const match =
+            /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+                dataUrl,
             );
-            return upload.url;
-        },
-    );
+        if (!match) {
+            throw new HTTPException(400, {
+                message: "Invalid inline image data URL",
+            });
+        }
+        const bytes = Buffer.from(match[2], "base64");
+        const id = createHmac("sha256", c.env.BETTER_AUTH_SECRET)
+            .update("chat-input\0")
+            .update(user.id)
+            .update("\0")
+            .update(match[1])
+            .update("\0")
+            .update(bytes)
+            .digest("hex");
+        if (await c.env.MEDIA.has(id)) {
+            return `https://media.pollinations.ai/${id}`;
+        }
+        const upload = await c.env.MEDIA.upload(new Blob([bytes]).stream(), {
+            id,
+            contentType: match[1],
+            size: bytes.byteLength,
+            uploadedBy: user.id,
+            keyType: "chat-input",
+        });
+        return upload.url;
+    });
 
     const headers = new Headers(c.req.raw.headers);
     headers.set(
@@ -178,8 +170,5 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
         String(new TextEncoder().encode(body).byteLength),
     );
     c.req.raw = new Request(c.req.raw, { body, headers });
-    c.req.bodyCache = {};
-    c.set("generationRequestBody", body);
-    c.set("generationCacheBody", digest);
     await next();
 });

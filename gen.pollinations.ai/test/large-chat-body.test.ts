@@ -42,18 +42,15 @@ describe("large chat bodies", () => {
         });
 
         let uploads = 0;
-        const { body, digest } = await readLargeChatBody(
-            stream,
-            async (dataUrl) => {
-                const bytes = Buffer.from(dataUrl.split(",")[1], "base64");
-                const result = await env.MEDIA.upload(
-                    new Blob([bytes]).stream(),
-                    { contentType: "image/jpeg", size: bytes.byteLength },
-                );
-                uploads++;
-                return result.url;
-            },
-        );
+        const body = await readLargeChatBody(stream, async (dataUrl) => {
+            const bytes = Buffer.from(dataUrl.split(",")[1], "base64");
+            const result = await env.MEDIA.upload(new Blob([bytes]).stream(), {
+                contentType: "image/jpeg",
+                size: bytes.byteLength,
+            });
+            uploads++;
+            return result.url;
+        });
 
         const parsed = JSON.parse(body);
         expect(uploads).toBe(24);
@@ -66,7 +63,6 @@ describe("large chat bodies", () => {
         expect(stored?.status).toBe(200);
         expect((await stored?.arrayBuffer())?.byteLength).toBe(3 * 1024 * 1024);
         expect(body.length).toBeLessThan(4096);
-        expect(digest).toMatch(/^[a-f0-9]{64}$/);
     });
 });
 

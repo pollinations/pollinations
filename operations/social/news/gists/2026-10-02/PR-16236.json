@@ -1,0 +1,33 @@
+{
+  "pr_number": 16236,
+  "title": "chore: regenerate enter worker binding types",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16236",
+  "merged_at": "2026-10-02T15:19:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Regenerates `enter.pollinations.ai/worker-bindings.d.ts` with `npm run gen:types:bindings:worker`; the committed file had drifted from `wrangler.toml`\n- Adds missing bindings: `CODE_AGENT_DISPATCH_NAMESPACE` and `COMPOSIO_MCP` per env, test-env `DISCORD_*` and `TINYBIRD_ECONOMICS_READ_TOKEN`, plus optional `STAGING_ALLOWED_*` / `USAGE_DEBUG_USER_ID` on `Env`\n- Switches to Wrangler's current per-env interface layout (`Cloudflare.Env` plus `NodeJS.ProcessEnv`)\n- Types only: no `wrangler.toml` or secrets changes; secrets stay `string`, and every literal comes from `wrangler.toml` vars\n- `npm run typecheck` passes\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The types caught up",
+    "blurb": "The enter worker’s binding types caught up with its configuration. A small but useful victory over configuration drift.",
+    "summary": "Regenerated enter’s worker binding types from wrangler.toml, adding CODE_AGENT_DISPATCH_NAMESPACE, COMPOSIO_MCP, test-environment bindings, and optional Env fields in Wrangler’s current Cloudflare.Env and NodeJS.ProcessEnv layout.",
+    "impact": "Developers get type definitions that match the configured worker environments; runtime bindings, secrets, and behavior are unchanged.",
+    "keywords": [
+      "enter",
+      "Cloudflare Workers",
+      "Wrangler",
+      "TypeScript",
+      "bindings"
+    ],
+    "visual_concept": "Depict Polli checking a tidy stack of configuration pages against a retro terminal showing matching type definitions. Small code-plants and lime-green highlights make the internal maintenance task feel like tending a garden.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli checks configuration pages against matching type definitions on a retro terminal while small code-plants grow nearby; lime green (#ecf874) glows prominently among warm cream and soft pastel gradients. Polli is a cute, small-to-medium pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny reading glasses; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16236.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli checks configuration pages against matching type definitions on a retro terminal while small code-plants grow nearby; lime green (#ecf874) glows prominently among warm cream and soft pastel gradients. Polli is a cute, small-to-medium pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny reading glasses; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-02T15:21:04.274559+00:00"
+}

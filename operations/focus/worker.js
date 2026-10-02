@@ -43,7 +43,10 @@ async function github(env, query, variables) {
         body: JSON.stringify({ query, variables }),
     });
     const body = await r.json().catch(() => ({}));
-    if (!r.ok || body.errors) throw new Error(`GitHub ${r.status}: ${JSON.stringify(body.errors || body).slice(0, 300)}`);
+    if (!r.ok || body.errors)
+        throw new Error(
+            `GitHub ${r.status}: ${JSON.stringify(body.errors || body).slice(0, 300)}`,
+        );
     return body.data;
 }
 
@@ -51,7 +54,8 @@ async function items(env, q) {
     const out = [];
     let cursor = null;
     do {
-        const page = (await github(env, ITEMS, { cursor, q })).organization.projectV2.items;
+        const page = (await github(env, ITEMS, { cursor, q })).organization
+            .projectV2.items;
         out.push(...page.nodes);
         cursor = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
     } while (cursor);
@@ -60,7 +64,8 @@ async function items(env, q) {
 
 function toItem(node) {
     const c = node.content;
-    if (!c || (c.__typename !== "Issue" && c.__typename !== "PullRequest")) return null;
+    if (!c || (c.__typename !== "Issue" && c.__typename !== "PullRequest"))
+        return null;
     const isPr = c.__typename === "PullRequest";
     return {
         kind: isPr ? "pr" : "issue",
@@ -89,8 +94,13 @@ const AREAS = `{ organization(login: "pollinations") { projectV2(number: 20) {
 
 // Open and closed items of each area, fetched side by side: a few short page chains instead of one long one.
 async function snapshot(env) {
-    const areas = (await github(env, AREAS)).organization.projectV2.field.options.map((o) => o.name);
-    const queries = areas.flatMap((a) => [`is:open area:"${a}"`, `is:closed area:"${a}"`]);
+    const areas = (
+        await github(env, AREAS)
+    ).organization.projectV2.field.options.map((o) => o.name);
+    const queries = areas.flatMap((a) => [
+        `is:open area:"${a}"`,
+        `is:closed area:"${a}"`,
+    ]);
     const nodes = (await Promise.all(queries.map((q) => items(env, q)))).flat();
     const byNumber = new Map();
     for (const node of nodes) {
@@ -107,24 +117,38 @@ let pending = null;
 async function data(env, ctx) {
     const refresh = () => {
         pending ??= snapshot(env)
-            .then((s) => (cached = s))
-            .finally(() => (pending = null));
+            .then((s) => {
+                cached = s;
+                return s;
+            })
+            .finally(() => {
+                pending = null;
+            });
         return pending;
     };
     if (!cached) return refresh();
-    if (Date.now() - cached.fetchedAt > CACHE_MS) ctx.waitUntil(refresh().catch(() => {}));
+    if (Date.now() - cached.fetchedAt > CACHE_MS)
+        ctx.waitUntil(refresh().catch(() => {}));
     return cached;
 }
 
 export default {
     async fetch(request, env, ctx) {
         const { pathname } = new URL(request.url);
-        if (pathname === "/") return new Response(PAGE, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+        if (pathname === "/")
+            return new Response(PAGE, {
+                headers: { "Content-Type": "text/html; charset=utf-8" },
+            });
         if (pathname === "/data") {
             try {
-                return Response.json(await data(env, ctx), { headers: { "Cache-Control": "no-store" } });
+                return Response.json(await data(env, ctx), {
+                    headers: { "Cache-Control": "no-store" },
+                });
             } catch (e) {
-                return Response.json({ error: String(e.message || e) }, { status: 502 });
+                return Response.json(
+                    { error: String(e.message || e) },
+                    { status: 502 },
+                );
             }
         }
         return env.ASSETS.fetch(request);

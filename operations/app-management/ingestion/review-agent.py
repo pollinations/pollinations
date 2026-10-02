@@ -249,7 +249,7 @@ def call_llm(submission, evidence):
     system_prompt = """You are pre-reviewing a community app submitted to Pollinations.
 Decide whether a human maintainer has enough evidence to review it.
 
-Ready means: the app is reachable, its purpose is understandable, there is credible evidence that it uses Pollinations, and it credits Pollinations. A repository is optional. Never infer integration from the submitter's claim alone when the live page and repository show no evidence.
+Ready means: the app is reachable (or, when no app URL is given, the repository is), its purpose is understandable, there is credible evidence that it uses Pollinations, and it credits Pollinations. A submission gives an app URL, a repository, or both. Never infer integration from the submitter's claim alone when the live page and repository show no evidence.
 
 Credit: when a repository is provided, its README must show the "Made with pollinations.ai" badge (repository.badge_in_readme). Without a repository, the app page must show the badge or a visible link to pollinations.ai (app.credit_link). Missing credit means needs_info with a question asking for the badge.
 
@@ -400,10 +400,13 @@ def main():
 
     submission = validation["submission"]
     evidence = {"app": {}, "repository": {}}
-    try:
-        evidence["app"] = inspect_app(submission["appUrl"])
-    except (requests.RequestException, ValueError) as error:
-        evidence["app"] = {"reachable": False, "error": str(error)}
+    if submission["appUrl"]:
+        try:
+            evidence["app"] = inspect_app(submission["appUrl"])
+        except (requests.RequestException, ValueError) as error:
+            evidence["app"] = {"reachable": False, "error": str(error)}
+    else:
+        evidence["app"] = {"provided": False}
     try:
         evidence["repository"] = inspect_repo(submission.get("repoUrl", ""))
     except requests.RequestException as error:

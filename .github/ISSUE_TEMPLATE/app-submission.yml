@@ -41,16 +41,14 @@ body:
     id: app-url
     attributes:
       label: App URL
-      description: Public URL where reviewers can try the app.
+      description: Public URL where people can try the app. Leave empty when the repository is the app, such as a plugin or library.
       placeholder: https://example.com
-    validations:
-      required: true
 
   - type: input
     id: github-repo
     attributes:
       label: GitHub Repository URL
-      description: Optional public source repository.
+      description: Public source repository. Required when there is no App URL.
       placeholder: https://github.com/username/repository
 
   - type: upload

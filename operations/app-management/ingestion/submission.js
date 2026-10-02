@@ -133,8 +133,10 @@ function validateSubmission(submission) {
         errors.push(
             "App Description must explain what the app does and how it uses Pollinations.",
         );
-    if (!submission.appUrl)
-        errors.push("App URL must be a valid public HTTP(S) URL.");
+    if (!submission.appUrl && !submission.repoUrl)
+        errors.push(
+            "Provide a valid public App URL, a GitHub Repository URL, or both.",
+        );
     if (!submission.screenshotUrl)
         errors.push(
             "Screenshot is required: upload an image of the app in the Screenshot field.",
@@ -186,7 +188,7 @@ function buildApp(submission, metadata) {
     return {
         emoji: submission.emoji,
         name: submission.name,
-        url: submission.appUrl,
+        url: submission.appUrl || null,
         description: submission.description,
         language: submission.language,
         category: submission.category,

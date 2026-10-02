@@ -77,6 +77,31 @@ test("requires a screenshot hosted by GitHub", () => {
     }
 });
 
+test("accepts an app URL, a repository, or both", () => {
+    const repoOnly = parseSubmission(
+        BODY.replace("https://example.com/app", "_No response_"),
+    );
+    assert.deepEqual(validateSubmission(repoOnly), []);
+    assert.equal(buildApp(repoOnly, {}).url, null);
+    assert.equal(
+        buildApp(repoOnly, {}).repositoryUrl,
+        "https://github.com/example/sunflower",
+    );
+    const appOnly = parseSubmission(
+        BODY.replace("https://github.com/example/sunflower", "_No response_"),
+    );
+    assert.deepEqual(validateSubmission(appOnly), []);
+    const neither = parseSubmission(
+        BODY.replace("https://example.com/app", "_No response_").replace(
+            "https://github.com/example/sunflower",
+            "_No response_",
+        ),
+    );
+    assert.deepEqual(validateSubmission(neither), [
+        "Provide a valid public App URL, a GitHub Repository URL, or both.",
+    ]);
+});
+
 test("preserves multiline textarea content", () => {
     const submission = parseSubmission(
         BODY.replace(

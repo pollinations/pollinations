@@ -1,0 +1,34 @@
+{
+  "pr_number": 15656,
+  "title": "feat: E2B sandboxes through gen, paid in advance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15656",
+  "merged_at": "2026-10-02T18:24:45Z",
+  "labels": [],
+  "pr_body_excerpt": "Alternative backend to #15251.\n\n- Adds `/alpha/e2b` on gen, a pass-through of E2B's control API. E2B's SDKs and CLI work unchanged with `E2B_API_URL=https://gen.pollinations.ai/alpha/e2b` and a key with the new `machines` permission.\n- Bills a prepaid lease on the sandbox timeout: each create, timeout or connect pays for the time past the running sandbox's current end. No refunds; pausing early gives up the rest. Launch promo: 25% of E2B's list price (`PRICE_MULTIPLIER`) until the promo ends.\n- Keeps users apart on one E2B team: the owner is stored in sandbox metadata, each user can run 3 sandboxes, and `secure: true` is forced so envd needs the sandbox's access token.\n- Adds `polli sandbox create | list | timeout | logs | kill`, and `ssh <id>.polli` with scp, sftp and rsync.\n- Adds the default `pollinations` template (`operations/infrastructure/e2b/`): polli with Claude Code, OpenCode, Pi, Hermes Agent and OpenClaw. Gen logs polli in with a `polli-sandbox-<id>` key, created through `POST /account/keys` with the caller's key. The first interactive ssh connects each harness with its own key.\n\nNot in this PR: a dashboard sandbox section, Codex in the template (its router needs systemd), limits for keys created by keys (#16215).\n\nTested:\n- On staging: E2B CLI 2.20.0 and JS/Python SDKs 2.51.0; wallet debits matched Tinybird. ssh, scp, sftp and rsync work; a paused sandbox resumes on ssh.\n- The template on E2B's dev team: the first login connected all five harnesses in 27 s.\n\n`E2B_API_KEY` (the dev E2B team's key, which has the `pollinations` template) is in gen's dev, staging and prod SOPS files, so promoting this PR makes `/alpha/e2b` live.\n\nBefore production:\n- E2B's written consent to resell\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_011LgiC2X1edxD4TcXeX9sXo\n\n\n\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A little room to compute",
+    "blurb": "Polli gets a sandbox with a door, a terminal, and five coding agents. Bring an E2B SDK or the polli CLI; the `pollinations` template has the tools waiting inside.",
+    "summary": "Adds `/alpha/e2b` for E2B-compatible sandboxes using keys with `machines` permission, prepaid leases at a launch price of 25% of E2B’s list price, and `polli sandbox` commands plus SSH access to a template with five coding agents.",
+    "impact": "Developers can use E2B’s CLI or JS/Python SDKs unchanged against the gen endpoint, or create and manage up to three secure sandboxes per user with `polli sandbox` and connect over SSH, scp, sftp or rsync.",
+    "keywords": [
+      "E2B",
+      "sandboxes",
+      "polli CLI",
+      "SSH",
+      "machines permission",
+      "coding agents"
+    ],
+    "visual_concept": "Depict the new E2B sandbox as a small, welcoming pixel-art workspace: a terminal, an SSH doorway, and five little toolstations for Claude Code, OpenCode, Pi, Hermes Agent and OpenClaw. Polli, wearing a tiny tool belt, opens the doorway; lime-green code-plants make the computing space feel like part of the garden. Avoid inventing mascots or logos for the agent tools.",
+    "image_prompt": "Polli opens the SSH doorway to a cozy pixel-art sandbox workspace, where five small terminal stations sit among code-plants in lime green (#ecf874) pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-15656.jpg",
+    "prompt": "Polli opens the SSH doorway to a cozy pixel-art sandbox workspace, where five small terminal stations sit among code-plants in lime green (#ecf874) pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-02T18:25:41.354561+00:00"
+}

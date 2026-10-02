@@ -25,6 +25,9 @@ Collection steps:
    Never append the summed account total alongside its lots.
 3. For a closed month, archive the Glass settlement/invoice and use `You Pay`
    as the cash obligation after credits and reseller discounts.
+   Check AWS Billing and Cost Management → Bills for the same service month:
+   record whether its grand total is still estimated and whether the Invoices
+   tab has issued originals. Do not present an estimated bill as an invoice.
 4. For usage evidence, query Umbrella Cost for the requested period only.
 5. Required credentials:
    - `UMBRELLA_USERNAME`

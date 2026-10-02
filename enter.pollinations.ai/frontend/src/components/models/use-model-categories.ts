@@ -12,13 +12,16 @@ import { getModelCategoriesFromCatalog } from "./model-categories.ts";
  */
 export function useModelCategories(extraModels?: ApiModelInfo[]) {
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
 
         fetchModelCatalog()
             .then((models) => {
-                if (!cancelled) setCatalogModels(models);
+                if (cancelled) return;
+                setCatalogModels(models);
+                setLoaded(true);
             })
             .catch(() => {
                 if (!cancelled) setCatalogModels([]);
@@ -37,5 +40,5 @@ export function useModelCategories(extraModels?: ApiModelInfo[]) {
         () => getModelCategoriesFromCatalog(catalog),
         [catalog],
     );
-    return { catalog, categories };
+    return { catalog, categories, loaded };
 }

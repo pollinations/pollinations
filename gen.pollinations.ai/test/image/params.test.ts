@@ -82,6 +82,20 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("accepts the one resolution a fixed-resolution video model produces", () => {
+        for (const [model, resolution] of [
+            ["alibaba/happyhorse-1.1", "720p"],
+            ["bytedance/seedance-2.0", "720p"],
+            ["alibaba/wan-2.2-fast", "480p"],
+            ["x-ai/grok-imagine-video", "720p"],
+            ["alibaba/wan-2.6", "720p"],
+        ] as const) {
+            expect(
+                ImageParamsSchema.safeParse({ model, resolution }).success,
+            ).toBe(true);
+        }
+    });
+
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({
@@ -325,5 +339,40 @@ describe("ImageParamsSchema", () => {
             reference_images: "http://127.0.0.1/image.png",
         });
         expect(invalidUrl.success).toBe(false);
+    });
+
+    it("accepts inferenceport-ai/lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects an unregistered short model name", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "lightning-image-turbo",
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("parses two image references for lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+                image: [
+                    "https://example.com/a.png",
+                    "https://example.com/b.png",
+                ],
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects resolution on lightning-image-turbo", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            resolution: "720p",
+        });
+        expect(result.success).toBe(false);
     });
 });

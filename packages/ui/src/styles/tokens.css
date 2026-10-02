@@ -186,16 +186,6 @@
     --polli-color-modality-embedding-bg: oklch(0.95 0.03 163 / 0.7);
 }
 
-/* Switch primitive — theme-independent, mode-aware. Light thumb in BOTH modes
-   (so it reads as a switch, not a dark blob), vivid on/invalid tracks, neutral
-   off track. Only the off track flips per mode (see .dark below). */
-:root {
-    --polli-color-switch-thumb:         oklch(0.98 0.005 80);
-    --polli-color-switch-track-off:     oklch(0.86 0.012 80);
-    --polli-color-switch-track-on:      var(--polli-color-success-bright);
-    --polli-color-switch-track-invalid: oklch(0.62 0.2 25);
-}
-
 /* ════════════════════════════════════════════════════════════════════════
    DARK MODE — add `dark` to <html>.
    (a) mode layer: neutrals, ink ramp, shadows, intents (theme-independent)
@@ -263,10 +253,6 @@
     --polli-color-new-text:         oklch(0.855 0.105 25);
     --polli-color-alpha-bg-light:   oklch(0.35 0.085 300);
     --polli-color-alpha-text:       oklch(0.85 0.12 300);
-
-    /* Switch — off track darkens so it stays visible on the dark desk;
-       thumb + on/invalid tracks are shared with :root. */
-    --polli-color-switch-track-off: oklch(0.44 0.012 80);
 }
 
 /* Modality colors — DARK (deeper solids; deep-tint chip backgrounds). */

@@ -182,6 +182,7 @@ export const deviceRoutes = new Hono<Env>()
                     `device-key:${device.deviceCode}`,
                     JSON.stringify({
                         key: body.apiKey,
+                        keyId: body.apiKeyId,
                         expiresIn: body.expiresIn ?? null,
                         // Granted scope — may be narrower than what the row
                         // stored at issuance ("" = narrowed to zero)
@@ -314,6 +315,7 @@ export async function exchangeDeviceCode(
                 "json",
             )) as {
                 key: string;
+                keyId?: string;
                 expiresIn: number | null;
                 scope?: string | null;
             } | null;
@@ -332,6 +334,7 @@ export async function exchangeDeviceCode(
             captureFromRequest(c, "device_token_issued", device.userId ?? "", {
                 flow_id: device.id,
                 client_id: device.clientId ?? "",
+                key_id: stored.keyId ?? "",
             });
 
             return c.json({

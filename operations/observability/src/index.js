@@ -9,7 +9,7 @@ const DOMAIN = new URL(ROOT_URL).host;
 const HEALTH_URL = new URL("/grafana/api/health", ROOT_URL).href;
 const BRAND_HEAD_TAGS = `
 <meta name="description" content="Pollinations operations dashboards">
-<meta property="og:title" content="pollinations.ai">
+<meta property="og:title" content="Observability">
 <meta property="og:description" content="Pollinations operations dashboards">
 <meta property="og:image" content="/grafana/public/img/og-image.png">
 <meta property="og:type" content="website">

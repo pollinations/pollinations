@@ -17,12 +17,14 @@ const ITEMS = `query($cursor: String, $q: String!) {
           __typename
           ... on Issue {
             number title url state createdAt closedAt
+            labels(first: 10) { nodes { name } }
             issueType { name }
             parent { number title url state }
             subIssuesSummary { total completed }
           }
           ... on PullRequest {
             number title url state createdAt mergedAt closedAt additions deletions
+            labels(first: 10) { nodes { name } }
             commits { totalCount }
             closingIssuesReferences(first: 10) { nodes { number } }
           }
@@ -72,6 +74,7 @@ function toItem(node) {
         source: node.source?.name || null,
         priority: node.priority?.name || null,
         type: c.issueType?.name || null,
+        labels: c.labels.nodes.map((l) => l.name),
         parent: c.parent || null,
         subIssues: c.subIssuesSummary?.total ? c.subIssuesSummary : null,
         fixes: isPr ? c.closingIssuesReferences.nodes.map((n) => n.number) : [],
@@ -199,7 +202,17 @@ const PAGE = `<!doctype html>
   const n = (name, value, cls, title, col) => h("span", { key: col, className: "n" + (value ? "" : " zero"), title, style: { gridColumn: col } }, icon(name, cls), value || 0);
   const cells = (...children) => h("span", { className: "cells" }, children);
 
-  const SOURCES = ["All", "Team", "Community", "Agent"];
+  const SOURCES = ["All", "Team", "Community", "Agent", "Apps", "Quests"];
+  // Workflow tabs: issues with the label, plus the PRs that close them.
+  const LABEL_TABS = { Apps: "APP-SUBMISSION", Quests: "POLLEN-QUEST" };
+
+  function pick(source) {
+    if (source === "All") return data.items;
+    const label = LABEL_TABS[source];
+    if (!label) return data.items.filter((i) => i.source === source);
+    const issues = new Set(data.items.filter((i) => i.kind === "issue" && i.labels.includes(label)).map((i) => i.number));
+    return data.items.filter((i) => i.labels.includes(label) || (i.kind === "pr" && i.fixes.some((k) => issues.has(k))));
+  }
 
   // State lives in the hash: #days=30&source=Team&open=Models|p15935
   function state() {
@@ -230,7 +243,7 @@ const PAGE = `<!doctype html>
   const prCells = (c) => [n("pr", c.openPrs, "open", "Open PRs", 7), n("merged", c.merged, "done", "Merged PRs", 8)];
 
   function build(since, source) {
-    const items = source === "All" ? data.items : data.items.filter((i) => i.source === source);
+    const items = pick(source);
     const byNumber = new Map(items.map((i) => [i.number, i]));
     const prsFor = new Map();
     for (const p of items) if (p.kind === "pr") for (const k of p.fixes) (prsFor.get(k) || prsFor.set(k, []).get(k)).push(p);

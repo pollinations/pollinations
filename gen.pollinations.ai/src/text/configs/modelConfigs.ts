@@ -340,6 +340,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "inclusionai/ling-3.1-flash": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.1-flash",
+        "novita",
+    ),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

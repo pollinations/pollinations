@@ -34,6 +34,7 @@ import { apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
     QuestCheckResult,
+    QuestStandingsResponse,
 } from "../../backend-types.ts";
 import {
     LoadError,
@@ -41,6 +42,7 @@ import {
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
+import { QuestStandings } from "./quest-standings.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -61,6 +63,8 @@ type QuestReward = {
 type FetchState = {
     catalog: QuestCatalogItem[];
     rewards: QuestReward[];
+    // Monthly leaderboard; null when it failed to load (the page still works).
+    standings: QuestStandingsResponse | null;
     progress: QuestProgress[];
     loading: boolean;
     checking: boolean;
@@ -75,6 +79,7 @@ type FetchState = {
 const INITIAL_STATE: FetchState = {
     catalog: [],
     rewards: [],
+    standings: null,
     progress: [],
     loading: true,
     checking: false,
@@ -188,16 +193,21 @@ function rewardIconKind(
         : "tier";
 }
 
-type QuestData = Pick<FetchState, "catalog" | "rewards" | "anonymous">;
+type QuestData = Pick<
+    FetchState,
+    "catalog" | "rewards" | "standings" | "anonymous"
+>;
 
 async function loadQuestData(): Promise<QuestData> {
     // The catalog is public; the per-user rewards endpoint requires auth. A
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
-    const [catalogResponse, rewardsResponse] = await Promise.all([
-        apiClient.quests.catalog.$get(),
-        apiClient.quests.rewards.$get(),
-    ]);
+    const [catalogResponse, rewardsResponse, standingsResponse] =
+        await Promise.all([
+            apiClient.quests.catalog.$get(),
+            apiClient.quests.rewards.$get(),
+            apiClient.quests.standings.$get(),
+        ]);
     if (!catalogResponse.ok) {
         throw new Error(`Failed to load quests (${catalogResponse.status})`);
     }
@@ -212,9 +222,14 @@ async function loadQuestData(): Promise<QuestData> {
         : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
               .rewards;
 
+    const standings = standingsResponse.ok
+        ? ((await standingsResponse.json()) as QuestStandingsResponse)
+        : null;
+
     return {
         catalog: catalog.quests ?? [],
         rewards: rewards ?? [],
+        standings,
         anonymous,
     };
 }
@@ -883,6 +898,24 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         return { count, segments };
     }, [state.rewards]);
 
+    // Quests the viewer can still earn, for the leaderboard's "next step" line.
+    const openQuests = useMemo(
+        () =>
+            Object.values(sections)
+                .flat()
+                .filter(
+                    (card) =>
+                        card.status === "open" &&
+                        !card.comingSoon &&
+                        (card.reward ?? 0) > 0,
+                )
+                .map((card) => ({
+                    title: card.title,
+                    reward: card.reward ?? 0,
+                })),
+        [sections],
+    );
+
     const initialError =
         state.catalog.length === 0 && state.rewards.length === 0
             ? state.error
@@ -942,6 +975,13 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     </p>
                 </div>
             </Section>
+
+            {state.standings && (
+                <QuestStandings
+                    standings={state.standings}
+                    openQuests={openQuests}
+                />
+            )}
 
             {bonusRewardCards.length > 0 && (
                 <Section

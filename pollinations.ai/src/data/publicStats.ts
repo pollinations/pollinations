@@ -96,6 +96,9 @@ export const isFresh = (app: DirectoryApp) => {
     return Number.isFinite(approved) && approved >= Date.now() - THIRTY_DAYS_MS;
 };
 
+export const newestFirst = (a: DirectoryApp, b: DirectoryApp) =>
+    (b.approved_date || "").localeCompare(a.approved_date || "");
+
 /** The community app directory; exact duplicates collapse, same-named apps stay. */
 const loadDirectory = cachePublic(async () => {
     const rows = await tinybird<DirectoryApp>(
@@ -160,47 +163,43 @@ export function useWeeklyApps() {
     return useAsync<DirectoryApp[]>(loadWeeklyApps, []);
 }
 
+const loadNewestApps = cachePublic(async () =>
+    [...(await loadDirectory())].sort(newestFirst).slice(0, 8),
+);
+
+export function useNewestApps() {
+    return useAsync<DirectoryApp[]>(loadNewestApps, []);
+}
+
 type PlatformStats = {
-    /** Callable models excluding agents; official and community entries included. */
-    models: number;
     /** Callable agents, counted separately from models. */
     agents: number;
-    /** Count per category, e.g. { text: 141, image: 51 }. */
-    byCategory: Record<string, number>;
-    /** Models and agents explicitly marked as community-published by the catalog. */
+    /**
+     * Models explicitly marked as community-published by the catalog, agents
+     * excluded. The public catalog already leaves out unreliable ones.
+     */
     community: number;
+    /** Official models per catalog category, e.g. { image: 42, text: 99 }. */
+    kinds: Record<string, number>;
+    /**
+     * Up to two newest model titles per group, from different publishers:
+     * official general-purpose models by category, community models under
+     * `community`.
+     */
+    newest: Record<string, string[]>;
 };
 
 type CatalogModel = {
-    category?: string;
+    name: string;
+    title?: string;
     agent?: boolean;
     community?: boolean;
+    category?: string;
+    publisher?: string;
+    /** Epoch milliseconds. */
+    added_date?: number;
+    is_specialized?: boolean;
 };
-
-const MODEL_KIND_LABELS: Record<string, string> = {
-    embedding: "embeddings",
-    "3d": "3D",
-};
-
-/**
- * The catalog's model categories as a sentence, largest first — e.g.
- * "Text, image, audio, video, embeddings, realtime and 3D". A new category
- * appears on the homepage as soon as the catalog lists it.
- */
-export function describeModelKinds(
-    byCategory: Record<string, number>,
-): string | null {
-    const kinds = Object.entries(byCategory)
-        .filter(([category]) => category !== "other")
-        .sort(([, left], [, right]) => right - left)
-        .map(([category]) => MODEL_KIND_LABELS[category] ?? category);
-    if (kinds.length === 0) return null;
-    const list =
-        kinds.length > 1
-            ? `${kinds.slice(0, -1).join(", ")} and ${kinds[kinds.length - 1]}`
-            : kinds[0];
-    return list.charAt(0).toUpperCase() + list.slice(1);
-}
 
 /**
  * Shared across the dev kit and Community so each mount reuses the cached
@@ -210,7 +209,7 @@ export function usePlatformStats() {
     return useAsync<PlatformStats | null>(loadPlatformStats, null);
 }
 
-/** Only request the catalog used by the visible counts and model categories. */
+/** Only request the catalog used by the visible counts. */
 export const loadPlatformStats = cachePublic(
     async (): Promise<PlatformStats> => {
         const response = await fetch("https://gen.pollinations.ai/models");
@@ -218,20 +217,71 @@ export const loadPlatformStats = cachePublic(
         const body = await response.json();
         if (!Array.isArray(body)) throw new Error("models: invalid catalog");
         const catalog = body as CatalogModel[];
-        const byCategory: Record<string, number> = {};
-        for (const model of catalog) {
-            const category = model.category ?? "other";
-            byCategory[category] = (byCategory[category] ?? 0) + 1;
+        const models = catalog.filter((model) => model.agent !== true);
+        const official = models.filter((model) => model.community !== true);
+        const kinds: Record<string, number> = {};
+        for (const { category } of official) {
+            if (category) kinds[category] = (kinds[category] ?? 0) + 1;
         }
         return {
-            models: catalog.filter((model) => model.agent !== true).length,
-            agents: catalog.filter((model) => model.agent === true).length,
-            byCategory,
-            community: catalog.filter((model) => model.community === true)
-                .length,
+            agents: catalog.length - models.length,
+            community: models.length - official.length,
+            kinds,
+            newest: newestByGroup(models),
         };
     },
 );
+
+function newestByGroup(models: CatalogModel[]) {
+    const newest: Record<string, string[]> = {};
+    // One model per publisher, so a model and its variant don't fill the pair.
+    const seen = new Set<string>();
+    const sorted = models
+        .filter((model) => !model.is_specialized)
+        .sort((a, b) => (b.added_date ?? 0) - (a.added_date ?? 0));
+    for (const model of sorted) {
+        const group = model.community === true ? "community" : model.category;
+        if (!group || seen.has(`${group}/${model.publisher}`)) continue;
+        seen.add(`${group}/${model.publisher}`);
+        newest[group] = [
+            ...(newest[group] ?? []),
+            model.title ?? model.name,
+        ].slice(0, 2);
+    }
+    return newest;
+}
+
+/** Names of the hosted MCP servers, in the order gen lists them. */
+export const loadMcpServers = cachePublic(async (): Promise<string[]> => {
+    const response = await fetch("https://gen.pollinations.ai/mcp");
+    if (!response.ok) throw new Error(`mcp: ${response.status}`);
+    const body = (await response.json()) as { data?: { name: string }[] };
+    return (body.data ?? []).map((server) => server.name);
+});
+
+export function useMcpServers() {
+    return useAsync<string[]>(loadMcpServers, []);
+}
+
+/** Requests gen settled in the last hour, across every model. */
+export const loadRequestsLastHour = cachePublic(async (): Promise<number> => {
+    const response = await fetch(
+        "https://gen.pollinations.ai/models/status?minutes=60",
+    );
+    if (!response.ok) throw new Error(`models/status: ${response.status}`);
+    const body = (await response.json()) as {
+        data?: { is_rollup: number; total_requests: number }[];
+    };
+    // A model's rollup row counts each request once; its route rows also
+    // count the attempts that were retried on a fallback.
+    return (body.data ?? [])
+        .filter((row) => row.is_rollup === 1)
+        .reduce((sum, row) => sum + row.total_requests, 0);
+});
+
+export function useRequestsLastHour() {
+    return useAsync<number | null>(loadRequestsLastHour, null);
+}
 
 /**
  * 984868 → "985K", 1204000 → "1.2M".

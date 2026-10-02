@@ -628,3 +628,189 @@ test("advertises reasoning capability for Azure GPT models that accept reasoning
         );
     }
 });
+
+type CatalogModel = {
+    name: string;
+    title: string;
+    description?: string;
+    publisher: string;
+    aliases: string[];
+    capabilities: string[];
+    agent?: boolean;
+};
+
+const searchable = (model: CatalogModel): string[] => [
+    model.name,
+    model.title,
+    model.description ?? "",
+    model.publisher,
+    ...model.aliases,
+];
+
+const fetchList = async (query: string): Promise<CatalogModel[]> => {
+    const response = await fetchWorker(`/models?reliability=all&${query}`);
+    expect(response.status, query).toBe(200);
+    return (await response.json()) as CatalogModel[];
+};
+
+test("narrows the model list by query", async () => {
+    const all = await fetchList("");
+    expect(all.length).toBeGreaterThan(5);
+
+    // A term that matches nothing returns nothing, so the filter really runs.
+    expect(await fetchList("query=zzz-no-such-model")).toEqual([]);
+
+    // Name, aliases, title, description and publisher all match, and every
+    // space-separated word must appear somewhere in that text.
+    const probe = all[0];
+    const words = probe.name.toLowerCase().split(/\s+/);
+    const expected = all.filter((model) => {
+        const text = searchable(model).join(" ").toLowerCase();
+        return words.every((word) => text.includes(word));
+    });
+    expect(expected.map((model) => model.name)).toContain(probe.name);
+    const searched = await fetchList(`query=${encodeURIComponent(probe.name)}`);
+    expect(searched.map((model) => model.name).sort()).toEqual(
+        expected.map((model) => model.name).sort(),
+    );
+    // Matching is case-insensitive.
+    const upper = await fetchList(
+        `query=${encodeURIComponent(probe.name.toUpperCase())}`,
+    );
+    expect(upper.map((model) => model.name).sort()).toEqual(
+        expected.map((model) => model.name).sort(),
+    );
+
+    // Words are combined with AND and may come from different fields, so they
+    // do not have to appear next to each other.
+    const fields = searchable(probe).filter((text) => text.trim());
+    const first = fields[0]?.split(/\s+/)[0];
+    const last = fields[fields.length - 1]?.split(/\s+/)[0];
+    if (first && last && first !== last) {
+        const both = await fetchList(
+            `query=${encodeURIComponent(`${first} ${last}`)}`,
+        );
+        expect(both.map((model) => model.name)).toContain(probe.name);
+    }
+    // AND semantics: one impossible word drops the whole result.
+    expect(
+        await fetchList(
+            `query=${encodeURIComponent(`${first} zzz-no-such-word`)}`,
+        ),
+    ).toEqual([]);
+});
+
+test("combines capabilities with AND semantics", async () => {
+    const all = await fetchList("");
+    const capabilities = [
+        ...new Set(all.flatMap((model) => model.capabilities)),
+    ];
+    expect(capabilities.length).toBeGreaterThan(1);
+    const [first, second] = capabilities as [string, string];
+
+    const single = await fetchList(`capabilities=${first}`);
+    expect(single.length).toBeGreaterThan(0);
+    expect(single.every((model) => model.capabilities.includes(first))).toBe(
+        true,
+    );
+
+    // Both a pipe and a comma are accepted separators, and every returned
+    // model must list every requested capability.
+    for (const separator of ["|", ","]) {
+        const both = await fetchList(
+            `capabilities=${first}${separator}${second}`,
+        );
+        expect(
+            both.every(
+                (model) =>
+                    model.capabilities.includes(first) &&
+                    model.capabilities.includes(second),
+            ),
+        ).toBe(true);
+    }
+
+    const invalid = await fetchWorker("/models?capabilities=nope");
+    expect(invalid.status).toBe(400);
+});
+
+test("filters by agent status", async () => {
+    const all = await fetchList("");
+    const agents = await fetchList("agent=true");
+    const models = await fetchList("agent=false");
+
+    // The two halves partition the unfiltered list and neither leaks a model
+    // from the other side, so an ignored or inverted filter fails here.
+    expect(agents.every((model) => model.agent === true)).toBe(true);
+    expect(models.every((model) => !model.agent)).toBe(true);
+    expect([...agents, ...models].map((model) => model.name).sort()).toEqual(
+        all.map((model) => model.name).sort(),
+    );
+
+    expect((await fetchWorker("/models?agent=maybe")).status).toBe(400);
+});
+
+test("applies limit after every other filter", async () => {
+    const all = await fetchList("");
+    const three = await fetchList("limit=3");
+    expect(three).toEqual(all.slice(0, 3));
+
+    // Limit only ever truncates; it never pads an empty result.
+    expect(await fetchList("query=zzz-no-such-model&limit=3")).toEqual([]);
+    expect((await fetchWorker("/models?limit=0")).status).toBe(400);
+    expect((await fetchWorker("/models?limit=501")).status).toBe(400);
+});
+
+test("combines query, capabilities, agent and limit", async () => {
+    const all = await fetchList("");
+    const capability = all.find((model) => model.capabilities.length > 0)
+        ?.capabilities[0];
+    expect(capability).toBeDefined();
+
+    const combined = await fetchList(
+        `query=${encodeURIComponent(all[0].name)}&capabilities=${capability}&limit=1`,
+    );
+    expect(combined.length).toBeLessThanOrEqual(1);
+    for (const model of combined) {
+        expect(model.capabilities).toContain(capability);
+        expect(
+            searchable(model).some((text) =>
+                text.toLowerCase().includes(all[0].name.toLowerCase()),
+            ),
+        ).toBe(true);
+    }
+});
+
+test("applies the filters to every model-list route", async () => {
+    for (const path of [
+        "/models",
+        "/text/models",
+        "/image/models",
+        "/audio/models",
+        "/embeddings/models",
+        "/3d/models",
+    ]) {
+        const response = await fetchWorker(`${path}?reliability=all&limit=2`);
+        expect(response.status, path).toBe(200);
+        expect(((await response.json()) as CatalogModel[]).length, path).toBe(
+            2,
+        );
+    }
+    const openai = await fetchWorker("/v1/models?reliability=all&limit=2");
+    expect(openai.status).toBe(200);
+    expect(((await openai.json()) as { data: unknown[] }).data.length).toBe(2);
+    const capped = await fetchWorker("/v1/models?reliability=all&limit=0");
+    expect(capped.status).toBe(400);
+});
+
+test("keeps key permissions ahead of the limit", async ({
+    restrictedApiKey,
+}) => {
+    const response = await fetchWorker(
+        "/text/models?reliability=all&limit=500",
+        { headers: { Authorization: `Bearer ${restrictedApiKey}` } },
+    );
+    expect(response.status).toBe(200);
+    expect(
+        ((await response.json()) as CatalogModel[]).map((m) => m.name),
+    ).toEqual([RESTRICTED_TEXT_TEST_MODEL]);
+});

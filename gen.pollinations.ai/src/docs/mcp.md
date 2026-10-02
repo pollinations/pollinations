@@ -122,7 +122,9 @@ model health and account balance.
 | `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
-clients should not rely on a hardcoded model list.
+clients should not rely on a hardcoded model list. Narrow the catalog with its
+`query`, `capabilities`, `agent` and `limit` arguments instead of reading every
+model into context.
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone

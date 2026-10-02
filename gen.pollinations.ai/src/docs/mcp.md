@@ -47,7 +47,8 @@ npx @pollinations/cli mcp remove cursor         # remove all Pollinations entrie
 ```
 
 Supported clients: Claude Code, Codex CLI, VS Code, Cursor, OpenCode, Gemini
-CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp.
+CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, Warp, Hermes Agent,
+and Pi (0.99+).
 
 Keys are stored locally in plaintext in client configs and reused on reinstall.
 Codex instead references `POLLI_MCP_CODEX_API_KEY` in `~/.codex/.env`.

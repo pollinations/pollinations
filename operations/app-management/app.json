@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Pollinations for Krita",
+    "url": "https://github.com/xiaotian1171/pollinations-krita",
+    "description": "A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "xiaotian1171",
+    "githubUserId": "63298614",
+    "repositoryUrl": "https://github.com/xiaotian1171/pollinations-krita",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15715",
+    "approvedDate": "2026-10-02",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Pollinations for Figma - AI Image Studio",
     "url": "https://guest453.github.io/pollinations-figma/",
     "description": "A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi",

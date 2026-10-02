@@ -6,7 +6,6 @@ const path = require("node:path");
 const test = require("node:test");
 const {
     buildApp,
-    inferPlatform,
     parseSubmission,
     validateSubmission,
 } = require("./submission.js");
@@ -25,6 +24,9 @@ https://github.com/example/sunflower
 
 ### App Category
 image
+
+### Platform
+web
 
 ### App Language
 en
@@ -52,6 +54,7 @@ test("parses and validates the issue form", () => {
     assert.equal(submission.name, "Sunflower Studio");
     assert.equal(submission.appUrl, "https://example.com/app");
     assert.equal(submission.category, "image");
+    assert.equal(submission.platform, "web");
     assert.equal(
         submission.screenshotUrl,
         "https://github.com/user-attachments/assets/0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0",
@@ -74,6 +77,19 @@ test("requires a screenshot hosted by GitHub", () => {
         assert.deepEqual(validateSubmission(withScreenshot(value)), [
             "Screenshot is required: upload an image of the app in the Screenshot field.",
         ]);
+    }
+});
+
+test("requires a platform from the form", () => {
+    for (const value of ["_No response_", "plugin"]) {
+        assert.deepEqual(
+            validateSubmission(
+                parseSubmission(
+                    BODY.replace("### Platform\nweb", `### Platform\n${value}`),
+                ),
+            ),
+            ["Platform must be selected from the submission form."],
+        );
     }
 });
 
@@ -125,14 +141,6 @@ test("parses the optional quest reference", () => {
     assert.deepEqual(validateSubmission(withQuest("the Krita one")), [
         "Quest must be a quest issue number such as #15600.",
     ]);
-});
-
-test("infers known distribution platforms", () => {
-    assert.equal(
-        inferPlatform("Example", "https://play.google.com/store/apps/x", ""),
-        "android",
-    );
-    assert.equal(inferPlatform("Example CLI", "", "command-line tool"), "cli");
 });
 
 test("builds the canonical catalog app", () => {

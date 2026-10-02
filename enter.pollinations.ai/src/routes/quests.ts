@@ -17,6 +17,10 @@ import type {
     QuestEvaluationContext,
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import {
+    buildQuestStandings,
+    questStandingsResponseSchema,
+} from "./quest-leaderboard.ts";
 
 // Bumped to v30: the app-spend quest is worth 10 Pollen.
 const CACHE_KEY = "quests:catalog:v30";
@@ -118,6 +122,30 @@ export const questsRoutes = new Hono<Env>()
                 expirationTtl: CACHE_TTL,
             });
             return c.json(catalog);
+        },
+    )
+    .get(
+        "/standings",
+        describeRoute({
+            tags: ["✨ Quests"],
+            summary: "Get Monthly Quest Standings",
+            description:
+                "Returns this calendar month's (UTC) Quest Pollen ranking: the top three plus, for a signed-in user, the rows around them.",
+            responses: {
+                200: {
+                    description: "Monthly quest standings",
+                    content: {
+                        "application/json": {
+                            schema: resolver(questStandingsResponseSchema),
+                        },
+                    },
+                },
+            },
+        }),
+        auth({ allowApiKey: false, allowSessionCookie: true }),
+        async (c) => {
+            const githubLogin = c.var.auth.user?.githubUsername ?? null;
+            return c.json(await buildQuestStandings(c.env, githubLogin));
         },
     )
     .post(

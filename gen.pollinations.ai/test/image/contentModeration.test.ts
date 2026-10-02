@@ -38,7 +38,7 @@ const REAL_MODERATION_MESSAGES = [
     // Azure Content Safety (kontext, gpt-image)
     "Prompt contains unsafe content: sexual, violence",
     "Input image contains unsafe content: hate",
-    // Azure MAI image route (microsoft/mai-image-2.5-flash) 400 body
+    // Azure MAI image route (microsoft/mai-image-2.6-flash) 400 body
     '{"error":{"code":"content_safety_violation","message":"Response content blocked by label \'MultiSeverity_ViolenceScore\'."}}',
 ];
 

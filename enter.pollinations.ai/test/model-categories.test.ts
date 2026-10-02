@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getModelCategoriesFromCatalog } from "../frontend/src/components/models/model-categories.ts";
+import {
+    getCommunityModelOwner,
+    getModelCategoriesFromCatalog,
+} from "../frontend/src/components/models/model-categories.ts";
 import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 
 const catalog = [
@@ -66,6 +69,14 @@ describe("model categories", () => {
                 models: ["community-agent"],
             },
         ]);
+    });
+
+    it("reads the creator from community model IDs only", () => {
+        expect(getCommunityModelOwner("community/alice/tiny-llm")).toBe(
+            "alice",
+        );
+        expect(getCommunityModelOwner("openai/gpt")).toBeUndefined();
+        expect(getCommunityModelOwner("flux")).toBeUndefined();
     });
 
     it("accepts categories independently of the model query", () => {

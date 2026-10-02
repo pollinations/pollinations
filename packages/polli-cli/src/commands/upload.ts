@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { createReadStream, existsSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { Command } from "commander";
 import { requireKey } from "../lib/api.js";
@@ -27,18 +27,20 @@ export const uploadCommand = new Command("upload")
         }
 
         const mime = mimeTypeFor(file);
-        const form = new FormData();
-        form.append(
-            "file",
-            new Blob([readFileSync(file)], { type: mime }),
-            basename(file),
-        );
+        const size = statSync(file).size;
 
-        const res = await fetch(`${MEDIA_URL}/upload`, {
+        const uploadRequest: RequestInit & { duplex: "half" } = {
             method: "POST",
-            headers: { Authorization: `Bearer ${key}` },
-            body: form,
-        });
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": mime,
+                "Content-Length": String(size),
+                "X-File-Name": basename(file),
+            },
+            body: createReadStream(file) as unknown as BodyInit,
+            duplex: "half",
+        };
+        const res = await fetch(`${MEDIA_URL}/upload`, uploadRequest);
 
         if (!res.ok) {
             const text = await res.text().catch(() => "");

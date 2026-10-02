@@ -23,7 +23,6 @@ import {
 } from "./models/ideogramReplicateModel.ts";
 import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
-import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterFlux2MaxAPI,
     callOpenRouterGeminiImageAPI,
@@ -904,7 +903,6 @@ const generateImage = async (
         case "black-forest-labs/flux.2-max:openrouter":
             return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
 
-        case "microsoft/mai-image-2.5-flash":
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {
             try {
@@ -987,9 +985,6 @@ const generateImage = async (
 
         case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
-
-        case "amazon/nova-canvas-v1":
-            return await callNovaCanvasAPI(prompt, safeParams);
 
         case "alibaba/wan-2.7-image":
             return await callAlibabaImage(prompt, safeParams, "wan2.7-image");

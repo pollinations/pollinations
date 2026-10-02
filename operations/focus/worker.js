@@ -245,16 +245,26 @@ const PAGE = `<!doctype html>
   function build(since, source) {
     const items = pick(source);
     const byNumber = new Map(items.map((i) => [i.number, i]));
+    // A sub-issue, and any PR that closes it, belongs to its parent's area: one area per item on this page.
+    const openParent = (i) => (i.parent && i.parent.state === "OPEN" ? i.parent : null);
+    const areaOf = (i) => {
+      if (i.kind === "pr") {
+        const sub = i.fixes.map((k) => byNumber.get(k)).find((x) => x && openParent(x));
+        return sub ? areaOf(sub) : i.area;
+      }
+      const parent = openParent(i) && byNumber.get(i.parent.number);
+      return parent ? parent.area : i.area;
+    };
     const prsFor = new Map();
     for (const p of items) if (p.kind === "pr") for (const k of p.fixes) (prsFor.get(k) || prsFor.set(k, []).get(k)).push(p);
     const areas = new Map();
     const area = (name) => areas.get(name) || areas.set(name, { name, issues: [], prs: [], parents: new Map(), loose: [] }).get(name);
     for (const i of items) {
-      if (i.kind === "pr") { area(i.area).prs.push(i); continue; }
-      area(i.area).issues.push(i);
-      const parent = i.parent && i.parent.state === "OPEN" ? i.parent : null;
+      if (i.kind === "pr") { area(areaOf(i)).prs.push(i); continue; }
+      area(areaOf(i)).issues.push(i);
+      const parent = openParent(i);
       if (parent) {
-        const owner = area((byNumber.get(parent.number) || i).area);
+        const owner = area(areaOf(i));
         (owner.parents.get(parent.number) || owner.parents.set(parent.number, { parent, item: byNumber.get(parent.number), children: [] }).get(parent.number)).children.push(i);
       }
     }

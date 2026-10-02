@@ -1530,7 +1530,12 @@ export const accountRoutes = new Hono<Env>()
         "/polli/harness-on",
         validator(
             "json",
-            z.object({ harness: z.string().regex(/^[a-z0-9-]{1,32}$/) }),
+            z.object({
+                harness: z
+                    .string()
+                    .regex(/^[a-z0-9-]{1,32}$/)
+                    .meta({ example: "opencode" }),
+            }),
         ),
         async (c) => {
             await c.var.auth.requireAuthorization();

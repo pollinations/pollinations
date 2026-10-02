@@ -1,9 +1,8 @@
 // Focus — where the team's effort goes, by area. Public, no login.
 //   GET /      -> the page (@pollinations/ui browser bundle, served from packages/ui/dist)
-//   GET /data  -> Dev project items as JSON: everything open, plus items closed in the last 90 days
+//   GET /data  -> Dev project items with an Area, as JSON
 // Reads GitHub with GITHUB_TOKEN; the token never reaches the browser.
 
-const DAYS = 90;
 const CACHE_MS = 10 * 60 * 1000;
 
 const ITEMS = `query($cursor: String, $q: String!) {
@@ -84,22 +83,21 @@ function toItem(node) {
     };
 }
 
-// Open items, plus closed ones in 30-day slices fetched side by side.
+const AREAS = `{ organization(login: "pollinations") { projectV2(number: 20) {
+  field(name: "Area") { ... on ProjectV2SingleSelectField { options { name } } }
+} } }`;
+
+// Open and closed items of each area, fetched side by side: a few short page chains instead of one long one.
 async function snapshot(env) {
-    const day = 86400000;
-    const iso = (ms) => new Date(ms).toISOString().slice(0, 10);
-    const now = Date.now();
-    const queries = ["is:open"];
-    for (let start = DAYS; start > 0; start -= 30) {
-        queries.push(`is:closed updated:${iso(now - start * day)}..${iso(now - (start - 30) * day)}`);
-    }
+    const areas = (await github(env, AREAS)).organization.projectV2.field.options.map((o) => o.name);
+    const queries = areas.flatMap((a) => [`is:open area:"${a}"`, `is:closed area:"${a}"`]);
     const nodes = (await Promise.all(queries.map((q) => items(env, q)))).flat();
     const byNumber = new Map();
     for (const node of nodes) {
         const item = toItem(node);
         if (item) byNumber.set(item.number, item);
     }
-    return { fetchedAt: now, days: DAYS, items: [...byNumber.values()] };
+    return { fetchedAt: Date.now(), items: [...byNumber.values()] };
 }
 
 let cached = null;
@@ -318,7 +316,7 @@ const PAGE = `<!doctype html>
     const r = route();
     const since = Date.now() - r.days * 86400000;
     if (error) return root.render(h(Text, { tone: "muted" }, "Could not load: " + error));
-    if (!data) return root.render(h(Text, { tone: "muted" }, "Loading the Dev board…"));
+    if (!data) return root.render(h(Text, { tone: "muted" }, "Loading the Dev board from GitHub…"));
     const body = r.view === "area" ? areaView(r, since) : r.view === "parent" ? parentView(r, since) : overview(r, since);
     root.render(h("div", null, body,
       h(Text, { as: "div", size: "xs", tone: "muted", className: "polli:mt-6" }, "Updated " + new Date(data.fetchedAt).toLocaleString() + " · " + num(data.items.length) + " items")));

@@ -6,8 +6,8 @@ import type { Env } from "../env.ts";
 
 export const MAX_LARGE_CHAT_BODY = 100 * 1024 * 1024;
 const EXISTING_CHAT_BODY_LIMIT = 32 * 1024 * 1024;
-// The generation coordinator carries this body in a 32 MiB RPC argument.
-const MAX_REWRITTEN_BODY = 31 * 1024 * 1024;
+// Validation, caching and the 32 MiB coordinator RPC each copy the compact body.
+const MAX_REWRITTEN_BODY = 16 * 1024 * 1024;
 const MAX_IMAGE_DATA_URL = 20 * 1024 * 1024;
 const MAX_UNOFFLOADED_BYTES = MAX_REWRITTEN_BODY + MAX_IMAGE_DATA_URL;
 const PARSE_CHUNK_SIZE = 64 * 1024;
@@ -109,7 +109,7 @@ export async function readLargeChatBody(
         throw new HTTPException(413, {
             message:
                 offloadedBytes > 0
-                    ? "Chat content exceeds the 31 MiB limit after image offload"
+                    ? "Chat content exceeds the 16 MiB limit after image offload"
                     : "Request body exceeds the 32 MiB limit",
         });
     }

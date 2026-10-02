@@ -448,7 +448,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     expect(byId.get("early_adopter")?.title).toBe("Early adopter");
     expectStableCatalogFields("github_established", {
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 1,
         balanceBucket: "tier",
     });
     expect(byId.get("github_established")?.goal).toEqual({
@@ -1626,7 +1626,7 @@ test("github established-account quest records once per GitHub identity", async 
         {
             idempotencyKey: `quest:github_established:github:${user.githubId}`,
             userId: user.id,
-            pollenAmount: 2,
+            pollenAmount: 1,
             balanceBucket: "tier",
         },
     ]);

@@ -219,11 +219,17 @@ name or an undocumented ratio.
 
 Keep ledger writes task-scoped; do not add permanent ingest code. Before a
 write, query the effective datasource, save and verify a complete local backup,
-and show the exact proposed rows and totals. Existing `entry_id` corrections
+and show the exact proposed rows and totals. Validate every proposed field
+against the deployed datasource schema before appending; in particular,
+`economics_vendor_ledger.model` is a string even when the registry maps one
+provider label to several Pollen IDs. Existing `entry_id` corrections
 must include the current base version, use a later `recorded_at`, and preserve
 immutable identity fields. Append only after explicit approval for the named
 batch and environment, then re-query every written ID and save a verified
-after-snapshot. Validate staging first; production requires separate approval.
+after-snapshot. Check the ingest response's `successful_rows` and
+`quarantined_rows` against the submitted count; on any quarantine, inspect
+the affected IDs and correct only rejected rows. Never resend accepted rows.
+Validate staging first; production requires separate approval.
 
 Staging verification uses
 `operations/economics/secrets/web.dev.json:TINYBIRD_ECONOMICS_READ_TOKEN`.

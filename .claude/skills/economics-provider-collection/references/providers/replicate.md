@@ -84,6 +84,11 @@ Seedance 2.0 pricing witness:
 
 Known traps:
 
+- `modelLabels` can map one Replicate slug to several Pollen IDs, but the
+  vendor ledger's `model` column accepts one string. For a SKU-specific line,
+  use its exact reviewed canonical model ID when the billed tier identifies
+  one; never serialize the registry's array into a ledger row. Preserve the
+  original provider slug and SKU in `resource_name` and `resource_sku`.
 - Replicate has no public invoice export API and no per-model spend API. Monthly cash evidence must come from invoices, receipts, Wise/card records, or the billing UI.
 - The predictions API is operational evidence, not a billing ledger. It is useful for finding models, statuses, sources, and recent runs, but it may not be enough to reconstruct a closed month.
 - The predictions API returns 100 records per page. Do not rely on older `prediction_count` examples to limit page size.

@@ -20,9 +20,13 @@ Primary evidence sources:
 
 Collection steps:
 
-1. Select the full calendar month in the Stability billing dashboard.
-2. Download a usage export when offered; otherwise capture the dated usage and
-   remaining-credit view.
+1. Check the signed-in account identity, then Billing → Credits for the
+   current balance and payment list. As checked October 2026, this page has
+   no monthly usage selector or export; do not infer September burn from its
+   current credits.
+2. Download a usage export if another verified account page offers one;
+   otherwise retain the missing provider-usage gap and capture the account
+   and credit pages.
 3. Save the export or screenshot under `<collection-dir>/evidence/stability/` and archive it in
    Drive before proposing ledger rows.
 4. Compare the provider month to OP Pollen for `stable-audio-3-large`.

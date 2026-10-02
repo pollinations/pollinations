@@ -579,7 +579,7 @@ curl -X POST "https://gen.pollinations.ai/v1/messages" \
 Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
-JSON request bodies may be up to 32 MiB, including inline images.
+JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. For requests over 32 MiB, each data URI may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days. Base64-only input_audio.data and file.file_data fields are not offloaded.
 
 Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.
 
@@ -3258,7 +3258,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `expiresIn` | `integer` | Expiry in seconds from now |
 | `allowedModels` | `string`[] \| `null` | Model IDs this key can access. null = all models |
 | `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
-| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too. |
+| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
 

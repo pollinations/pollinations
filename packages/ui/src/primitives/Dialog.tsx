@@ -23,8 +23,6 @@ export type DialogProps = {
     ariaLabel?: string;
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
-    /** Fill narrow viewports; disable for compact confirmations. */
-    fullscreenOnMobile?: boolean;
     showBackdrop?: boolean;
     backdropBlur?: boolean;
     positionerClassName?: string;
@@ -42,7 +40,6 @@ export const Dialog: FC<DialogProps> = ({
     ariaLabel,
     labelledBy,
     size = "md",
-    fullscreenOnMobile = true,
     showBackdrop = true,
     backdropBlur = true,
     positionerClassName,
@@ -81,10 +78,8 @@ export const Dialog: FC<DialogProps> = ({
                 )}
                 <ArkDialog.Positioner
                     className={cn(
-                        "polli:fixed polli:inset-0 polli:z-[calc(110_+_var(--layer-index,0)_*_20)] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden",
-                        fullscreenOnMobile
-                            ? "polli:p-0 polli:sm:p-4"
-                            : "polli:p-4",
+                        "polli:fixed polli:inset-0 polli:z-[calc(110_+_var(--layer-index,0)_*_20)] polli:flex polli:max-h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
+                        "polli-dialog-mobile-positioner",
                         positionerClassName,
                     )}
                 >
@@ -93,10 +88,8 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:flex polli:w-full polli:flex-col polli:overflow-y-auto polli:bg-surface-block polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
-                            fullscreenOnMobile
-                                ? "polli-dialog-mobile-page polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-block"
-                                : "polli:my-auto polli:h-auto polli:max-h-[calc(100dvh-2rem)] polli:rounded-block",
+                            "polli:my-auto polli:flex polli:h-auto polli:max-h-full polli:w-full polli:flex-col polli:overflow-y-auto polli:rounded-block polli:bg-surface-block polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli-dialog-mobile-page",
                             sizeClasses[size],
                             contentClassName,
                         )}

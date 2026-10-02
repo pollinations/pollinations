@@ -13,6 +13,7 @@ const MAX_UNOFFLOADED_BYTES = MAX_REWRITTEN_BODY + MAX_MEDIA_DATA_URL;
 const PARSE_CHUNK_SIZE = 64 * 1024;
 
 type InlineMedia = {
+    type: "image_url" | "video_url" | "file";
     container: Record<string, unknown>;
     field: string;
     dataUrl: string;
@@ -29,12 +30,20 @@ function inlineMedia(value: unknown): InlineMedia | undefined {
     const field = type === "file" ? "file_url" : "url";
     const dataUrl = (container as Record<string, unknown>)[field];
     if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) return;
-    return { container: container as Record<string, unknown>, field, dataUrl };
+    return {
+        type,
+        container: container as Record<string, unknown>,
+        field,
+        dataUrl,
+    };
 }
 
 export async function readLargeChatBody(
     stream: ReadableStream<Uint8Array>,
-    uploadMedia: (dataUrl: string) => Promise<string>,
+    uploadMedia: (
+        dataUrl: string,
+        type: InlineMedia["type"],
+    ) => Promise<string>,
 ): Promise<string> {
     const parser = new JSONParser({
         paths: ["$.messages.*.content.*", "$"],
@@ -87,8 +96,13 @@ export async function readLargeChatBody(
                         message: "Invalid JSON body",
                     });
                 }
-                for (const { container, field, dataUrl } of pending.splice(0)) {
-                    container[field] = await uploadMedia(dataUrl);
+                for (const {
+                    type,
+                    container,
+                    field,
+                    dataUrl,
+                } of pending.splice(0)) {
+                    container[field] = await uploadMedia(dataUrl, type);
                     offloadedBytes += dataUrl.length;
                 }
                 if (parsedBytes - offloadedBytes > MAX_UNOFFLOADED_BYTES) {
@@ -134,13 +148,22 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
     const stream = c.req.raw.body;
     if (!stream) return next();
 
-    const body = await readLargeChatBody(stream, async (dataUrl) => {
+    const body = await readLargeChatBody(stream, async (dataUrl, type) => {
         const user = c.var.auth.requireUser();
         const match =
             /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
                 dataUrl,
             );
         if (!match) {
+            throw new HTTPException(400, {
+                message: "Invalid inline media data URL",
+            });
+        }
+        if (
+            (type === "image_url" &&
+                !/^image\/(?:jpeg|png|webp|gif)$/.test(match[1])) ||
+            (type === "video_url" && !match[1].startsWith("video/"))
+        ) {
             throw new HTTPException(400, {
                 message: "Invalid inline media data URL",
             });

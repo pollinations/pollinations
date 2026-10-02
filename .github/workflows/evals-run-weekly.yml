@@ -1,0 +1,92 @@
+name: Evals / Run weekly model evals
+
+# Scores every text model in /text/models (community models included) with
+# operations/model-evals and publishes the results to the `evals` data branch,
+# which the Evals tab of model-monitor.pollinations.ai reads. Needs the repo
+# secret PLN_EVALS_KEY: a Pollinations key with room for ~20 Pollen.
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Monday 03:00 UTC
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Which models to score'
+        type: choice
+        options: [all, official, community]
+        default: all
+      models:
+        description: 'Comma-separated model names or aliases (overrides scope)'
+        required: false
+        type: string
+      samples:
+        description: 'Questions per family and model'
+        required: false
+        type: string
+        default: '10'
+      budget:
+        description: 'Stop asking questions after this many Pollen'
+        required: false
+        type: string
+        default: '12'
+
+# contents: write is only used to push the evals data branch, never main.
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: model-evals
+  cancel-in-progress: false
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Check out the evals data branch
+        run: |
+          if git ls-remote --exit-code --heads origin evals >/dev/null 2>&1; then
+            git fetch --depth=1 origin evals
+            git worktree add "$RUNNER_TEMP/evals" FETCH_HEAD
+          else
+            git worktree add --orphan -b evals "$RUNNER_TEMP/evals"
+          fi
+
+      - name: Score models
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_EVALS_KEY }}
+          SCOPE: ${{ inputs.scope || 'all' }}
+          MODELS: ${{ inputs.models }}
+          SAMPLES: ${{ inputs.samples || '10' }}
+          BUDGET: ${{ inputs.budget || '12' }}
+        run: |
+          node operations/model-evals/run.js \
+            --out "$RUNNER_TEMP/evals/data" \
+            --scope "$SCOPE" \
+            --samples "$SAMPLES" \
+            --budget "$BUDGET" \
+            ${MODELS:+--models "$MODELS"}
+
+      - name: Publish results to the evals branch
+        working-directory: ${{ runner.temp }}/evals
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "evals: weekly run $(date -u +%F)"
+          git push origin HEAD:evals
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

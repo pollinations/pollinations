@@ -6,7 +6,6 @@ import {
     BannedAccountError,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
-import { authenticateSessionRequest } from "@shared/auth/session.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { canonicalizeModelPermissionIds } from "@shared/registry/visible-model-ids.ts";
@@ -113,21 +112,15 @@ function installAuth(
     });
 }
 
-// `session` also accepts a dashboard session that enter forwards, for routes
-// the dashboard uses. A session carries no key, so no key limits apply.
-export const auth = ({ session = false } = {}) =>
+export const auth = () =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        let authResult: Parameters<typeof installAuth>[1] | null;
+        let authResult: Awaited<ReturnType<typeof authenticateApiKeyRequest>>;
         try {
             authResult = await authenticateApiKeyRequest({
                 request: c.req.raw,
                 env: c.env,
                 ctx: c.executionCtx,
             });
-            if (!authResult && session) {
-                const user = await authenticateSessionRequest(c.req.raw, c.env);
-                authResult = user && { user };
-            }
         } catch (error) {
             if (
                 error instanceof BannedAccountError ||

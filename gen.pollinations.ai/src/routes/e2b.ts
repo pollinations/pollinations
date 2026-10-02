@@ -1,5 +1,4 @@
-import { createApiKeyAuth } from "@shared/auth/api-key.ts";
-import { createApiKeyForUser } from "@shared/auth/api-key-creation.ts";
+import { extractApiKey } from "@shared/auth/api-key.ts";
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
@@ -7,6 +6,7 @@ import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     priceToEventParams,
     usageToEventParams,
@@ -314,19 +314,31 @@ async function extendLease(
     return new Response(response.body, response);
 }
 
-// Writes polli's login into a new sandbox: a key of its own, made like
-// `polli harness ... on` makes one. envd, the agent in every sandbox, writes
-// the file as `user`.
+// Writes polli's login into a new sandbox: a key of its own, created with the
+// caller's key through enter's key API, as `polli harness ... on` creates one.
+// envd, the agent in every sandbox, writes the file as `user`.
 async function logIn(c: E2bContext, sandbox: CreatedSandbox) {
-    const { key } = await createApiKeyForUser({
-        authClient: createApiKeyAuth(c.env, c.executionCtx),
-        dbBinding: c.env.DB,
-        userId: c.var.auth.requireUser().id,
-        name: `polli-sandbox-${sandbox.sandboxID}`,
-        type: "secret",
-        accountPermissions: POLLI_PERMISSIONS,
-        defaultCreatedVia: "sandbox",
-    });
+    const created = await c.env.ENTER.fetch(
+        `${PUBLIC_URLS.enter.production}/api/account/keys`,
+        {
+            method: "POST",
+            headers: {
+                "authorization": `Bearer ${extractApiKey(c.req.raw)}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                name: `polli-sandbox-${sandbox.sandboxID}`,
+                type: "secret",
+                accountPermissions: POLLI_PERMISSIONS,
+            }),
+        },
+    );
+    if (!created.ok) {
+        throw new Error(
+            `Key creation returned ${created.status}: ${(await created.text()).slice(0, 300)}`,
+        );
+    }
+    const { key } = await created.json<{ key: string }>();
     // polli keeps a staging login apart from a production one.
     const file =
         c.env.ENVIRONMENT === "production"
@@ -365,18 +377,17 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
         });
     }
     c.var.auth.requireUser();
-    // Without a key, the caller is the account owner's dashboard session.
     const apiKey = c.var.auth.apiKey;
-    if (apiKey && !apiKey.permissions?.account?.includes("machines")) {
+    if (!apiKey?.permissions?.account?.includes("machines")) {
         throw new HTTPException(403, {
-            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}`,
+            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
         });
     }
     await next();
 }
 
 export const e2bRoutes = new Hono<Env>()
-    .use("*", edgeRateLimit, auth({ session: true }), requireSandboxAccess)
+    .use("*", edgeRateLimit, auth(), requireSandboxAccess)
     // E2B's CLI still creates and connects through the deprecated v1 paths,
     // which take the same bodies as v2.
     .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
@@ -439,12 +450,7 @@ export const e2bRoutes = new Hono<Env>()
         }
         await charge(c, bill, startTime);
         await savePaidUntil(c, created.sandboxID, paidUntil);
-        // Like POST /account/keys, only a caller who may create keys gets one.
-        const caller = c.var.auth.apiKey;
-        if (
-            body.templateID === LOGGED_IN_TEMPLATE &&
-            (!caller || caller.permissions?.account?.includes("keys"))
-        ) {
+        if (body.templateID === LOGGED_IN_TEMPLATE) {
             try {
                 await logIn(c, created);
             } catch (error) {

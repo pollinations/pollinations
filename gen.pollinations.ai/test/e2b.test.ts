@@ -1,13 +1,6 @@
 import { env, SELF } from "cloudflare:test";
-import { SESSION_TOKEN_HEADER } from "@shared/auth/session.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { apikey, session } from "@shared/db/better-auth.ts";
-import {
-    createTestApiKey,
-    createTestUser,
-    test,
-} from "@shared/test/fixtures/index.ts";
-import { eq } from "drizzle-orm";
+import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, vi } from "vitest";
 
@@ -392,73 +385,15 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
 });
 
-test("the dashboard session enter forwards pays from the wallet", async () => {
-    const e2b = stubE2b();
-    const userId = await createTestUser({ tierBalance: 10 });
-    const login = async (expiresInSeconds: number) => {
-        const token = crypto.randomUUID();
-        await drizzle(env.DB)
-            .insert(session)
-            .values({
-                id: crypto.randomUUID(),
-                token,
-                userId,
-                expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-        return token;
-    };
-    const asSession = (token: string, path: string, init?: RequestInit) =>
-        SELF.fetch(`https://gen.pollinations.ai/alpha/e2b${path}`, {
-            ...init,
-            headers: {
-                [SESSION_TOKEN_HEADER]: token,
-                "content-type": "application/json",
-            },
-        });
-
-    const token = await login(60);
-    const created = await asSession(token, "/v2/sandboxes", {
-        method: "POST",
-        body: JSON.stringify({ templateID: "base" }),
-    });
-    expect(created.status).toBe(201);
-    const { sandboxID } = await created.json<{ sandboxID: string }>();
-    expect(await questPollen(userId)).toBeCloseTo(10 - LEASE_300S, 8);
-    const listed = await asSession(token, "/v2/sandboxes");
-    expect(await listed.json()).toMatchObject([{ sandboxID }]);
-    const killed = await asSession(token, `/sandboxes/${sandboxID}`, {
-        method: "DELETE",
-    });
-    expect(killed.status).toBe(204);
-
-    // An unknown or expired session is no login.
-    expect((await asSession("not-a-session", "/v2/sandboxes")).status).toBe(
-        401,
-    );
-    const expired = await login(-60);
-    expect((await asSession(expired, "/v2/sandboxes")).status).toBe(401);
-    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
-});
-
-const keyNamed = (name: string) =>
-    drizzle(env.DB).select().from(apikey).where(eq(apikey.name, name)).get();
-
-test("the pollinations template comes logged in when the caller may create keys", async () => {
+test("the pollinations template comes logged in with a key from enter's key API", async () => {
     const e2b = stubE2b();
     const owner = await createTestApiKey({
         accountPermissions: ["machines", "keys"],
         user: { tierBalance: 10 },
     });
-    const machinesOnly = await createTestApiKey({
-        accountPermissions: ["machines"],
-        user: { tierBalance: 10 },
-    });
 
-    // Other templates, and callers who may not create keys, get no login.
+    // Other templates get no login.
     await createSandbox(owner.key);
-    await createSandbox(machinesOnly.key, { templateID: "pollinations" });
     expect(e2b.files).toEqual([]);
 
     const created = await createSandbox(owner.key, {
@@ -473,12 +408,14 @@ test("the pollinations template comes logged in when the caller may create keys"
             accessToken: "envd",
         },
     ]);
+    // The test stub of enter answers with the request it got as the key.
     const { apiKey } = JSON.parse(e2b.files[0].content);
-    const key = await keyNamed(`polli-sandbox-${sandboxID}`);
-    expect(key?.referenceId).toBe(owner.userId);
-    expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
-        account: ["profile", "usage", "keys", "machines"],
+    expect(JSON.parse(apiKey)).toEqual({
+        authorization: `Bearer ${owner.key}`,
+        body: {
+            name: `polli-sandbox-${sandboxID}`,
+            type: "secret",
+            accountPermissions: ["profile", "usage", "keys", "machines"],
+        },
     });
-
-    expect((await call(apiKey, "/v2/sandboxes")).status).toBe(200);
 });

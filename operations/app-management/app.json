@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Pollinations for Unity",
+    "url": "https://github.com/Marcus-Mok-GH/pollinations-unity",
+    "description": "A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene.",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "Marcus-Mok-GH",
+    "githubUserId": "133474899",
+    "repositoryUrl": "https://github.com/Marcus-Mok-GH/pollinations-unity",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-28",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15622",
+    "approvedDate": "2026-10-02",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Pollinations for Krita",
     "url": "https://github.com/xiaotian1171/pollinations-krita",

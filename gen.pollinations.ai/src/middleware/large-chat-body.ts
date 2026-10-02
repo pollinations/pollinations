@@ -8,34 +8,38 @@ export const MAX_LARGE_CHAT_BODY = 100 * 1024 * 1024;
 const EXISTING_CHAT_BODY_LIMIT = 32 * 1024 * 1024;
 // Validation, caching and the 32 MiB coordinator RPC each copy the compact body.
 const MAX_REWRITTEN_BODY = 16 * 1024 * 1024;
-const MAX_IMAGE_DATA_URL = 20 * 1024 * 1024;
-const MAX_UNOFFLOADED_BYTES = MAX_REWRITTEN_BODY + MAX_IMAGE_DATA_URL;
+const MAX_MEDIA_DATA_URL = 20 * 1024 * 1024;
+const MAX_UNOFFLOADED_BYTES = MAX_REWRITTEN_BODY + MAX_MEDIA_DATA_URL;
 const PARSE_CHUNK_SIZE = 64 * 1024;
 
-type ImagePart = { type: "image_url"; image_url: { url: string } };
+type InlineMedia = {
+    container: Record<string, unknown>;
+    field: string;
+    dataUrl: string;
+};
 
-function imagePart(value: unknown): value is ImagePart {
-    return (
-        typeof value === "object" &&
-        value !== null &&
-        "type" in value &&
-        value.type === "image_url" &&
-        "image_url" in value &&
-        typeof value.image_url === "object" &&
-        value.image_url !== null &&
-        "url" in value.image_url &&
-        typeof value.image_url.url === "string"
-    );
+function inlineMedia(value: unknown): InlineMedia | undefined {
+    if (typeof value !== "object" || value === null || !("type" in value))
+        return;
+    const record = value as Record<string, unknown>;
+    const type = record.type;
+    if (type !== "image_url" && type !== "video_url" && type !== "file") return;
+    const container = record[type];
+    if (typeof container !== "object" || container === null) return;
+    const field = type === "file" ? "file_url" : "url";
+    const dataUrl = (container as Record<string, unknown>)[field];
+    if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) return;
+    return { container: container as Record<string, unknown>, field, dataUrl };
 }
 
 export async function readLargeChatBody(
     stream: ReadableStream<Uint8Array>,
-    uploadImage: (dataUrl: string) => Promise<string>,
+    uploadMedia: (dataUrl: string) => Promise<string>,
 ): Promise<string> {
     const parser = new JSONParser({
         paths: ["$.messages.*.content.*", "$"],
     });
-    const pending: Array<{ part: ImagePart; dataUrl: string }> = [];
+    const pending: InlineMedia[] = [];
     let parsed: unknown;
     let totalBytes = 0;
     let parsedBytes = 0;
@@ -46,16 +50,15 @@ export async function readLargeChatBody(
             parsed = value;
             return;
         }
-        if (!imagePart(value) || !value.image_url.url.startsWith("data:image/"))
-            return;
-        const dataUrl = value.image_url.url;
-        if (dataUrl.length > MAX_IMAGE_DATA_URL) {
+        const media = inlineMedia(value);
+        if (!media) return;
+        if (media.dataUrl.length > MAX_MEDIA_DATA_URL) {
             throw new HTTPException(413, {
-                message: "An inline image exceeds the 20 MiB limit",
+                message: "An inline media item exceeds the 20 MiB limit",
             });
         }
-        value.image_url.url = "";
-        pending.push({ part: value, dataUrl });
+        media.container[media.field] = "";
+        pending.push(media);
     };
 
     const reader = stream.getReader();
@@ -84,8 +87,8 @@ export async function readLargeChatBody(
                         message: "Invalid JSON body",
                     });
                 }
-                for (const { part, dataUrl } of pending.splice(0)) {
-                    part.image_url.url = await uploadImage(dataUrl);
+                for (const { container, field, dataUrl } of pending.splice(0)) {
+                    container[field] = await uploadMedia(dataUrl);
                     offloadedBytes += dataUrl.length;
                 }
                 if (parsedBytes - offloadedBytes > MAX_UNOFFLOADED_BYTES) {
@@ -107,14 +110,14 @@ export async function readLargeChatBody(
         throw new HTTPException(413, {
             message:
                 offloadedBytes > 0
-                    ? "Chat content exceeds the 16 MiB limit after image offload"
+                    ? "Chat content exceeds the 16 MiB limit after media offload"
                     : "Request body exceeds the 32 MiB limit",
         });
     }
     return body;
 }
 
-/** Large inline images become URLs before Hono or the provider constructs another JSON copy. */
+/** Large inline media become URLs before Hono or the provider constructs another JSON copy. */
 export const largeChatBody = createMiddleware<Env>(async (c, next) => {
     const contentLength = Number(c.req.header("content-length"));
     if (
@@ -134,12 +137,12 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
     const body = await readLargeChatBody(stream, async (dataUrl) => {
         const user = c.var.auth.requireUser();
         const match =
-            /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+            /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
                 dataUrl,
             );
         if (!match) {
             throw new HTTPException(400, {
-                message: "Invalid inline image data URL",
+                message: "Invalid inline media data URL",
             });
         }
         const bytes = Buffer.from(match[2], "base64");

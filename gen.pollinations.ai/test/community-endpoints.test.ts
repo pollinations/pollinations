@@ -3718,7 +3718,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "stores large inline chat images once per user and sends their URLs upstream",
+    "stores large inline chat media once per user and sends their URLs upstream",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `vision-${crypto.randomUUID().slice(0, 8)}`;
@@ -3730,7 +3730,7 @@ fixtureTest(
             }),
             visibility: "public",
             name: modelName,
-            inputModalities: ["text", "image"],
+            inputModalities: ["text", "image", "video"],
             baseUrl: "https://vision.example.com/v1",
             upstreamModel: "vision-upstream",
             bearerTokenCiphertext: await encryptSecret(
@@ -3743,8 +3743,13 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        type Part = { type: string; image_url?: { url: string } };
-        const upstreamImageUrls: string[][] = [];
+        type Part = {
+            type: string;
+            image_url?: { url: string };
+            video_url?: { url: string };
+            file?: { file_url?: string };
+        };
+        const upstreamMediaUrls: string[][] = [];
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
@@ -3753,12 +3758,16 @@ fixtureTest(
                     const { messages } = (await request.json()) as {
                         messages: { content: string | Part[] }[];
                     };
-                    upstreamImageUrls.push(
+                    upstreamMediaUrls.push(
                         messages.flatMap(({ content }) =>
                             typeof content === "string"
                                 ? []
                                 : content.flatMap(
-                                      (part) => part.image_url?.url ?? [],
+                                      (part) =>
+                                          part.image_url?.url ??
+                                          part.video_url?.url ??
+                                          part.file?.file_url ??
+                                          [],
                                   ),
                         ),
                     );
@@ -3827,6 +3836,14 @@ fixtureTest(
                 url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
             },
         });
+        const video = {
+            type: "video_url",
+            video_url: { url: "data:video/mp4;base64,AQID" },
+        };
+        const file = {
+            type: "file",
+            file: { file_url: "data:application/pdf;base64,JVBERg==" },
+        };
         const turn = {
             role: "user",
             content: [
@@ -3834,6 +3851,8 @@ fixtureTest(
                 image(first),
                 image(second),
                 image(first),
+                video,
+                file,
             ],
         };
         const model = communityModelId(ownerGithubUsername, modelName);
@@ -3859,13 +3878,13 @@ fixtureTest(
         );
         expect(repeated.status, repeated.text).toBe(200);
 
-        expect(uploads).toHaveLength(2);
-        const [firstUrl, secondUrl] = uploads.map(
+        expect(uploads).toHaveLength(4);
+        const [firstUrl, secondUrl, videoUrl, fileUrl] = uploads.map(
             (id) => `https://media.pollinations.ai/${id}`,
         );
-        expect(upstreamImageUrls).toEqual([
-            [firstUrl, secondUrl, firstUrl],
-            [firstUrl, secondUrl, firstUrl],
+        expect(upstreamMediaUrls).toEqual([
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
         ]);
         const stored = await media.get(uploads[0]);
         expect(stored?.headers.get("content-type")).toBe("image/png");
@@ -3873,6 +3892,14 @@ fixtureTest(
             await (stored as Response).arrayBuffer(),
         );
         expect(storedBytes.equals(first)).toBe(true);
+        for (const [index, contentType] of [
+            "video/mp4",
+            "application/pdf",
+        ].entries()) {
+            const response = await media.get(uploads[index + 2]);
+            expect(response?.headers.get("content-type")).toBe(contentType);
+            await response?.arrayBuffer();
+        }
 
         const oversized = await send("{}", 100 * 1024 * 1024 + 1);
         expect(oversized.status).toBe(413);

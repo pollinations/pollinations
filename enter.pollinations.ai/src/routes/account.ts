@@ -36,6 +36,7 @@ import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import {
     hasAccountPermission,
     requireAccountPermission,
@@ -1513,8 +1514,36 @@ export const accountRoutes = new Hono<Env>()
                 accountPermissions,
                 metadata,
                 defaultCreatedVia: "api",
+                createdByApiKeyId: c.var.auth.apiKey?.id,
+                originAppKeyId:
+                    c.var.auth.apiKey?.byopClientKeyId ??
+                    (c.var.auth.apiKey?.metadata?.keyType === "publishable"
+                        ? c.var.auth.apiKey.id
+                        : (c.var.auth.apiKey?.metadata?.originAppKeyId as
+                              | string
+                              | undefined)),
             });
             return c.json(created);
+        },
+    )
+    .post(
+        "/polli/harness-on",
+        validator(
+            "json",
+            z.object({
+                harness: z
+                    .string()
+                    .regex(/^[a-z0-9-]{1,32}$/)
+                    .meta({ example: "opencode" }),
+            }),
+        ),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            captureFromRequest(c, "polli_harness_on", user.id, {
+                harness: c.req.valid("json").harness,
+            });
+            return c.json({ ok: true });
         },
     )
     .delete(

@@ -13,6 +13,7 @@ import {
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
+ *   - connect_polli_cli -> apikey.byop_client_key_id (Polli device login)
  *   - early_adopter  -> user.created_at           (registered 9+ months ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
@@ -24,6 +25,10 @@ import {
 
 type SetupQuestRow = {
     userId: string;
+};
+
+type ByopLoginRow = SetupQuestRow & {
+    connectedPolli: number;
 };
 
 type TopUpSummaryRow = SetupQuestRow & {
@@ -54,6 +59,20 @@ const byopLoginQuest: QuestDefinition = {
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,
+    balanceBucket: "tier",
+};
+
+// ID of Polli's publishable app key (the client_id in polli auth login).
+const POLLI_CLIENT_KEY_ID = "jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0";
+
+const connectPolliCliQuest: QuestDefinition = {
+    id: "connect_polli_cli",
+    title: "Connect Polli CLI",
+    description:
+        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`.",
+    category: "setup",
+    scope: "perUser",
+    rewardAmount: 2,
     balanceBucket: "tier",
 };
 
@@ -112,9 +131,18 @@ const overHundredPollenSinceLaunchQuest = {
     goal: { target: 100, unit: "pollen" },
 } satisfies QuestDefinition;
 
+/** Quests earned by buying Pollen; the monthly standings mark their earners. */
+export const TOP_UP_QUEST_IDS = [
+    legacyFirstTopUpQuest.id,
+    legacyOverHundredPollenQuest.id,
+    topUpSinceLaunchQuest.id,
+    overHundredPollenSinceLaunchQuest.id,
+];
+
 const QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,
+    connectPolliCliQuest,
     earlyAdopterQuest,
     legacyFirstTopUpQuest,
     legacyOverHundredPollenQuest,
@@ -125,6 +153,7 @@ const QUESTS = [
 const EVALUATED_QUESTS = [
     firstApiKeyQuest,
     byopLoginQuest,
+    connectPolliCliQuest,
     earlyAdopterQuest,
     topUpSinceLaunchQuest,
     overHundredPollenSinceLaunchQuest,
@@ -172,12 +201,15 @@ export async function evaluateUser(
         GROUP BY stripe_checkout_credits.user_id
         LIMIT 1`)
                 : [],
-            rewardableQuestIds.has(byopLoginQuest.id)
-                ? db.all<SetupQuestRow>(sql`
-        SELECT apikey.user_id AS userId
+            rewardableQuestIds.has(byopLoginQuest.id) ||
+            rewardableQuestIds.has(connectPolliCliQuest.id)
+                ? db.all<ByopLoginRow>(sql`
+        SELECT apikey.user_id AS userId,
+               MAX(apikey.byop_client_key_id = ${POLLI_CLIENT_KEY_ID}) AS connectedPolli
         FROM apikey
         WHERE apikey.user_id = ${user.id}
           AND apikey.byop_client_key_id IS NOT NULL
+        GROUP BY apikey.user_id
         LIMIT 1`)
                 : [],
             rewardableQuestIds.has(earlyAdopterQuest.id)
@@ -200,6 +232,12 @@ export async function evaluateUser(
             quest: byopLoginQuest,
             userId: row.userId,
         })),
+        ...byopLoginRows
+            .filter((row) => row.connectedPolli === 1)
+            .map((row) => ({
+                quest: connectPolliCliQuest,
+                userId: row.userId,
+            })),
         ...earlyAdopterRows.map((row) => ({
             quest: earlyAdopterQuest,
             userId: row.userId,

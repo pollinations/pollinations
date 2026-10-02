@@ -16,6 +16,7 @@ interface __BaseEnv_CloudflareBindings {
 	BETTER_AUTH_URL: "http://localhost:3000" | "https://enter.pollinations.ai" | "https://staging.enter.pollinations.ai" | "https://dev.enter.pollinations.ai";
 	STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg" | "pmc_1TVU4T7rcjS3l7trqtBuve71";
 	STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU" | "pmc_1SrY4O7rcjS3l7trnGXDTuat";
+	STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE" | "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS75PHDAbCXMXuem6MyUz89SaF8rXsBopXEOMGz6HVxwAa009lrHccxE";
 	BETTER_AUTH_SECRET: string;
 	GITHUB_CLIENT_ID: string;
 	GITHUB_CLIENT_SECRET: string;
@@ -58,6 +59,7 @@ declare namespace Cloudflare {
 		GEN_BASE_URL: "http://localhost:8788";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
+		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -92,6 +94,7 @@ declare namespace Cloudflare {
 		GEN_BASE_URL: "https://gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TVU4T7rcjS3l7trqtBuve71";
 		STRIPE_PMC: "pmc_1SrY4O7rcjS3l7trnGXDTuat";
+		STRIPE_PUBLISHABLE_KEY: "pk_live_51SrY3q7rcjS3l7trHGtfzyEb63kpEdfwZJQQifMVcLVS75PHDAbCXMXuem6MyUz89SaF8rXsBopXEOMGz6HVxwAa009lrHccxE";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -126,6 +129,7 @@ declare namespace Cloudflare {
 		GEN_BASE_URL: "https://staging.gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
+		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE";
 		STAGING_ALLOWED_GITHUB_IDS: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
 		STAGING_ALLOWED_EMAILS: "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
 		BETTER_AUTH_SECRET: string;
@@ -163,6 +167,7 @@ declare namespace Cloudflare {
 		GEN_BASE_URL: "https://dev.gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
+		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -197,6 +202,7 @@ declare namespace Cloudflare {
 		GEN_BASE_URL: "https://gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
+		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;

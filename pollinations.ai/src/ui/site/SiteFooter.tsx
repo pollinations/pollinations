@@ -70,7 +70,19 @@ export function SiteFooter() {
                         ))}
                     </nav>
                     <p className="text-xs text-theme-text-muted">
-                        © {new Date().getFullYear()} Myceli.AI OÜ
+                        <span className="block">
+                            © {new Date().getFullYear()} Myceli.AI OÜ, Tallinn,
+                            Estonia
+                        </span>
+                        <span className="block">
+                            Payments by Stripe ·{" "}
+                            <a
+                                href="mailto:hello@pollinations.ai"
+                                className="hover:text-theme-text-strong"
+                            >
+                                hello@pollinations.ai
+                            </a>
+                        </span>
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-12">

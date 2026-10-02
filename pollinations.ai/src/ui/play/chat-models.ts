@@ -1,0 +1,228 @@
+import {
+    type AudioFormat,
+    type MessageContent,
+    type MessageContentPart,
+    type ModelInfo,
+    PollinationsError,
+} from "@pollinations/sdk";
+
+export const FLORET_MODEL_ID = "community/pollinations-ai/floret";
+
+export function errorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    return "Something went wrong. Please try again.";
+}
+
+export function isCancellation(error: unknown): boolean {
+    return (
+        (error instanceof PollinationsError && error.code === "CANCELLED") ||
+        (error instanceof DOMException && error.name === "AbortError")
+    );
+}
+
+export interface AgentChoice {
+    id: string;
+    title: string;
+    inputModalities: string[];
+}
+
+/** Never replace an explicit choice with whichever agent happens to be first. */
+export function selectedAgentChoice(
+    agents: AgentChoice[],
+    selectedId: string | null,
+): AgentChoice | undefined {
+    return agents.find((agent) => agent.id === (selectedId ?? FLORET_MODEL_ID));
+}
+
+export type ChatAttachmentKind = "image" | "video" | "audio" | "file";
+
+type AgentMessagePart =
+    | { type: "text"; text: string }
+    | {
+          type: "tool-call";
+          toolCallId: string;
+          toolName: string;
+          args: Record<string, unknown>;
+          result: unknown;
+          isError: boolean;
+      };
+
+const TOOL_DETAILS_PATTERN =
+    /<details\b([^>]*)>\s*<summary>([\s\S]*?)<\/summary>\s*([\s\S]*?)<\/details>/gi;
+const DETAILS_ATTRIBUTE_PATTERN = /([\w:-]+)\s*=\s*"([^"]*)"/g;
+
+function decodeAgentHtml(value: string): string {
+    return value.replace(
+        /&(amp|lt|gt|quot|#39);/g,
+        (entity) =>
+            ({
+                "&amp;": "&",
+                "&lt;": "<",
+                "&gt;": ">",
+                "&quot;": '"',
+                "&#39;": "'",
+            })[entity] ?? entity,
+    );
+}
+
+function detailsAttributes(source: string): Record<string, string> {
+    const attributes: Record<string, string> = {};
+    for (const match of source.matchAll(DETAILS_ATTRIBUTE_PATTERN)) {
+        attributes[match[1]] = decodeAgentHtml(match[2]);
+    }
+    return attributes;
+}
+
+function jsonObject(source: string): Record<string, unknown> {
+    try {
+        const parsed = JSON.parse(source) as unknown;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+            return parsed as Record<string, unknown>;
+        return { value: parsed };
+    } catch {
+        return {};
+    }
+}
+
+function toolResult(source: string): unknown {
+    const decoded = decodeAgentHtml(source.trim());
+    try {
+        return JSON.parse(decoded) as unknown;
+    } catch {
+        return decoded;
+    }
+}
+
+/** Convert managed-agent tool markup into structured text and tool parts. */
+export function parseAgentMessage(content: string): AgentMessagePart[] {
+    const parts: AgentMessagePart[] = [];
+    let cursor = 0;
+
+    for (const match of content.matchAll(TOOL_DETAILS_PATTERN)) {
+        const index = match.index;
+        if (index > cursor)
+            parts.push({ type: "text", text: content.slice(cursor, index) });
+
+        const attributes = detailsAttributes(match[1]);
+        if (
+            attributes.type !== "tool_calls" ||
+            !attributes.id ||
+            !attributes.name
+        ) {
+            parts.push({ type: "text", text: match[0] });
+        } else {
+            const argsText = attributes.arguments || "{}";
+            parts.push({
+                type: "tool-call",
+                toolCallId: attributes.id,
+                toolName: attributes.name,
+                args: jsonObject(argsText),
+                result: toolResult(match[3]),
+                isError: decodeAgentHtml(match[2]) === "Tool Failed",
+            });
+        }
+        cursor = index + match[0].length;
+    }
+
+    if (cursor < content.length)
+        parts.push({ type: "text", text: content.slice(cursor) });
+    return parts.length > 0 ? parts : [{ type: "text", text: content }];
+}
+
+interface FileDescriptor {
+    name: string;
+    type: string;
+}
+
+const FILE_EXTENSIONS: Record<
+    Exclude<ChatAttachmentKind, "file">,
+    Set<string>
+> = {
+    image: new Set(["avif", "gif", "jpeg", "jpg", "png", "webp"]),
+    video: new Set(["m4v", "mov", "mp4", "webm"]),
+    audio: new Set(["aac", "flac", "m4a", "mp3", "ogg", "opus", "wav"]),
+};
+
+const AUDIO_FORMATS: Record<string, AudioFormat> = {
+    "audio/flac": "flac",
+    "audio/mpeg": "mp3",
+    "audio/mp3": "mp3",
+    "audio/opus": "opus",
+    "audio/pcm": "pcm16",
+    "audio/wav": "wav",
+    "audio/wave": "wav",
+    "audio/x-wav": "wav",
+    flac: "flac",
+    mp3: "mp3",
+    opus: "opus",
+    pcm: "pcm16",
+    pcm16: "pcm16",
+    wav: "wav",
+};
+
+export function agentChoices(models: ModelInfo[]): AgentChoice[] {
+    return models.flatMap((model): AgentChoice[] => {
+        const id = model.id ?? model.name;
+        if (model.agent !== true) return [];
+        return [
+            {
+                id,
+                title: model.title ?? model.name,
+                inputModalities: model.input_modalities ?? ["text"],
+            },
+        ];
+    });
+}
+
+function extension(name: string): string {
+    return name.split(".").pop()?.toLowerCase() ?? "";
+}
+
+export function fileKind(file: FileDescriptor): ChatAttachmentKind {
+    const mimeFamily = file.type.toLowerCase().split("/", 1)[0];
+    if (
+        mimeFamily === "image" ||
+        mimeFamily === "video" ||
+        mimeFamily === "audio"
+    ) {
+        return mimeFamily;
+    }
+
+    const fileExtension = extension(file.name);
+    for (const [kind, extensions] of Object.entries(FILE_EXTENSIONS)) {
+        if (extensions.has(fileExtension)) return kind as ChatAttachmentKind;
+    }
+    return "file";
+}
+
+export function audioFormat(file: FileDescriptor): AudioFormat | null {
+    return (
+        AUDIO_FORMATS[file.type.toLowerCase()] ??
+        AUDIO_FORMATS[extension(file.name)] ??
+        null
+    );
+}
+
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+        binary += String.fromCharCode(
+            ...bytes.subarray(offset, offset + chunkSize),
+        );
+    }
+    return btoa(binary);
+}
+
+export function buildUserContent(
+    text: string,
+    parts: MessageContentPart[],
+): MessageContent {
+    const trimmedText = text.trim();
+    if (parts.length === 0) return trimmedText;
+    return [
+        ...(trimmedText ? [{ type: "text" as const, text: trimmedText }] : []),
+        ...parts,
+    ];
+}

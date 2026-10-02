@@ -336,6 +336,89 @@ describe("json config clients", () => {
 });
 
 describe("hermes yaml client", () => {
+    it.each([
+        "mcp_servers: # empty MCP table\n",
+        "mcp_servers: null # empty MCP table\n",
+        "mcp_servers: {} # empty MCP table\n",
+        "",
+    ])("installs into an empty MCP table (%s)", async (section) => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(
+            file,
+            `# user comment\nmodel:\n  provider: openai-api\n\n# MCP settings\n${section}`,
+        );
+        const client = findClient("hermes");
+        expect(client?.status(ctx).installed).toEqual([]);
+        expect(client?.existingKey?.(ctx)).toBeNull();
+        const result = await client?.install(ctx, SERVERS, "sk-test");
+        const text = readFileSync(file, "utf8");
+        expect(text).toContain("# user comment");
+        expect(text).toContain("# MCP settings");
+        if (section) expect(text).toContain("# empty MCP table");
+        expect(parse(text).model.provider).toBe("openai-api");
+        expect(parse(text).mcp_servers.pollinations).toEqual({
+            url: SERVERS[0].url,
+            headers: { Authorization: "Bearer sk-test" },
+        });
+        expect(result?.installed.sort()).toEqual(["ffmpeg", "pollinations"]);
+        expect(client?.status(ctx).installed.sort()).toEqual([
+            "ffmpeg",
+            "pollinations",
+        ]);
+        expect(client?.existingKey?.(ctx)).toBe("sk-test");
+        expect((await client?.remove(ctx, ["ffmpeg"]))?.removed).toEqual([
+            "ffmpeg",
+        ]);
+        expect(client?.status(ctx).installed).toEqual(["pollinations"]);
+        expect((await client?.remove(ctx))?.removed).toEqual(["pollinations"]);
+        expect(parse(readFileSync(file, "utf8")).model.provider).toBe(
+            "openai-api",
+        );
+    });
+
+    it.each([
+        "mcp_servers: # empty MCP table\n",
+        "mcp_servers: null # empty MCP table\n",
+        "mcp_servers: {} # empty MCP table\n",
+        "",
+    ])("leaves an empty MCP table untouched on removal (%s)", async (section) => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        const original = `# user comment\n${section}model:\n  provider: openai-api\n`;
+        writeFileSync(file, original);
+        const client = findClient("hermes");
+        for (const ids of [undefined, ["pollinations"]]) {
+            const result = await client?.remove(ctx, ids);
+            expect(result?.removed).toEqual([]);
+            expect(result?.installed).toEqual([]);
+            expect(readFileSync(file, "utf8")).toBe(original);
+        }
+    });
+
+    it.each([
+        "invalid",
+        "false",
+        "0",
+        "[]",
+        "[foreign]",
+    ])("rejects a non-mapping MCP table without rewriting it (%s)", (value) => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        const original = `# user comment\nmcp_servers: ${value}\n`;
+        writeFileSync(file, original);
+        const client = findClient("hermes");
+        expect(() => client?.install(ctx, SERVERS, "sk-test")).toThrow(
+            "expected YAML mappings",
+        );
+        expect(readFileSync(file, "utf8")).toBe(original);
+        expect(() => client?.remove(ctx)).toThrow("expected YAML mappings");
+        expect(readFileSync(file, "utf8")).toBe(original);
+    });
+
     it("preserves comments within foreign MCP entries and skips collisions", async () => {
         const ctx = freshCtx();
         const file = join(hermesHome(ctx), "config.yaml");
@@ -345,9 +428,10 @@ describe("hermes yaml client", () => {
         writeFileSync(file, `mcp_servers:\n${foreign}`);
         const client = findClient("hermes");
         const result = await client?.install(ctx, SERVERS, "sk-test");
+        expect(result?.installed).toEqual(["ffmpeg"]);
         expect(result?.notes.join(" ")).toContain("not overwritten");
         expect(readFileSync(file, "utf8")).toContain(foreign);
-        await client?.remove(ctx);
+        expect((await client?.remove(ctx))?.removed).toEqual(["ffmpeg"]);
         expect(readFileSync(file, "utf8")).toContain(foreign);
     });
     it("writes mcp_servers into config.yaml, preserving comments and config", async () => {

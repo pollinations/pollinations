@@ -15,38 +15,47 @@ export async function* streamSSE(
     const decoder = new TextDecoder();
     let buffer = "";
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-        for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const data = line.slice(6).trim();
-            if (data === "[DONE]") return;
+            for (const line of lines) {
+                if (!line.startsWith("data: ")) continue;
+                const data = line.slice(6).trim();
+                if (data === "[DONE]") return;
 
-            let parsed: {
-                error?: { message?: string };
-                choices?: { delta?: { content?: string } }[];
-                model?: string;
-                usage?: { total_tokens?: number };
-            };
-            try {
-                parsed = JSON.parse(data);
-            } catch {
-                continue;
+                let parsed: {
+                    error?: { message?: string };
+                    choices?: { delta?: { content?: string } }[];
+                    model?: string;
+                    usage?: { total_tokens?: number };
+                };
+                try {
+                    parsed = JSON.parse(data);
+                } catch {
+                    continue;
+                }
+                if (parsed.error) {
+                    throw new Error(
+                        parsed.error.message ?? JSON.stringify(parsed.error),
+                    );
+                }
+                onEvent?.(parsed);
+                const delta = parsed.choices?.[0]?.delta?.content;
+                if (delta) yield delta;
             }
-            if (parsed.error) {
-                throw new Error(
-                    parsed.error.message ?? JSON.stringify(parsed.error),
-                );
-            }
-            onEvent?.(parsed);
-            const delta = parsed.choices?.[0]?.delta?.content;
-            if (delta) yield delta;
         }
+    } finally {
+        try {
+            await reader.cancel();
+        } catch {
+            // Cleanup failures must not mask the original stream error.
+        }
+        reader.releaseLock();
     }
 }

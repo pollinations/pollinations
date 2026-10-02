@@ -36,6 +36,24 @@ const RECRAFT_FLASH_ASPECT_RATIOS = [
     "9:16",
 ] as const;
 const FLUX2_MAX_MODEL = "black-forest-labs/flux.2-max";
+const FLUX3_MODEL = "black-forest-labs/flux-3-image";
+const FLUX3_ASPECT_RATIOS = [
+    "21:9",
+    "2:1",
+    "16:9",
+    "3:2",
+    "7:5",
+    "4:3",
+    "5:4",
+    "1:1",
+    "4:5",
+    "3:4",
+    "5:7",
+    "2:3",
+    "9:16",
+    "1:2",
+    "9:21",
+] as const;
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const SVG_MEDIA_TYPE = "image/svg+xml";
 const SEEDREAM_PRO_ASPECT_RATIOS = [
@@ -622,6 +640,78 @@ export async function callOpenRouterFlux2MaxAPI(
             // credit-purchase fee (#14895), not BFL's tiered megapixel formula.
             providerBilling: { units: providerCost, unitCost: 1.055 },
             usage,
+        },
+    };
+}
+
+export async function callOpenRouterFlux3API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 10) {
+        throw UpstreamError.fromProvider(400, {
+            message: "FLUX.3 Image supports at most 10 reference images",
+        });
+    }
+    const apiKey = requireOpenRouterImageApiKey();
+    // BFL does not follow redirects, so inline references as data URIs.
+    const downloadedImages = await Promise.all(
+        safeParams.image.map((image) => downloadUserImage(image)),
+    );
+    const inputReferences = downloadedImages.map((downloaded) => ({
+        type: "image_url",
+        image_url: {
+            url: `data:${downloaded.mimeType};base64,${downloaded.buffer.toString("base64")}`,
+        },
+    }));
+    const requestBody: Record<string, unknown> = {
+        model: FLUX3_MODEL,
+        prompt,
+        n: 1,
+        resolution: safeParams.resolution === "2k" ? "2K" : "1K",
+        aspect_ratio: closestRatioLogSpace(
+            safeParams.width,
+            safeParams.height,
+            FLUX3_ASPECT_RATIOS,
+        ),
+        provider: {
+            only: ["black-forest-labs"],
+            allow_fallbacks: false,
+        },
+    };
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter FLUX.3 Image request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    const providerCost = data.usage?.cost;
+    if (typeof providerCost !== "number" || !(providerCost > 0)) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+
+    logOps("FLUX.3 Image generation complete", {
+        referenceImages: inputReferences.length,
+        providerCost,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: FLUX3_MODEL,
+            // Our cost is OpenRouter's reported charge plus its 5.5%
+            // credit-purchase fee, so the launch discount ending needs no
+            // code change.
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
         },
     };
 }

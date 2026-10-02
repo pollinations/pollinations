@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callOpenRouterFlux2MaxAPI,
+    callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
@@ -394,6 +395,122 @@ describe("OpenRouter FLUX.2 Max", () => {
         ).rejects.toMatchObject({
             status: 400,
             message: "FLUX.2 Max supports at most 8 reference images",
+        });
+    });
+});
+
+describe("OpenRouter FLUX.3 Image", () => {
+    function mockFlux3Fetch(
+        requests: Record<string, unknown>[],
+        body: Record<string, unknown> = {
+            data: [{ b64_json: PNG.toString("base64") }],
+            usage: { cost: 0.024 },
+        },
+    ) {
+        return vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                const href = typeof url === "string" ? url : url.toString();
+                if (href === REFERENCE_IMAGE_URL) {
+                    return new Response(PNG, {
+                        headers: { "Content-Type": "image/png" },
+                    });
+                }
+                if (href !== OPENROUTER_IMAGE_URL) {
+                    return new Response("unexpected URL", { status: 404 });
+                }
+                requests.push(
+                    JSON.parse(init?.body as string) as Record<string, unknown>,
+                );
+                return Response.json(body);
+            });
+    }
+
+    const flux3Params: ImageParams = {
+        ...baseParams,
+        model: "black-forest-labs/flux-3-image",
+    };
+
+    function setEnv() {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+    }
+
+    it("maps size, resolution and references to the OpenRouter request", async () => {
+        setEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockFlux3Fetch(requests);
+
+        await callOpenRouterFlux3API("test prompt", {
+            ...flux3Params,
+            width: 1280,
+            height: 720,
+            resolution: "2k",
+            image: [REFERENCE_IMAGE_URL],
+        });
+
+        expect(requests[0]).toEqual({
+            model: "black-forest-labs/flux-3-image",
+            prompt: "test prompt",
+            n: 1,
+            resolution: "2K",
+            aspect_ratio: "16:9",
+            provider: {
+                only: ["black-forest-labs"],
+                allow_fallbacks: false,
+            },
+            input_references: [
+                { type: "image_url", image_url: { url: PNG_DATA_URI } },
+            ],
+        });
+    });
+
+    it("defaults to 1K and bills OpenRouter's reported cost", async () => {
+        setEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockFlux3Fetch(requests);
+
+        const result = await callOpenRouterFlux3API("test prompt", flux3Params);
+
+        expect(requests[0]).toMatchObject({
+            resolution: "1K",
+            aspect_ratio: "1:1",
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "black-forest-labs/flux-3-image",
+            providerBilling: { units: 0.024, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
+    it("rejects a response without a positive reported cost", async () => {
+        setEnv();
+        for (const usage of [undefined, { cost: 0 }, { cost: null }]) {
+            vi.restoreAllMocks();
+            mockFlux3Fetch([], {
+                data: [{ b64_json: PNG.toString("base64") }],
+                usage,
+            });
+            await expect(
+                callOpenRouterFlux3API("test prompt", flux3Params),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: "OpenRouter returned invalid image billing usage",
+            });
+        }
+    });
+
+    it("rejects more than 10 reference images", async () => {
+        await expect(
+            callOpenRouterFlux3API("test prompt", {
+                ...flux3Params,
+                image: Array(11).fill("https://example.com/ref.png"),
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "FLUX.3 Image supports at most 10 reference images",
         });
     });
 });

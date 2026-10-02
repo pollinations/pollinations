@@ -681,7 +681,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
-                "JSON request bodies may be up to 100 MiB when inline images are present. For requests over 32 MiB, the chat JSON must shrink below 31 MiB after images are replaced with URLs. Those images are stored as unlisted public media for provider access; media retention is 30 days.",
+                "JSON request bodies may be up to 100 MiB when inline images are present. For requests over 32 MiB, each inline image data URL may be up to 20 MiB and the chat JSON must shrink below 31 MiB after images are replaced with URLs. Those images are stored as unlisted public media for provider access; media retention is 30 days.",
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",

@@ -7,144 +7,142 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { COMMUNITY_PAGE } from "../../copy/content/community";
-import {
-    type QuestLeaderboardData,
-    useQuestLeaderboard,
-} from "../../data/community";
-import { usePageCopy } from "../../hooks/usePageCopy";
+import { useQuestLeaderboard } from "../../data/community";
 
 const QUESTS_PAGE_URL = "https://enter.pollinations.ai/quests";
 const VISIBLE_CONTRIBUTORS = 8;
 
-/** Pure view exported so the rendered leaderboard can be tested without fetch. */
-export function QuestLeaderboardContent({
-    data,
-}: {
-    data: QuestLeaderboardData;
-}) {
-    const { copy } = usePageCopy(COMMUNITY_PAGE);
-    const visible = data.leaderboard.slice(0, VISIBLE_CONTRIBUTORS);
+function formatNumber(value: number) {
+    return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+/** Global Quest totals and the top earners, with loading and failure states. */
+export function QuestLeaderboard() {
+    const { data, loading } = useQuestLeaderboard();
 
     return (
         <Section
-            title={copy.questLeaderboardTitle}
-            intro={copy.questLeaderboardDescription}
+            title="Quest leaderboard"
+            intro="Pollen earned by completing Quests and contributing to Pollinations."
             action={
                 <ExternalLinkButton
                     href={QUESTS_PAGE_URL}
                     size="md"
                     intent="brand"
-                    external={false}
                 >
-                    {copy.questLeaderboardCta}
+                    Explore Quests
                 </ExternalLinkButton>
             }
             className="gap-5"
             titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
         >
-            <dl
-                className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
-                aria-label={copy.questLeaderboardTotalsLabel}
-            >
-                {(
-                    [
-                        [
-                            copy.questLeaderboardBuildersLabel,
-                            data.totals.contributors,
-                        ],
-                        [
-                            copy.questLeaderboardCompletedLabel,
-                            data.totals.completedQuests,
-                        ],
-                        [
-                            copy.questLeaderboardPollenLabel,
-                            data.totals.totalPollen,
-                        ],
-                    ] as const
-                ).map(([label, value]) => (
-                    <Surface key={label} as="div" variant="card">
-                        <StatCard
-                            label={label}
-                            value={value}
-                            className="flex flex-col"
-                            labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
-                            valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
-                        />
-                    </Surface>
-                ))}
-            </dl>
+            {data ? (
+                <>
+                    <dl
+                        className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
+                        aria-label="Quest leaderboard totals"
+                    >
+                        {(
+                            [
+                                ["Participants", data.totals.contributors],
+                                ["Rewards earned", data.totals.completedQuests],
+                                ["Pollen earned", data.totals.totalPollen],
+                            ] as const
+                        ).map(([label, value]) => (
+                            <Surface key={label} as="div" variant="card">
+                                <StatCard
+                                    label={label}
+                                    value={formatNumber(value)}
+                                    className="flex flex-col"
+                                    labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
+                                    valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
+                                />
+                            </Surface>
+                        ))}
+                    </dl>
 
-            <ol className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2">
-                {visible.map((entry, index) => (
-                    <li key={entry.githubLogin}>
-                        <Surface
-                            as="a"
-                            variant="card"
-                            href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex h-full items-center gap-3 transition-colors hover:bg-theme-bg-subtle"
-                        >
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                aria-hidden="true"
-                                className="w-8"
-                            >
-                                {index + 1}
-                            </Chip>
-                            <img
-                                src={`https://github.com/${encodeURIComponent(entry.githubLogin)}.png?size=64`}
-                                alt=""
-                                aria-hidden="true"
-                                className="size-9 shrink-0 rounded-full bg-theme-bg-subtle"
-                                loading="lazy"
-                                decoding="async"
-                                width={36}
-                                height={36}
-                            />
-                            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                <Heading
-                                    as="span"
-                                    size="card"
-                                    className="truncate"
-                                >
-                                    @{entry.githubLogin}
-                                </Heading>
-                                <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                    <Text
-                                        as="span"
-                                        size="xs"
-                                        tone="muted"
-                                        className="whitespace-nowrap"
+                    <ol className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2">
+                        {data.leaderboard
+                            .slice(0, VISIBLE_CONTRIBUTORS)
+                            .map((entry, index) => (
+                                <li key={entry.githubLogin}>
+                                    <Surface
+                                        as="a"
+                                        variant="card"
+                                        href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex h-full items-center gap-3 transition-colors hover:bg-theme-bg-subtle"
                                     >
-                                        {entry.completedQuests}{" "}
-                                        {copy.questLeaderboardRowCompletedLabel}
-                                    </Text>
-                                    <Text
-                                        as="strong"
-                                        size="xs"
-                                        tone="strong"
-                                        weight="bold"
-                                        className="whitespace-nowrap tabular-nums"
-                                    >
-                                        {entry.totalPollen}{" "}
-                                        {copy.questLeaderboardRowPollenLabel}
-                                    </Text>
-                                </span>
-                            </span>
-                        </Surface>
-                    </li>
-                ))}
-            </ol>
+                                        <Chip
+                                            intent="neutral"
+                                            size="sm"
+                                            aria-label={`Rank ${index + 1}`}
+                                            className="w-8"
+                                        >
+                                            {index + 1}
+                                        </Chip>
+                                        <img
+                                            src={`https://github.com/${encodeURIComponent(entry.githubLogin)}.png?size=64`}
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="size-9 shrink-0 rounded-full bg-theme-bg-subtle"
+                                            loading="lazy"
+                                            decoding="async"
+                                            width={36}
+                                            height={36}
+                                        />
+                                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                            <Heading
+                                                as="span"
+                                                size="card"
+                                                className="truncate"
+                                            >
+                                                @{entry.githubLogin}
+                                            </Heading>
+                                            <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                                <Text
+                                                    as="span"
+                                                    size="xs"
+                                                    tone="muted"
+                                                    className="whitespace-nowrap"
+                                                >
+                                                    {formatNumber(
+                                                        entry.completedQuests,
+                                                    )}{" "}
+                                                    {entry.completedQuests === 1
+                                                        ? "reward"
+                                                        : "rewards"}
+                                                </Text>
+                                                <Text
+                                                    as="strong"
+                                                    size="xs"
+                                                    tone="strong"
+                                                    weight="bold"
+                                                    className="whitespace-nowrap tabular-nums"
+                                                >
+                                                    {formatNumber(
+                                                        entry.totalPollen,
+                                                    )}{" "}
+                                                    Pollen earned
+                                                </Text>
+                                            </span>
+                                        </span>
+                                    </Surface>
+                                </li>
+                            ))}
+                    </ol>
+                </>
+            ) : loading ? (
+                <div
+                    aria-busy="true"
+                    className="h-40 animate-pulse rounded-xl bg-theme-bg-subtle"
+                />
+            ) : (
+                <Text size="sm" tone="muted">
+                    The Quest leaderboard couldn’t be loaded right now.
+                </Text>
+            )}
         </Section>
     );
-}
-
-/** The small public aggregate; a failed or empty board keeps the section hidden. */
-export function QuestLeaderboard() {
-    const { data } = useQuestLeaderboard();
-    if (!data || data.leaderboard.length === 0) return null;
-    return <QuestLeaderboardContent data={data} />;
 }

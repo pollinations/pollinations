@@ -74,7 +74,8 @@ export function createChatCommand() {
             });
 
             const sendMessage = async (userMsg: string) => {
-                messages.push({ role: "user", content: userMsg });
+                const userMessage: Message = { role: "user", content: userMsg };
+                messages.push(userMessage);
 
                 const body: Record<string, unknown> = {
                     messages,
@@ -132,7 +133,8 @@ export function createChatCommand() {
                     process.stderr.write("\n\n");
                     messages.push({ role: "assistant", content });
                 } catch (err) {
-                    messages.pop();
+                    const index = messages.indexOf(userMessage);
+                    if (index !== -1) messages.splice(index, 1);
                     printError(
                         err instanceof Error ? err.message : "Request failed",
                     );

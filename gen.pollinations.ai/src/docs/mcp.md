@@ -110,7 +110,7 @@ model health and account balance.
 
 | Tool | Purpose |
 | --- | --- |
-| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
+| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing, with optional search and filters |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
@@ -123,6 +123,18 @@ model health and account balance.
 
 Use `listModels` before choosing a model or voice. The registry is live, so
 clients should not rely on a hardcoded model list.
+
+`listModels` forwards `query`, `capabilities`, `agent`, `limit`, `community`,
+and `type` to the Gen model-list API and returns the live response unchanged.
+The server performs the filtering; the MCP tool stays a thin proxy. `query`
+searches the canonical name, aliases, title, description, and publisher with
+case-insensitive AND tokens. `capabilities` (array of `tool_calling`,
+`reasoning`, `web_search`, `code_execution`, `pollinations_models`) requires
+every listed capability. `agent` keeps or excludes prompt agents, `limit`
+caps the result (1-500), `community` narrows by source, and `type` selects
+`text`, `image`, `video`, `3d`, `audio`, or `embeddings`. Callers
+can pass their Pollinations API key in `Authorization` so visibility,
+API-key permissions, and paid-only rules match their access.
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone

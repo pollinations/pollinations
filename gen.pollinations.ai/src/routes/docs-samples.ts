@@ -445,6 +445,11 @@ console.log(\`Valid: \${keyInfo.valid}, Type: \${keyInfo.type}\`);`,
             source: `curl https://gen.pollinations.ai/v1/models`,
         },
         {
+            label: "cURL (filtered)",
+            lang: "Shell",
+            source: `curl 'https://gen.pollinations.ai/v1/models?query=gpt+tool&capabilities=tool_calling,reasoning&agent=false&limit=3'`,
+        },
+        {
             label: "Python",
             lang: "Python",
             source: `from openai import OpenAI

@@ -7,17 +7,14 @@ import {
 } from "../utils/coreUtils.js";
 import { getModels } from "../utils/models.js";
 
+// The MCP listModels tool is a thin proxy: it validates and forwards filters
+// to the Gen model-list API and returns the live response unchanged. Gen
+// performs all filtering (visibility, permissions, query, capabilities,
+// agent, reliability, limit), so this service never maintains its own search
+// logic or a local model list.
 async function listModels(params, context) {
-    let models = await getModels(
-        params.type || "all",
-        context,
-        params.community,
-    );
-    if (params.agent !== undefined) {
-        models = models.filter(
-            (model) => (model.agent === true) === params.agent,
-        );
-    }
+    const { type, ...filters } = params;
+    const models = await getModels(type || "all", context, filters);
     return createMCPResponse([createTextContent(models, true)]);
 }
 
@@ -30,10 +27,18 @@ async function getModelStatus(params, context) {
     return createMCPResponse([createTextContent(status, true)]);
 }
 
+const MODEL_CAPABILITIES = [
+    "tool_calling",
+    "reasoning",
+    "web_search",
+    "code_execution",
+    "pollinations_models",
+];
+
 export const discoveryTools = [
     [
         "listModels",
-        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Filter by modality, community ownership, or agents.",
+        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Forwards optional query, capabilities, agent, limit, community, and type filters to the Gen model-list API, which performs the filtering; the response is returned unchanged.",
         {
             type: z
                 .enum([
@@ -53,10 +58,33 @@ export const discoveryTools = [
                 .describe(
                     "True for community models only, false for official models only",
                 ),
+            query: z
+                .string()
+                .max(200)
+                .optional()
+                .describe(
+                    "Case-insensitive search across canonical name, aliases, title, description, and publisher; whitespace-separated tokens must all match (AND)",
+                ),
+            capabilities: z
+                .array(z.enum(MODEL_CAPABILITIES))
+                .max(10)
+                .optional()
+                .describe(
+                    "Every listed capability must be present on the model (AND semantics)",
+                ),
             agent: z
                 .boolean()
                 .optional()
                 .describe("True for agents only, false to exclude agents"),
+            limit: z
+                .number()
+                .int()
+                .min(1)
+                .max(500)
+                .optional()
+                .describe(
+                    "Maximum number of models returned; applied server-side after visibility, permissions, source, and reliability filters",
+                ),
         },
         listModels,
     ],

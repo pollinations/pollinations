@@ -4,13 +4,19 @@ The Pollinations CLI — for humans, AI agents, and everything in between.
 
 Generate text, images, audio, video from the terminal. Backed by the [Pollinations API](https://gen.pollinations.ai).
 
+## First result
+
+```bash
+npm install -g @pollinations/cli
+polli auth login
+polli gen text "Say hello in one sentence" --model openai/gpt-5.4-nano
+```
+
+Device login opens a browser for approval. The last command prints a short, low-cost result in your terminal. To try an image next, run `polli gen image "a cat in space" --output cat.png` and check that `cat.png` was saved.
+
 <video src="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785" controls muted loop playsinline width="720">
   <a href="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785">▶️ Watch the demo</a>
 </video>
-
-```bash
-npx @pollinations/cli gen image "a cat in space" --output cat.png
-```
 
 ## For AI agents
 
@@ -24,14 +30,12 @@ Every command is agent-friendly:
 
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
-- When a call runs out of pollen, the first line of the error is the top-up link.
+- A 402 error links to your balance, Quests, and top-up options.
 - `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
-## Get started
+## Other ways to start
 
 ```bash
-npm install -g @pollinations/cli     # installs the `polli` binary
-polli auth login                         # device-flow via enter.pollinations.ai
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
@@ -174,6 +178,9 @@ stores its provider and skill under `$HERMES_HOME` (default `~/.hermes`, or
 install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
+Pi 0.99+ also supports `polli mcp install pi --all` for native hosted MCP
+servers. Run `/reload` in Pi afterward; remove them with `polli mcp remove pi`.
+Model setup remains compatible with older Pi versions.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

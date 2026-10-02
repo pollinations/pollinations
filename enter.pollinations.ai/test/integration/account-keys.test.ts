@@ -183,6 +183,7 @@ describe("Account Key Management API", () => {
                 "keys",
                 "usage",
             ]);
+            expect(child.metadata.createdByApiKeyId).toBe(parentKey.id);
 
             // The child can mint its own key in turn.
             const createGrandchild = await SELF.fetch(
@@ -198,6 +199,7 @@ describe("Account Key Management API", () => {
             );
             expect(createGrandchild.status).toBe(200);
             const grandchild = await createGrandchild.json();
+            expect(grandchild.metadata.createdByApiKeyId).toBe(child.id);
             expect(grandchild.key.startsWith("sk_")).toBe(true);
             expect(grandchild.permissions?.account ?? []).not.toContain("keys");
         });

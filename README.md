@@ -28,6 +28,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Pollinations for Krita](https://github.com/xiaotian1171/pollinations-krita) | A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [🖼️ Pollinations for Figma - AI Image Studio](https://guest453.github.io/pollinations-figma/) | A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi | [@Guest453](https://github.com/Guest453) |
 | [🎮 Pollinations for Godot 4](https://github.com/davealan74/godot-pollinations) | A Godot 4 editor addon that adds a global Pollinations node for GDScript. Call generate_text() , generate_image() and generate_speech() directly from any script to hit gen.pollinations.ai's text, imag | [@davealan74](https://github.com/davealan74) |
 | [🎬 STT](https://fantasyreincarnation1-bit.github.io/my-pollinations-ap) | Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri, | [@fantasyreincarnation1-bit](https://github.com/fantasyreincarnation1-bit) |
 | [🖼️ Mmm](https://dwakatmahmoud-cmd.github.io/Mahmoud) | App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in | [@dwakatmahmoud-cmd](https://github.com/dwakatmahmoud-cmd) |
@@ -36,8 +38,6 @@
 | [✍️ Pollinations for Obsidian](https://github.com/xiaotian1171/pollinations-obsidian) | An Obsidian plugin that generates text and images with Pollinations inside the user's notes, on the user's own Pollen. **What it does** - **Text from a prompt or the selection.** The command asks for | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [✍️ Pollinations for Obsidian](https://github.com/tomdacatto/pollinations-obsidian) | Obsidian plugin: generate text or images from a selection or prompt using the Pollinations API; images save into the vault and embed at the cursor. | [@tomdacatto](https://github.com/tomdacatto) |
 | [💬 Roleplay AI](https://arpitgoswami.github.io/roleplay-app) | Here is the complete, polished submission description tailored specifically for Roleplay App, ready to copy and paste for your submission! Roleplay App — Interactive AI Storytelling in Your Browser Br | [@arpitgoswami](https://github.com/arpitgoswami) |
-| [🎬 GAANA BANANA](https://gaana.namansoni.in) | # Gaana Banana AI se apna gaana banaiye — India ka personalized AI song maker. Naam likho, theme chuno, 1-2 minute mein vocals wala poora gaana ready. Perfect gift for birthdays, anniversaries, love, | [@NamanSoni78](https://github.com/NamanSoni78) |
-| [🛠️ Calibrated Decisions](https://jonakss--calibrated-decisions-app-page.modal.run) | A visual playground for the Pollinations Jev typed-decisions API (POST /alpha/decisions). Write a decision state, build typed questions (choice with record options, score with ordered rungs, noul yes/ | [@Jonakss](https://github.com/Jonakss) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-01** – **🎨 Pollinations in Krita** Generate or edit images inside Krita, size results to your canvas or selection, and keep the original paint layer intact.
+- **2026-10-01** – **🎨 An image studio for Figma** Generate and edit images in Figma with your own Pollinations key. [Try it](https://guest453.github.io/pollinations-figma/) <!-- app -->
+- **2026-10-01** – **🤖 Two new decision models** Try Kev 4B and the free Span-01 Lite through `/alpha/decisions` or [chat completions](https://gen.pollinations.ai/v1/chat/completions).
+- **2026-10-01** – **✨ Bigger media uploads** Send files up to 400 MiB through the existing FormData or raw `/upload` flow. No client changes needed. [Media Store](https://media.pollinations.ai)
+- **2026-10-01** – **🎯 Pollen for connecting Polli CLI** Connect with `polli auth login` and claim a one-time 2-Pollen Quest.
+- **2026-09-30** – **🚀 GPT-6.1 Sol is here** Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions).
+- **2026-09-30** – **🎵 Audio tools in the SDK** Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
+- **2026-09-30** – **🎨 A new home for apps** The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters.
+- **2026-09-30** – **🎮 Pollinations for Godot 4** Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations) <!-- app -->
 - **2026-09-29** – **🚀 Claude Sonnet 5.5** Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models).
-- **2026-09-29** – **🔗 Claude Code, meet Pollinations** The new Anthropic-compatible `/v1/messages` endpoint supports streaming, tools, and thinking across chat-capable models. Point `ANTHROPIC_BASE_URL` at `https://gen.pollinations.ai`.
-- **2026-09-29** – **🎨 Lightning Image Turbo** Generate images from a prompt, with up to two reference images for guidance, through the image API. [Explore image models](https://gen.pollinations.ai/image/models).
-- **2026-09-29** – **🎵 Audio gets more useful** Transcribe with Gemini 3.5 for word timestamps and speaker labels, or split a recording into two or six stems with ElevenLabs. [Explore the API](https://gen.pollinations.ai/docs).
-- **2026-09-29** – **🎵 More voices for speech** `openai/tts-1` and `openai/tts-1-hd` are now available through the existing speech endpoints. [Explore the API](https://gen.pollinations.ai/docs).
-- **2026-09-29** – **✨ Polli CLI grows a third dimension** Generate 3D files from text or images with `polli gen 3d`; the CLI also adds voice changing, audio isolation, and speech timestamps. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).
-- **2026-09-29** – **🎨 Pollinations inside Figma** Generate and edit images on the canvas with a community-built plugin using your own Pollen. [View repo](https://github.com/xiaotian1171/pollinations-figma) <!-- app -->
-- **2026-09-28** – **🤖 Frugal code-agent routing** Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools.
-- **2026-09-28** – **🎯 Code reviews with Prism** `cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget.
-- **2026-09-28** – **🔗 Polli connects to Codex and Claude Code** Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login.
 ---
 
 ## 🌱 Introduction

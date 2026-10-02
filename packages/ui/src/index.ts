@@ -161,6 +161,7 @@ export { Surface, type SurfaceProps } from "./primitives/Surface.tsx";
 export {
     Switch,
     type SwitchProps,
+    type SwitchSize,
     type SwitchStatus,
 } from "./primitives/Switch.tsx";
 export {

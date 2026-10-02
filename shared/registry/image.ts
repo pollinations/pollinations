@@ -176,33 +176,8 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 8, // Replicate and OpenRouter both cap the API at 8 reference images.
     },
-    "microsoft/mai-image-2.5-flash": {
-        aliases: [],
-        provider: "azure",
-        publisher: "Microsoft",
-        category: "image",
-        addedDate: new Date("2026-09-05").getTime(),
-        // Azure retirement schedule; the model catalog says 2026-11-15.
-        retirementDate: new Date("2026-10-01").getTime(),
-        paidOnly: false,
-        priceMultiplier: 0.75,
-        perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
-        // Azure Global Standard meters and invoiced usage, verified 2026-09-05.
-        // Output tokens = pixels / 1024, so a 1024x1024 image is 1,024 tokens.
-        cost: {
-            promptTextTokens: perMillion(1.75),
-            promptImageTokens: perMillion(1.75),
-            completionImageTokens: perMillion(19.5),
-        },
-        title: "MAI Image 2.5 Flash",
-        description:
-            "Quick photorealistic generation and single-reference editing with accurate text rendering",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 1, // Azure MAI edit route takes one input image.
-    },
     "microsoft/mai-image-2.6-flash": {
-        aliases: [],
+        aliases: ["microsoft/mai-image-2.5-flash"],
         provider: "azure",
         publisher: "Microsoft",
         category: "image",
@@ -1650,6 +1625,57 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
         minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "heygen/heygen-video-1": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "HeyGen",
+        category: "video",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter HeyGen endpoint, 50% launch discount through October 2026
+        // (list $0.02/s at 480p, $0.03/s at 768p), verified 2026-10-01:
+        // a 5s 480p clip billed 5 x $0.01. Includes the 5.5% OpenRouter
+        // credit fee. Raise to list price when the discount ends.
+        cost: {
+            completionVideoSeconds: 0.01 * 1.055, // per sec at 480p
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.015 * 1.055 },
+            },
+            matchResolution("768p"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+            },
+            "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "768p": "768p",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["480p", "768p"],
+        title: "HeyGen Video 1",
+        description:
+            "Text and first-frame video with synchronized dialogue, ambience and effects at 480p or 768p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 5,
         maxDuration: 15,
         defaultDuration: 5,
     },

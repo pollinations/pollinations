@@ -1464,6 +1464,36 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "respan/span-01-lite": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Respan",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1, // Free upstream, so billed at zero.
+        // Free upstream, so Quest Pollen can reach it at no cost.
+        paidOnly: false,
+        cost: {
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Span-01 Lite",
+        description:
+            "Free behaviour scoring: the probability that plain-language " +
+            "behaviours are present in an agent or LLM conversation. Accepts " +
+            "only noul questions with plain-string instructions, and Respan " +
+            "retains prompts (no training). Post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        isSpecialized: true,
+    },
     "typesafe/jev-1.13": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: ["jev", "typesafe/jev"],
@@ -1498,6 +1528,38 @@ const TEXT_BASE_SERVICES = {
         // 64k for state + questions together; 32k for state + the longest
         // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
         contextLength: 64000,
+        isSpecialized: true,
+    },
+    "jaredpalmer/kev-4b": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Jared Palmer",
+        category: "text",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        // Like Jev, Quest Pollen must reach it; $0.042/M in with free output
+        // bounds what a free-tier account can spend.
+        paidOnly: false,
+        cost: {
+            // OpenRouter list price plus its 5.5% credit fee, as every
+            // OpenRouter route records.
+            promptTextTokens: perMillion(0.042) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        title: "Kev 4B",
+        description:
+            "Small open-weight decision model that returns typed choices, " +
+            "scores and probabilities with no prompt retention; post state " +
+            "and questions to /alpha/decisions, or send the same JSON in " +
+            "the last user message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 8192,
         isSpecialized: true,
     },
     "pollinations/midijourney": {

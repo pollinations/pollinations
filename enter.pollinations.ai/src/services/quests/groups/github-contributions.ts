@@ -71,6 +71,8 @@ const HONEY_CENSUS: Survey = {
     ],
     minWrittenChars: 100,
 };
+// Buying only the smallest pack (2 Pollen) doesn't qualify for the Honey Census.
+const HONEY_CENSUS_MIN_POLLEN_BOUGHT = 2;
 
 const firstMergedPrQuest: QuestDefinition = {
     id: "merged_pr",
@@ -124,10 +126,10 @@ const beeCensusQuest: QuestDefinition = {
 const honeyCensusQuest: QuestDefinition = {
     id: "honey_census",
     title: "Take the Honey Census",
-    description: `For anyone who has bought Pollen: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
+    description: `For anyone who has bought more than ${HONEY_CENSUS_MIN_POLLEN_BOUGHT} Pollen in total: answer a 3-minute [survey](https://github.com/${REPO}/issues/new?template=honey-census.yml). Your two written answers need at least ${HONEY_CENSUS.minWrittenChars} characters in total. One response per GitHub account.`,
     category: "community",
     scope: "perUser",
-    rewardAmount: 10,
+    rewardAmount: 5,
     balanceBucket: "tier",
     url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
 };
@@ -213,8 +215,9 @@ type PaginatedSearchData<TNode> = {
 
 // Multi-winner quests can keep pending submissions open alongside merged ones.
 const QUEST_ISSUES_QUERY = `
-query($query:String!){
-  search(query:$query,type:ISSUE,first:100){
+query($query:String!,$after:String){
+  search(query:$query,type:ISSUE,first:100,after:$after){
+    pageInfo{ hasNextPage endCursor }
     nodes{
       ... on Issue{
         number state title url body
@@ -381,19 +384,28 @@ function toDerivedQuestIssue(
 }
 
 async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
-    const data = await graphql<SearchData<GitHubIssueNode>>(
-        token,
-        QUEST_ISSUES_QUERY,
-        { query: `repo:${REPO} label:${QUEST_LABEL} is:issue` },
-    );
+    const issues: GitHubIssueNode[] = [];
+    let after: string | null = null;
+    do {
+        const data: PaginatedSearchData<GitHubIssueNode> = await graphql<
+            PaginatedSearchData<GitHubIssueNode>
+        >(token, QUEST_ISSUES_QUERY, {
+            query: `repo:${REPO} label:${QUEST_LABEL} is:issue`,
+            after,
+        });
+        issues.push(...data.search.nodes);
+        after = data.search.pageInfo.hasNextPage
+            ? data.search.pageInfo.endCursor
+            : null;
+    } while (after);
 
-    const issues = data.search.nodes
+    const filteredIssues = issues
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
         .filter(
             (issue) =>
                 issue.state === "OPEN" || mergedClosers(issue).length > 0,
         );
-    const appPublishPrs = issues
+    const appPublishPrs = filteredIssues
         .flatMap(mergedClosers)
         .filter(isAppPublishPr)
         .map((pr) => pr.number);
@@ -405,7 +417,7 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
             ),
         ),
     );
-    return issues
+    return filteredIssues
         .map((issue) => toDerivedQuestIssue(issue, appPublishPayees))
         .filter((issue) => issue.rewardAmount !== null);
 }
@@ -533,18 +545,18 @@ function writtenAnswerLength(body: string, survey: Survey): number {
     return length;
 }
 
-// Anyone who has paid for Pollen: a Stripe checkout, a paid auto top-up, or a
-// Polar order from before Stripe.
-async function hasBoughtPollen(db: QuestDb, userId: string): Promise<boolean> {
-    const rows = await db.all(sql`
-        SELECT 1 FROM stripe_checkout_credits WHERE user_id = ${userId}
-        UNION ALL
-        SELECT 1 FROM stripe_auto_top_up_attempt
-        WHERE user_id = ${userId} AND status = 'paid'
-        UNION ALL
-        SELECT 1 FROM polar_checkout_credits WHERE user_id = ${userId}
-        LIMIT 1`);
-    return rows.length > 0;
+// Pollen bought in total: Stripe checkouts, paid auto top-ups, and Polar
+// orders from before Stripe.
+async function pollenBought(db: QuestDb, userId: string): Promise<number> {
+    const [row] = await db.all<{ total: number }>(sql`
+        SELECT
+            (SELECT COALESCE(SUM(pollen_credited), 0) FROM stripe_checkout_credits
+             WHERE user_id = ${userId})
+          + (SELECT COALESCE(SUM(amount_usd), 0) FROM stripe_auto_top_up_attempt
+             WHERE user_id = ${userId} AND status = 'paid')
+          + (SELECT COALESCE(SUM(pollen_credited), 0) FROM polar_checkout_credits
+             WHERE user_id = ${userId}) AS total`);
+    return row?.total ?? 0;
 }
 
 export async function evaluateUser(
@@ -561,8 +573,10 @@ export async function evaluateUser(
             hasMergedPr(token, user),
             reportedIssueProposals(token, user),
             answeredSurvey(token, user, BEE_CENSUS),
-            hasBoughtPollen(ctx.db, user.id).then(
-                (bought) => bought && answeredSurvey(token, user, HONEY_CENSUS),
+            pollenBought(ctx.db, user.id).then(
+                (bought) =>
+                    bought > HONEY_CENSUS_MIN_POLLEN_BOUGHT &&
+                    answeredSurvey(token, user, HONEY_CENSUS),
             ),
         ]);
 

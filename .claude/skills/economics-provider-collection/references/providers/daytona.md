@@ -21,6 +21,11 @@ Canonical vendor: `daytona`
   The portal's invoice View action opened a browser blob that could not be
   archived through the connected browser; the original PDF remains a source
   gap. The Myceli mailbox search found no September Daytona invoice email.
+- The original February 8 $25 invoice is already archived in the accounting
+  Drive and matches its Wise card settlement. The effective vendor ledger has
+  $1.99 February usage. The wallet amount is exactly $10,000 + $25 - $1.99;
+  this supports a $10,000 grant plus $23.01 paid remainder, but still needs
+  the original credit-award terms to confirm the split.
 
 Primary evidence sources:
 

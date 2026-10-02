@@ -12,22 +12,18 @@ const CATEGORIES = new Set([
     "business",
 ]);
 
-// Mirrors APP_PLATFORMS in pollinations.ai/src/routes/-app-search.ts.
+// The form's platforms; a subset of APP_PLATFORMS in
+// pollinations.ai/src/routes/-app-search.ts.
 const PLATFORMS = new Set([
     "web",
     "android",
     "ios",
-    "windows",
-    "macos",
     "desktop",
     "cli",
     "discord",
     "telegram",
-    "whatsapp",
-    "library",
     "browser-ext",
-    "roblox",
-    "wordpress",
+    "library",
     "api",
 ]);
 

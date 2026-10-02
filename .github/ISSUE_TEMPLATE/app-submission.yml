@@ -81,22 +81,17 @@ body:
     id: app-platform
     attributes:
       label: Platform
-      description: Where people use the app. Plugins for desktop software such as Krita or Obsidian are desktop.
+      description: Where people use the app. Windows and macOS apps, and plugins for desktop software such as Krita or Obsidian, are desktop.
       options:
         - web
         - android
         - ios
-        - windows
-        - macos
         - desktop
         - cli
         - discord
         - telegram
-        - whatsapp
-        - library
         - browser-ext
-        - roblox
-        - wordpress
+        - library
         - api
     validations:
       required: true

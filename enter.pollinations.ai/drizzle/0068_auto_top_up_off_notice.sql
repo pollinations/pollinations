@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `auto_top_up_off_notice_due` integer DEFAULT 0 NOT NULL;

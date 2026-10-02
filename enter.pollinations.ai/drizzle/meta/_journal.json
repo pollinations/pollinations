@@ -477,6 +477,13 @@
       "when": 1790950374998,
       "tag": "0067_account_notices",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "6",
+      "when": 1790958898685,
+      "tag": "0068_auto_top_up_off_notice",
+      "breakpoints": true
     }
   ]
 }

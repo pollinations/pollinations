@@ -1,7 +1,16 @@
 import { env } from "cloudflare:test";
 import { expect } from "vitest";
-import { runAccountNotices } from "@/services/account-notices.ts";
-import { processAutoTopUpForUser } from "@/utils/stripe-billing/auto-top-up.ts";
+import {
+    lowBalanceNotice,
+    paymentRequiredNotice,
+    renderNotice,
+    runAccountNotices,
+    sendNotice,
+} from "@/services/account-notices.ts";
+import {
+    processAutoTopUpForUser,
+    updateAutoTopUpSettings,
+} from "@/utils/stripe-billing/auto-top-up.ts";
 import { test } from "./fixtures.ts";
 
 type SentEmail = { to: string; subject: string; text?: string };
@@ -127,5 +136,153 @@ test("auto top-up email is sent only when the switch-off actually happens", asyn
     await processAutoTopUpForUser(notifyEnv, "no-card");
 
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up is off"]);
+    expect(sent[0].text).toContain(
+        "We couldn't use your saved payment details",
+    );
     expect(sent[0].text).toContain("2.00 Pollen");
+});
+
+test("account notice escapes API key names in HTML and keeps the text readable", () => {
+    const { html, text } = renderNotice(
+        paymentRequiredNotice([
+            {
+                user_id: "owner",
+                api_key_id: "key",
+                api_key_name: '<script>alert("x")</script> & test',
+                error_code: "KEY_BUDGET_EXHAUSTED",
+                failures: 10,
+            },
+        ]),
+        "https://enter.pollinations.ai",
+    );
+
+    expect(html).toContain(
+        "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; test",
+    );
+    expect(html).not.toContain("<script>");
+    expect(text).toContain('<script>alert("x")</script> & test');
+    expect(text).toContain("https://enter.pollinations.ai/keys?");
+});
+
+test("an unclassified send failure remains retryable", async () => {
+    const notifyEnv = {
+        ...env,
+        EMAIL: {
+            send: async () => {
+                throw new Error("temporary email transport failure");
+            },
+        },
+    } as unknown as CloudflareBindings;
+
+    expect(
+        await sendNotice(
+            notifyEnv,
+            "buyer@example.com",
+            lowBalanceNotice(1, 10),
+        ),
+    ).toBe(false);
+});
+
+test("auto top-up notice retries after the email quota clears", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const sent: SentEmail[] = [];
+    let quotaExceeded = true;
+    const notifyEnv = {
+        ...env,
+        EMAIL: {
+            send: async (message: SentEmail) => {
+                if (quotaExceeded) {
+                    quotaExceeded = false;
+                    throw Object.assign(new Error("daily quota reached"), {
+                        code: "E_DAILY_LIMIT_EXCEEDED",
+                    });
+                }
+                sent.push(message);
+                return { messageId: crypto.randomUUID() };
+            },
+        },
+    } as unknown as CloudflareBindings;
+    await addUser("no-card-quota", { packBalance: 2, autoTopUp: true });
+
+    await processAutoTopUpForUser(notifyEnv, "no-card-quota");
+    await runAccountNotices(notifyEnv);
+
+    expect(sent.map((email) => email.subject)).toEqual(["Auto top-up is off"]);
+});
+
+test("a purchase during email delivery re-arms the low-balance notice", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const sent: SentEmail[] = [];
+    await addUser("purchase-race", { packBalance: -9 });
+    await addPurchase("purchase-race", 10, Date.now() - 60_000);
+    const notifyEnv = {
+        ...env,
+        EMAIL: {
+            send: async (message: SentEmail) => {
+                sent.push(message);
+                if (sent.length === 1) {
+                    await addPurchase("purchase-race", 10, Date.now());
+                    await env.DB.prepare(
+                        "UPDATE user SET pack_balance = 1 WHERE id = 'purchase-race'",
+                    ).run();
+                }
+                return { messageId: crypto.randomUUID() };
+            },
+        },
+    } as unknown as CloudflareBindings;
+
+    await runAccountNotices(notifyEnv);
+    await runAccountNotices(notifyEnv);
+
+    expect(sent.map((email) => email.to)).toEqual([
+        "purchase-race@example.com",
+        "purchase-race@example.com",
+    ]);
+});
+
+test("low-balance email skips active bans but not expired ones", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const { sent, notifyEnv } = withOutbox();
+    await addUser("ban-expired", { packBalance: 1 });
+    await addUser("ban-active", { packBalance: 1 });
+    for (const id of ["ban-expired", "ban-active"]) {
+        await addPurchase(id, 10, Date.now() - 60_000);
+    }
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    await env.DB.prepare(
+        "UPDATE user SET banned = 1, ban_expires = ? WHERE id = 'ban-expired'",
+    )
+        .bind(nowSeconds - 60)
+        .run();
+    await env.DB.prepare(
+        "UPDATE user SET banned = 1, ban_expires = ? WHERE id = 'ban-active'",
+    )
+        .bind(nowSeconds + 3600)
+        .run();
+
+    await runAccountNotices(notifyEnv);
+
+    expect(sent.map((email) => email.to)).toEqual(["ban-expired@example.com"]);
+});
+
+test("switching auto top-up off yourself cancels a pending notice", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const { sent, notifyEnv } = withOutbox();
+    await addUser("manual-off", { packBalance: 2 });
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_off_notice_due = 1 WHERE id = 'manual-off'",
+    ).run();
+
+    await updateAutoTopUpSettings(notifyEnv, "manual-off", { enabled: false });
+    await runAccountNotices(notifyEnv);
+
+    expect(sent).toEqual([]);
 });

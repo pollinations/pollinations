@@ -29,7 +29,7 @@ This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
 * **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
-* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We also email you directly about your own account: when your paid balance falls below 20% of your last purchase, when API keys keep failing because of insufficient Pollen or a key budget, and when auto top-up is switched off after a failed charge. These account emails contain no promotions and no tracking pixels. Any marketing email will only be sent where permitted (consent) and will include an unsubscribe link and `List-Unsubscribe` header.
+* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We also email you directly about your own account: when your paid balance falls below 20% of your last purchase, when API keys keep failing because of insufficient Pollen or a key budget, and when auto top-up is switched off because your saved payment details couldn't be used. These account emails contain no promotions and no tracking pixels. Any marketing email will only be sent where permitted (consent) and will include an unsubscribe link and `List-Unsubscribe` header.
 
 ## 4) Authorized Apps
 

@@ -15,14 +15,17 @@ const REPLY_TO = "billing@pollinations.ai";
 const LOW_BALANCE_SHARE = 0.2;
 const PAYMENT_REQUIRED_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
-// Stop the run and retry next hour; any other error belongs to one recipient.
-const RETRY_LATER_CODES = new Set([
+// Sending is unavailable for everyone: stop the run, retry next hour.
+const STOP_RUN_CODES = new Set([
     "E_RATE_LIMIT_EXCEEDED",
     "E_DAILY_LIMIT_EXCEEDED",
     "E_INTERNAL_SERVER_ERROR",
     "E_SENDER_NOT_VERIFIED",
     "E_SENDER_DOMAIN_NOT_AVAILABLE",
 ]);
+
+// Same rule as enabling auto top-up: an expired ban no longer counts.
+const NOT_BANNED = "(COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch())";
 
 type Notice = {
     id: "low_balance" | "payment_required" | "auto_top_up_off";
@@ -90,7 +93,7 @@ export function autoTopUpOffNotice(balance: number): Notice {
         subject: "Auto top-up is off",
         heading: "We switched off auto top-up",
         paragraphs: [
-            "We couldn't charge your saved payment method, so auto top-up is now off.",
+            "We couldn't use your saved payment details, so auto top-up is now off.",
             `Your keys keep working until your paid balance of ${pollen(balance)} runs out. You can update your card and turn it back on in your wallet.`,
         ],
         button: { label: "Open wallet", path: "/pollen" },
@@ -211,7 +214,11 @@ ${escapeHtml(ADDRESS)}</td></tr>
     return { html, text };
 }
 
-/** Send one notice. Returns false when the run should stop and retry later. */
+/**
+ * Send one notice. True once the recipient is settled: delivered, or suppressed
+ * by Cloudflare after bounces or complaints. False leaves it for the next hourly
+ * run. Throws when sending is down for everyone, so the run stops.
+ */
 export async function sendNotice(
     env: CloudflareBindings,
     to: string,
@@ -233,15 +240,43 @@ export async function sendNotice(
             code,
             error: error instanceof Error ? error.message : String(error),
         });
-        return !RETRY_LATER_CODES.has(code);
+        if (STOP_RUN_CODES.has(code)) throw error;
+        return code === "E_RECIPIENT_SUPPRESSED";
     }
 }
 
-async function sendLowBalanceNotices(
+/** Send a due auto top-up notice and clear it once settled. */
+export async function sendAutoTopUpOffNotice(
     env: CloudflareBindings,
-): Promise<boolean> {
+    user: { id: string; email: string; balance: number },
+): Promise<void> {
+    if (await sendNotice(env, user.email, autoTopUpOffNotice(user.balance))) {
+        await env.DB.prepare(
+            "UPDATE user SET auto_top_up_off_notice_due = 0 WHERE id = ?",
+        )
+            .bind(user.id)
+            .run();
+    }
+}
+
+async function sendDueAutoTopUpOffNotices(
+    env: CloudflareBindings,
+): Promise<void> {
+    const { results } = await env.DB.prepare(
+        `SELECT id, email, COALESCE(pack_balance, 0) AS balance FROM user
+        WHERE auto_top_up_off_notice_due = 1
+            AND auto_top_up_enabled = 0
+            AND ${NOT_BANNED}
+        LIMIT 500`,
+    ).all<{ id: string; email: string; balance: number }>();
+
+    for (const user of results) await sendAutoTopUpOffNotice(env, user);
+}
+
+async function sendLowBalanceNotices(env: CloudflareBindings): Promise<void> {
     // Latest checkout per buyer; created_at holds seconds on old rows and
-    // milliseconds on new ones.
+    // milliseconds on new ones. The marker stores the purchase it warned about,
+    // so any later purchase re-arms the notice.
     const { results } = await env.DB.prepare(
         `WITH purchases AS (
             SELECT user_id, pollen_credited,
@@ -253,12 +288,12 @@ async function sendLowBalanceNotices(
             FROM purchases
         )
         SELECT u.id, u.email, COALESCE(u.pack_balance, 0) AS balance,
-            p.pollen_credited AS lastPack
+            p.pollen_credited AS lastPack, p.created_ms AS purchasedAt
         FROM last_purchase p
         JOIN user u ON u.id = p.user_id
         WHERE p.rn = 1
             AND u.auto_top_up_enabled = 0
-            AND u.banned IS NOT 1
+            AND ${NOT_BANNED}
             AND COALESCE(u.pack_balance, 0) < ? * p.pollen_credited
             AND (u.low_balance_notified_at IS NULL OR u.low_balance_notified_at < p.created_ms)
         LIMIT 500`,
@@ -269,22 +304,18 @@ async function sendLowBalanceNotices(
             email: string;
             balance: number;
             lastPack: number;
+            purchasedAt: number;
         }>();
 
     for (const user of results) {
-        const sent = await sendNotice(
-            env,
-            user.email,
-            lowBalanceNotice(user.balance, user.lastPack),
-        );
-        if (!sent) return false;
+        const notice = lowBalanceNotice(user.balance, user.lastPack);
+        if (!(await sendNotice(env, user.email, notice))) continue;
         await env.DB.prepare(
             "UPDATE user SET low_balance_notified_at = ? WHERE id = ?",
         )
-            .bind(Date.now(), user.id)
+            .bind(user.purchasedAt, user.id)
             .run();
     }
-    return true;
 }
 
 async function sendPaymentRequiredNotices(
@@ -302,7 +333,7 @@ async function sendPaymentRequiredNotices(
     const { results: users } = await env.DB.prepare(
         `SELECT id, email FROM user
         WHERE id IN (SELECT value FROM json_each(?))
-            AND banned IS NOT 1
+            AND ${NOT_BANNED}
             AND (payment_required_notified_at IS NULL OR payment_required_notified_at < ?)`,
     )
         .bind(
@@ -312,13 +343,8 @@ async function sendPaymentRequiredNotices(
         .all<{ id: string; email: string }>();
 
     for (const user of users) {
-        const keys = byUser.get(user.id) ?? [];
-        const sent = await sendNotice(
-            env,
-            user.email,
-            paymentRequiredNotice(keys),
-        );
-        if (!sent) return;
+        const notice = paymentRequiredNotice(byUser.get(user.id) ?? []);
+        if (!(await sendNotice(env, user.email, notice))) continue;
         await env.DB.prepare(
             "UPDATE user SET payment_required_notified_at = ? WHERE id = ?",
         )
@@ -327,11 +353,11 @@ async function sendPaymentRequiredNotices(
     }
 }
 
-/** Hourly cron: low-balance and failing-key notices. */
+/** Hourly cron: due auto top-up, low-balance and failing-key notices. */
 export async function runAccountNotices(
     env: CloudflareBindings,
 ): Promise<void> {
-    if (await sendLowBalanceNotices(env)) {
-        await sendPaymentRequiredNotices(env);
-    }
+    await sendDueAutoTopUpOffNotices(env);
+    await sendLowBalanceNotices(env);
+    await sendPaymentRequiredNotices(env);
 }

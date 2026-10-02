@@ -14,10 +14,7 @@ import {
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
-import {
-    autoTopUpOffNotice,
-    sendNotice,
-} from "../../services/account-notices.ts";
+import { sendAutoTopUpOffNotice } from "../../services/account-notices.ts";
 import { createStripeClient } from "../stripe.ts";
 import { isBillingDetailsComplete } from "./billing-details.ts";
 import { getBillingOverview } from "./billing-overview.ts";
@@ -53,9 +50,10 @@ export async function updateAutoTopUpSettings(
     | { ok: false; status: 400 | 403; error: string }
 > {
     if (!input.enabled) {
+        // Switching it off yourself cancels any pending "we switched it off" notice.
         await env.DB.prepare(
             `UPDATE user
-                SET auto_top_up_enabled = 0
+                SET auto_top_up_enabled = 0, auto_top_up_off_notice_due = 0
                 WHERE id = ?`,
         )
             .bind(userId)
@@ -790,18 +788,19 @@ async function disableAutoTopUp(
     env: CloudflareBindings,
     userId: string,
 ): Promise<void> {
-    // Only the call that actually switches it off emails the user.
+    // Only the call that actually switches it off owes the user a notice. It
+    // stays due until sent, so the hourly run retries a failed send.
     const user = await env.DB.prepare(
         `UPDATE user
-            SET auto_top_up_enabled = 0
+            SET auto_top_up_enabled = 0, auto_top_up_off_notice_due = 1
             WHERE id = ? AND auto_top_up_enabled = 1
-            RETURNING email, COALESCE(pack_balance, 0) AS balance`,
+            RETURNING id, email, COALESCE(pack_balance, 0) AS balance`,
     )
         .bind(userId)
-        .first<{ email: string; balance: number }>();
-    if (user) {
-        await sendNotice(env, user.email, autoTopUpOffNotice(user.balance));
-    }
+        .first<{ id: string; email: string; balance: number }>();
+    if (!user) return;
+    // Email never blocks billing; sendNotice already logged the failure.
+    await sendAutoTopUpOffNotice(env, user).catch(() => {});
 }
 
 function createAutoTopUpIdempotencyKey(attemptId: string): string {

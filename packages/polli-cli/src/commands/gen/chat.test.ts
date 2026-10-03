@@ -59,6 +59,10 @@ vi.mock("node:readline", () => ({
 }));
 
 const originalExitCode = process.exitCode;
+const pendingTranscriptPath = join(
+    tmpdir(),
+    `polli-chat-pending-${process.pid}.txt`,
+);
 
 function prepare(fetchImpl: () => Promise<Response>) {
     setKeyOverride("sk_test");
@@ -83,6 +87,7 @@ afterEach(() => {
     setKeyOverride(undefined);
     setOutputMode("human");
     process.exitCode = originalExitCode;
+    rmSync(pendingTranscriptPath, { force: true });
 });
 
 describe("polli gen chat session lifecycle", () => {
@@ -181,5 +186,105 @@ describe("polli gen chat session lifecycle", () => {
         expect(transcript).toContain("AI: hi");
         expect(transcript).not.toContain("/exit");
         rmSync(path, { force: true });
+    });
+
+    it.each([
+        ["EOF", "human"],
+        ["/exit", "human"],
+        ["EOF", "json"],
+        ["/exit", "json"],
+    ] as const)("saves a pending reply after %s in %s mode", async (exit, mode) => {
+        let release!: (response: Response) => void;
+        const response = new Promise<Response>((resolve) => {
+            release = resolve;
+        });
+        const fetch = prepare(() => response);
+        setOutputMode(mode);
+
+        const line = await startSession(["--save", pendingTranscriptPath]);
+        const turn = line("hello");
+        if (exit === "EOF") h.fakeRl.close();
+        else await line(exit);
+        const savedBeforeReply = existsSync(pendingTranscriptPath);
+        release(
+            mode === "human"
+                ? new Response(STREAM_OK)
+                : Response.json({
+                      choices: [{ message: { content: "hi" } }],
+                      model: "test-model",
+                  }),
+        );
+        await turn;
+
+        expect(savedBeforeReply).toBe(false);
+        expect(readFileSync(pendingTranscriptPath, "utf-8")).toBe(
+            "You: hello\n\nAI: hi",
+        );
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(h.state.promptsAfterClose).toBe(0);
+        expect(process.exitCode).toBe(0);
+    });
+
+    it("saves once after all pending replies finish", async () => {
+        let releaseFirst!: (response: Response) => void;
+        let releaseSecond!: (response: Response) => void;
+        const responses = [
+            new Promise<Response>((resolve) => {
+                releaseFirst = resolve;
+            }),
+            new Promise<Response>((resolve) => {
+                releaseSecond = resolve;
+            }),
+        ];
+        const fetch = prepare(
+            () =>
+                responses.shift() ??
+                Promise.reject(new Error("Unexpected request")),
+        );
+
+        const line = await startSession(["--save", pendingTranscriptPath]);
+        const first = line("first");
+        const second = line("second");
+        h.fakeRl.close();
+        releaseFirst(new Response(STREAM_OK.replace('"hi"', '"first reply"')));
+        await first;
+        const savedBeforeLastReply = existsSync(pendingTranscriptPath);
+        releaseSecond(
+            new Response(STREAM_OK.replace('"hi"', '"second reply"')),
+        );
+        await second;
+
+        expect(savedBeforeLastReply).toBe(false);
+        const transcript = readFileSync(pendingTranscriptPath, "utf-8");
+        expect(transcript).toContain("AI: first reply");
+        expect(transcript).toContain("AI: second reply");
+        const saves = vi
+            .mocked(process.stderr.write)
+            .mock.calls.filter(([value]) =>
+                String(value).includes(`Saved to ${pendingTranscriptPath}`),
+            );
+        expect(saves).toHaveLength(1);
+        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(h.state.promptsAfterClose).toBe(0);
+    });
+
+    it("saves the cleaned transcript when a pending request fails after close", async () => {
+        let reject!: (error: Error) => void;
+        prepare(
+            () =>
+                new Promise<Response>((_resolve, rejectResponse) => {
+                    reject = rejectResponse;
+                }),
+        );
+
+        const line = await startSession(["--save", pendingTranscriptPath]);
+        const turn = line("hello");
+        h.fakeRl.close();
+        reject(new Error("provider failed"));
+        await turn;
+
+        expect(readFileSync(pendingTranscriptPath, "utf-8")).toBe("");
+        expect(h.state.promptsAfterClose).toBe(0);
+        expect(process.exitCode).toBe(0);
     });
 });

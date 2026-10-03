@@ -65,7 +65,7 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     stream: bool = False
     stream_options: dict[str, Any] | None = None
-    routing: RoutingInput | None = None
+    metadata: RoutingInput | None = None
 
 
 def _files_dir() -> str:
@@ -366,7 +366,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
 
     token = _api_key_override.set(api_key or None)
     try:
-        routing = await validate_routing(request.routing)
+        routing = await validate_routing(request.metadata)
     except RoutingValidationError as exc:
         raise HTTPException(
             status_code=422,

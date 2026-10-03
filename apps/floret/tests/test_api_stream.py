@@ -56,10 +56,10 @@ async def _fake_run_agent(messages, **kwargs):
 
 @pytest.mark.parametrize(
     "routing",
-    [{"image": "flux"}, {"video": " "}, {"text": None}],
+    [{"image": "flux"}, {"video": " "}, {"model": None}],
 )
 def test_invalid_routing_shape_is_rejected(routing):
-    body = _request_body(stream=False) | {"routing": routing}
+    body = _request_body(stream=False) | {"metadata": routing}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -68,12 +68,12 @@ def test_invalid_routing_shape_is_rejected(routing):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("routing", [None, {"text": "auto"}])
+@pytest.mark.parametrize("routing", [None, {"model": "auto"}])
 def test_omitted_and_auto_routing_values_remain_allowed(monkeypatch, routing):
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
     body = _request_body(stream=False)
     if routing is not None:
-        body["routing"] = routing
+        body["metadata"] = routing
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -92,7 +92,7 @@ def test_invalid_routing_preference_returns_stable_422(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -114,7 +114,7 @@ def test_unavailable_routing_registry_returns_503(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -142,7 +142,7 @@ def test_non_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"image_generation": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -170,7 +170,7 @@ def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
-    body = _request_body(stream=True) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=True) | {"metadata": {"image_generation": "flux"}}
 
     with TestClient(api_mod.app).stream(
         "POST", "/v1/chat/completions", json=body, headers=_HEADERS

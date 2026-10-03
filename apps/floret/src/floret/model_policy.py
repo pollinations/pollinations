@@ -216,9 +216,11 @@ def select_model(
         for item in policy.recommendations
         if item.task_family == request.task_family
     )
-    avoided = {
-        item.model_id for item in family_recommendations if item.action == "avoid"
-    }
+    avoided = (
+        {item.model_id for item in family_recommendations if item.action == "avoid"}
+        if policy.catalog_revision == catalog_revision
+        else set()
+    )
     allowed = tuple(model_id for model_id in eligible if model_id not in avoided)
     if not allowed:
         return None

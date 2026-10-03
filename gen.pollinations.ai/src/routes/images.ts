@@ -29,7 +29,13 @@ import { arrayBufferToBase64 } from "@/util.ts";
 // --- Helpers ---
 
 const QUALITY_MAP: Record<string, string> = { standard: "medium", hd: "high" };
-const PASSTHROUGH_PARAMS = ["safe", "transparent", "guidance_scale"] as const;
+const PASSTHROUGH_PARAMS = [
+    "safe",
+    "transparent",
+    "guidance_scale",
+    "duration",
+    "audio",
+] as const;
 const CACHE_PARAMS = [
     "image",
     "transparent",
@@ -180,11 +186,10 @@ async function parseEditInput(c: Context): Promise<{
             quality: (formData.get("quality") as string) || undefined,
             safe: formData.get("safe") as string | null,
             response_format: format.data,
-            extra: {
-                ...(formData.has("resolution")
-                    ? { resolution: formData.get("resolution") as string }
-                    : {}),
-            },
+            extra: collectPassthrough(
+                Object.fromEntries(formData.entries()),
+                "resolution",
+            ),
         };
     }
 

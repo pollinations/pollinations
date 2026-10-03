@@ -377,7 +377,7 @@ it.each([
         );
         if (redirect) link.searchParams.set("redirect", redirect);
         expect(text).toContain(`[raise the key budget](${link})`);
-        expect(text).toContain("Topping up the wallet does not raise");
+        expect(text).toContain("Topping up does not raise");
         expect(text).not.toContain("complete a quest");
     }
     await waitOnExecutionContext(ctx);
@@ -420,7 +420,7 @@ it("omits the quest link when only paid Pollen can cover the model", async () =>
         expect(text).toContain("INSUFFICIENT_BALANCE");
     } else {
         expect(response.status, text).toBe(200);
-        expect(text).toContain("needs paid Pollen");
+        expect(text).toContain("needs paid credit");
         expect(text).toContain("/top-up?ref=agent_low_balance_topup");
         expect(text).not.toContain("complete a quest");
     }

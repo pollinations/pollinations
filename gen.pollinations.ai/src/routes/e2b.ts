@@ -166,7 +166,7 @@ async function requireFunds(c: E2bContext, price: number) {
     ) {
         throw new PaymentRequiredError(
             "KEY_BUDGET_EXHAUSTED",
-            `API key budget too low for this sandbox lease (${price} pollen). Increase the key budget at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}; topping up the wallet does not increase this limit.`,
+            `API key budget too low for this sandbox lease ($${price}). Increase the key budget at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}; topping up does not increase this limit.`,
         );
     }
     const balance = await getUserBalance(
@@ -176,7 +176,7 @@ async function requireFunds(c: E2bContext, price: number) {
     if (!canCoverEstimatedCharge(balance, price)) {
         throw new PaymentRequiredError(
             "INSUFFICIENT_BALANCE",
-            `Insufficient balance for this sandbox lease (${price} pollen). Top up at https://enter.pollinations.ai/top-up.`,
+            `Insufficient credit for this sandbox lease ($${price}). Top up at https://enter.pollinations.ai/top-up.`,
         );
     }
 }

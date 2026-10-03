@@ -7982,7 +7982,7 @@ fixtureTest(
         );
         expect(aboveMaximumResponse.status).toBe(400);
         expect(await aboveMaximumResponse.text()).toContain(
-            `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`,
+            `$${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens`,
         );
 
         const belowMinimumResponse = await updatePrice(

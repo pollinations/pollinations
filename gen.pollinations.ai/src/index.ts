@@ -107,7 +107,7 @@ function llmsTxt(c: Context<Env>): Response {
 ## Account
 
 - [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
-- [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
+- [Credit balance](https://enter.pollinations.ai/pollen): Check prepaid credit; balances and prices are in US dollars.
 `,
         {
             headers: {

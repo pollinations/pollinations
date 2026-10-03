@@ -117,6 +117,54 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
     },
+    "black-forest-labs/flux-3-image": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-10-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter BFL endpoint with its 50% launch discount through
+        // 2026-10-08 (list $0.048 at 1K, $0.10 at 2K), verified 2026-10-02: a
+        // 1K image billed $0.024. Includes the 5.5% credit fee. Billing uses
+        // the cost OpenRouter reports per request, so it follows the list
+        // price when the discount ends; raise these rates then.
+        cost: {
+            completionImageTokens: 0.024 * 1.055, // per 1K image
+        },
+        ...defineCostVariants(
+            {
+                "2k": { completionImageTokens: 0.05 * 1.055 },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested image resolution is 2K.",
+                },
+            },
+            "1K",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "2k": "2K",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "FLUX.3 Image",
+        description:
+            "Flagship text-to-image and multi-reference editing at 1K or 2K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "black-forest-labs/flux.2-flex": {
         aliases: ["flux-2-flex"],
         provider: "azure",

@@ -19,10 +19,11 @@ Read the repository `AGENTS.md` and inspect the current route before diagnosing 
 
 - `generation_event_v2` contains authenticated, non-cached requests. Check its current [datasource definition](../../../enter.pollinations.ai/observability/datasources/generation_event_v2.datasource) before writing SQL. It can contain several upstream-attempt rows per request; `is_final` identifies the user-visible result. A successful fallback can hide a broken primary if you only count final responses.
 - In `model_health`, `total_requests` and status counts use final results; `own_calls`, `primary_5xx`, `primary_retried_503s`, and `fallback_rescues` describe upstream health and recovery. Check both views.
-- A 401, 402, 403, 400, or 429 can originate at different layers. Follow `error_source`, `error_response_code`, `upstream_status`, and the response body before treating it as caller noise or a model outage.
+- A 401, 402, 403, 400, or 429 can originate at different layers. Check `error_source` and `error_response_code` in `generation_event_v2`; check `upstream_status`, `upstream_body`, and `upstream_host` in `error_event` through `recent_server_errors.pipe` (24-hour retention) before treating it as caller noise or a model outage.
 - A server-side 200 can still arrive after the client's timeout. Inspect the latency tail per user and request shape, not just status rates or p95.
 - For streaming failures or missing usage, inspect the final SSE chunks and the original transport error across provider, adapter, and validator before blaming the provider.
 - A provider 500 can originate from invalid caller input, such as a seed above signed INT32 range. Compare failures by request shape before declaring an upstream outage.
+- Azure Content Safety returns a safe result when its configuration is missing or its request fails. If image moderation appears absent, check the current configuration and gen logs; a successful image response does not prove the safety check ran.
 - An immediate queue-full or rate-limit error can come from limiter state or many clients sharing one proxy IP while the backend is idle. Compare limiter and backend counters before restarting a worker.
 - If a suspected deploy or proxy caused timeouts, compare the symptom before and after the change and inspect the outermost hop. Use sequential direct-versus-proxy probes from a relevant region; parallel bursts can create misleading client failures.
 

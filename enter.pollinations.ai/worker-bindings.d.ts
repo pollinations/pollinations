@@ -7,6 +7,7 @@ declare namespace Cloudflare {
 	interface LocalEnv {
 		KV: KVNamespace;
 		DB: D1Database;
+		EMAIL: SendEmail;
 		ENVIRONMENT: "local";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "trace";
@@ -44,6 +45,7 @@ declare namespace Cloudflare {
 	interface ProductionEnv {
 		KV: KVNamespace;
 		DB: D1Database;
+		EMAIL: SendEmail;
 		ENVIRONMENT: "production";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "debug";
@@ -81,6 +83,7 @@ declare namespace Cloudflare {
 	interface StagingEnv {
 		KV: KVNamespace;
 		DB: D1Database;
+		EMAIL: SendEmail;
 		ENVIRONMENT: "staging";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "debug";
@@ -120,6 +123,7 @@ declare namespace Cloudflare {
 	interface DevEnv {
 		KV: KVNamespace;
 		DB: D1Database;
+		EMAIL: SendEmail;
 		ENVIRONMENT: "dev";
 		USAGE_DEBUG_USER_ID: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
@@ -158,6 +162,7 @@ declare namespace Cloudflare {
 	interface TestEnv {
 		KV: KVNamespace;
 		DB: D1Database;
+		EMAIL: SendEmail;
 		ENVIRONMENT: "test";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "trace";
@@ -199,6 +204,7 @@ declare namespace Cloudflare {
 	interface Env {
 		KV: KVNamespace;
 		DB: D1Database;
+		EMAIL: SendEmail;
 		ENVIRONMENT: "local" | "production" | "staging" | "dev" | "test" | "development";
 		CLOUDFLARE_ACCOUNT_ID: "b6ec751c0862027ba269faf7029b2501";
 		LOG_LEVEL: "trace" | "debug";

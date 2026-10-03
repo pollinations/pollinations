@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A code agent that uses Jev to make decisions. Ask Jev what to do next, get code written by other models, and see the full decision trace." />
+    <meta property="og:title" content="Jev Code Agent | Pollinations" />
+    <meta property="og:description" content="A code agent where Jev makes decisions via /alpha/decisions and models write code. Pay with your own Pollen." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://code-agent.pollinations.ai" />
+    <meta property="og:image" content="https://code-agent.pollinations.ai/og-image.png" />
+    <title>Jev Code Agent — AI Agent with Probabilistic Decision-Making</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+</head>
+<body>
+    <header>
+        <div class="logo">🤖 <span>Jev Code Agent</span></div>
+        <p class="tagline">A coding agent where Jev makes the decisions — explore, plan, code, test, review — via the /alpha/decisions API. Pay with your own Pollen.</p>
+    </header>
+
+    <!-- Auth: Logged Out -->
+    <section id="authLoggedOut" class="auth-section">
+        <div class="auth-card">
+            <h2>🔐 Log in to run the agent</h2>
+            <p>Log in with your Pollinations account to use your own Pollen for the Jev decisions API and code generation.</p>
+            <button id="authLoginBtn" class="btn btn-primary">Log In with Pollinations</button>
+            <div class="pollen-info">
+                <span class="pollen-badge">🏵️ POLLEN</span>
+                <span>Jev bills input tokens only; other models bill standard rates.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Auth: Logged In -->
+    <section id="authLoggedIn" class="auth-section hidden">
+        <div class="auth-bar">
+            <span id="authBalance" class="pollen-amount">-- pollen</span>
+            <button id="authLogoutBtn" class="btn btn-ghost">Log Out</button>
+        </div>
+    </section>
+
+    <!-- Task Input -->
+    <main id="mainSection" class="main-section hidden">
+        <div class="task-panel">
+            <h2>💡 Coding Task</h2>
+            <textarea id="taskInput" placeholder="Describe what you want the agent to accomplish. E.g. 'Create a Python function that reverses a string and write a test for it.'" rows="4"></textarea>
+            <div class="controls">
+                <button id="startBtn" class="btn btn-primary btn-lg" disabled>Start Agent</button>
+                <button id="stopBtn" class="btn btn-outline" disabled>⏹ Stop</button>
+            </div>
+            <p class="hint">The agent will ask Jev for each step. You'll see the full decision trace with probabilities.</p>
+        </div>
+
+        <!-- Decision Trace -->
+        <section id="traceSection" class="trace-section hidden">
+            <h3>🧠 Decision Trace</h3>
+            <div id="traceList" class="trace-list">
+                <!-- Filled dynamically -->
+            </div>
+        </section>
+
+        <!-- Code Output -->
+        <section id="outputSection" class="output-section hidden">
+            <h3>💻 Generated Code</h3>
+            <pre id="codeOutput" class="code-block"></pre>
+        </section>
+
+        <p id="errorBox" class="error hidden"></p>
+    </main>
+
+    <!-- Notification -->
+    <div id="notification" class="notification hidden"></div>
+
+    <footer>
+        <p>Built for <a href="https://pollinations.ai">Pollinations</a> · <a href="https://github.com/pollinations/pollinations/blob/main/apps/jev-code-agent">View source</a> · Quest #15723</p>
+    </footer>
+
+    <script type="module" src="/script.js"></script>
+</body>
+</html>

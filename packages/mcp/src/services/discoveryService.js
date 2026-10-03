@@ -8,16 +8,15 @@ import {
 import { getModels } from "../utils/models.js";
 
 async function listModels(params, context) {
-    let models = await getModels(
-        params.type || "all",
-        context,
-        params.community,
-    );
-    if (params.agent !== undefined) {
-        models = models.filter(
-            (model) => (model.agent === true) === params.agent,
-        );
-    }
+    // Gen applies query/capabilities/agent/limit server-side; forward them and
+    // return the live response untouched.
+    const models = await getModels(params.type || "all", context, {
+        community: params.community,
+        agent: params.agent,
+        query: params.query,
+        capabilities: params.capabilities,
+        limit: params.limit,
+    });
     return createMCPResponse([createTextContent(models, true)]);
 }
 
@@ -33,7 +32,7 @@ async function getModelStatus(params, context) {
 export const discoveryTools = [
     [
         "listModels",
-        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Filter by modality, community ownership, or agents.",
+        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Search and narrow the catalog server-side with query, capabilities, agent and limit instead of fetching everything. Filter by modality, community ownership, or agents.",
         {
             type: z
                 .enum([
@@ -57,6 +56,26 @@ export const discoveryTools = [
                 .boolean()
                 .optional()
                 .describe("True for agents only, false to exclude agents"),
+            query: z
+                .string()
+                .optional()
+                .describe(
+                    "Case-insensitive substring search across canonical name, aliases, title, description and publisher",
+                ),
+            capabilities: z
+                .array(z.string())
+                .optional()
+                .describe(
+                    "Only models exposing every listed capability (AND), e.g. ['tool_calling', 'reasoning']",
+                ),
+            limit: z
+                .number()
+                .int()
+                .positive()
+                .optional()
+                .describe(
+                    "Return at most this many models after filtering and ordering",
+                ),
         },
         listModels,
     ],

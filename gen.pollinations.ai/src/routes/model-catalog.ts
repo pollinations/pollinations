@@ -19,6 +19,44 @@ type HealthLookup = (entry: GenerationModelEntry) => ModelHealth;
 const isCommunityProxy = (entry: GenerationModelEntry) =>
     entry.info.community && !entry.info.agent;
 
+// Everything a `query` search may match: canonical id, aliases, and the human
+// readable catalog text. Kept in one place so list and single-model routes agree.
+function catalogSearchText(entry: GenerationModelEntry): string {
+    return [
+        entry.id,
+        ...entry.aliases,
+        entry.info.title,
+        entry.info.description,
+        entry.info.publisher,
+    ]
+        .filter((value): value is string => Boolean(value))
+        .join("\n")
+        .toLowerCase();
+}
+
+function matchesQuery(
+    entry: GenerationModelEntry,
+    query: string | undefined,
+): boolean {
+    return query === undefined || catalogSearchText(entry).includes(query);
+}
+
+function matchesCapabilities(
+    entry: GenerationModelEntry,
+    capabilities: string[] | undefined,
+): boolean {
+    if (capabilities === undefined) return true;
+    const available = new Set<string>(entry.info.capabilities);
+    return capabilities.every((capability) => available.has(capability));
+}
+
+function matchesAgent(
+    entry: GenerationModelEntry,
+    agent: boolean | undefined,
+): boolean {
+    return agent === undefined || (entry.info.agent === true) === agent;
+}
+
 // A missing feed must not turn discovery into a 502 or label a model
 // healthy; an empty row set makes every lookup resolve to "unknown".
 export async function getModelHealthLookup(
@@ -94,13 +132,22 @@ export async function filterCatalogEntries(
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
-    return filtered
-        .map((entry) => attachModelHealth(entry, lookup))
-        .filter(
-            (entry) =>
-                reliability === "all" ||
-                !isCommunityProxy(entry) ||
-                entry.communityEndpoint?.visibility === "private" ||
-                isModelReliable(entry.info.health?.success_rate),
-        );
+    return (
+        filtered
+            .map((entry) => attachModelHealth(entry, lookup))
+            .filter(
+                (entry) =>
+                    reliability === "all" ||
+                    !isCommunityProxy(entry) ||
+                    entry.communityEndpoint?.visibility === "private" ||
+                    isModelReliable(entry.info.health?.success_rate),
+            )
+            // Text/capability/agent filters narrow the already-permission- and
+            // visibility-filtered catalog; `limit` is applied last so it can only
+            // ever return fewer of the models the caller is allowed to see.
+            .filter((entry) => matchesQuery(entry, query.query))
+            .filter((entry) => matchesCapabilities(entry, query.capabilities))
+            .filter((entry) => matchesAgent(entry, query.agent))
+            .slice(0, query.limit)
+    );
 }

@@ -2,6 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
+import { isInternalAutomationAccount } from "@shared/billing/internal-automation.ts";
 import {
     type CommunityModelRewardResolution,
     handleBalanceDeduction,
@@ -563,6 +564,8 @@ async function isAutoTopUpConfigured(
     db: DrizzleD1Database,
     userId: string,
 ): Promise<boolean> {
+    if (isInternalAutomationAccount(userId)) return false;
+
     const [user] = await db
         .select({
             enabled: userTable.autoTopUpEnabled,

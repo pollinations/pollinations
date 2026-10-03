@@ -301,7 +301,14 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         the grid's right edge. The second line is the one
                         status slot (pack, problem, saving), sized for its
                         widest content, so the switch never moves. */}
-                    <div className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-theme-text-strong">
+                    <div
+                        className={cn(
+                            "ml-auto items-center gap-2 text-sm font-semibold text-theme-text-strong",
+                            billing?.autoTopUp.available === false
+                                ? "hidden"
+                                : "inline-flex",
+                        )}
+                    >
                         <span className="flex flex-col items-end leading-tight">
                             <span>Auto top-up</span>
                             {/* It buys paid Pollen: the Paid card's icon and

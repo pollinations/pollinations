@@ -472,7 +472,11 @@ export class Pollinations {
                 }
 
                 return (await response.json()) as {
-                    data: Array<{ url?: string; b64_json?: string }>;
+                    data: Array<{
+                        url?: string;
+                        b64_json?: string;
+                        media_type?: string;
+                    }>;
                 };
             },
         );
@@ -561,7 +565,11 @@ export class Pollinations {
                 }
 
                 return (await response.json()) as {
-                    data: Array<{ url?: string; b64_json?: string }>;
+                    data: Array<{
+                        url?: string;
+                        b64_json?: string;
+                        media_type?: string;
+                    }>;
                 };
             },
         );
@@ -589,7 +597,7 @@ export class Pollinations {
 
     /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
     private async resolveImageItem(
-        item: { url?: string; b64_json?: string },
+        item: { url?: string; b64_json?: string; media_type?: string },
         signal?: AbortSignal,
         invalidResponseMessage = "Unexpected image item shape in response",
     ): Promise<ImageResponse> {
@@ -619,7 +627,7 @@ export class Pollinations {
             }
             return {
                 buffer: bytes.buffer as ArrayBuffer,
-                contentType: "image/png",
+                contentType: item.media_type || "image/png",
                 url: "",
             };
         }

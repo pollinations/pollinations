@@ -1,0 +1,36 @@
+{
+  "pr_number": 15963,
+  "title": "feat: add Jev context-trimmer agent",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/15963",
+  "merged_at": "2026-10-03T16:29:25Z",
+  "labels": [
+    "POLLEN-QUEST"
+  ],
+  "pr_body_excerpt": "Fixes #15723\n\n- Adds a self-contained context-trimmer agent: Jev scores archived outputs; Nano answers using retained strings verbatim. Invalid decisions stop generation.\n- Keeps the upstream submission to `agent.ts`, `agent.test.mjs`, `code-agent.json` and a short README, following maintainer feedback. Full tooling and evidence remain in [the public source repository](https://github.com/ale-rls/jev-context-trimmer).\n- Callable model: `community/ale-rls/jev-context-trimmer` (private, owner-callable).\n- Three deployed-agent runs on 2026-09-30 produced different real decisions:\n\n| Task | Billing probability | Weather probability | Retained output |\n| --- | ---: | ---: | --- |\n| Billing | 0.98 | 0.02 | billing_test |\n| Weather | 0.01 | 0.96 | paris_forecast |\n| Unrelated | 0.01 | 0.01 | none |\n\n- Exact retained strings and expected selections passed live assertions; observed cost approximately 0.000333 Quest Pollen. [Full evidence](https://github.com/ale-rls/jev-context-trimmer/blob/main/EVIDENCE.md).\n- Cleanup validation: eight tests pass on Node 24; request example parses; whitespace check passes. Runtime, tests and deployment config are unchanged. Original strict TypeScript and Biome checks passed before submission.\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Jev keeps the useful scraps",
+    "blurb": "ale-rls built an agent that sorts archived outputs before Nano answers. Billing notes stay for billing questions, forecasts stay for weather questions, and unrelated clutter stays out of the way.",
+    "summary": "ale-rls added the private, owner-callable `community/ale-rls/jev-context-trimmer` agent, where Jev selects relevant archived outputs and Nano answers with retained strings verbatim, halting generation on invalid decisions.",
+    "impact": "The owner can call the agent to retain `billing_test` for billing tasks, `paris_forecast` for weather tasks, or nothing for unrelated tasks, as demonstrated in three deployed-agent runs.",
+    "keywords": [
+      "community",
+      "agent",
+      "context trimming",
+      "Jev",
+      "Nano",
+      "archived outputs"
+    ],
+    "visual_concept": "Depict Jev's context trimming as a small sorting desk for archived output cards: a billing card and a weather card go into separate labeled flower pots, while irrelevant cards remain on the shelf. Polli helps sort the cards; a friendly CRT monitor represents Nano reading only the selected card. Jev and Nano have no specified mascots or logos, so use labeled tools rather than invented characters.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears tiny librarian glasses and helps a friendly CRT monitor robot sort archived output cards into lime green (#ecf874) flower pots labeled 'BILLING' and 'WEATHER,' with little code-plants sprouting from the selected cards. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, with warm cream and soft pastel gradients, dark purple (#110518) outlines, gentle CRT glow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-15963.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny librarian glasses and helps a friendly CRT monitor robot sort archived output cards into lime green (#ecf874) flower pots labeled 'BILLING' and 'WEATHER,' with little code-plants sprouting from the selected cards. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, with warm cream and soft pastel gradients, dark purple (#110518) outlines, gentle CRT glow, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-03T16:30:24.669784+00:00"
+}

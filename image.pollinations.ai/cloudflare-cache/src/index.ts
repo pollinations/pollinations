@@ -8,7 +8,6 @@ import {
     generateLegacyCacheKey,
 } from "./cache-utils.ts";
 import type { Env } from "./env";
-import { googleAnalytics } from "./middleware/analytics.ts";
 import { exactCache } from "./middleware/exact-cache";
 import { parseImageParams } from "./middleware/parse-image-params.ts";
 import { semanticCache } from "./middleware/semantic-cache.ts";
@@ -73,7 +72,6 @@ app.delete("/delete/prompt/:prompt", async (c) => {
 // cache and proxy image requests
 app.all(
     "/prompt/:prompt",
-    googleAnalytics,
     setConnectingIp,
     turnstileVerification,
     parseImageParams,

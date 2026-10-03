@@ -10,7 +10,6 @@ import {
     handleAuthentication,
 } from "../../shared/auth-utils.js";
 import { extractToken, getIp } from "../../shared/extractFromRequest.js";
-import { sendImageTelemetry } from "./utils/telemetry.js";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
@@ -200,8 +199,6 @@ const imageGen = async ({
         );
     }
 
-    const startTime = Date.now();
-    
     try {
         timingInfo.push({ step: "Start processing", timestamp: Date.now() });
 
@@ -317,23 +314,6 @@ const imageGen = async ({
         progress.completeBar(requestId, "Image generation complete");
         progress.stop();
 
-        // Send telemetry to Tinybird
-        const endTime = new Date();
-        const duration = endTime.getTime() - startTime;
-        sendImageTelemetry({
-            requestId,
-            model: safeParams.model || "unknown",
-            duration,
-            status: "success",
-            authResult,
-        });
-
-        // Log completed request to file for analysis (IP + prompt + timestamp)
-        const ip = getIp(req);
-        const promptStr = String(originalPrompt || '').slice(0, 200);
-        const logLine = `${new Date().toISOString()}\t${ip}\t${referrer || 'no-referrer'}\t${promptStr}\n`;
-        fs.appendFile('/home/ubuntu/pollinations/image.pollinations.ai/request_log.txt', logLine, () => {});
-
         return { buffer, ...maturity };
     } catch (error) {
         // Check if this was a prohibited content error
@@ -353,18 +333,6 @@ const imageGen = async ({
         logError(
             `Image generation failed reqId=${requestId} model=${safeParams?.model || "unknown"} error=${error.message}`,
         );
-
-        // Send error telemetry to Tinybird
-        const endTime = new Date();
-        const duration = endTime.getTime() - startTime;
-        sendImageTelemetry({
-            requestId,
-            model: safeParams?.model || "unknown",
-            duration,
-            status: "error",
-            authResult,
-            error,
-        });
 
         throw error;
     }

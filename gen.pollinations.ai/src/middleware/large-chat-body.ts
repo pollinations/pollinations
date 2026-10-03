@@ -17,7 +17,7 @@ const MAX_UNOFFLOADED_BYTES = MAX_REWRITTEN_BODY + MAX_MEDIA_DATA_URL;
 const PARSE_CHUNK_SIZE = 64 * 1024;
 
 type InlineMedia = {
-    type: "image_url" | "video_url" | "file";
+    type: "image_url" | "video_url" | "file" | "input_audio";
     container: Record<string, unknown>;
     field: string;
     dataUrl: string;
@@ -29,6 +29,21 @@ function inlineMedia(value: unknown): InlineMedia | undefined {
         return;
     const record = value as Record<string, unknown>;
     const type = record.type;
+    if (type === "input_audio") {
+        const audio = record.input_audio as Record<string, unknown> | undefined;
+        if (
+            typeof audio?.data === "string" &&
+            audio.data.length > MAX_REWRITTEN_BODY &&
+            typeof audio.format === "string"
+        ) {
+            return {
+                type,
+                container: audio,
+                field: "data",
+                dataUrl: `data:audio/${audio.format === "opus" ? "ogg" : audio.format};base64,${audio.data}`,
+            };
+        }
+    }
     if (type !== "image_url" && type !== "video_url" && type !== "file") return;
     const container = record[type];
     if (typeof container !== "object" || container === null) return;
@@ -37,7 +52,7 @@ function inlineMedia(value: unknown): InlineMedia | undefined {
         const data = file.file_data;
         if (
             typeof data === "string" &&
-            data.length > 0 &&
+            data.length > MAX_REWRITTEN_BODY &&
             file.file_url === undefined
         ) {
             const dataUrl = data.startsWith("data:")
@@ -83,6 +98,7 @@ export async function readLargeChatBody(
     let parsedBytes = 0;
     let offloadedBytes = 0;
     let offloadedFileData = false;
+    let offloadedAudioData = false;
 
     parser.onValue = ({ value, stack }) => {
         if (stack.length === 0) {
@@ -101,6 +117,7 @@ export async function readLargeChatBody(
             delete media.container[media.removeField];
             offloadedFileData = true;
         }
+        if (media.type === "input_audio") offloadedAudioData = true;
         pending.push(media);
     };
 
@@ -153,22 +170,31 @@ export async function readLargeChatBody(
     if (!parser.isEnded || typeof parsed !== "object" || parsed === null) {
         throw new HTTPException(400, { message: "Invalid JSON body" });
     }
-    if (offloadedFileData) {
+    if (offloadedFileData || offloadedAudioData) {
         const model = (parsed as Record<string, unknown>).model;
+        let resolvedModel: ReturnType<typeof resolveModelName> | undefined;
         let provider: string | undefined;
         if (typeof model === "string") {
             try {
-                provider = getRegistryModelDefinition(
-                    resolveModelName(model),
-                ).provider;
+                resolvedModel = resolveModelName(model);
+                provider = getRegistryModelDefinition(resolvedModel).provider;
             } catch {
                 // The normal model resolver reports an unknown model.
             }
         }
-        if (provider !== "openrouter") {
+        if (offloadedFileData && provider !== "openrouter") {
             throw new HTTPException(413, {
                 message:
                     "Large inline PDF file_data requires an OpenRouter model",
+            });
+        }
+        if (
+            offloadedAudioData &&
+            resolvedModel !== "thinkingmachines/inkling"
+        ) {
+            throw new HTTPException(413, {
+                message:
+                    "Large inline audio requires the thinkingmachines/inkling model",
             });
         }
     }
@@ -215,7 +241,8 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
         if (
             (type === "image_url" &&
                 !/^image\/(?:jpeg|png|webp|gif)$/.test(match[1])) ||
-            (type === "video_url" && !match[1].startsWith("video/"))
+            (type === "video_url" && !match[1].startsWith("video/")) ||
+            (type === "input_audio" && !match[1].startsWith("audio/"))
         ) {
             throw new HTTPException(400, {
                 message: "Invalid inline media data URL",

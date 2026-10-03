@@ -206,12 +206,14 @@ monitor offline.
 
 ## Visibility and authority
 
-All model-list endpoints use one rule for public community proxy models: more than 80%
-success across the latest 50 eligible final requests within seven days. Official
-models, agents, and private owner-only models are unaffected. No minimum sample. No observations
+All model-list endpoints require more than 80% recent success for public models.
+Community proxies use the latest 50 eligible final requests within seven days;
+other models use a 24-hour window. Private owner-only models are unaffected.
+No minimum sample. No observations
 or unavailable analytics means unknown and visible. Successful fallbacks count
 for the requested model. Final 4xx are excluded; owner requests and monitor
-probes count. The bounded Tinybird query is `model_catalog_health.pipe`.
+probes count. Community models use `model_catalog_health.pipe`; other models
+use `model_route_health.pipe`.
 Health data is edge-cached for 60 seconds. `reliability=all` (or the
 `Pollinations-Model-Reliability: all` header) bypasses only this filter.
 

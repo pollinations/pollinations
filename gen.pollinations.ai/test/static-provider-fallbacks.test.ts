@@ -578,6 +578,24 @@ describe("static provider fallbacks", () => {
             promptVideoTokens: (0.25 / 1_000_000) * 1.055,
             completionTextTokens: (2.2 / 1_000_000) * 1.055,
         });
+        // Nemotron 3 Ultra: Fireworks NVFP4 primary, DeepInfra fallback. The
+        // two routes price differently, so the caller's quote and our cost
+        // must each come from their own sheet.
+        expect(TEXT_SERVICES["nvidia/nemotron-3-ultra"].fallbacks).toEqual([
+            "nvidia/nemotron-3-ultra:deepinfra",
+        ]);
+        expect(TEXT_SERVICES["nvidia/nemotron-3-ultra"].cost).toMatchObject({
+            promptTextTokens: 0.6 / 1_000_000,
+            promptCachedTokens: 0.12 / 1_000_000,
+            completionTextTokens: 2.4 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES["nvidia/nemotron-3-ultra:deepinfra"].cost,
+        ).toMatchObject({
+            promptTextTokens: 0.5 / 1_000_000,
+            promptCachedTokens: 0.1 / 1_000_000,
+            completionTextTokens: 2.2 / 1_000_000,
+        });
         expect(
             TEXT_SERVICES[
                 "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16"
@@ -937,6 +955,18 @@ describe("static provider fallbacks", () => {
                 ],
             ).toBeCloseTo(cost * 1.055, 15);
         }
+        expect(
+            findModelByName("nvidia/nemotron-3-ultra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+        });
+        expect(
+            findModelByName("nvidia/nemotron-3-ultra:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+        });
         expect(
             findModelByName("mistralai/mistral-small-3.2:deepinfra")?.config(),
         ).toMatchObject({

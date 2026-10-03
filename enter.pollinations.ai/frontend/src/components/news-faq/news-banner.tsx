@@ -5,8 +5,8 @@ const UPCOMING_CHANGES = [
     {
         when: "Planned",
         model: "Qwen3 Coder 30B",
-        change: "Moves to Bedrock. Paid Pollen only; $0.15/$0.60 per 1M input/output tokens. Same ID and aliases.",
-        note: "Drops Responses API, seed, logprobs and stop. Named tool choice becomes auto; strict JSON schemas are not enforced.",
+        change: "Bedrock; Paid Pollen; $0.15/$0.60 per 1M input/output tokens. IDs unchanged.",
+        note: "No Responses API, seed, logprobs or stop. Named tool choice uses auto; schemas are not enforced.",
     },
     {
         when: "Oct 9, 16:00 UTC",
@@ -31,7 +31,7 @@ const UPCOMING_CHANGES = [
 ];
 
 export const UpcomingChanges: FC = () => (
-    <ul className="flex flex-col gap-3 text-sm text-theme-text-soft">
+    <ul className="flex flex-col gap-3 text-sm text-theme-text-base">
         {UPCOMING_CHANGES.map(({ when, model, change, note }) => (
             <li key={model}>
                 <span className="mr-2 text-theme-text-muted">{when}</span>
@@ -46,10 +46,10 @@ export const UpcomingChanges: FC = () => (
 export const Announcements: FC = () => (
     <div className="flex flex-col gap-4">
         <Surface>
-            <h3 className="font-semibold text-theme-text-strong">
+            <h3 className="font-sans text-sm font-semibold text-theme-text-strong">
                 Code agents · Alpha
             </h3>
-            <p className="mt-1 text-sm text-theme-text-soft">
+            <p className="mt-1 text-sm text-theme-text-base">
                 Run your agent.ts from a GitHub repository. Callers pay for
                 usage.{" "}
                 <InlineLink
@@ -61,10 +61,10 @@ export const Announcements: FC = () => (
             </p>
         </Surface>
         <Surface>
-            <h3 className="font-semibold text-theme-text-strong">
+            <h3 className="font-sans text-sm font-semibold text-theme-text-strong">
                 Community IDs
             </h3>
-            <p className="mt-1 text-sm text-theme-text-soft">
+            <p className="mt-1 text-sm text-theme-text-base">
                 Community and agent IDs now use community/username/name.
                 Existing IDs keep working.
             </p>

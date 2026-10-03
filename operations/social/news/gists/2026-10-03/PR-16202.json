@@ -1,0 +1,34 @@
+{
+  "pr_number": 16202,
+  "title": "feat: add nomic-player Jev voting code agent",
+  "author": "ammarelshaf3y",
+  "url": "https://github.com/pollinations/pollinations/pull/16202",
+  "merged_at": "2026-10-03T16:37:47Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15723\n\nAdds `apps/agent-nomic-player/`: a code agent where Jev votes on Nomic proposals and a text model argues the verdict. No other submission plays the shared Nomic game.\n\n- One real Jev decision per run (`POST /alpha/decisions`, `choice` yes/no with probabilities, caller pays). The agent never overrides Jev; the text model only writes the argument.\n- Trace `[nomic-player: jev voted <choice> {...}]` prepended on both `/v1/responses` and `/v1/chat/completions` (full terminal envelope with real usage).\n- Copy of deployed code + README + static checks (5/5) + live demos under `apps/agent-nomic-player/`.\n\nSource repo (public, `agent.ts` at root): https://github.com/ammarelshaf3y/nomic-player\nDeployed agent ID / callable model: `3b37b51a-32c5-4bbb-a27b-355cf00d6bed` / `community/ammarelshaf3y/nomic-player` (private).\n\nThree live runs, different Jev verdicts with probabilities (full log in `demos/demo.md`):\n1. Strict proverb rule -> NO (yes 0.47 / no 0.53).\n2. Public named vote records -> NO (yes 0.05 / no 0.95).\n3. Herald reads summaries aloud -> YES (no 0.39 / yes 0.61).\n\nAlpha feedback: code-agent terminal responses need a full envelope (id/object/created/model/status/usage) or the gateway 502s; `agents create` does not deploy, a manual `sync` is required, and the sync validator typechecks strictly (unused params fail).\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Jev gets the deciding vote",
+    "blurb": "ammarelshaf3y built a Nomic-playing code agent that lets Jev cast the vote, then asks a text model to make the case. The argument can be eloquent; the ballot stays Jev’s.",
+    "summary": "ammarelshaf3y added `apps/agent-nomic-player/`, a code agent that makes one paid Jev yes/no decision with probabilities per Nomic proposal, then uses a text model to argue—but never override—the verdict.",
+    "impact": "The agent’s `/v1/responses` and `/v1/chat/completions` outputs prepend a trace of Jev’s vote, so each argument shows the decision and its probabilities.",
+    "keywords": [
+      "community",
+      "Nomic",
+      "Jev",
+      "code agent",
+      "voting",
+      "text models"
+    ],
+    "visual_concept": "Depict the community-built Nomic player as a cozy voting desk: a CRT terminal records Jev’s yes/no ballot and probabilities while a friendly monitor robot writes the argument. Polli, wearing a tiny clerk’s visor, watches the ballot go into the box; code-plants and flowers frame the scene. No invented Jev mascot or logo.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli in a tiny clerk’s visor watches a yes/no ballot slide from a lime green (#ecf874) CRT voting terminal into a box while a friendly chunky monitor robot writes an argument beside blooming code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, never oversized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16202.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli in a tiny clerk’s visor watches a yes/no ballot slide from a lime green (#ecf874) CRT voting terminal into a box while a friendly chunky monitor robot writes an argument beside blooming code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, never oversized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-03T16:38:46.506844+00:00"
+}

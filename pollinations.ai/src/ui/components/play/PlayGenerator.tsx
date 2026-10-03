@@ -283,7 +283,7 @@ export function PlayGenerator({
     };
 
     const handleGenerate = async () => {
-        if (isLoading) return;
+        if (isLoading || !currentModelData) return;
         if (!apiKey) {
             onLoginRequired();
             return;
@@ -588,7 +588,7 @@ export function PlayGenerator({
             ) : (
                 <Button
                     size="lg"
-                    disabled={isLoading}
+                    disabled={isLoading || !currentModelData}
                     onClick={apiKey ? handleGenerate : onLoginRequired}
                     className="self-end"
                 >

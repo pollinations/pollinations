@@ -72,7 +72,13 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
-
+export {
+    createResponsesChatTransport,
+    type ResponsesChatTransportOptions,
+    responsesSseToUiMessageStream,
+    type SendMessagesInput,
+    uiMessagesToResponsesInput,
+} from "./responses-chat-transport.js";
 // Export all types
 export type {
     AccountBalance,
@@ -173,6 +179,5 @@ export type {
     VideoModel,
     VideoResponse,
 } from "./types.js";
-
 // Export runtime constants and the error class
 export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";

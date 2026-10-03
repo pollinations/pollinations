@@ -2113,7 +2113,7 @@ test("app-publish catalog PRs pay the co-authoring submitter; other PRs pay only
     ]);
 });
 
-test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, excluding administrative issues", async ({
+test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including converted quests", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -2193,11 +2193,13 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, excluding
         [
             `quest:github:reported_issue:9101:github:${user.githubId}`,
             `quest:github:reported_issue:9102:github:${user.githubId}`,
+            `quest:github:reported_issue:9105:github:${user.githubId}`,
             `quest:github:reported_issue:9108:github:${user.githubId}`,
+            `quest:github:reported_issue:9111:github:${user.githubId}`,
         ],
     );
     expect(reportRewards.map((reward) => reward.pollenAmount)).toEqual([
-        3, 3, 3,
+        3, 3, 3, 3, 3,
     ]);
     expect(
         reportRewards.every((reward) => reward.balanceBucket === "tier"),
@@ -2213,7 +2215,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, excluding
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 9);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

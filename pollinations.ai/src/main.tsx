@@ -31,7 +31,7 @@ for (const tag of document.head.querySelectorAll("[data-route-meta]")) {
     tag.remove();
 }
 
-// Play and the Community build diary sign in through AuthProvider.
+// Play signs in through AuthProvider.
 createRoot(rootElement).render(
     <AuthProvider>
         <RouterProvider router={router} />

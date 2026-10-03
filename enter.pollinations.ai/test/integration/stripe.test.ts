@@ -936,11 +936,13 @@ test("GET /api/stripe/billing returns default card billing address", async ({
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "IN",
         },
     });
 
     expect(response.status).toBe(200);
     const data = (await response.json()) as {
+        ipCountry: string | null;
         paymentMethods: { isDefault: boolean }[];
         billingDetails: {
             name: string | null;
@@ -953,6 +955,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
             country: string | null;
         } | null;
     };
+    expect(data.ipCountry).toBe("IN");
     expect(data.paymentMethods.some((m) => m.isDefault)).toBe(true);
     // The company is its own field; the name is the person's.
     expect(data.billingDetails).toEqual({

@@ -901,6 +901,7 @@ All endpoints return errors in this envelope:
 | \`400\` | \`failed_to_download_image\` | A supplied image URL could not be downloaded — host unreachable, DNS failure, a non-2xx response from the image host, or a body that ended mid-read. The host's status is reported in \`details.upstreamStatus\`. |
 | \`400\` | \`image_too_large\` | A supplied image exceeds the per-image size cap, or the request exceeds the per-request image size or count cap. |
 | \`400\` | \`unsupported_image_media_type\` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
+| \`400\` | \`content_blocked\` | The input safety check blocked the request before generation — enabled via \`safe\` / the \`Pollinations-Safe\` header, or required by the model (\`required_safety\`). \`message\` names the triggered categories, e.g. \`Request blocked by safety filter: sexual\`. Change the input rather than retrying it. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
 | \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
 | \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |

@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-02",
+  "period_start": "2026-10-02",
+  "period_end": "2026-10-02",
+  "title": "Hosted sandboxes and a new way to get an API key",
+  "summary": "Sandboxes, larger media chats, visible model evals, and community-built tools all got a little easier to use.\n\nDevelopers can run E2B-compatible sandboxes through gen with existing E2B tools, or manage them with `polli sandbox` and connect over SSH. A completed x402 Pollen-pack purchase now returns a budgeted API key; the checkout page shows payment-method examples relevant to the buyer’s country, and the Machines permission label says plainly what it grants.\n\nThe chat API now accepts requests up to 100 MiB with large inline images. It also offloads large data URIs in image, video, and file URL fields, reusing account-scoped uploads across turns instead of sending the same bytes again. Which media types work still depends on the model.\n\nModel Monitor has an Evals tab with weekly Alice and Bowls puzzle scores, past runs, official-versus-community comparisons, and margins of error. Eval runs now pace requests to each model’s advertised rate limit and publish the other scores when one model runs out of retries.",
+  "pr_count": 19,
+  "prs": [
+    {
+      "number": 15656,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 15674,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 15745,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16180,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16194,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16197,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16199,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16207,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16210,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16211,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16218,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16251,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16258,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16261,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16262,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16267,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16268,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16269,
+      "date": "2026-10-02"
+    },
+    {
+      "number": 16270,
+      "date": "2026-10-02"
+    }
+  ],
+  "generated_at": "2026-10-03T06:30:38.168168+00:00"
+}

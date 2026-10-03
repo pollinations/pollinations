@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="语音谋杀之谜 — 侦探语音问询游戏：质问 AI 嫌疑人，从证词矛盾中指认凶手！">
+  <meta name="theme-color" content="#0c0a12">
+  <title>语音谋杀之谜 · Voice Murder Mystery</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%95%B5%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ======== 顶部状态栏 ======== -->
+  <div class="topbar">
+    <div class="topbar-brand">🕵️ 语音谋杀之谜</div>
+    <div class="topbar-right">
+      <span class="phase-chip" id="phase-chip">待命</span>
+      <button class="icon-btn" id="btn-mute" title="旁白静音开关">🔊</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ======== 视图：案件选择 ======== -->
+    <section id="view-start" class="view active">
+      <div class="hero">
+        <div class="hero-emoji">🕵️</div>
+        <h1>语音谋杀之谜</h1>
+        <p class="hero-sub">Voice Murder Mystery · 质问嫌疑人 · 找出真凶</p>
+        <p class="hero-desc">你是侦探。案发现场有 3 名嫌疑人，人人都有秘密。<br>
+        用语音直接质问他们，把证词记进笔记本，揪出证词里的致命矛盾。</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary hidden" id="btn-continue">继续调查</button>
+          <button class="btn btn-ghost" id="btn-new-game">开始新调查</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>📁 选择案件</h2>
+        <div class="case-list" id="case-list"></div>
+      </div>
+
+      <div class="panel">
+        <h2>🧪 语音与增强</h2>
+        <div class="ai-row">
+          <span class="ai-label" id="mic-state">🎙 语音识别：检测中…</span>
+          <span class="byop-state" id="byop-status">未登录（本地案件库）</span>
+        </div>
+        <div class="ai-row">
+          <button class="btn btn-small btn-ghost" id="btn-ai-case" disabled>✨ AI 生成新案件</button>
+          <button class="btn btn-small btn-ghost" id="btn-byop-login">BYOP 登录</button>
+          <button class="btn btn-small btn-ghost hidden" id="btn-byop-logout">退出登录</button>
+        </div>
+        <p class="tiny">语音提问需 Chrome / Edge（SpeechRecognition）；不支持时自动使用打字输入。<br>
+        BYOP 登录后 AI 嫌疑人可自由对答任意问题，并可生成全新案件（API key 仅存内存）。</p>
+      </div>
+
+      <div class="howto">
+        <h3>📖 玩法说明</h3>
+        <ol>
+          <li><strong>阅读案发简报</strong>：了解案情、时间线与现场证据。</li>
+          <li><strong>逐一问询嫌疑人</strong>：语音或打字提问，把关键证词记入侦探笔记本。</li>
+          <li><strong>标记可疑点</strong>：谁的证词与时间线/证据对不上？</li>
+          <li><strong>发起指控</strong>：指认真凶，查看矛盾对照表与案件真相。</li>
+        </ol>
+        <p class="tiny">💡 真凶的证词一定藏着破绽——但每个人都在隐瞒些什么。</p>
+      </div>
+    </section>
+
+    <!-- ======== 视图：案发简报 ======== -->
+    <section id="view-brief" class="view">
+      <div class="scene-head">
+        <span class="scene-emoji" id="brief-emoji">🏰</span>
+        <h2 id="brief-title">庄园夜宴谋杀案</h2>
+        <p class="faction-line" id="brief-victim">被害人：xxx</p>
+      </div>
+
+      <div class="panel">
+        <h2>📜 案情简报</h2>
+        <p class="story-text" id="brief-story"></p>
+      </div>
+
+      <div class="panel">
+        <h2>🕐 案发时间线</h2>
+        <ul class="timeline" id="brief-timeline"></ul>
+      </div>
+
+      <div class="panel">
+        <h2>🔍 现场证据</h2>
+        <ul class="evidence-list" id="brief-evidence"></ul>
+      </div>
+
+      <div class="panel">
+        <h2>👤 嫌疑人档案</h2>
+        <div class="suspect-profiles" id="brief-suspects"></div>
+        <p class="tiny">接下来你将逐一问询他们。准备好后进入问询室。</p>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btn-brief-next">🔦 进入问询室 →</button>
+    </section>
+
+    <!-- ======== 视图：调查 / 问询 ======== -->
+    <section id="view-investigate" class="view">
+      <div class="invest-head">
+        <h2 id="inv-case-title">问询室</h2>
+        <p class="tiny" id="inv-hint">选择一个嫌疑人开始问询</p>
+      </div>
+
+      <div class="suspect-tabs" id="inv-tabs"></div>
+
+      <div class="panel" id="inv-chat-panel">
+        <div class="chat-head">
+          <span class="chat-avatar" id="chat-avatar">🧑</span>
+          <div>
+            <div class="chat-name" id="chat-name">嫌疑人</div>
+            <div class="chat-role" id="chat-role">身份</div>
+          </div>
+        </div>
+
+        <div class="chat-log" id="chat-log"></div>
+
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="打字提问…（或点击麦克风语音提问）" autocomplete="off">
+          <button class="icon-btn mic-btn" id="btn-mic" title="语音提问">🎙️</button>
+        </div>
+        <div class="chat-actions">
+          <button class="btn btn-small btn-ghost" id="btn-replay">🔊 重听回答</button>
+          <button class="btn btn-small btn-ghost" id="btn-note">📓 记入笔记本</button>
+        </div>
+        <p class="tiny" id="mic-hint"></p>
+      </div>
+
+      <div class="panel">
+        <h2>📓 侦探笔记本</h2>
+        <div class="notebook" id="notebook"></div>
+        <p class="tiny hidden" id="notebook-empty">笔记本还是空的。问询时点击「记入笔记本」保存证词，手动标记可疑点。</p>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btn-inv-accuse">⚖️ 我已经有答案了，发起指控 →</button>
+    </section>
+
+    <!-- ======== 视图：指控 ======== -->
+    <section id="view-accuse" class="view">
+      <div class="accuse-head">
+        <h2>⚖️ 指控凶手</h2>
+        <p class="tiny">侦探，请指认你认定的真凶。慎重——错误的指控会让真凶逍遥法外。</p>
+      </div>
+
+      <div class="accuse-list" id="accuse-list"></div>
+
+      <button class="btn btn-primary btn-block" id="btn-accuse-confirm" disabled>发出指控</button>
+    </section>
+
+    <!-- ======== 视图：真相 ======== -->
+    <section id="view-truth" class="view">
+      <div class="truth-banner" id="truth-banner">
+        <div class="truth-emoji" id="truth-emoji">🎯</div>
+        <h1 id="truth-title">指控正确！真凶落网</h1>
+        <p id="truth-sub"></p>
+      </div>
+
+      <div class="panel">
+        <h2>📜 案件真相</h2>
+        <p class="story-text" id="truth-story"></p>
+      </div>
+
+      <div class="panel">
+        <h2>⚔️ 矛盾对照表</h2>
+        <div class="contradictions" id="truth-contradictions"></div>
+        <p class="tiny" id="truth-note">绿=无辜 · 红=真凶 · 每名嫌疑人都隐瞒着与命案无关的秘密</p>
+      </div>
+
+      <div class="end-actions">
+        <button class="btn btn-ghost" id="btn-truth-restart">返回案件选择</button>
+        <button class="btn btn-primary" id="btn-truth-replay">再查一桩案</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ======== 旁白字幕条 ======== -->
+  <div class="narration-bar hidden" id="narration-bar">
+    <div class="narration-label">🎙 AI 主持人</div>
+    <div class="narration-text" id="narration-text"></div>
+  </div>
+
+  <footer class="app-footer">
+    <div>语音谋杀之谜 · 纯静态应用 · 可直接托管于 GitHub Pages</div>
+    <div>语音识别 Web Speech API · TTS 由 Pollinations 生成 / Web Speech 兜底 · 文本增强可选 BYOP 登录</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

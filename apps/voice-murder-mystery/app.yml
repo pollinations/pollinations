@@ -1,0 +1,8 @@
+name: "Voice Murder Mystery"
+description: "Question AI suspects out loud with your microphone, catch contradictions in their alibis and accuse the culprit. A new case is generated every playthrough with the Pollinations text API; questions are transcribed and voices spoken through Pollinations audio APIs. Supports Bring your own Pollen."
+url: "https://voice-murder-mystery.pollinations.ai"
+category: "games"
+language: "en"
+quest: "#15724"
+uses_pollinations: true
+bring_your_own_pollen: true

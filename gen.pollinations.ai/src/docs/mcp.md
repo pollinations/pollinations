@@ -120,6 +120,12 @@ model health and account balance.
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
 | `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+| `getUsage` | Read request history or a daily usage summary; requires `account:usage` permission |
+| `getEarnings` | Read developer earnings; requires `account:usage` permission |
+| `listQuests` | List quests and their claim state; requires `account:usage` permission |
+| `listKeys` | List API keys; requires `account:keys` permission |
+| `createKey` | Create an API key and return its secret once; requires `account:keys` permission |
+| `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
 clients should not rely on a hardcoded model list.

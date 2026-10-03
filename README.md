@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ Jev Assembler](https://tomdacatto.github.io/pollinations-jev-assembler) | Describe a page in a sentence. Jev makes 16 small decisions about it in a single POST /alpha/decisions call (palette, typography, layout, call to action, roundness, density, urgency, and which section | [@tomdacatto](https://github.com/tomdacatto) |
 | [🛠️ Pollinations for Unity](https://github.com/Marcus-Mok-GH/pollinations-unity) | A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene. | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
 | [🖼️ Pollinations for Krita](https://github.com/xiaotian1171/pollinations-krita) | A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🖼️ Pollinations for Figma - AI Image Studio](https://guest453.github.io/pollinations-figma/) | A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi | [@Guest453](https://github.com/Guest453) |
@@ -37,7 +38,6 @@
 | [🎬 Aizen](https://aizensuske718-ctrl.github.io/Aizen) | App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. | [@aizensuske718-ctrl](https://github.com/aizensuske718-ctrl) |
 | [🖼️ Pollinations for Figma](https://github.com/xiaotian1171/pollinations-figma) | A Figma plugin that generates and edits images with Pollinations inside the canvas, on the user's own Pollen. **What it does** - **Generate onto the canvas.** The prompt goes to GET /image/{prompt} an | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [✍️ Pollinations for Obsidian](https://github.com/xiaotian1171/pollinations-obsidian) | An Obsidian plugin that generates text and images with Pollinations inside the user's notes, on the user's own Pollen. **What it does** - **Text from a prompt or the selection.** The command asks for | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [✍️ Pollinations for Obsidian](https://github.com/tomdacatto/pollinations-obsidian) | Obsidian plugin: generate text or images from a selection or prompt using the Pollinations API; images save into the vault and embed at the cursor. | [@tomdacatto](https://github.com/tomdacatto) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

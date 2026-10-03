@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-02",
+  "period_start": "2026-10-02",
+  "period_end": "2026-10-02",
+  "generated_at": "2026-10-03T06:30:38.168168+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-02/images/reddit.jpg"
+    }
+  ],
+  "title": "Hosted sandboxes, larger chat requests, and weekly model evals",
+  "text": "19 PRs merged today. The larger changes:\n\n- [Hosted sandboxes](https://github.com/pollinations/pollinations/pull/15656) are now available through gen and Polli CLI with E2B compatibility. Separately, [x402 checkout](https://github.com/pollinations/pollinations/pull/15745) can return a budgeted API key.\n- Chat now accepts [requests up to 100 MiB](https://github.com/pollinations/pollinations/pull/16199), including reusable inline-image uploads. Another change [offloads and reuses large image, video, and file URL data URIs](https://github.com/pollinations/pollinations/pull/16267). The point is to avoid hauling the same media through every turn.\n- [Weekly model evals](https://github.com/pollinations/pollinations/pull/15674) have a Model Monitor Evals tab. The eval runner now [paces requests and publishes scores](https://github.com/pollinations/pollinations/pull/16251) when model rate limits get in the way. Rate limits remain rate limits; the runner just handles them better.\n- Polli CLI gained [native Pi MCP setup](https://github.com/pollinations/pollinations/pull/16218), and `polli gen chat` no longer sends or records `/exit` when you leave. The API docs also have a [copyable Polli harness request](https://github.com/pollinations/pollinations/pull/16194).\n\nKrita and Unity integrations were added to the app listings. The Community page now shows activity counts, votes, and a Quest leaderboard; qualifying quest issues can count toward reporter rewards. There were also OpenAPI doc syncs and smaller Enter and Machines UI fixes.\n\nIf you try the sandbox or larger chat requests, reports with a minimal repro are particularly useful."
+}

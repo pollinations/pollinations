@@ -1,0 +1,36 @@
+{
+  "pr_number": 15731,
+  "title": "feat(mcp): add usage, earnings, quests and key tools",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15731",
+  "merged_at": "2026-10-03T02:11:38Z",
+  "labels": [
+    "POLLEN-QUEST"
+  ],
+  "pr_body_excerpt": "Fixes #15721\n\n- Adds `getUsage`, `getEarnings`, `listQuests`, `listKeys`, `createKey`, `revokeKey` to the MCP server. Each is a thin call to the `/account/*` route in the quest table; responses pass through unchanged.\n- Params are the CLI flags: `daily`, `days`, `limit`, `model`, `key`, `name`, `type`, `expiresIn`, `models`, `budget`, `permissions`, `redirectUri`, `earnings`. `getUsage` returns 20 rows by default, like `polli usage`.\n- Permissions stay in the API (`account:usage` for reads, `account:keys` for key tools); its error message is returned as is.\n- `packages/mcp/test/accountService.test.js` checks each tool's method, URL, body and auth header, plus a 403 pass-through. README, `gen.pollinations.ai/src/docs/mcp.md`, `SERVER_INSTRUCTIONS` and the worker's tool-list test are updated. `getBalance` is untouched.\n- 5 files, +213/−1. `packages/mcp` 19/19 and `apps/mcp` 8/8 pass.\n\n## Live calls\n\nOne call per tool through the MCP worker (real MCP client, `https://gen.pollinations.ai` behind it), using a key with `usage` + `keys` scopes. Values from the account are trimmed; the new key's secret is redacted.\n\n**getUsage** `{\"limit\":3}`\n```json\n{ \"count\": 3, \"usage\": [ { \"timestamp\": \"2026-09-29 07:57:45\", \"type\": \"generate.text\", \"model\": \"openai/gpt-6-luna\", \"meter_source\": \"tier\", \"output_text_tokens\": 98, \"cost_usd\": 0.00024898 } ] }\n```\n**getUsage** `{\"daily\":true,\"days\":7}`\n```json\n{ \"usage\": [ { \"date\": \"2026-09-29\", \"model\": \"openai/gpt-5.4-nano\", \"meter_source\": \"tier\", \"requests\": 48, \"cost_usd\": 0.023742859999999998 } ] }\n```\n**getEarnings** `{\"days\":30}`\n```json\n{ \"daily\": \"211 rows\", \"perEntity\": [ { \"source\": \"community_model\", \"requests\": 720, \"reward_rate\": 0.75 } ] }\n```\n**listQuests**\n```json\n{ \"quests\": \"119 quests\", \"first\": { \"id\": \"first_api_key\", \"title\": \"Create your first API key\", \"rewardAmount\": 0.25, \"status\": \"completed\" } }\n```\n**listKeys**\n```json\n{ \"data\": \"14 keys\", \"first\": { \"name\": \"Sonar\", \"prefix\": \"sk\", \"permissions\": {}, \"pollen",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The toolbox grows six drawers",
+    "blurb": "The MCP toolbox grows six drawers for usage, earnings, quests, and API keys. Polli can check the account without pretending a balance is the whole story.",
+    "summary": "The MCP server adds getUsage, getEarnings, listQuests, listKeys, createKey, and revokeKey as pass-through calls to /account/* routes; getUsage defaults to 20 rows.",
+    "impact": "MCP clients gain account usage and earnings reports, quest listings, and API-key management, with account:usage and account:keys permissions enforced by the API.",
+    "keywords": [
+      "MCP",
+      "account tools",
+      "usage",
+      "earnings",
+      "quests",
+      "API keys"
+    ],
+    "visual_concept": "Depict six labeled drawers in a cozy garden-shed workstation: usage, earnings, quests, key list, key creation, and key revocation. Polli, wearing a tiny tool belt, opens the drawers alongside a curious CRT monitor robot; lime-green code-plants make the account tools feel like part of the garden.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli and a curious CRT monitor robot explore six little drawers labeled 'USAGE', 'EARNINGS', 'QUESTS', 'KEYS', 'NEW KEY', and 'REVOKE', beside a glowing terminal and code-plants; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny tool belt, small-to-medium in the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a prominent soft lime green (#ecf874) glow against warm cream and pastel lavender, with dark purple (#110518) outlines; nostalgic and emotionally warm like Stardew Valley or A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-15731.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli and a curious CRT monitor robot explore six little drawers labeled 'USAGE', 'EARNINGS', 'QUESTS', 'KEYS', 'NEW KEY', and 'REVOKE', beside a glowing terminal and code-plants; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny tool belt, small-to-medium in the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a prominent soft lime green (#ecf874) glow against warm cream and pastel lavender, with dark purple (#110518) outlines; nostalgic and emotionally warm like Stardew Valley or A Short Hike."
+  },
+  "generated_at": "2026-10-03T02:12:34.639865+00:00"
+}

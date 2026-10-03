@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { isMap, parseDocument } from "yaml";
+import { isMap, isScalar, parseDocument } from "yaml";
 import {
     commandExists,
     readTextIfExists,
@@ -252,7 +252,7 @@ const yamlClient = (adapter: {
         if (doc.contents === null) doc.contents = doc.createNode({}) as never;
         if (
             !isMap(doc.contents) ||
-            (doc.has(table) && !isMap(doc.get(table)))
+            (doc.get(table) != null && !isMap(doc.get(table)))
         ) {
             throw new Error(
                 `${path}: expected YAML mappings for config and ${table}`,
@@ -263,6 +263,14 @@ const yamlClient = (adapter: {
         const removed = mutate(entries);
         if (JSON.stringify(entries) === JSON.stringify(before)) {
             return { installed: ownedEntryNames(entries), removed };
+        }
+        const existing = doc.get(table, true);
+        if (isScalar(existing)) {
+            const mapping = doc.createNode({});
+            mapping.comment = existing.comment;
+            mapping.commentBefore = existing.commentBefore;
+            mapping.spaceBefore = existing.spaceBefore;
+            doc.set(table, mapping);
         }
         for (const name of Object.keys(before)) {
             if (!(name in entries)) doc.deleteIn([table, name]);

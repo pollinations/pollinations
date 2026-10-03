@@ -7,7 +7,12 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { useQuestLeaderboard } from "../../data/community";
+import {
+    type QuestLeaderboardData,
+    useQuestLeaderboard,
+} from "../../data/community";
+
+export type { QuestLeaderboardData };
 
 const QUESTS_PAGE_URL = "https://enter.pollinations.ai/quests";
 const VISIBLE_CONTRIBUTORS = 8;
@@ -16,10 +21,14 @@ function formatNumber(value: number) {
     return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-/** Global Quest totals and the top earners, with loading and failure states. */
-export function QuestLeaderboard() {
-    const { data, loading } = useQuestLeaderboard();
-
+/** Pure view exported so the rendered leaderboard can be tested without fetch. */
+export function QuestLeaderboardContent({
+    data,
+    loading = false,
+}: {
+    data: QuestLeaderboardData | null;
+    loading?: boolean;
+}) {
     return (
         <Section
             title="Quest leaderboard"
@@ -110,9 +119,7 @@ export function QuestLeaderboard() {
                                                     {formatNumber(
                                                         entry.completedQuests,
                                                     )}{" "}
-                                                    {entry.completedQuests === 1
-                                                        ? "reward"
-                                                        : "rewards"}
+                                                    completed
                                                 </Text>
                                                 <Text
                                                     as="strong"
@@ -145,4 +152,11 @@ export function QuestLeaderboard() {
             )}
         </Section>
     );
+}
+
+/** Global Quest totals and the top earners, with loading and failure states. */
+export function QuestLeaderboard() {
+    const { data, loading } = useQuestLeaderboard();
+
+    return <QuestLeaderboardContent data={data} loading={loading} />;
 }

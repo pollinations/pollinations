@@ -12,24 +12,6 @@ import { incrementUserMetric } from "./userMetrics.js";
 import debug from "debug";
 import { shouldBypassQueue, isEnterRequest } from "./auth-utils.js";
 
-// Import rate limit logger for detailed 429 error logging
-let logRateLimitError = null;
-
-// Async function to load rate limit logger
-async function loadRateLimitLogger() {
-	try {
-		// Dynamic import to avoid breaking services that don't have the text service logging
-		const rateLimitLogger = await import("../text.pollinations.ai/logging/rateLimitLogger.js");
-		logRateLimitError = rateLimitLogger.logRateLimitError;
-	} catch (error) {
-		// Silently fail if rate limit logger not available (e.g., in image service)
-		debug("pollinations:queue")("Rate limit logger not available:", error.message);
-	}
-}
-
-// Load the logger asynchronously
-loadRateLimitLogger();
-
 // Set up debug loggers with namespaces
 const log = debug("pollinations:queue");
 const errorLog = debug("pollinations:error");
@@ -220,15 +202,6 @@ export async function enqueue(req, fn, { interval = 6000, cap = 1, forceCap = fa
 				tier: authResult.tier || "anonymous"
 			}
 		});
-		
-		// Log detailed rate limit error for debugging (if logger available)
-		if (logRateLimitError) {
-			try {
-				logRateLimitError(error, authResult, req, { interval, cap, forceCap });
-			} catch (logError) {
-				errorLog("Failed to log rate limit error:", logError.message);
-			}
-		}
 		
 		throw error;
 	}

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Spot the Fake — 真假 AI 猜谜游戏：在倒计时内分辨真实照片与 AI 生成图片，练就火眼金睛。">
+  <meta name="theme-color" content="#0b0f1e">
+  <title>Spot the Fake · 真假 AI 猜谜游戏</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%95%B5%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+
+    <!-- ======== 头部 ======== -->
+    <header class="app-header">
+      <h1>Spot the Fake</h1>
+      <p class="subtitle">真假 AI 猜谜游戏 · 哪一张是 AI 生成的？</p>
+    </header>
+
+    <!-- ======== HUD（游戏中显示） ======== -->
+    <div class="hud" id="hud" style="display:none;">
+      <div class="hud-item"><span>回合</span><b id="round-label">0 / 0</b></div>
+      <div class="hud-item"><span>得分</span><b id="score-label">0</b></div>
+      <div class="hud-item hud-streak"><span>连对</span><b id="streak-label">0</b></div>
+    </div>
+
+    <!-- ======== 视图：开始 ======== -->
+    <section id="view-start" class="view">
+      <div class="start-hero">
+        <span class="emoji">🕵️‍♂️</span>
+        <h2>你能分辨出 AI 吗？</h2>
+        <p>每一回合都会出现两张图片：一张来自真实世界的照片，一张由 AI 生成。<br>
+        在倒计时结束前，点出你认为<b>由 AI 生成</b>的那一张。连对越多，得分越高！</p>
+      </div>
+
+      <div class="start-panel">
+        <h2>开始游戏</h2>
+        <div class="setting-row">
+          <label for="set-rounds">回合数</label>
+          <select id="set-rounds">
+            <option value="5">5 回合（快速）</option>
+            <option value="10" selected>10 回合（标准）</option>
+            <option value="20">20 回合（挑战）</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="set-time">每轮倒计时</label>
+          <select id="set-time">
+            <option value="10">10 秒</option>
+            <option value="15" selected>15 秒</option>
+            <option value="20">20 秒</option>
+            <option value="30">30 秒（轻松）</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block" id="btn-start">开始游戏</button>
+        <div class="quick-row">
+          <button class="btn btn-ghost" id="btn-start-short">⚡ 快速 5 回合</button>
+          <button class="btn btn-ghost" id="btn-start-long">🔥 挑战 20 回合</button>
+        </div>
+      </div>
+
+      <div class="how-to">
+        <h3>玩法说明</h3>
+        <ol>
+          <li>每轮展示两张图：<strong>一张真实照片</strong>（来自 Wikimedia Commons）与<strong>一张 AI 生成图</strong>（由 Pollinations AI 实时生成）。</li>
+          <li>倒计时内点击你认为由 <strong>AI 生成</strong>的图片（点击卡片中央提示即可）。</li>
+          <li>答对：<strong>+100 分</strong>，且每多连对一次额外 <strong>+25 分</strong>；答错或超时则连击重置。</li>
+          <li>每轮结束会揭示答案，并给出 <strong>“假图破绽”</strong> 提示与真实照片小知识，越玩越会分辨。</li>
+          <li>AI 图按提示词哈希缓存到本地（Cache API / localStorage），同一提示词只生成一次。</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ======== 视图：加载 ======== -->
+    <section id="view-loading" class="view">
+      <div class="loading-box">
+        <div class="spinner"></div>
+        <p id="loading-msg">正在生成图片…</p>
+        <div class="loading-track"><div class="bar" id="loading-progress"></div></div>
+      </div>
+    </section>
+
+    <!-- ======== 视图：游戏 ======== -->
+    <section id="view-game" class="view">
+      <div class="game-header">
+        <div class="round-label" id="round-label-top"></div>
+        <div class="timer-wrap">
+          <div class="timer-num" id="timer-num">15</div>
+          <div class="timer-track"><div class="timer-bar" id="timer-bar"></div></div>
+        </div>
+      </div>
+
+      <div class="banner" id="round-banner">哪一张是 AI 生成的？</div>
+
+      <div class="cards">
+        <div class="card" id="card-left">
+          <div class="card-img-wrap">
+            <div class="card-badge">A</div>
+            <img id="img-left" alt="选项 A 图片" loading="lazy">
+            <div class="card-hint">👆 这张是 AI 生成的？</div>
+          </div>
+          <div class="card-label">
+            <span>选项 A</span>
+            <span class="tag" id="caption-left">A</span>
+          </div>
+        </div>
+
+        <div class="card" id="card-right">
+          <div class="card-img-wrap">
+            <div class="card-badge">B</div>
+            <img id="img-right" alt="选项 B 图片" loading="lazy">
+            <div class="card-hint">👆 这张是 AI 生成的？</div>
+          </div>
+          <div class="card-label">
+            <span>选项 B</span>
+            <span class="tag" id="caption-right">B</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======== 视图：揭示 ======== -->
+    <section id="view-reveal" class="view">
+      <div class="reveal-box">
+        <div class="reveal-title" id="reveal-title">答对了！</div>
+        <div class="reveal-sub" id="reveal-streak"></div>
+
+        <div class="reveal-pair">
+          <div class="mini-card ai">
+            <img id="reveal-ai-img" alt="AI 生成的图片">
+            <div class="mini-label" id="reveal-ai-title">AI 生成</div>
+          </div>
+          <div class="mini-card real">
+            <img id="reveal-real-img" alt="真实照片">
+            <div class="mini-label" id="reveal-real-title">真实照片</div>
+          </div>
+        </div>
+
+        <div class="flaw-box" id="reveal-flaw"></div>
+        <div class="truth-box" id="reveal-truth"></div>
+
+        <div class="reveal-meta">
+          <span class="gain" id="reveal-score">+0 分</span>
+          <span class="streak" id="reveal-streak2"></span>
+        </div>
+        <div class="reveal-credit" id="reveal-credit"></div>
+
+        <button class="btn btn-primary btn-block" id="btn-next">下一回合</button>
+      </div>
+    </section>
+
+    <!-- ======== 视图：结束 ======== -->
+    <section id="view-end" class="view">
+      <div class="end-box">
+        <div class="end-title" id="end-title">🏆 火眼金睛！</div>
+        <div class="end-stats" id="end-stats"></div>
+
+        <div class="history">
+          <h3>逐回合回顾</h3>
+          <div class="history-list" id="history-list"></div>
+        </div>
+
+        <div class="end-actions">
+          <button class="btn btn-ghost" id="btn-replay">返回主页</button>
+          <button class="btn btn-primary" id="btn-replay-same">再来一局（同设置）</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ======== 页脚 ======== -->
+  <footer class="app-footer">
+    <div>
+      真实照片来自 <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>（公共领域 / CC 许可），按许可要求署名；<br>
+      AI 图片由 <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations AI</a> 按提示词实时生成，并按提示词哈希缓存至本地。
+    </div>
+    <div>© 2026 Spot the Fake · 纯静态应用，可直接托管于 GitHub Pages</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

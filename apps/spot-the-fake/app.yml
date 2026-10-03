@@ -1,0 +1,8 @@
+name: "Spot the Fake"
+description: "A real-or-AI guessing game: guess which of two images was AI-generated before the timer runs out. Fake images are generated live with the Pollinations image API; real photos come from Wikimedia Commons."
+url: "https://spot-the-fake.pollinations.ai"
+category: "games"
+language: "en"
+quest: "#15725"
+uses_pollinations: true
+bring_your_own_pollen: true

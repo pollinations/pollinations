@@ -26,7 +26,22 @@ export function createMessageTransform(systemMessage: string): TransformFn {
 
         const existingSystemContent = messages
             .filter((msg) => msg.role === "system")
-            .map((msg) => String(msg.content || ""))
+            .map((msg) =>
+                Array.isArray(msg.content)
+                    ? msg.content
+                          .flatMap((part) =>
+                              part &&
+                              typeof part === "object" &&
+                              "type" in part &&
+                              part.type === "text" &&
+                              "text" in part &&
+                              typeof part.text === "string"
+                                  ? [part.text]
+                                  : [],
+                          )
+                          .join("\n")
+                    : String(msg.content || ""),
+            )
             .join("\n\n");
 
         const nonSystemMessages = messages.filter(

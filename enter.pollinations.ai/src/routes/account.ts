@@ -2,6 +2,7 @@ import type { Logger } from "@logtape/logtape";
 import {
     type ApiKeyType,
     createApiKeyForUser,
+    MEMORY_PERMISSIONS,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import {
@@ -136,6 +137,11 @@ const CreateKeySchema = z.object({
         .describe(
             'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes.',
         ),
+    memoryPermissions: z
+        .array(z.enum(MEMORY_PERMISSIONS))
+        .nullable()
+        .optional()
+        .describe('Memory permissions: ["read", "write"]. Secret keys only.'),
     redirectUris: z
         .array(z.string())
         .optional()
@@ -1488,6 +1494,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                memoryPermissions,
                 redirectUris,
                 earningsEnabled,
             } = c.req.valid("json");
@@ -1512,6 +1519,7 @@ export const accountRoutes = new Hono<Env>()
                 allowedModels,
                 pollenBudget,
                 accountPermissions,
+                memoryPermissions,
                 metadata,
                 defaultCreatedVia: "api",
                 createdByApiKeyId: c.var.auth.apiKey?.id,

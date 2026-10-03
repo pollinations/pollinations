@@ -1,0 +1,11 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "sops": "none",
+  "install": "npm ci",
+  "build": "npm run check",
+  "deploy": "npm run deploy",
+  "watch": [
+    "shared/registry/mcp.ts"
+  ]
+}

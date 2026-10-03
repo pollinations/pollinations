@@ -2843,12 +2843,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3-coder-30b-a3b-instruct": {
     "cost": {
-      "completionTextTokens": 0.00000026,
-      "promptTextTokens": 0.00000007,
+      "completionTextTokens": 0.0000006,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.00000026,
-      "promptTextTokens": 0.00000007,
+      "completionTextTokens": 0.0000006,
+      "promptTextTokens": 0.00000015,
     },
   },
   "qwen/qwen3-coder-next": {

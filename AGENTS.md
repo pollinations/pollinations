@@ -100,7 +100,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
 - Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
-- Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
 - Never synchronize production secrets from an unmerged commit or a branch other than `production`.
 - For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.
 
@@ -160,6 +159,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
   reintroduce externals the package source does not import.
 
 ### Commands & Files
+
+- Maintain project skills in `.claude/skills/`. Expose them to Codex through
+  relative directory links in `.agents/skills/`; keep command adapters as
+  pointers to their maintained instructions, never copied workflows.
 
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
@@ -248,9 +251,9 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 - Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
 - Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
-## GitHub Labels
+## GitHub Project Manager
 
-A bot labels every new issue and PR using the rules in `operations/github/project-manager.md`. Workflow labels (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

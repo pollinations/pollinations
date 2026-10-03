@@ -53,7 +53,7 @@ Polli defaults to `openai/gpt-6-sol` unless you pass `--model <id>`. Bloom is ke
 | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now** — `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, discovering models from the live catalog. Install the hosted MCP servers with `polli mcp install hermes`. Defaults to `openai/gpt-6-sol`. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-6-sol`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `openai/gpt-6-sol`. |
-| [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `openai/gpt-6-sol`. |
+| [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Add hosted MCP servers with `polli mcp install pi --all` (Pi 0.99+). Defaults to `openai/gpt-6-sol`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
 | [tgpt](https://github.com/aandrew-me/tgpt) | **Available now** — `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
 
@@ -158,7 +158,9 @@ polli harness pi status
 polli harness pi off
 ```
 
-`on` requires Pi to be installed with its official npm command: `npm install -g --ignore-scripts @earendil-works/pi-coding-agent`. It registers the current compatible Pollinations model catalog in `~/.pi/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`. Pi does not include built-in MCP support.
+`on` requires Pi to be installed with its official npm command: `npm install -g --ignore-scripts @earendil-works/pi-coding-agent`. It registers the current compatible Pollinations model catalog in `~/.pi/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`. This setup works with Pi 1.0 and older versions without separate configuration formats.
+
+Pi 0.99+ includes native MCP. Run `polli mcp install pi --all` (or choose servers from `polli mcp list`) to configure the hosted servers in `~/.pi/agent/mcp.json`. Both commands honor `PI_CODING_AGENT_DIR`. Run `/reload` in Pi after installation. MCP setup checks the Pi version before creating a key; upgrade older installations with `npm install -g --ignore-scripts @earendil-works/pi-coding-agent@latest`. MCP has its own lifecycle: `polli mcp status pi` and `polli mcp remove pi`; `polli harness pi off` leaves it unchanged.
 
 ## Prime Agent
 

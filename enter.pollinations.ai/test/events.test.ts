@@ -112,20 +112,20 @@ test("Exponential backoff delay", async () => {
     };
     expect(
         exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
+    ).toBeGreaterThanOrEqual(100);
     expect(
         exponentialBackoffDelay(1, backoffConfigWithJitter),
     ).toBeLessThanOrEqual(100 + 100 * 0.1);
     expect(
         exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
+    ).toBeGreaterThanOrEqual(100);
     expect(
         exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+    ).toBeLessThanOrEqual(10000);
     expect(
         exponentialBackoffDelay(5, backoffConfigWithJitter),
     ).toBeGreaterThanOrEqual(10000 - 10000 * 0.1);
     expect(
         exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+    ).toBeLessThanOrEqual(10000);
 });

@@ -120,6 +120,10 @@ export default defineConfig(async ({ mode }) => {
     return {
         ...baseConfig,
         test: {
+            // Catalog and paid-only checks occasionally exceed Vitest's 5s
+            // default under CI load (singleWorker + Tinybird/KV). Match enter
+            // e2e so flaky fetch timeouts do not fail otherwise-green PRs.
+            testTimeout: 30_000,
             // Use Gen's pool, not the older version hoisted for Enter.
             pool: fileURLToPath(
                 import.meta.resolve("@cloudflare/vitest-pool-workers"),

@@ -1,0 +1,8 @@
+name: "Pollinations NPC Dialogue for Roblox"
+description: "Give Roblox NPCs real conversations powered by Pollinations text models in a few lines of Luau. A single-file ModuleScript gives an NPC a persona and replies to players in chat via POST /v1/chat/completions; the API key lives in Roblox's Cloud Secrets store and is used only from server scripts. Includes a playable example Place with one talking NPC. Any text model from the live model list works. Players pay with their own Pollen (Bring your own Pollen)."
+url: "https://pollinations-npc-roblox.pollinations.ai"
+category: "games"
+language: "en"
+quest: "#15583"
+uses_pollinations: true
+bring_your_own_pollen: true

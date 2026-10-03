@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pollinations NPC Dialogue for Roblox</title>
+  <meta name="description" content="Give Roblox NPCs real conversations powered by Pollinations text models in a few lines of Luau. ModuleScript + example Place, API key in Roblox Cloud Secrets." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <p class="eyebrow">Pollinations Quest #15583</p>
+      <h1>Pollinations NPC Dialogue for Roblox</h1>
+      <p class="tagline">
+        Give Roblox NPCs real conversations powered by
+        <a href="https://gen.pollinations.ai/docs" target="_blank" rel="noopener">Pollinations</a>
+        text models — in a few lines of Luau.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#install">Install in Studio</a>
+        <a class="btn btn-ghost" href="#evidence">See live API evidence</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="features">
+      <h2>What you get</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>One-file ModuleScript</h3>
+          <p>
+            <code>PollinationsNPC.luau</code> gives any NPC a persona and replies to
+            players in chat. No Rojo, no Wally, no build step — copy-paste one file
+            into Studio.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Secrets-first API key</h3>
+          <p>
+            Your Pollinations key lives in
+            <a href="https://create.roblox.com/docs/cloud-services/secrets" target="_blank" rel="noopener">Roblox Cloud Secrets</a>
+            and is read only from server scripts via
+            <code>HttpService:GetSecret</code> — never shipped to the client.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Any live text model</h3>
+          <p>
+            Pick any model from the
+            <a href="https://gen.pollinations.ai/text/models" target="_blank" rel="noopener">live model list</a>
+            (default <code>openai/gpt-5.4-nano</code>).
+          </p>
+        </div>
+        <div class="card">
+          <h3>Playable example place</h3>
+          <p>
+            A tiny experience with one talking NPC ("Bramble"). Full Studio setup
+            guide included — publish it to get a playable
+            <code>https://www.roblox.com/games/&lt;placeId&gt;</code> URL.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="code">
+      <h2>In a few lines of Luau</h2>
+      <pre class="code-block" id="lua-sample"><code>local ServerScriptService = game:GetService("ServerScriptService")
+local PollinationsNPC = require(ServerScriptService.PollinationsNPC)
+
+local shopkeeper = PollinationsNPC.new({
+    secretName = "POLLINATIONS_API_KEY",  -- Roblox Cloud Secret
+    persona    = "You are Mara, a cheerful potion shopkeeper in a fantasy village.",
+    model      = "openai/gpt-5.4-nano",   -- any live text model
+})
+
+-- players say "@Mara hello" in chat -> Mara answers
+game.Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        shopkeeper:Respond(player, message, function(reply)
+            print("[Mara]", reply)
+        end)
+    end)
+end)</code></pre>
+      <button class="btn btn-small" id="copy-btn" data-target="lua-sample">Copy code</button>
+    </section>
+
+    <section id="install">
+      <h2>Install steps</h2>
+      <ol class="steps">
+        <li>
+          Get an API key at
+          <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">enter.pollinations.ai/keys</a>
+          (<code>sk_*</code> secret key).
+        </li>
+        <li>
+          In Studio, add a <code>ModuleScript</code> named
+          <code>PollinationsNPC</code> under <code>ServerScriptService</code> and paste
+          <code>luau/PollinationsNPC.luau</code> from the repo.
+        </li>
+        <li>
+          Create a Cloud Secret <code>POLLINATIONS_API_KEY</code> in
+          <em>Creator Dashboard → your experience → Secrets</em> (local secret for
+          playtesting).
+        </li>
+        <li>Enable HTTP requests: <em>File → Experience Settings → Security → Allow HTTP Requests</em>.</li>
+        <li>Run <code>luau/TalkingNPC.server.luau</code>, walk up to the NPC, and type
+          <code>@Bramble hello</code> in chat.</li>
+      </ol>
+      <p>
+        Full details in the
+        <a href="https://github.com/pollinations/pollinations/tree/main/apps/pollinations-npc-roblox" target="_blank" rel="noopener">repo README</a>
+        and <code>luau/ExamplePlace.md</code>.
+      </p>
+    </section>
+
+    <section id="evidence">
+      <h2>Live API evidence</h2>
+      <p>
+        Verified 2026-10-03 against
+        <code>POST https://gen.pollinations.ai/v1/chat/completions</code> with a real
+        <code>sk_</code> key, model <code>openai/gpt-5.4-nano</code> (live model list).
+      </p>
+      <div class="evidence-grid">
+        <div class="card">
+          <h3>Request</h3>
+          <pre class="code-block"><code>{
+  "model": "openai/gpt-5.4-nano",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are Bramble, a grumpy but lovable tavern keeper NPC in a Roblox game. Reply in 1-2 short sentences, in character, like a video game NPC. Never break character."
+    },
+    {
+      "role": "user",
+      "content": "Hey Bramble, what do you have on the menu today?"
+    }
+  ],
+  "temperature": 0.8,
+  "max_tokens": 120
+}</code></pre>
+        </div>
+        <div class="card">
+          <h3>Response <span class="ok">HTTP 200</span></h3>
+          <pre class="code-block"><code>{
+  "id": "chatcmpl-EUfTsGFwmomZklQe6aIDzp0Ln695T",
+  "model": "gpt-5.4-nano-2026-03-17",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Hmph—today's menu's got hearty stew, tough-but-tasty jerky, and a fresh loaf if you don't mind sharing. Don't just stand there; pick your poison before the next batch runs out."
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="links">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://gen.pollinations.ai/docs" target="_blank" rel="noopener">Pollinations API docs</a></li>
+        <li><a href="https://gen.pollinations.ai/text/models" target="_blank" rel="noopener">Live text model list</a></li>
+        <li><a href="https://create.roblox.com/docs/cloud-services/http-service" target="_blank" rel="noopener">Roblox HTTP service</a></li>
+        <li><a href="https://create.roblox.com/docs/cloud-services/secrets" target="_blank" rel="noopener">Roblox Cloud Secrets</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>
+        Built for <a href="https://github.com/pollinations/pollinations/issues/15583" target="_blank" rel="noopener">Pollinations quest #15583</a> ·
+        Pollinations · Roblox
+      </p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

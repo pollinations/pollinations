@@ -19,5 +19,4 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 1. **SOPS key setup** (one-time): Copy age key to `~/Library/Application Support/sops/age/keys.txt` on macOS
 2. **Optional - Nix**: Install [nix](https://github.com/DeterminateSystems/nix-installer) for reproducible dev environment, then run `nix develop`
 3. Install dependencies: `npm install`
-4. Run migrations: `npm run migrate:development`
-5. Run the dev server: `npm run dev`
+4. Run the dev server: `npm run dev` (applies local migrations automatically)

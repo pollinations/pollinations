@@ -278,7 +278,8 @@ describe("Codex harness", () => {
     it("reuses the child key with an explicit model override", async () => {
         await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
         mocks.resolveHarnessKey.mockClear();
-        await codex.on(ctx, { model: "openai/gpt-5.4-mini" });
+        const selected = await codex.on(ctx, { model: "openai/gpt-5.4-mini" });
+        expect(selected.model).toBe("pollinations/openai/gpt-5.4-mini");
         expect(mocks.resolveHarnessKey).toHaveBeenCalledWith(
             expect.objectContaining({ existingKey: "sk_new" }),
             expect.anything(),
@@ -287,6 +288,11 @@ describe("Codex harness", () => {
             "openai/gpt-5.4-nano",
             "openai/gpt-5.4-mini",
         ]);
+        const repeated = await codex.on(ctx, { model: "openai/gpt-5.4-mini" });
+        expect(repeated.model).toBe("pollinations/openai/gpt-5.4-mini");
+        expect((await codex.status(ctx)).model).toBe(
+            "pollinations/openai/gpt-5.4-nano",
+        );
     });
 
     it("refuses a foreign provider collision without requesting a key", async () => {

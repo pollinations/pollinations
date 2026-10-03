@@ -120,6 +120,42 @@ community models that reject a `tools` field 400 on every UI chat.
 request, so changing that config row takes effect immediately, for existing
 chats and users too. No container restart, no per-chat migration.
 
+## Onboarding defaults
+
+`worker.js` seeds three UX defaults that make the deployment friendlier to
+first-time users:
+
+- `DEFAULT_PROMPT_SUGGESTIONS` — new-chat starter cards. Upstream's fallback
+  list is generic (Roman Empire trivia, kids' art); ours exercises what this
+  deployment actually has: the Pollinations MCP tool server (images, audio,
+  balance) and the model catalog.
+- `DEFAULT_PINNED_MODELS` — a small curated set pinned to the sidebar for new
+  users, so they start from three strong picks (all verified on the
+  default seed tier) instead of a ~300-model
+  alphabetical list.
+- `USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS` — lets `user`-role accounts
+  create workspace knowledge bases. Upstream defaults this off, which left the
+  deployed RAG stack (pgvector + local embeddings) admin-only. Indexing bills
+  nothing (local embedding model); the retrieval prompt bills the signed-in
+  user's own wallet, like any chat.
+
+All three are config rows: seeded on first boot, and a later `wrangler
+deploy` does not change an instance that already has a config table. To apply
+them to an existing instance, use Admin Settings (Interface → prompt
+suggestions; Users → Permissions → knowledge) or upsert the rows directly:
+
+```bash
+psql "$DATABASE_URL" -c "insert into config (key, value, updated_at) values
+  ('ui.prompt_suggestions', '<json array>', extract(epoch from now())::bigint),
+  ('ui.default_pinned_models', '<json array>', extract(epoch from now())::bigint),
+  ('user.permissions', '<json object with workspace.knowledge = true>', extract(epoch from now())::bigint)
+  on conflict (key) do update set value = excluded.value, updated_at = excluded.updated_at"
+```
+
+`user.permissions` is a single row holding the whole permission object —
+replace it wholesale rather than patching one field, and keep any
+instance-specific overrides.
+
 ## Update the image
 
 ```bash

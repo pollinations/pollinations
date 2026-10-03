@@ -19,17 +19,17 @@ import {
 export const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
     access: "Access",
     source: "Source",
-    status: "Status",
+    health: "Health",
     publisher: "Publisher",
     id: "ID",
-    type: "Type",
+    category: "Category",
     capability: "Capability",
 };
 
 const formatFilterValue = (filter: ModelQueryFilter): string =>
     filter.key === "id" || filter.key === "publisher"
         ? filter.value
-        : filter.value.replaceAll("-", " ");
+        : filter.value.replace(/[-_]/g, " ");
 
 type ModelFilterTokensProps = {
     tokens: ModelQueryFilterToken[];
@@ -57,7 +57,7 @@ export const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
                 const value = formatFilterValue(token.filter);
                 if (
                     token.filter.key === "source" ||
-                    token.filter.key === "status"
+                    token.filter.key === "health"
                 ) {
                     return (
                         <Dropdown

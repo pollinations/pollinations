@@ -46,10 +46,12 @@ export function useModelQuerySearch({
     pickable = false,
     value,
     onTextChange,
+    placeholder = "Search models…",
 }: {
     models: ModelPrice[];
     initial?: string;
     pickable?: boolean;
+    placeholder?: string;
     /** Parent-owned model ID for pickers; filters remain local search state. */
     value?: string;
     onTextChange?: (text: string) => void;
@@ -178,7 +180,7 @@ export function useModelQuerySearch({
         closeOnSelect: pickable && !draft,
         placeholder: draft
             ? `${MODEL_FILTER_LABELS[draft.key]} value…`
-            : "Search models…",
+            : placeholder,
         onClick: () => setPendingRemoval(undefined),
         onBlur: () => {
             setSearch(draft && !draft.value ? cancelledDraft() : search.trim());

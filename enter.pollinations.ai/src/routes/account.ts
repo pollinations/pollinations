@@ -4,10 +4,8 @@ import {
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import {
-    getAvailableBalance,
-    getUserBalance,
-} from "@shared/billing/balance.ts";
+import { getAvailableBalance } from "@shared/billing/balance.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -1023,8 +1021,9 @@ export const accountRoutes = new Hono<Env>()
                 // negative is clamped here exactly as it is when spending is
                 // authorized — a raw tier + pack sum would under-report the
                 // Pollen the account can actually spend.
-                const balances = await getUserBalance(
+                const balances = await getFundedUserBalance(
                     drizzle(c.env.DB),
+                    c.env.DB,
                     user.id,
                 );
                 accountBalance = {

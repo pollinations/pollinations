@@ -1,0 +1,35 @@
+{
+  "pr_number": 16300,
+  "title": "Add Jev Triage Desk to business",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16300",
+  "merged_at": "2026-10-03T03:03:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Jev Triage Desk](https://mhmdrizzzki.github.io/jev-triage-desk) to business\n- Paste a shared inbox — one item per line — and Jev triages it. For every item Jev is asked three things, and the page code does nothing except act on the answers: - **Owning team** ( choice : engineer\n\nFixes #16155, fixes #15722",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "An inbox gets a desk",
+    "blurb": "Jev Triage Desk joins the business app list. Paste a shared inbox one item per line, and Jev sorts through the little pile.",
+    "summary": "Jev Triage Desk was added to the business app list; it takes a shared inbox pasted one item per line and asks three triage questions for each item, including which team owns it.",
+    "impact": "People browsing business apps get a way to find Jev Triage Desk and sort shared-inbox items by owning team.",
+    "keywords": [
+      "community app",
+      "business",
+      "shared inbox",
+      "triage",
+      "team ownership"
+    ],
+    "visual_concept": "Depict Jev Triage Desk as a cozy desk with a shared inbox represented by individual paper slips, each moving toward labeled team trays. Polli wears a tiny clerk's visor and helps sort the slips; code-plants and flowers soften the workspace. No Jev mascot is specified, so represent the app through its desk and workflow.",
+    "image_prompt": "At a cozy pixel-art triage desk, individual inbox notes travel from a lime green (#ecf874) tray toward team-labeled trays beside little flowering code-plants, against a warm cream and pastel-gradient background; Polli wears a tiny clerk's visor and gently guides a note into place. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized or realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16300.jpg",
+    "prompt": "At a cozy pixel-art triage desk, individual inbox notes travel from a lime green (#ecf874) tray toward team-labeled trays beside little flowering code-plants, against a warm cream and pastel-gradient background; Polli wears a tiny clerk's visor and gently guides a note into place. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized or realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-03T03:04:08.985557+00:00",
+  "app_name": "Jev Triage Desk",
+  "app_url": "https://mhmdrizzzki.github.io/jev-triage-desk"
+}

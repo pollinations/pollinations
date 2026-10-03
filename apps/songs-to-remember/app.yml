@@ -1,0 +1,8 @@
+name: "Songs to Remember"
+description: "Turn facts, formulas and word lists into short catchy songs that are easy to remember. Lyrics are written with the Pollinations text API, sung with the audio API, and quiz mode blanks out key words for practice. Supports Bring your own Pollen."
+url: "https://songs-to-remember.pollinations.ai"
+category: "learn"
+language: "en"
+quest: "#15727"
+uses_pollinations: true
+bring_your_own_pollen: true

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="记忆歌曲 — 粘贴知识点、公式或单词表，自动变成朗朗上口的短歌，边唱边记！">
+  <meta name="theme-color" content="#eef4fb">
+  <title>记忆歌曲 · Memory Song</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ======== 顶部状态栏 ======== -->
+  <div class="topbar">
+    <div class="topbar-brand">🎵 记忆歌曲 <span class="brand-sub">Memory Song</span></div>
+    <div class="topbar-right">
+      <span class="byop-state" id="byop-status">本地模式</span>
+      <button class="btn btn-small btn-ghost hidden" id="btn-byop-login">BYOP 登录</button>
+      <button class="btn btn-small btn-ghost hidden" id="btn-byop-logout">退出</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ======== 视图：写歌大厅 ======== -->
+    <section id="view-home" class="view active">
+      <div class="hero">
+        <div class="hero-note">🎶</div>
+        <h1>记忆歌曲</h1>
+        <p class="hero-sub">把知识点、公式、单词表，变成一首你忘不掉的口水歌。<br>先学会，再唱会，最后考不丢。</p>
+      </div>
+
+      <div class="panel">
+        <h2>📝 粘贴你的学习内容</h2>
+        <textarea id="study-input" rows="6" maxlength="600" placeholder="例如：勾股定理 a²+b²=c²；光合作用吸收二氧化碳放出氧气；abandon 放弃；benefit 利益；climate 气候…"></textarea>
+        <p class="tiny">支持知识点、公式、单词表；系统会自动拆句并编进歌词。</p>
+
+        <h2 class="mt">🎼 选择曲风</h2>
+        <div class="style-grid" id="style-grid"></div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="btn-compose">✨ 谱曲成歌</button>
+      </div>
+
+      <div class="panel">
+        <h2>🎧 刚出炉的歌曲 <button class="btn btn-small btn-ghost" id="btn-goto-lib" style="float:right">💾 播放列表</button></h2>
+        <div id="recent-list" class="recent-list"></div>
+        <p class="tiny hidden" id="recent-empty">还没有生成过歌曲。写点内容，点"谱曲成歌"试试。</p>
+      </div>
+
+      <div class="howto">
+        <h3>📖 玩法说明</h3>
+        <ol>
+          <li><strong>粘贴内容</strong>：输入你的知识点 / 公式 / 单词表。</li>
+          <li><strong>选曲风</strong>：童谣、流行、嘻哈、民谣、摇滚，五种风格任选。</li>
+          <li><strong>生成歌词</strong>：本地模板引擎拆句编曲，无需登录。</li>
+          <li><strong>试听</strong>：Pollinations 音频合成，失败自动语音朗读兜底。</li>
+          <li><strong>填空测验</strong>：歌词挖空生成 3 道题，作答自动评分。</li>
+          <li><strong>收藏播放列表</strong>：保存歌曲随时重听，支持一键导出文本。</li>
+          <li><strong>BYOP 增强</strong>：登录后 AI 生成押韵歌词 + 人声完整歌曲。</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ======== 视图：歌词页 ======== -->
+    <section id="view-song" class="view">
+      <div class="song-head">
+        <span class="style-badge" id="song-style-badge">童谣</span>
+        <h2 id="song-title">我的记忆之歌</h2>
+        <p class="tiny" id="song-topic"></p>
+      </div>
+
+      <div class="player-card">
+        <button class="btn btn-primary btn-play" id="btn-play">▶ 播放 / 逐行高亮</button>
+        <button class="btn btn-ghost" id="btn-stop">⏹ 停止</button>
+        <audio id="audio-player" style="display:none"></audio>
+      </div>
+
+      <div class="lyrics-card" id="lyrics-card"></div>
+
+      <div class="song-actions">
+        <button class="btn btn-ghost" id="btn-quiz">🧩 填空测验</button>
+        <button class="btn btn-ghost" id="btn-save">💾 存入播放列表</button>
+        <button class="btn btn-ghost" id="btn-export-song">📄 导出歌词文本</button>
+        <button class="btn btn-ghost" id="btn-back-home">🏠 再来一首</button>
+      </div>
+
+      <div class="panel hidden" id="quiz-box">
+        <h3>🧩 填空测验</h3>
+        <div id="quiz-list"></div>
+        <button class="btn btn-primary" id="btn-grade">✔ 交卷评分</button>
+        <div id="quiz-result" class="quiz-result"></div>
+      </div>
+    </section>
+
+    <!-- ======== 视图：播放列表 ======== -->
+    <section id="view-library" class="view">
+      <div class="map-head">
+        <h2>💾 我的学习播放列表</h2>
+        <p class="tiny">保存你生成过的每一首歌，随时重听；导出为文本即可离线背诵。</p>
+      </div>
+
+      <div class="lib-actions">
+        <button class="btn btn-primary" id="btn-export-all">📄 导出全部歌词</button>
+        <button class="btn btn-ghost" id="btn-lib-home">🏠 返回写歌</button>
+      </div>
+
+      <div id="lib-list" class="lib-list"></div>
+      <p class="tiny hidden" id="lib-empty">播放列表还是空的。去大厅生成第一首歌吧！</p>
+    </section>
+
+  </div>
+
+  <!-- ======== 提示条 ======== -->
+  <div class="toast hidden" id="toast"><span id="toast-text"></span></div>
+
+  <footer class="app-footer">
+    <div>记忆歌曲 · 纯静态应用 · 音频由 Pollinations 生成 · 可直接托管于 GitHub Pages</div>
+    <div>学习向 · 浅色双色主题 · 歌词逐行高亮</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -9,20 +9,14 @@ import worker from "./worker.js";
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
     "createEmbeddings",
-    "createKey",
     "generate3D",
     "generateAudio",
     "generateImage",
     "generateText",
     "generateVideo",
     "getBalance",
-    "getEarnings",
     "getModelStatus",
-    "getUsage",
-    "listKeys",
     "listModels",
-    "listQuests",
-    "revokeKey",
     "transcribeAudio",
 ];
 
@@ -313,6 +307,9 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
             authorization: new Headers(init.headers).get("authorization"),
         });
 
+        if (url.endsWith("/audio/models?community=false&agent=true")) {
+            return Response.json([{ name: "audio-agent", agent: true }]);
+        }
         if (url.endsWith("/audio/models?community=false")) {
             return Response.json([
                 { name: "speech-test" },

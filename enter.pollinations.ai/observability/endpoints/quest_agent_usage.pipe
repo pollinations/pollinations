@@ -1,6 +1,9 @@
 DESCRIPTION >
-    At most one row of agent milestone flags for the requested user. Reads
-    ingest-time aggregates, not raw generation events, for fast quest refreshes.
+    At most one row of agent and community model milestone flags for the
+    requested user. Reads ingest-time aggregates, not raw generation events, for
+    fast quest refreshes. createdUsedCommunityModel is 1 once other people have
+    spent more than 0.5 Paid Pollen in total across the user's community models.
+    The user's own calls, Quest Pollen spend and agents do not count toward it.
 
 TOKEN tinybird_read READ
 
@@ -10,7 +13,9 @@ SQL >
     SELECT
         {{String(user_id, '')}} AS userId,
         maxMergeIf(used_agent, user_id = {{String(user_id, '')}}) AS usedAgent,
-        maxMergeIf(used_agent, owner_username != '' AND owner_username = lower({{String(github_username, '')}})) AS createdUsedAgent
+        maxMergeIf(used_agent, owner_username != '' AND owner_username = lower({{String(github_username, '')}})) AS createdUsedAgent,
+        maxMergeIf(used_community_model, user_id = {{String(user_id, '')}}) AS usedCommunityModel,
+        toUInt8(sumMergeIf(community_model_paid_pollen, owner_username != '' AND owner_username = lower({{String(github_username, '')}}) AND user_id != {{String(user_id, '')}}) > 0.5) AS createdUsedCommunityModel
     FROM quest_agent_usage_mv
     WHERE user_id = {{String(user_id, '')}}
        OR (owner_username != '' AND owner_username = lower({{String(github_username, '')}}))

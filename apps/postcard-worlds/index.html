@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="明信片世界 — 输入一句话，生成明信片风景，点击画面中的门、路、桥、窗探索一个连续的小世界！">
+  <meta name="theme-color" content="#f7e8d0">
+  <title>明信片世界 · Postcard World</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%8D%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ======== 顶部状态栏 ======== -->
+  <div class="topbar">
+    <div class="topbar-brand">🌍 明信片世界 <span class="brand-sub">Postcard World</span></div>
+    <div class="topbar-right">
+      <span class="byop-state" id="byop-status">未登录</span>
+      <button class="btn btn-small btn-ghost hidden" id="btn-byop-login">BYOP 登录</button>
+      <button class="btn btn-small btn-ghost hidden" id="btn-byop-logout">退出</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ======== 视图：出发大厅 ======== -->
+    <section id="view-home" class="view active">
+      <div class="hero">
+        <div class="hero-stamp">🌍</div>
+        <h1>明信片世界</h1>
+        <p class="hero-sub">说一句话，寄出一张风景明信片。<br>点击画里的门、路、桥、窗，继续这场未知的旅行。</p>
+      </div>
+
+      <div class="panel trip-start">
+        <h2>✉️ 从一句话出发</h2>
+        <textarea id="scene-input" rows="3" maxlength="120" placeholder="例如：清晨的湖畔小镇，薄雾未散，炊烟袅袅…"></textarea>
+        <button class="btn btn-primary btn-block" id="btn-start">🎫 生成我的第一张明信片</button>
+      </div>
+
+      <div class="panel">
+        <h2>🧳 我的旅行</h2>
+        <button class="btn btn-ghost btn-block" id="btn-home-map">🗺 查看探索地图</button>
+        <p class="tiny" id="home-path-hint">尚无探索记录。生成第一张明信片后，你的每一步都会记录在这里，还可一键分享整条探索路径。</p>
+      </div>
+
+      <div class="panel">
+        <h2>🔧 增强与设置</h2>
+        <div class="ai-row">
+          <button class="btn btn-small btn-ghost" id="btn-ai-hotspots">✨ 使用 AI 分析热点（需登录）</button>
+          <button class="btn btn-small btn-ghost" id="btn-byop-login2">BYOP 登录</button>
+          <button class="btn btn-small btn-ghost hidden" id="btn-byop-logout2">退出登录</button>
+        </div>
+        <p class="tiny">默认使用本地热点词库（20+ 种探索元素）随机布置 3 个可点击热点。<br>
+        BYOP 登录后，AI 会真正“看”这张图，标注最自然的可点击位置与描述（key 仅存内存）。</p>
+      </div>
+
+      <div class="howto">
+        <h3>📖 玩法说明</h3>
+        <ol>
+          <li><strong>输入一句话</strong>：描述你想去的地方，生成第一张明信片。</li>
+          <li><strong>点击热点</strong>：画面上有 <b>2-3 个</b>发光热点（门/路/桥/窗…），点击进入下一场景。</li>
+          <li><strong>持续探索</strong>：每个场景延续上一张的风格与气氛，一路走下去。</li>
+          <li><strong>回看地图</strong>：面包屑地图记录你走过的每一步，可回跳任意场景。</li>
+          <li><strong>分享路径</strong>：把整条探索路径编码进链接，朋友打开即可按顺序重放。</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ======== 视图：明信片场景 ======== -->
+    <section id="view-scene" class="view">
+      <div class="scene-head">
+        <h2 id="scene-title">场景标题</h2>
+        <div class="breadcrumb" id="scene-breadcrumb"></div>
+      </div>
+
+      <div class="postcard-frame">
+        <div class="postcard" id="postcard">
+          <div class="img-loading" id="img-loading">
+            <div class="loader-stamp">🌍</div>
+            <div class="loader-text" id="loading-text">正在寄出这张明信片…</div>
+          </div>
+          <img id="scene-img" alt="明信片场景" loading="lazy">
+          <div class="hotspots-layer" id="hotspots-layer"></div>
+          <div class="postcard-caption">
+            <span class="caption-text" id="scene-desc">描述</span>
+            <span class="caption-index" id="scene-index">No.1</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scene-actions">
+        <button class="btn btn-ghost" id="btn-map">🗺 地图</button>
+        <button class="btn btn-ghost" id="btn-share">🔗 分享路径</button>
+        <button class="btn btn-ghost" id="btn-again">🎲 换个视角</button>
+        <button class="btn btn-ghost" id="btn-home">🏠 大厅</button>
+      </div>
+
+      <div class="share-box hidden" id="share-box">
+        <p class="tiny">把这串链接发给朋友，TA 打开即可按顺序重放你的探索：</p>
+        <input type="text" readonly id="share-link">
+        <button class="btn btn-small btn-primary" id="btn-copy-link">复制链接</button>
+      </div>
+    </section>
+
+    <!-- ======== 视图：探索地图 ======== -->
+    <section id="view-map" class="view">
+      <div class="map-head">
+        <h2>🗺 探索地图</h2>
+        <p class="tiny">你走过的地方，按时间顺序串成一张明信片地图。点击缩略图可回跳。</p>
+      </div>
+
+      <div class="map-list" id="map-list"></div>
+      <p class="tiny hidden" id="map-empty">还没有探索记录。去大厅生成第一张明信片吧！</p>
+
+      <div class="map-actions">
+        <button class="btn btn-primary" id="btn-map-replay" disabled>▶ 按顺序重放这段旅程</button>
+        <button class="btn btn-ghost" id="btn-map-home">🏠 返回大厅</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ======== 加载遮罩 ======== -->
+  <div class="toast hidden" id="toast"><span id="toast-text"></span></div>
+
+  <footer class="app-footer">
+    <div>明信片世界 · 纯静态应用 · 图片由 Pollinations 生成 · 可直接托管于 GitHub Pages</div>
+    <div>风格：水彩手绘明信片 · 复古旅行插画 · 柔和色调</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

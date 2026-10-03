@@ -1,0 +1,8 @@
+name: "Postcard Worlds"
+description: "Explore generated worlds one picture at a time: type a scene, then click doors, paths and windows to step into the next view. Each view is generated with the Pollinations image API, keeps a consistent style through reference images, and follows a breadcrumb map. Supports Bring your own Pollen."
+url: "https://postcard-worlds.pollinations.ai"
+category: "games"
+language: "en"
+quest: "#15728"
+uses_pollinations: true
+bring_your_own_pollen: true

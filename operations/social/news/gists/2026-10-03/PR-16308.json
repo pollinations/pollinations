@@ -1,0 +1,35 @@
+{
+  "pr_number": 16308,
+  "title": "feat: accept large inline PDF and Inkling audio chat input",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16308",
+  "merged_at": "2026-10-03T11:40:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Accepts unchanged large PDF `file_data` requests on OpenRouter models by storing PDFs in media and forwarding `file_url`.\n- Accepts unchanged large base64 `input_audio.data` requests on `thinkingmachines/inkling` by forwarding the media URL through its Fireworks transform.\n- Keeps the 100 MiB request, 20 MiB per-item, and 16 MiB compact-body limits, with account-scoped content hashes for upload reuse.\n- Adds route tests for requests above 32 MiB, passes focused tests and typecheck, and deploys Gen staging from this branch. An authenticated staging provider call still needs a valid key.\n\nAddresses #15889. Follow-up to #16267.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Big files, small detour",
+    "blurb": "Large PDFs and audio clips get a quiet trip through media storage on their way to chat. The request can stay exactly as it is.",
+    "summary": "Gen accepts large inline PDF file_data for OpenRouter models and base64 input_audio.data for thinkingmachines/inkling by storing the media and forwarding a URL, while retaining the 100 MiB request, 20 MiB per-item, and 16 MiB compact-body limits.",
+    "impact": "Developers can send those large PDF and Inkling audio requests unchanged, with account-scoped content hashes allowing uploaded media to be reused.",
+    "keywords": [
+      "Gen",
+      "chat",
+      "PDF",
+      "audio",
+      "OpenRouter",
+      "Inkling",
+      "media uploads"
+    ],
+    "visual_concept": "Pollinations' bee helps a chunky CRT robot pass an oversized PDF and an audio cassette through a friendly media-storage waystation toward two chat terminals labeled OpenRouter and Inkling. A small code-plant grows beside the route; the URL handoff is depicted as a neat little parcel rather than a wall of base64.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears a tiny courier satchel and helps a cheerful CRT monitor robot place a large PDF and an audio cassette into a lime green (#ecf874) media-storage mailbox; two warm chat terminals labeled 'OpenRouter' and 'Inkling' receive small URL parcels, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16308.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny courier satchel and helps a cheerful CRT monitor robot place a large PDF and an audio cassette into a lime green (#ecf874) media-storage mailbox; two warm chat terminals labeled 'OpenRouter' and 'Inkling' receive small URL parcels, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-10-03T11:41:48.010094+00:00"
+}

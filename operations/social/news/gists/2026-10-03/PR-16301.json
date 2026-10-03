@@ -1,0 +1,35 @@
+{
+  "pr_number": 16301,
+  "title": "Add Whichever to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16301",
+  "merged_at": "2026-10-03T03:07:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Whichever](https://kreggscode.github.io/whichever) to games\n- A branching story where you set the lens and Jev picks the branch. Type where the story starts and choose what it should be judged against — six presets, or a line of your own. A text model writes thr\n\nFixes #15849, fixes #15722",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Jev takes the fork",
+    "blurb": "Whichever joins the games list. Give it a starting point and a way to judge what happens next; Jev picks the branch.",
+    "summary": "Added Whichever to the games list, a branching-story game where players enter a starting point and choose one of six preset lenses or write their own for Jev to use when picking a branch.",
+    "impact": "Players get a story game where they set the premise and judging lens, then see which path Jev chooses.",
+    "keywords": [
+      "Whichever",
+      "games",
+      "branching stories",
+      "Jev",
+      "community app"
+    ],
+    "visual_concept": "Depict Whichever as a storybook with branching paths growing like vines. Polli chooses between six small lens cards and a blank custom card while a cozy terminal labeled 'JEV' marks the selected path; Jev has no described appearance, so represent Jev through the terminal rather than inventing a character.",
+    "image_prompt": "In a cozy pixel art garden, a branching storybook sprouts vine-like paths beside six little lens cards and one blank card; a warm CRT terminal marked 'JEV' gently lights one path as Polli, wearing tiny reading glasses, studies the choice. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style, with a prominent soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, flowers, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16301.jpg",
+    "prompt": "In a cozy pixel art garden, a branching storybook sprouts vine-like paths beside six little lens cards and one blank card; a warm CRT terminal marked 'JEV' gently lights one path as Polli, wearing tiny reading glasses, studies the choice. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style, with a prominent soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, flowers, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-03T03:09:04.376464+00:00",
+  "app_name": "Whichever",
+  "app_url": "https://kreggscode.github.io/whichever"
+}

@@ -8,11 +8,13 @@ import {
     WarningIcon,
     XIcon,
 } from "@pollinations/ui";
+import { IMMEDIATE_SERVICE_REQUEST } from "@shared/billing/checkout-consent.ts";
 import {
     formatPollenPackValue,
     type PollenPack,
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     loadStripe,
     type Stripe,
@@ -296,6 +298,7 @@ const WalletPay: FC<{
     const [session, setSession] = useState<StripeCheckoutSession | null>(null);
     const [actions, setActions] = useState<WalletActions | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [accepted, setAccepted] = useState(false);
     const [error, setError] = useState<string | null>(null);
     // Nothing shows until Stripe's currency selector is drawn, so the modal
     // appears complete instead of building itself up.
@@ -413,9 +416,25 @@ const WalletPay: FC<{
     }
 
     async function confirmWithCard(): Promise<void> {
-        if (!card || !actions) return;
+        if (!card || !actions || !accepted || submitting) return;
         setSubmitting(true);
         setError(null);
+        try {
+            const consent = await fetch(
+                `${config.apiBaseUrl}/stripe/checkout/sessions/${checkout.sessionId}/consent`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ accepted: true }),
+                },
+            );
+            if (!consent.ok) throw new Error();
+        } catch {
+            setError("Couldn’t save your consent. Please try again.");
+            setSubmitting(false);
+            return;
+        }
         const failure = await actions.confirmWithCard(card.id);
         if (failure) {
             setError(failure);
@@ -451,7 +470,7 @@ const WalletPay: FC<{
                     <Button
                         intent="commit"
                         size="lg"
-                        disabled={!canConfirm || submitting}
+                        disabled={!canConfirm || !accepted || submitting}
                         onClick={() => void confirmWithCard()}
                         className="w-full tabular-nums"
                     >
@@ -525,6 +544,38 @@ const WalletPay: FC<{
                         </div>
                     )}
                     <div ref={currencySelector} />
+                    {card && taxReady && selectorOk && (
+                        <label className="flex items-start gap-2 text-[13px] leading-snug text-theme-text-muted">
+                            <input
+                                type="checkbox"
+                                checked={accepted}
+                                disabled={submitting}
+                                onChange={(event) =>
+                                    setAccepted(event.target.checked)
+                                }
+                                className="mt-0.5 shrink-0"
+                            />
+                            <span>
+                                I agree to the{" "}
+                                <InlineLink
+                                    href={`${PUBLIC_URLS.root}/terms`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Terms
+                                </InlineLink>{" "}
+                                and{" "}
+                                <InlineLink
+                                    href={`${PUBLIC_URLS.root}/refunds`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Refund Policy
+                                </InlineLink>
+                                . {IMMEDIATE_SERVICE_REQUEST}
+                            </span>
+                        </label>
+                    )}
                     {needsDetails && card && (
                         <p className="text-[13px] leading-snug text-theme-text-muted">
                             Stripe needs your full billing address to work out

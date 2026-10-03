@@ -472,6 +472,13 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
         "any",
     );
+    expect(body?.["consent_collection[terms_of_service]"]).toBe("required");
+    expect(
+        body?.["custom_text[terms_of_service_acceptance][message]"],
+    ).toContain("immediate API service");
+    expect(body?.["invoice_creation[invoice_data][footer]"]).toContain(
+        "usage supplied before withdrawal",
+    );
     // Buyers may opt in to save the card; saved cards prefill next time.
     expect(body?.["saved_payment_method_options[payment_method_save]"]).toBe(
         "enabled",
@@ -4072,7 +4079,7 @@ function checkoutSessionRequests(stripeState: MockStripeState) {
     );
 }
 
-test("wallet and hosted checkout create the same session apart from how Stripe returns the buyer", async ({
+test("wallet and hosted checkout share billing settings with UI-specific consent and redirects", async ({
     sessionToken,
     mocks,
 }) => {
@@ -4098,7 +4105,21 @@ test("wallet and hosted checkout create the same session apart from how Stripe r
     const [hostedBody, walletBody] = checkoutSessionRequests(
         mocks.stripe.state,
     ).map((request) => request.body);
-    const { success_url, cancel_url, ...hostedShared } = hostedBody ?? {};
+    const {
+        success_url,
+        cancel_url,
+        "consent_collection[terms_of_service]": requiredConsent,
+        "custom_text[terms_of_service_acceptance][message]": consentText,
+        ...hostedShared
+    } = hostedBody ?? {};
+    expect(requiredConsent).toBe("required");
+    expect(consentText).toContain("immediate API service");
+    expect(
+        walletBody?.["consent_collection[terms_of_service]"],
+    ).toBeUndefined();
+    expect(
+        walletBody?.["custom_text[terms_of_service_acceptance][message]"],
+    ).toBeUndefined();
     const { ui_mode, return_url, ...walletShared } = walletBody ?? {};
     expect(walletShared).toEqual(hostedShared);
     expect(
@@ -4359,4 +4380,96 @@ test("GET /api/stripe/billing lists saved payment methods and the customer's bil
         city: "Tallinn",
         country: "EE",
     });
+});
+
+test("custom checkout records explicit consent only for the buyer's open session", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const headers = {
+        cookie: `better-auth.session_token=${sessionToken}`,
+        "Content-Type": "application/json",
+    };
+    const created = await SELF.fetch(`${base}/checkout/p10/session`, {
+        method: "POST",
+        headers,
+    });
+    expect(created.status).toBe(200);
+    const { sessionId } = (await created.json()) as { sessionId: string };
+    const session = mocks.stripe.state.checkoutSessions.find(
+        (item) => item.id === sessionId,
+    );
+    if (!session) throw new Error("Checkout session missing");
+    expect(session.metadata?.immediate_service_accepted_at).toBeUndefined();
+    const createBody = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(
+        createBody?.["consent_collection[terms_of_service]"],
+    ).toBeUndefined();
+    expect(
+        createBody?.["custom_text[terms_of_service_acceptance][message]"],
+    ).toBeUndefined();
+    const url = `${base}/checkout/sessions/${sessionId}/consent`;
+    expect(
+        (
+            await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body: '{"accepted":false}',
+            })
+        ).status,
+    ).toBe(400);
+    expect(
+        (
+            await SELF.fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: '{"accepted":true}',
+            })
+        ).status,
+    ).toBe(401);
+    const owner = session.metadata?.userId;
+    session.metadata = { ...session.metadata, userId: "someone_else" };
+    expect(
+        (
+            await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body: '{"accepted":true}',
+            })
+        ).status,
+    ).toBe(404);
+    if (!owner) throw new Error("Session owner missing");
+    session.metadata.userId = owner;
+    expect(session.metadata.immediate_service_accepted_at).toBeUndefined();
+    expect(
+        (
+            await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body: '{"accepted":true}',
+            })
+        ).status,
+    ).toBe(200);
+    expect(session.metadata.immediate_service_version).toBe("2026-10-01");
+    expect(session.metadata.immediate_service_text).toContain(
+        "fully performed",
+    );
+    expect(
+        Number.isNaN(
+            Date.parse(session.metadata.immediate_service_accepted_at),
+        ),
+    ).toBe(false);
+    session.status = "complete";
+    expect(
+        (
+            await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body: '{"accepted":true}',
+            })
+        ).status,
+    ).toBe(409);
 });

@@ -279,16 +279,10 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
-        config: portkeyConfig["qwen-coder-openrouter-siliconflow"],
-        // Qwen3-Coder has no reasoning mode. No default system prompt: on
-        // SiliconFlow and Bedrock it makes the model narrate before a tool
-        // call, which then leaks as raw <function=...> text.
-        transform: stripReasoning,
-    },
-    {
-        name: "qwen/qwen3-coder-30b-a3b-instruct:aws",
         config: portkeyConfig["qwen-coder-bedrock"],
-        // Bedrock rejects stop for this model with a ValidationException.
+        // No default coding prompt: it makes Bedrock narrate before a tool
+        // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning
+        // mode, and Bedrock rejects stop with a ValidationException.
         transform: pipe(stripReasoning, omitParameters("stop")),
     },
     {

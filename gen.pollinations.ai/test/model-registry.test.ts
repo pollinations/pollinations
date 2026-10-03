@@ -95,6 +95,20 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
+    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const model = registry.resolve("qwen-coder");
+
+        expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
+        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.paidOnly).toBe(true);
+        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        expect(model?.supportedEndpoints).not.toContain("/v1/responses");
+        for (const parameter of ["seed", "logprobs", "stop"]) {
+            expect(model?.info.supported_parameters).not.toContain(parameter);
+        }
+    });
+
     it("advertises every configured direct Responses model", async () => {
         const registry = await getGenerationModelRegistry(env);
         const configured = availableModels

@@ -668,10 +668,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-coder-next",
         "streamlake",
     ),
-    "qwen-coder-openrouter-siliconflow": createPinnedOpenRouterConfig(
-        "qwen/qwen3-coder-30b-a3b-instruct",
-        "siliconflow/fp8",
-    ),
 
     // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>

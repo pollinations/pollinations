@@ -786,21 +786,18 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-coder-30b-a3b-instruct": {
-        supportedParameters: CHAT_PARAMETERS.openRouterQwenCoderSiliconFlow,
+        supportedParameters: CHAT_PARAMETERS.bedrockQwenCoder,
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
-        provider: "openrouter",
+        provider: "aws",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter SiliconFlow fp8, including the 5.5% credit-purchase fee.
-            // SiliconFlow reports cached prompt tokens but bills them at the
-            // full input rate.
-            promptTextTokens: perMillion(0.07) * 1.055,
-            promptCachedTokens: perMillion(0.07) * 1.055,
-            completionTextTokens: perMillion(0.28) * 1.055,
+            // AWS Bedrock on-demand standard tier, us-east-1.
+            promptTextTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
         },
         title: "Qwen3 Coder 30B",
         description:

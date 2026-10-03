@@ -183,3 +183,92 @@ describe("polli gen chat session lifecycle", () => {
         rmSync(path, { force: true });
     });
 });
+
+describe("polli gen chat failed-turn history", () => {
+    it.each([
+        "human",
+        "json",
+    ] as const)("preserves a later successful turn after an earlier failure in %s mode", async (mode) => {
+        let rejectFirst: ((error: Error) => void) | undefined;
+        const fetch = prepare(async () =>
+            mode === "json"
+                ? Response.json({ choices: [{ message: { content: "hi" } }] })
+                : new Response(STREAM_OK),
+        );
+        fetch.mockImplementationOnce(
+            () =>
+                new Promise<Response>((_resolve, reject) => {
+                    rejectFirst = reject;
+                }),
+        );
+        setOutputMode(mode);
+        const line = await startSession(["--system", "system prompt"]);
+        const first = line("first");
+        await line("second");
+        rejectFirst?.(new Error("first request failed"));
+        await first;
+        await line("third");
+
+        expect(fetch).toHaveBeenCalledTimes(3);
+        expect(
+            JSON.parse(
+                vi.mocked(globalThis.fetch).mock.calls[2][1]?.body as string,
+            ).messages,
+        ).toEqual([
+            { role: "system", content: "system prompt" },
+            { role: "user", content: "second" },
+            { role: "assistant", content: "hi" },
+            { role: "user", content: "third" },
+        ]);
+    });
+
+    it("preserves new history when /clear already removed the failed turn", async () => {
+        let rejectFirst: ((error: Error) => void) | undefined;
+        const fetch = prepare(async () => new Response(STREAM_OK));
+        fetch.mockImplementationOnce(
+            () =>
+                new Promise<Response>((_resolve, reject) => {
+                    rejectFirst = reject;
+                }),
+        );
+        const line = await startSession(["--system", "system prompt"]);
+        const first = line("same input");
+        await line("/clear");
+        await line("same input");
+        rejectFirst?.(new Error("first request failed"));
+        await first;
+        await line("third");
+
+        expect(fetch).toHaveBeenCalledTimes(3);
+        expect(
+            JSON.parse(
+                vi.mocked(globalThis.fetch).mock.calls[2][1]?.body as string,
+            ).messages,
+        ).toEqual([
+            { role: "system", content: "system prompt" },
+            { role: "user", content: "same input" },
+            { role: "assistant", content: "hi" },
+            { role: "user", content: "third" },
+        ]);
+    });
+
+    it("removes a single failed turn while retaining preceding successful history", async () => {
+        const fetch = prepare(async () => new Response(STREAM_OK));
+        const line = await startSession();
+        await line("first");
+        fetch.mockRejectedValueOnce(new Error("second request failed"));
+        await line("second");
+        await line("third");
+
+        expect(fetch).toHaveBeenCalledTimes(3);
+        expect(
+            JSON.parse(
+                vi.mocked(globalThis.fetch).mock.calls[2][1]?.body as string,
+            ).messages,
+        ).toEqual([
+            { role: "user", content: "first" },
+            { role: "assistant", content: "hi" },
+            { role: "user", content: "third" },
+        ]);
+    });
+});

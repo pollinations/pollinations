@@ -3,18 +3,18 @@ import type { FC } from "react";
 
 const UPCOMING_CHANGES = [
     {
-        when: "Planned",
+        when: "Oct 3",
         model: "Qwen3 Coder 30B",
         change: "Bedrock; Paid Pollen; $0.15/$0.60 per 1M input/output tokens. IDs unchanged.",
         note: "No Responses API, seed, logprobs or stop. Named tool choice uses auto; schemas are not enforced.",
     },
     {
-        when: "Oct 9, 16:00 UTC",
+        when: "Oct 9",
         model: "Qwen3 VL 235B Thinking",
         change: "Alibaba route retires. Choose another vision model.",
     },
     {
-        when: "By Oct 13",
+        when: "Oct 13",
         model: "Cohere Command A+",
         change: "Azure route is due to retire. Replacement details to follow.",
     },
@@ -47,6 +47,9 @@ export const Announcements: FC = () => (
     <div className="flex flex-col gap-4">
         <Surface>
             <h3 className="font-sans text-sm font-semibold text-theme-text-strong">
+                <span className="mr-2 font-normal text-theme-text-muted">
+                    Sep 11
+                </span>
                 Code agents · Alpha
             </h3>
             <p className="mt-1 text-sm text-theme-text-base">
@@ -62,6 +65,9 @@ export const Announcements: FC = () => (
         </Surface>
         <Surface>
             <h3 className="font-sans text-sm font-semibold text-theme-text-strong">
+                <span className="mr-2 font-normal text-theme-text-muted">
+                    Sep 11
+                </span>
                 Community IDs
             </h3>
             <p className="mt-1 text-sm text-theme-text-base">

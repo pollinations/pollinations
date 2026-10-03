@@ -1,272 +1,91 @@
-import { InlineLink, Surface } from "@pollinations/ui";
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import { InlineLink } from "@pollinations/ui";
+import type { FC } from "react";
 
-const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
-export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
-
-const DYNAMIC_NEWS_COUNT = 6;
-
-interface Highlight {
-    date?: string;
-    /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
-    dateLabel?: string;
-    emoji: string;
-    title: string;
-    description: string;
-    /** Optional bullet list rendered under the description (pinned items only). */
-    details?: string[];
-}
-
-/**
- * Pinned news items that stay visible regardless of daily updates.
- * Edit this array to add/remove pinned announcements.
- */
-const PINNED_NEWS: Highlight[] = [
+const UPCOMING_CHANGES = [
     {
-        date: "2026-10-01",
-        emoji: "🖼️",
-        title: "MAI Image 2.5 Flash moves to 2.6 Flash",
-        description:
-            "The 2.5 Flash model ID still works, but now uses MAI Image 2.6 Flash and its pricing. [Browse models](/models).",
-        details: [
-            "Use microsoft/mai-image-2.6-flash for new integrations.",
-            "Nova Canvas and Nova Reel retired on September 30. Their model IDs and aliases no longer accept requests.",
-        ],
+        when: "Planned",
+        model: "Qwen3 Coder 30B",
+        change: "Moves to AWS Bedrock; Paid Pollen only",
+        details:
+            "The model ID and aliases stay unchanged. Input/output pricing becomes $0.15/$0.60 per million tokens. Responses API, seed, logprobs, and stop support are removed. Named tool choice behaves as auto; strict JSON schemas are not enforced. The change is not live yet.",
     },
     {
-        date: "2026-09-24",
-        emoji: "🔄",
-        title: "Model provider changes",
-        description:
-            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
-        details: [
-            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
-            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
-            "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
-            "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
-        ],
+        when: "Oct 9, 16:00 UTC",
+        model: "Qwen3 VL 235B Thinking",
+        change: "Current provider route retires",
+        details:
+            "Alibaba retires this route on October 10 at 00:00 Beijing time. Choose another vision model before that deadline; a replacement route has not been announced.",
     },
     {
-        date: "2026-09-11",
-        dateLabel: "Alpha",
-        emoji: "🧑‍💻",
-        title: "Code agents: run your own agent.ts",
-        description:
-            "Point a code agent at a public GitHub repository and Pollinations deploys and runs it as a model.",
-        details: [
-            "Write one agent.ts using the bundled Vercel AI SDK, Pollinations models, and MCP tools.",
-            "Calls are billed to whoever uses the agent, never to you.",
-            "Fork an [example repository](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example), then add it from [My Models](/my-models). [Read the guide](https://gen.pollinations.ai/docs#tag/publish-an-agent).",
-        ],
+        when: "By Oct 13",
+        model: "Cohere Command A+",
+        change: "Current Azure route is due to retire",
+        details:
+            "Plan for the earliest published retirement date, October 13. A provider change is being prepared; its pricing and compatibility will be announced before it goes live.",
     },
     {
-        date: "2026-09-11",
-        dateLabel: "Now live",
-        emoji: "🧩",
-        title: "Community model IDs get a clearer prefix",
-        description:
-            "Community models and agents are listed as community/username/model instead of username/model.",
-        details: [
-            "Both IDs keep working in generation requests. No changes to models, prices or providers.",
-            "Key permissions use the canonical IDs. Existing permissions were migrated automatically.",
-            "If your app matches saved IDs against the catalog, check aliases too.",
-        ],
+        when: "Oct 20",
+        model: "Gemini 2.5 Flash Lite and Flash Lite Search",
+        change: "Current Vertex AI routes retire",
+        details:
+            "Update apps using these models or their aliases before October 20. Browse Models for current alternatives and their search capabilities; do not assume the old IDs will redirect automatically.",
     },
     {
-        date: "2026-08-15",
-        dateLabel: "Alpha",
-        emoji: "🤖",
-        title: "Build your own agents",
-        description:
-            "Create managed prompt agents and call them through the Pollinations API like any other model.",
-        details: [
-            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
-            "Create an agent from [My Models](/my-models).",
-        ],
-    },
-    {
-        date: "2026-06-30",
-        dateLabel: "Alpha",
-        emoji: "🧪",
-        title: "Community models alpha",
-        description:
-            "Community models are now available on Pollinations in alpha.",
-        details: [
-            "Try community-hosted models from the [Models tab](/models), with attractive pricing.",
-            "The catalog is early and will expand as more models are approved.",
-            "Want to deploy your own model? Access is allowlist-only for now; contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
-        ],
+        when: "Nov 2",
+        model: "Grok Imagine Pro",
+        change: "Provider redirects to Grok Imagine Image 2.0",
+        details:
+            "xAI retires the image-quality route and redirects requests to Image 2.0. Check the replacement's output and pricing before the change.",
     },
 ];
 
-/** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */
-function renderWithLinks(text: string): ReactNode[] {
-    const parts: ReactNode[] = [];
-    const matches = [...text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
-    let lastIndex = 0;
-    for (const match of matches) {
-        const idx = match.index ?? 0;
-        const href = match[2];
-        if (idx > lastIndex) {
-            parts.push(text.slice(lastIndex, idx));
-        }
-        parts.push(
-            <InlineLink key={idx} href={href}>
-                {match[1]}
-            </InlineLink>,
-        );
-        lastIndex = idx + match[0].length;
-    }
-    if (lastIndex < text.length) {
-        parts.push(text.slice(lastIndex));
-    }
-    return parts;
-}
+const RECENT_CHANGES = [
+    {
+        when: "Oct 1",
+        model: "MAI Image 2.5 Flash",
+        change: "Existing ID now uses 2.6 Flash and its pricing",
+        details:
+            "Use microsoft/mai-image-2.6-flash for new integrations. Nova Canvas and Nova Reel retired on September 30; their IDs and aliases no longer accept requests.",
+    },
+    {
+        when: "Sep 24",
+        model: "Model provider changes",
+        change: "Paid access and pricing changed for several models",
+        details:
+            "DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, and Muse Glimmer 30B now require Paid Pollen. DeepSeek V4 Flash costs $0.33/$0.99 per million input/output tokens. GLM 5.2 and Kimi K2.7 Code prices rose about 5%; DeepSeek V4 Pro and Muse Glimmer became cheaper. Kimi K2.7 Code always reasons, so forcing a tool call returns an error. Browse Models for current pricing.",
+    },
+];
 
-function parseHighlights(md: string): Highlight[] {
-    return md
-        .split("\n")
-        .filter((line) => line.startsWith("- **"))
-        .filter((line) => !line.includes("<!-- app -->"))
-        .map((line) => {
-            const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
-            const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
-            const descStart = line.lastIndexOf("**") + 2;
-            const description = line.slice(descStart).trim();
-            return {
-                date: dateMatch?.[1] ?? "",
-                emoji: emojiTitleMatch?.[1] ?? "",
-                title: emojiTitleMatch?.[2]?.trim() ?? "",
-                description,
-            };
-        });
-}
+const ChangeList: FC<{ changes: typeof UPCOMING_CHANGES }> = ({ changes }) => (
+    <ul className="divide-y divide-theme-border">
+        {changes.map(({ when, model, change, details }) => (
+            <li key={model} className="py-3 first:pt-0 last:pb-0">
+                <details>
+                    <summary className="cursor-pointer text-sm text-theme-text-base">
+                        <span className="mr-2 text-theme-text-muted">
+                            {when}
+                        </span>
+                        <strong className="text-theme-text-strong">
+                            {model}
+                        </strong>
+                        <span> — {change}</span>
+                    </summary>
+                    <p className="mt-2 text-sm leading-relaxed text-theme-text-soft">
+                        {details}
+                    </p>
+                </details>
+            </li>
+        ))}
+    </ul>
+);
 
-function formatNewsDate(date: string): string {
-    if (!date) return "";
-    const parsed = new Date(`${date}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime())) return date;
-    return parsed.toLocaleDateString("en-US", {
-        timeZone: "UTC",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-}
-
-/** Hand-curated, pinned announcements — one card per item. */
-export const Announcements: FC = () => {
-    return (
-        <div className="flex flex-col gap-3">
-            <CanonicalModelSlugAnnouncement />
-            {PINNED_NEWS.map((item) => (
-                <PinnedNews key={item.title} item={item} />
-            ))}
-        </div>
-    );
-};
-
-const CanonicalModelSlugAnnouncement: FC = () => (
-    <Surface
-        id="canonical-model-slugs"
-        variant="card"
-        className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
-    >
-        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-            API update
-        </div>
-        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
-            <span aria-hidden="true" className="shrink-0">
-                🧪
-            </span>
-            <span>Model IDs are now standardized</span>
-        </div>
-        <p className="mt-1 text-sm text-ink-700">
-            Model IDs now follow <code>publisher/model</code>—for example,{" "}
-            <code>flux</code> → <code>black-forest-labs/flux.1-schnell</code>.
-            The model catalog uses the new IDs. Existing IDs remain supported as
-            aliases in API requests.
-        </p>
-        <InlineLink href="/models" className="mt-3 block w-fit text-sm">
-            Browse models and their aliases
+export const UpcomingChanges: FC = () => (
+    <>
+        <ChangeList changes={UPCOMING_CHANGES} />
+        <InlineLink href="/models" size="sm" className="mt-3 inline-block">
+            Browse models and current prices
         </InlineLink>
-    </Surface>
+    </>
 );
 
-export const NewsBanner: FC = () => {
-    const [highlights, setHighlights] = useState<Highlight[]>([]);
-
-    useEffect(() => {
-        fetch(HIGHLIGHTS_RAW_URL)
-            .then((res) => res.text())
-            .then((md) =>
-                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
-            )
-            .catch((err) => console.error("Failed to fetch highlights:", err));
-    }, []);
-
-    if (highlights.length === 0) return null;
-
-    return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {highlights.map((item) => (
-                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
-            ))}
-        </div>
-    );
-};
-
-const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="min-w-0 leading-relaxed">
-        {(item.dateLabel || item.date) && (
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                {item.dateLabel ??
-                    (item.date ? formatNewsDate(item.date) : null)}
-            </div>
-        )}
-        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
-            {item.emoji && (
-                <span aria-hidden="true" className="shrink-0">
-                    {item.emoji}
-                </span>
-            )}
-            <span>{item.title}</span>
-        </div>
-        {item.description && (
-            <p className="mt-1 text-sm text-ink-700">
-                {renderWithLinks(item.description)}
-            </p>
-        )}
-        {item.details && item.details.length > 0 && (
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink-700 marker:text-theme-text-soft">
-                {item.details.map((detail) => (
-                    <li key={detail}>{renderWithLinks(detail)}</li>
-                ))}
-            </ul>
-        )}
-    </Surface>
-);
-
-const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="text-sm leading-relaxed">
-        {item.date && (
-            <time
-                dateTime={item.date}
-                className="mb-1 block text-xs font-medium text-theme-text-muted"
-            >
-                {formatNewsDate(item.date)}
-            </time>
-        )}
-        <div className="flex items-start gap-2 font-semibold text-ink-900">
-            {item.emoji && (
-                <span aria-hidden="true" className="shrink-0 text-base">
-                    {item.emoji}
-                </span>
-            )}
-            <div className="min-w-0">{item.title}</div>
-        </div>
-        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
-    </Surface>
-);
+export const Announcements: FC = () => <ChangeList changes={RECENT_CHANGES} />;

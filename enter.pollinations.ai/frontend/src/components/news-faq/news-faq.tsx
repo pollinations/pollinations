@@ -1,31 +1,15 @@
-import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
+import { Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
-import {
-    Announcements,
-    HIGHLIGHTS_GITHUB_URL,
-    NewsBanner,
-} from "./news-banner.tsx";
+import { Announcements, UpcomingChanges } from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
     <>
-        <Section title="Announcements" framed>
-            <Announcements />
+        <Section title="Upcoming model changes" framed>
+            <UpcomingChanges />
         </Section>
-        <Section
-            title="News"
-            framed
-            action={
-                <InlineLink href={HIGHLIGHTS_GITHUB_URL} size="sm">
-                    <GitHubIcon
-                        aria-hidden="true"
-                        className="mr-1.5 inline-block h-4 w-4 align-text-bottom"
-                    />
-                    More on GitHub
-                </InlineLink>
-            }
-        >
-            <NewsBanner />
+        <Section title="Recent changes" framed>
+            <Announcements />
         </Section>
         <Section title="FAQ" id="faq">
             <FAQ showTitle={false} />

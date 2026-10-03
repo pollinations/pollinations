@@ -121,6 +121,16 @@ export function createDeepInfraModelConfig(
     );
 }
 
+export function createInferencePortModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inferenceport.ai/v1",
+        textEnvironmentValue("INFERENCEPORT_API_KEY"),
+        overrides,
+    );
+}
+
 export function createMistralModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

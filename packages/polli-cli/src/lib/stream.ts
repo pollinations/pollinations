@@ -7,6 +7,7 @@ export async function* streamSSE(
     onEvent?: (event: {
         model?: string;
         usage?: { total_tokens?: number };
+        choices?: { finish_reason?: string | null }[];
     }) => void,
 ): AsyncGenerator<string, void> {
     const reader = response.body?.getReader();
@@ -30,7 +31,10 @@ export async function* streamSSE(
 
             let parsed: {
                 error?: { message?: string };
-                choices?: { delta?: { content?: string } }[];
+                choices?: {
+                    delta?: { content?: string };
+                    finish_reason?: string | null;
+                }[];
                 model?: string;
                 usage?: { total_tokens?: number };
             };

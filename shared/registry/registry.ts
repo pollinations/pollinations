@@ -74,6 +74,14 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
+export const PRICE_UNITS = ["megapixel", "token", "byte"] as const;
+
+// Billed unit for a usage field whose name or category default misdescribes
+// it. `quantity` usage units make one billed unit. Display-only.
+export type PriceUnits = Partial<
+    Record<UsageType, { unit: (typeof PRICE_UNITS)[number]; quantity?: number }>
+>;
+
 // USD-equivalent amounts per usage type, plus what Pollinations pays the provider.
 export type UsageCost = Usage & {
     totalCost: number;
@@ -219,6 +227,7 @@ export type ModelDefinition = {
     // a per-second rate from a per-token cost. Used to disambiguate flat-fee
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
+    priceUnits?: PriceUnits;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
     fallbackOnly?: boolean;

@@ -1,50 +1,62 @@
 import { Chip, InlineLink, Section, Surface } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 
-const UPCOMING_CHANGES = [
+type ModelChange = {
+    date: string;
+    model: string;
+    action: "Updating" | "Retiring" | "Updated";
+    change: string;
+    note?: string;
+    details?: string[];
+};
+
+const UPCOMING_CHANGES: ModelChange[] = [
     {
-        when: "Oct 3",
+        date: "2026-10-03",
         model: "Qwen3 Coder 30B",
         action: "Updating",
         change: "Bedrock; Paid Pollen; $0.15/$0.60 per 1M input/output tokens. IDs unchanged.",
         note: "No Responses API, seed, logprobs or stop. Named tool choice uses auto; schemas are not enforced.",
     },
     {
-        when: "Oct 9",
+        date: "2026-10-09",
         model: "Qwen3 VL 235B Thinking",
         action: "Retiring",
         change: "Alibaba route retires. Choose another vision model.",
     },
     {
-        when: "Oct 13",
+        date: "2026-10-13",
         model: "Cohere Command A+",
         action: "Retiring",
         change: "Azure route is due to retire. Replacement details to follow.",
     },
     {
-        when: "Oct 20",
+        date: "2026-10-20",
         model: "Gemini 2.5 Flash Lite + Search",
         action: "Retiring",
         change: "Vertex AI routes retire. Update apps using these models or their aliases.",
     },
     {
-        when: "Nov 2",
+        date: "2026-11-02",
         model: "Grok Imagine Pro",
         action: "Updating",
         change: "Redirects to Image 2.0. Output and pricing change.",
     },
 ];
 
-export const UpcomingChanges: FC = () => (
+const ModelChanges: FC<{ changes: ModelChange[] }> = ({ changes }) => (
     <ul className="flex flex-col gap-4 text-sm text-theme-text-base">
-        {UPCOMING_CHANGES.map(({ when, model, action, change, note }) => (
+        {changes.map(({ date, model, action, change, note, details }) => (
             <li
                 key={model}
                 className="grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]"
             >
-                <span className="whitespace-nowrap text-theme-text-muted">
-                    {when}
-                </span>
+                <time
+                    dateTime={date}
+                    className="whitespace-nowrap text-theme-text-muted"
+                >
+                    {formatNewsDate(date)}
+                </time>
                 <span className="border-l border-theme-text-strong/15 pl-2">
                     <Chip
                         size="sm"
@@ -57,12 +69,23 @@ export const UpcomingChanges: FC = () => (
                     {model}
                 </strong>
                 <div className="col-span-3 min-w-0 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
-                    <p>{change}</p>
-                    {note && <p className="mt-1">{note}</p>}
+                    <p>{renderWithLinks(change)}</p>
+                    {note && <p className="mt-1">{renderWithLinks(note)}</p>}
+                    {details && (
+                        <ul className="mt-1.5 list-disc space-y-1 pl-5 marker:text-theme-text-soft">
+                            {details.map((detail) => (
+                                <li key={detail}>{renderWithLinks(detail)}</li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             </li>
         ))}
     </ul>
+);
+
+export const UpcomingChanges: FC = () => (
+    <ModelChanges changes={UPCOMING_CHANGES} />
 );
 
 interface Highlight {
@@ -76,17 +99,12 @@ interface Highlight {
     details?: string[];
 }
 
-/**
- * Pinned news items that stay visible regardless of daily updates.
- * Edit this array to add/remove pinned announcements.
- */
-const RECENT_MODEL_CHANGES: Highlight[] = [
+const RECENT_MODEL_CHANGES: ModelChange[] = [
     {
         date: "2026-10-01",
-        emoji: "🖼️",
-        title: "MAI Image 2.5 Flash moves to 2.6 Flash",
-        description:
-            "The 2.5 Flash model ID still works, but now uses MAI Image 2.6 Flash and its pricing. [Browse models](/models).",
+        model: "MAI Image 2.5 Flash",
+        action: "Updated",
+        change: "The 2.5 Flash model ID still works, but now uses MAI Image 2.6 Flash and its pricing. [Browse models](/models).",
         details: [
             "Use microsoft/mai-image-2.6-flash for new integrations.",
             "Nova Canvas and Nova Reel retired on September 30. Their model IDs and aliases no longer accept requests.",
@@ -94,10 +112,9 @@ const RECENT_MODEL_CHANGES: Highlight[] = [
     },
     {
         date: "2026-09-24",
-        emoji: "🔄",
-        title: "Model provider changes",
-        description:
-            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
+        model: "DeepSeek, Kimi, GLM, Muse",
+        action: "Updated",
+        change: "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
         details: [
             "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
             "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
@@ -207,11 +224,7 @@ export const RecentChanges: FC = () => {
     if (recent.length === 0) return null;
     return (
         <Section title="Recent model changes">
-            <div className="flex flex-col gap-3">
-                {recent.map((item) => (
-                    <PinnedNews key={item.title} item={item} />
-                ))}
-            </div>
+            <ModelChanges changes={recent} />
         </Section>
     );
 };

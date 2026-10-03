@@ -4,6 +4,7 @@ import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
 import {
     ExitSignal,
+    fail,
     getOutputMode,
     printError,
     printResult,
@@ -362,9 +363,6 @@ export const usageCommand = new Command("usage")
                 })),
             );
         } catch (err) {
-            printError(
-                `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            throw new ExitSignal(1);
+            fail("Failed to fetch usage", err);
         }
     });

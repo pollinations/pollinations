@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setKeyOverride } from "../lib/config.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
 import {
     filterDailyRows,
     isKeyId,
@@ -7,6 +9,7 @@ import {
     tokensIn,
     tokensOut,
     type UsageKeyInfo,
+    usageCommand,
 } from "./usage.js";
 
 const keys: UsageKeyInfo[] = [
@@ -14,6 +17,85 @@ const keys: UsageKeyInfo[] = [
     { id: "id_kimi3", name: "kimi3" },
     { id: "id_harness", name: "polli-harness-claude" },
 ];
+
+describe("usage command errors", () => {
+    const originalArgv = process.argv;
+
+    beforeEach(() => {
+        process.argv = ["node", "polli", "--key", "sk_test", "usage"];
+        setOutputMode("human");
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+        vi.stubGlobal("fetch", vi.fn());
+    });
+
+    afterEach(() => {
+        process.argv = originalArgv;
+        setKeyOverride(undefined);
+        setOutputMode("human");
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    it.each([
+        "0",
+        "abc",
+        "2.5",
+    ])("prints invalid limit %s only once without fetching", async (limit) => {
+        await expect(
+            usageCommand.parseAsync(["--history", "--limit", limit], {
+                from: "user",
+            }),
+        ).rejects.toMatchObject({ constructor: ExitSignal, code: 1 });
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [expect.stringContaining("--limit must be a positive integer")],
+        ]);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("fetches history with a valid limit", async () => {
+        vi.mocked(fetch).mockResolvedValue(
+            Response.json({ usage: [], count: 0 }),
+        );
+        await usageCommand.parseAsync(["--history", "--limit", "5"], {
+            from: "user",
+        });
+        expect(fetch).toHaveBeenCalledOnce();
+        expect(fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/account/usage?limit=5"),
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    Authorization: "Bearer sk_test",
+                }),
+            }),
+        );
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [expect.stringContaining("No results.")],
+        ]);
+    });
+
+    it("reports genuine API failures and exits with code 1", async () => {
+        vi.mocked(fetch).mockResolvedValue(
+            new Response("unavailable", {
+                status: 503,
+                statusText: "Service Unavailable",
+            }),
+        );
+        await expect(
+            usageCommand.parseAsync(["--history", "--limit", "5"], {
+                from: "user",
+            }),
+        ).rejects.toMatchObject({ constructor: ExitSignal, code: 1 });
+        expect(fetch).toHaveBeenCalledOnce();
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [
+                expect.stringContaining(
+                    "Failed to fetch usage: 503 Service Unavailable: unavailable",
+                ),
+            ],
+        ]);
+    });
+});
 
 describe("isKeyId", () => {
     it("accepts 32-char alphanumerics", () => {

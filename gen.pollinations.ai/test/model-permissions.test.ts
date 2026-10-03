@@ -520,6 +520,7 @@ test("filters OpenRouter text models by paid balance", async ({
     const questPollenModels = new Set([
         "typesafe/jev-1.13",
         "jaredpalmer/kev-4b",
+        "liquid/d1",
         "respan/span-01-lite",
     ]);
     const openRouterModelNames = getVisibleTextModels().filter((model) => {

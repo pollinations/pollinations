@@ -1,0 +1,34 @@
+{
+  "pr_number": 16321,
+  "title": "fix: install ripgrep in Polli runtime image",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/16321",
+  "merged_at": "2026-10-03T11:22:42Z",
+  "labels": [],
+  "pr_body_excerpt": "- Installs ripgrep in the Polli runtime image so `code_search` can run its exact-match step.\n- Fixes `grep` and combined `search` failing when the `rg` executable is missing.\n- Verified a repaired production image with nine handler checks, including semantic/exact search and no-match grep; the bot reconnected and both containers are healthy.\r\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli finds the missing grep",
+    "blurb": "Polli’s toolbox gets ripgrep. Exact-match code search, grep, and combined search have the executable they need.",
+    "summary": "Installs ripgrep in Polli’s runtime image so code_search can run exact matches and the grep and combined search handlers work.",
+    "impact": "Polli can complete semantic and exact code searches, including grep searches that find no matches, without failing on a missing rg executable.",
+    "keywords": [
+      "Polli",
+      "ripgrep",
+      "code_search",
+      "grep",
+      "search",
+      "runtime"
+    ],
+    "visual_concept": "Depict Polli finding a missing search tool in a cozy coding workshop: a small ripgrep-labeled magnifying glass beside a CRT terminal showing code, with code-plants growing nearby. A friendly monitor robot can help hold the search results.",
+    "image_prompt": "In a cozy pixel art coding workshop, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene, she wears a tiny tool belt and uses a magnifying glass labeled 'rg' to inspect code-plants beside a friendly CRT monitor robot. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender surroundings, dark purple (#110518) outlines, and chunky sprites."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16321.jpg",
+    "prompt": "In a cozy pixel art coding workshop, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene, she wears a tiny tool belt and uses a magnifying glass labeled 'rg' to inspect code-plants beside a friendly CRT monitor robot. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender surroundings, dark purple (#110518) outlines, and chunky sprites."
+  },
+  "generated_at": "2026-10-03T11:24:48.348796+00:00"
+}

@@ -516,7 +516,7 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Only the approved low-cost decision models are exempt from paid balance.
+    // Only the approved low-cost models are exempt from paid balance.
     const questPollenModels = new Set([
         "typesafe/jev-1.13",
         "jaredpalmer/kev-4b",

@@ -2132,6 +2132,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "inclusionai/ling-3.1-flash": {
+        supportedParameters: CHAT_PARAMETERS.openRouterLing31,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "inclusionAI",
+        category: "text",
+        addedDate: new Date("2026-10-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 5,
+        cost: {
+            // OpenRouter Novita rates once the free launch period ended
+            // (2026-10-14), including the mandatory 5.5% OpenRouter credit
+            // fee.
+            promptTextTokens: perMillion(0.06) * 1.055,
+            promptCachedTokens: perMillion(0.012) * 1.055,
+            completionTextTokens: perMillion(0.18) * 1.055,
+        },
+        title: "Ling 3.1 Flash",
+        description:
+            "Hybrid reasoning mixture-of-experts for agentic workflows with tool use and long context",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "inclusionai/ling-3.0-flash-vl": {
         supportedParameters: CHAT_PARAMETERS.openRouterLing,
         aliases: [],

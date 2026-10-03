@@ -199,6 +199,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Ling 3.1 Flash to Novita on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.1-flash",
+        });
+
+        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
+        expect(result.options.provider).toEqual({
+            only: ["novita"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",

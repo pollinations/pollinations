@@ -208,6 +208,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
             !model.pricing_adjustments?.some(({ price }) => Number(price) > 0),
         alpha: model.alpha,
         addedDate: model.added_date,
+        retirementDate: model.retirement_date,
         inputSortPrice,
         outputSortPrice,
         prices: [],

@@ -71,6 +71,37 @@ function mockCatalogHealth(
         });
 }
 
+test("native model catalogs expose registry retirement dates without changing /v1/models", async () => {
+    const retirementDate = Date.parse("2026-09-30T08:00:00Z");
+    for (const [path, modelId] of [
+        ["/models", "amazon/nova-canvas-v1"],
+        ["/image/models", "amazon/nova-canvas-v1"],
+        ["/video/models", "amazon/nova-reel-v1"],
+    ]) {
+        const response = await fetchWorker(path);
+        expect(response.status, path).toBe(200);
+        const models = (await response.json()) as {
+            name: string;
+            retirement_date?: number;
+        }[];
+        expect(
+            models.find((model) => model.name === modelId)?.retirement_date,
+            path,
+        ).toBe(retirementDate);
+    }
+
+    const compatibleResponse = await fetchWorker("/v1/models");
+    expect(compatibleResponse.status).toBe(200);
+    const compatibleCatalog = (await compatibleResponse.json()) as {
+        data: { id: string; retirement_date?: number }[];
+    };
+    expect(
+        compatibleCatalog.data.find(
+            (model) => model.id === "amazon/nova-canvas-v1",
+        )?.retirement_date,
+    ).toBeUndefined();
+});
+
 test("official models stay discoverable across every list regardless of reliability", async () => {
     const registry = await getGenerationModelRegistry(env);
     const categories = ["text", "image", "video", "3d", "audio", "embedding"];

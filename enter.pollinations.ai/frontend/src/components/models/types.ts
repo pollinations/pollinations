@@ -79,6 +79,7 @@ export type ModelPrice = {
     free?: boolean;
     alpha?: boolean;
     addedDate?: number;
+    retirementDate?: number;
     inputSortPrice?: number;
     outputSortPrice?: number;
     prices: ModelPriceLine[];

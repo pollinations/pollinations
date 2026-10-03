@@ -17,7 +17,7 @@ export const PollenPackButtons: FC<{
     packs,
     selectedAmount,
     onSelect,
-    describe = (pollen, price) => `Select ${pollen} Pollen for ${price}`,
+    describe = (pollen, price) => `Select $${pollen} credit for ${price}`,
 }) => (
     <div
         className={cn(
@@ -53,10 +53,10 @@ export const PollenPackButtons: FC<{
                     )}
                 >
                     <span className="text-2xl font-bold leading-none tracking-tight">
-                        {pollen}
+                        ${pollen}
                     </span>
                     {/* Faded, not grey: readable on both fills. */}
-                    <span className="mt-1 text-xs opacity-70">pollen</span>
+                    <span className="mt-1 text-xs opacity-70">credit</span>
                     <span className="mt-2 text-sm font-semibold">{price}</span>
                 </button>
             );

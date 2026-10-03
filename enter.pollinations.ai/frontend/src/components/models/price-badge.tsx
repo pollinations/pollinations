@@ -118,7 +118,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
                 })}
             </span>
             <span>
-                {displayedPrice.value}
+                ${displayedPrice.value}
                 {unit === "token"
                     ? `/${displayedPrice.tokenScale}`
                     : PRICE_UNIT_SUFFIX[unit]}
@@ -474,7 +474,7 @@ export const UsagePriceRows: FC<{
                     }
                 />
                 <LedgerPriceValue
-                    value={formatDisplayPrice(adjustment.price).value}
+                    value={`$${formatDisplayPrice(adjustment.price).value}`}
                 />
                 {adjustment.suffix ? (
                     <Tooltip
@@ -707,7 +707,7 @@ export const ModelPricingLedger: FC<{
                 >
                     {align === "right" && <span aria-hidden="true" />}
                     <LedgerLabel Icon={PriceIcon} label={row.label} />
-                    <LedgerPriceValue value={row.value} />
+                    <LedgerPriceValue value={`$${row.value}`} />
                     <span
                         className="min-w-0 cursor-help truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
                         title={row.unit}
@@ -731,7 +731,7 @@ export const ModelPricingLedger: FC<{
             {requestBadge && (
                 <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
                     {align === "right" && <span aria-hidden="true" />}
-                    <LedgerLabel Icon={WalletIcon} label="Pollen" />
+                    <LedgerLabel Icon={WalletIcon} label="Credit" />
                     <div className="flex justify-end pr-2">{requestBadge}</div>
                     <span aria-hidden="true" />
                 </div>
@@ -742,7 +742,7 @@ export const ModelPricingLedger: FC<{
                     <LedgerLabel Icon={TokensIcon} label="Requests" />
                     {requestEstimate}
                     <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
-                        /pollen
+                        /$1
                     </span>
                     <span
                         aria-hidden="true"

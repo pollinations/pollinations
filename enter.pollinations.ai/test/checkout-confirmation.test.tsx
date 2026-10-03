@@ -14,8 +14,8 @@ function render(state: CheckoutConfirmationState, onRetry?: () => void) {
 
 describe("checkout confirmation", () => {
     it.each([
-        [{ status: "checking" }, "Adding your Pollen"],
-        [{ status: "credited", pollen: 1000 }, "+1,000 Pollen added"],
+        [{ status: "checking" }, "Adding your credit"],
+        [{ status: "credited", pollen: 1000 }, "+$1,000 credit added"],
         [{ status: "timeout" }, "appear when Stripe confirms the payment"],
     ] as const)("says what %j means for the buyer", (state, text) => {
         expect(render(state)).toContain(text);
@@ -23,7 +23,7 @@ describe("checkout confirmation", () => {
 
     it("says added only once the session is credited", () => {
         for (const status of ["checking", "timeout"] as const)
-            expect(render({ status })).not.toContain("Pollen added");
+            expect(render({ status })).not.toContain("credit added");
     });
 
     it("offers a new checkout after an expired or failed one", () => {
@@ -31,7 +31,7 @@ describe("checkout confirmation", () => {
             expect(render({ status }, () => {})).toContain("Buy again");
             expect(render({ status })).not.toContain("<button");
         }
-        expect(render({ status: "failed" })).toContain("No Pollen was added");
+        expect(render({ status: "failed" })).toContain("No credit was added");
     });
 });
 

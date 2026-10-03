@@ -20,7 +20,7 @@ import {
     TrendUpIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
+import { formatUsd, WalletBalanceCard } from "@pollinations/ui/wallet";
 import { useLoaderData } from "@tanstack/react-router";
 import {
     type ComponentType,
@@ -180,8 +180,8 @@ function cardSortRank(card: QuestCard): number {
 // ── Formatting helpers ──────────────────────────────────────────────────────
 function formatRewardAmount(value: number | null): string {
     if (value == null) return "TBD";
-    const formatted = formatPollen(value);
-    if (value > 0 && formatted === "0") return "<0.0001";
+    const formatted = formatUsd(value);
+    if (value > 0 && formatted === "$0.00") return "<$0.0001";
     return formatted;
 }
 
@@ -304,7 +304,7 @@ function QuestSummary({
             <WalletBalanceCard
                 tone="neutral"
                 kind="tier"
-                label={preview ? "Potential Pollen" : "Pollen"}
+                label={preview ? "Potential credit" : "Credit"}
                 value={formatRewardAmount(pollen)}
                 icon={<SparkleIcon className="h-3.5 w-3.5 shrink-0" />}
                 footer={
@@ -328,8 +328,8 @@ function QuestSummary({
                                         <span>
                                             <span className="sr-only">
                                                 {kind === "paid"
-                                                    ? "Paid Pollen:"
-                                                    : "Quest Pollen:"}{" "}
+                                                    ? "Paid credit:"
+                                                    : "Quest credit:"}{" "}
                                             </span>
                                             +{formatRewardAmount(pollen)} to
                                             claim
@@ -359,9 +359,7 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
         Math.max(0, (progress.current / progress.target) * 100),
     );
     const formatValue = (value: number) =>
-        progress.unit === "pollen"
-            ? formatPollen(value)
-            : value.toLocaleString();
+        progress.unit === "pollen" ? formatUsd(value) : value.toLocaleString();
 
     return (
         <div className="mt-1 flex max-w-sm items-center gap-2">
@@ -379,8 +377,8 @@ function QuestProgressBar({ progress }: { progress: QuestProgress }) {
                 />
             </div>
             <span className="shrink-0 text-xs tabular-nums text-theme-text-muted">
-                {formatValue(progress.current)} / {formatValue(progress.target)}{" "}
-                {progress.unit}
+                {formatValue(progress.current)} / {formatValue(progress.target)}
+                {progress.unit !== "pollen" && ` ${progress.unit}`}
             </span>
         </div>
     );
@@ -928,9 +926,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 claimable footers + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
                 still explains how quests work. */}
-            <Section
-                title={state.anonymous ? "Pollen you can earn" : "Claimed"}
-            >
+            <Section title={state.anonymous ? "Quest rewards" : "Claimed"}>
                 <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}

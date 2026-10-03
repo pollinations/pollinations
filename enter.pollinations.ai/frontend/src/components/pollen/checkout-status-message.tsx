@@ -27,12 +27,12 @@ export const CheckoutStatusMessage: FC<{
 }> = ({ state, onRetry }) => {
     switch (state.status) {
         case "checking":
-            return <LoadingStatus>Adding your Pollen…</LoadingStatus>;
+            return <LoadingStatus>Adding your credit…</LoadingStatus>;
         case "credited":
             return (
                 <StatusLine icon={<CheckIcon />}>
                     <strong className="font-semibold text-theme-text-base">
-                        +{formatPollenPackValue(state.pollen)} Pollen added
+                        +${formatPollenPackValue(state.pollen)} credit added
                     </strong>
                 </StatusLine>
             );
@@ -53,7 +53,7 @@ export const CheckoutStatusMessage: FC<{
             return (
                 <div className="flex flex-col items-start gap-3">
                     <StatusLine icon={<WarningIcon />}>
-                        The payment didn’t go through. No Pollen was added.
+                        The payment didn’t go through. No credit was added.
                     </StatusLine>
                     {onRetry && (
                         <Button icon={<RefreshIcon />} onClick={onRetry}>
@@ -65,7 +65,7 @@ export const CheckoutStatusMessage: FC<{
         case "timeout":
             return (
                 <StatusLine icon={<ClockIcon />}>
-                    Your Pollen will appear when Stripe confirms the payment.
+                    Your credit will appear when Stripe confirms the payment.
                 </StatusLine>
             );
     }

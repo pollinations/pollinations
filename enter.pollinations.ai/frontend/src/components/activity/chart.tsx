@@ -9,7 +9,7 @@ import {
     type ActivityPeriod,
     activityBucketKey,
 } from "./activity-period";
-import { formatActivityPollen } from "./format-activity-pollen";
+import { formatActivityUsd } from "./format-activity-pollen";
 import type { DataPoint, Metric } from "./types";
 
 const CHART_COLORS = {
@@ -185,17 +185,20 @@ export const Chart: FC<ChartProps> = ({
     };
 
     const formatVal = (v: number) => {
-        if (metric === "pollen") return formatActivityPollen(v);
+        if (metric === "pollen") {
+            // Whole-dollar ticks read "$0", "$5", "$1.5k"; the rest "$0.50".
+            return Number.isInteger(v)
+                ? `$${formatCompactVal(v)}`
+                : formatActivityUsd(v);
+        }
         if (Math.abs(v) >= 1e3) return formatCompactVal(v);
         return Math.round(v).toString();
     };
 
     const formatAccessibleValue = (v: number) => {
-        if (metric === "pollen") return formatActivityPollen(v);
-        if (Number.isInteger(v)) {
-            return v.toLocaleString();
-        }
-        return v.toFixed(2);
+        if (metric === "pollen") return formatActivityUsd(v);
+        const count = Number.isInteger(v) ? v.toLocaleString() : v.toFixed(2);
+        return `${count} requests`;
     };
 
     if (data.length === 0) {
@@ -357,7 +360,7 @@ export const Chart: FC<ChartProps> = ({
                                 tabIndex={index === activeIndex ? 0 : -1}
                                 onFocus={() => setFocusedIndex(index)}
                                 aria-disabled={!canSelect(bar)}
-                                aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)} ${metric}. ${selected ? "Clear selection" : "Filter table"}`}
+                                aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)}. ${selected ? "Clear selection" : "Filter table"}`}
                                 className="outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-theme-text-muted"
                                 style={{
                                     cursor: canSelect(bar)

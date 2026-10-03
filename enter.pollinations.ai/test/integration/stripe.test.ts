@@ -570,7 +570,7 @@ test("GET /api/stripe/checkout marks new-card gate locked after four distinct fa
     );
 });
 
-test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({
+test("GET /api/stripe/checkout/p2 uses the plain credit label", async ({
     sessionToken,
     mocks,
 }) => {

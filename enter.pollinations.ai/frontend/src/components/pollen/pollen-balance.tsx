@@ -14,7 +14,7 @@ import {
     WalletIcon,
 } from "@pollinations/ui";
 import {
-    formatPollen,
+    formatUsd,
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
@@ -64,7 +64,7 @@ const TooltipList: FC<{
         </ul>
         {earned !== undefined && earned > 0 && (
             <span className="mt-2 block border-t border-divider pt-1.5 text-intent-success-text font-semibold">
-                +{formatPollen(earned)}{" "}
+                +{formatUsd(earned)}{" "}
                 <span className="font-medium text-theme-text-muted">
                     earned past 7d
                 </span>
@@ -94,18 +94,18 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 <WalletBalanceCard
                     kind="paid"
                     label="Paid"
-                    value={formatPollen(displayPaidBalance)}
+                    value={formatUsd(displayPaidBalance)}
                     info={
                         <InfoTip
-                            label="About Paid Pollen"
+                            label="About Paid credit"
                             text={
                                 <TooltipList
-                                    title="Paid Pollen"
+                                    title="Paid credit"
                                     icon={<CardIcon className="h-4 w-4" />}
                                     items={[
-                                        "Pollen you bought",
+                                        "Credit you bought",
                                         "Earnings from paid-side spend in your apps",
-                                        "Used for paid-only models, or when Quest Pollen can't cover",
+                                        "Used for paid-only models, or when Quest credit can't cover",
                                     ]}
                                     earned={paidWeek}
                                 />
@@ -115,7 +115,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     footer={
                         paidWeek > 0 ? (
                             <>
-                                +{formatPollen(paidWeek)}{" "}
+                                +{formatUsd(paidWeek)}{" "}
                                 <span className="font-medium text-theme-text-muted">
                                     / 7d
                                 </span>
@@ -126,16 +126,16 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 <WalletBalanceCard
                     kind="tier"
                     label="Quest"
-                    value={formatPollen(displayTierBalance)}
+                    value={formatUsd(displayTierBalance)}
                     info={
                         <InfoTip
-                            label="About Quest Pollen"
+                            label="About Quest credit"
                             text={
                                 <TooltipList
-                                    title="Quest Pollen"
+                                    title="Quest credit"
                                     icon={<SproutIcon className="h-4 w-4" />}
                                     items={[
-                                        "Pollen earned from completing Quests",
+                                        "Credit earned from completing Quests",
                                         "Earnings credited from your apps",
                                         "Used first for regular models, when it can cover",
                                     ]}
@@ -147,7 +147,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                     footer={
                         tierWeek > 0 ? (
                             <>
-                                +{formatPollen(tierWeek)}{" "}
+                                +{formatUsd(tierWeek)}{" "}
                                 <span className="font-medium text-theme-text-muted">
                                     / 7d
                                 </span>
@@ -167,15 +167,12 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                         <div className="flex flex-col items-end leading-tight">
                             <span className="flex items-baseline gap-1.5">
                                 <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
-                                    {formatPollen(totalPollen)}
-                                </span>
-                                <span className="text-xs font-bold text-theme-text-soft">
-                                    pollen
+                                    {formatUsd(totalPollen)}
                                 </span>
                             </span>
                             {totalWeek > 0 && (
                                 <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
-                                    +{formatPollen(totalWeek)}{" "}
+                                    +{formatUsd(totalWeek)}{" "}
                                     <span className="font-medium text-theme-text-muted">
                                         / 7d
                                     </span>
@@ -233,11 +230,11 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 </span>
                 <span className="flex items-baseline gap-1.5">
                     <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayPaidBalance)}
+                        {formatUsd(displayPaidBalance)}
                     </span>
                     {paidWeek > 0 && (
                         <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(paidWeek)}
+                            +{formatUsd(paidWeek)}
                         </span>
                     )}
                 </span>
@@ -249,11 +246,11 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
                 </span>
                 <span className="flex items-baseline gap-1.5">
                     <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayTierBalance)}
+                        {formatUsd(displayTierBalance)}
                     </span>
                     {tierWeek > 0 && (
                         <span className="text-micro font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(tierWeek)}
+                            +{formatUsd(tierWeek)}
                         </span>
                     )}
                 </span>
@@ -294,7 +291,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 />
                 <span>
                     Auto top-up buys its pack when your paid balance reaches{" "}
-                    {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
+                    {formatUsd(AUTO_TOP_UP_THRESHOLD_POLLEN)}
                 </span>
             </p>
             <p className="flex items-start gap-1.5">

@@ -78,7 +78,7 @@ function formatTimestamp(value: string): string {
 }
 
 function formatSignedPollen(event: LastEvent): string {
-    if (event.pollen === 0) return "0";
+    if (event.pollen === 0) return "$0.00";
     const sign = event.kind === "earnings" ? "+" : "-";
     return `${sign}${formatActivityPollenThreshold(event.pollen)}`;
 }
@@ -108,15 +108,15 @@ function EventPollenChip({ event }: { event: LastEvent }) {
         return (
             <span className="whitespace-nowrap tabular-nums">
                 {amount}
-                <span className="sr-only"> Pollen</span>
+                <span className="sr-only"> credit</span>
             </span>
         );
     }
     const source = event.meterSource === "tier" ? "Quest" : "Paid";
     const props = {
         size: "sm" as const,
-        title: `${source} Pollen`,
-        "aria-label": `${amount} ${source} Pollen`,
+        title: `${source} credit`,
+        "aria-label": `${amount} ${source} credit`,
         className:
             "inline-flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums",
     };
@@ -296,7 +296,7 @@ export const LastEventsPanel: FC = () => {
                                 <TableHeaderCell
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
-                                    Pollen
+                                    Amount
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>

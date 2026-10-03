@@ -67,7 +67,7 @@ function PollenPage() {
 
     return (
         <>
-            <Section title="Pollen">
+            <Section title="Balance">
                 <Await promise={balance} fallback={<PageStatus />}>
                     {(balances) =>
                         balances ? (

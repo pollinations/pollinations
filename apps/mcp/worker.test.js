@@ -313,6 +313,9 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
             authorization: new Headers(init.headers).get("authorization"),
         });
 
+        if (url.endsWith("/audio/models?community=false&agent=true")) {
+            return Response.json([{ name: "audio-agent", agent: true }]);
+        }
         if (url.endsWith("/audio/models?community=false")) {
             return Response.json([
                 { name: "speech-test" },

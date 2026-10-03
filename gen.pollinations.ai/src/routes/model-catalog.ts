@@ -94,7 +94,7 @@ export async function filterCatalogEntries(
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
-    return filtered
+    const visible = filtered
         .map((entry) => attachModelHealth(entry, lookup))
         .filter(
             (entry) =>
@@ -103,4 +103,43 @@ export async function filterCatalogEntries(
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );
+
+    // Discovery filters come after visibility, permissions, source and
+    // reliability so `limit` always caps the list a caller would otherwise
+    // have received, in its existing order.
+    const tokens = query.query
+        ?.trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+    const narrowed = visible.filter((entry) => {
+        const info = entry.info;
+        if (query.agent !== undefined) {
+            const wanted = query.agent === "true" || query.agent === "1";
+            if ((info.agent ?? false) !== wanted) return false;
+        }
+        if (
+            query.capabilities &&
+            !query.capabilities.every((capability) =>
+                (info.capabilities as readonly string[]).includes(capability),
+            )
+        ) {
+            return false;
+        }
+        if (!tokens?.length) return true;
+        const searchable = [
+            info.name,
+            info.title,
+            info.description ?? "",
+            info.publisher,
+            ...info.aliases,
+        ]
+            .join(" ")
+            .toLowerCase();
+        return tokens.every((token) => searchable.includes(token));
+    });
+
+    return query.limit === undefined
+        ? narrowed
+        : narrowed.slice(0, query.limit);
 }

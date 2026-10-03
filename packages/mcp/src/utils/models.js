@@ -22,10 +22,10 @@ async function fetchModels(url, context) {
     return response.json();
 }
 
-export function getModels(type = "all", context, community) {
+export function getModels(type = "all", context, params = {}) {
     const path = MODEL_PATHS[type];
     if (!path) throw new Error(`Unknown model type: ${type}`);
-    return fetchModels(buildUrl(path, { community }), context);
+    return fetchModels(buildUrl(path, params), context);
 }
 
 export const getImageModels = (context) => getModels("image", context);

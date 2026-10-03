@@ -1,3 +1,4 @@
+import { ModelCapabilitySchema } from "@shared/registry/model-info.ts";
 import { z } from "zod";
 
 export const ModelListQueryParamsSchema = z.object({
@@ -12,6 +13,43 @@ export const ModelListQueryParamsSchema = z.object({
     community: z.enum(["true", "false", "1", "0"]).optional().meta({
         description:
             "Legacy source filter: `true`/`1` for community, `false`/`0` for official.",
+    }),
+    query: z.string().optional().meta({
+        description:
+            "Case-insensitive match against canonical name, aliases, title, description and publisher; every space-separated word must appear in that text. Combined with `capabilities` and `agent`, which must all match.",
+    }),
+    capabilities: z
+        .string()
+        .transform((value) =>
+            value
+                .split(/[|,]/)
+                .map((capability) => capability.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .refine(
+            (capabilities) =>
+                !capabilities ||
+                capabilities.every(
+                    (capability) =>
+                        ModelCapabilitySchema.safeParse(capability).success,
+                ),
+            {
+                message:
+                    "Unknown capability. Valid values are listed in the capabilities field of /models.",
+            },
+        )
+        .meta({
+            description:
+                "Comma- or pipe-separated capabilities that every returned model must list, e.g. `tool_calling,reasoning`.",
+        }),
+    agent: z.enum(["true", "false", "1", "0"]).optional().meta({
+        description:
+            "Filter by agent status: `true`/`1` for agents only, `false`/`0` to exclude agents.",
+    }),
+    limit: z.coerce.number().int().min(1).max(500).optional().meta({
+        description:
+            "Return at most this many models, applied after every other filter. Omit for the full list.",
     }),
 });
 

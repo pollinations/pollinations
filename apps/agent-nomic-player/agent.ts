@@ -57,8 +57,20 @@ async function jevVote(
 	if (!res.ok) throw new Error(`Jev request failed (${res.status})`);
 	const data = (await res.json()) as AnyBody;
 	const vote = (data.answers as AnyBody)?.vote as AnyBody;
-	const choice = String(vote?.choice ?? "unknown");
-	const probabilities = (vote?.probabilities ?? {}) as Record<string, number>;
+	const choice = vote?.choice;
+	const probabilities = vote?.probabilities as Record<string, number> | undefined;
+	if (
+		(choice !== "yes" && choice !== "no") ||
+		!probabilities ||
+		Array.isArray(probabilities) ||
+		Object.keys(probabilities).sort().join() !== "no,yes" ||
+		![probabilities.yes, probabilities.no].every(
+			(p) => typeof p === "number" && Number.isFinite(p) && p >= 0 && p <= 1,
+		) ||
+		Math.abs(probabilities.yes + probabilities.no - 1) > 0.02 ||
+		probabilities[choice] < probabilities[choice === "yes" ? "no" : "yes"]
+	)
+		throw new Error("Jev returned an invalid vote");
 	return { choice, probabilities };
 }
 

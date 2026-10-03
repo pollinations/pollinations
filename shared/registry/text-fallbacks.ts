@@ -100,6 +100,11 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "microsoft/mai-thinking-1": {
+        "microsoft/mai-thinking-1:azure:sweden": {
+            provider: "azure",
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

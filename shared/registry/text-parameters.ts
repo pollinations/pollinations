@@ -43,6 +43,12 @@ export const CHAT_PARAMETERS = {
     ],
     // Chat-to-Responses conversion does not forward top-level verbosity.
     azureResponses: [...TOOL_CHAT, "reasoning_effort", "parallel_tool_calls"],
+    azureMaiThinking: [
+        "max_tokens",
+        "max_completion_tokens",
+        "stream",
+        "tools",
+    ],
     ovhGptOss: [
         ...SAMPLED_CHAT,
         ...PENALTIES,

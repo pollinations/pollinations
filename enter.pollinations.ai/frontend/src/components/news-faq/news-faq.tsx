@@ -1,7 +1,11 @@
 import { InlineLink, Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
-import { Announcements, UpcomingChanges } from "./news-banner.tsx";
+import {
+    Announcements,
+    RecentChanges,
+    UpcomingChanges,
+} from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
     <>
@@ -16,6 +20,7 @@ export const NewsFaq: FC = () => (
         >
             <UpcomingChanges />
         </Section>
+        <RecentChanges />
         <Section title="Announcements">
             <Announcements />
         </Section>

@@ -4,7 +4,6 @@ import {
     AUTO_TOP_UP_PACK_MIN_USD,
     AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
-import { isInternalAutomationAccount } from "@shared/billing/internal-automation.ts";
 import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import {
     calculateServiceFeeCents,
@@ -49,22 +48,13 @@ export async function updateAutoTopUpSettings(
     | { ok: true; overview: BillingOverview }
     | { ok: false; status: 400 | 403; error: string }
 > {
-    if (isInternalAutomationAccount(userId) && input.enabled) {
-        return {
-            ok: false,
-            status: 403,
-            error: "Internal automation credits replace auto top-up for this account.",
-        };
-    }
-
     if (!input.enabled) {
         await env.DB.prepare(
             `UPDATE user
-                SET auto_top_up_enabled = 0,
-                    auto_top_up_amount_usd = CASE WHEN ? THEN NULL ELSE auto_top_up_amount_usd END
+                SET auto_top_up_enabled = 0
                 WHERE id = ?`,
         )
-            .bind(Number(isInternalAutomationAccount(userId)), userId)
+            .bind(userId)
             .run();
 
         return { ok: true, overview: await getBillingOverview(env, userId) };
@@ -140,10 +130,6 @@ export async function processAutoTopUpForUser(
     env: CloudflareBindings,
     userId: string,
 ): Promise<AutoTopUpProcessResult> {
-    if (isInternalAutomationAccount(userId)) {
-        return { status: "skipped", reason: "internal automation account" };
-    }
-
     const user = await getUserStripeBillingRow(env.DB, userId);
 
     if (isUserBanned(user)) {

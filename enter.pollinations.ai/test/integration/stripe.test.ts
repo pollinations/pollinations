@@ -97,7 +97,6 @@ test("eight failed cards are recorded without a webhook account ban", async ({
 
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
-import { INTERNAL_AUTOMATION_USER_ID } from "@shared/billing/internal-automation.ts";
 import {
     stripeCardFingerprintAttempt as stripeCardFingerprintAttemptTable,
     stripeCheckoutCredits as stripeCheckoutCreditsTable,
@@ -117,11 +116,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
 import { expect, vi } from "vitest";
-import {
-    creditAutoTopUpInvoice,
-    processAutoTopUpForUser,
-    updateAutoTopUpSettings,
-} from "../../src/utils/stripe-billing/index.ts";
+import { creditAutoTopUpInvoice } from "../../src/utils/stripe-billing/index.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import {
@@ -1241,48 +1236,6 @@ test("PATCH /api/stripe/auto-top-up uses fixed threshold and rejects invalid pac
         error: string;
     };
     expect(unsupportedPackData.error).toBe("Invalid auto top-up pack amount.");
-});
-
-test("internal automation cannot enable or trigger Stripe auto top-up", async ({
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const db = drizzle(env.DB);
-    await db.insert(userTable).values({
-        id: INTERNAL_AUTOMATION_USER_ID,
-        name: "Internal Automation",
-        email: "internal-automation@test.local",
-        autoTopUpEnabled: true,
-        autoTopUpAmountUsd: 20,
-    });
-
-    expect(
-        await updateAutoTopUpSettings(env, INTERNAL_AUTOMATION_USER_ID, {
-            enabled: true,
-            packAmountUsd: 20,
-        }),
-    ).toMatchObject({ ok: false, status: 403 });
-    expect(
-        await processAutoTopUpForUser(env, INTERNAL_AUTOMATION_USER_ID),
-    ).toEqual({ status: "skipped", reason: "internal automation account" });
-    const disabled = await updateAutoTopUpSettings(
-        env,
-        INTERNAL_AUTOMATION_USER_ID,
-        { enabled: false, packAmountUsd: 20 },
-    );
-    expect(disabled).toMatchObject({
-        ok: true,
-        overview: { autoTopUp: { available: false, enabled: false } },
-    });
-    const [user] = await db
-        .select({
-            enabled: userTable.autoTopUpEnabled,
-            amountUsd: userTable.autoTopUpAmountUsd,
-        })
-        .from(userTable)
-        .where(eq(userTable.id, INTERNAL_AUTOMATION_USER_ID));
-    expect(user).toEqual({ enabled: false, amountUsd: null });
-    expect(mocks.stripe.state.requests).toHaveLength(0);
 });
 
 test("PATCH /api/stripe/auto-top-up validates request shape", async ({

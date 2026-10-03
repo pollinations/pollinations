@@ -43,7 +43,6 @@ export type AutoTopUpIssue =
 
 export type BillingOverview = {
     autoTopUp: {
-        available: boolean;
         enabled: boolean;
         packAmountUsd: number;
         lastIssue: AutoTopUpIssue | null;

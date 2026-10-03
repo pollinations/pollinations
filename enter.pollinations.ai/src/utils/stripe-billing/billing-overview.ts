@@ -1,4 +1,3 @@
-import { isInternalAutomationAccount } from "@shared/billing/internal-automation.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
 import {
@@ -40,19 +39,14 @@ export async function getBillingOverview(
         ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
     const ready = !!paymentMethod && billingDetailsComplete;
-    const autoTopUpAvailable = !isInternalAutomationAccount(userId);
-    const autoTopUpEnabled =
-        autoTopUpAvailable && user.autoTopUpEnabled && ready;
+    const autoTopUpEnabled = user.autoTopUpEnabled && ready;
 
-    const lastIssue = autoTopUpAvailable
-        ? await getLastAutoTopUpIssue(env.DB, stripe, userId)
-        : null;
+    const lastIssue = await getLastAutoTopUpIssue(env.DB, stripe, userId);
     const packAmountUsd =
         user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD;
 
     return {
         autoTopUp: {
-            available: autoTopUpAvailable,
             enabled: autoTopUpEnabled,
             packAmountUsd,
             lastIssue,

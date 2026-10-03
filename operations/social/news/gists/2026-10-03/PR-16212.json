@@ -1,0 +1,32 @@
+{
+  "pr_number": 16212,
+  "title": "feat: allow four community publishers",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/16212",
+  "merged_at": "2026-10-03T11:53:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds publisher access for @massafizidane21-ux, @vathsothary72-source, @achraf2011achraf, and @helicopterbrr.\n- Keeps @connor11016 out of this change.\n\nCloses #16142, #16111, #15833, #16264",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Four new garden gates",
+    "blurb": "Four community members get publisher access. The garden has a few more people tending it.",
+    "summary": "The GitHub publisher access list adds @massafizidane21-ux, @vathsothary72-source, @achraf2011achraf, and @helicopterbrr.",
+    "impact": "These four community members gain publisher access through GitHub authentication.",
+    "keywords": [
+      "community",
+      "publishers",
+      "GitHub",
+      "access"
+    ],
+    "visual_concept": "Four small publisher badges hang beside a garden gate, each marking one newly authorized community member. Polli, wearing a tiny gardener's hat, welcomes them among code-plants; no project-specific mascot is indicated.",
+    "image_prompt": "Polli welcomes four little publisher badges through a garden gate beside sprouting code-plants and a prominently lime green (#ecf874) path; she wears a tiny gardener's hat. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, never oversized or elongated, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and lavender surroundings with dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16212.jpg",
+    "prompt": "Polli welcomes four little publisher badges through a garden gate beside sprouting code-plants and a prominently lime green (#ecf874) path; she wears a tiny gardener's hat. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, never oversized or elongated, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and lavender surroundings with dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-03T11:54:11.182036+00:00"
+}

@@ -1,4 +1,4 @@
-import { cn, LockIcon } from "@pollinations/ui";
+import { Chip, cn, LockIcon, WalletIcon } from "@pollinations/ui";
 import type { FC } from "react";
 
 const NAMES: Record<string, string> = {
@@ -59,6 +59,20 @@ type PaymentTrustBadgeProps = {
     country?: string | null;
 };
 
+export const CryptoAcceptedBadge: FC = () => (
+    <span className="inline-flex items-center font-body text-[13px] font-medium leading-normal text-theme-text-muted">
+        Crypto accepted
+        <Chip
+            data-theme="accent"
+            intent="neutral"
+            size="sm"
+            className="bg-transparent text-theme-text-soft"
+        >
+            New!
+        </Chip>
+    </span>
+);
+
 export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
     className,
     country,
@@ -86,6 +100,10 @@ export const PaymentTrustBadge: FC<PaymentTrustBadgeProps> = ({
                         loading="lazy"
                     />
                 ))}
+                <span className="inline-flex h-6 items-center gap-1 rounded border border-theme-text-muted/30 px-1.5 text-xs font-medium">
+                    <WalletIcon aria-hidden="true" className="h-3.5 w-3.5" />
+                    Crypto
+                </span>
             </span>
         </div>
     );

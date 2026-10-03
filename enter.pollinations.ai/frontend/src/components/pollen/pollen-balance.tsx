@@ -311,6 +311,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 className="mt-0 pt-0"
                 country={initialBilling?.ipCountry}
             />
+            <p>Choose Crypto at checkout to pay from your wallet.</p>
         </Footnotes>
     </>
 );

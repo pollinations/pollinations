@@ -24,6 +24,7 @@ import { config } from "../../config.ts";
 import { useResetWhenShownAgain } from "../../lib/billing-portal.ts";
 import { CheckoutConfirmation } from "./checkout-confirmation.tsx";
 import { formatCard } from "./payment-method-format.ts";
+import { CryptoAcceptedBadge } from "./payment-trust-badge.tsx";
 
 /** A Checkout Session shown in the pay modal (`ui_mode: custom`). */
 type WalletCheckout = {
@@ -486,9 +487,12 @@ const WalletPay: FC<{
                         </button>
                         {/* Same tab, like Buy without a card: Stripe's page
                             returns here, and no modal is left behind. */}
-                        <InlineLink href={hostedHref}>
-                            Another card or method
-                        </InlineLink>
+                        <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                            <InlineLink href={hostedHref}>
+                                Pay with another method
+                            </InlineLink>
+                            <CryptoAcceptedBadge />
+                        </span>
                     </div>
                 ) : undefined
             }

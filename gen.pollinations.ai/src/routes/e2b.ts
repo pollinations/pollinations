@@ -450,7 +450,19 @@ export const e2bRoutes = new Hono<Env>()
             const sandbox = await ownedSandbox(c);
             if (sandbox.state === "paused") await requireCapacity(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
-            return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS);
+            const requested = timeout ?? DEFAULT_TIMEOUT_SECONDS;
+            // Connect tops a running lease up only once less than half of the
+            // requested time is left, so each ssh session or CLI command
+            // doesn't buy a few more seconds.
+            const left =
+                sandbox.state === "running"
+                    ? (Date.parse(sandbox.endAt) - Date.now()) / 1000
+                    : 0;
+            return extendLease(
+                c,
+                sandbox,
+                left > requested / 2 ? Math.floor(left) : requested,
+            );
         },
     )
     // Everything else (templates, snapshots, forks, volumes, secrets,

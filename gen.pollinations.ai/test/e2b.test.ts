@@ -275,6 +275,8 @@ test("a running sandbox pays only past its lease; pausing gives up the rest", as
         timeout: 600,
     });
     expect(extended.status).toBe(204);
+    // More than half of the 600 s is left, so reconnecting buys nothing.
+    expect((await connect(600)).status).toBe(200);
     // A paused sandbox has given up its lease, so resuming pays it all.
     const paused = await post(owner.key, `/sandboxes/${sandboxID}/pause`);
     expect(paused.status).toBe(204);

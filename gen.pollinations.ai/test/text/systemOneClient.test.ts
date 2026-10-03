@@ -1,0 +1,426 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { findModelByName } from "../../src/text/availableModels.js";
+import { requireChatStreamUsage } from "../../src/text/chat/usage.js";
+import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
+import { callSystemOne } from "../../src/text/systemOneClient.js";
+
+const modelConfig = {
+    authKey: "test-key",
+    directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+    model: "typesafe/jev-1.13",
+};
+
+// Native TypeSafe shapes: instructions and rubric entries may be strings,
+// objects, or arrays; the adapter must forward them untouched.
+const nativeState = {
+    ticket: { subject: "Duplicate charge", messages: ["Charged twice."] },
+};
+const nativeQuestions = {
+    department: {
+        type: "choice",
+        instructions: "Which team should handle this?",
+        criteria: {
+            billing: "Payment issues",
+            technical: "Product failures",
+        },
+    },
+    frustration: {
+        type: "score",
+        instructions: { question: "How frustrated?", scale: "Calm to angry" },
+        criteria: [
+            "Calm",
+            { level: "Frustrated", example: "Repeated contact" },
+            "Very angry",
+        ],
+    },
+    is_urgent: {
+        type: "noul",
+        instructions: "Does this convey urgency?",
+        criteria: {
+            true: "Explicitly time-sensitive",
+            false: "No urgency expressed",
+        },
+    },
+};
+const nativeContent = JSON.stringify({
+    state: nativeState,
+    questions: nativeQuestions,
+});
+
+const answers = {
+    department: {
+        type: "choice",
+        choice: "technical",
+        confidence: 0.85,
+        probabilities: { billing: 0.08, technical: 0.92 },
+    },
+    frustration: {
+        type: "score",
+        score: 1.6,
+        legend: { "0": "Calm", "1": "Frustrated", "2": "Very angry" },
+        confidence: 0.78,
+        probabilities: { "0": 0.1, "1": 0.2, "2": 0.7 },
+    },
+    is_urgent: { type: "noul", noul: 0.98 },
+};
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+});
+
+describe("System One adapter", () => {
+    it.each([
+        "typesafe/jev-1.13",
+        "typesafe/jev",
+        "jev",
+    ])("resolves %s to the versioned canonical model", (name) => {
+        expect(findModelByName(name)?.name).toBe("typesafe/jev-1.13");
+    });
+
+    it("resolves Kev 4B only by its OpenRouter id", () => {
+        expect(findModelByName("jaredpalmer/kev-4b")?.name).toBe(
+            "jaredpalmer/kev-4b",
+        );
+        expect(findModelByName("kev")).toBeNull();
+    });
+
+    it("routes respan/span-01-lite to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "respan/span-01-lite",
+                });
+                return Response.json({
+                    model: "respan/span-01-lite-20260925",
+                    answers,
+                    usage: { input_tokens: 27, output_tokens: 0 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "respan/span-01-lite",
+                modelConfig: { ...modelConfig, model: "respan/span-01-lite" },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("routes jaredpalmer/kev-4b to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "jaredpalmer/kev-4b",
+                });
+                return Response.json({
+                    model: "jaredpalmer/kev-4b-20260924",
+                    answers,
+                    usage: { input_tokens: 44, output_tokens: 76 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "jaredpalmer/kev-4b",
+                modelConfig: { ...modelConfig, model: "jaredpalmer/kev-4b" },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("forwards native state and questions in one message and returns native answers", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(init?.method).toBe("POST");
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer test-key",
+                );
+                expect(new Headers(init?.headers).get("content-type")).toBe(
+                    "application/json",
+                );
+                expect(init?.signal).toBeInstanceOf(AbortSignal);
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "typesafe/jev-1.13",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "jev-1.13.0",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            });
+        const result = await callSystemOne(
+            [{ role: "user", content: nativeContent }],
+            { modelConfig },
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(result).toMatchObject({
+            id: expect.stringMatching(/^systemone-/),
+            object: "chat.completion",
+            created: expect.any(Number),
+            model: "jev-1.13.0",
+            choices: [
+                {
+                    index: 0,
+                    finish_reason: "stop",
+                    message: { role: "assistant", content: expect.any(String) },
+                },
+            ],
+            usage: {
+                prompt_tokens: 312,
+                completion_tokens: 48,
+                total_tokens: 360,
+            },
+        });
+        expect(
+            JSON.parse(String(result.choices?.[0]?.message?.content)),
+        ).toEqual(answers);
+        // Internal routing metadata must not reach the OpenAI response body.
+        expect(result.upstreamRequestUrl?.href).toBe(
+            "https://openrouter.ai/api/alpha/decisions",
+        );
+        expect(JSON.parse(JSON.stringify(result))).not.toHaveProperty(
+            "upstreamRequestUrl",
+        );
+    });
+
+    it("routes typesafe/jev-1.13 directly with the configured upstream model", async () => {
+        const payloadWithModel = JSON.stringify({
+            model: "inner-model-must-not-route",
+            state: nativeState,
+            questions: nativeQuestions,
+        });
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "jev-1.13.0",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                expect(
+                    new Headers(init?.headers).get("x-portkey-provider"),
+                ).toBeNull();
+                return Response.json({
+                    model: "jev-1.13.0",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            });
+        const portkeyFetcher = vi.fn();
+        await generateTextPortkey(
+            [{ role: "user", content: payloadWithModel }],
+            {
+                model: "typesafe/jev-1.13",
+                modelConfig: { ...modelConfig, model: "jev-1.13.0" },
+            },
+            portkeyFetcher,
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(portkeyFetcher).not.toHaveBeenCalled();
+    });
+
+    it("wraps the finished answers in an SSE stream with terminal usage", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                model: "jev-1.13.0",
+                answers,
+                usage: { input_tokens: 312, output_tokens: 48 },
+            }),
+        );
+        const result = await callSystemOne(
+            [{ role: "user", content: nativeContent }],
+            { modelConfig, stream: true },
+        );
+        expect(result.stream).toBe(true);
+        // The same validator billing runs the stream through; it appends an
+        // error event instead of the terminator when usage is missing.
+        const body = await new Response(
+            requireChatStreamUsage(
+                result.responseStream as ReadableStream<
+                    Uint8Array<ArrayBuffer>
+                >,
+            ),
+        ).text();
+        expect(body).not.toContain("usage_missing");
+        const events = body
+            .split("\n\n")
+            .filter(Boolean)
+            .map((event) => event.replace(/^data: /, ""));
+        expect(events.at(-1)).toBe("[DONE]");
+        const chunks = events.slice(0, -1).map((event) => JSON.parse(event));
+        expect(chunks).toHaveLength(2);
+        expect(chunks[0]).toMatchObject({
+            object: "chat.completion.chunk",
+            model: "jev-1.13.0",
+            choices: [
+                {
+                    index: 0,
+                    finish_reason: "stop",
+                    delta: { role: "assistant" },
+                },
+            ],
+            usage: null,
+        });
+        expect(JSON.parse(chunks[0].choices[0].delta.content)).toEqual(answers);
+        expect(chunks[1]).toMatchObject({
+            choices: [],
+            usage: {
+                prompt_tokens: 312,
+                completion_tokens: 48,
+                total_tokens: 360,
+            },
+        });
+    });
+
+    it.each([
+        [
+            "a system message",
+            [
+                { role: "system", content: "Route the request." },
+                { role: "user", content: nativeContent },
+            ],
+        ],
+        [
+            "an earlier conversation turn",
+            [
+                { role: "user", content: "hello" },
+                { role: "assistant", content: "hi" },
+                { role: "user", content: nativeContent },
+            ],
+        ],
+    ])("reads the last user message past %s", async (_name, messages) => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "typesafe/jev-1.13",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "jev-1.13.0",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            });
+        await callSystemOne(messages, { modelConfig });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ["no messages", []],
+        [
+            "non-string content",
+            [
+                {
+                    role: "user",
+                    content: [{ type: "text", text: nativeContent }],
+                },
+            ],
+        ],
+        ["no user message", [{ role: "assistant", content: nativeContent }]],
+    ])("rejects an unsupported message layout: %s", async (_name, messages) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne(messages, { modelConfig }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("a user message"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ["not json", "not json"],
+        ["an array", "[]"],
+        ["missing state", '{"questions":{}}'],
+        ["missing questions", '{"state":"Payment failed."}'],
+    ])("rejects a malformed native payload: %s", async (_name, content) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne([{ role: "user", content }], { modelConfig }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("https://docs.typesafe.ai/api"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("names the requested model when the request is malformed", async () => {
+        await expect(
+            callSystemOne([{ role: "user", content: "not json" }], {
+                modelConfig: { ...modelConfig, model: "jaredpalmer/kev-4b" },
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining(
+                "jaredpalmer/kev-4b could not parse",
+            ),
+        });
+    });
+
+    it("reports missing credentials as server misconfiguration", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig: { model: "jaredpalmer/kev-4b" },
+            }),
+        ).rejects.toMatchObject({
+            status: 500,
+            message:
+                "The decisions route is not configured for jaredpalmer/kev-4b.",
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("preserves upstream status and sanitized response headers", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            new Response("quota exceeded", {
+                status: 429,
+                headers: {
+                    "retry-after": "10",
+                    "x-api-key": "upstream-test-key",
+                },
+            }),
+        );
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig,
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            message: "quota exceeded",
+            responseBody: "quota exceeded",
+            upstreamHeaders: { "retry-after": "10", "x-api-key": "[redacted]" },
+        });
+    });
+
+    it("rejects a success response that omits usage", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ model: "jev-1.13.0", answers }),
+        );
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig,
+            }),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+});

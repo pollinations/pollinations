@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { type ApiModelInfo, fetchModelCatalog } from "./model-catalog.ts";
-import {
-    getModelCategoriesFromCatalog,
-    type ModelCategoryGroup,
-} from "./model-categories.ts";
+import { getModelCategoriesFromCatalog } from "./model-categories.ts";
 
 /**
  * The public model catalog, plus any models the caller supplies that the
@@ -11,21 +8,20 @@ import {
  * categories. Callers pass only models the catalog leaves out, so the two
  * sources never describe the same model twice.
  *
- * The consent screen and the permission picker have to agree on this list: one
- * renders the summary of what is being granted and the other renders the
- * checkboxes, so a divergence would describe two different grants.
+ * Consent and key editing use this same list in the shared permission picker.
  */
-export function useModelCategories(
-    extraModels?: ApiModelInfo[],
-): ModelCategoryGroup[] {
+export function useModelCategories(extraModels?: ApiModelInfo[]) {
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
+    const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
 
         fetchModelCatalog()
             .then((models) => {
-                if (!cancelled) setCatalogModels(models);
+                if (cancelled) return;
+                setCatalogModels(models);
+                setLoaded(true);
             })
             .catch(() => {
                 if (!cancelled) setCatalogModels([]);
@@ -36,12 +32,13 @@ export function useModelCategories(
         };
     }, []);
 
-    return useMemo(
-        () =>
-            getModelCategoriesFromCatalog([
-                ...catalogModels,
-                ...(extraModels ?? []),
-            ]),
+    const catalog = useMemo(
+        () => [...catalogModels, ...(extraModels ?? [])],
         [catalogModels, extraModels],
     );
+    const categories = useMemo(
+        () => getModelCategoriesFromCatalog(catalog),
+        [catalog],
+    );
+    return { catalog, categories, loaded };
 }

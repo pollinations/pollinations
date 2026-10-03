@@ -169,6 +169,10 @@
     "klein-large",
     "ltx-2",
     "mistral-ocr",
+    "nova-canvas",
+    "amazon/nova-canvas-v1",
+    "nova-reel",
+    "amazon/nova-reel-v1",
     "universal-3-pro"
   ],
   "pollenVendorOverrides": [

@@ -1,3 +1,4 @@
+import { isUserBanned } from "@shared/auth/ban.ts";
 import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
@@ -28,18 +29,46 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type CommunityModelEnv = Pick<CloudflareBindings, "DB">;
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB" | "KV">;
+
+// One shared copy of the catalog for every gen isolate: each isolate running
+// the full-table query on its own 60s expiry was most of the D1 load. Bump
+// the version when the entry shape changes, or Workers mid-deploy serve each
+// other's entries.
+const COMMUNITY_CATALOG_CACHE_KEY = "community-catalog:v1";
+const COMMUNITY_CATALOG_CACHE_TTL_SECONDS = 60;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
 ): Promise<CommunityModelRegistryEntry[]> {
-    const dbBinding = env.DB;
-    if (!dbBinding) return [];
+    const cached = await env.KV.get<CommunityModelRegistryEntry[]>(
+        COMMUNITY_CATALOG_CACHE_KEY,
+        "json",
+    ).catch(() => null);
+    if (cached) return cached;
+    const entries = await queryCommunityModelRegistryEntries(env.DB);
+    await env.KV.put(COMMUNITY_CATALOG_CACHE_KEY, JSON.stringify(entries), {
+        expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
+    }).catch(() => {});
+    return entries;
+}
+
+export async function resetCommunityModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
+    await env.KV.delete(COMMUNITY_CATALOG_CACHE_KEY);
+}
+
+async function queryCommunityModelRegistryEntries(
+    dbBinding: CloudflareBindings["DB"],
+): Promise<CommunityModelRegistryEntry[]> {
     const db = drizzle(dbBinding, { schema });
     const rows = await db
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
+            banned: schema.user.banned,
+            banExpires: schema.user.banExpires,
             ownerGithubUsername: schema.user.githubUsername,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
@@ -67,9 +96,8 @@ export async function getCommunityModelRegistryEntries(
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
         .where(isNotNull(schema.user.githubUsername));
-
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
-        if (!row.ownerGithubUsername) return [];
+        if (!row.ownerGithubUsername || isUserBanned(row)) return [];
         const baseUrl = row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);

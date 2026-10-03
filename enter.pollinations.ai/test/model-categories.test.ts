@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    computeCategoryModalities,
+    getCommunityModelOwner,
     getModelCategoriesFromCatalog,
 } from "../frontend/src/components/models/model-categories.ts";
 import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
@@ -71,28 +71,12 @@ describe("model categories", () => {
         ]);
     });
 
-    it("reports the correct OAuth modality for each community category", () => {
-        const categories = getModelCategoriesFromCatalog(catalog);
-
-        expect(
-            computeCategoryModalities(["community-text"], categories),
-        ).toEqual(["text"]);
-        expect(
-            computeCategoryModalities(["community-image"], categories),
-        ).toEqual(["images"]);
-        expect(
-            computeCategoryModalities(["community-agent"], categories),
-        ).toEqual(["text"]);
-        expect(
-            computeCategoryModalities(
-                ["official-text", "community-text", "community-image"],
-                categories,
-            ),
-        ).toEqual(["text", "images"]);
-        expect(computeCategoryModalities(null, categories)).toEqual([
-            "text",
-            "images",
-        ]);
+    it("reads the creator from community model IDs only", () => {
+        expect(getCommunityModelOwner("community/alice/tiny-llm")).toBe(
+            "alice",
+        );
+        expect(getCommunityModelOwner("openai/gpt")).toBeUndefined();
+        expect(getCommunityModelOwner("flux")).toBeUndefined();
     });
 
     it("accepts categories independently of the model query", () => {

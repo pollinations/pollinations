@@ -4,10 +4,8 @@ import {
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import {
-    getAvailableBalance,
-    getUserBalance,
-} from "@shared/billing/balance.ts";
+import { getAvailableBalance } from "@shared/billing/balance.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -36,6 +34,7 @@ import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import {
     hasAccountPermission,
     requireAccountPermission,
@@ -46,6 +45,9 @@ import { communityEndpointsRoutes } from "./community-endpoints.ts";
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
 const MAX_USAGE_DAYS = 90;
+/** Matches activity_earnings_events ENGINE_TTL (12 months). */
+const MAX_EARNINGS_DAYS = 365;
+const DEFAULT_EARNINGS_DAYS = 90;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
@@ -104,9 +106,15 @@ const CreateKeySchema = z.object({
         .number()
         .int()
         .positive()
-        .max(365 * SECONDS_PER_DAY)
+        .refine(
+            (seconds) =>
+                Number.isFinite(
+                    new Date(Date.now() + seconds * 1000).getTime(),
+                ),
+            "Expiry is outside the supported date range",
+        )
         .optional()
-        .describe("Expiry in seconds from now (max 365 days)"),
+        .describe("Expiry in seconds from now"),
     allowedModels: z
         .array(z.string())
         .nullable()
@@ -124,7 +132,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
+            'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes.',
         ),
     redirectUris: z
         .array(z.string())
@@ -375,14 +383,33 @@ const usageDailyQuerySchema = z.object({
     api_key_ids: commaSeparatedQueryList,
 });
 
-const earningsQuerySchema = usageDailyQuerySchema.omit({ api_key_ids: true });
+const earningsQuerySchema = usageDailyQuerySchema
+    .omit({ api_key_ids: true })
+    .extend({
+        days: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(MAX_EARNINGS_DAYS)
+            .optional()
+            .default(DEFAULT_EARNINGS_DAYS),
+    });
 
-const earningsTransactionsQuerySchema = usageQuerySchema.pick({
-    limit: true,
-    days: true,
-    granularity: true,
-    period: true,
-});
+const earningsTransactionsQuerySchema = usageQuerySchema
+    .pick({
+        limit: true,
+        granularity: true,
+        period: true,
+    })
+    .extend({
+        days: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(MAX_EARNINGS_DAYS)
+            .optional()
+            .default(DEFAULT_USAGE_DAYS),
+    });
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
@@ -994,8 +1021,9 @@ export const accountRoutes = new Hono<Env>()
                 // negative is clamped here exactly as it is when spending is
                 // authorized — a raw tier + pack sum would under-report the
                 // Pollen the account can actually spend.
-                const balances = await getUserBalance(
+                const balances = await getFundedUserBalance(
                     drizzle(c.env.DB),
+                    c.env.DB,
                     user.id,
                 );
                 accountBalance = {
@@ -1439,7 +1467,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
@@ -1484,10 +1512,37 @@ export const accountRoutes = new Hono<Env>()
                 pollenBudget,
                 accountPermissions,
                 metadata,
-                allowAccountKeysPermission: false,
                 defaultCreatedVia: "api",
+                createdByApiKeyId: c.var.auth.apiKey?.id,
+                originAppKeyId:
+                    c.var.auth.apiKey?.byopClientKeyId ??
+                    (c.var.auth.apiKey?.metadata?.keyType === "publishable"
+                        ? c.var.auth.apiKey.id
+                        : (c.var.auth.apiKey?.metadata?.originAppKeyId as
+                              | string
+                              | undefined)),
             });
             return c.json(created);
+        },
+    )
+    .post(
+        "/polli/harness-on",
+        validator(
+            "json",
+            z.object({
+                harness: z
+                    .string()
+                    .regex(/^[a-z0-9-]{1,32}$/)
+                    .meta({ example: "opencode" }),
+            }),
+        ),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            captureFromRequest(c, "polli_harness_on", user.id, {
+                harness: c.req.valid("json").harness,
+            });
+            return c.json({ ok: true });
         },
     )
     .delete(
@@ -1556,6 +1611,11 @@ export const accountRoutes = new Hono<Env>()
                         "application/json": {
                             schema: resolver(
                                 z.object({
+                                    id: z
+                                        .string()
+                                        .describe(
+                                            "Opaque ID for editing this key in the owner’s account",
+                                        ),
                                     valid: z
                                         .boolean()
                                         .describe(
@@ -1726,6 +1786,7 @@ export const accountRoutes = new Hono<Env>()
                 : null;
 
             return c.json({
+                id: apiKey.id,
                 valid: true, // If we got here, the key is valid
                 type: keyType,
                 name: apiKey.name || null,

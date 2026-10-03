@@ -100,6 +100,57 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
+    it("sends Krea's requested aspect ratio like the primary route", async () => {
+        const fetchSpy = mockPrediction();
+
+        await callReplicateFallbackImage("a lighthouse", {
+            ...params("krea/krea-2-medium:replicate"),
+            aspectRatio: "16:9",
+        });
+
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+        );
+        expect(body.input.aspect_ratio).toBe("16:9");
+    });
+
+    it("maps FLUX.2 Max generation to the exact Replicate model", async () => {
+        const fetchSpy = mockPrediction();
+
+        const result = await callReplicateFallbackImage(
+            "a red apple",
+            params("black-forest-labs/flux.2-max"),
+        );
+
+        expect(fetchSpy.mock.calls[0][0]).toBe(
+            "https://api.replicate.com/v1/models/black-forest-labs/flux-2-max/predictions",
+        );
+        const body = JSON.parse(
+            (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+        );
+        expect(body.input).toMatchObject({
+            prompt: "a red apple",
+            aspect_ratio: "custom",
+            width: 1024,
+            height: 1024,
+            output_format: "png",
+            seed: 42,
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "black-forest-labs/flux.2-max",
+            usage: { completionImageTokens: 1.048576 },
+        });
+    });
+
+    it("rejects more than 8 reference images for FLUX.2 Max", async () => {
+        await expect(
+            callReplicateFallbackImage(
+                "make it blue",
+                params("black-forest-labs/flux.2-max", Array(9).fill(PNG)),
+            ),
+        ).rejects.toThrow("FLUX.2 Max supports at most 8 reference images");
+    });
+
     it("passes all supported p-image-edit references", async () => {
         const fetchSpy = mockPrediction();
 

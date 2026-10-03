@@ -1384,7 +1384,13 @@ test("does not retry a partially completed realtime deduction", async () => {
         user?.packBalance ?? 0,
         8,
     );
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    await waitForTinybirdRequests(session.upstream, 1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
+    const event = (await session.upstream.tinybirdRequests[0].json()) as Record<
+        string,
+        unknown
+    >;
+    expect(event.totalPrice).toBeCloseTo(0.003553 * 0.75, 8);
 });
 
 test.each([

@@ -168,7 +168,7 @@ workerTest(
         const ctx = createExecutionContext();
         try {
             source.fallbacks = ["elevenlabs/eleven-flash-v2.5"];
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
             const providerModels: string[] = [];
             fetchMock.mockImplementation(async (input, init) => {
                 const request = new Request(input, init);
@@ -233,7 +233,7 @@ workerTest(
             } finally {
                 fetchMock.mockRestore();
                 source.fallbacks = previousFallbacks;
-                resetGenerationModelRegistryCache();
+                await resetGenerationModelRegistryCache(env);
             }
         }
     },

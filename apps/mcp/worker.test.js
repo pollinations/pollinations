@@ -9,14 +9,20 @@ import worker from "./worker.js";
 const TOKEN = "sk_test_request_scoped";
 const EXPECTED_TOOLS = [
     "createEmbeddings",
+    "createKey",
     "generate3D",
     "generateAudio",
     "generateImage",
     "generateText",
     "generateVideo",
     "getBalance",
+    "getEarnings",
     "getModelStatus",
+    "getUsage",
+    "listKeys",
     "listModels",
+    "listQuests",
+    "revokeKey",
     "transcribeAudio",
 ];
 
@@ -316,7 +322,7 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
         if (url.endsWith("/video/models")) {
             return Response.json([{ name: "veo" }]);
         }
-        if (url.endsWith("/v1/models/status?minutes=15")) {
+        if (url.endsWith("/models/status?minutes=15")) {
             return Response.json({ data: [{ model: "speech-test" }] });
         }
         if (url.endsWith("/v1/embeddings")) {

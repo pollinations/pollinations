@@ -2,8 +2,8 @@
 
 Headless coding agent that watches community models (the
 `community/owner/model` endpoints registered via My Models), probes text/image models,
-reads Tinybird health for every category, and hides unreliable ones from model listings while keeping exact-ID
-calls available. Runs on the `monitoring-agents` EC2 box (ssh alias
+reads Tinybird health for every category, and helps owners diagnose failures.
+Model lists filter reliability automatically; the monitor never changes visibility. Runs on the `monitoring-agents` EC2 box (ssh alias
 `community-monitor`, see `operations/infrastructure/gpu/GPU_INSTANCES.md`),
 not in this repo's CI. The Discord bots share that host.
 
@@ -11,13 +11,8 @@ not in this repo's CI. The Discord bots share that host.
 
 Committed (source of truth — edit here, then deploy):
 - `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
-- `probe.mjs` — one low-load probe sweep across community text/image models (see
+- `probe.mjs` + `probe-schedule.mjs` — selective community text/image checks (see
   "Probe load" below).
-- `seven-day-health.mjs` — deterministic daily 7-day effective-success audit.
-  Final request outcomes count successful fallback rescues; image-provider 4xx
-  count as failures while ordinary client 4xx remain excluded. Models at 80%
-  or better in the freshest 24h/48h window with at least 20 requests are
-  protected from a delayed hide after a fix or new fallback.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
   cycle gets a fresh Claude process and systemd starts the next one 30 minutes
   after completion. Headless cycles cannot be remote-controlled; a separate
@@ -38,7 +33,7 @@ Live-only on the box, never committed:
   Configure `mcp-discord` without `--config`; it inherits `DISCORD_TOKEN` from
   the service environment. Never place the token in MCP command-line arguments.
 - `state.json` — cycle-to-cycle memory (last-replied message ids, alert state,
-  per-operation health/recovery checks, and billing flags). Preserve it during deployments to retain cooldowns and
+  probe backoff and protocol alerts). Preserve it during deployments to retain cooldowns and
   prevent duplicate posts.
 - `people_mapping.json` — GitHub↔Discord identity map the agent maintains
   for tagging owners correctly. Contains real Discord user IDs, so it stays
@@ -54,8 +49,9 @@ Every new instance gets a persisted swapfile at least the size of RAM.
 
 Use a monitor-specific SSH key and the infrastructure secret manager; do not
 commit private keys or host credentials to this repository, even encrypted.
-Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
-(see `.env.example`), install `community-monitor.service`, then run
+Install Node and Claude Code 2.1.280 or newer (required for Opus 5.5),
+clone/copy this directory, populate `.env` (see `.env.example`),
+install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
 
 Moving credentials requires the separate, scoped approval in AGENTS.md's
@@ -72,8 +68,9 @@ Pick "Resume full session" at the prompt to keep the session state intact.
 
 Once `update-from-repo.sh` and its systemd unit are installed, every fresh cycle
 fetches `origin/main` and updates `CYCLE.md`, `.claude/settings.json`,
-`probe.mjs`, `loop.sh`, `healthcheck.sh`, both leaderboard builders, and the
-updater itself. Changes merged to `main` apply on the next cycle. `.env`, state,
+the probe scripts (including `probe-schedule.mjs`), `loop.sh`, `healthcheck.sh`,
+both leaderboard builders, and the updater itself. Changes merged to `main`
+apply on the next cycle. `.env`, state,
 identity mappings, logs, and generated data are never copied or removed.
 Restart the service to apply a merged change immediately. Changes to the
 systemd unit itself still require the deployment command below.
@@ -116,20 +113,18 @@ and refresh `update-from-repo.sh` before restarting the service so the next
 cycle knows the complete file set.
 
 ```bash
-scp operations/community-monitor/{CYCLE.md,chat-stream.mjs,image-probe.mjs,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
+scp operations/community-monitor/{CYCLE.md,chat-stream.mjs,image-probe.mjs,probe-schedule.mjs,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
   community-monitor:/home/ubuntu/monitor/
 ssh community-monitor "mkdir -p /home/ubuntu/monitor/.claude"
 scp operations/community-monitor/.claude/settings.json \
   community-monitor:/home/ubuntu/monitor/.claude/settings.json
-scp operations/community-monitor/seven-day-health.mjs \
-  community-monitor:/home/ubuntu/monitor/
 scp operations/community-monitor/leaderboard/{build-leaderboard.mjs,build-image-leaderboard.mjs,fonts-embedded.css} \
   community-monitor:/home/ubuntu/monitor/leaderboard/
 scp operations/community-monitor/community-monitor.service \
   community-monitor:/tmp/community-monitor.service
 ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
   /etc/systemd/system/community-monitor.service && \
-  chmod +x /home/ubuntu/monitor/{probe.mjs,seven-day-health.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} && \
+  chmod +x /home/ubuntu/monitor/{probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} && \
   sudo systemctl daemon-reload && \
   sudo systemctl restart community-monitor"
 ```
@@ -137,39 +132,50 @@ ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
 ## Probe load
 
 `probe.mjs` fetches live pricing and modality metadata from the public,
-unauthenticated `GET https://gen.pollinations.ai/models` catalog (no
+unauthenticated `GET https://gen.pollinations.ai/models?reliability=all` catalog (no
 D1/wrangler access needed on the box):
 
-- Every listed community text model gets exactly one cache-busted streaming
-  chat request per cycle. Text probes omit `max_tokens` so reasoning models can
+- The agent selects low-traffic, unhealthy, reported, or automatically filtered models
+  using traffic from everyone except its own probe account, then runs
+  `node probe.mjs --models-file /home/ubuntu/monitor/probe-candidates.json`.
+  An empty selection runs no probes. Healthy busy models are skipped. Both
+  text and image checks have a four-hour base interval; successive failures
+  double it to at most six days (`min(4 * 2^failures, 144)` hours).
+  Success, including a fallback rescue, and inconclusive caller/probe errors
+  reset it to four hours. The script
+  stores cadence in `state.json`'s `spend.probes`, separately from health
+  decisions. A server/protocol failure slows retries; it does not classify the provider.
+  The agent's 30-minute wake-up/reply schedule is unchanged.
+- Selected, due text models get one cache-busted streaming chat request.
+  Text probes omit `max_tokens` so reasoning models can
   finish, and pass only when the unique marker appears in final completion
   content inside a valid OpenAI-compatible SSE stream. Malformed JSON events,
   missing or unterminated `[DONE]`, and post-terminal data fail the probe.
   Coverage matters more than synthetic volume;
   additional requests can consume a meaningful share of low-capacity provider
   quotas and make a sweep outlive the monitor cycle.
-- Community image models use a separate low-load schedule: exactly one
-  image request per model every four hours. Models advertising `image` in
+- Selected, due image models get one image request. Models advertising `image` in
   `input_modalities` alternate `/v1/images/edits` and `/v1/images/generations`,
   starting with edits; the others test generation only. Edits send an embedded
   512px PNG, avoiding external fixture hosts. Both use a cache-busted prompt,
   default output dimensions, and `b64_json` validation. A newly listed model
   is tested immediately. Use
   `node probe.mjs --model '<community/owner/name>'` for an explicit freshness check; this
-  bypasses the cadence but still sends only one request. Targeted checks print
-  JSON without replacing the latest full sweep or changing its cadence state.
+  bypasses the cadence but still sends only one request. Reserve this for a
+  specific new report or fix, never routine confirmations. Targeted checks print
+  JSON without replacing routine results, but update the same cadence state.
   Image freshness checks default to generation; add `--operation edit` to test
   edits (and `--category image` for a hidden exact ID). Results include the
   public `requestPath`, timestamp, and request ID when returned. Match the
-  failing operation when confirming a hide or recovery; generation success
-  cannot clear an edit failure. Image output alone does not prove edit quality.
+  failing operation when diagnosing an issue; generation success
+  cannot establish edit health. Image output alone does not prove edit quality.
 - Text and image results record `modelUsed` and `fallbackUsed` from the
   gateway's served-model header. A passing fallback is effective listing health,
   not proof the primary works. Missing headers leave attribution unknown.
   Text and image failures include `upstreamStatus`, `errorCode`, and a short error
   message when available, without copying the raw upstream body. Upstream 4xx still need
-  caller/provider attribution; the daily audit surfaces image-provider 4xx separately
-  in `needsDiagnosis` rather than silently dropping them or auto-hiding.
+  caller/provider attribution; report unnormalized provider failures as gateway
+  bugs rather than inventing a second visibility rule.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key.
 
@@ -180,7 +186,7 @@ message limits and cooldowns remain unchanged.
 
 ## Model/effort
 
-The deployed agent is pinned to `claude-opus-4-8` at medium effort in
+The deployed agent is pinned to `claude-opus-5-5` at medium effort in
 `loop.sh`. Every cycle starts with a fresh context containing the complete
 current `CYCLE.md`. Medium effort is intentional: routine checks are
 mechanical, but owner replies and billing diagnostics require controlled
@@ -198,34 +204,49 @@ Codex credentials onto the shared server. Until that service credential is
 available, keep the Opus medium-effort runtime rather than silently leaving the
 monitor offline.
 
-## Authority split
+## Visibility and authority
 
-The monitor may hide a listed community model through these paths:
+All model-list endpoints use one rule for public community proxy models: more than 80%
+success across the latest 50 eligible final requests within seven days. Official
+models, agents, and private owner-only models are unaffected. No minimum sample. No observations
+or unavailable analytics means unknown and visible. Successful fallbacks count
+for the requested model. Final 4xx are excluded; owner requests and monitor
+probes count. The bounded Tinybird query is `model_catalog_health.pipe`.
+Health data is edge-cached for 60 seconds. `reliability=all` (or the
+`Pollinations-Model-Reliability: all` header) bypasses only this filter.
 
-- complete outage: 0% success across at least 5 attributable requests in the
-  last 30 minutes, confirmed by a fresh provider-failing probe;
-- poor short-term reliability: below 75% across at least 10 requests in four hours,
-  confirmed by a fresh provider-failing probe in the same cycle;
-- repeated failures: two confirmed provider-failing probes on separate cycles
-  at least 30 minutes apart, for the same model and operation, even with little traffic;
-- rolling floor: below 75% final user-visible success across at least 20
-  requests over seven days, unless fresh 24h/48h health vetoes the action.
+This is discovery only: exact-ID calls and fallback targets remain available.
+Manual hiding, privacy, key permissions and paid access remain unchanged.
+No stored health flag, daily audit, hide/relist writes or recovery streaks.
+The monitor retains requested diagnostics, protocol warnings, served-model and
+fallback notices, official-model alerts and daily leaderboards. After a daily
+leaderboard posts, it reports only community models newly filtered from
+discovery and those back in listings since the previous check, with their
+current success rates. The first check records a baseline without posting a
+long list. It posts at most two messages per cycle, with no routine
+listing-transition chatter.
 
-Provider credits/quota, invalid upstream credentials, and disabled hosting count
-as unavailability. Caller/probe-wallet balance, caller auth, invalid inputs,
-content-policy refusals, and unknown error origins do not confirm an outage.
-Marker-only mismatches do not justify hiding. For audio/video/embeddings, use the
-traffic-based gates with final, provider-attributable errors across at least two
-callers instead of new synthetic probes; insufficient evidence means no action.
+## Coordinated rollout
 
-Successful fallback rescues count as successes. Hiding writes the
-`hidden_at`, `hidden_reason`, and `hidden_by` audit fields, removes the model
-from catalogs and fallback selection, and keeps exact-ID calls working. The
-monitor relists only its own hides after at least 90% success across ten
-post-hide requests in one hour plus a passing same-operation probe, or two
-passing same-operation checks after hiding, on separate cycles at least 30
-minutes apart. Image recovery probes retain the four-hour routine cadence.
-Audio/video/embedding recovery uses the same 90% traffic gate across two callers.
-Owner requests use these gates too; owners and maintainers retain manual control.
-Discord posts are limited to actual hide and relist actions rather than advance
-warnings or routine recovery chatter.
+The EC2 updater follows main while gateway deployments follow production.
+Do not merge and let an old live updater try to install the removed audit script.
+
+1. Pause `community-monitor.service` before merging this PR. Preserve state,
+   credentials and cooldowns. Do not run the old policy during the cutover.
+2. Validate and deploy Tinybird to staging first, verify the new pipe and public
+   read-token access, then deploy to production when approved (see the Tinybird
+   deployment skill). Benchmark the seven-day scan before enabling it in prod.
+3. Promote/deploy Gen and Enter through the normal production GitHub Actions
+   workflow. Verify default and `reliability=all` catalogs, exact-ID calls and
+   fallback routing. Missing analytics fails open; it does not validate rollout.
+4. Back up rows with `hidden_by = 'monitor'`, then clear only those old automatic
+   hides in D1. Leave owner/admin hides and publication/privacy state unchanged:
+   `UPDATE community_endpoint SET hidden_at = NULL, hidden_reason = NULL, hidden_by = NULL, updated_at = unixepoch() WHERE hidden_by = 'monitor';`
+   Read back the affected rows and verify both catalog modes after registry-cache
+   expiry. This is a one-time maintainer action, never a monitor duty.
+5. Install the merged updater and runtime files using the commands above before
+   restarting the service. The old updater still names the deleted audit script,
+   so it cannot bootstrap this change itself. Archive the obsolete live audit
+   script and its output; preserve state but ignore old recovery/audit keys.
+   Check the live prompt/revision and one full cycle. No model-state writes,
+   selective probes, and the unchanged 30-minute wake-up should be observed.

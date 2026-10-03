@@ -58,6 +58,19 @@ Run multi-model in parallel:
 .claude/skills/web-research/scripts/web-research.sh --models gemini-search,perplexity-fast --parallel "Compare answers"
 ```
 
+## Before reviewing a build plan
+
+Run two searches first — `"<vendor> <capability> <year>"` and `"<capability> MCP server"`
+— and record the result. A first-party vendor launch in the last two quarters gets its own
+section ("why not the managed product"). It's the cheapest part of the review and can
+invalidate the whole plan, so do it before studying the design.
+
+## Numbers from PDFs or long documents
+
+A summarizer given a leading prompt ("did X beat Y?") tends to echo the prompt, including
+invented quotes. Ask neutrally ("list every numeric result table") and, for any number
+you'll repeat, read the source text or table yourself.
+
 ## Notes
 
 - Uses `https://gen.pollinations.ai/v1/chat/completions`

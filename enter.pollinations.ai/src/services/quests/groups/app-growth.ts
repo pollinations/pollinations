@@ -28,8 +28,7 @@ type AppDirectoryRow = {
 };
 
 type AppUsageRow = QuestUserRow & {
-    pollenUsed: number;
-    paidRequests: number;
+    paidPollenUsed: number;
 };
 
 type AppReachRow = QuestUserRow & {
@@ -45,6 +44,8 @@ const firstByopExternalUserQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 7,
     balanceBucket: "tier",
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
 };
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
@@ -56,6 +57,8 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 15,
     balanceBucket: "tier",
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
 };
 
 const tenAppUsersQuest = {
@@ -65,22 +68,23 @@ const tenAppUsersQuest = {
         "At least ten external users connect to your [apps](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 15,
+    rewardAmount: 3,
     balanceBucket: "tier",
     goal: { target: 10, unit: "users" },
 } satisfies QuestDefinition;
 
-const tenPollenAppUsageQuest: QuestDefinition = {
+const paidAppUsageQuest = {
+    // Keep the existing ID so a threshold change cannot award this twice.
     id: "app_pollen_10",
-    title: "Pollen is flowing through your app",
+    title: "Paid Pollen is flowing through your app",
     description:
-        "Other users spend 10 Pollen of billed usage across your [apps](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+        "Other users spend 3 Paid Pollen across your [apps](https://gen.pollinations.ai/docs#tag/connect-user-wallets). Quest Pollen and your own usage do not count.",
     category: "grow",
     scope: "perUser",
-    rewardAmount: 25,
+    rewardAmount: 10,
     balanceBucket: "tier",
-    state: "coming_soon",
-};
+    goal: { target: 3, unit: "pollen" },
+} satisfies QuestDefinition;
 
 const appListedQuest: QuestDefinition = {
     id: "app_listed",
@@ -98,7 +102,7 @@ const QUESTS = [
     firstByopExternalUserQuest,
     firstPaidSpendInAppQuest,
     tenAppUsersQuest,
-    tenPollenAppUsageQuest,
+    paidAppUsageQuest,
     appListedQuest,
 ];
 
@@ -125,16 +129,11 @@ export async function evaluateUser(
         return { proposals: [] };
     }
 
-    const usageQuestIds = [
-        firstPaidSpendInAppQuest.id,
-        tenPollenAppUsageQuest.id,
-    ];
-    const reachQuestIds = [firstByopExternalUserQuest.id, tenAppUsersQuest.id];
     const [appUsage, appReach, listedAppRows] = await Promise.all([
-        usageQuestIds.some((id) => rewardableQuestIds.has(id))
+        rewardableQuestIds.has(paidAppUsageQuest.id)
             ? loadAppUsage(ctx, user)
             : null,
-        reachQuestIds.some((id) => rewardableQuestIds.has(id))
+        rewardableQuestIds.has(tenAppUsersQuest.id)
             ? loadAppReach(ctx, user)
             : null,
         rewardableQuestIds.has(appListedQuest.id)
@@ -144,24 +143,14 @@ export async function evaluateUser(
 
     const proposals = [
         ...(appReach &&
-        appReach.externalUsers >= 1 &&
-        rewardableQuestIds.has(firstByopExternalUserQuest.id)
-            ? [{ quest: firstByopExternalUserQuest, userId: user.id }]
-            : []),
-        ...(appUsage &&
-        appUsage.paidRequests >= 1 &&
-        rewardableQuestIds.has(firstPaidSpendInAppQuest.id)
-            ? [{ quest: firstPaidSpendInAppQuest, userId: user.id }]
-            : []),
-        ...(appReach &&
         appReach.externalUsers >= tenAppUsersQuest.goal.target &&
         rewardableQuestIds.has(tenAppUsersQuest.id)
             ? [{ quest: tenAppUsersQuest, userId: user.id }]
             : []),
         ...(appUsage &&
-        appUsage.pollenUsed >= 10 &&
-        rewardableQuestIds.has(tenPollenAppUsageQuest.id)
-            ? [{ quest: tenPollenAppUsageQuest, userId: user.id }]
+        appUsage.paidPollenUsed >= paidAppUsageQuest.goal.target &&
+        rewardableQuestIds.has(paidAppUsageQuest.id)
+            ? [{ quest: paidAppUsageQuest, userId: user.id }]
             : []),
         ...listedAppRows.map((row) => ({
             quest: appListedQuest,
@@ -169,13 +158,12 @@ export async function evaluateUser(
         })),
     ];
     log.info(
-        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} externalUsers={externalUsers} pollenUsed={pollenUsed} paidRequests={paidRequests} listedAppRows={listed} questIds={questIds}",
+        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} externalUsers={externalUsers} paidPollenUsed={paidPollenUsed} listedAppRows={listed} questIds={questIds}",
         {
             userId: user.id,
             byop: appReach ? 1 : 0,
             externalUsers: appReach?.externalUsers ?? 0,
-            pollenUsed: appUsage?.pollenUsed ?? 0,
-            paidRequests: appUsage?.paidRequests ?? 0,
+            paidPollenUsed: appUsage?.paidPollenUsed ?? 0,
             listed: listedAppRows.length,
             questIds: proposals.map((p) => p.quest.id),
         },
@@ -184,6 +172,7 @@ export async function evaluateUser(
         proposals,
         progress: [
             toQuestProgress(tenAppUsersQuest, appReach?.externalUsers ?? 0),
+            toQuestProgress(paidAppUsageQuest, appUsage?.paidPollenUsed ?? 0),
         ],
     };
 }

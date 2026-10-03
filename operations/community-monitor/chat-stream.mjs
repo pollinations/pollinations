@@ -45,13 +45,18 @@ export function hasChatProbeMarker(content, marker) {
 export function parseChatStream(body) {
     let content = "";
     let usage;
+    let servedModel;
     let done = false;
     let dataLines = [];
     let errorDetails;
 
+    // The upstream writes its own model name into every chunk; the monitor
+    // compares it with the declared upstream model (informational only).
+    const served = () => (servedModel ? { servedModel } : {});
     const fail = (protocolError) => ({
         content,
         usage,
+        ...served(),
         protocolError,
         ...errorDetails,
     });
@@ -89,6 +94,9 @@ export function parseChatStream(body) {
             }
         }
         if (chunk.usage) usage = chunk.usage;
+        if (typeof chunk.model === "string" && chunk.model) {
+            servedModel = chunk.model;
+        }
     };
 
     try {
@@ -110,7 +118,7 @@ export function parseChatStream(body) {
             return fail("stream ended with an unterminated SSE event");
         }
         if (!done) return fail("stream is missing [DONE]");
-        return { content, usage };
+        return { content, usage, ...served() };
     } catch (err) {
         return fail(err.message);
     }

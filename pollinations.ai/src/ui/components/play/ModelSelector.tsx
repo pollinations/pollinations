@@ -1,10 +1,15 @@
+import {
+    AudioIcon,
+    ImageIcon,
+    RobotIcon,
+    TabButton,
+    Tooltip,
+    VideoIcon,
+} from "@pollinations/ui";
 import { memo, useEffect, useState } from "react";
 import { PLAY_PAGE } from "../../../copy/content/play";
 import type { Model } from "../../../hooks/useModelList";
-import { useModelUptime } from "../../../hooks/useModelUptime";
 import { usePageCopy } from "../../../hooks/usePageCopy";
-import { Button } from "../ui/button";
-import { UptimeDot } from "./UptimeDot";
 
 type ModelCategory = "image" | "text" | "audio" | "video";
 
@@ -20,31 +25,12 @@ interface ModelSelectorProps {
     isLoggedIn?: boolean;
 }
 
-const CATEGORY_GLOW: Record<ModelCategory, string> = {
-    image: "var(--primary-strong)",
-    text: "var(--secondary-strong)",
-    audio: "var(--tertiary-strong)",
-    video: "var(--accent-strong)",
-};
-
-const COLOR_VARS: Record<ModelCategory, { strong: string; light: string }> = {
-    image: {
-        strong: "rgb(var(--primary-strong))",
-        light: "rgb(var(--primary-light))",
-    },
-    text: {
-        strong: "rgb(var(--secondary-strong))",
-        light: "rgb(var(--secondary-light))",
-    },
-    audio: {
-        strong: "rgb(var(--tertiary-strong))",
-        light: "rgb(var(--tertiary-light))",
-    },
-    video: {
-        strong: "rgb(var(--accent-strong))",
-        light: "rgb(var(--accent-light))",
-    },
-};
+const CATEGORY_ICON = {
+    text: RobotIcon,
+    image: ImageIcon,
+    video: VideoIcon,
+    audio: AudioIcon,
+} as const;
 
 function getModelCategory(m: Model): ModelCategory {
     if (m.hasVideoOutput) return "video";
@@ -56,7 +42,7 @@ function getModelCategory(m: Model): ModelCategory {
 /**
  * ModelSelector Component
  * Unified model selection UI used in both Create and Watch views
- * Shows image/text/audio/video models with color-coded filter tabs
+ * Shows image/text/audio/video models with filter tabs
  * Memoized to prevent unnecessary re-renders
  */
 export const ModelSelector = memo(function ModelSelector({
@@ -73,8 +59,6 @@ export const ModelSelector = memo(function ModelSelector({
     const { copy } = usePageCopy(PLAY_PAGE);
     const [activeCategory, setActiveCategory] =
         useState<ModelCategory>("image");
-
-    const getUptime = useModelUptime(models.some((model) => model.community));
 
     // Keep the visible category tab on the selected model (e.g. when
     // preselected via /play?model=<id>).
@@ -97,26 +81,24 @@ export const ModelSelector = memo(function ModelSelector({
     );
 
     return (
-        <div className="mb-6">
+        <div className="flex flex-col gap-4">
             {showLegend && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                    {categories.map(({ key, label }) => (
-                        <Button
-                            key={key}
-                            type="button"
-                            variant="toggle-glow"
-                            data-active={activeCategory === key}
-                            onClick={() => setActiveCategory(key)}
-                            className="px-2 py-1 text-sm md:px-4 md:py-2 md:text-base"
-                            style={
-                                {
-                                    "--glow": CATEGORY_GLOW[key],
-                                } as React.CSSProperties
-                            }
-                        >
-                            {label}
-                        </Button>
-                    ))}
+                <div className="flex min-w-0 flex-wrap gap-2">
+                    {categories.map(({ key, label }) => {
+                        const CategoryIcon = CATEGORY_ICON[key];
+                        return (
+                            <TabButton
+                                key={key}
+                                active={activeCategory === key}
+                                size="lg"
+                                className="gap-2"
+                                onClick={() => setActiveCategory(key)}
+                            >
+                                <CategoryIcon className="h-4 w-4 shrink-0" />
+                                {label}
+                            </TabButton>
+                        );
+                    })}
                 </div>
             )}
             <div className="flex flex-wrap gap-2">
@@ -124,13 +106,12 @@ export const ModelSelector = memo(function ModelSelector({
                     ? ["s1", "s2", "s3", "s4"].map((k) => (
                           <div
                               key={k}
-                              className="h-8 w-20 rounded animate-pulse bg-border opacity-40"
+                              aria-hidden="true"
+                              className="h-9 w-24 animate-pulse rounded-full bg-theme-bg-subtle"
                           />
                       ))
                     : filteredModels.map((m) => {
-                          const modelType = getModelCategory(m);
                           const isActive = selectedModel === m.id;
-                          const isPaidOnly = m.paid_only;
                           const isImage = m.type === "image";
                           const isAudio = m.type === "audio";
                           const allowedSet = isImage
@@ -139,49 +120,37 @@ export const ModelSelector = memo(function ModelSelector({
                                 ? allowedAudioModelIds
                                 : allowedTextModelIds;
                           const isAllowed = allowedSet.has(m.id);
-                          const borderColor = isActive
-                              ? COLOR_VARS[modelType].strong
-                              : COLOR_VARS[modelType].light;
+                          const button = (
+                              <TabButton
+                                  key={m.id}
+                                  active={isActive}
+                                  size="sm"
+                                  onClick={() =>
+                                      isAllowed && onSelectModel(m.id)
+                                  }
+                                  disabled={!isAllowed}
+                                  title={m.description || m.id}
+                                  detail={m.paid_only ? "💎" : undefined}
+                              >
+                                  {m.title}
+                              </TabButton>
+                          );
 
-                          return (
-                              <div key={m.id} className="relative group">
-                                  <Button
-                                      type="button"
-                                      onClick={() =>
-                                          isAllowed && onSelectModel(m.id)
-                                      }
-                                      variant="model"
-                                      size={null}
-                                      data-active={isActive}
-                                      data-type={modelType}
-                                      disabled={!isAllowed}
-                                      title={m.description || m.id}
-                                      className={`border-2 ${
-                                          !isAllowed
-                                              ? "opacity-40 cursor-not-allowed grayscale"
-                                              : ""
-                                      }`}
-                                      style={{ borderColor }}
-                                  >
-                                      {m.community && (
-                                          <UptimeDot status={getUptime(m)} />
-                                      )}
-                                      {m.title}
-                                      {isPaidOnly && (
-                                          <span className="ml-1 text-[9px] font-black uppercase tracking-wider text-indicator-warning">
-                                              💎
-                                          </span>
-                                      )}
-                                  </Button>
-                                  {!isAllowed && (
-                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                          {isLoggedIn
-                                              ? copy.gatedModelTooltipLoggedIn
-                                              : copy.gatedModelTooltip}
-                                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
-                                      </div>
-                                  )}
-                              </div>
+                          return isAllowed ? (
+                              button
+                          ) : (
+                              <Tooltip
+                                  key={m.id}
+                                  triggerAs="span"
+                                  align="center"
+                                  content={
+                                      isLoggedIn
+                                          ? copy.gatedModelTooltipLoggedIn
+                                          : copy.gatedModelTooltip
+                                  }
+                              >
+                                  {button}
+                              </Tooltip>
                           );
                       })}
             </div>

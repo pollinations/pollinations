@@ -487,7 +487,7 @@ const WalletPay: FC<{
                         {/* Same tab, like Buy without a card: Stripe's page
                             returns here, and no modal is left behind. */}
                         <InlineLink href={hostedHref}>
-                            Another card or method
+                            Pay with another method
                         </InlineLink>
                     </div>
                 ) : undefined

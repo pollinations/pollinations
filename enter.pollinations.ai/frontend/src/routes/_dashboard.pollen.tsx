@@ -20,6 +20,7 @@ import {
     PollenBalance,
 } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { CryptoAcceptedBadge } from "../components/pollen/payment-trust-badge.tsx";
 import { checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
@@ -95,7 +96,12 @@ function PollenPage() {
                     }
                 </Await>
             </Section>
-            <Section title="Top-up" id="buy-pollen">
+            <Section
+                title="Top-up"
+                id="buy-pollen"
+                action={<CryptoAcceptedBadge />}
+                actionClassName="mr-auto"
+            >
                 {checkoutSessionId && (
                     <Surface>
                         <CheckoutConfirmation

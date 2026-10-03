@@ -9,6 +9,7 @@ import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { CryptoAcceptedBadge } from "../components/pollen/payment-trust-badge.tsx";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
 
 import { validateTopUpSearch } from "../lib/top-up-search.ts";
@@ -125,6 +126,7 @@ function TopUpPage() {
         return (
             <SignInScreen
                 title="Top-up"
+                subject={<CryptoAcceptedBadge />}
                 description="Sign in to your Pollinations account to continue."
             />
         );
@@ -191,7 +193,12 @@ function TopUpPage() {
     return (
         <AuthFlowScreen
             footnote="payment"
-            title="Top-up"
+            title={
+                <span className="flex flex-wrap items-center gap-3">
+                    Top-up
+                    <CryptoAcceptedBadge />
+                </span>
+            }
             error={
                 search.stripe_canceled
                     ? "Checkout was cancelled. Choose an amount to try again."

@@ -1,0 +1,97 @@
+:root {
+    color-scheme: light dark;
+    font-family: system-ui, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #0e0e11;
+    color: #eee;
+}
+
+.page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+}
+
+.lede {
+    color: #aaa;
+    margin-bottom: 2rem;
+}
+
+.panel {
+    background: #17171c;
+    border: 1px solid #2a2a33;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 0.75rem;
+}
+
+input,
+select,
+textarea,
+button {
+    font: inherit;
+    background: #0e0e11;
+    color: #eee;
+    border: 1px solid #3a3a45;
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+}
+
+button {
+    margin-top: 1rem;
+    background: #6d5efc;
+    border-color: #6d5efc;
+    color: #fff;
+    cursor: pointer;
+    align-self: flex-start;
+    padding: 0.6rem 1.2rem;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hint {
+    font-size: 0.8rem;
+    color: #999;
+    margin: 0.1rem 0 0;
+}
+
+.hint.error {
+    color: #ff8080;
+}
+
+.output {
+    background: #0a0a0c;
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 360px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: ui-monospace, monospace;
+    font-size: 0.85rem;
+}
+
+a {
+    color: #a39bff;
+}
+
+code {
+    background: #0a0a0c;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+}

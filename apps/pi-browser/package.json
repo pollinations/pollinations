@@ -1,0 +1,26 @@
+{
+    "name": "pi-browser.pollinations.ai",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite --host 127.0.0.1 --port 4181",
+        "build": "vite build",
+        "preview": "vite preview --host 127.0.0.1 --port 4182",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@wasmer/sdk": "^0.19.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.7",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.1",
+        "typescript": "^5.7.2",
+        "vite": "^7.0.0",
+        "vitest": "^3.0.0"
+    }
+}

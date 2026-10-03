@@ -5304,6 +5304,155 @@ fixtureTest(
 );
 
 fixtureTest(
+    "searches and narrows model catalogs with query, capabilities, agent and limit",
+    async () => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const owner = `search-${suffix}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: owner,
+        });
+        const { key: ownerKey } = await createTestApiKey({
+            userId: ownerUserId,
+        });
+        const agentPayload = JSON.stringify({
+            prompt: "Test",
+            baseModel: DEFAULT_TEXT_MODEL,
+            mcpServers: [],
+        });
+        const [proxyName, agentName, privateAgentName] = [
+            "proxy",
+            "agent",
+            "hidden",
+        ].map((kind) => `qs-${kind}-${suffix}`);
+        await insertCommunityEndpoints([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: proxyName,
+                description: `Narwhal ${suffix} proxy`,
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-4.1-mini",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            ...[
+                [agentName, "public"],
+                [privateAgentName, "private"],
+            ].map(([name, visibility]) => {
+                const id = `endpoint-${crypto.randomUUID()}`;
+                return {
+                    id,
+                    ownerUserId,
+                    visibility: visibility as "public" | "private",
+                    name,
+                    description: `Narwhal ${suffix} agent`,
+                    type: "prompt_agent" as const,
+                    baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    payload: agentPayload,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+            }),
+        ]);
+        const [proxyId, agentId, privateAgentId] = [
+            proxyName,
+            agentName,
+            privateAgentName,
+        ].map((name) => communityModelId(owner, name));
+
+        const names = async (path: string, key?: string) => {
+            const response = await SELF.fetch(
+                `https://gen.pollinations.ai${path}`,
+                key ? { headers: { Authorization: `Bearer ${key}` } } : {},
+            );
+            expect(response.status, path).toBe(200);
+            return ((await response.json()) as { name: string }[])
+                .map((model) => model.name)
+                .sort();
+        };
+
+        // query: case-insensitive, every word must match, hidden stays hidden.
+        const both = [proxyId, agentId].sort();
+        expect(await names(`/models?query=${suffix}`)).toEqual(both);
+        expect(await names(`/models?query=NARWHAL+${suffix}`)).toEqual(both);
+        expect(await names(`/models?query=narwhal+nomatch-${suffix}`)).toEqual(
+            [],
+        );
+
+        // agent: only agents, or everything but agents.
+        expect(await names(`/models?query=${suffix}&agent=true`)).toEqual([
+            agentId,
+        ]);
+        expect(await names(`/models?query=${suffix}&agent=0`)).toEqual([
+            proxyId,
+        ]);
+
+        // capabilities: a model needs all of them.
+        expect(
+            await names(
+                `/models?query=${suffix}&capabilities=reasoning,tool_calling`,
+            ),
+        ).toEqual([agentId]);
+        expect(
+            await names(
+                `/models?query=${suffix}&capabilities=reasoning,web_search`,
+            ),
+        ).toEqual([]);
+
+        // limit: keeps catalog order and runs after every other filter.
+        const catalog = (await (
+            await SELF.fetch("https://gen.pollinations.ai/models")
+        ).json()) as { name: string }[];
+        const limited = (await (
+            await SELF.fetch("https://gen.pollinations.ai/models?limit=3")
+        ).json()) as { name: string }[];
+        expect(limited.map((model) => model.name)).toEqual(
+            catalog.slice(0, 3).map((model) => model.name),
+        );
+        expect(
+            await names(`/text/models?query=${suffix}&limit=1`),
+        ).toHaveLength(1);
+
+        // The owner's private agent is listed for the owner only, and a
+        // limit does not cut it before visibility has been applied.
+        expect(
+            await names(`/models?query=${suffix}&agent=true`, ownerKey),
+        ).toEqual([agentId, privateAgentId].sort());
+        expect(
+            await names(`/models?query=${suffix}&agent=true&limit=2`, ownerKey),
+        ).toEqual([agentId, privateAgentId].sort());
+        expect(await names(`/models?query=${suffix}&agent=true`)).not.toContain(
+            privateAgentId,
+        );
+
+        // Every list route validates the same parameters.
+        for (const path of ["/models", "/text/models", "/v1/models"]) {
+            for (const bad of [
+                "limit=0",
+                "limit=501",
+                "limit=abc",
+                "agent=maybe",
+                "capabilities=bogus",
+            ]) {
+                const response = await SELF.fetch(
+                    `https://gen.pollinations.ai${path}?${bad}`,
+                );
+                expect(response.status, `${path}?${bad}`).toBe(400);
+            }
+        }
+    },
+);
+
+fixtureTest(
     "routes canonical and aliased calls to a hidden community model with a canonical-only key",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

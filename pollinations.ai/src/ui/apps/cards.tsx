@@ -9,10 +9,9 @@ import {
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useArt } from "../../art";
 import {
-    appIdentity,
     type DirectoryApp,
     formatStars,
     githubProfileUrl,
@@ -23,7 +22,7 @@ import {
 } from "../../data/publicStats";
 
 /**
- * The app tile and compact directory row share their signals, cover fallback,
+ * The ranked tile and directory listing share their signals, cover fallback,
  * and link behavior here so the two views cannot drift apart.
  */
 
@@ -86,26 +85,50 @@ function AppCoverImage({
     );
 }
 
-/** Image on top, name and description below; fills its rail slot. */
-export function AppTile({
+/**
+ * A tile in the weekly ranking: image on top, place, name and description
+ * below. The leader grows its screenshot to fill the space beside the others.
+ */
+export function RankedAppTile({
     app,
-    tabIndex,
+    rank,
 }: {
     app: DirectoryApp;
-    tabIndex?: number;
+    rank: number;
 }) {
+    const featured = rank === 1;
     return (
         <LinkCard
             href={appHref(app)}
-            tabIndex={tabIndex}
             showIcon={false}
             className="h-full w-full"
-            surfaceClassName="overflow-hidden rounded-2xl p-0"
+            surfaceClassName="gap-0 overflow-hidden rounded-2xl p-0"
         >
-            <AppCoverImage src={app.screenshot_url} className="h-30" />
-            <div className="flex flex-col gap-1.5 px-5 py-4">
-                <span className="font-body text-lg font-semibold text-theme-text-strong">
-                    {app.name}
+            <AppCoverImage
+                src={app.screenshot_url}
+                className={cn(
+                    "aspect-[2/1]",
+                    featured && "lg:aspect-auto lg:min-h-0 lg:flex-1",
+                )}
+            />
+            <div
+                className={cn(
+                    "flex flex-col gap-1",
+                    featured ? "px-5 py-4" : "px-4 py-3",
+                )}
+            >
+                <span className="flex min-w-0 items-baseline gap-2">
+                    <span className="shrink-0 font-semibold text-sm text-theme-text-muted tabular-nums">
+                        {rank}
+                    </span>
+                    <span
+                        className={cn(
+                            "truncate font-body font-semibold text-theme-text-strong",
+                            featured ? "text-xl" : "text-base",
+                        )}
+                    >
+                        {app.name}
+                    </span>
                 </span>
                 <p className="line-clamp-2 text-sm leading-relaxed text-theme-text-base">
                     {app.description}
@@ -115,110 +138,42 @@ export function AppTile({
     );
 }
 
-export function SpotlightTile({
-    app,
-    action,
-    direction,
-}: {
-    app: DirectoryApp;
-    action?: ReactNode;
-    direction: "forward" | "back";
-}) {
-    const href = appHref(app);
-    const slideClassName = cn(
-        "apps-spotlight-slide",
-        direction === "back" && "apps-spotlight-slide-back",
-    );
-    const image = (
-        <AppCoverImage
-            src={app.screenshot_url}
-            className="aspect-[16/7] sm:aspect-[18/7]"
-        />
-    );
-
-    return (
-        <article>
-            {href ? (
-                <a
-                    key={`${appIdentity(app)}-image`}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Open ${app.name}`}
-                    className={cn(
-                        "block focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-theme-border-strong",
-                        slideClassName,
-                    )}
-                >
-                    {image}
-                </a>
-            ) : (
-                image
-            )}
-            <div className="flex h-[8.5rem] items-start justify-between gap-3 px-5 py-4">
-                <div
-                    key={`${appIdentity(app)}-copy`}
-                    className={cn(
-                        "flex min-w-0 flex-1 flex-col gap-1.5",
-                        slideClassName,
-                    )}
-                >
-                    {href ? (
-                        <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="truncate rounded-sm font-body text-lg font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
-                        >
-                            {app.name}
-                        </a>
-                    ) : (
-                        <span className="truncate font-body text-lg font-semibold text-theme-text-strong">
-                            {app.name}
-                        </span>
-                    )}
-                    <p className="line-clamp-3 text-sm leading-relaxed text-theme-text-base">
-                        {app.description}
-                    </p>
-                </div>
-                <div className="shrink-0">{action}</div>
-            </div>
-        </article>
-    );
-}
-
-/** Compact directory row: the screenshot sets the mood without dominating. */
-export function AppRow({ app }: { app: DirectoryApp }) {
+/**
+ * A directory entry: a compact row on phones, where the screenshot sets the
+ * mood without dominating, and a card from `sm` up so wide screens show a
+ * grid instead of long lines.
+ */
+export function AppListing({ app }: { app: DirectoryApp }) {
     const stars = formatStars(app.github_repository_stars);
     const profile = githubProfileUrl(app.github_username);
     const platform = platformsOf(app)[0];
     const href = appHref(app);
 
     return (
-        <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-text-strong/10 border-b py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:py-4">
+        <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-text-strong/10 border-b py-3.5 sm:flex sm:flex-col sm:items-stretch sm:gap-0 sm:overflow-hidden sm:rounded-card sm:border-b-0 sm:bg-surface-opaque/80 sm:py-0">
             {href && (
                 <a
                     href={href}
                     aria-label={`Open ${app.name}`}
-                    className="overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                    className="overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong sm:shrink-0 sm:rounded-none sm:focus-visible:outline-offset-[-2px]"
                 >
                     <AppCoverImage
                         src={app.screenshot_url}
-                        className="aspect-[16/10]"
+                        className="aspect-[16/10] sm:aspect-[2/1]"
                     />
                 </a>
             )}
-            <div className="flex min-h-full min-w-0 flex-col gap-1.5">
+            <div className="flex min-h-full min-w-0 flex-1 flex-col gap-1.5 sm:min-h-0 sm:px-4 sm:py-3.5">
                 <div className="flex items-start justify-between gap-3">
                     {href ? (
                         <a
                             href={href}
-                            className="rounded-sm font-body text-base font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong sm:text-lg"
+                            className="rounded-sm font-body text-base font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
                         >
                             {app.name}
                         </a>
                     ) : (
-                        <h3 className="font-body text-base font-semibold text-theme-text-strong sm:text-lg">
+                        <h3 className="font-body text-base font-semibold text-theme-text-strong">
                             {app.name}
                         </h3>
                     )}

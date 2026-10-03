@@ -4,12 +4,12 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
         title: "Pollinations.ai — Open infrastructure for AI-natives. Models. Agents. Tools. One API.",
         description:
-            "The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps.",
+            "The AI-native builder community. Generate images, videos, speech, music and text. Build agents and apps.",
     },
     "/play": {
         title: "Play | pollinations.ai",
         description:
-            "Chat with agents or generate images, video and audio in your browser using your own Pollen.",
+            "Chat with agents or generate images, videos and audio in your browser using your own Pollen.",
     },
     "/apps": {
         title: "Apps | pollinations.ai",

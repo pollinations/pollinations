@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="AI 派对推理 — pass-and-play 社交推理游戏：太空船、庄园、海盗船……轮流传机，找出隐藏的叛徒！">
+  <meta name="theme-color" content="#0d0b1e">
+  <title>AI 派对推理 · Party Deduction</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AD%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ======== 顶部状态栏 ======== -->
+  <div class="topbar">
+    <div class="topbar-brand">🎭 AI 派对推理</div>
+    <div class="topbar-right">
+      <span class="phase-chip" id="phase-chip">准备</span>
+      <button class="icon-btn" id="btn-mute" title="旁白静音开关">🔊</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ======== 视图：开始 / 设置 ======== -->
+    <section id="view-start" class="view active">
+      <div class="hero">
+        <div class="hero-emoji">🎭</div>
+        <h1>AI 派对推理</h1>
+        <p class="hero-sub">Party Deduction · 轮流传机 · 找出隐藏的叛徒</p>
+        <p class="hero-desc">一台手机 / 一台电脑，4–10 人围坐一圈轮流传机。每个人领取秘密身份，<br>
+        在讨论中察言观色，投票驱逐叛徒。AI 主持人负责旁白与真相揭晓。</p>
+      </div>
+
+      <div class="save-banner hidden" id="save-banner">
+        <span>检测到未完成的游戏存档（第 <b id="save-phase"></b> 阶段）</span>
+        <button class="btn btn-small btn-primary" id="btn-continue-save">继续游戏</button>
+        <button class="btn btn-small btn-ghost" id="btn-discard-save">放弃</button>
+      </div>
+
+      <div class="panel">
+        <h2>⚙️ 开局设置</h2>
+
+        <div class="setting-row">
+          <label for="set-players">玩家数</label>
+          <select id="set-players">
+            <option value="4">4 人</option>
+            <option value="5">5 人</option>
+            <option value="6" selected>6 人</option>
+            <option value="7">7 人</option>
+            <option value="8">8 人</option>
+            <option value="9">9 人</option>
+            <option value="10">10 人</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <label for="set-talk">讨论时长</label>
+          <select id="set-talk">
+            <option value="60">60 秒（快节奏）</option>
+            <option value="90">90 秒</option>
+            <option value="120" selected>120 秒（推荐）</option>
+            <option value="150">150 秒</option>
+            <option value="180">180 秒（深度盘问）</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <label for="set-scene">场景</label>
+          <select id="set-scene">
+            <option value="random" selected>🎲 随机场景</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="btn-start-game">🎲 开始游戏</button>
+
+        <div class="ai-row">
+          <span class="ai-label">✨ 文本增强</span>
+          <button class="btn btn-small btn-ghost" id="btn-ai-scene" disabled>AI 生成新场景</button>
+          <button class="btn btn-small btn-ghost" id="btn-byop-login">BYOP 登录</button>
+          <button class="btn btn-small btn-ghost hidden" id="btn-byop-logout">退出登录</button>
+          <span class="byop-state" id="byop-status">未登录（本地模板）</span>
+        </div>
+      </div>
+
+      <div class="howto">
+        <h3>📖 玩法说明</h3>
+        <ol>
+          <li><strong>分配身份</strong>：AI 随机分派好人 / 叛徒阵营，各自有秘密目标，轮流传机悄悄查看。</li>
+          <li><strong>自由讨论</strong>：在倒计时内面对面讨论，找出发言矛盾、行为可疑的人。</li>
+          <li><strong>公开投票</strong>：轮流投票，票数最高者被驱逐并当场验明身份。</li>
+          <li><strong>胜负判定</strong>：被驱逐者是叛徒 → 好人胜；否则叛徒胜。AI 主持宣读真相。</li>
+        </ol>
+        <p class="tiny">💡 传机时请其他玩家不要偷看屏幕；每轮身份保密是游戏乐趣所在。</p>
+      </div>
+    </section>
+
+    <!-- ======== 视图：开场 ======== -->
+    <section id="view-intro" class="view">
+      <div class="scene-head">
+        <span class="scene-emoji" id="intro-emoji">🚀</span>
+        <h2 id="intro-title">太空飞船</h2>
+        <p class="faction-line" id="intro-factions">船员 vs 外星变形者</p>
+      </div>
+
+      <div class="panel">
+        <h2>🌌 背景故事</h2>
+        <p class="story-text" id="intro-story"></p>
+        <button class="btn btn-small btn-ghost" id="btn-intro-tts">🔊 重听开场旁白</button>
+      </div>
+
+      <div class="panel">
+        <h2>👥 阵营构成</h2>
+        <div class="cast-box" id="intro-cast"></div>
+        <p class="tiny">身份保密！请勿在传机前偷看他人卡片。</p>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btn-intro-next">开始分发身份 →</button>
+    </section>
+
+    <!-- ======== 视图：秘密身份分发 ======== -->
+    <section id="view-deal" class="view">
+      <div class="pass-hint" id="deal-pass-hint"></div>
+
+      <div class="secret-card hidden" id="deal-card">
+        <div class="secret-faction" id="deal-faction">🟢 好人阵营</div>
+        <div class="secret-role" id="deal-role">舰长</div>
+        <div class="secret-desc" id="deal-desc"></div>
+        <div class="secret-goal">
+          <span class="goal-label">🎯 秘密目标</span>
+          <span id="deal-goal"></span>
+        </div>
+      </div>
+
+      <div class="deal-actions">
+        <button class="btn btn-primary btn-block hidden" id="deal-btn-reveal">我是这位玩家，显示我的身份</button>
+        <button class="btn btn-primary btn-block hidden" id="deal-btn-next">我记住了，传给下一位 →</button>
+      </div>
+      <p class="tiny center" id="deal-progress"></p>
+    </section>
+
+    <!-- ======== 视图：讨论 ======== -->
+    <section id="view-discussion" class="view">
+      <div class="disc-head">
+        <h2>🗣 自由讨论</h2>
+        <p class="tiny">面对面讨论，找出可疑的人！</p>
+      </div>
+
+      <div class="timer-ring" id="disc-timer-ring">
+        <div class="timer-inner"><span id="disc-timer">02:00</span></div>
+      </div>
+
+      <div class="panel">
+        <h2>💬 讨论话题</h2>
+        <ul class="topic-list" id="disc-topics"></ul>
+      </div>
+
+      <button class="btn btn-ghost btn-block" id="btn-disc-tts">🔊 重听讨论开场</button>
+      <button class="btn btn-primary btn-block" id="btn-disc-vote">提前结束讨论，进入投票 →</button>
+    </section>
+
+    <!-- ======== 视图：投票 ======== -->
+    <section id="view-vote" class="view">
+      <div class="pass-hint" id="vote-pass-hint"></div>
+
+      <div class="panel hidden" id="vote-panel">
+        <h2 id="vote-current-name">玩家 1 请投票</h2>
+        <p class="tiny">投出你认为最可疑的人（不能投自己）</p>
+        <div class="vote-list" id="vote-list"></div>
+        <button class="btn btn-primary btn-block" id="btn-vote-confirm" disabled>确认投票</button>
+      </div>
+      <p class="tiny center" id="vote-progress"></p>
+    </section>
+
+    <!-- ======== 视图：投票结果 ======== -->
+    <section id="view-result" class="view">
+      <div class="result-banner" id="result-banner">
+        <h2 id="result-title">投票结果</h2>
+      </div>
+
+      <div class="panel">
+        <p class="story-text" id="result-announce"></p>
+        <button class="btn btn-small btn-ghost" id="btn-result-tts">🔊 重听宣读</button>
+      </div>
+
+      <div class="panel">
+        <h2>🗳 票数统计</h2>
+        <div class="vote-tally" id="result-tally"></div>
+      </div>
+
+      <div class="panel">
+        <h2>🕵 被驱逐者身份</h2>
+        <div class="exiled-box" id="result-exiled"></div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btn-result-next">揭示真相 →</button>
+    </section>
+
+    <!-- ======== 视图：真相揭示 ======== -->
+    <section id="view-reveal" class="view">
+      <div class="reveal-title" id="reveal-title">真相大白</div>
+      <p class="story-text center" id="reveal-story"></p>
+
+      <div class="panel">
+        <h2>🧾 全员身份档案</h2>
+        <div class="roster" id="reveal-list"></div>
+      </div>
+
+      <button class="btn btn-small btn-ghost btn-block" id="btn-reveal-tts">🔊 重听结局旁白</button>
+      <button class="btn btn-primary btn-block" id="btn-reveal-next">查看胜负结算 →</button>
+    </section>
+
+    <!-- ======== 视图：结束 ======== -->
+    <section id="view-end" class="view">
+      <div class="end-banner" id="end-banner">
+        <div class="end-emoji" id="end-emoji">🏆</div>
+        <h1 id="end-title">好人阵营胜利！</h1>
+        <p id="end-sub"></p>
+      </div>
+
+      <div class="panel">
+        <h2>🧾 全员身份档案</h2>
+        <div class="roster" id="end-roster"></div>
+      </div>
+
+      <div class="end-actions">
+        <button class="btn btn-ghost" id="btn-home">返回主页</button>
+        <button class="btn btn-primary" id="btn-again">再玩一局（同设置）</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ======== 旁白字幕条 ======== -->
+  <div class="narration-bar hidden" id="narration-bar">
+    <div class="narration-label">🎙 AI 主持人</div>
+    <div class="narration-text" id="narration-text"></div>
+  </div>
+
+  <footer class="app-footer">
+    <div>AI 派对推理 · 纯静态应用 · 可直接托管于 GitHub Pages</div>
+    <div>音频由 Pollinations 生成，Web Speech API 兜底；文本增强可选 BYOP 登录（API key 仅存内存）</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

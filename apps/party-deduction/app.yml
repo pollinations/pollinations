@@ -1,0 +1,8 @@
+name: "Party Deduction"
+description: "A pass-and-play social deduction game with an AI host: secret roles are handed out, twists are narrated and votes are read aloud with text-to-speech, while a fresh scenario is generated every game with the Pollinations text API. Supports Bring your own Pollen."
+url: "https://party-deduction.pollinations.ai"
+category: "games"
+language: "en"
+quest: "#15726"
+uses_pollinations: true
+bring_your_own_pollen: true

@@ -68,6 +68,38 @@ export function attachModelHealth(
     };
 }
 
+// Every field a caller can reach with the discovery `query` filter. Aliases are
+// included because callers often know the old `owner/model` id, not the
+// canonical one.
+function catalogSearchText(entry: GenerationModelEntry): string {
+    return [
+        entry.info.name,
+        entry.info.title,
+        entry.info.description ?? "",
+        entry.info.publisher,
+        ...entry.info.aliases,
+    ]
+        .join(" ")
+        .toLowerCase();
+}
+
+function matchesAgentFilter(
+    entry: GenerationModelEntry,
+    agent: string | undefined,
+): boolean {
+    if (agent === undefined) return true;
+    return (entry.info.agent === true) === (agent === "true" || agent === "1");
+}
+
+function matchesCapabilityFilter(
+    entry: GenerationModelEntry,
+    capabilities: readonly string[] | undefined,
+): boolean {
+    if (capabilities === undefined) return true;
+    const declared: readonly string[] = entry.info.capabilities;
+    return capabilities.every((capability) => declared.includes(capability));
+}
+
 // Discovery only: callers apply access checks before entering this function.
 export async function filterCatalogEntries(
     c: Context<Env>,
@@ -94,7 +126,7 @@ export async function filterCatalogEntries(
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
-    return filtered
+    const visible = filtered
         .map((entry) => attachModelHealth(entry, lookup))
         .filter(
             (entry) =>
@@ -103,4 +135,24 @@ export async function filterCatalogEntries(
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );
+
+    // Discovery filters run after access, source, and reliability, so they can
+    // only remove entries the caller already sees. `limit` runs last, which
+    // preserves catalog ordering and never surfaces a hidden model.
+    const searchTokens = (query.query ?? "")
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+    const narrowed = visible.filter((entry) => {
+        if (!matchesAgentFilter(entry, query.agent)) return false;
+        if (!matchesCapabilityFilter(entry, query.capabilities)) return false;
+        if (searchTokens.length === 0) return true;
+        const text = catalogSearchText(entry);
+        return searchTokens.every((token) => text.includes(token));
+    });
+
+    return query.limit === undefined
+        ? narrowed
+        : narrowed.slice(0, query.limit);
 }

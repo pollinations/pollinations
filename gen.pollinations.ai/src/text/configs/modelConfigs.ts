@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import { textEnvironmentValue } from "../environment.js";
+import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
@@ -11,7 +12,7 @@ import {
     createOpenRouterModelConfig,
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
-    createPerplexityModelConfig,
+    createPerplexityAgentConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -74,6 +75,12 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    "span-01-lite": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "respan/span-01-lite",
+    }),
     // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
     // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
     // OpenRouter exposes no floating alias, so the version is pinned here.
@@ -82,6 +89,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "typesafe/jev-1.13",
+    }),
+    "kev-4b": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "jaredpalmer/kev-4b",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
@@ -172,15 +185,39 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra-datazone/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6.1-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6-luna": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-luna/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
 
     // -- OpenAI direct (GPT-6) -------------------------------------------------
-    "gpt-6-sol": () => ({
+    "gpt-6-sol-openai": () => ({
         provider: "openai",
         responsesEndpoint: "https://api.openai.com/v1/responses",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
         model: "gpt-6-sol",
     }),
-    "gpt-6-luna": () => ({
+    "gpt-6.1-sol-openai": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6.1-sol",
+    }),
+    "gpt-6-luna-openai": () => ({
         provider: "openai",
         responsesEndpoint: "https://api.openai.com/v1/responses",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
@@ -239,11 +276,42 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
     }),
 
+    // -- xAI direct -----------------------------------------------------------
+    "grok-4.6-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.6",
+    }),
+
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
+        ),
+
+    // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
+    // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
+    // replaces, so this route asks by default.
+    "DeepSeek-V4-Flash-0731": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4-Flash-0731/chat/completions?api-version=2024-12-01-preview",
+            { defaultOptions: { reasoning_effort: "high" } },
+        ),
+    // Azure Kimi rejects remote image URLs.
+    "Kimi-K2.6": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
+        ),
+    "Kimi-K2.6-azure-sweden": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/Kimi-K2.6/chat/completions?api-version=2024-12-01-preview",
+            { requiresBase64ImageUrls: true },
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
@@ -255,6 +323,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "xiaomi/mimo-v2.5-pro",
         "xiaomi/fp8",
     ),
+    "xiaomi/mimo-v2.6-flash": createPinnedOpenRouterConfig(
+        "xiaomi/mimo-v2.6-flash",
+        "xiaomi/fp8",
+    ),
+    "xiaomi/mimo-v2.6-pro": createPinnedOpenRouterConfig(
+        "xiaomi/mimo-v2.6-pro",
+        "xiaomi/fp8",
+    ),
     "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
         "minimax/minimax-m2.7",
         "novita/fp8",
@@ -264,6 +340,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.0-flash-vl",
+        "deepinfra/fp16",
+    ),
     "hy3-openrouter-phala": createPinnedOpenRouterConfig(
         "tencent/hy3",
         "phala",
@@ -460,7 +540,17 @@ export const portkeyConfig: PortkeyConfigMap = {
     "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
         }),
+    "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+        }),
+    "zai-org/GLM-5.2": () =>
+        createDeepInfraModelConfig({ model: "zai-org/GLM-5.2" }),
+    "meta-models/Muse-Glimmer-30B": () =>
+        createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
@@ -505,9 +595,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-fable-5",
         "google-vertex/global",
     ),
-    "muse-glimmer-openrouter-deepinfra": createPinnedOpenRouterConfig(
+    "muse-glimmer-openrouter-together": createPinnedOpenRouterConfig(
         "meta/muse-glimmer-30b",
-        "deepinfra/bf16",
+        "together",
     ),
     "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-lightning",
@@ -551,8 +641,30 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.3",
         "friendli",
     ),
-    "kimi-code-deepinfra": () =>
-        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.7-Code" }),
+    "kimi-code-openrouter-moonshot": createPinnedOpenRouterConfig(
+        "moonshotai/kimi-k2.7-code",
+        "moonshotai/int4",
+    ),
+    // StreamLake cannot fetch remote image URLs.
+    "kimi-code-openrouter-streamlake": () => ({
+        ...createPinnedOpenRouterConfig(
+            "moonshotai/kimi-k2.7-code",
+            "streamlake",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
+    "glm-5.2-openrouter-zai": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.2",
+        "z-ai/fp8",
+    ),
+    "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
+        "deepseek/deepseek-v4-pro-0813",
+        "alibaba",
+    ),
+    "deepseek-v4-pro-openrouter-streamlake": createPinnedOpenRouterConfig(
+        "deepseek/deepseek-v4-pro-0813",
+        "streamlake",
+    ),
     "qwen-coder-large-openrouter-streamlake": createPinnedOpenRouterConfig(
         "qwen/qwen3-coder-next",
         "streamlake",
@@ -576,10 +688,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
-    "accounts/fireworks/models/deepseek-v4-flash-0731": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-flash-0731",
-        }),
     "accounts/fireworks/models/deepseek-v4p1-flash": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
@@ -588,24 +696,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         "deepseek/deepseek-v4.1-flash",
         "deepinfra/fp8",
     ),
-    "accounts/fireworks/models/deepseek-v4-flash-vision-exp": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
-        }),
-    "accounts/fireworks/models/deepseek-v4-pro-0813": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/deepseek-v4-pro-0813",
-        }),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
-    "accounts/fireworks/models/kimi-k2p6": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p6",
-        }),
-    "accounts/fireworks/models/kimi-k2p7-code": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/kimi-k2p7-code",
-        }),
     "accounts/fireworks/models/kimi-k3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/kimi-k3",
@@ -650,6 +742,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
+        }),
+    "anthropic/claude-sonnet-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
         }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
@@ -741,27 +838,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Perplexity -----------------------------------------------------------
-    "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
-    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
-    "sonar-reasoning-pro": () =>
-        createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
-    "perplexity/sonar": createPinnedOpenRouterConfig(
-        "perplexity/sonar",
-        "perplexity",
-    ),
-    "perplexity/sonar-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-pro",
-        "perplexity",
-    ),
-    "perplexity/sonar-reasoning-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ),
+    // The Sonar transform turns the caller's search options into web_search
+    // tool settings.
+    "perplexity/sonar": (options?: TransformOptions) =>
+        createPerplexityAgentConfig(
+            "perplexity/sonar",
+            options?.perplexityWebSearch,
+        ),
 
-    "accounts/fireworks/models/glm-5p2": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/glm-5p2",
-        }),
     "accounts/fireworks/models/glm-5p3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p3",
@@ -775,10 +859,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
-        }),
-    "accounts/fireworks/models/muse-glimmer-30b": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/muse-glimmer-30b",
         }),
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({

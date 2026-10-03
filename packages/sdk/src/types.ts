@@ -477,6 +477,20 @@ export interface AudioGenerateOptions extends RequestOptions {
     seed?: number;
 }
 
+/** Options for POST /v1/audio/speech */
+export interface AudioSpeechOptions extends AudioGenerateOptions {
+    /** Public audio URL for models that support reference audio */
+    referenceAudio?: string;
+}
+
+/** File-based voice conversion or speech isolation. */
+export interface AudioTransformOptions extends RequestOptions {
+    operation: "voice-changer" | "voice-isolator";
+    model?: AudioModel;
+    /** Target voice for voice-changer. */
+    voice?: AudioVoice;
+}
+
 /** Response from dedicated audio endpoints (binary audio data) */
 export interface AudioBinaryResponse {
     /** The generated audio as a Buffer (Node.js) or ArrayBuffer (browser) */
@@ -901,7 +915,7 @@ export interface CreateKeyOptions {
      * Account permissions to grant (e.g. `["profile", "usage"]`).
      * Without this, scoped keys cannot read account state beyond their
      * own key metadata, budget, and per-key usage.
-     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
     /**

@@ -22,8 +22,6 @@ import { auth } from "../middleware/auth.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 
-const SECONDS_PER_DAY = 24 * 60 * 60;
-
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;
 }): void {
@@ -118,7 +116,7 @@ async function updateKeyMetadata(
  *
  * Permissions format: { models?: string[], account?: string[] }
  * - models: canonical IDs from /models = restrict to specific models
- * - account: ["profile", "usage", "keys"] = allow access to account endpoints
+ * - account: ["profile", "usage", "keys", "machines"] = allow access to account endpoints and hosted sandboxes
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
@@ -139,7 +137,7 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions: ["profile", "usage", "keys"]. null = none',
+            'Account permissions: ["profile", "usage", "keys", "machines"]. null = none',
         ),
     expiresAt: z
         .string()
@@ -161,9 +159,15 @@ const CreateApiKeySchema = z.object({
         .number()
         .int()
         .positive()
-        .max(365 * SECONDS_PER_DAY)
+        .refine(
+            (seconds) =>
+                Number.isFinite(
+                    new Date(Date.now() + seconds * 1000).getTime(),
+                ),
+            "Expiry is outside the supported date range",
+        )
         .optional()
-        .describe("Expiry in seconds from now (max 365 days)"),
+        .describe("Expiry in seconds from now"),
     allowedModels: z
         .array(z.string())
         .nullable()
@@ -183,7 +187,7 @@ const CreateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions: ["profile", "usage", "keys"]. null = none',
+            'Account permissions: ["profile", "usage", "keys", "machines"]. null = none',
         ),
     metadata: z.record(z.string(), z.unknown()).optional(),
 });
@@ -241,7 +245,6 @@ export const apiKeysRoutes = new Hono<Env>()
                 pollenBudget: input.pollenBudget,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
-                allowAccountKeysPermission: true,
                 defaultCreatedVia: createdVia,
             });
 

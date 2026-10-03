@@ -301,13 +301,8 @@ export async function callAzureFluxKontext(
     // Convert base64 to buffer
     const imageBuffer = base64ToBuffer(data.data[0].b64_json);
 
-    // Return result with content safety flags from Azure response
     return {
         buffer: imageBuffer,
-        isMature:
-            asRecord(asRecord(data.data[0].content_filter_results)?.sexual)
-                ?.filtered === true,
-        isChild: false, // Azure doesn't provide child detection
         trackingData: {
             actualModel: "black-forest-labs/flux.1-kontext-pro",
             usage: {
@@ -412,10 +407,6 @@ export async function callAzureFlux11Pro(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature:
-            asRecord(asRecord(firstImage?.content_filter_results)?.sexual)
-                ?.filtered === true,
-        isChild: false,
         trackingData: {
             actualModel: model,
             usage: { completionImageTokens: 1, totalTokenCount: 1 },
@@ -580,8 +571,6 @@ export async function callAzureFlux2(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: model,
             usage: {

@@ -127,6 +127,49 @@ test("legacy stored allowlists still filter catalogs after canonical promotion",
     });
 });
 
+test("stored MAI Image 2.5 permissions allow the 2.6 Flash catalog entry", async () => {
+    const currentModel = "microsoft/mai-image-2.6-flash";
+    const oldModel = "microsoft/mai-image-2.5-flash";
+    const { key, id } = await createTestApiKey({
+        allowedModels: [currentModel],
+        user: { packBalance: 100 },
+    });
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify({ models: [oldModel] }) })
+        .where(eq(apikey.id, id));
+
+    const response = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        aliases: string[];
+    }[];
+    expect(models).toEqual([
+        expect.objectContaining({ name: currentModel, aliases: [oldModel] }),
+    ]);
+    expect(resolveModelName(oldModel)).toBe(currentModel);
+
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: { id, permissions: { models: [oldModel] } },
+        }),
+    );
+    app.get("/check", (c) => {
+        c.set("model", { requested: oldModel, resolved: currentModel });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+    const allowed = await app.request("/check");
+    expect(allowed.status).toBe(200);
+    expect(await allowed.json()).toEqual({ models: [currentModel] });
+});
+
 test("restored auth snapshots normalize aliases once without expanding model or account scope", async () => {
     const snapshot = {
         user: { id: "permission-test", tier: "seed" },
@@ -272,6 +315,49 @@ test("restored auth allows old and future names without expanding account or com
         "openai/gpt-5-nano",
         "owner/custom",
     ]);
+});
+
+test("keys allowed the retired Sonar Pro models still reach Sonar and nothing else", async () => {
+    // The canonical IDs migration 0062 stored before Sonar Pro and Reasoning
+    // Pro became aliases of Sonar.
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: {
+                id: "test",
+                permissions: {
+                    models: [
+                        "perplexity/sonar-pro",
+                        "perplexity/sonar-reasoning-pro",
+                    ],
+                },
+            },
+        }),
+    );
+    app.get("/:model", (c) => {
+        const requested = c.req.param("model");
+        c.set("model", { requested, resolved: resolveModelName(requested) });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+
+    for (const model of [
+        "perplexity/sonar-pro",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity",
+        "perplexity-reasoning",
+        "perplexity/sonar",
+    ]) {
+        const response = await app.request(`/${encodeURIComponent(model)}`);
+        expect(response.status, model).toBe(200);
+        expect(await response.json()).toEqual({
+            models: ["perplexity/sonar"],
+        });
+    }
+    const other = await app.request("/flux");
+    expect(other.status).toBe(403);
 });
 
 test("keyPermissionsLink resolves production and staging editor links", () => {
@@ -430,15 +516,32 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Jev is the one OpenRouter route free-tier accounts may select, so it is
-    // visible to both keys and cannot take part in this comparison.
-    const openRouterModelNames = getVisibleTextModels().filter(
-        (model) =>
-            getRegistryModelDefinition(model).provider === "openrouter" &&
-            model !== "typesafe/jev-1.13",
-    );
+    // Only the approved low-cost decision models are exempt from paid balance.
+    const questPollenModels = new Set([
+        "typesafe/jev-1.13",
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+    ]);
+    const openRouterModelNames = getVisibleTextModels().filter((model) => {
+        const definition = getRegistryModelDefinition(model);
+        return (
+            definition.provider === "openrouter" &&
+            !questPollenModels.has(model)
+        );
+    });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of questPollenModels) {
+        expect(
+            freeModelNames.has(model),
+            `${model} visible to Quest Pollen`,
+        ).toBe(true);
+        expect(
+            paidModelNames.has(model),
+            `${model} visible to paid users`,
+        ).toBe(true);
+    }
 
     expect(openRouterModelNames.length).toBeGreaterThan(0);
     expect(
@@ -459,25 +562,22 @@ test("filters OpenRouter text models by paid balance", async ({
     }
 }, 15_000);
 
-test("requires paid balance for direct OpenAI GPT-6 models", async ({
+test("makes Azure GPT-6 models available to Quest Pollen accounts", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"];
-    const [freeResponse, paidResponse, responses] = await Promise.all([
+    const models = [
+        "openai/gpt-6-sol",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-luna",
+    ] as const;
+    const [freeResponse, paidResponse] = await Promise.all([
         fetchWorker("/v1/models", {
             headers: { Authorization: `Bearer ${apiKey}` },
         }),
         fetchWorker("/v1/models", {
             headers: { Authorization: `Bearer ${paidApiKey}` },
         }),
-        Promise.all(
-            models.map((model) =>
-                fetchWorker(`/text/paid-only-check?model=${model}`, {
-                    headers: { Authorization: `Bearer ${apiKey}` },
-                }),
-            ),
-        ),
     ]);
     const freeModels = (await freeResponse.json()) as {
         data: { id: string }[];
@@ -488,12 +588,10 @@ test("requires paid balance for direct OpenAI GPT-6 models", async ({
     const freeNames = new Set(freeModels.data.map((model) => model.id));
     const paidNames = new Set(paidModels.data.map((model) => model.id));
 
-    for (const [index, model] of models.entries()) {
-        expect(freeNames.has(model)).toBe(false);
+    for (const model of models) {
+        expect(freeNames.has(model)).toBe(true);
         expect(paidNames.has(model)).toBe(true);
-        expect(responses[index].status).toBe(
-            TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
-        );
+        expect(getRegistryModelDefinition(model).paidOnly).toBe(false);
     }
 }, 15_000);
 

@@ -2,7 +2,6 @@ import {
     calculateServiceFeeCents,
     describePollenPack,
     formatPollenPackValue,
-    formatUsdCentsCompact,
     getPollenPackByAmount,
     getPollenPackByKey,
     isPollenPackKey,
@@ -40,11 +39,6 @@ test("service fee matches the expected pack-size table", () => {
         50: 205,
         100: 380,
     });
-});
-
-test("compact USD formatter keeps whole-dollar badges short", () => {
-    expect(formatUsdCentsCompact(2100)).toBe("$21");
-    expect(formatUsdCentsCompact(1065)).toBe("$10.65");
 });
 
 test("pack lookup validates supported USD amounts", () => {

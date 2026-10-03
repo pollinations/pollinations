@@ -265,11 +265,15 @@ async function inputMessages(
                 );
             }
             const isMcp = Boolean(parseFunctionName(call.name));
+            const outputText = functionOutputText(parsed.data.output);
             let output: z.infer<ReturnType<typeof z.json>>;
             try {
-                output = z
-                    .json()
-                    .parse(JSON.parse(functionOutputText(parsed.data.output)));
+                output = z.json().parse(JSON.parse(outputText));
+            } catch {
+                // Caller functions may return ordinary text, not only JSON.
+                output = outputText;
+            }
+            try {
                 if (isMcp) {
                     const result = objectValue(output, "input.output");
                     if (
@@ -282,9 +286,7 @@ async function inputMessages(
                 }
             } catch {
                 invalidRequest(
-                    isMcp
-                        ? "Function output must contain a JSON MCP result"
-                        : "Function output must contain JSON",
+                    "Function output must contain a JSON MCP result",
                     "input.output",
                 );
             }
@@ -404,10 +406,7 @@ function requestSettings(
     ) {
         invalidRequest("Invalid reasoning effort", "reasoning.effort");
     }
-    // Caller tools are ignored, not rejected: an agent runs its own tools, and
-    // clients attach theirs unprompted. Open WebUI injects builtin tool specs
-    // into every chat sent from its UI, so rejecting made agents unusable there.
-    if (request.tool_choice !== undefined) {
+    if (request.tool_choice !== undefined && request.tool_choice !== "auto") {
         invalidRequest(
             "Caller-provided tool choice is not supported by managed agents",
             "tool_choice",
@@ -510,7 +509,10 @@ function responseUsage(output: AgentOutput): ResponseUsage {
     });
 }
 
-function responseConfiguration(request: CreateResponseRequest) {
+function responseConfiguration(
+    request: CreateResponseRequest,
+    callerTools: ReadonlySet<string>,
+) {
     const reasoning = request.reasoning
         ? {
               effort:
@@ -523,7 +525,9 @@ function responseConfiguration(request: CreateResponseRequest) {
     return {
         previous_response_id: null,
         instructions: request.instructions ?? null,
-        tools: [],
+        tools: (request.tools ?? []).filter((tool) =>
+            callerTools.has(tool.name),
+        ),
         tool_choice: "auto",
         truncation: "disabled",
         parallel_tool_calls: true,
@@ -551,6 +555,7 @@ function responseObject(
     id: string,
     createdAt: number,
     items: AgentOutputItem[],
+    callerTools: ReadonlySet<string>,
 ) {
     const incomplete =
         output.finishReason === "length" ||
@@ -573,7 +578,7 @@ function responseObject(
         output: items,
         error: null,
         usage: responseUsage(output),
-        ...responseConfiguration(request),
+        ...responseConfiguration(request, callerTools),
     };
     CreateResponseResponseSchema.parse(response);
     return response;
@@ -614,6 +619,7 @@ function streamResponse(
     messages: ModelMessage[],
     settings: AgentGenerationSettings,
     signal: AbortSignal,
+    callerTools: ReadonlySet<string>,
 ): Response {
     const encoder = new TextEncoder();
     const responseId = `resp_${crypto.randomUUID()}`;
@@ -647,7 +653,7 @@ function streamResponse(
                 output: [],
                 error: null,
                 usage: null,
-                ...responseConfiguration(request),
+                ...responseConfiguration(request, callerTools),
             };
             const collected = collectOutput(send);
             // Do not block stream initialization on the run: cancel() must
@@ -669,7 +675,8 @@ function streamResponse(
                         output,
                         responseId,
                         createdAt,
-                        collected.finish(output.finishReason),
+                        collected.finish(output.finishReason, callerTools),
+                        callerTools,
                     );
                     send(
                         response.status === "incomplete"
@@ -723,8 +730,20 @@ export async function handleAgentResponsesRequest(
         const messages = await inputMessages(request, tools);
         signal.throwIfAborted();
         const settings = requestSettings(request);
+        const callerTools = new Set(
+            Object.entries(tools ?? {})
+                .filter(([, tool]) => !tool.execute)
+                .map(([name]) => name),
+        );
         if (request.stream) {
-            return streamResponse(request, runner, messages, settings, signal);
+            return streamResponse(
+                request,
+                runner,
+                messages,
+                settings,
+                signal,
+                callerTools,
+            );
         }
         const collected = collectOutput();
         const output = await runner({
@@ -741,7 +760,8 @@ export async function handleAgentResponsesRequest(
                 output,
                 `resp_${crypto.randomUUID()}`,
                 Math.floor(Date.now() / 1000),
-                collected.finish(output.finishReason),
+                collected.finish(output.finishReason, callerTools),
+                callerTools,
             ),
         );
     } catch (error) {

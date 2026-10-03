@@ -34,8 +34,9 @@ type CreateApiKeyForUserInput = {
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
-    allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
+    createdByApiKeyId?: string;
+    originAppKeyId?: string;
 };
 
 type CreateApiKeyAuthClient = {
@@ -220,8 +221,9 @@ export async function createApiKeyForUser({
     pollenBudget,
     accountPermissions,
     metadata,
-    allowAccountKeysPermission,
     defaultCreatedVia,
+    createdByApiKeyId,
+    originAppKeyId,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
     const attribution = await validateClientRedirectBinding(
@@ -244,11 +246,8 @@ export async function createApiKeyForUser({
         }
     }
 
-    const sanitizedAccountPerms =
-        sanitizeAuthorizeAccountPermissions(accountPermissions) ?? null;
-    const safeAccountPerms = allowAccountKeysPermission
-        ? sanitizedAccountPerms
-        : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
+    const safeAccountPerms =
+        sanitizeAuthorizeAccountPermissions(accountPermissions);
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {
@@ -266,6 +265,8 @@ export async function createApiKeyForUser({
         ...callerMetadata,
         keyType: type,
         createdVia: defaultCreatedVia,
+        ...(createdByApiKeyId && { createdByApiKeyId }),
+        ...(originAppKeyId && { originAppKeyId }),
     };
 
     const created = await authClient.api.createApiKey({

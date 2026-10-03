@@ -1,5 +1,5 @@
 DESCRIPTION >
-    Two pre-login funnels by day.
+    Pre-login and auth-adjacent funnels by day.
     Browser sign-in: signed-out views of a sign-in page, requests sent on to
     GitHub, and sessions created. All are plain counts, so no browser
     identifier is needed. Each ratio divides a matched pair: pct_started uses
@@ -13,8 +13,10 @@ DESCRIPTION >
     the browser, then collected as a token, counted per device row so a retry
     of one stage is not double counted. client_id narrows the device side to
     one app.
-    Consent grants and Discord linking are plain event counts; read them from
-    product_analytics_daily.
+    App OAuth/PKCE: authorize_granted counts successful consent grants (the
+    authorize page does not emit a separate viewed event today).
+    Account linking: link_started → link_completed for Discord (and future)
+    providers, with a completion ratio.
 
 TOKEN tinybird_read READ
 
@@ -76,10 +78,39 @@ SQL >
     )
     GROUP BY date
 
+NODE oauth_daily
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        countIf(event = 'authorize_granted') AS authorize_granted
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND event = 'authorize_granted'
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+        {% if defined(client_id) %}
+        AND client_id = {{String(client_id)}}
+        {% end %}
+    GROUP BY date
+
+NODE link_daily
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        countIf(event = 'link_started') AS link_started,
+        countIf(event = 'link_completed') AS link_completed,
+        if(link_started = 0, 0, round(100 * link_completed / link_started, 1)) AS pct_link_completed
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND event IN ('link_started', 'link_completed')
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+    GROUP BY date
+
 NODE funnel
 SQL >
     SELECT
-        greatest(s.date, d.date) AS date,
+        greatest(s.date, d.date, o.date, l.date) AS date,
         s.sign_in_viewed AS sign_in_viewed,
         s.sign_in_started AS sign_in_started,
         s.sign_in_started_anywhere AS sign_in_started_anywhere,
@@ -95,9 +126,15 @@ SQL >
         d.device_denied AS device_denied,
         d.device_token_issued AS device_token_issued,
         d.pct_device_approved AS pct_device_approved,
-        d.pct_device_token_issued AS pct_device_token_issued
+        d.pct_device_token_issued AS pct_device_token_issued,
+        o.authorize_granted AS authorize_granted,
+        l.link_started AS link_started,
+        l.link_completed AS link_completed,
+        l.pct_link_completed AS pct_link_completed
     FROM sign_in_daily s
     FULL OUTER JOIN device_daily d ON s.date = d.date
+    FULL OUTER JOIN oauth_daily o ON greatest(s.date, d.date) = o.date
+    FULL OUTER JOIN link_daily l ON greatest(s.date, d.date, o.date) = l.date
     ORDER BY date
 
 TYPE endpoint

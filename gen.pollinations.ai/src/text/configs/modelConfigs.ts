@@ -340,6 +340,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "nex-agi/nex-n2.5-pro": createPinnedOpenRouterConfig(
+        "nex-agi/nex-n2.5-pro",
+        "nex-agi/fp8",
+    ),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-02** – **🚀 A little room to compute** Create E2B-compatible sandboxes through the gen API or `polli sandbox`, then connect over SSH. The coding-agent template comes with five agents ready to use. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-10-02** – **🤖 The models meet Alice** Compare official and community models on weekly puzzle evals, with past runs and uncertainty shown alongside the scores. [See the rankings](https://model-monitor.pollinations.ai)
+- **2026-10-02** – **✨ A bigger picture fits** Send chat requests up to 100 MiB with inline images; large image, video, and file data URLs can be uploaded and reused across turns. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-10-02** – **🎨 A new layer of pollen** Generate and edit images directly in Krita, with results placed on new layers. [View repo](https://github.com/xiaotian1171/pollinations-krita) <!-- app -->
+- **2026-10-02** – **🎵 A bee enters Unity** Add Pollinations-powered chat, image generation, and speech to Unity games with an async C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity) <!-- app -->
+- **2026-10-02** – **🔗 Pi gets a proper plug** Run `polli mcp install pi` to add Pollinations to Pi’s native MCP config without disturbing your other servers. [Polli CLI](https://www.npmjs.com/package/@pollinations/cli)
+- **2026-10-02** – **🌟 The garden gets a gathering place** The Community page now shows live project activity, open votes, and Quest rankings in one place. [Visit the community](https://pollinations.ai)
 - **2026-10-01** – **🎨 Pollinations in Krita** Generate or edit images inside Krita, size results to your canvas or selection, and keep the original paint layer intact.
 - **2026-10-01** – **🎨 An image studio for Figma** Generate and edit images in Figma with your own Pollinations key. [Try it](https://guest453.github.io/pollinations-figma/) <!-- app -->
 - **2026-10-01** – **🤖 Two new decision models** Try Kev 4B and the free Span-01 Lite through `/alpha/decisions` or [chat completions](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-10-01** – **✨ Bigger media uploads** Send files up to 400 MiB through the existing FormData or raw `/upload` flow. No client changes needed. [Media Store](https://media.pollinations.ai)
-- **2026-10-01** – **🎯 Pollen for connecting Polli CLI** Connect with `polli auth login` and claim a one-time 2-Pollen Quest.
-- **2026-09-30** – **🚀 GPT-6.1 Sol is here** Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-09-30** – **🎵 Audio tools in the SDK** Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-09-30** – **🎨 A new home for apps** The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters.
-- **2026-09-30** – **🎮 Pollinations for Godot 4** Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations) <!-- app -->
-- **2026-09-29** – **🚀 Claude Sonnet 5.5** Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models).
 ---
 
 ## 🌱 Introduction

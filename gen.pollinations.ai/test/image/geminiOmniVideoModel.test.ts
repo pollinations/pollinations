@@ -82,7 +82,6 @@ afterEach(() => {
 
 describe("geminiOmniVideoModel", () => {
     it.each([
-        [undefined, "720p"],
         ["360p", "360p"],
         ["720p", "720p"],
         ["1080p", "1080p"],

@@ -39,7 +39,7 @@ afterEach(() => {
 
 describe("Seedance 2.5 via Replicate", () => {
     it.each([
-        [undefined, "480p", undefined, "16:9"],
+        ["480p", "480p", undefined, "16:9"],
         ["720p", "720p", "4:3", "4:3"],
     ] as const)("routes resolution %s as %s with aspect ratio %s", async (resolution, expected, aspectRatio, expectedAspectRatio) => {
         syncImageEnv(

@@ -85,9 +85,7 @@ export async function callSeedanceV2API(
     const modelName = safeParams.model as SeedanceV2ModelName;
     const config = MODELS[modelName];
     const definition = IMAGE_SERVICES[modelName] as ModelDefinition;
-    const resolution = (safeParams.resolution ??
-        definition.resolutions?.[0] ??
-        "720p") as SeedanceV2Input["resolution"];
+    const resolution = safeParams.resolution as SeedanceV2Input["resolution"];
 
     // Replicate accepts 4–15 seconds. Pollinations caps Mini and Fast at their
     // empirically verified synchronous latency limits.

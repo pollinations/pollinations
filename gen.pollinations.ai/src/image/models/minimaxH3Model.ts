@@ -23,16 +23,6 @@ const H3_MAX_TURBO_IMAGE_ENDPOINT =
 const H3_POLL_INTERVAL_MS = 2_000;
 const H3_TIMEOUT_MS = 10 * 60 * 1_000;
 const H3_DURATION_SECONDS = 5;
-const H3_RESOLUTIONS = {
-    "480p": "480P",
-    "768p": "768P",
-    "2k": "2K",
-} as const;
-const H3_MAX_RESOLUTIONS = {
-    "480p": "480P",
-    "768p": "768P",
-    "1080p": "1080P",
-} as const;
 const H3_MAX_DURATIONS = [5, 10, 15] as const;
 const H3_MAX_ASPECT_RATIOS = [
     "21:9",
@@ -223,22 +213,13 @@ export async function callMinimaxH3API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    const resolution = safeParams.resolution ?? "480p";
-    const upstreamResolution =
-        H3_RESOLUTIONS[resolution as keyof typeof H3_RESOLUTIONS];
-    if (!upstreamResolution) {
-        throw UpstreamError.fromProvider(400, {
-            message: `MiniMax H3 does not support ${resolution}`,
-        });
-    }
-
     return callFalH3API(
         "MiniMax H3",
         H3_ENDPOINT,
         {
             prompt,
             duration: H3_DURATION_SECONDS,
-            resolution: upstreamResolution,
+            resolution: safeParams.resolution?.toUpperCase(),
             aspect_ratio: "16:9",
             seed: safeParams.seed,
         },
@@ -261,15 +242,6 @@ async function callFalMinimaxMaxVariant(
     if (!(H3_MAX_DURATIONS as readonly number[]).includes(duration)) {
         throw UpstreamError.fromProvider(400, {
             message: `${title} supports 5, 10, or 15 seconds`,
-        });
-    }
-
-    const resolution = safeParams.resolution ?? "480p";
-    const upstreamResolution =
-        H3_MAX_RESOLUTIONS[resolution as keyof typeof H3_MAX_RESOLUTIONS];
-    if (!upstreamResolution) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${title} does not support ${resolution}`,
         });
     }
 
@@ -318,7 +290,7 @@ async function callFalMinimaxMaxVariant(
         {
             prompt,
             duration,
-            resolution: upstreamResolution,
+            resolution: safeParams.resolution?.toUpperCase(),
             seed: safeParams.seed,
             enable_safety_checker: true,
             prompt_expansion_mode: "balanced",

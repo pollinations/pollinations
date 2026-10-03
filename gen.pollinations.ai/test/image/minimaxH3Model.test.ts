@@ -132,7 +132,6 @@ afterEach(() => {
 
 describe("callMinimaxH3API", () => {
     it.each([
-        [undefined, "480P"],
         ["480p", "480P"],
         ["768p", "768P"],
         ["2k", "2K"],

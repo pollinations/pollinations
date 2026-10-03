@@ -96,6 +96,23 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("defaults an omitted resolution to the model's first resolution", () => {
+        expect(
+            ImageParamsSchema.parse({ model: "alibaba/wan-3.0" }).resolution,
+        ).toBe("480p");
+        expect(
+            ImageParamsSchema.parse({
+                model: "alibaba/wan-3.0",
+                resolution: "1080p",
+            }).resolution,
+        ).toBe("1080p");
+        expect(
+            ImageParamsSchema.parse({
+                model: "black-forest-labs/flux.1-schnell",
+            }).resolution,
+        ).toBeUndefined();
+    });
+
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({

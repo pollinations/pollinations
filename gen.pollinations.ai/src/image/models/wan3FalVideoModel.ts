@@ -72,7 +72,6 @@ export async function callWan3FalAPI(
         });
     }
 
-    const resolution = safeParams.resolution ?? "480p";
     const authorization = { Authorization: `Key ${apiKey}` };
 
     const endpoint = hasReference
@@ -82,7 +81,7 @@ export async function callWan3FalAPI(
           : WAN_3_TEXT_ENDPOINT;
     const body = {
         prompt,
-        resolution,
+        resolution: safeParams.resolution,
         aspect_ratio: hasFrames
             ? "adaptive"
             : closestRatioLogSpace(

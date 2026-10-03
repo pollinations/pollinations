@@ -1,3 +1,4 @@
+import { ModelCapabilitySchema } from "@shared/registry/model-info.ts";
 import { z } from "zod";
 
 export const ModelListQueryParamsSchema = z.object({
@@ -12,6 +13,34 @@ export const ModelListQueryParamsSchema = z.object({
     community: z.enum(["true", "false", "1", "0"]).optional().meta({
         description:
             "Legacy source filter: `true`/`1` for community, `false`/`0` for official.",
+    }),
+    query: z.string().optional().meta({
+        description:
+            "Search catalog text: canonical name, aliases, title, description, and publisher. Case-insensitive. Whitespace-separated tokens must all match (AND). Blank values are ignored.",
+    }),
+    capabilities: z
+        .string()
+        .optional()
+        .transform((value) =>
+            value === undefined
+                ? undefined
+                : value
+                      .split(",")
+                      .map((item) => item.trim())
+                      .filter(Boolean),
+        )
+        .pipe(z.array(ModelCapabilitySchema).optional())
+        .meta({
+            description:
+                "Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have every listed capability (AND). Unknown capabilities are rejected with 400.",
+        }),
+    agent: z.enum(["true", "false", "1", "0"]).optional().meta({
+        description:
+            "`true`/`1` for agents only, `false`/`0` to exclude agents. Omit for both.",
+    }),
+    limit: z.coerce.number().int().min(1).max(500).optional().meta({
+        description:
+            "Maximum number of models returned, 1-500. Applied after visibility, permissions, source, search, and reliability filters, preserving catalog order.",
     }),
 });
 

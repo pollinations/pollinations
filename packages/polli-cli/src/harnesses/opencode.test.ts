@@ -1,10 +1,14 @@
 import {
+    chmodSync,
     existsSync,
+    lstatSync,
     mkdirSync,
     mkdtempSync,
     readdirSync,
     readFileSync,
+    readlinkSync,
     rmSync,
+    symlinkSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -166,6 +170,98 @@ describe("opencode harness", () => {
         expect(existsSync(pluginConfig())).toBe(false);
         expect(snapshotFiles()).toHaveLength(0);
         expect(opencode.status(ctx).configured).toBe(false);
+    });
+
+    it.each([
+        "absolute",
+        "relative",
+    ])("restores an original %s config symlink on off", (kind) => {
+        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+        const target = join(home, "opencode-dotfile.jsonc");
+        const original =
+            '{\n  // Original dotfile\n  model: "other/model",\n}\n';
+        writeFileSync(target, original, { mode: 0o400 });
+        const link =
+            kind === "absolute" ? target : "../../opencode-dotfile.jsonc";
+        symlinkSync(link, opencodeJsoncFile(), "file");
+        const targetMode = lstatSync(target).mode;
+
+        configureOpenCode(ctx, settings);
+        configureOpenCode(ctx, { ...settings, model: "kimi" });
+        expect(lstatSync(opencodeJsoncFile()).isFile()).toBe(true);
+        expect(read(target)).toBe(original);
+        expect(disableOpenCode(ctx).outcome).toBe("restored");
+
+        expect(lstatSync(opencodeJsoncFile()).isSymbolicLink()).toBe(true);
+        expect(readlinkSync(opencodeJsoncFile())).toBe(link);
+        expect(read(target)).toBe(original);
+        expect(lstatSync(target).mode).toBe(targetMode);
+        chmodSync(target, 0o600);
+        writeFileSync(target, '{"autoupdate":false}\n');
+        expect(read(opencodeJsoncFile())).toBe('{"autoupdate":false}\n');
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
+    it("restores the original config symlink when setup fails", () => {
+        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+        const target = join(home, "invalid-opencode.json");
+        writeFileSync(target, "{");
+        const link = "../../invalid-opencode.json";
+        symlinkSync(link, opencodeFile(), "file");
+
+        expect(() => configureOpenCode(ctx, settings)).toThrow(
+            "Could not parse OpenCode config",
+        );
+
+        expect(lstatSync(opencodeFile()).isSymbolicLink()).toBe(true);
+        expect(readlinkSync(opencodeFile())).toBe(link);
+        expect(read(target)).toBe("{");
+        expect(existsSync(pluginConfig())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
+    it("keeps user edits instead of restoring the original config symlink", () => {
+        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+        const target = join(home, "opencode-dotfile.json");
+        const original = '{"autoupdate":true}\n';
+        writeFileSync(target, original);
+        symlinkSync(target, opencodeFile(), "file");
+        configureOpenCode(ctx, settings);
+        const edited = readJsonFile(opencodeFile());
+        edited.autoupdate = false;
+        writeFileSync(opencodeFile(), JSON.stringify(edited));
+
+        expect(disableOpenCode(ctx).outcome).toBe("stripped");
+        expect(lstatSync(opencodeFile()).isFile()).toBe(true);
+        expect(readJsonFile(opencodeFile()).autoupdate).toBe(false);
+        expect(readJsonFile(opencodeFile()).plugin).toBeUndefined();
+        expect(readJsonFile(opencodeFile()).model).toBeUndefined();
+        expect(read(target)).toBe(original);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
+    it("restores snapshots without symlink metadata as regular files", () => {
+        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+        const target = join(home, "opencode-dotfile.json");
+        const original = '{"autoupdate":true}\n';
+        writeFileSync(target, original);
+        symlinkSync(target, opencodeFile(), "file");
+        configureOpenCode(ctx, settings);
+        const path = join(
+            home,
+            ".pollinations",
+            "harnesses",
+            snapshotFiles()[0],
+        );
+        const snapshot = readJsonFile(path);
+        delete snapshot.files[opencodeFile()].symlink;
+        writeFileSync(path, JSON.stringify(snapshot));
+
+        expect(disableOpenCode(ctx).outcome).toBe("restored");
+        expect(lstatSync(opencodeFile()).isFile()).toBe(true);
+        expect(read(opencodeFile())).toBe(original);
+        expect(read(target)).toBe(original);
+        expect(snapshotFiles()).toHaveLength(0);
     });
 
     it("only strips the Pollinations entries when the config changed since on", () => {

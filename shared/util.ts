@@ -55,7 +55,7 @@ export function exponentialBackoffDelay(
     if (jitter > 0) {
         const jitterRange = delay * jitter;
         const jitterOffset = jitterRange * (Math.random() * 2 - 1);
-        return delay + jitterOffset;
+        return Math.max(minDelay, Math.min(maxDelay, delay + jitterOffset));
     }
 
     // return clamped delay

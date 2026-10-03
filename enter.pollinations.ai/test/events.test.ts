@@ -103,29 +103,43 @@ test("Exponential backoff delay", async () => {
     expect(exponentialBackoffDelay(1, backoffConfig)).toBe(100);
     expect(exponentialBackoffDelay(3, backoffConfig)).toBeGreaterThan(100);
     expect(exponentialBackoffDelay(3, backoffConfig)).toBeLessThan(10000);
-    expect(exponentialBackoffDelay(5, backoffConfig)).toBe(10000);
+    expect(exponentialBackoffDelay(5, backoffConfig)).toBeCloseTo(10000);
     const backoffConfigWithJitter = {
         minDelay: 100,
         maxDelay: 10000,
         maxAttempts: 5,
         jitter: 0.1,
     };
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(100 + 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(10000 - 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+    // Jitter must never push the delay outside the documented
+    // [minDelay, maxDelay] bounds.
+    for (const attempt of [1, 3, 5]) {
+        for (let i = 0; i < 50; i++) {
+            const delay = exponentialBackoffDelay(
+                attempt,
+                backoffConfigWithJitter,
+            );
+            expect(delay).toBeGreaterThanOrEqual(100);
+            expect(delay).toBeLessThanOrEqual(10000);
+        }
+    }
+});
+
+test("Exponential backoff delay clamps jittered delays to [minDelay, maxDelay]", async () => {
+    const backoffConfig = {
+        minDelay: 100,
+        maxDelay: 10000,
+        maxAttempts: 5,
+        jitter: 0.25,
+    };
+    const random = vi.spyOn(Math, "random");
+
+    // Maximum negative jitter at the minimum delay would yield 75 without
+    // clamping.
+    random.mockReturnValue(0);
+    expect(exponentialBackoffDelay(1, backoffConfig)).toBe(100);
+
+    // Maximum positive jitter at the maximum delay would yield ~12500 without
+    // clamping.
+    random.mockReturnValue(1);
+    expect(exponentialBackoffDelay(5, backoffConfig)).toBe(10000);
 });

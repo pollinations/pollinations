@@ -52,14 +52,10 @@ export function exponentialBackoffDelay(
     const base = (maxDelay / minDelay) ** (1 / (maxAttempts - 1));
     const delay = minDelay * base ** (attempt - 1);
 
-    if (jitter > 0) {
-        const jitterRange = delay * jitter;
-        const jitterOffset = jitterRange * (Math.random() * 2 - 1);
-        return delay + jitterOffset;
-    }
+    const jitterOffset =
+        jitter > 0 ? delay * jitter * (Math.random() * 2 - 1) : 0;
 
-    // return clamped delay
-    return Math.max(minDelay, Math.min(maxDelay, delay));
+    return Math.max(minDelay, Math.min(maxDelay, delay + jitterOffset));
 }
 
 const resetColor = "\x1b[0m";

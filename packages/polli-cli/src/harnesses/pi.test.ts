@@ -182,6 +182,87 @@ describe("pi harness", () => {
         expect(existsSync(modelsFile())).toBe(false);
     });
 
+    it.each([
+        false,
+        true,
+    ])("preserves auth edits across repeated on (existing auth: %s)", (existingAuth) => {
+        if (existingAuth) {
+            mkdirSync(agentDir(), { recursive: true });
+            writeFileSync(authFile(), '{"openai":{"key":"sk-original"}}\n');
+        }
+        configurePi(ctx, settings);
+        const auth = readJson(authFile());
+        auth.anthropic = { type: "api_key", key: "sk-added" };
+        writeFileSync(authFile(), JSON.stringify(auth));
+
+        configurePi(ctx, { ...settings, model: "kimi" });
+        configurePi(ctx, settings);
+
+        expect(disablePi(ctx).outcome).toBe("stripped");
+        expect(readJson(authFile())).toEqual({
+            ...(existingAuth ? { openai: { key: "sk-original" } } : {}),
+            anthropic: { type: "api_key", key: "sk-added" },
+        });
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("supports old snapshots on repeated on (edited: %s)", (edited) => {
+        configurePi(ctx, settings);
+        const path = join(
+            home,
+            ".pollinations",
+            "harnesses",
+            snapshotFiles()[0],
+        );
+        const snapshot = readJson(path);
+        delete snapshot.edited;
+        writeFileSync(path, JSON.stringify(snapshot));
+        if (edited) {
+            const data = readJson(settingsFile());
+            data.theme = "light";
+            writeFileSync(settingsFile(), JSON.stringify(data));
+        }
+
+        configurePi(ctx, { ...settings, model: "kimi" });
+
+        expect(disablePi(ctx).outcome).toBe(edited ? "stripped" : "restored");
+        if (edited)
+            expect(readJson(settingsFile())).toEqual({ theme: "light" });
+        else expect(existsSync(settingsFile())).toBe(false);
+    });
+
+    it("rolls back a failed repeated on without changing its snapshot", () => {
+        configurePi(ctx, settings);
+        const auth = readJson(authFile());
+        auth.anthropic = { type: "api_key", key: "sk-added" };
+        writeFileSync(authFile(), JSON.stringify(auth));
+        const validSettings = read(settingsFile());
+        writeFileSync(settingsFile(), "{");
+        const snapshot = join(
+            home,
+            ".pollinations",
+            "harnesses",
+            snapshotFiles()[0],
+        );
+        const paths = [modelsFile(), authFile(), settingsFile(), snapshot];
+        const before = paths.map(read);
+
+        expect(() =>
+            configurePi(ctx, { ...settings, model: "kimi" }),
+        ).toThrow();
+        expect(paths.map(read)).toEqual(before);
+
+        writeFileSync(settingsFile(), validSettings);
+        configurePi(ctx, { ...settings, model: "kimi" });
+        expect(disablePi(ctx).outcome).toBe("stripped");
+        expect(readJson(authFile())).toEqual({
+            anthropic: { type: "api_key", key: "sk-added" },
+        });
+    });
+
     it("honors PI_CODING_AGENT_DIR", () => {
         const custom = join(home, "custom-pi-agent");
         configurePi({ home, env: { PI_CODING_AGENT_DIR: custom } }, settings);

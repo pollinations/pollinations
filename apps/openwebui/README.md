@@ -79,6 +79,30 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
   \"select key, value::text from config where key = 'tool_server.connections';\""
 ```
 
+## Bringing the defaults to an existing installation
+
+`DEFAULT_MODELS`, `DEFAULT_PINNED_MODELS`, `WEBUI_BANNERS` and
+`ENABLE_COMMUNITY_SHARING` above are seeded from `DEFAULT_CONFIG` only when
+their key is *missing* (`Config.seed_defaults` inserts new keys and
+`Config.get` reads the stored row first), so a database that has already booted
+keeps its old rows. To move an existing installation — staging included — onto
+the new defaults, update the stored rows directly; none of these keys is cached
+in memory, so the next request picks the change up (no container restart):
+
+```sql
+update config set value = '"openai/gpt-5.4-mini,openai/gpt-5.4-nano,openai/gpt-5.5"'
+  where key = 'ui.default_models';
+update config set value = '"openai/gpt-5.4-mini,openai/gpt-5.3-codex,openai/gpt-5.4-nano,openai/gpt-image-2"'
+  where key = 'ui.default_pinned_models';
+update config set value = 'false' where key = 'ui.enable_community_sharing';
+```
+
+`ui.banners` stores a JSON array; write the same array `worker.js` builds
+(`WEBUI_BANNERS`) with
+`update config set value = '<json>' where key = 'ui.banners';`.
+Users who have pinned their own models are unaffected — `default_pinned_models`
+only fills the sidebar while a user has no pins.
+
 ## Restarting the container
 
 `envVars` on the Container class are applied when the container *starts*, and a

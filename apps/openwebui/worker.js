@@ -13,6 +13,55 @@ function required(name) {
     return value;
 }
 
+// Default model(s) for a fresh chat. Open WebUI splits this on commas and takes
+// the first id that exists in the live catalog, so a chain is safer than a
+// single hard-coded id: a retired or unavailable model only moves the picker to
+// the next entry. The bare `openai` prefix this replaces is not a catalog id,
+// which made the picker fall back to the alphabetically first community model.
+const DEFAULT_MODELS = [
+    "openai/gpt-5.4-mini",
+    "openai/gpt-5.4-nano",
+    "openai/gpt-5.5",
+].join(",");
+
+// Sidebar staples for users who have not pinned anything yet: a cheap
+// general-purpose chat model, a coding/reasoning model, a vision-capable nano
+// and an image model — the four jobs this workspace is most often used for.
+const DEFAULT_PINNED_MODELS = [
+    "openai/gpt-5.4-mini",
+    "openai/gpt-5.3-codex",
+    "openai/gpt-5.4-nano",
+    "openai/gpt-image-2",
+].join(",");
+
+// Dismissible banners on the new-chat screen. The first makes the billing model
+// explicit (signed-in users pay from their own wallet, which is easy to
+// forget); the second is light onboarding into the catalog and the optional MCP
+// tool server.
+const WEBUI_BANNERS = [
+    {
+        id: "pollinations-wallet",
+        type: "info",
+        title: "Your chats spend your own Pollen",
+        content:
+            "Text, images and tool calls are all billed to the Pollen wallet you signed in with. " +
+            "[Check your balance](https://enter.pollinations.ai/pollen) or [top up](https://enter.pollinations.ai/top-up).",
+        dismissible: true,
+        timestamp: 1759500000,
+    },
+    {
+        id: "pollinations-onboarding",
+        type: "info",
+        title: "Finding your way around",
+        content:
+            "The model picker lists the live catalog — [browse it](https://gen.pollinations.ai/models) and read the " +
+            "[API docs](https://gen.pollinations.ai/docs). Open a chat's **Tools** menu to add the Pollinations MCP " +
+            "server and generate images, video and audio without leaving the chat.",
+        dismissible: true,
+        timestamp: 1759500000,
+    },
+];
+
 /**
  * Open WebUI with Pollinations as its only login provider. The consent-minted
  * sk_ is forwarded to gen.pollinations.ai per user (auth_type system_oauth),
@@ -63,7 +112,14 @@ export class OpenWebUIContainer extends Container {
         BYPASS_MODEL_ACCESS_CONTROL: "true",
         // Without this the model picker defaults to the alphabetically first
         // community model.
-        DEFAULT_MODELS: "openai",
+        DEFAULT_MODELS,
+        DEFAULT_PINNED_MODELS,
+        // New-chat banners: billing clarity and light onboarding (catalog, docs,
+        // optional MCP tools).
+        WEBUI_BANNERS: JSON.stringify(WEBUI_BANNERS),
+        // Sharing a chat "to community" uploads it to openwebui.com. Out of
+        // scope for a Pollinations workspace; keep chats on the instance.
+        ENABLE_COMMUNITY_SHARING: "false",
         // Titles, tags and follow-ups need text, even when the chat model generates media.
         // Non-reasoning on purpose: gpt-5-nano spent 256-1024 reasoning tokens and
         // 3-12 s per title/tags/follow-up call. Seed value only; the live value is

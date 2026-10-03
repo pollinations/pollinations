@@ -1,4 +1,8 @@
 import { createHmac } from "node:crypto";
+import {
+    getRegistryModelDefinition,
+    resolveModelName,
+} from "@shared/registry/registry.ts";
 import { JSONParser } from "@streamparser/json";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -17,6 +21,7 @@ type InlineMedia = {
     container: Record<string, unknown>;
     field: string;
     dataUrl: string;
+    removeField?: string;
 };
 
 function inlineMedia(value: unknown): InlineMedia | undefined {
@@ -27,6 +32,30 @@ function inlineMedia(value: unknown): InlineMedia | undefined {
     if (type !== "image_url" && type !== "video_url" && type !== "file") return;
     const container = record[type];
     if (typeof container !== "object" || container === null) return;
+    if (type === "file") {
+        const file = container as Record<string, unknown>;
+        const data = file.file_data;
+        if (
+            typeof data === "string" &&
+            data.length > 0 &&
+            file.file_url === undefined
+        ) {
+            const dataUrl = data.startsWith("data:")
+                ? data
+                : file.mime_type === "application/pdf"
+                  ? `data:application/pdf;base64,${data}`
+                  : undefined;
+            if (dataUrl?.startsWith("data:application/pdf;base64,")) {
+                return {
+                    type,
+                    container: file,
+                    field: "file_url",
+                    dataUrl,
+                    removeField: "file_data",
+                };
+            }
+        }
+    }
     const field = type === "file" ? "file_url" : "url";
     const dataUrl = (container as Record<string, unknown>)[field];
     if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) return;
@@ -53,6 +82,7 @@ export async function readLargeChatBody(
     let totalBytes = 0;
     let parsedBytes = 0;
     let offloadedBytes = 0;
+    let offloadedFileData = false;
 
     parser.onValue = ({ value, stack }) => {
         if (stack.length === 0) {
@@ -67,6 +97,10 @@ export async function readLargeChatBody(
             });
         }
         media.container[media.field] = "";
+        if (media.removeField) {
+            delete media.container[media.removeField];
+            offloadedFileData = true;
+        }
         pending.push(media);
     };
 
@@ -118,6 +152,25 @@ export async function readLargeChatBody(
 
     if (!parser.isEnded || typeof parsed !== "object" || parsed === null) {
         throw new HTTPException(400, { message: "Invalid JSON body" });
+    }
+    if (offloadedFileData) {
+        const model = (parsed as Record<string, unknown>).model;
+        let provider: string | undefined;
+        if (typeof model === "string") {
+            try {
+                provider = getRegistryModelDefinition(
+                    resolveModelName(model),
+                ).provider;
+            } catch {
+                // The normal model resolver reports an unknown model.
+            }
+        }
+        if (provider !== "openrouter") {
+            throw new HTTPException(413, {
+                message:
+                    "Large inline PDF file_data requires an OpenRouter model",
+            });
+        }
     }
     const body = JSON.stringify(parsed);
     if (body.length > MAX_REWRITTEN_BODY) {

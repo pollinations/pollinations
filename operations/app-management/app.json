@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🛠️",
+    "name": "Jev Assembler",
+    "url": "https://tomdacatto.github.io/pollinations-jev-assembler",
+    "description": "Describe a page in a sentence. Jev makes 16 small decisions about it in a single POST /alpha/decisions call (palette, typography, layout, call to action, roundness, density, urgency, and which section",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-jev-assembler",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15741",
+    "approvedDate": "2026-10-03",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🛠️",
     "name": "Pollinations for Unity",
     "url": "https://github.com/Marcus-Mok-GH/pollinations-unity",
     "description": "A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene.",

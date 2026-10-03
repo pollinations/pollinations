@@ -295,6 +295,7 @@ export function CommunityEndpointDialog({
         try {
             const payload = toEndpointPayload(
                 formWithVisiblePrices(form, visiblePriceKeys),
+                !isEdit,
             );
             await onSubmit(payload, form.bearerToken.trim());
             onOpenChange(false);
@@ -533,6 +534,41 @@ export function CommunityEndpointDialog({
                             />
                         </AuthInfoCard>
                     )}
+                    {!isEdit &&
+                        !isEndpointAgent &&
+                        form.visibility === "public" && (
+                            <AuthInfoCard>
+                                <fieldset className="flex flex-col gap-2">
+                                    <legend className="text-sm font-semibold text-theme-text-strong">
+                                        Catalog visibility
+                                    </legend>
+                                    <label className="flex items-center gap-2 text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={form.hidden}
+                                            aria-describedby="community-model-hidden-help"
+                                            onChange={(event) =>
+                                                setForm((current) => ({
+                                                    ...current,
+                                                    hidden: event.target
+                                                        .checked,
+                                                }))
+                                            }
+                                        />
+                                        Publish as hidden
+                                    </label>
+                                    <p
+                                        id="community-model-hidden-help"
+                                        className="text-xs leading-5 text-theme-text-muted"
+                                    >
+                                        Unlisted models stay out of public
+                                        catalogs and search. Anyone with the
+                                        model ID can call it after the usual
+                                        3-hour public publishing delay.
+                                    </p>
+                                </fieldset>
+                            </AuthInfoCard>
+                        )}
                     {form.visibility === "public" && (
                         <Alert intent="advisory" title="Public provider duties">
                             Requests are sent to your endpoint. You are

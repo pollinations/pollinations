@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Whichever",
+    "url": "https://kreggscode.github.io/whichever",
+    "description": "A branching story where you set the lens and Jev picks the branch. Type where the story starts and choose what it should be judged against — six presets, or a line of your own. A text model writes thr",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "kreggscode",
+    "githubUserId": "117812547",
+    "repositoryUrl": "https://github.com/kreggscode/whichever",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-30",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15849",
+    "approvedDate": "2026-10-03",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💼",
     "name": "Jev Triage Desk",
     "url": "https://mhmdrizzzki.github.io/jev-triage-desk",

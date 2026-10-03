@@ -1184,6 +1184,42 @@ test("chat completions reject a successful envelope without usage", async ({
     });
 });
 
+test("chat completions forward a 28 MiB inline-image request", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/png;base64,${"A".repeat(28 * 1024 * 1024)}`,
+                            },
+                        },
+                    ],
+                },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+});
+
 test("chat streaming without usage fails closed and remains unbilled", async ({
     mocks,
 }) => {

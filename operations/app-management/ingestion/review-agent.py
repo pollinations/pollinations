@@ -237,16 +237,22 @@ Return only JSON:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
             ],
-            "max_tokens": 500,
+            # MODEL is a reasoning model; 500 tokens could all go to reasoning
+            # and leave `content` null.
+            "max_tokens": 2000,
             "temperature": 0,
         },
         timeout=60,
     )
     response.raise_for_status()
-    content = response.json()["choices"][0]["message"]["content"]
+    choice = response.json()["choices"][0]
+    content = choice["message"].get("content") or ""
     match = re.search(r"\{[\s\S]*\}", content)
     if not match:
-        raise ValueError("pre-review model did not return JSON")
+        raise ValueError(
+            "pre-review model did not return JSON "
+            f"(finish_reason={choice.get('finish_reason')})"
+        )
     result = json.loads(match.group(0))
     if not isinstance(result, dict) or result.get("status") not in (
         "ready",

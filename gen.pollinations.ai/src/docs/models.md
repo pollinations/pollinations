@@ -54,6 +54,25 @@ This only affects discovery: exact-ID calls, retrieval and fallback routing
 remain available. Authentication, key permissions, paid access and manual
 hiding still apply. Owners can manage all their models in My Models.
 
+Every list endpoint also accepts `query`, `capabilities`, `agent`, and `limit`
+to narrow a large catalog instead of downloading all of it:
+
+| Parameter | Meaning |
+|-----------|---------|
+| `query` | Case-insensitive text search over the canonical name, aliases, title, description, and publisher. Every whitespace-separated word must appear somewhere in that text, so words can match different fields. |
+| `capabilities` | Comma- or pipe-separated capability names. Every returned model must declare all of them (AND semantics). Unknown names return **400 Bad Request**. |
+| `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents. |
+| `limit` | Return at most this many models, between 1 and 500. |
+
+```bash
+curl 'https://gen.pollinations.ai/v1/models?query=gemini%20flash&capabilities=reasoning&limit=5'
+```
+
+Access, source, and reliability filtering apply first, then these discovery
+filters, then `limit`. A capped list therefore never contains a model the caller
+could not otherwise see, and keeps the catalog order. `query`, `capabilities`,
+and `agent` combine with AND semantics.
+
 Time-windowed traffic, latency and fallback breakdowns are served separately by
 `/models/status`, described in [Public Stats](/docs#tag/public-stats).
 

@@ -7,17 +7,16 @@ import {
 } from "../utils/coreUtils.js";
 import { getModels } from "../utils/models.js";
 
+// Every filter is forwarded to the gateway, which owns search, capability
+// matching, agent selection and the result limit. Nothing is filtered here.
 async function listModels(params, context) {
-    let models = await getModels(
-        params.type || "all",
-        context,
-        params.community,
-    );
-    if (params.agent !== undefined) {
-        models = models.filter(
-            (model) => (model.agent === true) === params.agent,
-        );
-    }
+    const models = await getModels(params.type || "all", context, {
+        community: params.community,
+        query: params.query,
+        capabilities: params.capabilities,
+        agent: params.agent,
+        limit: params.limit,
+    });
     return createMCPResponse([createTextContent(models, true)]);
 }
 
@@ -33,7 +32,7 @@ async function getModelStatus(params, context) {
 export const discoveryTools = [
     [
         "listModels",
-        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Filter by modality, community ownership, or agents.",
+        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Narrow the catalog by modality, community ownership, agent status, text search, capabilities, or a result limit instead of loading every model.",
         {
             type: z
                 .enum([
@@ -57,6 +56,27 @@ export const discoveryTools = [
                 .boolean()
                 .optional()
                 .describe("True for agents only, false to exclude agents"),
+            query: z
+                .string()
+                .optional()
+                .describe(
+                    "Case-insensitive search over canonical name, aliases, title, description and publisher; every word must appear",
+                ),
+            capabilities: z
+                .array(z.string())
+                .optional()
+                .describe(
+                    "Only models declaring every listed capability, e.g. tool_calling, reasoning, web_search, code_execution, pollinations_models",
+                ),
+            limit: z
+                .number()
+                .int()
+                .min(1)
+                .max(500)
+                .optional()
+                .describe(
+                    "Return at most this many models, applied after every other filter",
+                ),
         },
         listModels,
     ],

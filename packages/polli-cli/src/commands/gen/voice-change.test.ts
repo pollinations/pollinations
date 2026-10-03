@@ -17,11 +17,15 @@ afterEach(() => {
 });
 
 describe("gen voice-change", () => {
-    it("uploads the source file and saves the transformed voice", async () => {
+    it.each([
+        ["talk.mp3", "audio/mpeg"],
+        ["speech.opus", "audio/ogg"],
+        ["speech.OPUS", "audio/ogg"],
+    ])("uploads %s as %s and saves the transformed voice", async (file, mime) => {
         const folder = mkdtempSync(join(tmpdir(), "polli-voice-change-test-"));
         try {
             process.chdir(folder);
-            writeFileSync("talk.mp3", "source audio");
+            writeFileSync(file, "source audio");
             setKeyOverride("sk_test");
             setOutputMode("json");
             const output: string[] = [];
@@ -31,20 +35,25 @@ describe("gen voice-change", () => {
             });
             let request: { url: string; body: FormData } | undefined;
             vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
-                request = { url, body: init.body as FormData };
+                request = {
+                    url,
+                    body: await new Request(url, init).formData(),
+                };
                 return new Response(new Uint8Array([1, 2, 3]));
             });
 
             await createVoiceChangeCommand().parseAsync(
-                ["talk.mp3", "--voice", "nova"],
+                [file, "--voice", "nova"],
                 { from: "user" },
             );
 
             expect(request?.url).toContain("/v1/audio/voice-changer");
             expect(request?.body.get("voice")).toBe("nova");
-            const audio = request?.body.get("audio") as Blob;
+            const audio = request?.body.get("audio") as File;
             expect(audio.size).toBe("source audio".length);
-            expect(audio.type).toBe("audio/mpeg");
+            expect(audio.type).toBe(mime);
+            expect(audio.name).toBe(file);
+            expect(await audio.text()).toBe("source audio");
             const meta = JSON.parse(output.join(""));
             expect(meta.path).toBe("voice.mp3");
             expect([...readFileSync("voice.mp3")]).toEqual([1, 2, 3]);

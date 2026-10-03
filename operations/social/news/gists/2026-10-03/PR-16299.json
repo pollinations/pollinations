@@ -1,0 +1,35 @@
+{
+  "pr_number": 16299,
+  "title": "Add Jev Assembler to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16299",
+  "merged_at": "2026-10-03T02:58:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Jev Assembler](https://tomdacatto.github.io/pollinations-jev-assembler) to build\n- Describe a page in a sentence. Jev makes 16 small decisions about it in a single POST /alpha/decisions call (palette, typography, layout, call to action, roundness, density, urgency, and which section\n\nFixes #15741, fixes #15722",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sixteen decisions, one sentence",
+    "blurb": "Jev Assembler joins the app collection. Give it a sentence about a page, and it works through 16 little design decisions. The indecisive among us may feel seen.",
+    "summary": "Jev Assembler is added to the app collection; it turns a one-sentence page description into 16 design decisions through a single POST /alpha/decisions call, covering palette, typography, layout, call to action, roundness, density, and urgency.",
+    "impact": "Page builders get a starting set of 16 design choices from one sentence and one API call.",
+    "keywords": [
+      "Jev Assembler",
+      "community app",
+      "page design",
+      "design decisions",
+      "alpha/decisions"
+    ],
+    "visual_concept": "Depict Jev Assembler as a friendly pixel-art page-building workbench: one sentence on a note flows into 16 small design tiles for colors, type, and layout. Polli helps arrange the tiles into a budding webpage; avoid inventing a mascot or logo for Jev.",
+    "image_prompt": "In a cozy pixel art garden workshop, Polli in a tiny tool belt arranges 16 little design tiles around a budding webpage, with a handwritten sentence feeding into the workbench and lime green (#ecf874) code-plants growing beside it. Polli is a cute small-to-medium pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded translucent light-blue wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients on a warm cream background, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16299.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli in a tiny tool belt arranges 16 little design tiles around a budding webpage, with a handwritten sentence feeding into the workbench and lime green (#ecf874) code-plants growing beside it. Polli is a cute small-to-medium pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded translucent light-blue wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients on a warm cream background, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-03T03:00:03.223078+00:00",
+  "app_name": "Jev Assembler",
+  "app_url": "https://tomdacatto.github.io/pollinations-jev-assembler"
+}

@@ -347,6 +347,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins Fugu Max to Sakana AI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "sakana/fugu-max",
+        });
+
+        expect(result.options.model).toBe("sakana/fugu-max");
+        expect(result.options.provider).toEqual({
+            only: ["sakana"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Step Flash directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "stepfun/step-3.7-flash",

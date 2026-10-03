@@ -190,6 +190,17 @@ export const CHAT_PARAMETERS = {
         "n",
         "prediction",
     ],
+    // OpenRouter sakana tag (2026-09-12): tools are declared without
+    // tool_choice because the endpoint doesn't support it, and
+    // web_search_options is withheld: OpenRouter bills web_search per call
+    // ($0.01), a non-token charge our cost model can't meter yet.
+    openRouterFuguMax: [
+        "stream",
+        "tools",
+        "structured_outputs",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     deepinfraReasoning: [...EXTENDED_CHAT, "reasoning_effort", "n"],
     openRouterGemma: [
         ...EXTENDED_CHAT,

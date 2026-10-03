@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💼",
+    "name": "Jev Triage Desk",
+    "url": "https://mhmdrizzzki.github.io/jev-triage-desk",
+    "description": "Paste a shared inbox — one item per line — and Jev triages it. For every item Jev is asked three things, and the page code does nothing except act on the answers: - **Owning team** ( choice : engineer",
+    "language": "en",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "mhmdrizzzki",
+    "githubUserId": "82577674",
+    "repositoryUrl": "https://github.com/mhmdrizzzki/jev-triage-desk",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-01",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16155",
+    "approvedDate": "2026-10-03",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "Jev Assembler",
     "url": "https://tomdacatto.github.io/pollinations-jev-assembler",

@@ -76,7 +76,9 @@ const list = async (path: string): Promise<CatalogModel[]> => {
 };
 
 const fetchList = (query: string): Promise<CatalogModel[]> =>
-    list(query ? `/models?reliability=all&${query}` : "/models?reliability=all");
+    list(
+        query ? `/models?reliability=all&${query}` : "/models?reliability=all",
+    );
 
 test("narrows the model list with a case-insensitive text query", async () => {
     const all = await fetchList("");
@@ -200,9 +202,8 @@ test("applies limit after every other filter", async () => {
 
 test("combines query, capabilities, and limit", async () => {
     const all = await fetchList("");
-    const capability = all.find(
-        (model) => model.capabilities.length > 0,
-    )?.capabilities[0];
+    const capability = all.find((model) => model.capabilities.length > 0)
+        ?.capabilities[0];
     expect(capability).toBeDefined();
     if (!capability) return;
 
@@ -228,9 +229,10 @@ test("applies the discovery filters to every model-list route", async () => {
         const unfiltered = await list(`${path}?reliability=all`);
         const limited = await list(`${path}?reliability=all&limit=2`);
         expect(limited.length, path).toBe(Math.min(2, unfiltered.length));
-        expect(limited.map((model) => model.name), path).toEqual(
-            unfiltered.slice(0, 2).map((model) => model.name),
-        );
+        expect(
+            limited.map((model) => model.name),
+            path,
+        ).toEqual(unfiltered.slice(0, 2).map((model) => model.name));
     }
 
     // The query filter runs on category routes too.

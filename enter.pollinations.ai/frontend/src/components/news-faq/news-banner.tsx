@@ -1,16 +1,88 @@
-import { InlineLink, Surface } from "@pollinations/ui";
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import { Chip, InlineLink, Section, Surface } from "@pollinations/ui";
+import type { FC, ReactNode } from "react";
 
-const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
-export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
+type ModelChange = {
+    date: string;
+    model: string;
+    action: "Updating" | "Retiring" | "Updated";
+    change: string;
+    note?: string;
+};
 
-const DYNAMIC_NEWS_COUNT = 6;
+const UPCOMING_CHANGES: ModelChange[] = [
+    {
+        date: "2026-10-03",
+        model: "Qwen3 Coder 30B",
+        action: "Updating",
+        change: "Bedrock; Paid Pollen; $0.15/$0.60 per 1M input/output tokens. IDs unchanged.",
+        note: "No Responses API, seed, logprobs or stop. Named tool choice uses auto; schemas are not enforced.",
+    },
+    {
+        date: "2026-10-09",
+        model: "Qwen3 VL 235B Thinking",
+        action: "Retiring",
+        change: "Alibaba route retires. Choose another vision model.",
+    },
+    {
+        date: "2026-10-13",
+        model: "Cohere Command A+",
+        action: "Retiring",
+        change: "Azure route is due to retire. Replacement details to follow.",
+    },
+    {
+        date: "2026-10-20",
+        model: "Gemini 2.5 Flash Lite + Search",
+        action: "Retiring",
+        change: "Vertex AI routes retire. Update apps using these models or their aliases.",
+    },
+    {
+        date: "2026-11-02",
+        model: "Grok Imagine Pro",
+        action: "Updating",
+        change: "Redirects to Image 2.0. Output and pricing change.",
+    },
+];
+
+const ModelChanges: FC<{ changes: ModelChange[] }> = ({ changes }) => (
+    <ul className="flex flex-col gap-4 text-sm text-theme-text-base">
+        {changes.map(({ date, model, action, change, note }) => (
+            <li
+                key={model}
+                className="grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]"
+            >
+                <time
+                    dateTime={date}
+                    className="whitespace-nowrap text-theme-text-muted"
+                >
+                    {formatNewsDate(date)}
+                </time>
+                <span className="border-l border-theme-text-strong/15 pl-2">
+                    <Chip
+                        size="sm"
+                        intent={action === "Retiring" ? "warning" : "info"}
+                    >
+                        {action}
+                    </Chip>
+                </span>
+                <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
+                    {model}
+                </strong>
+                <div className="col-span-3 min-w-0 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
+                    <p>{renderWithLinks(change)}</p>
+                    {note && <p className="mt-1">{renderWithLinks(note)}</p>}
+                </div>
+            </li>
+        ))}
+    </ul>
+);
+
+export const UpcomingChanges: FC = () => (
+    <ModelChanges changes={UPCOMING_CHANGES} />
+);
 
 interface Highlight {
     date?: string;
-    /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
+    /** Optional status shown after the date. */
     dateLabel?: string;
     emoji: string;
     title: string;
@@ -19,35 +91,22 @@ interface Highlight {
     details?: string[];
 }
 
-/**
- * Pinned news items that stay visible regardless of daily updates.
- * Edit this array to add/remove pinned announcements.
- */
-const PINNED_NEWS: Highlight[] = [
+const RECENT_MODEL_CHANGES: ModelChange[] = [
     {
         date: "2026-10-01",
-        emoji: "🖼️",
-        title: "MAI Image 2.5 Flash moves to 2.6 Flash",
-        description:
-            "The 2.5 Flash model ID still works, but now uses MAI Image 2.6 Flash and its pricing. [Browse models](/models).",
-        details: [
-            "Use microsoft/mai-image-2.6-flash for new integrations.",
-            "Nova Canvas and Nova Reel retired on September 30. Their model IDs and aliases no longer accept requests.",
-        ],
+        model: "MAI Image 2.5 Flash",
+        action: "Updated",
+        change: "Uses 2.6 Flash and its pricing. [PR #15492](https://github.com/pollinations/pollinations/pull/15492).",
     },
     {
         date: "2026-09-24",
-        emoji: "🔄",
-        title: "Model provider changes",
-        description:
-            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
-        details: [
-            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
-            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
-            "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
-            "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
-        ],
+        model: "DeepSeek, Kimi, GLM, Muse",
+        action: "Updated",
+        change: "Providers, pricing and Paid Pollen access changed. [PR #15361](https://github.com/pollinations/pollinations/pull/15361).",
     },
+];
+
+const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-09-11",
         dateLabel: "Alpha",
@@ -125,25 +184,6 @@ function renderWithLinks(text: string): ReactNode[] {
     return parts;
 }
 
-function parseHighlights(md: string): Highlight[] {
-    return md
-        .split("\n")
-        .filter((line) => line.startsWith("- **"))
-        .filter((line) => !line.includes("<!-- app -->"))
-        .map((line) => {
-            const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
-            const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
-            const descStart = line.lastIndexOf("**") + 2;
-            const description = line.slice(descStart).trim();
-            return {
-                date: dateMatch?.[1] ?? "",
-                emoji: emojiTitleMatch?.[1] ?? "",
-                title: emojiTitleMatch?.[2]?.trim() ?? "",
-                description,
-            };
-        });
-}
-
 function formatNewsDate(date: string): string {
     if (!date) return "";
     const parsed = new Date(`${date}T00:00:00.000Z`);
@@ -152,9 +192,24 @@ function formatNewsDate(date: string): string {
         timeZone: "UTC",
         month: "short",
         day: "numeric",
-        year: "numeric",
     });
 }
+
+export const RecentChanges: FC = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+    const recent = RECENT_MODEL_CHANGES.filter(
+        ({ date }) => date && date >= cutoff && date <= today,
+    );
+    if (recent.length === 0) return null;
+    return (
+        <Section title="Recent model changes">
+            <ModelChanges changes={recent} />
+        </Section>
+    );
+};
 
 /** Hand-curated, pinned announcements — one card per item. */
 export const Announcements: FC = () => {
@@ -175,7 +230,7 @@ const CanonicalModelSlugAnnouncement: FC = () => (
         className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
     >
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-            API update
+            <time dateTime="2026-08-27">Aug 27</time> · API update
         </div>
         <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
             <span aria-hidden="true" className="shrink-0">
@@ -195,35 +250,16 @@ const CanonicalModelSlugAnnouncement: FC = () => (
     </Surface>
 );
 
-export const NewsBanner: FC = () => {
-    const [highlights, setHighlights] = useState<Highlight[]>([]);
-
-    useEffect(() => {
-        fetch(HIGHLIGHTS_RAW_URL)
-            .then((res) => res.text())
-            .then((md) =>
-                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
-            )
-            .catch((err) => console.error("Failed to fetch highlights:", err));
-    }, []);
-
-    if (highlights.length === 0) return null;
-
-    return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {highlights.map((item) => (
-                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
-            ))}
-        </div>
-    );
-};
-
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
     <Surface variant="card" className="min-w-0 leading-relaxed">
         {(item.dateLabel || item.date) && (
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                {item.dateLabel ??
-                    (item.date ? formatNewsDate(item.date) : null)}
+                {item.date && (
+                    <time dateTime={item.date}>
+                        {formatNewsDate(item.date)}
+                    </time>
+                )}
+                {item.dateLabel && <span> · {item.dateLabel}</span>}
             </div>
         )}
         <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
@@ -246,27 +282,5 @@ const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
                 ))}
             </ul>
         )}
-    </Surface>
-);
-
-const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="text-sm leading-relaxed">
-        {item.date && (
-            <time
-                dateTime={item.date}
-                className="mb-1 block text-xs font-medium text-theme-text-muted"
-            >
-                {formatNewsDate(item.date)}
-            </time>
-        )}
-        <div className="flex items-start gap-2 font-semibold text-ink-900">
-            {item.emoji && (
-                <span aria-hidden="true" className="shrink-0 text-base">
-                    {item.emoji}
-                </span>
-            )}
-            <div className="min-w-0">{item.title}</div>
-        </div>
-        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
     </Surface>
 );

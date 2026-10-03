@@ -14,7 +14,7 @@ export const NewsFaq: FC = () => (
             actionClassName="ml-auto"
             action={
                 <InlineLink href="/models" size="sm">
-                    Model catalog
+                    Browse Model Catalog
                 </InlineLink>
             }
         >

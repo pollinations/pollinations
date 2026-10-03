@@ -7,7 +7,6 @@ type ModelChange = {
     action: "Updating" | "Retiring" | "Updated";
     change: string;
     note?: string;
-    details?: string[];
 };
 
 const UPCOMING_CHANGES: ModelChange[] = [
@@ -46,7 +45,7 @@ const UPCOMING_CHANGES: ModelChange[] = [
 
 const ModelChanges: FC<{ changes: ModelChange[] }> = ({ changes }) => (
     <ul className="flex flex-col gap-4 text-sm text-theme-text-base">
-        {changes.map(({ date, model, action, change, note, details }) => (
+        {changes.map(({ date, model, action, change, note }) => (
             <li
                 key={model}
                 className="grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]"
@@ -71,13 +70,6 @@ const ModelChanges: FC<{ changes: ModelChange[] }> = ({ changes }) => (
                 <div className="col-span-3 min-w-0 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
                     <p>{renderWithLinks(change)}</p>
                     {note && <p className="mt-1">{renderWithLinks(note)}</p>}
-                    {details && (
-                        <ul className="mt-1.5 list-disc space-y-1 pl-5 marker:text-theme-text-soft">
-                            {details.map((detail) => (
-                                <li key={detail}>{renderWithLinks(detail)}</li>
-                            ))}
-                        </ul>
-                    )}
                 </div>
             </li>
         ))}
@@ -104,23 +96,13 @@ const RECENT_MODEL_CHANGES: ModelChange[] = [
         date: "2026-10-01",
         model: "MAI Image 2.5 Flash",
         action: "Updated",
-        change: "The 2.5 Flash model ID still works, but now uses MAI Image 2.6 Flash and its pricing. [Browse models](/models).",
-        details: [
-            "Use microsoft/mai-image-2.6-flash for new integrations.",
-            "Nova Canvas and Nova Reel retired on September 30. Their model IDs and aliases no longer accept requests.",
-        ],
+        change: "Uses 2.6 Flash and its pricing. [PR #15492](https://github.com/pollinations/pollinations/pull/15492).",
     },
     {
         date: "2026-09-24",
         model: "DeepSeek, Kimi, GLM, Muse",
         action: "Updated",
-        change: "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
-        details: [
-            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
-            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
-            "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
-            "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
-        ],
+        change: "Providers, pricing and Paid Pollen access changed. [PR #15361](https://github.com/pollinations/pollinations/pull/15361).",
     },
 ];
 

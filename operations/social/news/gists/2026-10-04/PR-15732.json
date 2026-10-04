@@ -1,0 +1,35 @@
+{
+  "pr_number": 15732,
+  "title": "feat: video and community model quests; retire three low-return quests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15732",
+  "merged_at": "2026-10-04T08:38:32Z",
+  "labels": [
+    "REVENUE"
+  ],
+  "pr_body_excerpt": "- Adds \"Use a video model\" and \"Try a community model\" (0.25 Quest Pollen each, Setup).\n- Adds \"Your community model gets used\" (2 Quest Pollen, Grow) once others spend >0.5 Paid Pollen across the publisher's community models. Own calls, Quest Pollen and agents don't count.\n- Retires three quests that pay out without moving revenue (Addresses #16008). Existing rewards stay visible and claimable:\n\n| Quest | Why |\n|---|---|\n| Senior dev (1 P) | Pays for account age: 6.4k Pollen paid out, 41% never claimed, claimers convert at the first-API-key rate |\n| Your app is gaining users (3 P) | 0 of 17 claimers paid within 30 days; \"Paid Pollen is flowing\" already rewards real use |\n| Create an agent that gets used (2 P) | Agent use is mostly internal; can't be tied to paid use without a gen change |\n\n- Extends `quest_model_modalities` / `quest_agent_usage`; no D1 or gen changes.\n- Verified: quest tests 55/55, Biome. Tinybird staging deployment #175 is created (not promoted); pinned requests return the new columns. Both MVs rebuild from the last 3 months, so older unclaimed flags drop.\n\n**Deploy order:** promote Tinybird staging, deploy production, then promote the Worker.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0173LR1AQTLF2njvmaJQD3BS\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "More paths through the garden",
+    "blurb": "Video models and community models get their own Quests. Publish a model that other people use, and there’s a Grow Quest for that too.",
+    "summary": "Adds 0.25-Pollen Setup Quests for using a video model and trying a community model, plus a 2-Pollen Grow Quest when others spend more than 0.5 Paid Pollen across a publisher’s community models; three older Quests retire while earned rewards remain claimable.",
+    "impact": "Video and community-model use gain new Quest rewards, and publishers can earn 2 Pollen from qualifying use by others; self-calls, agents, and Quest Pollen do not count toward that threshold.",
+    "keywords": [
+      "quests",
+      "Pollen",
+      "video models",
+      "community models",
+      "model publishing"
+    ],
+    "visual_concept": "Depict the new Quest paths as a cozy garden: a video screen, a community-made model sprout, and a small Pollen reward growing when visiting bees use it. Polli tends the model sprout in a tiny gardener’s hat; keep the scene focused on sharing and growth rather than billing.",
+    "image_prompt": "In a cozy pixel garden, Polli in a tiny gardener’s hat waters a community-model sprout beside a little video screen, while visiting bees help it bloom into lime green (#ecf874) Pollen flowers against soft pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-15732.jpg",
+    "prompt": "In a cozy pixel garden, Polli in a tiny gardener’s hat waters a community-model sprout beside a little video screen, while visiting bees help it bloom into lime green (#ecf874) Pollen flowers against soft pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-04T08:39:31.041516+00:00"
+}

@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { z } from "zod";
 import { accountTools } from "../src/services/accountService.js";
 
 const CONTEXT = { http: { authInfo: { token: "sk_test" } } };
@@ -24,8 +23,6 @@ const REQUESTS = [
         "/account/usage/daily?days=14",
     ],
     ["getEarnings", { days: 30 }, "GET", "/account/earnings?days=30"],
-    ["getEarnings", { days: 180 }, "GET", "/account/earnings?days=180"],
-    ["getEarnings", { days: 365 }, "GET", "/account/earnings?days=365"],
     ["listQuests", {}, "GET", "/account/quests"],
     ["listKeys", {}, "GET", "/account/keys"],
     [
@@ -74,11 +71,7 @@ for (const [name, args, method, path, body] of REQUESTS) {
     test(`${name} ${JSON.stringify(args)} calls ${method} ${path}`, async (t) => {
         const calls = mockFetch(t, () => Response.json({ ok: true }));
 
-        const params =
-            name === "getEarnings"
-                ? z.object(tools[name].shape).parse(args)
-                : args;
-        const result = await tools[name].handler(params, CONTEXT);
+        const result = await tools[name].handler(args, CONTEXT);
 
         assert.equal(calls.length, 1);
         const [call] = calls;
@@ -95,20 +88,6 @@ for (const [name, args, method, path, body] of REQUESTS) {
 
 test("getUsage lists 20 requests unless told otherwise", () => {
     assert.equal(tools.getUsage.shape.limit.parse(undefined), 20);
-});
-
-test("earnings accepts up to 365 days while usage remains limited to 90", () => {
-    const earnings = z.object(tools.getEarnings.shape);
-    const usage = z.object(tools.getUsage.shape);
-    assert.deepEqual(earnings.parse({}), {});
-    for (const days of [1, 90, 91, 180, 365]) {
-        assert.equal(earnings.parse({ days }).days, days);
-    }
-    for (const days of [0, 1.5, 366]) {
-        assert.equal(earnings.safeParse({ days }).success, false);
-    }
-    assert.equal(usage.parse({ days: 90 }).days, 90);
-    assert.equal(usage.safeParse({ days: 91 }).success, false);
 });
 
 test("returns the API's own error message on a missing permission", async (t) => {

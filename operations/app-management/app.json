@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "Tunemory",
+    "url": "https://tomdacatto.github.io/pollinations-tunemory",
+    "description": "Turn a fact, formula or word list into a short catchy song that helps you remember it. Paste your notes, pick a style, and get lyrics that keep every fact and number (checked in code before they are s",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-tunemory",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15743",
+    "approvedDate": "2026-10-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎮",
     "name": "Liar's Supper",
     "url": "https://xiaotian1171.github.io/liars-supper",

@@ -2,6 +2,7 @@ import { runtimeModule, sdkModules } from "virtual:code-agent-sdk";
 import { generateText, jsonSchema, tool } from "ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createWorker as createComposioWorker } from "../../apps/composio-mcp/worker.js";
+import { functionOutputText } from "../../shared/schemas/response-function-items.ts";
 import {
     deleteCodeAgent,
     deployCodeAgent,
@@ -122,11 +123,7 @@ describe("code agent AI SDK", () => {
                     (message) => message.role === "tool",
                 ).content;
                 if (fail) expect(result).toContain("Lookup unavailable");
-                // History refers to the call by its mcp_call item ID.
-                else
-                    expect(result).toMatch(
-                        /^(lookup-call|mcp_[\w-]+): weather = 42$/,
-                    );
+                else expect(result).toBe("lookup-call: weather = 42");
             }
             const message =
                 modelCalls === 1
@@ -229,29 +226,29 @@ describe("code agent AI SDK", () => {
                 runtimeEnv,
             ),
         );
-        expect(first.output.filter((item) => item.type === "mcp_call")).toEqual(
-            [
-                expect.objectContaining({
-                    server_label: "agent",
-                    name: "lookup",
-                    arguments: '{"topic":"weather"}',
-                    ...(fail
-                        ? {
-                              status: "failed",
-                              output: null,
-                              error: {
-                                  type: "mcp_tool_execution_error",
-                                  content: "Lookup unavailable",
-                              },
-                          }
-                        : {
-                              status: "completed",
-                              output: '{"answer":42}',
-                              error: null,
-                          }),
-                }),
-            ],
-        );
+        expect(
+            first.output.filter((item) => item.type === "function_call_output"),
+        ).toEqual([
+            expect.objectContaining({
+                call_id: "lookup-call",
+                output: [
+                    {
+                        type: "input_text",
+                        text: fail
+                            ? JSON.stringify({
+                                  isError: true,
+                                  content: [
+                                      {
+                                          type: "text",
+                                          text: "Lookup unavailable",
+                                      },
+                                  ],
+                              })
+                            : '{"answer":42}',
+                    },
+                ],
+            }),
+        ]);
         const replay = await responseBody(
             await worker.fetch(
                 request({
@@ -427,12 +424,13 @@ describe("code agent AI SDK", () => {
         expect(body.usage.total_tokens).toBe(12);
         expect(mcpCalls).toBe(16);
         expect(modelCalls).toBe(2);
-        const calls = body.output.filter((item) => item.type === "mcp_call");
-        expect(calls).toHaveLength(17);
-        expect(calls[16]).toMatchObject({
-            status: "failed",
-            error: { content: expect.stringContaining("maximum of 16") },
-        });
+        const results = body.output.filter(
+            (item) => item.type === "function_call_output",
+        );
+        expect(results).toHaveLength(17);
+        expect(
+            JSON.parse(functionOutputText(results[16].output)),
+        ).toMatchObject({ isError: true });
     });
 });
 

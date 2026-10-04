@@ -1,9 +1,5 @@
+import { parseFunctionName } from "@shared/agents/function-items.ts";
 import {
-    type McpCall,
-    parseFunctionName,
-} from "@shared/agents/function-items.ts";
-import {
-    mcpErrorText,
     safeMcpModelOutput,
     safeMcpOutput,
 } from "@shared/agents/mcp-output.ts";
@@ -13,6 +9,53 @@ import {
     type ResponseFunctionCall,
     type ResponseFunctionCallOutput,
 } from "@shared/schemas/response-function-items.ts";
+import { z } from "zod";
+
+const McpCallErrorSchema = z.discriminatedUnion("type", [
+    z.object({
+        type: z.enum(["mcp_protocol_error", "http_error"]),
+        code: z.number().int(),
+        message: z.string(),
+    }),
+    z.object({
+        type: z.literal("mcp_tool_execution_error"),
+        content: z.json(),
+    }),
+]);
+
+export const McpCallSchema = z.object({
+    type: z.literal("mcp_call"),
+    id: z.string().min(1),
+    server_label: z.string().min(1),
+    name: z.string().min(1),
+    arguments: z.string(),
+    status: z
+        .enum(["in_progress", "completed", "incomplete", "calling", "failed"])
+        .default("completed"),
+    output: z.string().nullable().default(null),
+    error: McpCallErrorSchema.nullable().default(null),
+});
+
+export type McpCall = z.infer<typeof McpCallSchema>;
+type McpCallError = z.infer<typeof McpCallErrorSchema>;
+
+/** Keep Chat rendering and model-visible replay consistent with structured errors. */
+function mcpErrorText(error: McpCallError): string {
+    if (error.type !== "mcp_tool_execution_error") return error.message;
+    const content = error.content;
+    if (
+        content &&
+        typeof content === "object" &&
+        "content" in content &&
+        Array.isArray(content.content)
+    ) {
+        const output = safeMcpModelOutput({ output: content });
+        return output.type === "text"
+            ? output.value
+            : output.value.map((part) => part.text).join("\n");
+    }
+    return typeof content === "string" ? content : JSON.stringify(content);
+}
 
 function escapeHtml(value: string): string {
     return value.replace(
@@ -119,7 +162,6 @@ export function formatFunctionCall(
             status: "completed",
             output: functionOutputText(result.output),
             error: null,
-            approval_request_id: null,
         },
         seenUrls,
         Boolean(tool),

@@ -19,12 +19,8 @@ import {
     ResponseFunctionCallOutputSchema,
     ResponseFunctionCallSchema,
 } from "../schemas/response-function-items.ts";
-import {
-    McpCallSchema,
-    parseFunctionName,
-    serverToolName,
-} from "./function-items.ts";
-import { mcpErrorText, safeMcpModelOutput } from "./mcp-output.ts";
+import { parseFunctionName } from "./function-items.ts";
+import { safeMcpModelOutput } from "./mcp-output.ts";
 import { type AgentOutputItem, collectOutput } from "./output.ts";
 import type {
     AgentGenerationSettings,
@@ -40,6 +36,12 @@ type PromptCacheProviderOptions = {
         prompt_cache_breakpoint: { mode: "explicit" };
     };
 };
+
+// collectOutput serializes executed tool failures in this shape.
+const ToolErrorOutputSchema = z.object({
+    isError: z.literal(true),
+    content: z.array(z.object({ type: z.literal("text"), text: z.string() })),
+});
 
 export class AgentResponsesRequestError extends Error {
     constructor(
@@ -174,59 +176,6 @@ function userContent(content: unknown): UserMessage["content"] {
     }) as UserMessage["content"];
 }
 
-function callInput(args: string): JsonObject {
-    try {
-        return objectValue(JSON.parse(args), "input.arguments");
-    } catch {
-        invalidRequest(
-            "Function call arguments must be a JSON object",
-            "input.arguments",
-        );
-    }
-}
-
-/** Turn a replayed tool result back into what the model saw when it ran. */
-async function toolResultOutput(
-    call: { call_id: string; name: string; arguments: string },
-    outputText: string,
-    tools?: ToolSet,
-): Promise<ToolResultPart["output"]> {
-    let output: z.infer<ReturnType<typeof z.json>>;
-    try {
-        output = z.json().parse(JSON.parse(outputText));
-    } catch {
-        // Caller functions may return ordinary text, not only JSON.
-        output = outputText;
-    }
-    if (parseFunctionName(call.name)) {
-        const result = output as JsonObject | null;
-        if (
-            !result ||
-            typeof result !== "object" ||
-            !Array.isArray(result.content) ||
-            (result.isError !== undefined &&
-                typeof result.isError !== "boolean")
-        ) {
-            invalidRequest(
-                "Function output must contain a JSON MCP result",
-                "input.output",
-            );
-        }
-        return safeMcpModelOutput({ output });
-    }
-    const toModelOutput = tools?.[call.name]?.toModelOutput;
-    if (toModelOutput) {
-        return toModelOutput({
-            toolCallId: call.call_id,
-            input: JSON.parse(call.arguments),
-            output,
-        });
-    }
-    return typeof output === "string"
-        ? { type: "text", value: output }
-        : { type: "json", value: output };
-}
-
 async function inputMessages(
     request: CreateResponseRequest,
     tools?: ToolSet,
@@ -273,7 +222,18 @@ async function inputMessages(
             }
             const call = parsed.data;
             toolCallIds.add(call.call_id);
-            const input = callInput(call.arguments);
+            let input: JsonObject;
+            try {
+                input = objectValue(
+                    JSON.parse(call.arguments),
+                    "input.arguments",
+                );
+            } catch {
+                invalidRequest(
+                    "Function call arguments must be a JSON object",
+                    "input.arguments",
+                );
+            }
             if (!pendingCalls.size) {
                 calls = [];
                 results = [];
@@ -304,70 +264,62 @@ async function inputMessages(
                     "input",
                 );
             }
-            const output = await toolResultOutput(
-                call,
-                functionOutputText(parsed.data.output),
-                tools,
-            );
-            results.push({
-                type: "tool-result",
-                toolCallId: call.call_id,
-                toolName: call.name,
-                output,
-            });
-            pendingCalls.delete(call.call_id);
-            continue;
-        }
-        if (item.type === "mcp_call") {
-            const parsed = McpCallSchema.safeParse(item);
-            if (
-                !parsed.success ||
-                !["completed", "failed"].includes(parsed.data.status) ||
-                toolCallIds.has(parsed.data.id)
-            ) {
+            const isMcp = Boolean(parseFunctionName(call.name));
+            const outputText = functionOutputText(parsed.data.output);
+            let output: z.infer<ReturnType<typeof z.json>>;
+            try {
+                output = z.json().parse(JSON.parse(outputText));
+            } catch {
+                // Caller functions may return ordinary text, not only JSON.
+                output = outputText;
+            }
+            try {
+                if (isMcp) {
+                    const result = objectValue(output, "input.output");
+                    if (
+                        !Array.isArray(result.content) ||
+                        (result.isError !== undefined &&
+                            typeof result.isError !== "boolean")
+                    ) {
+                        throw new Error("Invalid MCP result");
+                    }
+                }
+            } catch {
                 invalidRequest(
-                    "Tool history must contain unique finished MCP calls",
-                    "input",
+                    "Function output must contain a JSON MCP result",
+                    "input.output",
                 );
             }
-            const mcpCall = parsed.data;
-            toolCallIds.add(mcpCall.id);
-            const call = {
-                call_id: mcpCall.id,
-                name: serverToolName(mcpCall),
-                arguments: mcpCall.arguments,
-            };
-            const input = callInput(call.arguments);
-            if (!pendingCalls.size) {
-                calls = [];
-                results = [];
-                messages.push({ role: "assistant", content: calls });
-                messages.push({ role: "tool", content: results });
+            let modelOutput: ToolResultPart["output"] =
+                typeof output === "string"
+                    ? { type: "text", value: output }
+                    : { type: "json", value: output };
+            const toModelOutput = tools?.[call.name]?.toModelOutput;
+            const toolError = ToolErrorOutputSchema.safeParse(output);
+            if (isMcp) {
+                modelOutput = safeMcpModelOutput({ output });
+            } else if (toolError.success) {
+                // Like the SDK, bypass the successful-output formatter on errors.
+                modelOutput = {
+                    type: "error-text",
+                    value: toolError.data.content
+                        .map((part) => part.text)
+                        .join("\n"),
+                };
+            } else if (toModelOutput) {
+                modelOutput = await toModelOutput({
+                    toolCallId: call.call_id,
+                    input: JSON.parse(call.arguments),
+                    output,
+                });
             }
-            calls.push({
-                type: "tool-call",
-                toolCallId: call.call_id,
-                toolName: call.name,
-                input,
-            });
             results.push({
                 type: "tool-result",
                 toolCallId: call.call_id,
                 toolName: call.name,
-                output:
-                    mcpCall.error || mcpCall.status === "failed"
-                        ? {
-                              type: "error-text",
-                              value: mcpCall.error
-                                  ? mcpErrorText(mcpCall.error)
-                                  : "Tool failed",
-                          }
-                        : await toolResultOutput(
-                              call,
-                              mcpCall.output ?? "null",
-                              tools,
-                          ),
+                output: modelOutput,
             });
+            pendingCalls.delete(call.call_id);
             continue;
         }
         if (pendingCalls.size) {
@@ -703,7 +655,7 @@ function streamResponse(
                 usage: null,
                 ...responseConfiguration(request, callerTools),
             };
-            const collected = collectOutput(callerTools, send);
+            const collected = collectOutput(send);
             // Do not block stream initialization on the run: cancel() must
             // abort an in-flight model/tool call, not wait for it to finish.
             void (async () => {
@@ -723,7 +675,7 @@ function streamResponse(
                         output,
                         responseId,
                         createdAt,
-                        collected.finish(output.finishReason),
+                        collected.finish(output.finishReason, callerTools),
                         callerTools,
                     );
                     send(
@@ -793,7 +745,7 @@ export async function handleAgentResponsesRequest(
                 callerTools,
             );
         }
-        const collected = collectOutput(callerTools);
+        const collected = collectOutput();
         const output = await runner({
             messages,
             settings,
@@ -808,7 +760,7 @@ export async function handleAgentResponsesRequest(
                 output,
                 `resp_${crypto.randomUUID()}`,
                 Math.floor(Date.now() / 1000),
-                collected.finish(output.finishReason),
+                collected.finish(output.finishReason, callerTools),
                 callerTools,
             ),
         );

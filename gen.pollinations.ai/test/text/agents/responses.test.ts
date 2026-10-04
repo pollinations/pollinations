@@ -165,7 +165,7 @@ describe("shared agent Responses adapter", () => {
                             content: [
                                 {
                                     type: "tool-call",
-                                    toolCallId: expect.stringMatching(/^mcp_/),
+                                    toolCallId: "lookup-call",
                                     toolName: "lookup",
                                     input: { question: "test" },
                                 },
@@ -176,7 +176,7 @@ describe("shared agent Responses adapter", () => {
                             content: [
                                 {
                                     type: "tool-result",
-                                    toolCallId: expect.stringMatching(/^mcp_/),
+                                    toolCallId: "lookup-call",
                                     toolName: "lookup",
                                     output: { type: "json", value: toolOutput },
                                 },
@@ -223,13 +223,19 @@ describe("shared agent Responses adapter", () => {
                     content: [{ text: "Looking up the answer." }],
                 },
                 {
-                    type: "mcp_call",
-                    server_label: "agent",
+                    type: "function_call",
                     name: "lookup",
-                    arguments: JSON.stringify({ question: "test" }),
-                    status: "completed",
-                    output: JSON.stringify(toolOutput),
-                    error: null,
+                    call_id: "lookup-call",
+                },
+                {
+                    type: "function_call_output",
+                    call_id: "lookup-call",
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify(toolOutput),
+                        },
+                    ],
                 },
                 { type: "message", content: [{ text: "The answer is 42." }] },
             ],
@@ -281,10 +287,15 @@ describe("shared agent Responses adapter", () => {
         const body = await response.json<{ output: unknown[] }>();
         expect(body).toMatchObject({
             output: [
+                { type: "function_call", name: "lookup" },
                 {
-                    type: "mcp_call",
-                    name: "lookup",
-                    output: JSON.stringify(toolOutput),
+                    type: "function_call_output",
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify(toolOutput),
+                        },
+                    ],
                 },
             ],
         });
@@ -1162,9 +1173,9 @@ describe("managed agent Responses runtime", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("reports parallel server tools as mcp_call items with sanitized results in JSON, events and replay", async () => {
+    it("preserves parallel function pairs, sanitized results and ordering in JSON, events and replay", async () => {
         const events: Record<string, unknown>[] = [];
-        const collected = collectOutput(new Set(), (type, payload) => {
+        const collected = collectOutput((type, payload) => {
             events.push(structuredClone({ type, ...payload }));
         });
         collected.onPart({ type: "text-delta", text: "Checking both tools." });
@@ -1211,62 +1222,66 @@ describe("managed agent Responses runtime", () => {
         const output = collected.finish("stop");
         expect(output.map((item) => item.type)).toEqual([
             "message",
-            "mcp_call",
-            "mcp_call",
+            "function_call",
+            "function_call",
+            "function_call_output",
+            "function_call_output",
             "message",
         ]);
         expect(new Set(output.map((item) => item.id)).size).toBe(output.length);
-        expect(output[1]).toEqual({
-            type: "mcp_call",
-            id: expect.stringMatching(/^mcp_/),
-            server_label: "pollinations",
-            name: "search",
+        expect(output[1]).toMatchObject({
+            id: expect.stringMatching(/^fc_/),
+            call_id: "call_search",
+            name: "mcp__pollinations__search",
             arguments: '{"prompt":"Test"}',
-            status: "failed",
-            output: null,
-            error: {
-                type: "mcp_tool_execution_error",
-                content: "Search unavailable",
-            },
-            approval_request_id: null,
-        });
-        expect(output[2]).toMatchObject({
-            server_label: "pollinations",
-            name: "image",
             status: "completed",
-            error: null,
         });
-        expect(
-            JSON.parse(
-                String(output[2].type === "mcp_call" && output[2].output),
-            ),
-        ).toEqual({
-            content: [
-                { type: "text", text: "Generated image" },
+        expect(output[3]).toMatchObject({
+            id: expect.stringMatching(/^fco_/),
+            call_id: "call_image",
+            status: "completed",
+        });
+        expect(output[4]).toMatchObject({
+            call_id: "call_search",
+            status: "completed",
+            output: [
                 {
-                    type: "resource_link",
-                    uri: "https://media.test/image.png",
-                    name: "Image",
-                    mimeType: "image/png",
-                },
-                {
-                    type: "text",
-                    text: "[image output omitted; use an HTTPS resource link]",
+                    type: "input_text",
+                    text: JSON.stringify({
+                        isError: true,
+                        content: [{ type: "text", text: "Search unavailable" }],
+                    }),
                 },
             ],
         });
         expect(JSON.stringify(output)).not.toContain("PRIVATE_");
-        // Each tool item opens when called and closes with its own result.
-        expect(
-            events
-                .filter((event) => event.type === "response.output_item.added")
-                .map((event) => (event.item as Record<string, unknown>).status),
-        ).toEqual(Array(4).fill("in_progress"));
         expect(
             events
                 .filter((event) => event.type === "response.output_item.done")
                 .map((event) => event.item),
-        ).toEqual([output[0], output[2], output[1], output[3]]);
+        ).toEqual(output);
+        expect(
+            events.filter(
+                (event) =>
+                    event.type === "response.function_call_arguments.done",
+            ),
+        ).toHaveLength(2);
+        expect(
+            events
+                .filter(
+                    (event) =>
+                        event.type === "response.function_call_arguments.delta",
+                )
+                .map((event) => event.delta),
+        ).toEqual(['{"prompt":"Test"}', '{"prompt":"Test"}']);
+        expect(
+            events.some((event) => String(event.type).includes("mcp_call")),
+        ).toBe(false);
+        expect(
+            events
+                .filter((event) => event.type === "response.output_item.added")
+                .map((event) => (event.item as Record<string, unknown>).status),
+        ).toEqual(Array(6).fill("in_progress"));
 
         const fetchMock = vi.fn(
             async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -1277,34 +1292,29 @@ describe("managed agent Responses runtime", () => {
                 const body = (await upstream.json()) as {
                     messages: Record<string, unknown>[];
                 };
-                expect(
-                    body.messages
-                        .filter((message) => message.tool_calls)
-                        .map((message) => message.tool_calls),
-                ).toMatchObject([
-                    [
-                        {
-                            id: output[1].id,
-                            function: { name: "mcp__pollinations__search" },
-                        },
-                    ],
-                    [
-                        {
-                            id: output[2].id,
-                            function: { name: "mcp__pollinations__image" },
-                        },
-                    ],
+                const assistant = body.messages.find(
+                    (message) => message.tool_calls,
+                );
+                expect(assistant?.tool_calls).toMatchObject([
+                    {
+                        id: "call_search",
+                        function: { name: "mcp__pollinations__search" },
+                    },
+                    {
+                        id: "call_image",
+                        function: { name: "mcp__pollinations__image" },
+                    },
                 ]);
                 const toolResults = body.messages.filter(
                     (message) => message.role === "tool",
                 );
                 expect(
                     toolResults.map((message) => message.tool_call_id),
-                ).toEqual([output[1].id, output[2].id]);
-                expect(toolResults[0].content).toContain("Search unavailable");
-                expect(toolResults[1].content).toContain(
+                ).toEqual(["call_image", "call_search"]);
+                expect(toolResults[0].content).toContain(
                     "https://media.test/image.png",
                 );
+                expect(toolResults[1].content).toContain("Search unavailable");
                 return Response.json({
                     choices: [
                         {
@@ -1324,9 +1334,19 @@ describe("managed agent Responses runtime", () => {
             },
         );
         vi.stubGlobal("fetch", fetchMock);
+        // Open WebUI replays stored items without status, and outputs
+        // without id; the Responses API makes both optional on input.
+        const replayed = output.map((item) => {
+            const { status: _status, ...rest } = item as Record<
+                string,
+                unknown
+            >;
+            if (rest.type === "function_call_output") delete rest.id;
+            return rest;
+        });
         const response = await handlePromptAgentResponsesRequest(
             request({
-                input: [...output, { role: "user", content: "Continue" }],
+                input: [...replayed, { role: "user", content: "Continue" }],
             }),
             new AbortController().signal,
             RUNTIME,
@@ -1336,24 +1356,10 @@ describe("managed agent Responses runtime", () => {
         expect(await response.json()).toMatchObject({
             usage: { tool_call_counts: {} },
         });
-        for (const input of [
-            [{ ...output[2], status: "in_progress" }],
-            [output[2], output[2]],
-            [{ ...output[2], arguments: "[]" }],
-            [{ ...output[2], output: "plain text" }],
-        ]) {
-            const invalid = await handlePromptAgentResponsesRequest(
-                request({ input }),
-                new AbortController().signal,
-                RUNTIME,
-            );
-            expect(invalid.status).toBe(400);
-        }
-        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it("rejects dangling or duplicate execution results and omits unexecuted invalid attempts", () => {
-        const collected = collectOutput(new Set(["read_file"]));
+        const collected = collectOutput();
         collected.onPart({
             type: "tool-call",
             toolCallId: "invalid",
@@ -1379,6 +1385,9 @@ describe("managed agent Responses runtime", () => {
         };
         collected.onPart(call);
         expect(() => collected.finish("stop")).toThrow("has no result");
+        expect(() =>
+            collected.finish("tool_calls", new Set(["read_file"])),
+        ).toThrow("has no result");
         expect(() => collected.onPart(call)).toThrow("reused a tool call ID");
         const result = {
             type: "tool-result" as const,
@@ -1389,19 +1398,7 @@ describe("managed agent Responses runtime", () => {
         };
         collected.onPart(result);
         expect(() => collected.onPart(result)).toThrow("no matching call");
-        // Caller tools wait for the client, so they need no result here.
-        collected.onPart({
-            type: "tool-call",
-            toolCallId: "client",
-            toolName: "read_file",
-            input: {},
-        });
-        expect(() =>
-            collected.onPart({ ...result, toolCallId: "client" }),
-        ).toThrow("no matching call");
-        expect(collected.finish("tool_calls").map((item) => item.type)).toEqual(
-            ["mcp_call", "function_call"],
-        );
+        expect(collected.finish("stop")).toHaveLength(2);
     });
 
     it("rejects state and unsupported parameters", async () => {

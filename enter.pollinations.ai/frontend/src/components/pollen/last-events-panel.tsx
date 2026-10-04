@@ -12,6 +12,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
+import { useLocation } from "@tanstack/react-router";
 import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
@@ -206,7 +207,15 @@ export const LastEventsPanel: FC = () => {
         loading: true,
         error: null,
     });
+    // The panel is reused across client-side navigations, so mounting alone
+    // does not re-fetch. Without this, activity that happened while the user
+    // was on another page only appeared after a manual browser refresh.
+    const location = useLocation();
+    // Keyed on pathname only: the activity period lives in the search params,
+    // and re-fetching on every period tweak would discard the loaded rows.
+    const navigationKey = location.pathname;
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: navigationKey re-runs the fetch when the user navigates back to this page, so freshly recorded activity appears without a manual browser refresh.
     useEffect(() => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         fetchLastEvents(visibleCount)
@@ -220,7 +229,7 @@ export const LastEventsPanel: FC = () => {
                     error: "Failed to load last events",
                 })),
             );
-    }, [visibleCount]);
+    }, [visibleCount, navigationKey]);
 
     const loadingMore = state.loading && state.rows.length > 0;
 

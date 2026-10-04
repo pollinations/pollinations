@@ -147,10 +147,20 @@ export function createChatCommand() {
                             `${m.role === "user" ? "You" : "AI"}: ${m.content}`,
                     )
                     .join("\n\n");
-                writeFileSync(path, transcript, "utf-8");
+                try {
+                    writeFileSync(path, transcript, "utf-8");
+                } catch (err) {
+                    printError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to save transcript",
+                    );
+                    return false;
+                }
                 if (!isJson) {
                     process.stderr.write(chalk.green(`Saved to ${path}\n`));
                 }
+                return true;
             };
 
             let closed = false;
@@ -206,7 +216,8 @@ export function createChatCommand() {
 
             rl.on("close", () => {
                 closed = true;
-                if (opts.save) saveTranscript(opts.save);
+                if (opts.save && !saveTranscript(opts.save))
+                    process.exitCode = 1;
                 process.exitCode ??= 0;
             });
         });

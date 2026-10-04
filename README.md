@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Whodunnit - a voice murder mystery](https://guest453.github.io/whodunnit) | A first-person 3D browser game: five AI suspects, one killer, and an alibi built to break. The player walks a mansion, questions the suspects out loud (voice input transcribed by Pollinations) or by t | [@Guest453](https://github.com/Guest453) |
 | [🎮 Alibi](https://tomdacatto.github.io/pollinations-alibi) | A voice murder mystery. Four AI suspects, each with their own voice and story: question them out loud (or type), keep a notebook of what each one claims, catch the contradiction in the culprit's alibi | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Whichever](https://kreggscode.github.io/whichever) | A branching story where you set the lens and Jev picks the branch. Type where the story starts and choose what it should be judged against — six presets, or a line of your own. A text model writes thr | [@kreggscode](https://github.com/kreggscode) |
@@ -37,7 +38,6 @@
 | [🖼️ Pollinations for Krita](https://github.com/xiaotian1171/pollinations-krita) | A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🖼️ Pollinations for Figma - AI Image Studio](https://guest453.github.io/pollinations-figma/) | A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi | [@Guest453](https://github.com/Guest453) |
 | [🎮 Pollinations for Godot 4](https://github.com/davealan74/godot-pollinations) | A Godot 4 editor addon that adds a global Pollinations node for GDScript. Call generate_text() , generate_image() and generate_speech() directly from any script to hit gen.pollinations.ai's text, imag | [@davealan74](https://github.com/davealan74) |
-| [🎬 STT](https://fantasyreincarnation1-bit.github.io/my-pollinations-ap) | Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri, | [@fantasyreincarnation1-bit](https://github.com/fantasyreincarnation1-bit) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

@@ -136,6 +136,9 @@ const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     video: "video/*,.mp4,.mov,.webm,.mkv",
     audio: "audio/*,.mp3,.mpeg,.mpga,.m4a,.wav",
 };
+// Most video models take 16:9 or 9:16; the API rejects or adapts others.
+// "" sends no ratio, so the model picks its default.
+const VIDEO_ASPECT_RATIOS = ["", "16:9", "9:16"] as const;
 const AUDIO_UPLOAD_MAX_SIZE_BYTES = 20 * 1024 * 1024;
 const IMAGE_UPLOAD_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -624,6 +627,10 @@ export function Playground() {
     const [width, setWidth] = useState(search.width ?? "");
     const [height, setHeight] = useState(search.height ?? "");
     const [duration, setDuration] = useState(Number(search.duration) || 0);
+    const [aspectRatio, setAspectRatio] = useState(search.aspect ?? "");
+    // Audio models declare no length range, so the API validates the value.
+    const [audioLength, setAudioLength] = useState(search.length ?? "");
+    const [language, setLanguage] = useState(search.language ?? "");
     const [seed, setSeed] = useState(search.seed ?? "");
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
@@ -668,9 +675,12 @@ export function Playground() {
             size: selectedResolution,
             width,
             height,
+            aspect: aspectRatio,
             duration: duration ? String(duration) : undefined,
+            length: audioLength,
             seed,
             voice: selectedVoice,
+            language,
         });
     }, [
         showInUrl,
@@ -681,9 +691,12 @@ export function Playground() {
         selectedResolution,
         width,
         height,
+        aspectRatio,
         duration,
+        audioLength,
         seed,
         selectedVoice,
+        language,
     ]);
 
     // Community models stay off the playground menu: this page pitches the
@@ -804,6 +817,9 @@ export function Playground() {
             : undefined;
     const isAudioTranscription =
         currentAudioEndpoint === "/v1/audio/transcriptions";
+    const showsAudioLength =
+        currentModel?.category === "audio" &&
+        audioTaskForModel(currentModel) === "music-and-sound-effects";
     const audioError =
         currentModel?.category === "audio"
             ? audioInputError(currentModel, prompt, audioFiles[0])
@@ -848,6 +864,8 @@ export function Playground() {
     });
     const videoDuration =
         currentModel?.category === "video" ? mediaSettings.duration : undefined;
+    const videoAspectRatio =
+        currentModel?.category === "video" ? aspectRatio : undefined;
     const isVisualModel =
         currentModel?.category === "image" ||
         currentModel?.category === "video";
@@ -873,6 +891,7 @@ export function Playground() {
                   model: currentModel.id,
                   ...imageSize,
                   resolution: mediaSettings.resolution,
+                  aspectRatio: videoAspectRatio,
                   duration: videoDuration?.value,
                   seed: fixedSeed,
                   key: "YOUR_API_KEY",
@@ -951,6 +970,7 @@ export function Playground() {
                 const response = await client.video(trimmedPrompt, {
                     model: currentModel.id,
                     duration: videoDuration?.value,
+                    aspectRatio: videoAspectRatio || undefined,
                     resolution: mediaSettings.resolution,
                     seed: requestSeed,
                     referenceImage:
@@ -981,6 +1001,12 @@ export function Playground() {
                         prompt: trimmedPrompt,
                         file: audioFiles[0],
                         voice: selectedVoice || undefined,
+                        duration: showsAudioLength
+                            ? Number(audioLength) || undefined
+                            : undefined,
+                        language: isAudioTranscription
+                            ? language.trim() || undefined
+                            : undefined,
                     },
                 );
                 setResult(
@@ -1154,6 +1180,35 @@ export function Playground() {
                     )}
                     {!isAudioTranscription && audioInput}
 
+                    {isAudioTranscription && (
+                        <FieldStack label="Language" className="w-44">
+                            <Input
+                                aria-label="Language"
+                                placeholder="Auto (e.g. en)"
+                                value={language}
+                                onChange={(event) =>
+                                    setLanguage(event.target.value)
+                                }
+                            />
+                        </FieldStack>
+                    )}
+
+                    {showsAudioLength && (
+                        <FieldStack label="Length (seconds)" className="w-44">
+                            <Input
+                                aria-label="Length in seconds"
+                                type="number"
+                                min={0}
+                                step="any"
+                                placeholder="Model default"
+                                value={audioLength}
+                                onChange={(event) =>
+                                    setAudioLength(event.target.value)
+                                }
+                            />
+                        </FieldStack>
+                    )}
+
                     {isReferenceImageListMode && (
                         <FieldStack
                             label="Reference images"
@@ -1306,6 +1361,28 @@ export function Playground() {
                                     </span>
                                 </MediaFact>
                             ) : null}
+
+                            {currentModel.category === "video" && (
+                                <FieldStack
+                                    label="Aspect ratio"
+                                    className="w-fit min-w-0 max-w-full"
+                                >
+                                    <ButtonGroup aria-label="Aspect ratio">
+                                        {VIDEO_ASPECT_RATIOS.map((ratio) => (
+                                            <TabButton
+                                                key={ratio || "auto"}
+                                                active={aspectRatio === ratio}
+                                                size="sm"
+                                                onClick={() =>
+                                                    setAspectRatio(ratio)
+                                                }
+                                            >
+                                                {ratio || "Auto"}
+                                            </TabButton>
+                                        ))}
+                                    </ButtonGroup>
+                                </FieldStack>
+                            )}
 
                             {videoDuration &&
                                 (videoDuration.min === videoDuration.max ? (

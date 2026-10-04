@@ -45,7 +45,19 @@ export function audioInputError(
 export async function generatePlaygroundAudio(
     client: Pollinations,
     model: AudioModel,
-    { prompt, file, voice }: { prompt: string; file?: File; voice?: string },
+    {
+        prompt,
+        file,
+        voice,
+        duration,
+        language,
+    }: {
+        prompt: string;
+        file?: File;
+        voice?: string;
+        duration?: number;
+        language?: string;
+    },
 ): Promise<
     { type: "text"; text: string } | ({ type: "audio" } & AudioBinaryResponse)
 > {
@@ -56,6 +68,7 @@ export async function generatePlaygroundAudio(
         const result = await client.transcribe(file, {
             model: model.id,
             prompt: prompt.trim() || undefined,
+            language,
         });
         return { type: "text", text: result.text || "No transcript" };
     }
@@ -77,7 +90,12 @@ export async function generatePlaygroundAudio(
     const upload = file
         ? await client.upload(file, { name: file.name })
         : undefined;
-    const options = { model: model.id, voice, referenceAudio: upload?.url };
+    const options = {
+        model: model.id,
+        voice,
+        duration,
+        referenceAudio: upload?.url,
+    };
     const result =
         endpoint === "/audio/{text}"
             ? await client.audio(prompt.trim(), options)

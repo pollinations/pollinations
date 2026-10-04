@@ -1,5 +1,4 @@
 import { getLogger } from "@logtape/logtape";
-import { sql } from "drizzle-orm";
 import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import {
@@ -31,10 +30,6 @@ type AppUsageRow = QuestUserRow & {
     paidPollenUsed: number;
 };
 
-type AppReachRow = QuestUserRow & {
-    externalUsers: number;
-};
-
 const firstByopExternalUserQuest: QuestDefinition = {
     id: "app_active",
     title: "First user connects to your app",
@@ -61,7 +56,7 @@ const firstPaidSpendInAppQuest: QuestDefinition = {
     state: "completed",
 };
 
-const tenAppUsersQuest = {
+const tenAppUsersQuest: QuestDefinition = {
     id: "app_users_10",
     title: "Your app is gaining users",
     description:
@@ -70,8 +65,9 @@ const tenAppUsersQuest = {
     scope: "perUser",
     rewardAmount: 3,
     balanceBucket: "tier",
-    goal: { target: 10, unit: "users" },
-} satisfies QuestDefinition;
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
+};
 
 const paidAppUsageQuest = {
     // Keep the existing ID so a threshold change cannot award this twice.
@@ -129,12 +125,9 @@ export async function evaluateUser(
         return { proposals: [] };
     }
 
-    const [appUsage, appReach, listedAppRows] = await Promise.all([
+    const [appUsage, listedAppRows] = await Promise.all([
         rewardableQuestIds.has(paidAppUsageQuest.id)
             ? loadAppUsage(ctx, user)
-            : null,
-        rewardableQuestIds.has(tenAppUsersQuest.id)
-            ? loadAppReach(ctx, user)
             : null,
         rewardableQuestIds.has(appListedQuest.id)
             ? loadListedAppOwner(ctx, user)
@@ -142,11 +135,6 @@ export async function evaluateUser(
     ]);
 
     const proposals = [
-        ...(appReach &&
-        appReach.externalUsers >= tenAppUsersQuest.goal.target &&
-        rewardableQuestIds.has(tenAppUsersQuest.id)
-            ? [{ quest: tenAppUsersQuest, userId: user.id }]
-            : []),
         ...(appUsage &&
         appUsage.paidPollenUsed >= paidAppUsageQuest.goal.target &&
         rewardableQuestIds.has(paidAppUsageQuest.id)
@@ -158,11 +146,9 @@ export async function evaluateUser(
         })),
     ];
     log.info(
-        "APP_GROWTH_PROPOSALS: userId={userId} byopOwnerRows={byop} externalUsers={externalUsers} paidPollenUsed={paidPollenUsed} listedAppRows={listed} questIds={questIds}",
+        "APP_GROWTH_PROPOSALS: userId={userId} paidPollenUsed={paidPollenUsed} listedAppRows={listed} questIds={questIds}",
         {
             userId: user.id,
-            byop: appReach ? 1 : 0,
-            externalUsers: appReach?.externalUsers ?? 0,
             paidPollenUsed: appUsage?.paidPollenUsed ?? 0,
             listed: listedAppRows.length,
             questIds: proposals.map((p) => p.quest.id),
@@ -171,7 +157,6 @@ export async function evaluateUser(
     return {
         proposals,
         progress: [
-            toQuestProgress(tenAppUsersQuest, appReach?.externalUsers ?? 0),
             toQuestProgress(paidAppUsageQuest, appUsage?.paidPollenUsed ?? 0),
         ],
     };
@@ -230,25 +215,4 @@ async function loadListedAppOwner(
     );
 
     return listed ? [{ userId: user.id }] : [];
-}
-
-async function loadAppReach(
-    { db }: QuestEvaluationContext,
-    user: QuestUser,
-): Promise<AppReachRow | null> {
-    const rows = await db.all<AppReachRow>(
-        sql`
-        SELECT
-            app_key.user_id AS userId,
-            COUNT(DISTINCT user_key.user_id) AS externalUsers
-        FROM apikey AS user_key
-        INNER JOIN apikey AS app_key
-            ON app_key.id = user_key.byop_client_key_id
-        WHERE app_key.user_id = ${user.id}
-          AND user_key.user_id != app_key.user_id
-        GROUP BY app_key.user_id
-        LIMIT 1`,
-    );
-
-    return rows.find((row) => row.userId === user.id) ?? null;
 }

@@ -1,0 +1,37 @@
+{
+  "pr_number": 16276,
+  "title": "feat: show model prices in dollars",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16276",
+  "merged_at": "2026-10-04T09:21:42Z",
+  "labels": [
+    "REVENUE",
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Shows every model rate on the Models page in dollars, so people see the price unit next to the price instead of looking it up elsewhere (1 Pollen = $1).\n- Changes the request estimate, its tooltip and the page footnote from \"per pollen\" to \"per $1\".\n- Also applies to the MCP tab and community endpoint price badges, which use the same components.\n- Leaves balance naming (\"Pollen\" row label, \"Paid pollen\" / \"Quest pollen\" chips) unchanged on purpose; that wording is still under discussion.\n\n| Before | After |\n|---|---|\n| `0.15 /M tokens` | `$0.15 /M tokens` |\n| `0.002 /gen` | `$0.002 /gen` |\n| `≈ 500 /pollen` | `≈ 500 /$1` |\n| `About 500 requests per pollen` | `About 500 requests per $1` |\n| `requests /pollen — estimated…` | `requests /$1 — estimated…` |\n\nSplit out of #16273 with identical hunks for these lines, so #16273 merges cleanly afterwards.\n\nAddresses #16011\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_016VqwnftUw8DUP9T1G469kF\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Prices get their dollar signs",
+    "blurb": "Model rates get a dollar sign, and request estimates switch to “per $1.” The unit no longer requires a separate lookup.",
+    "summary": "The Models page adds dollar signs to model rates and changes request estimates, tooltips, and the footnote from “per Pollen” to “per $1,” with the shared price badges also covering MCP and community endpoints; balance labels remain in Pollen.",
+    "impact": "People comparing models can read rates such as “$0.15 /M tokens” and estimates such as “≈ 500 /$1” directly, without looking up the 1 Pollen = $1 conversion.",
+    "keywords": [
+      "model prices",
+      "dollars",
+      "request estimates",
+      "Models page",
+      "MCP",
+      "community endpoints"
+    ],
+    "visual_concept": "The pollinations.ai Models page becomes a cozy garden price board: clear dollar-denominated tags hang from code-plants, with a small requests-per-$1 sign nearby. Polli, wearing tiny accountant glasses, checks the tags while a CRT monitor robot holds the board; Pollen balance labels stay separate from the price signs.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli in tiny accountant glasses checks dollar-denominated price tags on code-plants while a friendly chunky CRT monitor robot holds a board reading “$0.15 /M tokens” and “≈ 500 /$1.” The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green #ecf874, warm cream and mint, with dark purple #110518 lettering and a soft CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16276.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli in tiny accountant glasses checks dollar-denominated price tags on code-plants while a friendly chunky CRT monitor robot holds a board reading “$0.15 /M tokens” and “≈ 500 /$1.” The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green #ecf874, warm cream and mint, with dark purple #110518 lettering and a soft CRT glow."
+  },
+  "generated_at": "2026-10-04T09:22:42.705847+00:00"
+}

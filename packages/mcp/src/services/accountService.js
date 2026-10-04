@@ -153,9 +153,8 @@ export const accountTools = [
                 .number()
                 .int()
                 .min(1)
-                .max(90)
                 .optional()
-                .describe("Rolling window in days, max 90"),
+                .describe("Rolling window in days"),
         },
         getEarnings,
     ],

@@ -1,0 +1,34 @@
+{
+  "pr_number": 16352,
+  "title": "fix(sdk): retain saved connection after failed reauthorization",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16352",
+  "merged_at": "2026-10-04T10:54:51Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16349\n\n- Restores the saved SDK connection before processing a callback, so failed reauthorization exposes its error without dropping the prior in-memory key.\n- Successful exchange still replaces the key; no-saved-key failures remain disconnected and callback cleanup is unchanged.\n- Extends the existing provider failure table and successful-exchange controls. Three regressions fail before the fix; all 30 React SDK tests and 118 SDK tests pass afterward.\n- Verification: strict typecheck, ESM/CJS/browser/declaration builds, Biome, independent provider tests, and native loopback exchange checks pass. Synthetic storage/responses only; no live account or Pollen changes.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The old key stays put",
+    "blurb": "A failed reauthorization can report its error without knocking out a connection that was already working. PolliProvider keeps the saved key in place until a successful exchange replaces it.",
+    "summary": "React SDK PolliProvider restores the saved connection before processing a reauthorization callback, so a failed exchange reports its error while preserving the prior in-memory key.",
+    "impact": "Apps using PolliProvider retain their existing connection after failed reauthorization; a successful exchange still replaces the key, while failures without a saved key remain disconnected.",
+    "keywords": [
+      "React SDK",
+      "PolliProvider",
+      "reauthorization",
+      "connection state",
+      "callback",
+      "error handling"
+    ],
+    "visual_concept": "Depict the React SDK's saved connection as a small key resting safely beside a retro terminal while an unsuccessful callback arrives as an error note. Polli, wearing a tiny tool belt, keeps the key in place and reads the note; code-plants and a lime-green glow make the scene feel calm rather than alarming.",
+    "image_prompt": "In a cozy pixel art garden workshop, Polli reads a small callback error note at a retro terminal while keeping a little saved-connection key safe beside a code-plant; she wears a tiny tool belt and looks quietly pleased that the key stayed put. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), a warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16352.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli reads a small callback error note at a retro terminal while keeping a little saved-connection key safe beside a code-plant; she wears a tiny tool belt and looks quietly pleased that the key stayed put. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-04T10:56:15.696793+00:00"
+}

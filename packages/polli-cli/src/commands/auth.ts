@@ -139,7 +139,7 @@ export async function loginWithDeviceFlow(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             client_id: LOGIN_CLIENT_ID,
-            scope: "generate profile usage keys",
+            scope: "generate profile usage keys machines",
         }),
     }).catch((err) => {
         printError(

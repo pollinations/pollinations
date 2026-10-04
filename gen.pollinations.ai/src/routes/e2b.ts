@@ -1,6 +1,7 @@
 import { extractApiKey } from "@shared/auth/api-key.ts";
-import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
+import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { handleError } from "@shared/error.ts";
@@ -169,8 +170,9 @@ async function requireFunds(c: E2bContext, price: number) {
             `API key budget too low for this sandbox lease (${price} pollen). Increase the key budget at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}; topping up the wallet does not increase this limit.`,
         );
     }
-    const balance = await getUserBalance(
+    const balance = await getFundedUserBalance(
         drizzle(c.env.DB),
+        c.env.DB,
         c.var.auth.requireUser().id,
     );
     if (!canCoverEstimatedCharge(balance, price)) {

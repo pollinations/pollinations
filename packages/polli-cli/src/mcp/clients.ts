@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { isMap, isScalar, parseDocument } from "yaml";
+import { isMap, parseDocument } from "yaml";
 import {
     commandExists,
     readTextIfExists,
@@ -264,14 +264,8 @@ const yamlClient = (adapter: {
         if (JSON.stringify(entries) === JSON.stringify(before)) {
             return { installed: ownedEntryNames(entries), removed };
         }
-        const existing = doc.get(table, true);
-        if (isScalar(existing)) {
-            const mapping = doc.createNode({});
-            mapping.comment = existing.comment;
-            mapping.commentBefore = existing.commentBefore;
-            mapping.spaceBefore = existing.spaceBefore;
-            doc.set(table, mapping);
-        }
+        // A bare `mcp_servers:` has no mapping to write into yet.
+        if (doc.get(table) == null) doc.set(table, doc.createNode({}));
         for (const name of Object.keys(before)) {
             if (!(name in entries)) doc.deleteIn([table, name]);
         }

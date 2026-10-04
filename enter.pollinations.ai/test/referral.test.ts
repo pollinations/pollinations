@@ -9,7 +9,7 @@ for (const ref of [
     "agent_low_balance_topup",
     "agent_low_balance_quests",
     "agent_key_budget",
-    "agent_model_permission",
+    "agent_grant",
 ]) {
     test(`tracks the ${ref} referral`, async ({ mocks }) => {
         await mocks.enable("tinybird");

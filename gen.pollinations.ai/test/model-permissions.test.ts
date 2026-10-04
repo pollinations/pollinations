@@ -18,11 +18,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
-import {
-    type AuthEnv,
-    authFromSnapshot,
-    keyPermissionsLink,
-} from "../src/middleware/auth.ts";
+import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -206,7 +202,7 @@ test("restored auth snapshots normalize aliases once without expanding model or 
     const forbidden = await app.request("/other%2Fcustom");
     expect(forbidden.status).toBe(403);
     expect(await forbidden.text()).toBe(
-        "Model 'other/custom' is not allowed for this API key. Allow this model at https://enter.pollinations.ai/grant?id=test&model=other%2Fcustom",
+        "Model 'other/custom' is not allowed for this API key. Allow it at https://enter.pollinations.ai/grant?id=test&model=other%2Fcustom&ref=agent_grant",
     );
     expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
         403,
@@ -311,7 +307,7 @@ test("restored auth allows old and future names without expanding account or com
         const res = await app.request(`/${encodeURIComponent(model)}`);
         expect(res.status).toBe(403);
         expect(await res.text()).toBe(
-            `Model '${model}' is not allowed for this API key. Allow this model at https://enter.pollinations.ai/grant?id=test&model=${encodeURIComponent(model === "flux" ? resolveModelName(model) : model)}`,
+            `Model '${model}' is not allowed for this API key. Allow it at https://enter.pollinations.ai/grant?id=test&model=${encodeURIComponent(model === "flux" ? resolveModelName(model) : model)}&ref=agent_grant`,
         );
     }
     expect(snapshot.apiKey.permissions.models).toEqual([
@@ -364,23 +360,6 @@ test("keys allowed the retired Sonar Pro models still reach Sonar and nothing el
     expect(other.status).toBe(403);
 });
 
-test("keyPermissionsLink resolves production and staging editor links", () => {
-    expect(keyPermissionsLink("key-1")).toBe(
-        "https://enter.pollinations.ai/edit-key?id=key-1",
-    );
-    expect(keyPermissionsLink("key-1", "staging")).toBe(
-        "https://staging.enter.pollinations.ai/edit-key?id=key-1",
-    );
-    expect(
-        keyPermissionsLink("key-1", undefined, { permission: "machines" }),
-    ).toBe("https://enter.pollinations.ai/grant?id=key-1&permission=machines");
-    expect(
-        keyPermissionsLink("key-1", "staging", { model: "owner/model" }),
-    ).toBe(
-        "https://staging.enter.pollinations.ai/grant?id=key-1&model=owner%2Fmodel",
-    );
-});
-
 test("requireModelAccess uses staging host for staging environment", async () => {
     const snapshot = {
         user: { id: "permission-test", tier: "seed" },
@@ -406,7 +385,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key. Allow this model at https://staging.enter.pollinations.ai/grant?id=staging-key-id&model=forbidden-model",
+        "Model 'forbidden-model' is not allowed for this API key. Allow it at https://staging.enter.pollinations.ai/grant?id=staging-key-id&model=forbidden-model&ref=agent_grant",
     );
 });
 

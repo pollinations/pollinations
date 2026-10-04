@@ -447,6 +447,7 @@ it.each([
             headers: {
                 Authorization: `Bearer ${caller.key}`,
                 "Content-Type": "application/json",
+                Referer: "https://chat.example/c/1",
             },
             body: JSON.stringify({
                 model,
@@ -458,20 +459,24 @@ it.each([
         ctx,
     );
     const text = await response.text();
+    // The chat reply and the plain 403 carry the same link.
     const link = new URL("https://enter.pollinations.ai/grant");
+    link.search = new URLSearchParams({
+        id: caller.id,
+        model,
+        ref: "agent_grant",
+        redirect: "https://chat.example",
+    }).toString();
     if (TEXT_PERMISSION_NOTICE_ENABLED && !responseFormat) {
         expect(response.status, text).toBe(200);
-        link.search = new URLSearchParams({
-            id: caller.id,
-            model,
-            ref: "agent_model_permission",
-        }).toString();
         expect(text).toContain(`[allow it for this key](${link})`);
     } else {
         // JSON callers parse the body, so they keep the plain 403.
         expect(response.status, text).toBe(403);
-        link.search = new URLSearchParams({ id: caller.id, model }).toString();
-        expect(text).toContain(`Allow this model at ${link}`);
+        expect(JSON.parse(text).error).toMatchObject({
+            message: expect.stringContaining(`Allow it at ${link}`),
+            fixUrl: link.toString(),
+        });
     }
     await waitOnExecutionContext(ctx);
 });

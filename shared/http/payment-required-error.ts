@@ -4,6 +4,8 @@ export class PaymentRequiredError extends HTTPException {
     constructor(
         readonly errorCode: "KEY_BUDGET_EXHAUSTED" | "INSUFFICIENT_BALANCE",
         message: string,
+        /** The page where the key's owner fixes this. */
+        readonly fixUrl: string,
         /** Only paid Pollen can cover this model, so quests are no remedy. */
         readonly paidOnly = false,
     ) {

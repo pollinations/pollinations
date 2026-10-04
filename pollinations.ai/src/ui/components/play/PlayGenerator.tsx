@@ -25,7 +25,6 @@ import { PLAY_PAGE, PLAY_PAGE_NO_TRANSLATE } from "../../../copy/content/play";
 import { LINKS } from "../../../copy/content/socialLinks";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
-import { getModelImageUrls } from "./model-selection";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -161,9 +160,10 @@ export function PlayGenerator({
         false;
     const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
+    // Keep uploads for switching back, but only send them to models that take images.
     const effectiveImageUrls = useMemo(
-        () => getModelImageUrls(currentModelData, imageUrls),
-        [currentModelData, imageUrls],
+        () => (supportsImageInput ? imageUrls : []),
+        [supportsImageInput, imageUrls],
     );
     const availableVoices = currentModelData?.voices || [];
 

@@ -341,12 +341,8 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     c.var.auth.requireUser();
     const apiKey = c.var.auth.apiKey;
     if (!apiKey?.permissions?.account?.includes("machines")) {
-        // Agent run tokens never carry account permissions, so granting the
-        // parent key would not help them.
         throw new HTTPException(403, {
-            message: c.var.auth.agentRun
-                ? "Agent run tokens cannot use sandboxes."
-                : `API key does not have 'account:machines' permission. Allow it at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT, { permission: "machines" })}`,
+            message: `API key does not have 'account:machines' permission. Allow it at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT, { permission: "machines" })}`,
         });
     }
     await next();

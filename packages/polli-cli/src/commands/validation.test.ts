@@ -54,6 +54,66 @@ describe("CLI argument validation", () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 
+    it.each([
+        "abc",
+        "30d",
+        "",
+        " ",
+        "0",
+        "-1",
+        "1.5",
+        "Infinity",
+        "NaN",
+        "1e20",
+    ])("rejects invalid key expiry %j before fetching", async (expiresIn) => {
+        const fetch = prepare();
+        await expect(
+            keysCommand.parseAsync(
+                ["create", "--name", "test", "--expires-in", expiresIn],
+                { from: "user" },
+            ),
+        ).rejects.toThrow(ExitSignal);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [expect.stringContaining("--expires-in")],
+        ]);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        "1",
+        "86400",
+        "31536000",
+        "31536001",
+        "63072000",
+    ])("sends valid key expiry %s as numeric seconds", async (expiresIn) => {
+        const fetch = prepare();
+        fetch.mockResolvedValueOnce(
+            Response.json({ id: "test-id", name: "test" }),
+        );
+        await keysCommand.parseAsync(
+            ["create", "--name", "test", "--expires-in", expiresIn],
+            { from: "user" },
+        );
+        expect(fetch).toHaveBeenCalledOnce();
+        expect(fetch.mock.calls[0]?.[0]).toMatch(/\/account\/keys$/);
+        expect(fetch.mock.calls[0]?.[1]?.method).toBe("POST");
+        const body = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body));
+        expect(body.expiresIn).toBe(Number(expiresIn));
+    });
+
+    it("omits key expiry when the flag is absent", async () => {
+        const fetch = prepare();
+        fetch.mockResolvedValueOnce(
+            Response.json({ id: "test-id", name: "test" }),
+        );
+        await keysCommand.parseAsync(["create", "--name", "test"], {
+            from: "user",
+        });
+        expect(fetch).toHaveBeenCalledOnce();
+        const body = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body));
+        expect(body).not.toHaveProperty("expiresIn");
+    });
+
     it("prints an invalid agent option only once", async () => {
         const fetch = prepare();
         await expect(

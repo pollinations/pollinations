@@ -1,0 +1,29 @@
+DESCRIPTION >
+    Users making their first recorded successful live Stripe payment, grouped
+    by UTC Monday. Search all history before filtering the reporting window.
+
+TOKEN tinybird_read READ
+
+NODE first_payers_by_week
+SQL >
+    %
+    SELECT
+        formatDateTime(toStartOfWeek(first_paid_at, 1), '%Y-%m-%d') AS week,
+        count() AS new_payers
+    FROM (
+        SELECT user_id, min(timestamp) AS first_paid_at
+        FROM stripe_event
+        WHERE livemode = 1
+            AND user_id != ''
+            AND amount_cents > 0
+            AND (
+                (event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded') AND payment_status = 'paid')
+                OR (event_type = 'payment_intent.succeeded' AND payment_status = 'succeeded')
+            )
+        GROUP BY user_id
+    )
+    WHERE first_paid_at >= toDateTime({{Date(start_date, '2026-01-01')}})
+    GROUP BY week
+    ORDER BY week ASC
+
+TYPE endpoint

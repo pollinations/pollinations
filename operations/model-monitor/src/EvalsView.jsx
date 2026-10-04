@@ -246,7 +246,7 @@ export default function EvalsView() {
                 </span>
             </div>
             {run.evals.map((evalResult) => {
-                const { ranking, pairs, skipped } = buildLeaderboard(
+                const { ranking, pairs, skipped, unscored } = buildLeaderboard(
                     evalResult.models,
                 );
                 return (
@@ -272,6 +272,12 @@ export default function EvalsView() {
                             <Text size="xs" tone="soft" className="m-0">
                                 Not run (budget reached):{" "}
                                 {skipped.map((m) => m.name).join(", ")}
+                            </Text>
+                        )}
+                        {unscored.length > 0 && (
+                            <Text size="xs" tone="soft" className="m-0">
+                                Unscored (rate limited):{" "}
+                                {unscored.map((m) => m.name).join(", ")}
                             </Text>
                         )}
                     </div>

@@ -2,20 +2,21 @@
 # Find users/models with 500 errors (actual backend issues)
 # Usage: ./find-500-errors.sh [hours]
 # Example: ./find-500-errors.sh 24
+set -euo pipefail
 
 HOURS="${1:-24}"
 
 source "$(dirname "$0")/tinybird-query.sh"
+validate_positive_integer "$HOURS" 720 hours
 
-QUERY="SELECT ge.user_id, any(users.github_username) as github_username, ge.model_requested, ge.error_message, count() as error_count
-FROM generation_event_v2 ge
-LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users
-  ON ge.user_id = users.id
-WHERE ge.response_status >= 500
-  AND ge.start_time > now() - interval $HOURS hour
-GROUP BY ge.user_id, ge.model_requested, ge.error_message
+QUERY="SELECT user_id, argMax(user_github_username, start_time) AS github_username, model_requested, response_status, error_source, error_response_code, argMax(error_message, start_time) AS sample_error, count() AS error_count
+FROM generation_event_v2
+WHERE is_final
+  AND response_status >= 500
+  AND start_time > now() - interval $HOURS hour
+GROUP BY user_id, model_requested, response_status, error_source, error_response_code
 ORDER BY error_count DESC
-LIMIT 50"
+LIMIT 50 FORMAT JSON"
 
 echo "=== 500+ Errors (Last ${HOURS}h) ==="
 run_tinybird_query "$QUERY"

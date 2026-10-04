@@ -13,7 +13,6 @@ SQL >
     SELECT
         {{String(user_id, '')}} AS userId,
         maxMergeIf(used_agent, user_id = {{String(user_id, '')}}) AS usedAgent,
-        maxMergeIf(used_agent, owner_username != '' AND owner_username = lower({{String(github_username, '')}})) AS createdUsedAgent,
         maxMergeIf(used_community_model, user_id = {{String(user_id, '')}}) AS usedCommunityModel,
         toUInt8(sumMergeIf(community_model_paid_pollen, owner_username != '' AND owner_username = lower({{String(github_username, '')}}) AND user_id != {{String(user_id, '')}}) > 0.5) AS createdUsedCommunityModel
     FROM quest_agent_usage_mv

@@ -447,13 +447,9 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expect(byId.get("early_adopter")?.title).toBe("Early adopter");
     expectStableCatalogFields("github_established", {
-        state: "available",
+        state: "completed",
         rewardAmount: 1,
         balanceBucket: "tier",
-    });
-    expect(byId.get("github_established")?.goal).toEqual({
-        target: 1095,
-        unit: "days",
     });
     expectStableCatalogFields("app_paid_request", {
         state: "completed",
@@ -461,13 +457,14 @@ test("catalog returns quest definitions without ledger stats", async ({
         balanceBucket: "tier",
     });
     expectStableCatalogFields("app_users_10", {
-        state: "available",
+        state: "completed",
         rewardAmount: 3,
         balanceBucket: "tier",
     });
-    expect(byId.get("app_users_10")?.goal).toEqual({
-        target: 10,
-        unit: "users",
+    expectStableCatalogFields("create_used_agent", {
+        state: "completed",
+        rewardAmount: 2,
+        balanceBucket: "tier",
     });
     expectStableCatalogFields("app_pollen_10", {
         state: "available",
@@ -1180,9 +1177,7 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
             )
             .map((reward) => reward.questId),
     );
-    expect(ownerQuestIds).toEqual(
-        new Set(["app_pollen_10", "app_users_10", "app_listed"]),
-    );
+    expect(ownerQuestIds).toEqual(new Set(["app_pollen_10", "app_listed"]));
     // use_app is live, but the owner has no BYOP-attributed key of their own.
     expect(
         ownerRewards.some(
@@ -1281,13 +1276,13 @@ test("app milestones award their rewards at inclusive thresholds", async ({
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
     const questIds = new Set(rewards.map((reward) => reward.questId));
-    expect(questIds.has("app_users_10")).toBe(true);
     expect(questIds.has("app_pollen_10")).toBe(true);
+    // Retired milestones never record, even when their old threshold is met.
+    expect(questIds.has("app_users_10")).toBe(false);
     expect(questIds.has("app_paid_request")).toBe(false);
     expect(questIds.has("app_active")).toBe(false);
     expect(rewards).toEqual(
         expect.arrayContaining([
-            { questId: "app_users_10", pollenAmount: 3 },
             { questId: "app_pollen_10", pollenAmount: 10 },
         ]),
     );
@@ -1312,12 +1307,6 @@ test("app milestones do not record below their thresholds, even with Quest Polle
     await seedByopConnections(user.id, 9, "below-milestone");
     const result = await checkQuestsForUser(env, user.id);
 
-    expect(result.progress).toContainEqual({
-        questId: "app_users_10",
-        current: 9,
-        target: 10,
-        unit: "users",
-    });
     expect(result.progress).toContainEqual({
         questId: "app_pollen_10",
         current: 2.99,
@@ -1461,19 +1450,16 @@ test("quest check records model-usage rewards per modality", async ({
 
 const AGENT_QUEST_REWARDS: Record<string, number> = {
     use_agent: 0.25,
-    create_used_agent: 2,
     use_community_model: 0.25,
     create_used_community_model: 2,
 };
 const NO_AGENT_FLAGS = {
     usedAgent: 0,
-    createdUsedAgent: 0,
     usedCommunityModel: 0,
     createdUsedCommunityModel: 0,
 };
 const ALL_AGENT_FLAGS = {
     usedAgent: 1,
-    createdUsedAgent: 1,
     usedCommunityModel: 1,
     createdUsedCommunityModel: 1,
 };
@@ -1481,7 +1467,6 @@ const ALL_AGENT_FLAGS = {
 for (const { flags, expected } of [
     { flags: {}, expected: [] },
     { flags: { usedAgent: 1 }, expected: ["use_agent"] },
-    { flags: { createdUsedAgent: 1 }, expected: ["create_used_agent"] },
     { flags: { usedCommunityModel: 1 }, expected: ["use_community_model"] },
     {
         flags: { createdUsedCommunityModel: 1 },
@@ -1490,7 +1475,6 @@ for (const { flags, expected } of [
     {
         flags: ALL_AGENT_FLAGS,
         expected: [
-            "create_used_agent",
             "create_used_community_model",
             "use_agent",
             "use_community_model",
@@ -1619,7 +1603,7 @@ test("quest check continues after one group fails", async ({
     }
 });
 
-test("github established-account quest records once per GitHub identity", async ({
+test("retired Senior dev quest neither records nor fetches the GitHub profile", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1631,40 +1615,16 @@ test("github established-account quest records once per GitHub identity", async 
     await mocks.enable("github", "tinybird");
 
     mocks.github.state.requests = [];
-    const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThanOrEqual(1);
-
-    expect(
-        mocks.github.state.requests.some(
-            (request) => request.path === `/user/${user.githubId}`,
-        ),
-    ).toBe(true);
-
-    mocks.github.state.requests = [];
     await checkQuestsForUser(env, user.id);
 
     const establishedRows = await db
-        .select({
-            idempotencyKey: schema.rewards.idempotencyKey,
-            userId: schema.rewards.userId,
-            pollenAmount: schema.rewards.pollenAmount,
-            balanceBucket: schema.rewards.balanceBucket,
-        })
+        .select({ id: schema.rewards.id })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toEqual([
-        {
-            idempotencyKey: `quest:github_established:github:${user.githubId}`,
-            userId: user.id,
-            pollenAmount: 1,
-            balanceBucket: "tier",
-        },
-    ]);
+    expect(establishedRows).toHaveLength(0);
     expect(
         mocks.github.state.requests.some(
-            (request) =>
-                request.path === `/user/${user.githubId}` ||
-                request.path.startsWith("/users/"),
+            (request) => request.path === `/user/${user.githubId}`,
         ),
     ).toBe(false);
 });
@@ -1687,50 +1647,6 @@ test("a GitHub identity cannot be attached to a second account", async ({
             githubUsername: user.githubUsername,
         }),
     ).rejects.toThrow();
-});
-
-test("github established-account quest waits until the threshold", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    mocks.github.state.user.created_at = new Date(
-        Date.now() - 1094 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    await mocks.enable("github", "tinybird");
-
-    mocks.github.state.requests = [];
-    const beforeThreshold = await checkQuestsForUser(env, user.id);
-
-    expect(beforeThreshold.progress).toContainEqual({
-        questId: "github_established",
-        current: 1094,
-        target: 1095,
-        unit: "days",
-    });
-
-    let establishedRows = await db
-        .select({ id: schema.rewards.id })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toHaveLength(0);
-    expect(
-        mocks.github.state.requests.some(
-            (request) => request.path === `/user/${user.githubId}`,
-        ),
-    ).toBe(true);
-
-    mocks.github.state.user.created_at = new Date(
-        Date.now() - 1095 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    await checkQuestsForUser(env, user.id);
-
-    establishedRows = await db
-        .select({ id: schema.rewards.id })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.questId, "github_established"));
-    expect(establishedRows).toHaveLength(1);
 });
 
 test("github public repo stars quest is coming_soon and never records", async ({

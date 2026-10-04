@@ -27,6 +27,8 @@ const createUsedAgentQuest: QuestDefinition = {
     scope: "perUser",
     rewardAmount: 2,
     balanceBucket: "tier",
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
 };
 
 const useCommunityModelQuest: QuestDefinition = {
@@ -51,10 +53,16 @@ const createUsedCommunityModelQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-// Each quest completes when its flag from quest_agent_usage is 1.
+const QUESTS = [
+    useAgentQuest,
+    createUsedAgentQuest,
+    useCommunityModelQuest,
+    createUsedCommunityModelQuest,
+];
+
+// Each live quest completes when its flag from quest_agent_usage is 1.
 const QUEST_FLAGS = [
     ["usedAgent", useAgentQuest],
-    ["createdUsedAgent", createUsedAgentQuest],
     ["usedCommunityModel", useCommunityModelQuest],
     ["createdUsedCommunityModel", createUsedCommunityModelQuest],
 ] as const;
@@ -62,7 +70,7 @@ const QUEST_FLAGS = [
 type QuestFlag = (typeof QUEST_FLAGS)[number][0];
 
 export async function listQuestCards() {
-    return QUEST_FLAGS.map(([, quest]) => questToCard(quest));
+    return QUESTS.map(questToCard);
 }
 
 export async function evaluateUser(

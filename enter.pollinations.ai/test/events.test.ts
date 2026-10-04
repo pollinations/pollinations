@@ -104,28 +104,30 @@ test("Exponential backoff delay", async () => {
     expect(exponentialBackoffDelay(3, backoffConfig)).toBeGreaterThan(100);
     expect(exponentialBackoffDelay(3, backoffConfig)).toBeLessThan(10000);
     expect(exponentialBackoffDelay(5, backoffConfig)).toBe(10000);
+    // Jitter must never push the delay outside [minDelay, maxDelay]:
+    // the bounds are a contract callers rely on, not just a starting point.
     const backoffConfigWithJitter = {
         minDelay: 100,
         maxDelay: 10000,
         maxAttempts: 5,
         jitter: 0.1,
     };
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(100 + 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(10000 - 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
+    for (let i = 0; i < 200; i++) {
+        for (const attempt of [1, 3, 5]) {
+            const delay = exponentialBackoffDelay(
+                attempt,
+                backoffConfigWithJitter,
+            );
+            expect(delay).toBeGreaterThanOrEqual(100);
+            expect(delay).toBeLessThanOrEqual(10000);
+        }
+    }
+    // Jitter still spreads retries out, so it is not simply pinned.
+    const firstAttemptDelays = new Set(
+        Array.from(
+            { length: 50 },
+            () => exponentialBackoffDelay(1, backoffConfigWithJitter),
+        ),
+    );
+    expect(firstAttemptDelays.size).toBeGreaterThan(1);
 });

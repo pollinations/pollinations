@@ -1,13 +1,15 @@
-import { BANNERS, PINNED_MODELS, PROMPT_SUGGESTIONS } from "../ui-defaults.js";
+import { banners, PINNED_MODELS, PROMPT_SUGGESTIONS } from "../ui-defaults.js";
 
 // Open WebUI stores these settings on first boot and ignores the env vars
 // afterwards, so an existing install has to be changed through the admin API:
-//   OWUI_URL=https://openwebui.pollinations.ai OWUI_TOKEN=<admin key or JWT> \
+//   OWUI_URL=https://openwebui.pollinations.ai \
+//   OWUI_ENTER_URL=https://enter.pollinations.ai OWUI_TOKEN=<admin key or JWT> \
 //     node scripts/apply-ui-defaults.mjs
 const base = process.env.OWUI_URL?.replace(/\/$/, "");
 const token = process.env.OWUI_TOKEN;
-if (!base || !token) {
-    console.error("Set OWUI_URL and OWUI_TOKEN (an admin API key or JWT).");
+const enterUrl = process.env.OWUI_ENTER_URL?.replace(/\/$/, "");
+if (!base || !token || !enterUrl) {
+    console.error("Set OWUI_URL, OWUI_ENTER_URL, and OWUI_TOKEN (an admin API key or JWT).");
     process.exit(1);
 }
 
@@ -36,7 +38,7 @@ await api("/configs/models", {
     DEFAULT_PINNED_MODELS: PINNED_MODELS.join(","),
 });
 await api("/configs/suggestions", { suggestions: PROMPT_SUGGESTIONS });
-await api("/configs/banners", { banners: BANNERS });
+await api("/configs/banners", { banners: banners(enterUrl) });
 await api("/auths/admin/config", {
     ...(await api("/auths/admin/config")),
     ENABLE_COMMUNITY_SHARING: false,

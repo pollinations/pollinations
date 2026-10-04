@@ -39,13 +39,11 @@ export const PROMPT_SUGGESTIONS = [
 ];
 
 // Chats are billed to the signed-in user's own wallet: say so once.
-export const BANNERS = [
+export const banners = (enterUrl) => [
     {
         id: "own-pollen",
         type: "info",
-        title: "Your Pollen",
-        content:
-            "Chats and generations are paid from your own Pollen. Check your balance or top up at [enter.pollinations.ai](https://enter.pollinations.ai).",
+        content: `Chats and generations use your own Pollen. [Check your balance](${enterUrl}/pollen) or [top up](${enterUrl}/top-up).`,
         dismissible: true,
         timestamp: 0,
     },

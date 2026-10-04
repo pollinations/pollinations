@@ -1,6 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
 import { Container, getContainer } from "@cloudflare/containers";
-import { BANNERS, PINNED_MODELS, PROMPT_SUGGESTIONS } from "./ui-defaults.js";
+import { banners, PINNED_MODELS, PROMPT_SUGGESTIONS } from "./ui-defaults.js";
 
 const CONTAINER_NAME = "primary";
 const WEBUI_URL = required("WEBUI_URL");
@@ -69,7 +69,7 @@ export class OpenWebUIContainer extends Container {
         DEFAULT_MODELS: PINNED_MODELS[0],
         DEFAULT_PINNED_MODELS: PINNED_MODELS.join(","),
         DEFAULT_PROMPT_SUGGESTIONS: JSON.stringify(PROMPT_SUGGESTIONS),
-        WEBUI_BANNERS: JSON.stringify(BANNERS),
+        WEBUI_BANNERS: JSON.stringify(banners(required("ENTER_URL"))),
         // This is a shared host: no "share to Open WebUI Community" button
         // (it uploads chats to openwebui.com), and no blind-comparison arena.
         ENABLE_COMMUNITY_SHARING: "false",

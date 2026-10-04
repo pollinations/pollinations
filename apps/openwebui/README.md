@@ -91,8 +91,7 @@ minute:
   not pinned any, and new chats open on `openai/gpt-5.4-nano`. The rest of the
   picker keeps the order gen serves it in.
 - Four prompt suggestions replace the upstream ones.
-- A dismissible banner says chats are paid from the user's own Pollen and links
-  to Enter.
+- A dismissible banner links directly to the user's balance and top-up pages.
 - No "share to Open WebUI Community" button (it uploads chats to openwebui.com)
   and no arena models.
 
@@ -103,7 +102,7 @@ instead; an admin key or JWT is needed, and the script reads each form before
 changing it so `DEFAULT_MODEL_METADATA` (builtin tools off) is not reset:
 
 ```bash
-OWUI_URL=https://openwebui.pollinations.ai OWUI_TOKEN=<admin key> node scripts/apply-ui-defaults.mjs
+OWUI_URL=https://openwebui.pollinations.ai OWUI_ENTER_URL=https://enter.pollinations.ai OWUI_TOKEN=<admin key> node scripts/apply-ui-defaults.mjs
 ```
 
 No restart is needed; users see the change on their next page load. A user's

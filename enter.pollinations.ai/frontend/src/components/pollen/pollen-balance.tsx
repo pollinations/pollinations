@@ -35,7 +35,7 @@ type PollenBalanceProps = {
     compact?: boolean;
 };
 
-const BALANCE_DISPLAY_EPSILON = 0.0001;
+export const BALANCE_DISPLAY_EPSILON = 0.0001;
 export const TERMS_URL = "https://pollinations.ai/terms";
 export const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 

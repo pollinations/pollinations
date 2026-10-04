@@ -1,0 +1,34 @@
+{
+  "pr_number": 16311,
+  "title": "feat: connect polli's Claude Code harness directly to gen's /v1/messages",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16311",
+  "merged_at": "2026-10-04T10:58:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Connects Claude Code directly to gen’s `/v1/messages` (#15680), removing Claude Code Router and its broken credential handoff.\n- Writes a separate `~/.pollinations/claude-code.json` with the dedicated key and model aliases. Launch with `claude --settings ~/.pollinations/claude-code.json`; native Claude login/settings stay untouched. `off` deletes only this file.\n- Runs Claude Code itself for readiness, verifies dedicated-key usage, and restores the previous file on failure. Bumps `@pollinations/cli` to **0.1.24**.\n- Removes CCR from the E2B template. Rebuild the template after 0.1.24 is published; no template rebuild is included here.\n- Verified after updating with main: **282 CLI tests**, build, lint and shell syntax pass. Installed Claude Code 2.1.289 passed isolated setup/status/off, key reuse, rollback, streaming and Read-tool tests. A live Pollinations Read-tool round trip with `openai/gpt-6-sol` also passed.\n\nOriginal implementation session: https://claude.ai/code/session_011LgiC2X1edxD4TcXeX9sXo",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli takes the direct route",
+    "blurb": "Polli’s Claude Code harness takes a straight path to gen’s `/v1/messages`. No router in the middle, and Claude’s own settings stay put.",
+    "summary": "`@pollinations/cli` 0.1.24 connects Claude Code directly to gen’s `/v1/messages`, replacing Claude Code Router with a dedicated `~/.pollinations/claude-code.json` that preserves native Claude settings and rolls back if setup fails.",
+    "impact": "Claude Code launches with Pollinations credentials and model aliases from a separate settings file; `off` removes only that file, while setup checks that Claude Code actually uses the dedicated key.",
+    "keywords": [
+      "Polli CLI",
+      "Claude Code",
+      "/v1/messages",
+      "credentials",
+      "model aliases",
+      "E2B"
+    ],
+    "visual_concept": "Depict Polli guiding a small Claude Code terminal along a direct garden path to a glowing /v1/messages endpoint, with an unused router sign off to the side. A separate settings card beside the path represents the dedicated configuration; a nearby untouched terminal represents native Claude settings.",
+    "image_prompt": "In a cozy pixel garden, Polli wears a tiny tool belt and guides a little Claude Code terminal along a lime green (#ecf874) path to a warmly glowing '/v1/messages' screen, past an unused router sign and a separate settings card. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, never realistic, surrounded by code-flowers and an untouched second terminal against a warm cream and soft pastel gradient background: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16311.jpg",
+    "prompt": "In a cozy pixel garden, Polli wears a tiny tool belt and guides a little Claude Code terminal along a lime green (#ecf874) path to a warmly glowing '/v1/messages' screen, past an unused router sign and a separate settings card. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, never realistic, surrounded by code-flowers and an untouched second terminal against a warm cream and soft pastel gradient background: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T10:59:06.884658+00:00"
+}

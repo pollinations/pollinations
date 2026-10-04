@@ -1,0 +1,34 @@
+{
+  "pr_number": 16249,
+  "title": "feat(openwebui): pin everyday models and explain Pollen billing",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16249",
+  "merged_at": "2026-10-04T12:58:00Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16242\n\n## What changes for users\n\n| | Before | After |\n|---|---|---|\n| Default / pins | `openai` (an alias, not an id in the model list); nothing pinned | New chats open on `openai/gpt-5.4-nano`; four everyday models that need no paid balance are pinned for users with no pins |\n| Empty-chat suggestions | Upstream set: options trading, kids' art | Four that work with any model |\n| Paying with your own Pollen | Not mentioned | Dismissible banner: chats are paid from your Pollen, link to Enter |\n| Share to openwebui.com / arena | On | Off (the share button uploads chats to a third party) |\n| Rest of the picker | Gen's catalog order | Unchanged |\n\nLogin, the per-user `system_oauth` key, the MCP tool server and existing chats are untouched.\n\nThe values live in `apps/openwebui/ui-defaults.js`. `worker.js` seeds them as env vars. `scripts/apply-ui-defaults.mjs` applies the same values to a database that has already booted.\n\n## Existing installations\n\nOpen WebUI reads these env vars only while the setting is missing from its config table, so a deploy alone changes nothing on production. Checked locally on Open WebUI 0.11.3 (the pinned image), against a database created with the old values:\n\n1. Restarted it with the new env: default model, pins, suggestions, banner and both switches stayed the same.\n2. `OWUI_URL=... OWUI_TOKEN=<admin key> node scripts/apply-ui-defaults.mjs`: all of them changed, no restart. `DEFAULT_MODEL_METADATA` (`builtin_tools: false`) survived, because the script reads each form and changes only its own fields; a bare `POST /configs/models` would reset it.\n\nA user's own pins win: the frontend uses `default_pinned_models` only while `settings.pinnedModels` is undefined, and drops ids that are not in the list.\n\n## Walkthrough (local Open WebUI 0.11.3, same env as production except password login)\n\nWhat `/api/config` and `/api/models` return, which is what the picker and home screen render:\n\n```\nbaseline                                   new default",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A friendlier chat doorstep",
+    "blurb": "Open WebUI gets a sensible starting model, four everyday pins, and a little sign explaining where the Pollen goes. Your own pins still get the final say.",
+    "summary": "Open WebUI sets new chats to openai/gpt-5.4-nano, offers four no-paid-balance models as fallback pins, explains Pollen billing, and turns off third-party chat sharing by default; an apply script brings the same settings to existing installations without resetting other model metadata.",
+    "impact": "People without custom pins get four ready-to-pick models and a clear link to their Pollen balance, while their own pins and existing chats stay intact.",
+    "keywords": [
+      "Open WebUI",
+      "model picker",
+      "gpt-5.4-nano",
+      "Pollen",
+      "chat sharing",
+      "defaults"
+    ],
+    "visual_concept": "Depict Open WebUI as a cozy chat terminal with one highlighted starting model card and four pinned model cards. Polli pins the cards beside a small Pollen jar and a garden of code-flowers; a closed sharing hatch suggests chats stay in the app. No external mascot or logo is identified in the PR.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli pins four small model cards beside a glowing chat terminal, a Pollen jar, and a gently closed sharing hatch, with code-flowers growing around them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, warm cream and lavender tones, and prominent lime green (#ecf874) glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16249.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli pins four small model cards beside a glowing chat terminal, a Pollen jar, and a gently closed sharing hatch, with code-flowers growing around them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, warm cream and lavender tones, and prominent lime green (#ecf874) glow."
+  },
+  "generated_at": "2026-10-04T12:59:01.380293+00:00"
+}

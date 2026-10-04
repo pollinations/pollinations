@@ -138,17 +138,36 @@ function GrantPage() {
         };
     }, [userId, id, grant, agent, sig]);
 
+    const agentListing = catalog.find(
+        (item) => getCatalogModelId(item) === askingAgent,
+    );
+    // Who asks sits on top: the key, then the agent gen signed for, if any.
+    // What they ask for sits below the description.
     const subject = key ? (
-        <KeySubject apiKey={key}>
-            <Text size="sm">
-                <InlineLink
-                    href={`/edit-key?id=${encodeURIComponent(id)}`}
-                    tone="quiet"
-                >
-                    View permissions
-                </InlineLink>
-            </Text>
-        </KeySubject>
+        <>
+            <KeySubject apiKey={key}>
+                <Text size="sm">
+                    <InlineLink
+                        href={`/edit-key?id=${encodeURIComponent(id)}`}
+                        tone="quiet"
+                    >
+                        View permissions
+                    </InlineLink>
+                </Text>
+            </KeySubject>
+            {askingAgent && (
+                <AppAttribution
+                    icon={<BotIcon className="h-4 w-4" />}
+                    attribution={{
+                        appName: agentListing
+                            ? getCatalogDisplayName(agentListing, askingAgent)
+                            : askingAgent,
+                        githubUsername: getCommunityModelOwner(askingAgent),
+                    }}
+                    redirectUrl={null}
+                />
+            )}
+        </>
     ) : undefined;
 
     if (isPending) return <AuthModalLoading title={title} />;
@@ -173,39 +192,6 @@ function GrantPage() {
         return <AuthModalLoading title={title} />;
     }
 
-    const requested = (
-        <>
-            <Text size="sm">{model ? "Wants to use" : "Wants to"}</Text>
-            <div className="break-words">
-                <Text size="sm" weight="semibold" tone="strong">
-                    {model ??
-                        accountPermissions.find(({ id }) => id === permission)
-                            ?.label}
-                </Text>
-            </div>
-        </>
-    );
-    const agentListing = catalog.find(
-        (item) => getCatalogModelId(item) === askingAgent,
-    );
-    // Every flow shows the key first. A request gen signed for an agent names
-    // the agent inside the request, since the grant still goes to the key.
-    const request = askingAgent ? (
-        <AppAttribution
-            icon={<BotIcon className="h-4 w-4" />}
-            attribution={{
-                appName: agentListing
-                    ? getCatalogDisplayName(agentListing, askingAgent)
-                    : askingAgent,
-                githubUsername: getCommunityModelOwner(askingAgent),
-            }}
-            redirectUrl={null}
-        >
-            {requested}
-        </AppAttribution>
-    ) : (
-        <Surface>{requested}</Surface>
-    );
     const alreadyAllowed = model
         ? !Array.isArray(key.permissions?.models) ||
           key.permissions.models.includes(model)
@@ -284,7 +270,17 @@ function GrantPage() {
                 </>
             }
         >
-            {request}
+            <Surface>
+                <Text size="sm">Asks for</Text>
+                <div className="break-words">
+                    <Text size="sm" weight="semibold" tone="strong">
+                        {model ??
+                            accountPermissions.find(
+                                ({ id }) => id === permission,
+                            )?.label}
+                    </Text>
+                </div>
+            </Surface>
             {model && (
                 <Text size="sm">
                     This model may spend Pollen when used. The key’s existing

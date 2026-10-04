@@ -4,6 +4,22 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.8] - 2026-10-04
+
+### Added
+- `embeddings()` for `/v1/embeddings`, with the `Embedding*` types.
+- `audioTransform()` for voice-changer and voice-isolator, and `referenceAudio`
+  on speech options.
+
+### Fixed
+- `generateText({ raw: true })` sends `systemPrompt` and `json` like the
+  non-raw path.
+- Base64 images keep the media type the API sends instead of always PNG.
+- Cancellation stays active while a response body is read, and an
+  already-aborted signal rejects before the request is sent.
+- `PolliProvider` validates restored keys, recovers from browser auth failures,
+  and keeps the saved key when a re-login fails.
+
 ## [5.1.0-alpha.7] - 2026-09-05
 
 ### Added

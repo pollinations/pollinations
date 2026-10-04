@@ -3,7 +3,10 @@ import {
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import {
+    CONSENT_PERMISSIONS,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
@@ -149,9 +152,11 @@ const UpdateApiKeySchema = z.object({
         .describe("Expiration date for the key. null = no expiry"),
 });
 
-const GrantModelSchema = z.object({
-    model: z.string().min(1),
-});
+// One model or one account permission per approval.
+const GrantSchema = z.union([
+    z.object({ model: z.string().min(1) }),
+    z.object({ permission: z.enum(CONSENT_PERMISSIONS) }),
+]);
 
 const CreateApiKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
@@ -415,55 +420,65 @@ export const apiKeysRoutes = new Hono<Env>()
         },
     )
     .post(
-        "/:id/grant-model",
+        "/:id/grant",
         describeRoute({
             tags: ["👤 Account"],
-            description: "Add one model to an owned API key's permissions.",
+            description:
+                "Add one model or account permission to an owned API key.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
-        validator("json", GrantModelSchema),
+        validator("json", GrantSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
             const { id } = c.req.param();
-            const { model } = c.req.valid("json");
+            const grant = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
             const key = await requireOwnedKey(db, id, user.id);
-            const [canonicalModel] = await validateModelPermissionIds(
-                c.env.DB,
-                [model],
-            );
-            const visibleModels = await getVisibleModelIdsForUser(
-                c.env.DB,
-                user.id,
-            );
-            if (!visibleModels.has(canonicalModel)) {
-                throw new HTTPException(404, {
-                    message: "Model not available",
-                });
-            }
-
             const permissions = key.permissions
                 ? parsePermissions(key.permissions)
                 : null;
-            // An absent model list already allows every model. Preserve that meaning.
-            if (!Array.isArray(permissions?.models)) {
-                return c.json({ granted: true, model: canonicalModel });
-            }
 
-            const models = canonicalizeModelPermissionIds(permissions.models);
-            if (!models.includes(canonicalModel)) {
+            // Only the granted entry changes; budget, expiry and the rest stay.
+            let next: Record<string, string[]> | null = null;
+            if ("permission" in grant) {
+                const account = permissions?.account ?? [];
+                if (!account.includes(grant.permission)) {
+                    next = {
+                        ...permissions,
+                        account: [...account, grant.permission],
+                    };
+                }
+            } else {
+                const [canonicalModel] = await validateModelPermissionIds(
+                    c.env.DB,
+                    [grant.model],
+                );
+                const visibleModels = await getVisibleModelIdsForUser(
+                    c.env.DB,
+                    user.id,
+                );
+                if (!visibleModels.has(canonicalModel)) {
+                    throw new HTTPException(404, {
+                        message: "Model not available",
+                    });
+                }
+                // An absent model list already allows every model. Keep it.
+                const models = Array.isArray(permissions?.models)
+                    ? canonicalizeModelPermissionIds(permissions.models)
+                    : null;
+                if (models && !models.includes(canonicalModel)) {
+                    next = {
+                        ...permissions,
+                        models: [...models, canonicalModel],
+                    };
+                }
+            }
+            if (next) {
                 await c.var.auth.client.api.updateApiKey({
-                    body: {
-                        keyId: id,
-                        userId: user.id,
-                        permissions: {
-                            ...permissions,
-                            models: [...models, canonicalModel],
-                        },
-                    },
+                    body: { keyId: id, userId: user.id, permissions: next },
                 });
             }
-            return c.json({ granted: true, model: canonicalModel });
+            return c.json({ granted: true });
         },
     )
     /**

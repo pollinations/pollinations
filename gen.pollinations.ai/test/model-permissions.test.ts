@@ -116,7 +116,10 @@ test("legacy stored allowlists still filter catalogs after canonical promotion",
             (model) => model.name,
         ),
     ).toEqual(["google/gemini-3.1-flash-image"]);
-    const denied = await fetchWorker("/text/test?model=openai", { headers });
+    // JSON mode keeps the raw 403; plain text gets the grant-link reply.
+    const denied = await fetchWorker("/text/test?model=openai&json=true", {
+        headers,
+    });
     expect(denied.status).toBe(403);
     const stored = await drizzle(env.DB)
         .select({ permissions: apikey.permissions })
@@ -203,7 +206,7 @@ test("restored auth snapshots normalize aliases once without expanding model or 
     const forbidden = await app.request("/other%2Fcustom");
     expect(forbidden.status).toBe(403);
     expect(await forbidden.text()).toBe(
-        "Model 'other/custom' is not allowed for this API key. Allow this model at https://enter.pollinations.ai/grant-model?id=test&model=other%2Fcustom",
+        "Model 'other/custom' is not allowed for this API key. Allow this model at https://enter.pollinations.ai/grant?id=test&model=other%2Fcustom",
     );
     expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
         403,
@@ -261,7 +264,8 @@ test("future-name stored allowlists filter catalogs without rewriting the databa
         ),
     ).toEqual([resolveModelName("flux")]);
     expect(
-        (await fetchWorker("/text/test?model=openai", { headers })).status,
+        (await fetchWorker("/text/test?model=openai&json=true", { headers }))
+            .status,
     ).toBe(403);
     const stored = await drizzle(env.DB)
         .select({ permissions: apikey.permissions })
@@ -307,7 +311,7 @@ test("restored auth allows old and future names without expanding account or com
         const res = await app.request(`/${encodeURIComponent(model)}`);
         expect(res.status).toBe(403);
         expect(await res.text()).toBe(
-            `Model '${model}' is not allowed for this API key. Allow this model at https://enter.pollinations.ai/grant-model?id=test&model=${encodeURIComponent(model === "flux" ? resolveModelName(model) : model)}`,
+            `Model '${model}' is not allowed for this API key. Allow this model at https://enter.pollinations.ai/grant?id=test&model=${encodeURIComponent(model === "flux" ? resolveModelName(model) : model)}`,
         );
     }
     expect(snapshot.apiKey.permissions.models).toEqual([
@@ -367,8 +371,13 @@ test("keyPermissionsLink resolves production and staging editor links", () => {
     expect(keyPermissionsLink("key-1", "staging")).toBe(
         "https://staging.enter.pollinations.ai/edit-key?id=key-1",
     );
-    expect(keyPermissionsLink("key-1", "staging", "owner/model")).toBe(
-        "https://staging.enter.pollinations.ai/grant-model?id=key-1&model=owner%2Fmodel",
+    expect(
+        keyPermissionsLink("key-1", undefined, { permission: "machines" }),
+    ).toBe("https://enter.pollinations.ai/grant?id=key-1&permission=machines");
+    expect(
+        keyPermissionsLink("key-1", "staging", { model: "owner/model" }),
+    ).toBe(
+        "https://staging.enter.pollinations.ai/grant?id=key-1&model=owner%2Fmodel",
     );
 });
 
@@ -397,7 +406,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key. Allow this model at https://staging.enter.pollinations.ai/grant-model?id=staging-key-id&model=forbidden-model",
+        "Model 'forbidden-model' is not allowed for this API key. Allow this model at https://staging.enter.pollinations.ai/grant?id=staging-key-id&model=forbidden-model",
     );
 });
 
@@ -463,7 +472,7 @@ test("empty model permissions deny access and return an empty catalog", async ()
     });
 
     const generationResponse = await fetchWorker(
-        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}`,
+        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}&json=true`,
         { headers },
     );
     expect(generationResponse.status).toBe(403);

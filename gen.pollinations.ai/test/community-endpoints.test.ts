@@ -10185,7 +10185,8 @@ fixtureTest(
             communityChatCompletionsUrl(primaryHost),
         );
 
-        // The same key calling the fallback directly is refused.
+        // The same key calling the fallback directly is refused. JSON mode
+        // keeps the raw 403; plain chat gets the allow-link reply.
         const direct = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
@@ -10196,6 +10197,7 @@ fixtureTest(
                 body: JSON.stringify({
                     model: fallbackModelId,
                     messages: [{ role: "user", content: "hello" }],
+                    response_format: { type: "json_object" },
                 }),
             }),
         );

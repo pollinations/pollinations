@@ -1,6 +1,6 @@
 import { AuthAccessItem } from "@pollinations/ui/auth";
 
-const permissions = [
+export const accountPermissions = [
     {
         id: "profile",
         label: "See your name and email.",
@@ -31,7 +31,7 @@ export function AccountPermissionsInput({
     disabled?: boolean;
     visiblePermissions?: ReadonlySet<string>;
 }) {
-    return permissions
+    return accountPermissions
         .filter(({ id }) => !visiblePermissions || visiblePermissions.has(id))
         .map(({ id, label }) => (
             <AuthAccessItem

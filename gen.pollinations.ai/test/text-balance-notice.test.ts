@@ -11,7 +11,10 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
-import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
+import {
+    TEXT_BALANCE_NOTICE_ENABLED,
+    TEXT_PERMISSION_NOTICE_ENABLED,
+} from "../src/middleware/text-balance-notice.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => vi.restoreAllMocks());
@@ -423,6 +426,52 @@ it("omits the quest link when only paid Pollen can cover the model", async () =>
         expect(text).toContain("needs paid Pollen");
         expect(text).toContain("/top-up?ref=agent_low_balance_topup");
         expect(text).not.toContain("complete a quest");
+    }
+    await waitOnExecutionContext(ctx);
+});
+
+it.each([
+    { name: "plain chat", responseFormat: undefined },
+    { name: "JSON", responseFormat: { type: "json_object" } },
+])("answers a blocked model with the grant link ($name)", async ({
+    responseFormat,
+}) => {
+    const caller = await createTestApiKey({
+        user: { packBalance: 10 },
+        allowedModels: ["black-forest-labs/flux.1-schnell"],
+    });
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${caller.key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: "hello" }],
+                response_format: responseFormat,
+            }),
+        }),
+        env,
+        ctx,
+    );
+    const text = await response.text();
+    const link = new URL("https://enter.pollinations.ai/grant");
+    if (TEXT_PERMISSION_NOTICE_ENABLED && !responseFormat) {
+        expect(response.status, text).toBe(200);
+        link.search = new URLSearchParams({
+            id: caller.id,
+            model,
+            ref: "agent_model_permission",
+        }).toString();
+        expect(text).toContain(`[allow it for this key](${link})`);
+    } else {
+        // JSON callers parse the body, so they keep the plain 403.
+        expect(response.status, text).toBe(403);
+        link.search = new URLSearchParams({ id: caller.id, model }).toString();
+        expect(text).toContain(`Allow this model at ${link}`);
     }
     await waitOnExecutionContext(ctx);
 });

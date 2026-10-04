@@ -14,7 +14,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as GrantModelRouteImport } from './routes/grant-model'
+import { Route as GrantRouteImport } from './routes/grant'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as EditKeyRouteImport } from './routes/edit-key'
 import { Route as DeviceRouteImport } from './routes/device'
@@ -56,9 +56,9 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GrantModelRoute = GrantModelRouteImport.update({
-  id: '/grant-model',
-  path: '/grant-model',
+const GrantRoute = GrantRouteImport.update({
+  id: '/grant',
+  path: '/grant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -142,7 +142,7 @@ export interface FileRoutesByFullPath {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
-  '/grant-model': typeof GrantModelRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
@@ -164,7 +164,7 @@ export interface FileRoutesByTo {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
-  '/grant-model': typeof GrantModelRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
@@ -188,7 +188,7 @@ export interface FileRoutesById {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
-  '/grant-model': typeof GrantModelRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
@@ -212,7 +212,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
-    | '/grant-model'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
@@ -234,7 +234,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
-    | '/grant-model'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
@@ -257,7 +257,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
-    | '/grant-model'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
@@ -281,7 +281,7 @@ export interface RootRouteChildren {
   DeviceRoute: typeof DeviceRoute
   EditKeyRoute: typeof EditKeyRoute
   ErrorRoute: typeof ErrorRoute
-  GrantModelRoute: typeof GrantModelRoute
+  GrantRoute: typeof GrantRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
@@ -327,11 +327,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/grant-model': {
-      id: '/grant-model'
-      path: '/grant-model'
-      fullPath: '/grant-model'
-      preLoaderRoute: typeof GrantModelRouteImport
+    '/grant': {
+      id: '/grant'
+      path: '/grant'
+      fullPath: '/grant'
+      preLoaderRoute: typeof GrantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -475,7 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeviceRoute: DeviceRoute,
   EditKeyRoute: EditKeyRoute,
   ErrorRoute: ErrorRoute,
-  GrantModelRoute: GrantModelRoute,
+  GrantRoute: GrantRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,

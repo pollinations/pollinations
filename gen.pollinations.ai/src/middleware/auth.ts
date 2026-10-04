@@ -46,18 +46,26 @@ export type AuthEnv = {
 const AUTHENTICATION_REQUIRED_MESSAGE =
     "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
 
+/** A grant link asks the owner to approve one model or account permission;
+ * without one, the link opens the key editor. */
 export function keyPermissionsLink(
     apiKeyId: string,
     environment?: string,
-    model?: string,
+    grant?: { model: string } | { permission: string },
 ): string {
     const enterBase =
         environment === "staging"
             ? PUBLIC_URLS.enter.staging
             : PUBLIC_URLS.enter.production;
-    const search = new URLSearchParams({ id: apiKeyId });
-    if (model) search.set("model", model);
-    return `${enterBase}/${model ? "grant-model" : "edit-key"}?${search}`;
+    const search = new URLSearchParams({ id: apiKeyId, ...grant });
+    return `${enterBase}/${grant ? "grant" : "edit-key"}?${search}`;
+}
+
+/** Text routes turn this 403 into a chat reply with the grant link. */
+export class ModelNotAllowedError extends HTTPException {
+    constructor(message: string) {
+        super(403, { message });
+    }
 }
 
 function installAuth(
@@ -99,14 +107,12 @@ function installAuth(
         if (!apiKey?.permissions?.models) return;
 
         if (!apiKey.permissions.models.includes(model.resolved)) {
-            const link = keyPermissionsLink(
-                apiKey.id,
-                c.env?.ENVIRONMENT,
-                model.resolved,
-            );
-            throw new HTTPException(403, {
-                message: `Model '${model.requested}' is not allowed for this API key. Allow this model at ${link}`,
+            const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT, {
+                model: model.resolved,
             });
+            throw new ModelNotAllowedError(
+                `Model '${model.requested}' is not allowed for this API key. Allow this model at ${link}`,
+            );
         }
     }
 

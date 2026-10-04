@@ -1,13 +1,13 @@
 import {
     Button,
     InlineLink,
-    KeyChip,
     KeyIcon,
     Surface,
     Text,
     XIcon,
 } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
+import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -15,6 +15,8 @@ import { authClient } from "../auth.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
+import { accountPermissions } from "../components/keys/account-permissions-input.tsx";
+import { KeySubject } from "../components/keys/key-subject.tsx";
 import type { ApiKey } from "../components/keys/types.ts";
 import {
     parseAppUrl,
@@ -22,25 +24,35 @@ import {
     ReturnToApp,
 } from "../lib/return-to-app.tsx";
 
-type GrantModelSearch = {
+type GrantSearch = {
     id: string;
-    model: string;
+    /** One model or one account permission the key was refused. */
+    model?: string;
+    permission?: (typeof CONSENT_PERMISSIONS)[number];
     redirect?: string;
 };
 
-export const Route = createFileRoute("/grant-model")({
-    head: () => ({ meta: [{ title: "Allow model access | pollinations.ai" }] }),
-    validateSearch: (search: Record<string, unknown>): GrantModelSearch => ({
+/**
+ * Approve one model or account permission for an existing key, linked from
+ * the 403s and chat replies gen returns when a key lacks it.
+ */
+export const Route = createFileRoute("/grant")({
+    head: () => ({ meta: [{ title: "Allow access | pollinations.ai" }] }),
+    validateSearch: (search: Record<string, unknown>): GrantSearch => ({
         id: typeof search.id === "string" ? search.id : "",
-        model: typeof search.model === "string" ? search.model : "",
+        model:
+            typeof search.model === "string" && search.model
+                ? search.model
+                : undefined,
+        permission: CONSENT_PERMISSIONS.find((p) => p === search.permission),
         redirect: parseAppUrl(search.redirect) ?? undefined,
     }),
-    component: GrantModelPage,
+    component: GrantPage,
 });
 
-function GrantModelPage() {
-    const { id, model, redirect } = Route.useSearch();
-    const navigate = useNavigate({ from: "/grant-model" });
+function GrantPage() {
+    const { id, model, permission, redirect } = Route.useSearch();
+    const navigate = useNavigate({ from: "/grant" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
     const userId = user?.id;
@@ -50,6 +62,8 @@ function GrantModelPage() {
     );
     const [isGranting, setIsGranting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const grant = model ? { model } : permission ? { permission } : undefined;
+    const title = model ? "Allow model access" : "Allow account access";
 
     useEffect(() => {
         const from = preferredReturnUrl(redirect);
@@ -62,7 +76,7 @@ function GrantModelPage() {
     }, [navigate, redirect]);
 
     useEffect(() => {
-        if (!userId || !id || !model) return;
+        if (!userId || !id) return;
         let canceled = false;
         setKey(undefined);
         setOutcome("pending");
@@ -81,43 +95,43 @@ function GrantModelPage() {
         return () => {
             canceled = true;
         };
-    }, [userId, id, model]);
+    }, [userId, id]);
 
-    const subject = key ? (
-        <Surface>
-            <Text size="sm">Key to update</Text>
-            <Text size="sm" weight="semibold" tone="strong">
-                {key.name ?? key.id}
-            </Text>
-            {key.start && <KeyChip prefix={key.start} />}
-        </Surface>
-    ) : undefined;
+    const subject = key ? <KeySubject apiKey={key} /> : undefined;
 
-    if (isPending) return <AuthModalLoading title="Allow model access" />;
+    if (isPending) return <AuthModalLoading title={title} />;
     if (!user) {
         return (
             <SignInScreen
-                title="Allow model access"
+                title={title}
                 description="Sign in as the key owner to review this request."
             />
         );
     }
-    if (!id || !model || key === null) {
+    if (!id || !grant || key === null) {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Allow model access"
+                title={title}
                 error="Couldn’t load this request. Check that you’re signed in as the key owner."
             />
         );
     }
     if (key === undefined) {
-        return <AuthModalLoading title="Allow model access" />;
+        return <AuthModalLoading title={title} />;
     }
 
-    const alreadyAllowed =
-        !Array.isArray(key.permissions?.models) ||
-        key.permissions.models.includes(model);
+    const requested = model
+        ? { label: "Model requested", value: model }
+        : {
+              label: "Permission requested",
+              value: accountPermissions.find(({ id }) => id === permission)
+                  ?.label,
+          };
+    const alreadyAllowed = model
+        ? !Array.isArray(key.permissions?.models) ||
+          key.permissions.models.includes(model)
+        : Boolean(permission && key.permissions?.account?.includes(permission));
 
     if (outcome !== "pending" || alreadyAllowed) {
         return (
@@ -133,7 +147,7 @@ function GrantModelPage() {
                 subject={subject}
                 description={
                     outcome !== "declined"
-                        ? `This key can use ${model}. Retry your request in the app or conversation.`
+                        ? "This key has the access it asked for. Retry your request in the app or conversation."
                         : "The key’s permissions have not changed."
                 }
                 actions={
@@ -145,9 +159,9 @@ function GrantModelPage() {
 
     return (
         <AuthFlowScreen
-            title="Allow model access?"
+            title={`${title}?`}
             subject={subject}
-            description="This adds one model to this key. Its spending limit, expiry, and other permissions stay the same. You can remove access later from your Keys page."
+            description="This adds only what’s shown below to this key. Its spending limit, expiry, and other permissions stay the same. You can remove it later from your Keys page."
             error={error ?? undefined}
             actions={
                 <>
@@ -169,9 +183,9 @@ function GrantModelPage() {
                             try {
                                 const response = await apiClient["api-keys"][
                                     ":id"
-                                ]["grant-model"].$post({
+                                ].grant.$post({
                                     param: { id },
-                                    json: { model },
+                                    json: grant,
                                 });
                                 if (!response.ok)
                                     throw new Error(await readError(response));
@@ -187,23 +201,25 @@ function GrantModelPage() {
                             }
                         }}
                     >
-                        {isGranting ? "Allowing…" : "Allow model access"}
+                        {isGranting ? "Allowing…" : "Allow"}
                     </Button>
                 </>
             }
         >
             <Surface>
-                <Text size="sm">Model requested</Text>
+                <Text size="sm">{requested.label}</Text>
                 <div className="break-words">
                     <Text size="sm" weight="semibold" tone="strong">
-                        {model}
+                        {requested.value}
                     </Text>
                 </div>
             </Surface>
-            <Text size="sm">
-                This model may spend Pollen when used. The key’s existing
-                spending limit still applies.
-            </Text>
+            {model && (
+                <Text size="sm">
+                    This model may spend Pollen when used. The key’s existing
+                    spending limit still applies.
+                </Text>
+            )}
             <InlineLink
                 href={`/edit-key?id=${encodeURIComponent(id)}`}
                 tone="quiet"

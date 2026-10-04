@@ -1191,7 +1191,7 @@ describe("API Key Management", () => {
         });
     });
 
-    describe("POST /api/api-keys/:id/grant-model", () => {
+    describe("POST /api/api-keys/:id/grant", () => {
         test("adds only the approved model to an existing key", async ({
             sessionToken,
         }) => {
@@ -1202,7 +1202,7 @@ describe("API Key Management", () => {
                 allowedModels: [firstModel],
                 accountPermissions: ["profile"],
             });
-            const url = `http://localhost:3000/api/api-keys/${created.id}/grant-model`;
+            const url = `http://localhost:3000/api/api-keys/${created.id}/grant`;
             const body = JSON.stringify({ model: secondModel });
             const headers = {
                 "Content-Type": "application/json",
@@ -1256,6 +1256,42 @@ describe("API Key Management", () => {
                 account: ["profile"],
             });
             expect(key?.pollenBalance).toBe(5);
+        });
+
+        test("adds only the approved account permission", async ({
+            sessionToken,
+        }) => {
+            const model = "black-forest-labs/flux.1-schnell";
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "limited-account-key",
+                allowedModels: [model],
+                accountPermissions: ["profile"],
+            });
+            const grant = (permission: string) =>
+                SELF.fetch(
+                    `http://localhost:3000/api/api-keys/${created.id}/grant`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({ permission }),
+                    },
+                );
+
+            expect((await grant("admin")).status).toBe(400);
+            expect((await grant("machines")).status).toBe(200);
+            expect((await grant("machines")).status).toBe(200);
+
+            const db = drizzle(env.DB, { schema });
+            const key = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
+                models: [model],
+                account: ["profile", "machines"],
+            });
         });
     });
 

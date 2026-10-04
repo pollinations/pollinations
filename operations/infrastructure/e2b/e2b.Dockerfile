@@ -27,7 +27,7 @@ RUN curl -fsSL -o /usr/local/bin/websocat https://github.com/vi/websocat/release
 # `polli harness` connects, from the installers its hints name. Not Codex:
 # its router runs as a systemd user service, and sandboxes have no systemd.
 RUN npx -y n 24 && rm -rf /usr/local/n \
-    && npm install -g @pollinations/cli @anthropic-ai/claude-code \
+    && npm install -g @pollinations/cli@0.1.24 @anthropic-ai/claude-code \
         opencode-ai openclaw \
     && npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 

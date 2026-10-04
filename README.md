@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-03** – **🔗 More tools for MCP clients** Check usage and earnings, browse quests, and manage API keys from your MCP client. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).
+- **2026-10-03** – **📱 Sandboxes from `polli`** Create, list, and stop sandboxes from the CLI, then generate SSH configuration to connect. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).
+- **2026-10-03** – **✨ PDFs and audio in chat requests** Send inline PDFs to OpenRouter models or base64 audio to Inkling; Gen handles the media transfer behind the scenes. [API docs](https://gen.pollinations.ai/docs).
+- **2026-10-03** – **🎨 Sixteen design decisions from one sentence** Jev Assembler turns a page description into choices for layout, typography, palette, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler) <!-- app -->
 - **2026-10-02** – **🚀 A little room to compute** Create E2B-compatible sandboxes through the gen API or `polli sandbox`, then connect over SSH. The coding-agent template comes with five agents ready to use. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-10-02** – **🤖 The models meet Alice** Compare official and community models on weekly puzzle evals, with past runs and uncertainty shown alongside the scores. [See the rankings](https://model-monitor.pollinations.ai)
 - **2026-10-02** – **✨ A bigger picture fits** Send chat requests up to 100 MiB with inline images; large image, video, and file data URLs can be uploaded and reused across turns. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-10-02** – **🎨 A new layer of pollen** Generate and edit images directly in Krita, with results placed on new layers. [View repo](https://github.com/xiaotian1171/pollinations-krita) <!-- app -->
 - **2026-10-02** – **🎵 A bee enters Unity** Add Pollinations-powered chat, image generation, and speech to Unity games with an async C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity) <!-- app -->
 - **2026-10-02** – **🔗 Pi gets a proper plug** Run `polli mcp install pi` to add Pollinations to Pi’s native MCP config without disturbing your other servers. [Polli CLI](https://www.npmjs.com/package/@pollinations/cli)
-- **2026-10-02** – **🌟 The garden gets a gathering place** The Community page now shows live project activity, open votes, and Quest rankings in one place. [Visit the community](https://pollinations.ai)
-- **2026-10-01** – **🎨 Pollinations in Krita** Generate or edit images inside Krita, size results to your canvas or selection, and keep the original paint layer intact.
-- **2026-10-01** – **🎨 An image studio for Figma** Generate and edit images in Figma with your own Pollinations key. [Try it](https://guest453.github.io/pollinations-figma/) <!-- app -->
-- **2026-10-01** – **🤖 Two new decision models** Try Kev 4B and the free Span-01 Lite through `/alpha/decisions` or [chat completions](https://gen.pollinations.ai/v1/chat/completions).
 ---
 
 ## 🌱 Introduction

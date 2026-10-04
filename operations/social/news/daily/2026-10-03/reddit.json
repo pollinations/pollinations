@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-03",
+  "period_start": "2026-10-03",
+  "period_end": "2026-10-03",
+  "generated_at": "2026-10-04T08:09:39.264830+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-03/images/reddit.jpg"
+    }
+  ],
+  "title": "Chat accepts larger PDFs; Polli gets code search",
+  "text": "Twelve PRs merged today. The changes most likely to affect someone building on pollinations are in chat, Polli, and MCP.\n\n- Chat now accepts [large inline PDFs and Inkling audio](https://github.com/pollinations/pollinations/pull/16308). If either format has been blocking a workflow, this is the one to retest.\n- [polli 0.1.23](https://github.com/pollinations/pollinations/pull/16296) adds sandbox and SSH commands. We also [installed ripgrep in Polli’s runtime](https://github.com/pollinations/pollinations/pull/16321) so it can search code there.\n- MCP clients have [new tools for usage, earnings, quests, and API keys](https://github.com/pollinations/pollinations/pull/15731). Fewer trips out of the client to check account state.\n\nThe Jev work is a mix of agents and apps: a [private context trimmer](https://github.com/pollinations/pollinations/pull/15963), [Cerberus for security review](https://github.com/pollinations/pollinations/pull/16164), and [Nomic for voting code](https://github.com/pollinations/pollinations/pull/16202). [Jev Assembler](https://github.com/pollinations/pollinations/pull/16299) joined the app collection, [Jev Triage Desk](https://github.com/pollinations/pollinations/pull/16300) joined business apps, and [Whichever](https://github.com/pollinations/pollinations/pull/16301) joined games.\n\nOn the community side, [four members received publisher access](https://github.com/pollinations/pollinations/pull/16212), and [@murderszn received community-agent publishing access](https://github.com/pollinations/pollinations/pull/16312).\n\nThe PRs are linked because the implementation details are more useful than a changelog adjective. If you try the new input formats or Polli commands and hit an odd edge case, a reproducible example would help."
+}

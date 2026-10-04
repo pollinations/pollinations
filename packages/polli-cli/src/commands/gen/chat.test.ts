@@ -137,6 +137,23 @@ describe("polli gen chat session lifecycle", () => {
         expect(process.exitCode).toBe(0);
     });
 
+    it("labels an omitted model as the API default without sending a model", async () => {
+        prepare(async () => new Response(STREAM_OK));
+
+        const line = await startSession();
+        expect(process.stderr.write).toHaveBeenCalledWith(
+            expect.stringContaining("model: API default"),
+        );
+        expect(createChatCommand().helpInformation()).toContain(
+            "Text model (default: API default)",
+        );
+
+        await line("hello");
+        const body = vi.mocked(fetch).mock.calls[0][1]?.body as string;
+        expect(JSON.parse(body)).not.toHaveProperty("model");
+        await line("/exit");
+    });
+
     it("does not prompt a closed interface when stdin ends mid-turn", async () => {
         let release: (() => void) | undefined;
         const gate = new Promise<void>((resolve) => {

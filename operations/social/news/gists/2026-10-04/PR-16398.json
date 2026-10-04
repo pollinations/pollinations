@@ -1,0 +1,36 @@
+{
+  "pr_number": 16398,
+  "title": "Add Real or AI? — Spot the Synthetic to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16398",
+  "merged_at": "2026-10-04T09:07:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) to games\n- Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi\n\nFixes #15790, fixes #15725",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Spot the synthetic",
+    "blurb": "A new game joins the garden: pick the real image or passage from a matched pair before the timer runs out. Three hearts make every guess count.",
+    "summary": "Real or AI? — Spot the Synthetic joins the games list with timed rounds of matched images or passages, one real and one AI-generated, plus three hearts and streak scoring.",
+    "impact": "Players get a quick visual-and-text guessing game where they identify the AI-generated entry before time runs out.",
+    "keywords": [
+      "community",
+      "games",
+      "Real or AI",
+      "images",
+      "text",
+      "AI detection"
+    ],
+    "visual_concept": "Real or AI? is a browser guessing game with no mascot identified in the PR. Show Polli as a tiny detective comparing two image cards beside two passage cards, with a pixel timer, three hearts, and a streak marker; flowers and code-plants keep the scene rooted in the pollinations garden.",
+    "image_prompt": "In a cozy pixel-art garden arcade, Polli wears a tiny detective hat and thoughtfully compares two matching picture cards and two passage cards beside a pixel timer and three hearts; she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art. Lime green (#ecf874) glows prominently around the cards and code-plants against a warm cream background with mint, lavender, and peach accents: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16398.jpg",
+    "prompt": "In a cozy pixel-art garden arcade, Polli wears a tiny detective hat and thoughtfully compares two matching picture cards and two passage cards beside a pixel timer and three hearts; she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art. Lime green (#ecf874) glows prominently around the cards and code-plants against a warm cream background with mint, lavender, and peach accents: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T09:08:18.775628+00:00",
+  "app_name": "Real or AI? — Spot the Synthetic",
+  "app_url": "https://spot-the-ai.edgeone.dev"
+}

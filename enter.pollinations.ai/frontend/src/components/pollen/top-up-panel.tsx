@@ -312,7 +312,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 intent="brand"
                                 icon={<WalletIcon />}
                             >
-                                Pay with crypto (USD)
+                                Pay with crypto
                             </Button>
                         )}
                     </div>

@@ -54,18 +54,20 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         initialEarningsEnabled,
     );
 
-    const expiryDays = apiKey.expiresAt
-        ? Math.ceil(
-              (new Date(apiKey.expiresAt).getTime() - Date.now()) /
-                  (1000 * 60 * 60 * 24),
-          )
-        : null;
+    const [initialExpiryDays] = useState(() =>
+        apiKey.expiresAt
+            ? Math.ceil(
+                  (new Date(apiKey.expiresAt).getTime() - Date.now()) /
+                      (1000 * 60 * 60 * 24),
+              )
+            : null,
+    );
 
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
-        expiryDays,
+        expiryDays: initialExpiryDays,
     });
 
     async function handleSave() {
@@ -96,13 +98,16 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             }
 
             const { expiryDays, ...permissions } = keyPermissions.permissions;
-            await onUpdate(apiKey.id, {
+            const updates: ApiKeyUpdateParams = {
                 name,
                 ...permissions,
-                expiresAt: expiryDays
+            };
+            if (expiryDays !== initialExpiryDays) {
+                updates.expiresAt = expiryDays
                     ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
-                    : null,
-            });
+                    : null;
+            }
+            await onUpdate(apiKey.id, updates);
 
             onClose();
         } catch (error) {

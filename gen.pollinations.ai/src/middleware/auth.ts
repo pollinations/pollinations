@@ -1,4 +1,8 @@
-import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
+import {
+    type AgentRunClaims,
+    type Grant,
+    signGrantAgent,
+} from "@shared/auth/agent-run-token.ts";
 import {
     type AuthenticatedApiKey,
     type AuthUser,
@@ -46,19 +50,35 @@ export type AuthEnv = {
 const AUTHENTICATION_REQUIRED_MESSAGE =
     "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
 
+type GrantAsker = { agent: string; sig: string };
+
 /** A grant link asks the owner to approve one model or account permission;
  * without one, the link opens the key editor. */
 export function keyPermissionsLink(
     apiKeyId: string,
     environment?: string,
-    grant?: { model: string } | { permission: string },
+    grant?: Grant,
+    asker?: GrantAsker,
 ): string {
     const enterBase =
         environment === "staging"
             ? PUBLIC_URLS.enter.staging
             : PUBLIC_URLS.enter.production;
-    const search = new URLSearchParams({ id: apiKeyId, ...grant });
+    const search = new URLSearchParams({ id: apiKeyId, ...grant, ...asker });
     return `${enterBase}/${grant ? "grant" : "edit-key"}?${search}`;
+}
+
+/** The agent whose run was refused, for the grant link to name. */
+export function grantAsker(
+    agentRun: AgentRunClaims | undefined,
+    env: { BETTER_AUTH_SECRET: string },
+    apiKeyId: string,
+    grant: Grant,
+): GrantAsker | undefined {
+    const agent = agentRun?.agentModelId;
+    if (!agent) return undefined;
+    const secret = env.BETTER_AUTH_SECRET;
+    return { agent, sig: signGrantAgent({ secret, apiKeyId, grant, agent }) };
 }
 
 /** Text routes turn this 403 into a chat reply with the grant link. */
@@ -107,9 +127,13 @@ function installAuth(
         if (!apiKey?.permissions?.models) return;
 
         if (!apiKey.permissions.models.includes(model.resolved)) {
-            const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT, {
-                model: model.resolved,
-            });
+            const grant = { model: model.resolved };
+            const link = keyPermissionsLink(
+                apiKey.id,
+                c.env?.ENVIRONMENT,
+                grant,
+                grantAsker(agentRun, c.env, apiKey.id, grant),
+            );
             throw new ModelNotAllowedError(
                 `Model '${model.requested}' is not allowed for this API key. Allow this model at ${link}`,
             );

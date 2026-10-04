@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import {
     communityModelId,
     legacyCommunityModelId,
@@ -1292,6 +1293,42 @@ describe("API Key Management", () => {
                 models: [model],
                 account: ["profile", "machines"],
             });
+        });
+
+        test("names the asking agent only when gen signed it", async ({
+            sessionToken,
+        }) => {
+            const agent = "community/alice/research-buddy";
+            const sig = signGrantAgent({
+                secret: env.BETTER_AUTH_SECRET,
+                apiKeyId: "key-1",
+                grant: { permission: "machines" },
+                agent,
+            });
+            const named = async (keyId: string, asker: string) => {
+                const query = new URLSearchParams({
+                    permission: "machines",
+                    agent: asker,
+                    sig,
+                });
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/api-keys/${keyId}/grant-agent?${query}`,
+                    {
+                        headers: {
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                    },
+                );
+                expect(response.status).toBe(200);
+                return (await response.json<{ agent: string | null }>()).agent;
+            };
+
+            expect(await named("key-1", agent)).toBe(agent);
+            // A signed name cannot be relabelled or moved to another key.
+            expect(
+                await named("key-1", "community/pollinations/floret"),
+            ).toBeNull();
+            expect(await named("key-2", agent)).toBeNull();
         });
     });
 

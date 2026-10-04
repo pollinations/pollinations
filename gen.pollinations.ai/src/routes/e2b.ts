@@ -17,7 +17,7 @@ import { type Context, Hono, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { auth, keyPermissionsLink } from "@/middleware/auth.ts";
+import { auth, grantAsker, keyPermissionsLink } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 
@@ -341,8 +341,11 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     c.var.auth.requireUser();
     const apiKey = c.var.auth.apiKey;
     if (!apiKey?.permissions?.account?.includes("machines")) {
+        const keyId = apiKey?.id ?? "";
+        const grant = { permission: "machines" };
+        const asker = grantAsker(c.var.auth.agentRun, c.env, keyId, grant);
         throw new HTTPException(403, {
-            message: `API key does not have 'account:machines' permission. Allow it at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT, { permission: "machines" })}`,
+            message: `API key does not have 'account:machines' permission. Allow it at ${keyPermissionsLink(keyId, c.env.ENVIRONMENT, grant, asker)}`,
         });
     }
     await next();

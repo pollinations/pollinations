@@ -63,6 +63,7 @@ async function mintDelegatedToken({
             endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
                 ? endpoint.id
                 : undefined,
+        agentModelId: endpoint.modelId,
     });
 }
 

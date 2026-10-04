@@ -17,7 +17,7 @@ import {
     responsesToChatCompletion,
     responsesToChatStream,
 } from "../text/responses/chatResponse.ts";
-import { ModelNotAllowedError } from "./auth.ts";
+import { grantAsker, ModelNotAllowedError } from "./auth.ts";
 
 // Text routes answer these errors as a chat reply with a link to fix them.
 // Set one false to return the plain HTTP error instead. JSON and audio
@@ -88,10 +88,12 @@ export function modelNotAllowedNoticeMessage(
     model: { requested: string; resolved: string },
     keyId: string | undefined,
     redirect: string | null,
+    asker?: { agent: string; sig: string },
 ): string {
     const link = enterLink(environment, "/grant", {
         id: keyId,
         model: model.resolved,
+        ...asker,
         ref: "agent_model_permission",
         redirect,
     });
@@ -125,6 +127,11 @@ function noticeMessage(c: Context<Env>): string | undefined {
             c.var.model,
             keyId,
             appOrigin(c),
+            keyId
+                ? grantAsker(c.var.auth?.agentRun, c.env, keyId, {
+                      model: c.var.model.resolved,
+                  })
+                : undefined,
         );
 }
 

@@ -10,7 +10,7 @@ import {
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AppAttribution } from "../components/auth/app-attribution.tsx";
@@ -38,6 +38,9 @@ type GrantSearch = {
     /** One model or one account permission the key was refused. */
     model?: string;
     permission?: (typeof CONSENT_PERMISSIONS)[number];
+    /** The agent whose run was refused, with gen's signature over it. */
+    agent?: string;
+    sig?: string;
     redirect?: string;
 };
 
@@ -54,13 +57,15 @@ export const Route = createFileRoute("/grant")({
                 ? search.model
                 : undefined,
         permission: CONSENT_PERMISSIONS.find((p) => p === search.permission),
+        agent: typeof search.agent === "string" ? search.agent : undefined,
+        sig: typeof search.sig === "string" ? search.sig : undefined,
         redirect: parseAppUrl(search.redirect) ?? undefined,
     }),
     component: GrantPage,
 });
 
 function GrantPage() {
-    const { id, model, permission, redirect } = Route.useSearch();
+    const { id, model, permission, agent, sig, redirect } = Route.useSearch();
     const navigate = useNavigate({ from: "/grant" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
@@ -71,8 +76,12 @@ function GrantPage() {
     );
     const [isGranting, setIsGranting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [askingAgent, setAskingAgent] = useState<string | null>(null);
     const { catalog } = useModelCategories(useOwnCommunityModels(!!userId));
-    const grant = model ? { model } : permission ? { permission } : undefined;
+    const grant = useMemo(
+        () => (model ? { model } : permission ? { permission } : undefined),
+        [model, permission],
+    );
     const title = model ? "Allow model access" : "Allow account access";
 
     useEffect(() => {
@@ -107,6 +116,22 @@ function GrantPage() {
         };
     }, [userId, id]);
 
+    useEffect(() => {
+        setAskingAgent(null);
+        if (!userId || !id || !grant || !agent || !sig) return;
+        let canceled = false;
+        apiClient["api-keys"][":id"]["grant-agent"]
+            .$get({ param: { id }, query: { ...grant, agent, sig } })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((result) => {
+                if (!canceled) setAskingAgent(result?.agent ?? null);
+            })
+            .catch(() => {});
+        return () => {
+            canceled = true;
+        };
+    }, [userId, id, grant, agent, sig]);
+
     const subject = key ? <KeySubject apiKey={key} /> : undefined;
 
     if (isPending) return <AuthModalLoading title={title} />;
@@ -138,12 +163,8 @@ function GrantPage() {
               value: accountPermissions.find(({ id }) => id === permission)
                   ?.label,
           };
-    // A refusal while an agent runs can only reach a key that lists the
-    // agent itself, so the agents on the key's model list say who could ask.
-    const agents = catalog.filter(
-        (item) =>
-            item.agent &&
-            key.permissions?.models?.includes(getCatalogModelId(item)),
+    const agentListing = catalog.find(
+        (item) => getCatalogModelId(item) === askingAgent,
     );
     const alreadyAllowed = model
         ? !Array.isArray(key.permissions?.models) ||
@@ -237,27 +258,22 @@ function GrantPage() {
                     spending limit still applies.
                 </Text>
             )}
-            {agents.length > 0 && (
+            {askingAgent && (
                 <div className="space-y-2">
-                    <Text size="sm">This key is used with</Text>
-                    {agents.map((agent) => {
-                        const agentId = getCatalogModelId(agent);
-                        return (
-                            <AppAttribution
-                                key={agentId}
-                                icon={<BotIcon className="h-4 w-4" />}
-                                attribution={{
-                                    appName: getCatalogDisplayName(
-                                        agent,
-                                        agentId,
-                                    ),
-                                    githubUsername:
-                                        getCommunityModelOwner(agentId),
-                                }}
-                                redirectUrl={null}
-                            />
-                        );
-                    })}
+                    <Text size="sm">Requested by an agent using this key</Text>
+                    <AppAttribution
+                        icon={<BotIcon className="h-4 w-4" />}
+                        attribution={{
+                            appName: agentListing
+                                ? getCatalogDisplayName(
+                                      agentListing,
+                                      askingAgent,
+                                  )
+                                : askingAgent,
+                            githubUsername: getCommunityModelOwner(askingAgent),
+                        }}
+                        redirectUrl={null}
+                    />
                 </div>
             )}
             <InlineLink

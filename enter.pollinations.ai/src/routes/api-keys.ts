@@ -1,3 +1,4 @@
+import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
 import {
     createApiKeyForUser,
     validateRedirectUriFormat,
@@ -157,6 +158,12 @@ const GrantSchema = z.union([
     z.object({ model: z.string().min(1) }),
     z.object({ permission: z.enum(CONSENT_PERMISSIONS) }),
 ]);
+
+// A grant link from an agent run names the agent, signed by gen.
+const GrantAgentSchema = z.intersection(
+    GrantSchema,
+    z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
+);
 
 const CreateApiKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
@@ -479,6 +486,35 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
             return c.json({ granted: true });
+        },
+    )
+    .get(
+        "/:id/grant-agent",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Confirm which agent a grant link says asked for the grant.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", GrantAgentSchema),
+        async (c) => {
+            c.var.auth.requireUser();
+            const query = c.req.valid("query");
+            const grant =
+                "model" in query
+                    ? { model: query.model }
+                    : { permission: query.permission };
+            // The link reached the owner through the agent, so only gen's
+            // signature makes the name trustworthy. This reads nothing from
+            // the key, so it needs no ownership check.
+            const signed = verifyGrantAgent({
+                secret: c.env.BETTER_AUTH_SECRET,
+                apiKeyId: c.req.param("id"),
+                grant,
+                agent: query.agent,
+                sig: query.sig,
+            });
+            return c.json({ agent: signed ? query.agent : null });
         },
     )
     /**

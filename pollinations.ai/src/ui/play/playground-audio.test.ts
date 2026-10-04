@@ -46,6 +46,7 @@ describe("catalog-driven audio requests", () => {
             {
                 prompt: "  a piano melody  ",
                 file,
+                duration: 12,
             },
         );
         const [uploadUrl, upload] = fetchRequest.mock.calls[0];
@@ -56,6 +57,7 @@ describe("catalog-driven audio requests", () => {
         expect(JSON.parse(request.body)).toEqual({
             input: "a piano melody",
             model: "new-model-from-catalog",
+            duration: 12,
             reference_audio: "https://media.pollinations.ai/reference",
         });
         expect(result.type).toBe("audio");
@@ -111,6 +113,7 @@ describe("catalog-driven audio requests", () => {
                 {
                     prompt: "Names: Polly",
                     file,
+                    language: "de",
                 },
             ),
         ).toEqual({ type: "text", text: "hello" });
@@ -118,6 +121,7 @@ describe("catalog-driven audio requests", () => {
         expect(url).toBe("https://example.test/v1/audio/transcriptions");
         expect(await request.body.get("file").text()).toBe("audio bytes");
         expect(request.body.get("prompt")).toBe("Names: Polly");
+        expect(request.body.get("language")).toBe("de");
     });
 
     it.each([

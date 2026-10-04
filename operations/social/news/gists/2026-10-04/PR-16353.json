@@ -1,0 +1,34 @@
+{
+  "pr_number": 16353,
+  "title": "fix(cli): report the selected Codex harness model",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16353",
+  "merged_at": "2026-10-04T10:48:39Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16350\n\n- Reports the requested and smoke-verified model in Codex enable's result instead of the first model retained by additive curation.\n- Preserves standalone status, child-key reuse, setup, smoke verification, and rollback behavior.\n- Extends the existing override test for a newly curated model, repeated selection of a non-first model, and unchanged status. One regression fails before the fix; all nine focused tests and 280 CLI tests pass afterward.\n- Verification: build, Biome, independent focused review and diff checks pass. Strict TypeScript retains main's 36 diagnostics; tests use installed Vitest 2.1.9 and synthetic router fixtures. No live model calls or Pollen used.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The chosen model gets named",
+    "blurb": "Codex enable reports the model it actually selected, even when that model isn’t first on the curated list. A small but useful distinction.",
+    "summary": "The Polli CLI’s Codex enable result reports the requested, smoke-verified model instead of the first model retained by additive curation, without changing setup, status, child-key reuse, verification, or rollback behavior.",
+    "impact": "CLI users see the model they selected in the Codex enable result, including when they choose a non-first curated model.",
+    "keywords": [
+      "Polli CLI",
+      "Codex",
+      "model selection",
+      "harness",
+      "result reporting",
+      "bug fix"
+    ],
+    "visual_concept": "Depict a cozy CLI terminal with a short curated model list: the selected non-first entry and the result line point to the same model. Polli, wearing tiny coder glasses, checks the result beside a small code-plant; the focus is accurate reporting, not a new model.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro terminal shows a short model list with its second entry highlighted and a matching result line, while a small Polli in tiny coder glasses points approvingly at the screen beside a sprouting code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) glow, warm cream and pastel surroundings, dark purple (#110518) outlines, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16353.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro terminal shows a short model list with its second entry highlighted and a matching result line, while a small Polli in tiny coder glasses points approvingly at the screen beside a sprouting code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) glow, warm cream and pastel surroundings, dark purple (#110518) outlines, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "generated_at": "2026-10-04T10:49:38.489637+00:00"
+}

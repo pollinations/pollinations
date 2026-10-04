@@ -1073,6 +1073,9 @@ test("enforces paid-only and model permissions for Scribe Realtime", async () =>
 
     expect(questResponse.status).toBe(402);
     expect(permissionResponse.status).toBe(403);
+    expect(await permissionResponse.text()).toContain(
+        `https://enter.pollinations.ai/grant-model?id=${emptyPermissions.id}&model=elevenlabs%2Fscribe-v2-realtime`,
+    );
 });
 
 test("accepts a publishable key without forwarding it to ElevenLabs", async () => {

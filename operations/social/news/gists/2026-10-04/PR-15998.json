@@ -1,0 +1,36 @@
+{
+  "pr_number": 15998,
+  "title": "feat: route Nemotron 3 Ultra via Fireworks NVFP4 with DeepInfra fallback",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/15998",
+  "merged_at": "2026-10-04T15:29:58Z",
+  "labels": [
+    "POLLEN-QUEST"
+  ],
+  "pr_body_excerpt": "Fixes #15851\n\n- Routes `nvidia/nemotron-3-ultra` first to Fireworks `accounts/fireworks/models/nemotron-3-ultra-nvfp4`, using the same Fireworks config, parameters and transform as Nemotron 3.5 Lightning.\n- Adds `nvidia/nemotron-3-ultra:deepinfra` as a hidden fallback: DeepInfra `nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B` with its existing config and transform.\n- `paidOnly: false`, `priceMultiplier: 1`. Public ID, aliases, text/tool/reasoning behavior, context (262144) and endpoints are unchanged. No secret added.\n- Prices: Fireworks $0.60 / $0.12 cached / $2.40 per million (primary); DeepInfra standard tier $0.50 / $0.10 / $2.20 (fallback, cheaper than the primary). Both match the providers' public pages; OpenRouter lists the same $0.60 / $0.12 / $2.40 and 262144 context for the model.\n\n## Verification\n\n- Resolver tests cover both routes (upstream ID and host); the cache-control passthrough test now includes the model; price snapshot updated. 184 related tests pass under a plain Node Vitest config; `tsc` is clean on the touched files.\n- The Workers-pool tests and the snapshot run only in CI.\n\n## Not verified\n\nI had no Fireworks or DeepInfra credentials, so these acceptance items are **not done** and need a maintainer with the keys:\n\n- Direct provider probes (identity, tools, reasoning, streaming, usage) for both routes. The reasoning toggle reuses the Fireworks Lightning transform and is untested against this model.\n- Authenticated gateway tests (Quest Pollen, forced fallback, wallet debit, billing attribution).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Nemotron takes the scenic route",
+    "blurb": "Nemotron 3 Ultra gets a Fireworks route and a DeepInfra backup. Same public model ID; a little more room for the infrastructure to improvise.",
+    "summary": "Routes nvidia/nemotron-3-ultra primarily through Fireworks’ NVFP4 model, with a hidden DeepInfra fallback, while keeping its public ID, 262144-token context, and text, tool, and reasoning behavior unchanged.",
+    "impact": "Requests keep using nvidia/nemotron-3-ultra; the primary Fireworks route is priced at $0.60 input, $0.12 cached input, and $2.40 output per million tokens, with DeepInfra configured as a fallback.",
+    "keywords": [
+      "Nemotron 3 Ultra",
+      "Fireworks",
+      "DeepInfra",
+      "NVFP4",
+      "fallback",
+      "text API"
+    ],
+    "visual_concept": "Depict the existing Nemotron 3 Ultra model as one cozy retro terminal connected to two garden paths: a prominent Fireworks path marked by a gentle pastel spark and a quieter DeepInfra backup path. Polli, wearing a tiny route-planner scarf, tends the branching code-vines; avoid suggesting a new public model ID or verified provider behavior.",
+    "image_prompt": "In a cozy pixel garden, a retro terminal labeled 'NEMOTRON 3 ULTRA' sits among code-vines branching toward a softly sparkling Fireworks sign and a smaller DeepInfra backup sign, with prominent lime green (#ecf874) foliage against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny route-planner scarf and gently guides a vine toward the two paths, small-to-medium sized in the scene, strictly pixel art, never realistic, with chunky retro sprites, warm lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-15998.jpg",
+    "prompt": "In a cozy pixel garden, a retro terminal labeled 'NEMOTRON 3 ULTRA' sits among code-vines branching toward a softly sparkling Fireworks sign and a smaller DeepInfra backup sign, with prominent lime green (#ecf874) foliage against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny route-planner scarf and gently guides a vine toward the two paths, small-to-medium sized in the scene, strictly pixel art, never realistic, with chunky retro sprites, warm lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T15:30:53.660894+00:00"
+}

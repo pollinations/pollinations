@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 Chorus](https://xiaotian1171.github.io/chorus) | Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [📚 Tunemory](https://tomdacatto.github.io/pollinations-tunemory) | Turn a fact, formula or word list into a short catchy song that helps you remember it. Paste your notes, pick a style, and get lyrics that keep every fact and number (checked in code before they are s | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Liar's Supper](https://xiaotian1171.github.io/liars-supper) | A party deduction game for one device passed around the table. The host sets a scene, deals every player a secret role, narrates three twists while the table argues on a timer, then takes a private vo | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
@@ -37,7 +38,6 @@
 | [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Whodunnit - a voice murder mystery](https://guest453.github.io/whodunnit) | A first-person 3D browser game: five AI suspects, one killer, and an alibi built to break. The player walks a mansion, questions the suspects out loud (voice input transcribed by Pollinations) or by t | [@Guest453](https://github.com/Guest453) |
 | [🎮 Alibi](https://tomdacatto.github.io/pollinations-alibi) | A voice murder mystery. Four AI suspects, each with their own voice and story: question them out loud (or type), keep a notebook of what each one claims, catch the contradiction in the culprit's alibi | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Whichever](https://kreggscode.github.io/whichever) | A branching story where you set the lens and Jev picks the branch. Type where the story starts and choose what it should be judged against — six presets, or a line of your own. A text model writes thr | [@kreggscode](https://github.com/kreggscode) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

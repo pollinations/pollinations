@@ -15,7 +15,7 @@
  * ```
  */
 
-import { Pollinations } from "./client.js";
+import { buildTextRequest, Pollinations } from "./client.js";
 import {
     type AudioResponseExt,
     type ChatResponseExt,
@@ -246,9 +246,10 @@ export async function generateText(
 ): Promise<string | ChatResponseExt> {
     const { raw = false, ...textOptions } = options || {};
     if (raw) {
+        const request = buildTextRequest(prompt, textOptions);
         const response = await getClient().chat(
-            [{ role: "user", content: prompt }],
-            textOptions,
+            request.messages,
+            request.options,
         );
         return wrapChatResponse(response);
     }

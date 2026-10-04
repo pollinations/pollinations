@@ -57,7 +57,7 @@ export const PKCE_S256_CHALLENGE_REGEX = /^[A-Za-z0-9_-]{43}$/;
  *   balance and usage are free regardless)
  * - `keys`: account admin; create, list, and revoke API keys, plus My Models
  *   access where enabled.
- * - `machines`: create and run hosted sandboxes, paid in advance.
+ * - `machines`: create and run hosted sandboxes.
  */
 export const CONSENT_PERMISSIONS = [
     "profile",

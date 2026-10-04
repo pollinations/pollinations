@@ -1,0 +1,34 @@
+{
+  "pr_number": 16420,
+  "title": "feat: add switchable official app requests KPI",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16420",
+  "merged_at": "2026-10-04T13:01:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds one Official apps requests row: All plus individual verified CLI, Play/Website, Open WebUI, Playground and other official app keys. Reuses existing switch/graph controls and CSV export.\n- Counts successful final requests through BYOP or direct app keys once; excludes internal/dev, legacy and community-model traffic. Unavailable data stays blank, not zero.\n- Verified: 54 KPI tests, client/Worker production build, Biome, live read-only query (15,068 requests for Sep 21–27; per-key sum matches All), and Tinybird staging dry run.\n- Deployment prerequisite: deploy the new Tinybird endpoint/read grant to staging then production before promoting the dashboard. No deployment performed: staging dry run also lists unrelated quest migrations and deletion of account_notice_payment_required; reconcile those separately. Merge only, no production promotion.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One graph, several gardens",
+    "blurb": "The KPI dashboard gets a switchable view of official-app requests. One row for the whole garden, or a closer look at each verified app key.",
+    "summary": "Adds an Official apps requests KPI with All and per-key views for verified CLI, Play/Website, Open WebUI, Playground, and other official apps, using a new Tinybird endpoint and the dashboard’s existing graph and CSV controls.",
+    "impact": "The team can compare successful final requests across official apps, counting BYOP and direct app-key requests once while leaving unavailable data blank and excluding internal, legacy, and community-model traffic.",
+    "keywords": [
+      "KPI",
+      "official apps",
+      "Tinybird",
+      "observability",
+      "BYOP",
+      "CSV"
+    ],
+    "visual_concept": "Depict the internal KPI dashboard as a cozy retro monitor with a switch between an All graph and several smaller official-app graphs; a tiny CSV printout suggests export. Polli, wearing little analyst glasses, studies the graph beside a sprouting code-plant. Avoid implying that the dashboard is already deployed.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli studies a retro monitor showing one lime green (#ecf874) request graph branching into several smaller graphs, while a code-plant grows beside the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny analyst glasses and stays small within the scene. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16420.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli studies a retro monitor showing one lime green (#ecf874) request graph branching into several smaller graphs, while a code-plant grows beside the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny analyst glasses and stays small within the scene. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-04T13:02:30.168371+00:00"
+}

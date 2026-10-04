@@ -1,0 +1,33 @@
+{
+  "pr_number": 16217,
+  "title": "fix(cli): accept SSE data without a trailing space",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16217",
+  "merged_at": "2026-10-04T10:45:57Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16214\n\n- Accepts valid SSE data frames with or without the optional space after the colon, avoiding silently empty output or swallowed provider errors.\n- Preserves spaced-frame parsing, content, metadata and `[DONE]` handling with a two-line runtime change.\n- Adds four direct-parser regression cases using native `Response` bodies. The two unspaced cases fail on main and pass with the fix.\n- Keeps this compatibility change separate from reader cleanup #16208. Live gateway use of unspaced frames has not been observed.\n\nVerification: 253 tests across 30 files passed; ESM/declaration build, scoped strict TypeScript and Biome passed. Three localhost-server suites were excluded because this environment blocks socket binding. Local tests used cached Vitest 2.1.9 rather than the declared ^3.0.0; no dependencies or lockfiles changed.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One less space to worry about",
+    "blurb": "The CLI reads SSE messages whether or not there’s a space after `data:`. A tiny parsing fix keeps output and provider errors from disappearing into the shrubbery.",
+    "summary": "The Polli CLI parser accepts SSE `data:` frames with or without an optional space after the colon, while preserving spaced frames, metadata, and `[DONE]` handling.",
+    "impact": "CLI users get message content and provider errors from either valid frame format instead of silently empty output when the space is absent.",
+    "keywords": [
+      "Polli CLI",
+      "SSE",
+      "streaming",
+      "parser",
+      "provider errors"
+    ],
+    "visual_concept": "A cozy terminal shows `data:hello` and `data: hello` flowing into the same readable message. Polli, wearing tiny debugging glasses, checks the two paths beside a sprouting code-plant; the scene represents a small compatibility fix, not an observed gateway change.",
+    "image_prompt": "In a cozy pixel art garden workspace, two terminal lines, `data:hello` and `data: hello`, flow into one glowing message beside a sprouting code-plant; Polli wears tiny debugging glasses and checks both paths: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium sized and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream background, and dark purple (#110518) terminal text."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16217.jpg",
+    "prompt": "In a cozy pixel art garden workspace, two terminal lines, `data:hello` and `data: hello`, flow into one glowing message beside a sprouting code-plant; Polli wears tiny debugging glasses and checks both paths: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium sized and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream background, and dark purple (#110518) terminal text."
+  },
+  "generated_at": "2026-10-04T10:46:55.161009+00:00"
+}

@@ -262,7 +262,7 @@ export const usageCommand = new Command("usage")
         let days: number | undefined;
         if (opts.days !== undefined) {
             try {
-                days = parseDaysWindow(opts.days);
+                days = parseDaysWindow(opts.days, 90);
             } catch (err) {
                 printError(
                     err instanceof Error ? err.message : "Invalid --days value",

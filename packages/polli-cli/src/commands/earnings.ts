@@ -31,16 +31,19 @@ interface EarningsResponse {
 
 export type { EarningsRow };
 
-/** The API accepts a rolling window of at most 90 days. */
-export const MAX_EARNINGS_DAYS = 90;
+/** The API accepts an earnings window of at most 365 days. */
+export const MAX_EARNINGS_DAYS = 365;
 
-export function parseDaysWindow(value: string): number {
+export function parseDaysWindow(
+    value: string,
+    maxDays = MAX_EARNINGS_DAYS,
+): number {
     const days = Number(value);
     if (!Number.isInteger(days) || days < 1) {
         throw new Error("--days must be a positive integer");
     }
-    if (days > MAX_EARNINGS_DAYS) {
-        throw new Error(`--days must be ${MAX_EARNINGS_DAYS} or less`);
+    if (days > maxDays) {
+        throw new Error(`--days must be ${maxDays} or less`);
     }
     return days;
 }
@@ -51,7 +54,7 @@ export function totalPollenEarned(perEntity: EarningsRow[]): number {
 
 export const earningsCommand = new Command("earnings")
     .description("Show developer earnings from BYOP apps and community models")
-    .option("--days <n>", "Rolling window in days, max 90", "30")
+    .option("--days <n>", "Rolling window in days, max 365", "30")
     .action(async (opts) => {
         const key = requireKey();
 

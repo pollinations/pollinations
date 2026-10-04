@@ -113,7 +113,7 @@ polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
-polli earnings               # developer earnings (default 30 days, --days up to 90)
+polli earnings               # developer earnings (default 30 days, --days up to 365)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models

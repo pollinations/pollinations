@@ -92,7 +92,7 @@ const CategorySection: FC<{
                         </span>
                         <span className="text-theme-text-muted">
                             {" "}
-                            — {model.perPollen} {model.unit}/pollen
+                            — {model.perPollen} {model.unit} per $1
                         </span>
                     </div>
                 ))}
@@ -137,7 +137,7 @@ export const PollenExamples: FC = () => {
     return (
         <div className="mt-4 space-y-4 border-t border-divider pt-4">
             <div className="text-sm text-theme-text-muted mb-3">
-                <strong>$1 ≈ 1 pollen</strong> — here's what you can create:
+                Here's what <strong>$1 of credit</strong> can create:
             </div>
 
             <CategorySection

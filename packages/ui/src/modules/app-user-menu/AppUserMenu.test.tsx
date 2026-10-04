@@ -100,8 +100,8 @@ describe("AppUserMenu", () => {
 
         const html = renderMenu();
 
-        expect(html).toContain("Quest Pollen:");
-        expect(html).toContain("Paid Pollen:");
+        expect(html).toContain("Quest credit:");
+        expect(html).toContain("Paid credit:");
         expect(html).not.toContain("Unlimited");
     });
 

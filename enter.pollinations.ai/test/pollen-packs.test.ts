@@ -71,8 +71,6 @@ test("pack descriptions stay aligned with the shared catalog", () => {
         expect(pack.checkoutDescription).not.toHaveLength(0);
         expect(() => new URL(pack.checkoutImageUrl)).not.toThrow();
         expect(pack.taxCode).not.toHaveLength(0);
-        expect(describePollenPack(pack)).toBe(
-            `$${pack.amountUsd} -> ${formattedAmount} pollen`,
-        );
+        expect(describePollenPack(pack)).toBe(`$${formattedAmount} API credit`);
     }
 });

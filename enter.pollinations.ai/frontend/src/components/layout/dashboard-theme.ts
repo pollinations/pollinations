@@ -27,7 +27,7 @@ export const DASHBOARD_NAV_ITEMS = [
         icon: CloudUploadIcon,
     },
     { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
-    { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
+    { id: "pollen", to: "/pollen", label: "Credit", icon: WalletIcon },
     {
         id: "activity",
         to: "/activity",

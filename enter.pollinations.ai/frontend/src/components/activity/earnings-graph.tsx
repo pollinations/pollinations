@@ -212,7 +212,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                     className="px-2 py-1 font-normal"
                                 >
                                     {metric === "pollen"
-                                        ? "Pollen"
+                                        ? "Credit"
                                         : "Requests"}
                                 </TableHeaderCell>
                             </TableRow>
@@ -285,7 +285,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
 
 const EarningsEmptyState: FC = () => (
     <ActivityEmptyState>
-        No earnings in this period. Once users spend Pollen through your apps or
+        No earnings in this period. Once users spend credit through your apps or
         community models, earnings will appear here.{" "}
         <InlineLink href="/keys">Create an App key</InlineLink>.
     </ActivityEmptyState>

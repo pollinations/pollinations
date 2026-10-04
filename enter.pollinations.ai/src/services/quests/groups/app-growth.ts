@@ -50,9 +50,9 @@ const firstByopExternalUserQuest: QuestDefinition = {
 
 const firstPaidSpendInAppQuest: QuestDefinition = {
     id: "app_paid_request",
-    title: "First Paid Pollen request",
+    title: "First paid credit request",
     description:
-        "Someone other than you makes a successful Paid Pollen request in your [app](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
+        "Someone other than you makes a successful request with paid credit in your [app](https://gen.pollinations.ai/docs#tag/connect-user-wallets).",
     category: "grow",
     scope: "perUser",
     rewardAmount: 15,
@@ -76,9 +76,9 @@ const tenAppUsersQuest = {
 const paidAppUsageQuest = {
     // Keep the existing ID so a threshold change cannot award this twice.
     id: "app_pollen_10",
-    title: "Paid Pollen is flowing through your app",
+    title: "Paid credit is flowing through your app",
     description:
-        "Other users spend 3 Paid Pollen across your [apps](https://gen.pollinations.ai/docs#tag/connect-user-wallets). Quest Pollen and your own usage do not count.",
+        "Other users spend $3 of paid credit across your [apps](https://gen.pollinations.ai/docs#tag/connect-user-wallets). Quest credit and your own usage do not count.",
     category: "grow",
     scope: "perUser",
     rewardAmount: 10,

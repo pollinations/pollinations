@@ -255,7 +255,7 @@ export function KeyDialogContent({
                                         checked={earningsEnabled}
                                         onChange={onEarningsEnabledChange}
                                         disabled={isSubmitting}
-                                        ariaLabel="Receive 20% of the Pollen users spend in your app"
+                                        ariaLabel="Receive 20% of what users spend in your app"
                                         info={
                                             <InfoTip
                                                 text="When enabled, your users pay 25% above the base rate. That markup, 20% of what they pay, is credited to your balance. Your own spending does not generate earnings."
@@ -263,8 +263,8 @@ export function KeyDialogContent({
                                             />
                                         }
                                     >
-                                        Receive 20% of the Pollen users spend in
-                                        your app
+                                        Receive 20% of what users spend in your
+                                        app
                                     </AuthAccessItem>
                                 )}
                             </ul>

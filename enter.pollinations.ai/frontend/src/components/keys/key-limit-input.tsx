@@ -7,7 +7,7 @@ const limits = {
         label: "Budget",
         icon: <CardIcon />,
         name: "pollen-budget",
-        unit: "pollen",
+        unit: "USD",
         min: 0,
         step: "any",
         empty: "Unlimited",

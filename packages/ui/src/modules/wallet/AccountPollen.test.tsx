@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountPollen } from "./AccountPollen.tsx";
+import { formatUsd } from "./format-pollen.ts";
 import { WalletBalanceCard } from "./wallet-display.tsx";
 
 describe("account Pollen", () => {
@@ -8,7 +9,7 @@ describe("account Pollen", () => {
         const some = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
         );
-        expect(some).toContain("3.25 pollen");
+        expect(some).toContain("$3.25");
         expect(some).not.toContain("Limit reached");
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
@@ -60,9 +61,9 @@ describe("account Pollen", () => {
                 topUpHref="/top-up"
             />,
         );
-        expect(mixed).toContain("Quest Pollen:");
-        expect(mixed).toContain("Paid Pollen:");
-        expect(mixed).not.toContain("No Pollen");
+        expect(mixed).toContain("Quest credit:");
+        expect(mixed).toContain("Paid credit:");
+        expect(mixed).not.toContain("No credit");
         expect(mixed).not.toContain("/top-up");
         expect(mixed.indexOf("Quest")).toBeLessThan(mixed.indexOf("Paid"));
     });
@@ -74,15 +75,15 @@ describe("account Pollen", () => {
                 topUpHref="/top-up"
             />,
         );
-        expect(linked).toContain("No Pollen");
+        expect(linked).toContain("No credit");
         expect(linked).toContain('href="/top-up"');
-        expect(linked).not.toContain("Quest Pollen:");
+        expect(linked).not.toContain("Quest credit:");
         const menu = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
             />,
         );
-        expect(menu).toContain("No Pollen");
+        expect(menu).toContain("No credit");
         expect(menu).not.toContain("<a ");
     });
 
@@ -131,5 +132,17 @@ describe("wallet card colors", () => {
         expect(html).toContain("polli:rounded-card polli:p-3.5");
         expect(html).toContain("polli-wallet-balance-value");
         expect(html).toContain("27.5");
+    });
+});
+
+describe("formatUsd", () => {
+    it("shows cents from $1 up and keeps small amounts readable", () => {
+        expect(formatUsd(12.4)).toBe("$12.40");
+        expect(formatUsd(1.15)).toBe("$1.15");
+        expect(formatUsd(1234.567)).toBe("$1,234.56");
+        expect(formatUsd(0.0042)).toBe("$0.0042");
+        expect(formatUsd(0.000012, 8)).toBe("$0.000012");
+        expect(formatUsd(-1.2)).toBe("-$1.20");
+        expect(formatUsd(0)).toBe("$0.00");
     });
 });

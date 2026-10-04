@@ -56,12 +56,12 @@ type TopUpPanelProps = {
 };
 
 const buyLabel = (pack: PollenPack | null) =>
-    pack ? `Buy ${formatPollenPackValue(pack.amountUsd)} pollen` : "Buy now";
+    pack ? `Buy $${formatPollenPackValue(pack.amountUsd)} credit` : "Buy now";
 // The second line under "Auto top-up": the pack, or what it needs.
 const refillLabel = (amountUsd: number | null) =>
     amountUsd
-        ? `${formatPollenPackValue(amountUsd)} pollen`
-        : `From ${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} pollen`;
+        ? `$${formatPollenPackValue(amountUsd)} credit`
+        : `From $${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} credit`;
 // Every text each label can show, so it keeps the widest one's size.
 const BUY_LABELS = [null, ...POLLEN_PACKS].map(buyLabel);
 const REFILL_LABELS = [
@@ -252,7 +252,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         <Switch
             ariaLabel={
                 billing?.autoTopUp.enabled
-                    ? `Auto top-up, ${status?.tab.label} Pollen`
+                    ? `Auto top-up, $${status?.tab.label} credit`
                     : "Auto top-up"
             }
             size="md"
@@ -436,7 +436,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                 // No inline wrapper: the switch stays put.
                                 displayContents
                                 ariaLabel="Why auto top-up is unavailable"
-                                content="Choose 5 Pollen or more to enable auto top-up."
+                                content="Choose $5 or more to enable auto top-up."
                             >
                                 {autoTopUpSwitch}
                             </Tooltip>

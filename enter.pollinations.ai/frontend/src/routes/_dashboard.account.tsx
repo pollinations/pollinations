@@ -204,7 +204,7 @@ function AccountPage() {
                 <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                     <Text size="sm" tone="muted">
                         Permanently delete your account, profile, keys, agents
-                        and models. All remaining Pollen will be lost. This
+                        and models. All remaining credit will be lost. This
                         cannot be undone, and deleted data cannot be recovered.
                     </Text>
                     <Button
@@ -335,7 +335,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                             Profile, sessions, GitHub connection, and API keys
                         </li>
                         <li>
-                            Pollen balances, access to reward history, agents,
+                            Credit balances, access to reward history, agents,
                             and community models
                         </li>
                         <li>Published media listings and tags</li>

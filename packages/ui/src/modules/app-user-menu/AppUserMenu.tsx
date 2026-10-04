@@ -42,7 +42,7 @@ const defaultLabels: AppUserMenuLabels = {
     authorize: "Pollinations Connect",
     appUserMenu: "App user menu",
     permissions: "Permissions",
-    buyPollen: "Buy Pollen",
+    buyPollen: "Buy credit",
     logout: "Disconnect",
 };
 

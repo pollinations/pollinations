@@ -28,16 +28,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🛠️ Pollinations for Unity](https://github.com/Marcus-Mok-GH/pollinations-unity) | A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene. | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
-| [🖼️ Pollinations for Krita](https://github.com/xiaotian1171/pollinations-krita) | A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [🖼️ Pollinations for Figma - AI Image Studio](https://guest453.github.io/pollinations-figma/) | A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi | [@Guest453](https://github.com/Guest453) |
-| [🎮 Pollinations for Godot 4](https://github.com/davealan74/godot-pollinations) | A Godot 4 editor addon that adds a global Pollinations node for GDScript. Call generate_text() , generate_image() and generate_speech() directly from any script to hit gen.pollinations.ai's text, imag | [@davealan74](https://github.com/davealan74) |
-| [🎬 STT](https://fantasyreincarnation1-bit.github.io/my-pollinations-ap) | Update: The app implements Pollinations' BYOP authorization flow (not classic PKCE): - Redirects to https://enter.pollinations.ai/authorize with a public app key (pk_...) as client_id, a redirect_uri, | [@fantasyreincarnation1-bit](https://github.com/fantasyreincarnation1-bit) |
-| [🖼️ Mmm](https://dwakatmahmoud-cmd.github.io/Mahmoud) | App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in | [@dwakatmahmoud-cmd](https://github.com/dwakatmahmoud-cmd) |
-| [🎬 Aizen](https://aizensuske718-ctrl.github.io/Aizen) | App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. | [@aizensuske718-ctrl](https://github.com/aizensuske718-ctrl) |
-| [🖼️ Pollinations for Figma](https://github.com/xiaotian1171/pollinations-figma) | A Figma plugin that generates and edits images with Pollinations inside the canvas, on the user's own Pollen. **What it does** - **Generate onto the canvas.** The prompt goes to GET /image/{prompt} an | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [✍️ Pollinations for Obsidian](https://github.com/xiaotian1171/pollinations-obsidian) | An Obsidian plugin that generates text and images with Pollinations inside the user's notes, on the user's own Pollen. **What it does** - **Text from a prompt or the selection.** The command asks for | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [✍️ Pollinations for Obsidian](https://github.com/tomdacatto/pollinations-obsidian) | Obsidian plugin: generate text or images from a selection or prompt using the Pollinations API; images save into the vault and embed at the cursor. | [@tomdacatto](https://github.com/tomdacatto) |
+| [📚 Chorus](https://xiaotian1171.github.io/chorus) | Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [📚 Tunemory](https://tomdacatto.github.io/pollinations-tunemory) | Turn a fact, formula or word list into a short catchy song that helps you remember it. Paste your notes, pick a style, and get lyrics that keep every fact and number (checked in code before they are s | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Liar's Supper](https://xiaotian1171.github.io/liars-supper) | A party deduction game for one device passed around the table. The host sets a scene, deals every player a secret role, narrates three twists while the table argues on a timer, then takes a private vo | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
+| [🎮 Mole Party](https://tomdacatto.github.io/pollinations-mole-party) | Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
+| [🎮 Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) | Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Whodunnit - a voice murder mystery](https://guest453.github.io/whodunnit) | A first-person 3D browser game: five AI suspects, one killer, and an alibi built to break. The player walks a mansion, questions the suspects out loud (voice input transcribed by Pollinations) or by t | [@Guest453](https://github.com/Guest453) |
+| [🎮 Alibi](https://tomdacatto.github.io/pollinations-alibi) | A voice murder mystery. Four AI suspects, each with their own voice and story: question them out loud (or type), keep a notebook of what each one claims, catch the contradiction in the culprit's alibi | [@tomdacatto](https://github.com/tomdacatto) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-02** – **🚀 A little room to compute** Create E2B-compatible sandboxes through the gen API or `polli sandbox`, then connect over SSH. The coding-agent template comes with five agents ready to use. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-10-02** – **🤖 The models meet Alice** Compare official and community models on weekly puzzle evals, with past runs and uncertainty shown alongside the scores. [See the rankings](https://model-monitor.pollinations.ai)
+- **2026-10-02** – **✨ A bigger picture fits** Send chat requests up to 100 MiB with inline images; large image, video, and file data URLs can be uploaded and reused across turns. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-10-02** – **🎨 A new layer of pollen** Generate and edit images directly in Krita, with results placed on new layers. [View repo](https://github.com/xiaotian1171/pollinations-krita) <!-- app -->
+- **2026-10-02** – **🎵 A bee enters Unity** Add Pollinations-powered chat, image generation, and speech to Unity games with an async C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity) <!-- app -->
+- **2026-10-02** – **🔗 Pi gets a proper plug** Run `polli mcp install pi` to add Pollinations to Pi’s native MCP config without disturbing your other servers. [Polli CLI](https://www.npmjs.com/package/@pollinations/cli)
+- **2026-10-02** – **🌟 The garden gets a gathering place** The Community page now shows live project activity, open votes, and Quest rankings in one place. [Visit the community](https://pollinations.ai)
 - **2026-10-01** – **🎨 Pollinations in Krita** Generate or edit images inside Krita, size results to your canvas or selection, and keep the original paint layer intact.
 - **2026-10-01** – **🎨 An image studio for Figma** Generate and edit images in Figma with your own Pollinations key. [Try it](https://guest453.github.io/pollinations-figma/) <!-- app -->
 - **2026-10-01** – **🤖 Two new decision models** Try Kev 4B and the free Span-01 Lite through `/alpha/decisions` or [chat completions](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-10-01** – **✨ Bigger media uploads** Send files up to 400 MiB through the existing FormData or raw `/upload` flow. No client changes needed. [Media Store](https://media.pollinations.ai)
-- **2026-10-01** – **🎯 Pollen for connecting Polli CLI** Connect with `polli auth login` and claim a one-time 2-Pollen Quest.
-- **2026-09-30** – **🚀 GPT-6.1 Sol is here** Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions).
-- **2026-09-30** – **🎵 Audio tools in the SDK** Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-09-30** – **🎨 A new home for apps** The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters.
-- **2026-09-30** – **🎮 Pollinations for Godot 4** Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations) <!-- app -->
-- **2026-09-29** – **🚀 Claude Sonnet 5.5** Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models).
 ---
 
 ## 🌱 Introduction

@@ -1,0 +1,33 @@
+{
+  "pr_number": 16383,
+  "title": "fix(keys): preserve untouched expiry when editing",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16383",
+  "merged_at": "2026-10-04T10:02:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Prevents rename or permission-only saves from extending an untouched key expiry.\n- Captures the initial expiry selection once; sends expiresAt only when the selection changes.\n- Adds four component regressions; parent rerun: 32 related tests pass. Eight local React renderer controls cover explicit edits, clearing and elapsed-day rerenders.\n- Biome passes. Full service typecheck remains blocked by identical baseline dependency/generated-binding diagnostics; full Worker suite was not run locally.\n\nFixes #16382\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A rename is not a renewal",
+    "blurb": "Giving an API key a new name should not give it a new expiry date. The edit dialog leaves the clock alone unless you actually change it.",
+    "summary": "Editing an API key's name or permissions preserves its existing expiry by sending expiresAt only when the expiry selection changes.",
+    "impact": "Users can rename a key or adjust its permissions without unintentionally extending its expiration; explicit expiry edits still apply.",
+    "keywords": [
+      "API keys",
+      "expiry",
+      "key editing",
+      "permissions",
+      "bug fix"
+    ],
+    "visual_concept": "Polli edits the label on a pixel-art API key while a small calendar beside it stays on the same date. A potted code-plant and a cozy terminal make the key-management setting clear.",
+    "image_prompt": "In a cozy pixel-art garden workspace, Polli carefully replaces the label on a glowing lime green (#ecf874) API key while the date on a nearby calendar stays put; code-plants grow beside a retro terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny editor glasses and shares the frame with the key and calendar, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16383.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli carefully replaces the label on a glowing lime green (#ecf874) API key while the date on a nearby calendar stays put; code-plants grow beside a retro terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny editor glasses and shares the frame with the key and calendar, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-04T10:04:01.275432+00:00"
+}

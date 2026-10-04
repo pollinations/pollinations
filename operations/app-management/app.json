@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🎮",
+    "name": "Spot the Fake",
+    "url": "https://tomdacatto.github.io/pollinations-spot-the-fake",
+    "description": "A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-spot-the-fake",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15749",
+    "approvedDate": "2026-10-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🎮",
     "name": "Whodunnit - a voice murder mystery",
     "url": "https://guest453.github.io/whodunnit",
     "description": "A first-person 3D browser game: five AI suspects, one killer, and an alibi built to break. The player walks a mansion, questions the suspects out loud (voice input transcribed by Pollinations) or by t",

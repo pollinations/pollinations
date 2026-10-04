@@ -1,3 +1,5 @@
+import { OFFICIAL_APP_VIEWS } from "./officialApps";
+
 // Pollen revenue against compute cost: same traffic, same week, so the ratio is
 // a unit economic. Stripe cash is a different question — see coverage().
 const margin = (week) =>
@@ -283,6 +285,11 @@ export const KPIS = [
                     "Community-model 2xx / (2xx + 5xx) × 100. 4xx is excluded from the denominator — auth, balance, rate-limit and bad-input errors are the caller's, not an endpoint being down. Includes top-level managed-agent runs until agent attribution exists.",
             },
         ],
+    },
+    {
+        key: "officialApps",
+        category: "Ecosystem",
+        views: OFFICIAL_APP_VIEWS,
     },
     {
         key: "agentUsage",

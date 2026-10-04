@@ -1,0 +1,34 @@
+{
+  "pr_number": 16292,
+  "title": "fix: accept empty Hermes MCP server sections",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16292",
+  "merged_at": "2026-10-04T15:03:53Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16291\n\n- Accept bare/explicit-null Hermes `mcp_servers` sections as empty tables while retaining rejection of scalar/list configurations.\n- Convert the null YAML node to a mapping only when entries change, preserving its comments and leaving empty removal byte-for-byte unchanged.\n- Extend the existing Hermes client tests for install/removal, empty-operation preservation, null-node comments, unrelated settings and invalid-table controls.\n\nValidation: four null-table regressions fail on baseline; all 293 CLI tests pass after the fix. Build, scoped Biome and diff checks pass; strict TypeScript retains the same 35 baseline diagnostics. Independent review: both this fix and the Claude config-directory patch apply together; all 58 combined client/parent checks pass. Local tests use temporary configs, synthetic keys, Node 24 and compatible cached dependencies. Full Hermes startup was not exercised.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "An empty table is fine",
+    "blurb": "Hermes MCP setup makes room for an empty `mcp_servers` section. Even the comments get to stay where they are.",
+    "summary": "Polli CLI accepts bare or explicit-null Hermes `mcp_servers` sections as empty tables, converting the YAML node to a mapping only when adding an entry while preserving comments.",
+    "impact": "Hermes users can install MCP servers into empty sections without a config error; removing from an unchanged empty section leaves the file byte-for-byte intact, while scalar and list values remain rejected.",
+    "keywords": [
+      "Polli CLI",
+      "Hermes",
+      "MCP",
+      "YAML",
+      "configuration",
+      "bug fix"
+    ],
+    "visual_concept": "Depict a Hermes YAML configuration as a small blank garden plot labeled mcp_servers: Polli gently plants an MCP server entry, while a nearby comment remains undisturbed. Hermes is represented by its config, not an invented mascot.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears a tiny tool belt and gently plants an MCP server sprout in an empty YAML plot labeled 'mcp_servers', leaving a little comment sign untouched; lime green (#ecf874) leaves glow against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16292.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny tool belt and gently plants an MCP server sprout in an empty YAML plot labeled 'mcp_servers', leaving a little comment sign untouched; lime green (#ecf874) leaves glow against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T15:05:04.077801+00:00"
+}

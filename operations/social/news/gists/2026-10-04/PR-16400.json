@@ -1,0 +1,35 @@
+{
+  "pr_number": 16400,
+  "title": "Add Ink or Engine to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16400",
+  "merged_at": "2026-10-04T09:12:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) to games\n- Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs\n\nFixes #15871, fixes #15725",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Ink meets the guessing game",
+    "blurb": "Ink or Engine joins the games collection: a timed challenge to spot real writing among 12 Pollinations-generated fakes. The clock is not especially sympathetic.",
+    "summary": "Adds MetaMysteries8's free timed real-or-AI text game, Ink or Engine, to the games collection; Pollinations generated all 12 fake passages.",
+    "impact": "Players get a timed game where they try to distinguish real writing from 12 AI-generated fakes.",
+    "keywords": [
+      "community",
+      "games",
+      "Ink or Engine",
+      "text generation",
+      "AI detection"
+    ],
+    "visual_concept": "Depict Ink or Engine as a cozy guessing table with two passage cards—one beside an ink bottle, one beside a friendly CRT robot—and a small timer. Polli studies the cards with a tiny detective hat; lime-green code-plants and flowers connect the writing game to Pollinations.",
+    "image_prompt": "In a cozy pixel art garden café, Polli studies two passage cards beside an ink bottle, a friendly CRT monitor robot, and a little ticking timer, wearing a tiny detective hat; lime green (#ecf874) code-plants bloom around the table. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16400.jpg",
+    "prompt": "In a cozy pixel art garden café, Polli studies two passage cards beside an ink bottle, a friendly CRT monitor robot, and a little ticking timer, wearing a tiny detective hat; lime green (#ecf874) code-plants bloom around the table. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-10-04T09:13:29.057422+00:00",
+  "app_name": "Ink or Engine",
+  "app_url": "https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site"
+}

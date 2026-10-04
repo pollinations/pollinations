@@ -1,9 +1,10 @@
 import { z } from "zod";
 import {
-    type FunctionCall,
-    FunctionCallOutputSchema,
     FunctionCallSchema,
+    type McpCall,
+    McpCallSchema,
     parseFunctionName,
+    serverTool,
 } from "./function-items.ts";
 import { safeMcpOutput } from "./mcp-output.ts";
 import type { AgentPart } from "./types.ts";
@@ -25,17 +26,22 @@ const MessageSchema = z.object({
 const OutputItemSchema = z.discriminatedUnion("type", [
     MessageSchema,
     FunctionCallSchema,
-    FunctionCallOutputSchema,
+    McpCallSchema,
 ]);
 export type AgentOutputItem = z.infer<typeof OutputItemSchema>;
 
-/** One ordered output collector serves JSON responses and streaming events. */
+/**
+ * One ordered output collector serves JSON responses and streaming events.
+ * Caller tools become function calls for the client to run; tools the server
+ * runs become mcp_call items that carry their own result.
+ */
 export function collectOutput(
+    callerTools: ReadonlySet<string>,
     send?: (type: string, payload: Record<string, unknown>) => void,
 ) {
     const items: AgentOutputItem[] = [];
     const skippedToolCalls = new Set<string>();
-    const pendingCalls = new Map<string, FunctionCall>();
+    const pendingCalls = new Map<string, McpCall>();
     const callIds = new Set<string>();
     let message: z.infer<typeof MessageSchema> | undefined;
     const closeMessage = (status: "completed" | "incomplete" = "completed") => {
@@ -114,15 +120,33 @@ export function collectOutput(
                     throw new Error("Agent reused a tool call ID");
                 }
                 callIds.add(part.toolCallId);
+                const input = JSON.stringify(part.input ?? {});
+                if (!callerTools.has(part.toolName)) {
+                    const tool = serverTool(part.toolName);
+                    const item = McpCallSchema.parse({
+                        type: "mcp_call",
+                        id: `mcp_${crypto.randomUUID()}`,
+                        server_label: tool.serverLabel,
+                        name: tool.name,
+                        arguments: input,
+                        status: "in_progress",
+                    });
+                    pendingCalls.set(part.toolCallId, item);
+                    items.push(item);
+                    send?.("response.output_item.added", {
+                        output_index: items.length - 1,
+                        item,
+                    });
+                    return;
+                }
                 const item = FunctionCallSchema.parse({
                     type: "function_call",
                     id: `fc_${crypto.randomUUID()}`,
                     call_id: part.toolCallId,
                     name: part.toolName,
-                    arguments: JSON.stringify(part.input ?? {}),
+                    arguments: input,
                     status: "completed",
                 });
-                pendingCalls.set(part.toolCallId, item);
                 items.push(item);
                 const position = {
                     item_id: item.id,
@@ -147,55 +171,38 @@ export function collectOutput(
                 return;
             }
             if (skippedToolCalls.delete(part.toolCallId)) return;
-            const call = pendingCalls.get(part.toolCallId);
-            if (!call) {
+            const item = pendingCalls.get(part.toolCallId);
+            if (!item) {
                 throw new Error("Agent tool result has no matching call");
             }
             pendingCalls.delete(part.toolCallId);
             closeMessage();
-            const result =
-                part.type === "tool-error"
-                    ? {
-                          isError: true,
-                          content: [
-                              {
-                                  type: "text",
-                                  text:
-                                      part.error instanceof Error
-                                          ? part.error.message
-                                          : String(part.error),
-                              },
-                          ],
-                      }
-                    : parseFunctionName(call.name)
-                      ? safeMcpOutput(part.output)
-                      : (part.output ?? null);
-            const item = FunctionCallOutputSchema.parse({
-                type: "function_call_output",
-                id: `fco_${crypto.randomUUID()}`,
-                call_id: call.call_id,
-                // Content parts rather than a bare string: Open WebUI iterates
-                // the output of every function_call_output item it receives.
-                output: [{ type: "input_text", text: JSON.stringify(result) }],
-                status: "completed",
+            const mcpResult =
+                part.type === "tool-result" && parseFunctionName(part.toolName)
+                    ? safeMcpOutput(part.output)
+                    : undefined;
+            if (part.type === "tool-result" && !mcpResult?.isError) {
+                item.status = "completed";
+                item.output = JSON.stringify(mcpResult ?? part.output ?? null);
+            } else {
+                item.status = "failed";
+                item.error = {
+                    type: "mcp_tool_execution_error",
+                    content:
+                        part.type === "tool-error"
+                            ? part.error instanceof Error
+                                ? part.error.message
+                                : String(part.error)
+                            : (mcpResult ?? null),
+                };
+            }
+            send?.("response.output_item.done", {
+                output_index: items.indexOf(item),
+                item,
             });
-            items.push(item);
-            const output_index = items.length - 1;
-            send?.("response.output_item.added", {
-                output_index,
-                item: { ...item, output: [], status: "in_progress" },
-            });
-            send?.("response.output_item.done", { output_index, item });
         },
-        finish(
-            finishReason: string,
-            callerTools: ReadonlySet<string> = new Set(),
-        ): AgentOutputItem[] {
-            if (
-                [...pendingCalls.values()].some(
-                    (call) => !callerTools.has(call.name),
-                )
-            ) {
+        finish(finishReason: string): AgentOutputItem[] {
+            if (pendingCalls.size) {
                 throw new Error("Agent tool call has no result");
             }
             closeMessage(

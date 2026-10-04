@@ -1,3 +1,4 @@
+import { McpCallSchema } from "@shared/agents/function-items.ts";
 import {
     type ResponseUsage,
     ResponseUsageSchema,
@@ -12,11 +13,7 @@ import {
     type EventSourceMessage,
     EventSourceParserStream,
 } from "eventsource-parser/stream";
-import {
-    formatFunctionCall,
-    formatMcpCall,
-    McpCallSchema,
-} from "../agents/mcp.ts";
+import { formatFunctionCall, formatMcpCall } from "../agents/mcp.ts";
 import type { ChatCompletion, ChatMessage, ServiceError } from "../types.js";
 
 type JsonObject = Record<string, unknown>;

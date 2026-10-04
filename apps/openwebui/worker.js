@@ -1,5 +1,11 @@
 import { env as workerEnv } from "cloudflare:workers";
 import { Container, getContainer } from "@cloudflare/containers";
+import {
+    BANNERS,
+    DEFAULT_MODEL,
+    PINNED_MODELS,
+    PROMPT_SUGGESTIONS,
+} from "./ui-defaults.js";
 
 const CONTAINER_NAME = "primary";
 const WEBUI_URL = required("WEBUI_URL");
@@ -61,9 +67,17 @@ export class OpenWebUIContainer extends Container {
         // get_filtered_models() shows unconfigured models to admins only. Without
         // this every non-admin gets an empty model picker.
         BYPASS_MODEL_ACCESS_CONTROL: "true",
-        // Without this the model picker defaults to the alphabetically first
-        // community model.
-        DEFAULT_MODELS: "openai",
+        // The previous value was the bare prefix "openai", which matches no
+        // catalog id, so new chats fell back to the alphabetically first
+        // community model. Both of these are seeded once, like every other
+        // key below; scripts/apply-ui-defaults.mjs updates them afterwards.
+        DEFAULT_MODELS: DEFAULT_MODEL,
+        DEFAULT_PINNED_MODELS: PINNED_MODELS.join(","),
+        // Upstream's fallback suggestions (options trading, children's art)
+        // assume a general-purpose chat product rather than this workspace.
+        DEFAULT_PROMPT_SUGGESTIONS: JSON.stringify(PROMPT_SUGGESTIONS),
+        // Billing and the opt-in Pollinations tool server, both dismissible.
+        WEBUI_BANNERS: JSON.stringify(BANNERS),
         // Titles, tags and follow-ups need text, even when the chat model generates media.
         // Non-reasoning on purpose: gpt-5-nano spent 256-1024 reasoning tokens and
         // 3-12 s per title/tags/follow-up call. Seed value only; the live value is

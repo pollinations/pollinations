@@ -17,9 +17,12 @@ paid from the signed-in user's own wallet.
 | File | Role |
 |------|------|
 | `worker.js` | Container class with every Open WebUI setting as env vars, plus a keepalive cron |
+| `ui-defaults.js` | Model defaults, prompt suggestions and banners, shared by both config paths |
+| `ui-defaults.test.mjs` | Schema and live-catalog checks for those defaults |
 | `wrangler.jsonc` | Container (pre-built image), custom domains, staging env |
 | `scripts/push-image.sh` | Mirror the upstream image into the Cloudflare registry |
 | `scripts/push-secrets.mjs` | Push `secrets/secrets.vars.json` (sops) to the Worker |
+| `scripts/apply-ui-defaults.mjs` | Write `ui-defaults.js` into an install that has already booted |
 | `deploy.json` | Picked up by `Deploy / Applications` on the `production` branch |
 
 No Dockerfile. Cloudflare cannot pull `ghcr.io`, so the upstream `-slim` image is
@@ -78,6 +81,47 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
   psql -U openwebui -d openwebui -c \
   \"select key, value::text from config where key = 'tool_server.connections';\""
 ```
+
+## Workspace defaults
+
+`ui-defaults.js` is the one source of truth for the model defaults, prompt
+suggestions and banners this deployment seeds. `worker.js` reads it for a
+fresh install; `scripts/apply-ui-defaults.mjs` reads the same file for an
+install that has already booted, so the two paths cannot drift.
+
+| | Before | After |
+|---|---|---|
+| New chat opens on | `openai` — a prefix, not an id, so the picker fell back to the alphabetically first community model | `openai/gpt-5.4-nano` |
+| Sidebar | nothing pinned; a 300-row picker to search | gpt-5.4-nano, gpt-5.3-codex, Gemini 3.8 Flash, Claude Sonnet 5.5 |
+| Empty-chat suggestions | upstream's options-trading and children's-art prompts | four prompts that work with any model |
+| Wallet and tools | unmentioned | two dismissible banners: chats bill your own Pollen, and the Pollinations tool server is attachable per chat |
+
+To write those values into an instance that has already booted, where the env
+vars above are ignored:
+
+```bash
+OWUI_URL=https://openwebui.pollinations.ai OWUI_TOKEN=<admin key or JWT> \
+  node scripts/apply-ui-defaults.mjs
+```
+
+It reads `GET /api/v1/configs/models` before posting it, because the form
+replaces every field it carries: posting without `DEFAULT_MODEL_METADATA`
+would reset it to `null` and switch Open WebUI's builtin tools back on, which
+managed agents and community models reject with a 400 on every chat. The same
+applies to the Settings UI — set the values there, or run the script; editing
+`worker.js` alone does nothing to an existing database.
+
+## Tests
+
+```bash
+npm test          # node --test, no dependencies
+```
+
+Checks the banners and suggestions against Open WebUI's `BannerModel` and
+`PromptSuggestion` schemas (`title` is a list of strings, not a string), pins
+every default model to a real catalog id that accepts tool calls by fetching
+`gen.pollinations.ai/v1/models`, and asserts the apply payload overrides only
+the two keys it means to.
 
 ## Restarting the container
 

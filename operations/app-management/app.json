@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🎮",
+    "name": "Whisperwick",
+    "url": "https://kreggscode.github.io/whisperwick",
+    "description": "A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes ",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "kreggscode",
+    "githubUserId": "117812547",
+    "repositoryUrl": "https://github.com/kreggscode/whisperwick",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15788",
+    "approvedDate": "2026-10-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🎮",
     "name": "Mole Party",
     "url": "https://tomdacatto.github.io/pollinations-mole-party",
     "description": "Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp",

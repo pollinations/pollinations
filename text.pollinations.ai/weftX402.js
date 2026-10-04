@@ -1,5 +1,7 @@
 import { weftPaymentMiddleware } from "@weftlabs/sdk/facilitator/middleware";
+import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { createWeftPaywall } from "../shared/weft-paywall.js";
 
 let paymentMiddleware;
 
@@ -41,6 +43,7 @@ export function weftTextPayment(req, res, next) {
             name: "Pollinations legacy text",
             type: "api",
             tags: ["text"],
+            paywall: createWeftPaywall("response", findDefaultAsset),
             schemes: [{ network: WEFT_NETWORK, server: new ExactEvmScheme() }],
         },
     );

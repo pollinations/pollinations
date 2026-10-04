@@ -4,6 +4,7 @@ import {
     InlineLink,
     Switch,
     Tooltip,
+    WalletIcon,
     WarningIcon,
 } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
@@ -301,14 +302,18 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             </span>
                         </Button>
                         {selectedPack && (
-                            <InlineLink
+                            <Button
+                                as="a"
                                 href={hostedCheckoutHref(
                                     selectedPack.packKey,
                                     cryptoCheckoutParams.toString(),
                                 )}
+                                size="md"
+                                intent="brand"
+                                icon={<WalletIcon />}
                             >
                                 Pay with crypto (USD)
-                            </InlineLink>
+                            </Button>
                         )}
                     </div>
                     {/* A settings row: the label, then the switch flush with

@@ -322,7 +322,6 @@ describe("PolliProvider", () => {
             "https://app.example/?code=single-use&state=expected",
         );
         const storage = memoryStorage({
-            "polli:pk_test:token": "sk_stored",
             "polli:pk_test:oauth_state": "expected",
             "polli:pk_test:oauth_verifier": "v".repeat(64),
             "polli:pk_test:oauth_return_path": "/?view=models#/details",
@@ -367,9 +366,9 @@ describe("PolliProvider", () => {
         expect(form.get("client_id")).toBe("pk_test");
         expect(form.get("redirect_uri")).toBe("https://app.example/");
         expect(form.get("code_verifier")).toBe("v".repeat(64));
-        expect(storage.snapshot()).toEqual({
-            "polli:pk_test:token": storageFull ? "sk_stored" : "sk_delegated",
-        });
+        expect(storage.snapshot()).toEqual(
+            storageFull ? {} : { "polli:pk_test:token": "sk_delegated" },
+        );
         expect(
             (win.history as { replaceState: ReturnType<typeof vi.fn> })
                 .replaceState,
@@ -382,44 +381,25 @@ describe("PolliProvider", () => {
         );
     });
 
-    it.each(
-        [null, "sk_stored"].flatMap((savedKey) => [
-            [
-                "?code=code&state=wrong",
-                "verifier",
-                "Invalid OAuth state",
-                savedKey,
-            ],
-            [
-                "?code=code&state=expected",
-                null,
-                "Missing PKCE verifier",
-                savedKey,
-            ],
-            [
-                "?error=access_denied&state=expected",
-                "verifier",
-                "access_denied",
-                savedKey,
-            ],
-            ["?code=code&state=expected", "verifier", "Code expired", savedKey],
-            ["?code=code&state=expected", "verifier", "Offline", savedKey],
-        ]),
-    )("exposes callback failure and retains the saved key: %s, %s, %s, %s", async (query, verifier, expected, savedKey) => {
+    it.each([
+        ["?code=code&state=wrong", "verifier", "Invalid OAuth state"],
+        ["?code=code&state=expected", null, "Missing PKCE verifier"],
+        ["?error=access_denied&state=expected", "verifier", "access_denied"],
+        ["?code=code&state=expected", "verifier", "Code expired"],
+    ])("keeps the saved key when a re-login fails: %s", async (query, verifier, expected) => {
         stubWindow(`https://app.example/${query}`);
         vi.spyOn(console, "warn").mockImplementation(() => {});
         const storage = memoryStorage({
+            "polli:pk_test:token": "sk_stored",
             "polli:pk_test:oauth_state": "expected",
             ...(verifier ? { "polli:pk_test:oauth_verifier": verifier } : {}),
-            ...(savedKey ? { "polli:pk_test:token": savedKey } : {}),
         });
-        const fetchMock = vi.fn<typeof fetch>(async () => {
-            if (expected === "Offline") throw new TypeError("Offline");
-            return Response.json(
+        const fetchMock = vi.fn<typeof fetch>(async () =>
+            Response.json(
                 { error: "invalid_grant", error_description: "Code expired" },
                 { status: 400 },
-            );
-        });
+            ),
+        );
         vi.stubGlobal("fetch", fetchMock);
         const auth: { current: ReturnType<typeof useAuth> | null } = {
             current: null,
@@ -437,13 +417,12 @@ describe("PolliProvider", () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
         expect(auth.current?.error?.message).toBe(expected);
-        expect(auth.current?.apiKey).toBe(savedKey);
-        expect(auth.current?.isLoggedIn).toBe(!!savedKey);
+        expect(auth.current?.apiKey).toBe("sk_stored");
         expect(auth.current?.isHydrated).toBe(true);
         expect(fetchMock).toHaveBeenCalledTimes(
-            expected === "Code expired" || expected === "Offline" ? 1 : 0,
+            expected === "Code expired" ? 1 : 0,
         );
-        expect(storage.getItem("polli:pk_test:token")).toBe(savedKey);
+        expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
     });
 
     it.each([

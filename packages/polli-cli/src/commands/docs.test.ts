@@ -11,6 +11,7 @@ afterEach(() => {
 it.each([
     "/v1/chat/completions",
     "/v1/models",
+    "models",
 ])("finds %s in section bodies without splitting fenced examples", async (endpoint) => {
     const section = [
         "## API endpoints",
@@ -24,12 +25,15 @@ it.each([
         "```",
         "",
     ].join("\n");
+    const modelsSection = "## Models\nCatalog documentation.\n";
     vi.stubGlobal(
         "fetch",
         vi
             .fn()
             .mockResolvedValue(
-                new Response(`${section}## Unrelated\nOther documentation.\n`),
+                new Response(
+                    `${section}${modelsSection}## Unrelated\nModels are mentioned here.\n`,
+                ),
             ),
     );
     const write = vi
@@ -41,6 +45,6 @@ it.each([
 
     expect(JSON.parse(String(write.mock.calls[0][0]))).toEqual({
         endpoint,
-        content: section,
+        content: endpoint === "models" ? modelsSection : section,
     });
 });

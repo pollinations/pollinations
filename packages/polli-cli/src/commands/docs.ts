@@ -73,9 +73,14 @@ export const docsCommand = new Command("docs")
                         sections[sections.length - 1] += line;
                     }
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
-                    const matches = sections.filter((s) =>
-                        s.toLowerCase().includes(needle),
+                    const headingMatches = sections.filter((s) =>
+                        s.split("\n")[0].toLowerCase().includes(needle),
                     );
+                    const matches = headingMatches.length
+                        ? headingMatches
+                        : sections.filter((s) =>
+                              s.toLowerCase().includes(needle),
+                          );
 
                     if (matches.length === 0) {
                         printError(`No docs found matching "${endpoint}"`);

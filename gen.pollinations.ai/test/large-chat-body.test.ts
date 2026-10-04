@@ -1,11 +1,11 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readLargeChatBody } from "../src/middleware/large-chat-body.ts";
 
 describe("large chat bodies", () => {
-    it("offloads URL-shaped media without changing base64-only fields", async () => {
+    it("offloads URL-shaped media without changing other fields", async () => {
         const image = "data:image/png;base64,AQID";
         const video = "data:video/mp4;base64,BAUG";
         const file = "data:application/pdf;base64,BwgJ";
@@ -18,10 +18,16 @@ describe("large chat bodies", () => {
                         { type: "video_url", video_url: { url: video } },
                         { type: "file", file: { file_url: file } },
                         {
+                            type: "file",
+                            file: {
+                                file_data: "BAUG",
+                                mime_type: "application/pdf",
+                            },
+                        },
+                        {
                             type: "input_audio",
                             input_audio: { data: "AQID", format: "mp3" },
                         },
-                        { type: "file", file: { file_data: "BAUG" } },
                         { type: "text", text: image },
                     ],
                 },
@@ -105,6 +111,165 @@ describe("large chat bodies", () => {
 });
 
 describe("large chat route", () => {
+    it("forwards over 32 MiB of PDF file_data as URLs to OpenRouter", async () => {
+        const { key, userId } = await createTestApiKey({
+            user: { packBalance: 100 },
+        });
+        const bytes = Buffer.alloc(14 * 1024 * 1024);
+        bytes.write("%PDF-1.4\n");
+        const base64 = bytes.toString("base64");
+        const body = JSON.stringify({
+            model: "thinkingmachines/inkling-small",
+            messages: [
+                {
+                    role: "user",
+                    content: Array.from({ length: 2 }, (_, index) => ({
+                        type: "file",
+                        file: {
+                            file_data: index
+                                ? `data:application/pdf;base64,${base64}`
+                                : base64,
+                            ...(index ? {} : { mime_type: "application/pdf" }),
+                            file_name: `${index}.pdf`,
+                        },
+                    })),
+                },
+            ],
+        });
+        expect(body.length).toBeGreaterThan(32 * 1024 * 1024);
+        let forwarded: unknown;
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                if (
+                    String(url).includes(
+                        "openrouter.ai/api/v1/chat/completions",
+                    )
+                ) {
+                    forwarded = JSON.parse(String(init?.body));
+                    return Response.json(
+                        { error: { message: "provider test stop" } },
+                        { status: 400 },
+                    );
+                }
+                const host = new URL(String(url)).hostname;
+                if (host === "localhost" || host.endsWith(".tinybird.co")) {
+                    return Response.json({});
+                }
+                throw new Error("Unexpected outbound fetch");
+            });
+        try {
+            const response = await SELF.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body,
+                }),
+            );
+            expect(response.status).toBeGreaterThanOrEqual(400);
+            await response.arrayBuffer();
+        } finally {
+            fetch.mockRestore();
+        }
+        const id = createHmac("sha256", env.BETTER_AUTH_SECRET)
+            .update("chat-input\0")
+            .update(userId)
+            .update("\0application/pdf\0")
+            .update(bytes)
+            .digest("hex");
+        expect(await env.MEDIA.has(id)).toBe(true);
+        const forwardedParts = (
+            forwarded as {
+                messages: { content: { file: Record<string, unknown> }[] }[];
+            }
+        ).messages[0].content;
+        expect(forwardedParts).toHaveLength(2);
+        for (const part of forwardedParts) {
+            expect(part.file.file_data).toBeUndefined();
+            expect(part.file.file_url).toBe(
+                `https://media.pollinations.ai/${id}`,
+            );
+        }
+    });
+
+    it("forwards over 32 MiB of base64 audio as URLs to Fireworks Inkling", async () => {
+        const { key, userId } = await createTestApiKey({
+            user: { packBalance: 100 },
+        });
+        const bytes = Buffer.alloc(14 * 1024 * 1024);
+        bytes.write("OggS");
+        const base64 = bytes.toString("base64");
+        const body = JSON.stringify({
+            model: "thinkingmachines/inkling",
+            messages: [
+                {
+                    role: "user",
+                    content: Array.from({ length: 2 }, () => ({
+                        type: "input_audio",
+                        input_audio: { data: base64, format: "opus" },
+                    })),
+                },
+            ],
+        });
+        expect(body.length).toBeGreaterThan(32 * 1024 * 1024);
+        let forwarded: unknown;
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                if (String(url).includes("/v1/chat/completions")) {
+                    forwarded = JSON.parse(String(init?.body));
+                    return Response.json(
+                        { error: { message: "provider test stop" } },
+                        { status: 400 },
+                    );
+                }
+                const host = new URL(String(url)).hostname;
+                if (host === "localhost" || host.endsWith(".tinybird.co"))
+                    return Response.json({});
+                throw new Error("Unexpected outbound fetch");
+            });
+        try {
+            const response = await SELF.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body,
+                }),
+            );
+            expect(response.status).toBeGreaterThanOrEqual(400);
+            await response.arrayBuffer();
+        } finally {
+            fetch.mockRestore();
+        }
+        const id = createHmac("sha256", env.BETTER_AUTH_SECRET)
+            .update("chat-input\0")
+            .update(userId)
+            .update("\0audio/ogg\0")
+            .update(bytes)
+            .digest("hex");
+        expect(await env.MEDIA.has(id)).toBe(true);
+        const parts = (
+            forwarded as {
+                messages: {
+                    content: { type: string; audio_url: { url: string } }[];
+                }[];
+            }
+        ).messages[0].content;
+        expect(parts).toHaveLength(2);
+        for (const part of parts) {
+            expect(part).toEqual({
+                type: "audio_url",
+                audio_url: { url: `https://media.pollinations.ai/${id}` },
+            });
+        }
+    });
+
     it("accepts a 48 MiB mixed-media request through the real media service", async () => {
         const { key, userId } = await createTestApiKey({
             user: { packBalance: 100 },

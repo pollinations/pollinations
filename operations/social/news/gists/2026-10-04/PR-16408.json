@@ -1,0 +1,36 @@
+{
+  "pr_number": 16408,
+  "title": "Add Mole Party to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16408",
+  "merged_at": "2026-10-04T10:14:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Mole Party](https://tomdacatto.github.io/pollinations-mole-party) to games\n- Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp\n\nFixes #15737, fixes #15726",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A mole joins game night",
+    "blurb": "Mole Party joins the games list. One phone, a few friends, and an AI host handing out secrets.",
+    "summary": "Added tomdacatto's Mole Party to the games list: a pass-and-play social-deduction game for 4–10 players with AI-written scenarios, secret Insider, Impostor, and Jester roles, and a narrated twist each round.",
+    "impact": "Groups of 4–10 get a one-phone party game where the AI host gives each round a fresh scenario and twist.",
+    "keywords": [
+      "Mole Party",
+      "community app",
+      "games",
+      "social deduction",
+      "AI host",
+      "pass-and-play"
+    ],
+    "visual_concept": "Mole Party is a one-phone social-deduction game, not a known mascot. Show Polli in a party hat sharing a phone with cozy pixel friends, a friendly mole-shaped game token, and a CRT robot AI host dealing secret role cards beside a small garden.",
+    "image_prompt": "In a cozy pixel-art garden room, Polli in a tiny party hat shares one glowing phone with friends while a friendly mole-shaped game token peeks from a flower pot and a CRT robot deals secret role cards. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, never realistic, amid prominent lime green (#ecf874), warm cream and pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16408.jpg",
+    "prompt": "In a cozy pixel-art garden room, Polli in a tiny party hat shares one glowing phone with friends while a friendly mole-shaped game token peeks from a flower pot and a CRT robot deals secret role cards. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, never realistic, amid prominent lime green (#ecf874), warm cream and pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T10:15:35.452986+00:00",
+  "app_name": "Mole Party",
+  "app_url": "https://tomdacatto.github.io/pollinations-mole-party"
+}

@@ -28,6 +28,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
+| [🎮 Mole Party](https://tomdacatto.github.io/pollinations-mole-party) | Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 | [🎮 Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) | Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi | [@NamanSoni78](https://github.com/NamanSoni78) |
 | [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
@@ -36,8 +38,6 @@
 | [🎮 Whichever](https://kreggscode.github.io/whichever) | A branching story where you set the lens and Jev picks the branch. Type where the story starts and choose what it should be judged against — six presets, or a line of your own. A text model writes thr | [@kreggscode](https://github.com/kreggscode) |
 | [💼 Jev Triage Desk](https://mhmdrizzzki.github.io/jev-triage-desk) | Paste a shared inbox — one item per line — and Jev triages it. For every item Jev is asked three things, and the page code does nothing except act on the answers: - **Owning team** ( choice : engineer | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 | [🛠️ Jev Assembler](https://tomdacatto.github.io/pollinations-jev-assembler) | Describe a page in a sentence. Jev makes 16 small decisions about it in a single POST /alpha/decisions call (palette, typography, layout, call to action, roundness, density, urgency, and which section | [@tomdacatto](https://github.com/tomdacatto) |
-| [🛠️ Pollinations for Unity](https://github.com/Marcus-Mok-GH/pollinations-unity) | A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene. | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
-| [🖼️ Pollinations for Krita](https://github.com/xiaotian1171/pollinations-krita) | A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th | [@xiaotian1171](https://github.com/xiaotian1171) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

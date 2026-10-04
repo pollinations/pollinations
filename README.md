@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 | [🎮 Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) | Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi | [@NamanSoni78](https://github.com/NamanSoni78) |
 | [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Whodunnit - a voice murder mystery](https://guest453.github.io/whodunnit) | A first-person 3D browser game: five AI suspects, one killer, and an alibi built to break. The player walks a mansion, questions the suspects out loud (voice input transcribed by Pollinations) or by t | [@Guest453](https://github.com/Guest453) |
@@ -37,7 +38,6 @@
 | [🛠️ Jev Assembler](https://tomdacatto.github.io/pollinations-jev-assembler) | Describe a page in a sentence. Jev makes 16 small decisions about it in a single POST /alpha/decisions call (palette, typography, layout, call to action, roundness, density, urgency, and which section | [@tomdacatto](https://github.com/tomdacatto) |
 | [🛠️ Pollinations for Unity](https://github.com/Marcus-Mok-GH/pollinations-unity) | A Unity package for text, image, and speech generation with player-funded sign-in and a sample scene. | [@Marcus-Mok-GH](https://github.com/Marcus-Mok-GH) |
 | [🖼️ Pollinations for Krita](https://github.com/xiaotian1171/pollinations-krita) | A Krita plugin that generates and edits images with Pollinations inside Krita, on the user's own Pollen. **What it does** - **Generate onto a new layer.** The prompt goes to GET /image/{prompt} and th | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [🖼️ Pollinations for Figma - AI Image Studio](https://guest453.github.io/pollinations-figma/) | A Figma plug-in that lets designers generate and edit images with Pollinations directly on the canvas, paying with their own Pollen (BYOP). Designers connect their Pollinations account once via a devi | [@Guest453](https://github.com/Guest453) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

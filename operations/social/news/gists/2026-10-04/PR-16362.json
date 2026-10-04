@@ -1,0 +1,34 @@
+{
+  "pr_number": 16362,
+  "title": "fix(gen): preserve MIDIjourney system text parts",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16362",
+  "merged_at": "2026-10-04T15:14:12Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16361\n\n- Extracts ordered text parts before merging MIDIjourney system messages, preserving supplied instructions instead of stringifying objects.\n- Retains the persona, string/absent-content behavior, non-system messages, options, and both tiers' sampling/token behavior.\n- Adds direct and actual schema/registry/request/provider-preparation regressions: five fail before the fix; all 15 pass afterward. Eight related transform suites pass all 224 tests; parent independently verified the 15 regressions/controls.\n- Verification: scoped strict types, ES2022 production/pipeline bundles, Biome and diff checks pass. Full local Worker runner/typecheck are unavailable because the sparse checkout lacks Enter setup and Cloudflare type libraries; GitHub Gen CI will verify the configured environment. No live provider calls or Pollen used.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Instructions, not object soup",
+    "blurb": "MIDIjourney’s system instructions stay in order instead of turning into object-shaped mush. The persona keeps its place, too.",
+    "summary": "The Gen message transform extracts MIDIjourney system messages’ ordered text parts before merging them, preserving supplied instructions and the persona without changing non-system messages or sampling and token behavior.",
+    "impact": "MIDIjourney requests with multipart system content retain the intended instructions rather than passing stringified objects to the provider.",
+    "keywords": [
+      "MIDIjourney",
+      "Gen",
+      "system messages",
+      "text parts",
+      "message transform",
+      "provider preparation"
+    ],
+    "visual_concept": "Depict the Gen message transform as a cozy retro terminal. Polli, wearing a tiny conductor’s hat, guides ordered text tiles into a single readable system-instruction scroll; a small code-plant beside the terminal adds the garden motif. The ordered tiles, rather than music generation, represent the fix.",
+    "image_prompt": "In a cozy pixel art garden workspace, ordered text tiles flow into a readable SYSTEM scroll on a retro terminal glowing lime green (#ecf874), with a little code-plant beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wears a tiny conductor’s hat, and gently guides the tiles into place against a warm cream and pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; strictly pixel art, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16362.jpg",
+    "prompt": "In a cozy pixel art garden workspace, ordered text tiles flow into a readable SYSTEM scroll on a retro terminal glowing lime green (#ecf874), with a little code-plant beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wears a tiny conductor’s hat, and gently guides the tiles into place against a warm cream and pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; strictly pixel art, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-04T15:15:25.094096+00:00"
+}

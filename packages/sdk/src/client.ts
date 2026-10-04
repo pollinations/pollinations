@@ -59,6 +59,40 @@ const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
 
+/** Adapt simple text input to the canonical chat request without SDK defaults. */
+export function buildTextRequest(
+    prompt: string,
+    options: TextGenerateOptions = {},
+): { messages: Message[]; options: ChatOptions } {
+    if (!prompt || typeof prompt !== "string") {
+        throw new PollinationsError(
+            "Prompt is required and must be a string",
+            "INVALID_INPUT",
+            400,
+        );
+    }
+
+    return {
+        messages: [
+            ...(options.systemPrompt
+                ? [{ role: "system" as const, content: options.systemPrompt }]
+                : []),
+            { role: "user", content: prompt },
+        ],
+        options: {
+            model: options.model,
+            temperature: options.temperature,
+            maxTokens: options.maxTokens,
+            frequencyPenalty: options.frequencyPenalty,
+            presencePenalty: options.presencePenalty,
+            seed: options.seed,
+            private: options.private,
+            responseFormat: options.json ? { type: "json_object" } : undefined,
+            signal: options.signal,
+        },
+    };
+}
+
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
     try {
@@ -731,51 +765,9 @@ export class Pollinations {
         prompt: string,
         options: TextGenerateOptions = {},
     ): Promise<string> {
-        if (!prompt || typeof prompt !== "string") {
-            throw new PollinationsError(
-                "Prompt is required and must be a string",
-                "INVALID_INPUT",
-                400,
-            );
-        }
-
-        const response = await this.chat(
-            this.buildTextMessages(prompt, options.systemPrompt),
-            {
-                ...this.buildTextChatOptions(options),
-                signal: options.signal,
-            },
-        );
+        const request = buildTextRequest(prompt, options);
+        const response = await this.chat(request.messages, request.options);
         return response.choices[0]?.message?.content || "";
-    }
-
-    /** Adapt the simple text facade to the canonical chat-completions request. */
-    private buildTextMessages(
-        prompt: string,
-        systemPrompt?: string,
-    ): Message[] {
-        return [
-            ...(systemPrompt
-                ? [{ role: "system" as const, content: systemPrompt }]
-                : []),
-            { role: "user", content: prompt },
-        ];
-    }
-
-    /** Map simple text options without introducing SDK-owned defaults. */
-    private buildTextChatOptions(
-        options: Omit<TextGenerateOptions, "stream">,
-    ): Omit<ChatOptions, "stream" | "signal"> {
-        return {
-            model: options.model,
-            temperature: options.temperature,
-            maxTokens: options.maxTokens,
-            frequencyPenalty: options.frequencyPenalty,
-            presencePenalty: options.presencePenalty,
-            seed: options.seed,
-            private: options.private,
-            responseFormat: options.json ? { type: "json_object" } : undefined,
-        };
     }
 
     /**
@@ -792,21 +784,8 @@ export class Pollinations {
         prompt: string,
         options: Omit<TextGenerateOptions, "stream"> = {},
     ): AsyncGenerator<string> {
-        if (!prompt || typeof prompt !== "string") {
-            throw new PollinationsError(
-                "Prompt is required and must be a string",
-                "INVALID_INPUT",
-                400,
-            );
-        }
-
-        const chunks = this.chatStream(
-            this.buildTextMessages(prompt, options.systemPrompt),
-            {
-                ...this.buildTextChatOptions(options),
-                signal: options.signal,
-            },
-        );
+        const request = buildTextRequest(prompt, options);
+        const chunks = this.chatStream(request.messages, request.options);
         for await (const chunk of chunks) {
             const content = chunk.choices[0]?.delta?.content;
             if (content) yield content;

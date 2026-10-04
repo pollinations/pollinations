@@ -4,9 +4,14 @@ import {
     atomicDeductUserBalance,
     atomicReserveApiKeyBalance,
 } from "@shared/billing/deduction.ts";
+import {
+    getFundedUserBalance,
+    INTERNAL_AUTOMATION_USER_ID,
+} from "@shared/billing/internal-automation.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import {
     apikey as apiKeyTable,
+    rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
@@ -46,6 +51,62 @@ async function getApiKeyBalance(apiKeyId: string) {
 }
 
 describe("billing deduction", () => {
+    it("refills each internal balance at 10 or less without duplicate concurrent grants", async () => {
+        await db.insert(userTable).values({
+            id: INTERNAL_AUTOMATION_USER_ID,
+            email: "internal-automation@test.local",
+            name: "Internal Automation",
+            tierBalance: 0,
+            packBalance: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const balances = await Promise.all(
+            Array.from({ length: 5 }, () =>
+                getFundedUserBalance(db, env.DB, INTERNAL_AUTOMATION_USER_ID),
+            ),
+        );
+        expect(
+            balances.every(
+                (balance) =>
+                    balance.tierBalance === 100 && balance.packBalance === 20,
+            ),
+        ).toBe(true);
+
+        await atomicDeductUserBalance(db, INTERNAL_AUTOMATION_USER_ID, 89);
+        await atomicDeductUserBalance(db, INTERNAL_AUTOMATION_USER_ID, 9, true);
+        expect(
+            await getFundedUserBalance(db, env.DB, INTERNAL_AUTOMATION_USER_ID),
+        ).toEqual({ tierBalance: 11, packBalance: 11 });
+
+        await atomicDeductUserBalance(db, INTERNAL_AUTOMATION_USER_ID, 1);
+        await atomicDeductUserBalance(db, INTERNAL_AUTOMATION_USER_ID, 1, true);
+        expect(
+            await getFundedUserBalance(db, env.DB, INTERNAL_AUTOMATION_USER_ID),
+        ).toEqual({ tierBalance: 100, packBalance: 20 });
+
+        const grants = await db
+            .select({
+                amount: rewardsTable.pollenAmount,
+                bucket: rewardsTable.balanceBucket,
+            })
+            .from(rewardsTable)
+            .where(eq(rewardsTable.userId, INTERNAL_AUTOMATION_USER_ID));
+        expect(
+            grants.map((grant) => `${grant.bucket}:${grant.amount}`).sort(),
+        ).toEqual(["tier:100", "tier:90", "pack:20", "pack:10"].sort());
+
+        const otherUserId = await createUser({
+            tierBalance: 0,
+            packBalance: 0,
+        });
+        expect(await getFundedUserBalance(db, env.DB, otherUserId)).toEqual({
+            tierBalance: 0,
+            packBalance: 0,
+        });
+    });
+
     it("deducts regular generation charges from tier, then positive pack, with empty-pack overage on tier", async () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 

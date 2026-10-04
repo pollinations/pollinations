@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-03",
+  "period_start": "2026-10-03",
+  "period_end": "2026-10-03",
+  "title": "Chat accepts large inline PDFs and Inkling audio",
+  "summary": "Large media works in chat, Polli can manage sandboxes and search code, MCP gains account tools, and community builders keep finding things for Jev to decide.\n\nGen now stores large inline PDFs for OpenRouter models and base64 audio for Inkling, then forwards a URL to the model. Developers can keep sending those requests in the same format, and account-scoped content hashes let uploaded media be reused.\n\nPolli 0.1.23 adds commands to create, list, and kill sandboxes and configure SSH. Its runtime now includes ripgrep, so exact-match and combined code searches can run.\n\nThe MCP server now exposes usage, earnings, quests, and API-key listing, creation, and revocation through account tools. The API enforces the relevant account permissions.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 15731,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 15963,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16164,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16202,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16212,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16296,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16299,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16300,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16301,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16308,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16312,
+      "date": "2026-10-03"
+    },
+    {
+      "number": 16321,
+      "date": "2026-10-03"
+    }
+  ],
+  "generated_at": "2026-10-04T08:09:39.264830+00:00"
+}

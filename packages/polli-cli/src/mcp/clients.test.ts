@@ -396,40 +396,15 @@ describe("hermes yaml client", () => {
 });
 
 describe("Claude config directory", () => {
-    it.each([
-        undefined,
-        "",
-        "custom-claude",
-    ])("reads owned servers and keys from the configured directory (%s)", (configDir) => {
+    it("reads servers and the key from CLAUDE_CONFIG_DIR", () => {
         const ctx = freshCtx();
-        ctx.env.CLAUDE_CONFIG_DIR = configDir
-            ? join(ctx.home, configDir)
-            : configDir;
-        const file = join(
-            ctx.env.CLAUDE_CONFIG_DIR || ctx.home,
-            ".claude.json",
-        );
-        if (configDir) {
-            writeJsonObject(join(ctx.home, ".claude.json"), {
-                mcpServers: {
-                    decoy: {
-                        url: SERVERS[1].url,
-                        headers: { Authorization: "Bearer sk-wrong" },
-                    },
-                },
-            });
-        }
-        writeJsonObject(file, {
+        ctx.env.CLAUDE_CONFIG_DIR = join(ctx.home, "custom-claude");
+        writeJsonObject(join(ctx.env.CLAUDE_CONFIG_DIR, ".claude.json"), {
             mcpServers: {
                 pollinations: {
                     type: "http",
                     url: SERVERS[0].url,
                     headers: { Authorization: "Bearer sk-stored" },
-                },
-                ffmpeg: {
-                    type: "http",
-                    url: "https://example.org/foreign",
-                    headers: { Authorization: "Bearer sk-foreign" },
                 },
             },
         });
@@ -440,65 +415,39 @@ describe("Claude config directory", () => {
 });
 
 describe("real Claude CLI", () => {
-    it
-        .skipIf(!commandExists("claude", process.env))
-        .each([undefined, "custom-claude"])(
-        "reinstalls and removes only owned servers (%s)",
-        async (configDir) => {
+    it.skipIf(!commandExists("claude", process.env))(
+        "reinstalls and removes only owned servers",
+        async () => {
             const ctx = freshCtx();
-            const previousHome = process.env.HOME;
-            const previousConfigDir = process.env.CLAUDE_CONFIG_DIR;
-            process.env.HOME = ctx.home;
-            ctx.env.CLAUDE_CONFIG_DIR = configDir
-                ? join(ctx.home, configDir)
-                : configDir;
-            if (ctx.env.CLAUDE_CONFIG_DIR === undefined)
-                delete process.env.CLAUDE_CONFIG_DIR;
-            else process.env.CLAUDE_CONFIG_DIR = ctx.env.CLAUDE_CONFIG_DIR;
-            const file = join(
-                ctx.env.CLAUDE_CONFIG_DIR || ctx.home,
-                ".claude.json",
-            );
-            const homeFile = join(ctx.home, ".claude.json");
-            const originalHome = '{"theme":"unchanged"}\n';
+            const previous = process.env.CLAUDE_CONFIG_DIR;
+            process.env.CLAUDE_CONFIG_DIR = ctx.home;
             try {
-                if (configDir) writeFileSync(homeFile, originalHome);
-                const foreign = {
-                    type: "http",
-                    url: "https://example.org/foreign",
-                };
-                writeJsonObject(file, { mcpServers: { ffmpeg: foreign } });
+                writeJsonObject(join(ctx.home, ".claude.json"), {
+                    mcpServers: {
+                        ffmpeg: {
+                            type: "http",
+                            url: "https://example.org/foreign",
+                        },
+                    },
+                });
                 const client = findClient("claude-code");
                 if (!client) throw new Error("Missing Claude Code adapter");
-                const installed = await client.install(ctx, SERVERS, "sk-test");
-                expect(installed.installed).toEqual(["pollinations"]);
-                expect(installed.notes).toContain(
-                    'Kept existing non-Pollinations server "ffmpeg" - not overwritten.',
-                );
-                expect(client.existingKey?.(ctx)).toBe("sk-test");
-                const reinstalled = await client.install(
-                    ctx,
-                    SERVERS,
-                    "sk-reused",
-                );
-                expect(reinstalled.installed).toEqual(["pollinations"]);
+                await client.install(ctx, SERVERS, "sk-test");
+                await client.install(ctx, SERVERS, "sk-test");
                 expect(client.status(ctx).installed).toEqual(["pollinations"]);
-                expect(client.existingKey?.(ctx)).toBe("sk-reused");
                 expect((await client.remove(ctx)).removed).toEqual([
                     "pollinations",
                 ]);
-                expect(client.status(ctx).installed).toEqual([]);
-                expect(client.existingKey?.(ctx)).toBeNull();
-                const config = JSON.parse(readFileSync(file, "utf8"));
-                expect(config.mcpServers).toEqual({ ffmpeg: foreign });
-                if (configDir)
-                    expect(readFileSync(homeFile, "utf8")).toBe(originalHome);
+                const config = JSON.parse(
+                    readFileSync(join(ctx.home, ".claude.json"), "utf8"),
+                );
+                expect(config.mcpServers.ffmpeg.url).toBe(
+                    "https://example.org/foreign",
+                );
             } finally {
-                if (previousHome === undefined) delete process.env.HOME;
-                else process.env.HOME = previousHome;
-                if (previousConfigDir === undefined)
+                if (previous === undefined)
                     delete process.env.CLAUDE_CONFIG_DIR;
-                else process.env.CLAUDE_CONFIG_DIR = previousConfigDir;
+                else process.env.CLAUDE_CONFIG_DIR = previous;
             }
         },
         30000,

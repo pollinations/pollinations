@@ -59,6 +59,9 @@ const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
 
+/** One item of an OpenAI-style image response */
+type ImageItem = { url?: string; b64_json?: string; media_type?: string };
+
 /** Adapt simple text input to the canonical chat request without SDK defaults. */
 export function buildTextRequest(
     prompt: string,
@@ -505,13 +508,7 @@ export class Pollinations {
                     await this.handleErrorResponse(response);
                 }
 
-                return (await response.json()) as {
-                    data: Array<{
-                        url?: string;
-                        b64_json?: string;
-                        media_type?: string;
-                    }>;
-                };
+                return (await response.json()) as { data: ImageItem[] };
             },
         );
 
@@ -598,13 +595,7 @@ export class Pollinations {
                     await this.handleErrorResponse(response);
                 }
 
-                return (await response.json()) as {
-                    data: Array<{
-                        url?: string;
-                        b64_json?: string;
-                        media_type?: string;
-                    }>;
-                };
+                return (await response.json()) as { data: ImageItem[] };
             },
         );
 
@@ -631,7 +622,7 @@ export class Pollinations {
 
     /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
     private async resolveImageItem(
-        item: { url?: string; b64_json?: string; media_type?: string },
+        item: ImageItem,
         signal?: AbortSignal,
         invalidResponseMessage = "Unexpected image item shape in response",
     ): Promise<ImageResponse> {

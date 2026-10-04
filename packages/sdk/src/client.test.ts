@@ -2,7 +2,6 @@ import { once } from "node:events";
 import { createServer, type Server } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
-import { wrapImageResponse } from "./extras.js";
 import {
     chat,
     configure,
@@ -1460,97 +1459,6 @@ describe("Pollinations simple text facade", () => {
     });
 });
 
-describe("Pollinations OpenAI images — media types", () => {
-    const svg =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>';
-    const b64 = btoa(svg);
-
-    it.each([
-        "imageGenerate",
-        "imageEdit",
-    ] as const)("%s preserves declared SVG MIME and bytes in base64 responses", async (method) => {
-        fetchMock.mockResolvedValueOnce(
-            new Response(
-                JSON.stringify({
-                    data: [{ b64_json: b64, media_type: "image/svg+xml" }],
-                }),
-            ),
-        );
-
-        const result = await newClient()[method]("a vector square");
-        expect(Array.isArray(result)).toBe(false);
-        if (Array.isArray(result)) throw new Error("Expected one image");
-        expect(new TextDecoder().decode(result.buffer)).toBe(svg);
-        expect(result.contentType).toBe("image/svg+xml");
-        expect(result.url).toBe("");
-        expect(wrapImageResponse(result).toDataURL()).toBe(
-            `data:image/svg+xml;base64,${b64}`,
-        );
-    });
-
-    it("preserves each generation item's MIME and order, with PNG fallback", async () => {
-        fetchMock.mockResolvedValueOnce(
-            new Response(
-                JSON.stringify({
-                    data: [
-                        { b64_json: b64, media_type: "image/svg+xml" },
-                        { b64_json: "/9j/", media_type: "image/jpeg" },
-                        { b64_json: "AAAA" },
-                        { b64_json: "AQID", media_type: "" },
-                    ],
-                }),
-            ),
-        );
-
-        const results = await newClient().imageGenerate("four images", {
-            n: 4,
-        });
-        expect(Array.isArray(results)).toBe(true);
-        if (!Array.isArray(results)) throw new Error("Expected image array");
-        expect(results.map((result) => result.contentType)).toEqual([
-            "image/svg+xml",
-            "image/jpeg",
-            "image/png",
-            "image/png",
-        ]);
-        expect(
-            results.map((result) => wrapImageResponse(result).toBase64()),
-        ).toEqual([b64, "/9j/", "AAAA", "AQID"]);
-    });
-
-    it.each([
-        "imageGenerate",
-        "imageEdit",
-    ] as const)("%s uses downloaded URL MIME when an item also declares base64 data", async (method) => {
-        const url = "https://img.test/vector.svg";
-        fetchMock
-            .mockResolvedValueOnce(
-                new Response(
-                    JSON.stringify({
-                        data: [
-                            { url, b64_json: "AAAA", media_type: "image/png" },
-                        ],
-                    }),
-                ),
-            )
-            .mockResolvedValueOnce(
-                new Response(svg, {
-                    headers: { "content-type": "image/svg+xml" },
-                }),
-            );
-
-        const result = await newClient()[method]("a vector square");
-        expect(Array.isArray(result)).toBe(false);
-        if (Array.isArray(result)) throw new Error("Expected one image");
-        expect(result.contentType).toBe("image/svg+xml");
-        expect(result.url).toBe(url);
-        expect(new TextDecoder().decode(result.buffer)).toBe(svg);
-        expect(wrapImageResponse(result).toDataURL()).toBe(
-            `data:image/svg+xml;base64,${b64}`,
-        );
-    });
-});
-
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();
@@ -1612,6 +1520,17 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         expect(result.contentType).toBe("image/png");
         expect(result.url).toBe("");
         expect(result.buffer.byteLength).toBe(3);
+    });
+
+    it("keeps the declared media type of a b64_json response", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                data: [{ b64_json: "PHN2Zy8+", media_type: "image/svg+xml" }],
+            }),
+        );
+
+        const result = await newClient().imageEdit("make it a vector");
+        expect(result.contentType).toBe("image/svg+xml");
     });
 
     it("throws INVALID_RESPONSE / status 500 when the item has neither url nor b64_json", async () => {

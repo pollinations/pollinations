@@ -310,7 +310,7 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging OAuth lockdown — must match enter.pollinations.ai staging allowlist.
 # Request-time gate in shared/auth/api-key.ts fails closed without it. Issue #11137.
 STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
-STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
+STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid"
 [env.test]
 
 [env.test.images]
@@ -401,6 +401,7 @@ TINYBIRD_INGEST_TOKEN = "not-a-secret-workers-test-only"
 TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 PORTKEY_GATEWAY_URL = "https://portkey.test"
 AI_GATEWAY_API_KEY = "not-a-secret-workers-test-only"
+E2B_API_KEY = "not-a-secret-workers-test-only"
 AWS_ACCESS_KEY_ID = "not-a-secret-workers-test-only"
 AWS_SECRET_ACCESS_KEY = "not-a-secret-workers-test-only"
 AWS_REGION = "us-east-1"

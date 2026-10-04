@@ -134,6 +134,16 @@ const collect = (value: string, previous: string[]) => previous.concat(value);
 const looksLikeSecret = (value: string) =>
     value.startsWith("sk_") || value.startsWith("pk_");
 
+/**
+ * Validate the --limit option. Returns the parsed value, or null when the
+ * option is not a positive integer. Callers report the error themselves so
+ * the message can point at the flag.
+ */
+export function parseUsageLimit(value: string): number | null {
+    const limit = Number(value);
+    return Number.isInteger(limit) && limit >= 1 ? limit : null;
+}
+
 export interface UsageKeyArgs {
     /** `--key` before the subcommand: the global auth override. */
     authKey: string | undefined;
@@ -294,6 +304,15 @@ export const usageCommand = new Command("usage")
             }
         }
 
+        // Validate --limit before the fetch try block: an intentional ExitSignal
+        // thrown here must not be caught and re-reported as a fetch failure.
+        // The daily report has no limit, so leave that path untouched.
+        const limit = parseUsageLimit(opts.limit);
+        if (!opts.daily && limit === null) {
+            printError("--limit must be a positive integer");
+            throw new ExitSignal(1);
+        }
+
         const params = new URLSearchParams();
         if (days !== undefined) params.set("days", String(days));
 
@@ -333,11 +352,6 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            const limit = Number(opts.limit);
-            if (!Number.isInteger(limit) || limit < 1) {
-                printError("--limit must be a positive integer");
-                throw new ExitSignal(1);
-            }
             params.set("limit", String(limit));
             if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     filterDailyRows,
     isKeyId,
+    parseUsageLimit,
     resolveKeyIds,
     splitKeyArgs,
     tokensIn,
@@ -188,5 +189,24 @@ describe("token totals", () => {
         expect(tokensIn({ input_text_tokens: 5 })).toBe(5);
         expect(tokensOut({ output_text_tokens: null })).toBe(0);
         expect(tokensIn({})).toBe(0);
+    });
+});
+
+describe("parseUsageLimit", () => {
+    it("accepts positive integers", () => {
+        expect(parseUsageLimit("1")).toBe(1);
+        expect(parseUsageLimit("20")).toBe(20);
+        expect(parseUsageLimit("1000")).toBe(1000);
+    });
+
+    it("rejects zero, negatives, fractions and non-numbers", () => {
+        // These are the values that used to print the validation error and
+        // then a second "Failed to fetch usage" line, because the intentional
+        // ExitSignal was raised inside the fetch try block.
+        expect(parseUsageLimit("0")).toBeNull();
+        expect(parseUsageLimit("-5")).toBeNull();
+        expect(parseUsageLimit("2.5")).toBeNull();
+        expect(parseUsageLimit("abc")).toBeNull();
+        expect(parseUsageLimit("")).toBeNull();
     });
 });

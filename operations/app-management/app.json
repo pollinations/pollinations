@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🎮",
+    "name": "Liar's Supper",
+    "url": "https://xiaotian1171.github.io/liars-supper",
+    "description": "A party deduction game for one device passed around the table. The host sets a scene, deals every player a secret role, narrates three twists while the table argues on a timer, then takes a private vo",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "xiaotian1171",
+    "githubUserId": "63298614",
+    "repositoryUrl": "https://github.com/xiaotian1171/liars-supper",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-03",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16327",
+    "approvedDate": "2026-10-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🎮",
     "name": "Whisperwick",
     "url": "https://kreggscode.github.io/whisperwick",
     "description": "A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes ",

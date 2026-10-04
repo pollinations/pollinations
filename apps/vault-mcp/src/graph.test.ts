@@ -1,7 +1,7 @@
 import { runInDurableObject } from "cloudflare:test";
 import { expect, it } from "vitest";
 import { graphReadSchema, graphWriteSchema } from "./contracts";
-import { graphOperation } from "./graph";
+import { readGraph, writeGraph } from "./graph";
 import { call, ownerStub } from "./test-client";
 
 const nodes = [
@@ -259,18 +259,14 @@ it("enforces write and read limits and resets them each minute", async () => {
         );
         const write = graphWriteSchema.parse({ nodes: [nodes[0]] });
         const read = graphReadSchema.parse({ ids: ["user"] });
-        expect(() => graphOperation(state.storage, "write", write, 0)).toThrow(
+        expect(() => writeGraph(state.storage, write, 0)).toThrow(
             "rate_limited",
         );
-        expect(() => graphOperation(state.storage, "read", read, 0)).toThrow(
+        expect(() => readGraph(state.storage.sql, read, 0)).toThrow(
             "rate_limited",
         );
-        expect(() =>
-            graphOperation(state.storage, "write", write, 60_000),
-        ).not.toThrow();
-        expect(() =>
-            graphOperation(state.storage, "read", read, 60_000),
-        ).not.toThrow();
+        expect(() => writeGraph(state.storage, write, 60_000)).not.toThrow();
+        expect(() => readGraph(state.storage.sql, read, 60_000)).not.toThrow();
     });
 });
 
@@ -280,9 +276,8 @@ it("rolls back a write that would exceed the current-record quota", async () => 
             "WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<20000) INSERT INTO graph_nodes SELECT 'n'||x,'Node','','[]',0 FROM n",
         );
         expect(() =>
-            graphOperation(
+            writeGraph(
                 state.storage,
-                "write",
                 graphWriteSchema.parse({ nodes: [nodes[0]] }),
                 0,
             ),

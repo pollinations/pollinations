@@ -7,39 +7,11 @@ import {
     graphSearchSchema,
     graphWriteSchema,
 } from "./contracts";
-import { GraphError, graphOperation } from "./graph";
+import { GraphError, readGraph, searchGraph, writeGraph } from "./graph";
 import { migrate } from "./schema";
 
 interface Env {
     VAULT: DurableObjectNamespace<Vault>;
-}
-
-async function readBody(request: Request): Promise<unknown> {
-    if (!request.body) throw new Error("invalid_request");
-    const reader = request.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let size = 0;
-    while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        size += value.byteLength;
-        if (size > 131_072) {
-            await reader.cancel();
-            throw new Error("limit_exceeded");
-        }
-        chunks.push(value);
-    }
-    const bytes = new Uint8Array(size);
-    let offset = 0;
-    for (const chunk of chunks) {
-        bytes.set(chunk, offset);
-        offset += chunk.byteLength;
-    }
-    return JSON.parse(
-        new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(
-            bytes,
-        ),
-    );
 }
 
 export class Vault extends DurableObject<Env> {
@@ -49,23 +21,24 @@ export class Vault extends DurableObject<Env> {
     }
 
     override async fetch(request: Request): Promise<Response> {
-        const userId = request.headers.get(MCP_USER_ID_HEADER);
-        if (!userId)
-            return Response.json({ error: "unauthorized" }, { status: 401 });
         if (request.method !== "POST")
             return new Response(null, { status: 405 });
+        // Bound the body before parsing; streamed requests have no length.
+        const chunks: Uint8Array[] = [];
+        let size = 0;
+        for await (const chunk of request.body ?? []) {
+            size += chunk.byteLength;
+            if (size > 131_072)
+                return Response.json(
+                    { error: "limit_exceeded" },
+                    { status: 413 },
+                );
+            chunks.push(chunk);
+        }
         let body: unknown;
         try {
-            body = await readBody(request);
-        } catch (error) {
-            const large =
-                error instanceof Error && error.message === "limit_exceeded";
-            return Response.json(
-                { error: large ? "limit_exceeded" : "invalid_request" },
-                { status: large ? 413 : 400 },
-            );
-        }
-        if (!body || typeof body !== "object" || Array.isArray(body)) {
+            body = JSON.parse(await new Blob(chunks).text());
+        } catch {
             return Response.json({ error: "invalid_request" }, { status: 400 });
         }
         const server = new McpServer(
@@ -77,11 +50,9 @@ export class Vault extends DurableObject<Env> {
         );
         const invoke = (run: () => unknown) => {
             let envelope: { data: unknown } | { error: { code: string } };
-            let isError = false;
             try {
                 envelope = { data: run() };
             } catch (cause) {
-                isError = true;
                 const code =
                     cause instanceof GraphError
                         ? cause.message
@@ -98,7 +69,7 @@ export class Vault extends DurableObject<Env> {
                     { type: "text" as const, text: JSON.stringify(envelope) },
                 ],
                 structuredContent: envelope,
-                isError,
+                isError: "error" in envelope,
             };
         };
         server.registerTool(
@@ -115,14 +86,7 @@ export class Vault extends DurableObject<Env> {
                 },
             },
             (input) =>
-                invoke(() =>
-                    graphOperation(
-                        this.ctx.storage,
-                        "write",
-                        input,
-                        Date.now(),
-                    ),
-                ),
+                invoke(() => writeGraph(this.ctx.storage, input, Date.now())),
         );
         server.registerTool(
             "search",
@@ -134,12 +98,7 @@ export class Vault extends DurableObject<Env> {
             },
             (input) =>
                 invoke(() =>
-                    graphOperation(
-                        this.ctx.storage,
-                        "search",
-                        input,
-                        Date.now(),
-                    ),
+                    searchGraph(this.ctx.storage.sql, input, Date.now()),
                 ),
         );
         server.registerTool(
@@ -152,7 +111,7 @@ export class Vault extends DurableObject<Env> {
             },
             (input) =>
                 invoke(() =>
-                    graphOperation(this.ctx.storage, "read", input, Date.now()),
+                    readGraph(this.ctx.storage.sql, input, Date.now()),
                 ),
         );
         const transport = new WebStandardStreamableHTTPServerTransport({

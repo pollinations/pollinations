@@ -6,8 +6,10 @@ import type {
 } from "./contracts";
 
 export class GraphError extends Error {}
-type Row = Record<string, SqlStorageValue>;
-type NodeRow = Row & { id: string; aliases: string };
+type NodeRow = Record<string, SqlStorageValue> & {
+    id: string;
+    aliases: string;
+};
 const encoder = new TextEncoder();
 const fail = (code: string): never => {
     throw new GraphError(code);
@@ -71,113 +73,116 @@ function context(sql: SqlStorage, rows: NodeRow[], relationOffset = 0) {
     };
 }
 
-export function graphOperation(
+export function writeGraph(
     storage: DurableObjectStorage,
-    ...[operation, input, now]:
-        | ["write", z.output<typeof graphWriteSchema>, number]
-        | ["read", z.output<typeof graphReadSchema>, number]
-        | ["search", z.output<typeof graphSearchSchema>, number]
+    input: z.output<typeof graphWriteSchema>,
+    now: number,
 ) {
+    if (encoder.encode(JSON.stringify(input)).length > 65_536)
+        fail("limit_exceeded");
     const sql = storage.sql;
-    if (operation === "write") {
-        const command = input;
-        const encoded = JSON.stringify(command);
-        if (encoder.encode(encoded).length > 65_536) fail("limit_exceeded");
-        const result = storage.transactionSync(() => {
-            consumeRate(sql, "write", now, 120);
-            const nodes = [];
-            const relations = [];
-            for (const value of command.nodes) {
-                if ("delete" in value) {
-                    sql.exec("DELETE FROM graph_nodes WHERE id=?", value.id);
-                } else {
-                    sql.exec(
-                        "INSERT INTO graph_nodes(id,name,text,aliases,recordedAt) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,text=excluded.text,aliases=excluded.aliases,recordedAt=excluded.recordedAt",
-                        value.id,
-                        value.name,
-                        value.text,
-                        JSON.stringify(value.aliases),
-                        now,
-                    );
-                }
-                nodes.push({ id: value.id });
+    return storage.transactionSync(() => {
+        consumeRate(sql, "write", now, 120);
+        for (const value of input.nodes) {
+            if ("delete" in value) {
+                sql.exec("DELETE FROM graph_nodes WHERE id=?", value.id);
+            } else {
+                sql.exec(
+                    "INSERT INTO graph_nodes(id,name,text,aliases,recordedAt) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,text=excluded.text,aliases=excluded.aliases,recordedAt=excluded.recordedAt",
+                    value.id,
+                    value.name,
+                    value.text,
+                    JSON.stringify(value.aliases),
+                    now,
+                );
             }
-            for (const value of command.relations) {
-                const keys = [value.subject, value.predicate, value.target];
-                if ("delete" in value) {
-                    sql.exec(
-                        "DELETE FROM graph_relations WHERE subject=? AND predicate=? AND target=?",
-                        ...keys,
-                    );
-                } else {
-                    sql.exec(
-                        "INSERT INTO graph_relations(subject,predicate,target,evidence,recordedAt) VALUES(?,?,?,?,?) ON CONFLICT(subject,predicate,target) DO UPDATE SET evidence=excluded.evidence,recordedAt=excluded.recordedAt",
-                        ...keys,
-                        value.evidence,
-                        now,
-                    );
-                }
-                relations.push({
-                    subject: value.subject,
-                    predicate: value.predicate,
-                    target: value.target,
-                });
+        }
+        for (const value of input.relations) {
+            const keys = [value.subject, value.predicate, value.target];
+            if ("delete" in value) {
+                sql.exec(
+                    "DELETE FROM graph_relations WHERE subject=? AND predicate=? AND target=?",
+                    ...keys,
+                );
+            } else {
+                sql.exec(
+                    "INSERT INTO graph_relations(subject,predicate,target,evidence,recordedAt) VALUES(?,?,?,?,?) ON CONFLICT(subject,predicate,target) DO UPDATE SET evidence=excluded.evidence,recordedAt=excluded.recordedAt",
+                    ...keys,
+                    value.evidence,
+                    now,
+                );
             }
-            const { total } = sql
-                .exec(
-                    "SELECT (SELECT COUNT(*) FROM graph_nodes)+(SELECT COUNT(*) FROM graph_relations) AS total",
-                )
-                .one();
-            if (Number(total) > 20_000) fail("quota_exceeded");
-            return { nodes, relations };
-        });
-        return result;
-    }
-    consumeRate(sql, "read", now, 600);
-    if (operation === "read") {
-        const { ids, relationOffset } = input;
-        const rows = sql
-            .exec<NodeRow>(
-                "SELECT * FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id",
-                JSON.stringify(ids),
-            )
-            .toArray();
-        const found = new Set(rows.map((row) => row.id));
-        return {
-            ...context(sql, rows, relationOffset),
-            missingIds: [...new Set(ids)].filter((id) => !found.has(id)),
-        };
-    }
-    const value = input;
-    if (value.mode === "count") {
-        const result = sql
+        }
+        const { total } = sql
             .exec(
-                "SELECT COUNT(" +
-                    (value.countUnit === "targets" ? "DISTINCT target" : "*") +
-                    ") AS count FROM graph_relations WHERE (? IS NULL OR subject=?) AND (? IS NULL OR predicate=?) AND (? IS NULL OR target=?)",
-                value.subject ?? null,
-                value.subject ?? null,
-                value.predicate ?? null,
-                value.predicate ?? null,
-                value.target ?? null,
-                value.target ?? null,
+                "SELECT (SELECT COUNT(*) FROM graph_nodes)+(SELECT COUNT(*) FROM graph_relations) AS total",
             )
             .one();
+        if (Number(total) > 20_000) fail("quota_exceeded");
         return {
-            count: result.count,
-            countUnit: value.countUnit,
+            nodes: input.nodes.map(({ id }) => ({ id })),
+            relations: input.relations.map(
+                ({ subject, predicate, target }) => ({
+                    subject,
+                    predicate,
+                    target,
+                }),
+            ),
         };
+    });
+}
+
+export function readGraph(
+    sql: SqlStorage,
+    { ids, relationOffset }: z.output<typeof graphReadSchema>,
+    now: number,
+) {
+    consumeRate(sql, "read", now, 600);
+    const rows = sql
+        .exec<NodeRow>(
+            "SELECT * FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id",
+            JSON.stringify(ids),
+        )
+        .toArray();
+    const found = new Set(rows.map((row) => row.id));
+    return {
+        ...context(sql, rows, relationOffset),
+        missingIds: [...new Set(ids)].filter((id) => !found.has(id)),
+    };
+}
+
+export function searchGraph(
+    sql: SqlStorage,
+    input: z.output<typeof graphSearchSchema>,
+    now: number,
+) {
+    consumeRate(sql, "read", now, 600);
+    if (input.mode === "count") {
+        const { count } = sql
+            .exec(
+                "SELECT COUNT(" +
+                    (input.countUnit === "targets" ? "DISTINCT target" : "*") +
+                    ") AS count FROM graph_relations WHERE (? IS NULL OR subject=?) AND (? IS NULL OR predicate=?) AND (? IS NULL OR target=?)",
+                input.subject ?? null,
+                input.subject ?? null,
+                input.predicate ?? null,
+                input.predicate ?? null,
+                input.target ?? null,
+                input.target ?? null,
+            )
+            .one();
+        return { count, countUnit: input.countUnit };
     }
-    const terms = value.query.match(/[\p{L}\p{N}_]+/gu) ?? [];
+    const terms = input.query.match(/[\p{L}\p{N}_]+/gu) ?? [];
     if (terms.length > 16) fail("limit_exceeded");
     const match = terms.map((term) => `"${term}"`).join(" AND ");
     let rows: NodeRow[] = [];
-    if (!value.query.trim()) {
+    if (!input.query.trim()) {
         rows = sql
             .exec<NodeRow>(
                 "SELECT * FROM graph_nodes ORDER BY id LIMIT ? OFFSET ?",
-                value.limit + 1,
-                value.offset,
+                input.limit + 1,
+                input.offset,
             )
             .toArray();
     } else if (match) {
@@ -188,18 +193,18 @@ export function graphOperation(
                     "ORDER BY CASE WHEN n.id=? OR n.name=? THEN 0 ELSE 1 END,n.id LIMIT ? OFFSET ?",
                 match,
                 match,
-                value.query,
-                value.query,
-                value.limit + 1,
-                value.offset,
+                input.query,
+                input.query,
+                input.limit + 1,
+                input.offset,
             )
             .toArray();
     }
-    const result = context(sql, rows.slice(0, value.limit));
+    const result = context(sql, rows.slice(0, input.limit));
     const more = rows.length > result.nodes.length;
     return {
         ...result,
         truncated: result.truncated || more,
-        nextOffset: more ? value.offset + result.nodes.length : null,
+        nextOffset: more ? input.offset + result.nodes.length : null,
     };
 }

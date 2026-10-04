@@ -1,8 +1,42 @@
 import {
+    fetchModelCatalog,
     getModelPricesFromCatalog,
     parseModelCatalogResponse,
 } from "@frontend/components/models/model-catalog.ts";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../frontend/src/config.ts", () => ({
+    config: {
+        genBaseUrl: "https://gen.example",
+    },
+}));
+
+it("fetches the full catalog for show-all without a separate health request", async () => {
+    const fetch = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input) => {
+            const url = new URL(String(input));
+            expect(url.pathname).toBe("/models");
+            expect(url.searchParams.get("reliability")).toBe("all");
+            return Response.json([
+                {
+                    name: "example/model",
+                    health: { status: "down", success_rate: 0, requests: 1 },
+                },
+            ]);
+        });
+    try {
+        const catalog = await fetchModelCatalog({ refresh: true });
+        expect(fetch).toHaveBeenCalled();
+        expect(catalog[0].health).toEqual({
+            status: "down",
+            success_rate: 0,
+            requests: 1,
+        });
+    } finally {
+        fetch.mockRestore();
+    }
+});
 
 it("keeps catalog health for filtering and status display", () => {
     const health = [
@@ -179,4 +213,34 @@ it("adds rolling user counts from public model stats", () => {
         users7d: 12,
     });
     expect(model.realAvgCost).toBeUndefined();
+});
+
+it("does not label provider-cost-only pricing as free", () => {
+    const adjustment = {
+        name: "provider.units.v1",
+        label: "Provider cost",
+        kind: "video",
+        price: "1",
+        currency: "pollen" as const,
+        quantity: 1,
+        unit: "USD",
+    };
+    const [paid, free] = getModelPricesFromCatalog([
+        {
+            name: "provider-cost-video",
+            category: "video",
+            pricing: { currency: "pollen" },
+            pricing_adjustments: [adjustment],
+        },
+        {
+            name: "free-video",
+            category: "video",
+            pricing: { currency: "pollen" },
+            pricing_adjustments: [{ ...adjustment, price: "0" }],
+        },
+    ]);
+    expect(paid.free).toBe(false);
+    expect(paid.prices).toEqual([]);
+    expect(paid.priceAdjustments).toEqual([adjustment]);
+    expect(free.free).toBe(true);
 });

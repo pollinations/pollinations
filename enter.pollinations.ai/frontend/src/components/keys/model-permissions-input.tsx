@@ -6,10 +6,15 @@ import type {
     ModelCategoryGroup,
     ModelCategoryModel,
 } from "../models/model-categories.ts";
+import {
+    setConsentModelGroup,
+    toggleConsentModelGroup,
+} from "./model-selection.ts";
 
-type ModelTab = ModelCategoryGroup["modality"] | "other";
+type ModelTab = ModelCategoryGroup["modality"] | "other" | "all";
 
 const TAB_LABELS: Record<ModelTab, string> = {
+    all: "All",
     text: "Text",
     images: "Image",
     video: "Video",
@@ -35,92 +40,97 @@ export function ModelPermissionsInput({
     onChange: (models: string[]) => void;
     disabled?: boolean;
 }) {
-    const [activeTab, setActiveTab] = useState<ModelTab | "selected" | null>(
-        null,
-    );
-    const offeredIds = new Set(models.map(({ id }) => id));
+    const [expanded, setExpanded] = useState(false);
+    const modelIds = models.map(({ id }) => id);
+    const offeredIds = new Set(modelIds);
     const categorizedIds = new Set<string>();
-    const idsByTab = new Map<ModelTab, Set<string>>();
+    const idsByTab = new Map<ModelTab, string[]>([["all", modelIds]]);
     for (const group of categories) {
         for (const { id } of group.models) {
             if (!offeredIds.has(id) || categorizedIds.has(id)) continue;
-            const ids = idsByTab.get(group.modality) ?? new Set<string>();
-            ids.add(id);
-            idsByTab.set(group.modality, ids);
+            idsByTab.set(group.modality, [
+                ...(idsByTab.get(group.modality) ?? []),
+                id,
+            ]);
             categorizedIds.add(id);
         }
     }
-    const otherIds = models.filter(({ id }) => !categorizedIds.has(id));
-    if (otherIds.length) {
-        idsByTab.set("other", new Set(otherIds.map(({ id }) => id)));
-    }
-    const selectedIds = new Set(selected ?? models.map(({ id }) => id));
-    const hasSelectedModels = models.some(({ id }) => selectedIds.has(id));
-    const shownTabs = [...idsByTab].filter(
-        ([, ids]) =>
-            activeTab !== null || [...ids].some((id) => selectedIds.has(id)),
-    );
-    const displayedModels = models.filter(({ id }) =>
-        activeTab === "selected"
-            ? selectedIds.has(id)
-            : activeTab !== null && idsByTab.get(activeTab)?.has(id),
-    );
+    const otherIds = modelIds.filter((id) => !categorizedIds.has(id));
+    if (otherIds.length) idsByTab.set("other", otherIds);
+    const selectedIds = new Set(selected ?? modelIds);
     return (
         <>
-            {(activeTab !== null || hasSelectedModels) && (
-                <ButtonGroup
-                    aria-label="Model categories"
-                    className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1"
-                >
-                    {shownTabs.map(([tab]) => (
+            <ButtonGroup
+                aria-label="Model categories"
+                className="col-span-2 row-start-2 py-1.5 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+            >
+                {[...idsByTab].map(([tab, ids]) => {
+                    const count = ids.filter((id) =>
+                        selectedIds.has(id),
+                    ).length;
+                    // All works like a select-all checkbox: a partial click
+                    // fills it. Categories clear on a partial click instead.
+                    const isAll = tab === "all";
+                    const isFull = count === ids.length;
+                    return (
                         <TabButton
                             key={tab}
                             size="xs"
-                            active={activeTab === tab}
-                            disabled={disabled || activeTab === null}
-                            onClick={() => setActiveTab(tab)}
+                            className={isAll ? "mr-2" : undefined}
+                            active={isFull ? true : count > 0 ? "mixed" : false}
+                            disabled={disabled}
+                            ariaLabel={`${TAB_LABELS[tab]}: ${count} of ${ids.length} models`}
+                            detail={
+                                <SelectionCount
+                                    count={count}
+                                    total={ids.length}
+                                />
+                            }
+                            onClick={() =>
+                                onChange(
+                                    isAll
+                                        ? setConsentModelGroup(
+                                              selected,
+                                              modelIds,
+                                              ids,
+                                              !isFull,
+                                          )
+                                        : toggleConsentModelGroup(
+                                              selected,
+                                              modelIds,
+                                              ids,
+                                          ),
+                                )
+                            }
                         >
                             {TAB_LABELS[tab]}
                         </TabButton>
-                    ))}
-                    {activeTab !== null && (
-                        <TabButton
-                            size="xs"
-                            active={activeTab === "selected"}
-                            disabled={disabled}
-                            onClick={() => setActiveTab("selected")}
-                        >
-                            Selected
-                        </TabButton>
-                    )}
-                </ButtonGroup>
-            )}
-            <Button
-                type="button"
-                size="sm"
-                intent="neutral"
-                className="col-start-2 row-start-1 gap-1.5 justify-self-end sm:col-start-3"
-                aria-label={
-                    activeTab === null
-                        ? "Expand model selector"
-                        : "Collapse model selector"
-                }
-                aria-expanded={activeTab !== null}
-                disabled={disabled}
-                onClick={() =>
-                    setActiveTab(activeTab === null ? "selected" : null)
-                }
-            >
-                {activeTab === null && <span>Edit</span>}
-                <ChevronIcon expanded={activeTab !== null} />
-            </Button>
-            {activeTab !== null && (
+                    );
+                })}
+            </ButtonGroup>
+            <div className="col-start-2 row-start-1 flex h-8 items-center justify-self-end sm:col-start-3">
+                <Button
+                    type="button"
+                    size="sm"
+                    intent="neutral"
+                    className="gap-1.5"
+                    aria-label={
+                        expanded ? "Collapse model selector" : "Choose models"
+                    }
+                    aria-expanded={expanded}
+                    disabled={disabled}
+                    onClick={() => setExpanded(!expanded)}
+                >
+                    {!expanded && <span>Choose models</span>}
+                    <ChevronIcon expanded={expanded} />
+                </Button>
+            </div>
+            {expanded && (
                 <div className="col-span-2 w-full pt-2 sm:col-span-3">
                     <ConsentModelPicker
-                        key={activeTab}
                         catalog={catalog}
                         allModels={models}
-                        models={displayedModels}
+                        models={models}
                         selected={selected}
                         onChange={onChange}
                         disabled={disabled}
@@ -128,5 +138,19 @@ export function ModelPermissionsInput({
                 </div>
             )}
         </>
+    );
+}
+
+/** Reserves the widest count so toggling never resizes the chip. */
+function SelectionCount({ count, total }: { count: number; total: number }) {
+    return (
+        <span className="inline-grid tabular-nums" aria-hidden>
+            <span className="invisible col-start-1 row-start-1">
+                {total}/{total}
+            </span>
+            <span className="col-start-1 row-start-1 text-right">
+                {count}/{total}
+            </span>
+        </span>
     );
 }

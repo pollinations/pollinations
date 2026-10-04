@@ -82,7 +82,6 @@ describe("reasoning_effort model wiring", () => {
     it.each([
         "glm",
         "kimi",
-        "kimi-code",
         "kimi-k3",
         "deepseek",
         "qwen-large",
@@ -114,6 +113,7 @@ describe("reasoning_effort model wiring", () => {
         "step-flash",
         "qwen-vision-pro",
         "thinkingmachines/inkling",
+        "kimi-code",
     ])("drops off-value on mandatory-reasoning model %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

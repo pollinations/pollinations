@@ -11,6 +11,7 @@ import {
     isRetryableFallbackError,
     withModelFallback,
 } from "../fallback.ts";
+import { UserImageError } from "../userImage.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
@@ -28,6 +29,7 @@ import {
     type AuthResult,
     createAndReturnImageCached,
     type ImageGenerationResult,
+    isGPTImageRefusedByAzure,
 } from "./createAndReturnImages.ts";
 import {
     createAndReturnVideo,
@@ -36,13 +38,12 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
 import {
     CommunityReferenceParamsSchema,
     type ImageParams,
     ImageParamsSchema,
 } from "./params.ts";
-import { sanitizeString, sleep } from "./util.ts";
+import { sanitizeString } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
@@ -79,6 +80,7 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
     "DEEPINFRA_API_KEY",
@@ -87,6 +89,7 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
     "FAL_KEY",
+    "INFERENCEPORT_API_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
@@ -259,18 +262,12 @@ async function generateImageResult(
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
-    const result = await createAndReturnImageCached(
+    return await createAndReturnImageCached(
         prompt,
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
-
-    if (result.isChild && result.isMature) {
-        await sleep(5000);
-    }
-
-    return result;
 }
 
 /** Tries the requested model and its fallbacks through one modality-neutral loop. */
@@ -288,8 +285,13 @@ async function generateMediaWithFallback(
             candidate.definition?.provider === "azure" &&
             candidate.definition.publisher === "OpenAI"
         ) {
+            // Every Azure region refused, or the reference image host is
+            // rate limiting. Timeouts and 5xx stay terminal so an image Azure
+            // may have produced is not paid for twice.
             return (
-                error instanceof UpstreamError && error.upstreamStatus === 429
+                isGPTImageRefusedByAzure(error) ||
+                (error instanceof UserImageError &&
+                    error.upstreamStatus === 429)
             );
         }
         return isRetryableFallbackError(error);
@@ -322,7 +324,7 @@ async function generateMediaWithFallback(
                 return { result: generated, params };
             }
             if (isVideoModel(params.model)) {
-                const generated = await generateVideoResult(c, prompt, params);
+                const generated = await generateVideoResult(prompt, params);
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
@@ -341,15 +343,10 @@ async function generateMediaWithFallback(
 }
 
 async function generateVideoResult(
-    c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(
-        originalPrompt,
-        safeParams as ImageParams,
-        c.get("requestId"),
-    );
+    return createAndReturnVideo(originalPrompt, safeParams as ImageParams);
 }
 
 /**
@@ -405,19 +402,12 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    const pricingDimensions =
-        c.var.model.resolved === "amazon/nova-canvas-v1"
-            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
-            : safeParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
         hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
-        maxImageDimension: Math.max(
-            pricingDimensions.width,
-            pricingDimensions.height,
-        ),
+        maxImageDimension: Math.max(safeParams.width, safeParams.height),
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 
@@ -427,6 +417,9 @@ export async function generateImageOrVideoResponse(
             originalPrompt,
             safeParams,
         );
+        if (result.trackingData.pricingInput) {
+            c.var.track.setPricingInput(result.trackingData.pricingInput);
+        }
         const headers = mediaHeaders(
             originalPrompt,
             params,

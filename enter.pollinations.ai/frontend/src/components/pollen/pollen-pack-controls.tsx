@@ -1,145 +1,65 @@
-import { Chip, cn, Slider } from "@pollinations/ui";
+import { cn } from "@pollinations/ui";
 import {
+    calculateServiceFeeCents,
     formatPollenPackValue,
-    POLLEN_PACKS,
+    formatUsdCents,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
-import type { CSSProperties, FC } from "react";
+import type { FC } from "react";
 
-const pollenPackSliderStyle = {
-    "--polli-slider-fill": "var(--polli-color-paid-soft)",
-    "--polli-slider-track": "var(--polli-color-paid-pale)",
-    "--polli-slider-thumb-border": "var(--polli-color-paid-deep)",
-    "--polli-slider-thumb-shadow":
-        "color-mix(in oklab, var(--polli-color-paid-deep) 35%, transparent)",
-} as CSSProperties;
-
-const formatPackAriaLabel = (pack: PollenPack): string =>
-    `$${pack.amountUsd} to ${formatPollenPackValue(pack.amountUsd)} pollen`;
-
-type PollenPackSliderProps = {
-    value: number;
-    onChange: (value: number) => void;
-    packs?: ReadonlyArray<PollenPack>;
-    label?: string;
-    selectedBadgeLabel?: string;
-    selectedBadgeDetail?: string;
-    disabled?: boolean;
-};
-
-export const PollenPackSlider: FC<PollenPackSliderProps> = ({
-    value,
-    onChange,
-    packs = POLLEN_PACKS,
-    label = "Select amount",
-    selectedBadgeLabel,
-    selectedBadgeDetail,
-    disabled = false,
-}) => {
-    const selectedIndex = Math.max(
-        0,
-        packs.findIndex((pack) => pack.amountUsd === value),
-    );
-    const selectedPack = packs[selectedIndex] ?? packs[0];
-    const lastIndex = Math.max(0, packs.length - 1);
-    const progressPercent =
-        lastIndex > 0 ? (selectedIndex / lastIndex) * 100 : 100;
-
-    return (
-        <div className="relative">
-            <div className="flex h-8 items-center">
-                <Slider
-                    min={0}
-                    max={lastIndex}
-                    step={1}
-                    value={selectedIndex}
-                    onChange={(event) => {
-                        const pack = packs[Number(event.currentTarget.value)];
-                        if (pack) onChange(pack.amountUsd);
-                    }}
-                    disabled={disabled}
-                    aria-label={label}
-                    aria-valuetext={
-                        selectedPack
-                            ? formatPackAriaLabel(selectedPack)
-                            : undefined
-                    }
-                    progress={progressPercent}
-                    style={pollenPackSliderStyle}
-                />
-            </div>
-            <div className="absolute top-full right-0 left-0 mt-1 px-[11px] text-xs font-bold tracking-tight text-theme-text-muted tabular-nums">
-                <div className="relative">
-                    {packs.map((pack, index) => {
-                        const isSelected =
-                            pack.amountUsd === selectedPack?.amountUsd;
-                        const isFirst = index === 0;
-                        const isLast = lastIndex > 0 && index === lastIndex;
-                        return (
-                            <span
-                                key={pack.amountUsd}
-                                style={{
-                                    left:
-                                        lastIndex > 0
-                                            ? `${(index / lastIndex) * 100}%`
-                                            : "0%",
-                                }}
-                                className={cn(
-                                    "absolute top-0 whitespace-nowrap",
-                                    isFirst
-                                        ? "-ml-[11px] translate-x-0 text-left"
-                                        : isLast
-                                          ? "ml-[11px] -translate-x-full text-right"
-                                          : "-translate-x-1/2 text-center",
-                                    isSelected &&
-                                        "font-bold text-theme-text-soft",
-                                )}
-                            >
-                                <span className="relative inline-block">
-                                    <span
-                                        className={cn(
-                                            "inline-block",
-                                            isSelected &&
-                                                "text-2xl leading-none text-paid-deep",
-                                        )}
-                                    >
-                                        {formatPollenPackValue(pack.amountUsd)}
-                                        {isSelected && (
-                                            <span className="block text-base font-normal leading-tight text-paid-deep">
-                                                pollen
-                                            </span>
-                                        )}
-                                    </span>
-                                    {isSelected && (
-                                        <span
-                                            className={cn(
-                                                "absolute top-full mt-1 inline-flex flex-col whitespace-nowrap",
-                                                isFirst
-                                                    ? "left-0 items-start text-left"
-                                                    : isLast
-                                                      ? "right-0 items-end text-right"
-                                                      : "left-1/2 -translate-x-1/2 items-center text-center",
-                                            )}
-                                        >
-                                            <Chip size="sm">
-                                                <span className="text-sm">
-                                                    {selectedBadgeLabel ??
-                                                        `$${pack.amountUsd}`}
-                                                </span>
-                                            </Chip>
-                                            {selectedBadgeDetail && (
-                                                <span className="mt-0.5 text-xs font-normal leading-none text-theme-text-muted">
-                                                    {selectedBadgeDetail}
-                                                </span>
-                                            )}
-                                        </span>
-                                    )}
-                                </span>
-                            </span>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
-};
+/** Choosing a pack only selects it; the action button decides what happens. */
+export const PollenPackButtons: FC<{
+    packs: readonly PollenPack[];
+    selectedAmount?: number;
+    onSelect: (pack: PollenPack) => void;
+    describe?: (pollen: string, price: string) => string;
+}> = ({
+    packs,
+    selectedAmount,
+    onSelect,
+    describe = (pollen, price) => `Select ${pollen} Pollen for ${price}`,
+}) => (
+    <div
+        className={cn(
+            "grid grid-cols-3 gap-2",
+            packs.length === 5 ? "sm:grid-cols-5" : "sm:grid-cols-6",
+        )}
+    >
+        {packs.map((pack) => {
+            const pollen = formatPollenPackValue(pack.amountUsd);
+            const price = formatUsdCents(
+                pack.amountUsd * 100 +
+                    calculateServiceFeeCents(pack.amountUsd * 100),
+            );
+            const selected = pack.amountUsd === selectedAmount;
+            return (
+                <button
+                    key={pack.packKey}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => onSelect(pack)}
+                    aria-label={describe(pollen, price)}
+                    // A value, not an action: never a border. Idle it is a
+                    // quiet grey (a tint of the text colour, so it shows in
+                    // both modes). Two yellows only: hover is the pale 30%
+                    // of a resting outlined button, chosen is the full
+                    // accent and stays so on hover. The ring shows keyboard
+                    // focus only.
+                    className={cn(
+                        "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text-soft",
+                        selected
+                            ? "bg-theme-bg-active text-theme-text-strong"
+                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-bg-active/30",
+                    )}
+                >
+                    <span className="text-2xl font-bold leading-none tracking-tight">
+                        {pollen}
+                    </span>
+                    {/* Faded, not grey: readable on both fills. */}
+                    <span className="mt-1 text-xs opacity-70">pollen</span>
+                    <span className="mt-2 text-sm font-semibold">{price}</span>
+                </button>
+            );
+        })}
+    </div>
+);

@@ -9,7 +9,7 @@ const DOMAIN = new URL(ROOT_URL).host;
 const HEALTH_URL = new URL("/grafana/api/health", ROOT_URL).href;
 const BRAND_HEAD_TAGS = `
 <meta name="description" content="Pollinations operations dashboards">
-<meta property="og:title" content="pollinations.ai">
+<meta property="og:title" content="Observability">
 <meta property="og:description" content="Pollinations operations dashboards">
 <meta property="og:image" content="/grafana/public/img/og-image.png">
 <meta property="og:type" content="website">
@@ -57,6 +57,9 @@ export class ObservabilityGrafana extends Container {
         GF_SECURITY_ALLOW_EMBEDDING: "true",
         GF_SERVER_SERVE_FROM_SUB_PATH: "true",
         GF_USERS_AUTO_ASSIGN_ORG_ROLE: "Editor",
+        // The 60s role cache fills before dashboards are provisioned on boot,
+        // denying every Editor the current dashboards for the first minute.
+        GF_RBAC_PERMISSION_CACHE: "false",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),

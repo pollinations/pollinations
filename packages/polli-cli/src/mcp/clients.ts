@@ -630,6 +630,9 @@ const jsonTableIds =
             : Object.keys((config[table] ?? {}) as JsonObject);
     };
 
+const claudeConfigFile = (ctx: McpContext) =>
+    join(ctx.env.CLAUDE_CONFIG_DIR || ctx.home, ".claude.json");
+
 const codexConfigToml = (ctx: McpContext) =>
     join(ctx.env.CODEX_HOME ?? join(ctx.home, ".codex"), "config.toml");
 
@@ -684,18 +687,11 @@ const cliClients: McpClientAdapter[] = [
                 serverId,
             ],
             installHint: "Install it from https://claude.com/claude-code.",
-            installedIds: jsonTableIds(
-                (ctx) => join(ctx.home, ".claude.json"),
-                "mcpServers",
-            ),
-            configuredIds: jsonTableIds(
-                (ctx) => join(ctx.home, ".claude.json"),
-                "mcpServers",
-                false,
-            ),
+            installedIds: jsonTableIds(claudeConfigFile, "mcpServers"),
+            configuredIds: jsonTableIds(claudeConfigFile, "mcpServers", false),
             recoverKey: (ctx) =>
                 recoverKeyFromTable(
-                    readJsonObject(join(ctx.home, ".claude.json")).mcpServers,
+                    readJsonObject(claudeConfigFile(ctx)).mcpServers,
                 ),
         },
     }),

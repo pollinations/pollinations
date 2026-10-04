@@ -57,11 +57,15 @@ test(
 test(
     "GET /api/account/key - accepts an agent run token",
     { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
+    async ({ sessionToken, mocks }) => {
         await mocks.enable("tinybird");
+        const { key } = await createApiKeyViaApi(sessionToken, {
+            name: "agent-parent",
+            accountPermissions: ["usage"],
+        });
         const parent = await authenticateApiKeyRequest({
             request: new Request("http://localhost", {
-                headers: { Authorization: `Bearer ${apiKey}` },
+                headers: { Authorization: `Bearer ${key}` },
             }),
             env,
         });
@@ -84,8 +88,8 @@ test(
             userId: parent?.user?.id,
             byopApp: null,
         });
-        // A run token never carries account scope, only generation access.
-        expect(data.permissions.account).toBeNull();
+        // A run token carries the parent key's account permissions.
+        expect(data.permissions.account).toEqual(["usage"]);
     },
 );
 

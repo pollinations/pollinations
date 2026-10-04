@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-03",
+  "period_start": "2026-10-03",
+  "period_end": "2026-10-03",
+  "generated_at": "2026-10-04T08:09:39.264830+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-03/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped today: chat accepts large inline PDFs and Inkling audio. Polli has sandbox/SSH commands and ripgrep code search. MCP clients can access usage, earnings, quests, and API keys. fewer tabs, more things to debug."
+}

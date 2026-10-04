@@ -1191,6 +1191,74 @@ describe("API Key Management", () => {
         });
     });
 
+    describe("POST /api/api-keys/:id/grant-model", () => {
+        test("adds only the approved model to an existing key", async ({
+            sessionToken,
+        }) => {
+            const firstModel = "black-forest-labs/flux.1-schnell";
+            const secondModel = "google/gemini-3.1-flash-image";
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "limited-model-key",
+                allowedModels: [firstModel],
+                accountPermissions: ["profile"],
+            });
+            const url = `http://localhost:3000/api/api-keys/${created.id}/grant-model`;
+            const body = JSON.stringify({ model: secondModel });
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const budget = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({ pollenBudget: 5 }),
+                },
+            );
+            expect(budget.status).toBe(200);
+
+            const denied = await SELF.fetch(url, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${created.key}`,
+                    "Content-Type": "application/json",
+                },
+                body,
+            });
+            expect(denied.status).toBe(401);
+            const invalid = await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ model: "flux" }),
+            });
+            expect(invalid.status).toBe(400);
+
+            const approved = await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body,
+            });
+            expect(approved.status).toBe(200);
+            const again = await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body,
+            });
+            expect(again.status).toBe(200);
+
+            const db = drizzle(env.DB, { schema });
+            const key = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
+                models: [firstModel, secondModel],
+                account: ["profile"],
+            });
+            expect(key?.pollenBalance).toBe(5);
+        });
+    });
+
     describe("POST /api/api-keys/:id/update", () => {
         test("should update API key name", async ({ sessionToken }) => {
             // Create a new key for this test

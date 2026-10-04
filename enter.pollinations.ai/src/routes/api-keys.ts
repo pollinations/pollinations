@@ -7,6 +7,7 @@ import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-conf
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
+    canonicalizeModelPermissionIds,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
     validateModelPermissionIds,
@@ -146,6 +147,10 @@ const UpdateApiKeySchema = z.object({
         .optional()
         .transform((val) => (val ? new Date(val) : val))
         .describe("Expiration date for the key. null = no expiry"),
+});
+
+const GrantModelSchema = z.object({
+    model: z.string().min(1),
 });
 
 const CreateApiKeySchema = z.object({
@@ -407,6 +412,58 @@ export const apiKeysRoutes = new Hono<Env>()
                 pollenBalance: updated?.pollenBalance ?? null,
                 expiresAt: updated?.expiresAt ?? null,
             });
+        },
+    )
+    .post(
+        "/:id/grant-model",
+        describeRoute({
+            tags: ["👤 Account"],
+            description: "Add one model to an owned API key's permissions.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", GrantModelSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const { model } = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            const key = await requireOwnedKey(db, id, user.id);
+            const [canonicalModel] = await validateModelPermissionIds(
+                c.env.DB,
+                [model],
+            );
+            const visibleModels = await getVisibleModelIdsForUser(
+                c.env.DB,
+                user.id,
+            );
+            if (!visibleModels.has(canonicalModel)) {
+                throw new HTTPException(404, {
+                    message: "Model not available",
+                });
+            }
+
+            const permissions = key.permissions
+                ? parsePermissions(key.permissions)
+                : null;
+            // An absent model list already allows every model. Preserve that meaning.
+            if (!Array.isArray(permissions?.models)) {
+                return c.json({ granted: true, model: canonicalModel });
+            }
+
+            const models = canonicalizeModelPermissionIds(permissions.models);
+            if (!models.includes(canonicalModel)) {
+                await c.var.auth.client.api.updateApiKey({
+                    body: {
+                        keyId: id,
+                        userId: user.id,
+                        permissions: {
+                            ...permissions,
+                            models: [...models, canonicalModel],
+                        },
+                    },
+                });
+            }
+            return c.json({ granted: true, model: canonicalModel });
         },
     )
     /**

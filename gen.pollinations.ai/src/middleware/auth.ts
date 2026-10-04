@@ -49,12 +49,15 @@ const AUTHENTICATION_REQUIRED_MESSAGE =
 export function keyPermissionsLink(
     apiKeyId: string,
     environment?: string,
+    model?: string,
 ): string {
     const enterBase =
         environment === "staging"
             ? PUBLIC_URLS.enter.staging
             : PUBLIC_URLS.enter.production;
-    return `${enterBase}/edit-key?id=${apiKeyId}`;
+    const search = new URLSearchParams({ id: apiKeyId });
+    if (model) search.set("model", model);
+    return `${enterBase}/${model ? "grant-model" : "edit-key"}?${search}`;
 }
 
 function installAuth(
@@ -96,9 +99,13 @@ function installAuth(
         if (!apiKey?.permissions?.models) return;
 
         if (!apiKey.permissions.models.includes(model.resolved)) {
-            const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
+            const link = keyPermissionsLink(
+                apiKey.id,
+                c.env?.ENVIRONMENT,
+                model.resolved,
+            );
             throw new HTTPException(403, {
-                message: `Model '${model.requested}' is not allowed for this API key. Manage key permissions at ${link}`,
+                message: `Model '${model.requested}' is not allowed for this API key. Allow this model at ${link}`,
             });
         }
     }

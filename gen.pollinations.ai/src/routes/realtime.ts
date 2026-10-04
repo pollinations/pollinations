@@ -130,9 +130,9 @@ function requireAllowedModel(c: Context<Env>, model: string): void {
     const apiKey = c.var.auth.apiKey;
     const allowedModels = apiKey?.permissions?.models;
     if (apiKey && allowedModels && !allowedModels.includes(model)) {
-        const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
+        const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT, model);
         throw new HTTPException(403, {
-            message: `Model '${model}' is not allowed for this API key. Manage key permissions at ${link}`,
+            message: `Model '${model}' is not allowed for this API key. Allow this model at ${link}`,
         });
     }
 }

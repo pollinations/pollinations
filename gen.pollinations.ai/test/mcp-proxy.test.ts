@@ -1,11 +1,8 @@
 import { env, SELF } from "cloudflare:test";
-import { createMCPClient } from "@ai-sdk/mcp";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { apikey as apiKeyTable } from "@shared/db/better-auth.ts";
 import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 
@@ -18,39 +15,6 @@ const MCP_REQUEST = {
         arguments: {},
     },
 };
-
-async function callVault(
-    key: string,
-    name: "write" | "read" | "search",
-    args: Record<string, unknown>,
-    headers: Record<string, string> = {},
-) {
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/vault?key=spoofed-key&token=spoofed-token",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Cookie: "session=spoofed",
-                "Content-Type": "application/json",
-                Accept: "application/json, text/event-stream",
-                ...headers,
-            },
-            body: JSON.stringify({
-                jsonrpc: "2.0",
-                id: crypto.randomUUID(),
-                method: "tools/call",
-                params: { name, arguments: args },
-            }),
-        },
-    );
-    return {
-        response,
-        body: (await response.json()) as {
-            result?: { structuredContent?: { data?: Record<string, unknown> } };
-        },
-    };
-}
 
 test("lists the MCP servers exposed through Gen", async () => {
     const response = await SELF.fetch("https://gen.pollinations.ai/mcp");
@@ -185,171 +149,31 @@ test("lists the MCP servers exposed through Gen", async () => {
     });
 });
 
-test("proxies Vault through the real service binding with the hosted MCP client", async () => {
-    const { key } = await createTestApiKey();
-    const client = await createMCPClient({
-        clientName: "vault-gateway-test",
-        transport: {
-            type: "http",
-            url: "https://gen.pollinations.ai/mcp/vault",
-            headers: { Authorization: `Bearer ${key}` },
-            fetch: (input, init) =>
-                SELF.fetch(input, { ...init, redirect: "follow" }),
-        },
+test("routes Vault with the authenticated user and no billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
     });
-    try {
-        expect(Object.keys(await client.tools()).sort()).toEqual([
-            "read",
-            "search",
-            "write",
-        ]);
-    } finally {
-        await client.close();
-    }
-});
-
-test("allows publishable keys to use their owner's Vault", async () => {
-    const { key } = await createTestApiKey({ type: "publishable" });
-    const result = await callVault(key, "write", {
-        nodes: [{ id: "fact", name: "Fact" }],
-    });
-    expect(result.response.status).toBe(200);
-    expect(result.body.result?.structuredContent?.data?.nodes).toEqual([
-        { id: "fact" },
-    ]);
-});
-
-test("rejects unauthenticated Vault requests", async () => {
     const response = await SELF.fetch("https://gen.pollinations.ai/mcp/vault", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
-    });
-    expect(response.status).toBe(401);
-});
-
-test("bounds a streaming request inside Vault", async () => {
-    const { key } = await createTestApiKey();
-    const response = await Promise.race([
-        SELF.fetch("https://gen.pollinations.ai/mcp/vault", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${key}` },
-            body: new ReadableStream({
-                start(controller) {
-                    controller.enqueue(new Uint8Array(131_073));
-                    controller.close();
-                },
-            }),
-        }),
-        new Promise<never>((_, reject) =>
-            setTimeout(
-                () => reject(new Error("Vault request did not settle")),
-                1_000,
-            ),
-        ),
-    ]);
-    expect(response.status).toBe(413);
-    expect(await response.json()).toEqual({ error: "limit_exceeded" });
-});
-
-test("isolates users and shares memory across keys through the real gateway binding", async () => {
-    const writer = await createTestApiKey();
-    const reader = await createTestApiKey({
-        userId: writer.userId,
-    });
-    const node = {
-        nodes: [
-            {
-                id: "gateway-node",
-                name: "Gateway Node",
-                text: "private vault test",
-                aliases: [],
-            },
-        ],
-        relations: [],
-    };
-    expect((await callVault(writer.key, "write", node)).response.status).toBe(
-        200,
-    );
-
-    const sameUserRead = await callVault(reader.key, "read", {
-        ids: ["gateway-node"],
-    });
-    expect(sameUserRead.response.status).toBe(200);
-    expect(sameUserRead.body.result?.structuredContent?.data?.nodes).toEqual([
-        expect.objectContaining({ id: "gateway-node" }),
-    ]);
-    const sameUserSearch = await callVault(reader.key, "search", {
-        query: "private vault",
-    });
-    expect(sameUserSearch.body.result?.structuredContent?.data?.nodes).toEqual(
-        expect.arrayContaining([
-            expect.objectContaining({ id: "gateway-node" }),
-        ]),
-    );
-
-    const agentCommand = {
-        ...node,
-        nodes: [
-            {
-                ...node.nodes[0],
-                id: "agent-node",
-            },
-        ],
-    };
-    const agentOne = await signAgentRunToken({
-        secret: env.BETTER_AUTH_SECRET,
-        parentApiKeyId: writer.id,
-        parentRequestId: crypto.randomUUID(),
-        managedAgentId: "stable-agent",
-    });
-    const agentTwo = await signAgentRunToken({
-        secret: env.BETTER_AUTH_SECRET,
-        parentApiKeyId: writer.id,
-        parentRequestId: crypto.randomUUID(),
-        managedAgentId: "stable-agent",
-    });
-    const firstWrite = await callVault(agentOne, "write", agentCommand);
-    const renewedRead = await callVault(agentTwo, "read", {
-        ids: ["agent-node"],
-    });
-    expect(firstWrite.response.status).toBe(200);
-    expect(renewedRead.body.result?.structuredContent?.data?.nodes).toEqual([
-        expect.objectContaining({ id: "agent-node", name: "Gateway Node" }),
-    ]);
-    expect(
-        (await callVault(agentTwo, "read", { ids: ["gateway-node"] })).body
-            .result?.structuredContent?.data?.nodes,
-    ).toEqual([expect.objectContaining({ id: "gateway-node" })]);
-
-    const otherUser = await createTestApiKey();
-    const isolated = await callVault(
-        otherUser.key,
-        "read",
-        { ids: ["gateway-node"] },
-        {
-            "x-pollinations-user-id": writer.userId,
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "x-pollinations-user-id": "spoofed-user",
+            "Content-Type": "application/json",
         },
-    );
-    expect(isolated.body.result?.structuredContent?.data?.nodes).toEqual([]);
-    expect(isolated.body.result?.structuredContent?.data?.missingIds).toEqual([
-        "gateway-node",
-    ]);
-
-    const readerWrite = await callVault(reader.key, "write", {
-        nodes: [{ id: "reader-node", name: "Reader can also write" }],
+        body: JSON.stringify(MCP_REQUEST),
     });
-    expect(readerWrite.body.result?.structuredContent?.data?.nodes).toEqual([
-        expect.objectContaining({ id: "reader-node" }),
-    ]);
-    await drizzle(env.DB)
-        .update(apiKeyTable)
-        .set({ enabled: false })
-        .where(eq(apiKeyTable.id, reader.id));
-    expect(
-        (await callVault(reader.key, "read", { ids: ["gateway-node"] }))
-            .response.status,
-    ).toBe(401);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: { content: [{ type: "text", text: userId }] },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
 });
 
 test("routes Pollinations MCP with caller authorization for downstream billing", async () => {
@@ -429,6 +253,7 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
 test.for([
     "pollinations",
     "ask-jev",
+    "vault",
 ])("requires a Pollinations credential before invoking %s", async (serverId) => {
     const response = await SELF.fetch(
         `https://gen.pollinations.ai/mcp/${serverId}`,

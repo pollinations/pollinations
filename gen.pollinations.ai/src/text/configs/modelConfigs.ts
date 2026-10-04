@@ -864,6 +864,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
         }),
+    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+        }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/inkling",

@@ -49,6 +49,18 @@ interface SingleKeyInfo {
     rateLimitEnabled: boolean;
 }
 
+const formatPerms = (p: KeyInfo["permissions"]) => {
+    if (!p) return "-";
+    const parts: string[] = [];
+    for (const [key, v] of Object.entries(p)) {
+        if (!v?.length) continue;
+        parts.push(
+            v.length <= 2 ? `${key}:${v.join("|")}` : `${key}:${v.length}`,
+        );
+    }
+    return parts.join(" ") || "-";
+};
+
 const list = new Command("list")
     .description("List all API keys for your account")
     .option(
@@ -72,20 +84,6 @@ const list = new Command("list")
                 printResult(res.data);
                 return;
             }
-
-            const formatPerms = (p: KeyInfo["permissions"]) => {
-                if (!p) return "-";
-                const parts: string[] = [];
-                for (const [key, v] of Object.entries(p)) {
-                    if (!v?.length) continue;
-                    parts.push(
-                        v.length <= 2
-                            ? `${key}:${v.join("|")}`
-                            : `${key}:${v.length}`,
-                    );
-                }
-                return parts.join(" ") || "-";
-            };
 
             const check = process.platform === "win32" ? "yes" : "✓";
             const cross = process.platform === "win32" ? "no" : "✗";
@@ -229,7 +227,10 @@ Examples:
                 type: created.type,
                 prefix: created.prefix,
                 expires: created.expiresAt ?? "never",
-                permissions: created.permissions,
+                permissions:
+                    getOutputMode() === "human" && created.permissions
+                        ? formatPerms(created.permissions)
+                        : created.permissions,
                 budget: created.pollenBudget ?? "unlimited",
                 redirectUris: created.metadata?.redirectUris,
                 earnings: created.metadata?.earningsEnabled,

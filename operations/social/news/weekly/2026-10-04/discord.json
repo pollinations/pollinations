@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-10-04",
+  "period_start": "2026-09-27",
+  "period_end": "2026-10-03",
+  "generated_at": "2026-10-04T08:11:07.320495+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-04/images/discord.jpg"
+    }
+  ],
+  "text": "Hey <@&1424461167883194418> — weekly update for Sep 27–Oct 3. A lot landed; here’s what you can actually use.\n\n## Weekly Update - 2026-10-04\n\n🤖 **Agents have more doors in, and somewhere to run.** The Anthropic-compatible `Messages` API is here, alongside Polli harnesses for Codex, Claude Code and Hermes. You can run code in E2B-compatible sandboxes through Gen; Polli `0.1.23` also adds sandbox commands. [Sandbox details](https://github.com/pollinations/pollinations/pull/15656)\n\n🎛️ **The model shelf grew.** Claude Sonnet 5.5 and GPT-6.1 Sol joined text; Lightning Image Turbo joined images. Audio picked up Gemini 3.5 Transcribe, Azure TTS and ElevenLabs stem separation. Kev 4B and Span-01 Lite add decisions options. The catalog now has better filters, status defaults and modality descriptions.\n\n📦 **Bigger inputs, fewer detours.** Chat now handles 100 MiB inline images, plus large PDFs and supported audio. Streaming uploads go to 400 MiB. [Media input change](https://github.com/pollinations/pollinations/pull/16308)\n\n🌱 **More ways to find things and contribute.** The new Home, Apps and Community pages make the growing app directory easier to explore, including search and weekly rankings. App submissions can link to Quests; the Bee and Honey Census Quests are live, with monthly standings and rewards for eligible Quest-issue reports.\n\n🔎 **Useful small stuff:** weekly model evals make quality easier to inspect, while wallet controls now include saved cards and single-credit auto top-ups. The API reference got a refresh too: https://docs.pollinations.ai/"
+}

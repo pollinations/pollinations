@@ -34,7 +34,7 @@ For all Pollinations-hosted MCP servers, see the
 | `transcribeAudio` | Transcribe a public HTTPS audio URL | `/v1/audio/transcriptions` |
 | `generate3D` | Generate a GLB model | `/3d/{prompt}` |
 | `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
-| `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
+| `listModels` | List live models, capabilities, voices, and pricing; filter with `query`, `capabilities`, `agent`, `community`, `limit` | Model registry routes |
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
 | `getUsage` | Request history or daily summary; requires `account:usage` | `/account/usage`, `/account/usage/daily` |
@@ -49,7 +49,9 @@ public Media URL. No download or re-upload is needed, and binary data does not
 consume model context. Anyone with the link can access it; expired files return 404.
 
 Models, voices, capabilities, and pricing come from the live registry. Use
-`listModels` before selecting a model or voice.
+`listModels` before selecting a model or voice. Every filter is applied by Gen;
+the MCP forwards `query`, `capabilities`, `agent`, `community`, `type`, and
+`limit` and returns the response unchanged.
 
 ## Development
 

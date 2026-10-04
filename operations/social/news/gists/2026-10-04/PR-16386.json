@@ -1,0 +1,33 @@
+{
+  "pr_number": 16386,
+  "title": "fix(cli): format created key permissions",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16386",
+  "merged_at": "2026-10-04T09:53:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reuses the key-list formatter so human key-create output shows readable permissions instead of [object Object].\n- Preserves raw permission objects in JSON and existing null handling.\n- Adds actual-command regressions: old source fails four; fixed 11 pass. Parent reran all 11. Full CLI suite: 291 pass; build and Biome pass.\n- Strict typecheck reports the same 36 baseline diagnostics. Local cached Vitest is 2.1.9 versus declared 3.x.\n\nFixes #16384\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Keys, minus the mystery objects",
+    "blurb": "Creating a key gets readable permissions in the CLI instead of the deeply informative `[object Object]`. JSON output keeps the raw permission objects.",
+    "summary": "The polli CLI reuses its key-list formatter for human-readable key-create permissions, replacing `[object Object]` while preserving raw permission objects in JSON output and existing null handling.",
+    "impact": "CLI users get readable permissions when creating a key; scripts consuming JSON continue to receive the original permission objects.",
+    "keywords": [
+      "polli CLI",
+      "keys",
+      "permissions",
+      "formatting",
+      "JSON"
+    ],
+    "visual_concept": "Depict the polli CLI as a cozy retro terminal showing a newly created key and tidy permission lines, with a small key-shaped code-plant nearby. Polli, wearing a tiny tool belt, points out the readable output.",
+    "image_prompt": "In a cozy pixel art garden shed, a retro terminal glows with a newly created key and neat, readable permission lines beside a lime green (#ecf874) code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and points warmly at the screen, small within the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16386.jpg",
+    "prompt": "In a cozy pixel art garden shed, a retro terminal glows with a newly created key and neat, readable permission lines beside a lime green (#ecf874) code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and points warmly at the screen, small within the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T09:54:17.864411+00:00"
+}

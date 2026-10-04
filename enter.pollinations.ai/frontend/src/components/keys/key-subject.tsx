@@ -1,8 +1,23 @@
 import { KeyChip, Surface, Text } from "@pollinations/ui";
+import { parseAppUrl } from "../../lib/return-to-app.tsx";
+import { AppAttribution } from "../auth/app-attribution.tsx";
+import { getKeyAccessContext } from "./key-type.ts";
 import type { ApiKey } from "./types.ts";
 
-/** The key a standalone page acts on. Keys from a connected app carry the app's name. */
+/**
+ * The key a standalone page acts on. A key a connected app received shows the
+ * app the way the consent screen did; any other key shows its name and prefix.
+ */
 export function KeySubject({ apiKey }: { apiKey: ApiKey }) {
+    if (getKeyAccessContext(apiKey) === "app") {
+        const origin = parseAppUrl(apiKey.metadata?.redirectOrigin);
+        return (
+            <AppAttribution
+                attribution={{ appName: apiKey.name ?? undefined }}
+                redirectUrl={origin ? new URL(origin) : null}
+            />
+        );
+    }
     return (
         <Surface>
             <Text size="sm" weight="semibold" tone="strong">

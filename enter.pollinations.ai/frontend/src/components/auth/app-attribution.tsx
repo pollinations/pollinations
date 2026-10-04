@@ -16,6 +16,8 @@ type Attribution = {
 type AppAttributionProps = {
     attribution: Attribution | null;
     redirectUrl: URL | null;
+    /** Defaults to the app icon; agents pass the bot icon. */
+    icon?: ReactNode;
 };
 
 /**
@@ -27,6 +29,7 @@ type AppAttributionProps = {
 export function AppAttribution({
     attribution,
     redirectUrl,
+    icon = <AppIcon className="h-4 w-4" />,
 }: AppAttributionProps) {
     // A redirect hostname identifies the destination, not the app. Keep it
     // even when lookup has not supplied an app name, and lead with it then.
@@ -43,7 +46,7 @@ export function AppAttribution({
     return (
         <Surface>
             <ul className="space-y-2">
-                <Line lead={<AppIcon className="h-4 w-4" />}>
+                <Line lead={icon}>
                     <Text
                         size="body"
                         tone="strong"

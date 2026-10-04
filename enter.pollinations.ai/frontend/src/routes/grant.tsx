@@ -1,4 +1,5 @@
 import {
+    BotIcon,
     Button,
     InlineLink,
     KeyIcon,
@@ -12,12 +13,20 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { readError } from "../components/community-endpoints/types.ts";
 import { accountPermissions } from "../components/keys/account-permissions-input.tsx";
 import { KeySubject } from "../components/keys/key-subject.tsx";
 import type { ApiKey } from "../components/keys/types.ts";
+import {
+    getCatalogDisplayName,
+    getCatalogModelId,
+} from "../components/models/model-catalog.ts";
+import { getCommunityModelOwner } from "../components/models/model-categories.ts";
+import { useModelCategories } from "../components/models/use-model-categories.ts";
+import { useOwnCommunityModels } from "../components/models/use-own-community-models.ts";
 import {
     parseAppUrl,
     preferredReturnUrl,
@@ -62,6 +71,7 @@ function GrantPage() {
     );
     const [isGranting, setIsGranting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { catalog } = useModelCategories(useOwnCommunityModels(!!userId));
     const grant = model ? { model } : permission ? { permission } : undefined;
     const title = model ? "Allow model access" : "Allow account access";
 
@@ -128,6 +138,13 @@ function GrantPage() {
               value: accountPermissions.find(({ id }) => id === permission)
                   ?.label,
           };
+    // A refusal while an agent runs can only reach a key that lists the
+    // agent itself, so the agents on the key's model list say who could ask.
+    const agents = catalog.filter(
+        (item) =>
+            item.agent &&
+            key.permissions?.models?.includes(getCatalogModelId(item)),
+    );
     const alreadyAllowed = model
         ? !Array.isArray(key.permissions?.models) ||
           key.permissions.models.includes(model)
@@ -219,6 +236,29 @@ function GrantPage() {
                     This model may spend Pollen when used. The key’s existing
                     spending limit still applies.
                 </Text>
+            )}
+            {agents.length > 0 && (
+                <div className="space-y-2">
+                    <Text size="sm">This key is used with</Text>
+                    {agents.map((agent) => {
+                        const agentId = getCatalogModelId(agent);
+                        return (
+                            <AppAttribution
+                                key={agentId}
+                                icon={<BotIcon className="h-4 w-4" />}
+                                attribution={{
+                                    appName: getCatalogDisplayName(
+                                        agent,
+                                        agentId,
+                                    ),
+                                    githubUsername:
+                                        getCommunityModelOwner(agentId),
+                                }}
+                                redirectUrl={null}
+                            />
+                        );
+                    })}
+                </div>
             )}
             <InlineLink
                 href={`/edit-key?id=${encodeURIComponent(id)}`}

@@ -907,7 +907,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to specific model IDs */
+    /** Restrict to model categories (text, image, ...); a model ID allows its whole category */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;

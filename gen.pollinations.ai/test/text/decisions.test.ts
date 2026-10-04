@@ -4,7 +4,6 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { apikey } from "@shared/db/better-auth.ts";
 import {
     test as baseTest,
     createTestApiKey,
@@ -14,7 +13,6 @@ import {
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
@@ -285,17 +283,13 @@ test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
     expect(mocks.decisions.state.requests).toHaveLength(2);
 });
 
-test("existing Jev key permissions allow the canonical model and both aliases", async ({
+test("a text key reaches Jev by its canonical ID and both aliases", async ({
     mocks,
 }) => {
-    const { key, id } = await createTestApiKey({
-        allowedModels: ["typesafe/jev-1.13"],
+    const { key } = await createTestApiKey({
+        allowedModels: ["text"],
         user: { tierBalance: 100 },
     });
-    await drizzle(env.DB)
-        .update(apikey)
-        .set({ permissions: JSON.stringify({ models: ["typesafe/jev"] }) })
-        .where(eq(apikey.id, id));
 
     for (const model of ["typesafe/jev-1.13", "typesafe/jev", "jev"]) {
         const { response, wait } = await post("/alpha/decisions", key, {

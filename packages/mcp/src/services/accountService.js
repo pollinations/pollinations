@@ -191,7 +191,9 @@ export const accountTools = [
             models: z
                 .array(z.string())
                 .optional()
-                .describe("Restrict the key to these model ids"),
+                .describe(
+                    "Restrict the key to these model categories (text, image, video, audio, 3d, embedding, realtime); a model id allows its whole category",
+                ),
             budget: z
                 .number()
                 .min(0)

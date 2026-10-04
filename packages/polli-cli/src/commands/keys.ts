@@ -160,7 +160,10 @@ const create = new Command("create")
         "secret",
     )
     .option("--expires-in <seconds>", "Expiry in seconds (max 365 days)")
-    .option("--models <models...>", "Restrict to specific model IDs")
+    .option(
+        "--models <models...>",
+        "Restrict to model categories (text, image, video, audio, 3d, embedding, realtime); a model ID allows its whole category",
+    )
     .option("--budget <pollen>", "Pollen budget cap")
     .option(
         "--redirect-uri <uri...>",

@@ -1,0 +1,35 @@
+{
+  "pr_number": 16412,
+  "title": "feat(enter): show bonus rewards below the quest categories",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16412",
+  "merged_at": "2026-10-04T12:10:08Z",
+  "labels": [
+    "UI-UX"
+  ],
+  "pr_body_excerpt": "- Moves the **Bonus rewards** section on `/quests` from above the quest categories to the bottom of the page.\n- Pure JSX block move in `quest-overview.tsx`; no logic or styling changes.\n\nChecked: enter `tsc --noEmit`, `vite build --config frontend/vite.config.ts`, Biome.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0173LR1AQTLF2njvmaJQD3BS",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Quests first, bonuses after",
+    "blurb": "The quest categories take the lead; Bonus rewards wait at the bottom. Same rewards, less scrolling past the dessert to find the menu.",
+    "summary": "On /quests, the Bonus rewards section moves from above the quest categories to the bottom of the page, with no logic or styling changes.",
+    "impact": "Visitors encounter quest categories first and Bonus rewards after them; the rewards and how they work stay the same.",
+    "keywords": [
+      "quests",
+      "bonus rewards",
+      "page layout",
+      "enter",
+      "UI"
+    ],
+    "visual_concept": "Depict the /quests page as a cozy garden path: quest-category signposts come first, with a small Bonus rewards chest at the end. Polli guides a visitor along the path, making the new order clear without implying the rewards themselves changed.",
+    "image_prompt": "A cozy pixel art garden path winds past chunky quest-category signposts to a small chest labeled 'BONUS' at the end, with prominent lime green (#ecf874) flowers, soft pastel gradients, warm lighting, and dark purple (#110518) outlines. Polli wears a tiny explorer hat and points down the path: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or insect-like, in strictly pixel art style—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16412.jpg",
+    "prompt": "A cozy pixel art garden path winds past chunky quest-category signposts to a small chest labeled 'BONUS' at the end, with prominent lime green (#ecf874) flowers, soft pastel gradients, warm lighting, and dark purple (#110518) outlines. Polli wears a tiny explorer hat and points down the path: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or insect-like, in strictly pixel art style—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T12:11:04.540001+00:00"
+}

@@ -152,7 +152,10 @@ export class OpenWebUIContainer extends Container {
         // instances get them via admin Settings or SQL (see README).
         DEFAULT_PROMPT_SUGGESTIONS: JSON.stringify([
             {
-                title: ["Generate an image", "with the Pollinations image tool"],
+                title: [
+                    "Generate an image",
+                    "with the Pollinations image tool",
+                ],
                 content:
                     "Generate an image of a lighthouse in a storm using the Pollinations image tool, then describe what you created in one sentence.",
             },
@@ -162,9 +165,9 @@ export class OpenWebUIContainer extends Container {
                     "What models and tools does Pollinations give me here? Give me a quick tour with concrete things to try.",
             },
             {
-                title: ["Compare two models", "GPT-6.1 Sol vs Claude Sonnet 5.5"],
+                title: ["Compare two models", "GPT-5.4 Nano vs Qwen3.8"],
                 content:
-                    "I mostly write and brainstorm. Compare GPT-6.1 Sol and Claude Sonnet 5.5 for that, recommend one, and say why in two sentences.",
+                    "I mostly write and brainstorm. Compare GPT-5.4 Nano and Qwen3.8 for that, recommend one, and say why in two sentences.",
             },
             {
                 title: ["Check my pollen", "balance and recent usage"],

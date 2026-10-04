@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🎮",
+    "name": "Real or AI? — Spot the Synthetic",
+    "url": "https://spot-the-ai.edgeone.dev",
+    "description": "Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "NamanSoni78",
+    "githubUserId": "170070104",
+    "repositoryUrl": "https://github.com/NamanSoni78/spot-the-ai",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15790",
+    "approvedDate": "2026-10-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🎮",
     "name": "Spot the Fake",
     "url": "https://tomdacatto.github.io/pollinations-spot-the-fake",
     "description": "A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim",

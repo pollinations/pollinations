@@ -17,8 +17,9 @@ import {
     responsesToChatCompletion,
     responsesToChatStream,
 } from "../text/responses/chatResponse.ts";
+import { ModelNotAllowedError } from "./auth.ts";
 
-// Set false to restore HTTP 402 for every insufficient-balance response.
+// Set false to restore plain HTTP 402/403 errors on text routes.
 export const TEXT_BALANCE_NOTICE_ENABLED = true;
 
 const NOT_YOUR_ACCOUNT =
@@ -79,23 +80,49 @@ export function balanceNoticeMessage(
     );
 }
 
-/** Wrap tracking and caching so they capture the original 402 before formatting. */
+export function modelNotAllowedNoticeMessage(
+    environment: string,
+    model: { requested: string; resolved: string },
+    keyId: string | undefined,
+    redirect: string | null,
+): string {
+    const link = enterLink(environment, "/edit-key", {
+        id: keyId,
+        model: model.resolved,
+        ref: "agent_model_permission",
+        redirect,
+    });
+    return (
+        `The API key used for this request isn't allowed to use ${model.requested}. ` +
+        `Please [allow it for this key](${link}), then try again.\n\n${NOT_YOUR_ACCOUNT}`
+    );
+}
+
+function noticeMessage(c: Context<Env>): string | undefined {
+    const error = c.get("error");
+    const keyId = c.var.auth?.apiKey?.id;
+    if (c.res.status === 402 && error instanceof PaymentRequiredError)
+        return balanceNoticeMessage(
+            c.env.ENVIRONMENT,
+            error,
+            keyId,
+            appOrigin(c),
+        );
+    if (c.res.status === 403 && error instanceof ModelNotAllowedError)
+        return modelNotAllowedNoticeMessage(
+            c.env.ENVIRONMENT,
+            c.var.model,
+            keyId,
+            appOrigin(c),
+        );
+}
+
+/** Wrap tracking and caching so they capture the original 402/403 before formatting. */
 export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     await next();
 
-    const error = c.get("error");
-    if (
-        !TEXT_BALANCE_NOTICE_ENABLED ||
-        c.res.status !== 402 ||
-        !(error instanceof PaymentRequiredError)
-    )
-        return;
-    const message = balanceNoticeMessage(
-        c.env.ENVIRONMENT,
-        error,
-        c.var.auth?.apiKey?.id,
-        appOrigin(c),
-    );
+    const message = TEXT_BALANCE_NOTICE_ENABLED ? noticeMessage(c) : undefined;
+    if (!message) return;
 
     const isResponses = c.req.path === "/v1/responses";
     const request = c.req.valid(

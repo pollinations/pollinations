@@ -1,5 +1,6 @@
 import { KeyChip, Surface, Text } from "@pollinations/ui";
 import { AuthModalHeader, AuthModalLoading } from "@pollinations/ui/auth";
+import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -30,13 +31,15 @@ type EditKeySearch = {
     redirect?: string;
     /** A model a request was blocked from; preselected for the owner to allow. */
     model?: string;
+    /** An account permission a request lacked; preselected the same way. */
+    permission?: string;
 };
 
 /**
  * Standalone key editor for one key, shown on the auth-flow background.
  * Linked from the key-budget notice gen returns inside chats, and from
- * model-not-allowed errors, so the user can raise the budget or allow the
- * model and go back to the app.
+ * model-not-allowed and missing-permission errors, so the user can raise the
+ * budget or allow the request and go back to the app.
  */
 export const Route = createFileRoute("/edit-key")({
     head: () => ({
@@ -49,6 +52,7 @@ export const Route = createFileRoute("/edit-key")({
             typeof search.model === "string" && search.model
                 ? search.model
                 : undefined,
+        permission: CONSENT_PERMISSIONS.find((p) => p === search.permission),
     }),
     component: EditKeyPage,
 });
@@ -56,7 +60,7 @@ export const Route = createFileRoute("/edit-key")({
 type Outcome = "editing" | "saved" | "closed";
 
 function EditKeyPage() {
-    const { id, redirect, model } = Route.useSearch();
+    const { id, redirect, model, permission } = Route.useSearch();
     const navigate = useNavigate({ from: "/edit-key" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
@@ -188,6 +192,7 @@ function EditKeyPage() {
             apiKey={apiKey}
             accessContext={accessContext}
             requestedModel={model}
+            requestedPermission={permission}
             header={<AuthModalHeader>{accountIdentity}</AuthModalHeader>}
             footnote={footnotes.dashboard}
             onUpdate={async (keyId, updates) => {

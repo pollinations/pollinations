@@ -46,11 +46,11 @@ export type AuthEnv = {
 const AUTHENTICATION_REQUIRED_MESSAGE =
     "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
 
-/** Key editor link; `model` preselects a blocked model for the owner to allow. */
+/** Key editor link; `model` or `permission` preselects what the owner can allow. */
 export function keyPermissionsLink(
     apiKeyId: string,
     environment?: string,
-    model?: string,
+    grant: { model?: string; permission?: string } = {},
 ): string {
     const url = new URL(
         "/edit-key",
@@ -59,12 +59,20 @@ export function keyPermissionsLink(
             : PUBLIC_URLS.enter.production,
     );
     url.searchParams.set("id", apiKeyId);
-    if (model) url.searchParams.set("model", model);
+    if (grant.model) url.searchParams.set("model", grant.model);
+    if (grant.permission) url.searchParams.set("permission", grant.permission);
     return url.toString();
 }
 
 export function modelNotAllowedMessage(model: string, link: string): string {
     return `Model '${model}' is not allowed for this API key. The key owner can allow it at ${link}`;
+}
+
+/** Text routes turn this 403 into a chat reply with the allow link. */
+export class ModelNotAllowedError extends HTTPException {
+    constructor(message: string) {
+        super(403, { message });
+    }
 }
 
 function installAuth(
@@ -106,14 +114,12 @@ function installAuth(
         if (!apiKey?.permissions?.models) return;
 
         if (!apiKey.permissions.models.includes(model.resolved)) {
-            const link = keyPermissionsLink(
-                apiKey.id,
-                c.env?.ENVIRONMENT,
-                model.resolved,
-            );
-            throw new HTTPException(403, {
-                message: modelNotAllowedMessage(model.requested, link),
+            const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT, {
+                model: model.resolved,
             });
+            throw new ModelNotAllowedError(
+                modelNotAllowedMessage(model.requested, link),
+            );
         }
     }
 

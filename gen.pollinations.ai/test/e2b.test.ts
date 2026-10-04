@@ -335,10 +335,10 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     const plain = await createTestApiKey({ user: { tierBalance: 10 } });
     const denied = await call(plain.key, "/v2/sandboxes");
     expect(denied.status).toBe(403);
-    expect(await denied.json()).toMatchObject({
-        code: 403,
-        message: expect.stringContaining("account:machines"),
-    });
+    const { message } = await denied.json<{ message: string }>();
+    expect(message).toContain("account:machines");
+    // The link preselects the missing scope in the key editor.
+    expect(message).toContain(`/edit-key?id=${plain.id}&permission=machines`);
 
     // An empty wallet creates nothing. A key budget below the lease gets the
     // new sandbox killed before anything is charged.

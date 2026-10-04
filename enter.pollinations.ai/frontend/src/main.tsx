@@ -11,7 +11,8 @@ if (
     ref === "image" ||
     ref === "agent_low_balance_topup" ||
     ref === "agent_low_balance_quests" ||
-    ref === "agent_key_budget"
+    ref === "agent_key_budget" ||
+    ref === "agent_model_permission"
 ) {
     navigator.sendBeacon(`${config.apiBaseUrl}/referral?ref=${ref}`);
 }

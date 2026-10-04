@@ -22,6 +22,8 @@ interface EditApiKeyDialogProps {
     accessContext?: "app" | "device";
     /** A model a request was blocked from: preselected so saving allows it. */
     requestedModel?: string;
+    /** An account permission a request lacked, preselected the same way. */
+    requestedPermission?: string;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
     /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
@@ -38,6 +40,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     accessContext,
     requestedModel,
+    requestedPermission,
     onUpdate,
     onClose,
     header,
@@ -70,11 +73,25 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const initialModels = withRequestedModel(savedModels, requestedModel);
     const missingModel =
         initialModels !== savedModels ? requestedModel : undefined;
+    // Unlike models, no account list means no account permissions.
+    const savedAccount = apiKey.permissions?.account ?? null;
+    const missingPermission =
+        requestedPermission && !savedAccount?.includes(requestedPermission)
+            ? requestedPermission
+            : undefined;
+    const missing = [
+        missingModel,
+        missingPermission && `account:${missingPermission}`,
+    ]
+        .filter(Boolean)
+        .join(" and ");
 
     const keyPermissions = useKeyPermissions({
         allowedModels: initialModels,
         pollenBudget: apiKey.pollenBalance ?? null,
-        accountPermissions: apiKey.permissions?.account ?? null,
+        accountPermissions: missingPermission
+            ? [...(savedAccount ?? []), missingPermission]
+            : savedAccount,
         expiryDays,
     });
 
@@ -157,10 +174,10 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 }}
                 error={error}
                 notice={
-                    missingModel && (
-                        <AuthInfoCard title={`Allow ${missingModel}?`}>
+                    missing && (
+                        <AuthInfoCard title={`Allow ${missing}?`}>
                             <Text size="sm">
-                                This link asks to let this key use the model.
+                                This link asks to give this key more access.
                                 It’s selected below. Save to allow it, or cancel
                                 to leave the key unchanged.
                             </Text>

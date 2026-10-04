@@ -116,7 +116,10 @@ test("legacy stored allowlists still filter catalogs after canonical promotion",
             (model) => model.name,
         ),
     ).toEqual(["google/gemini-3.1-flash-image"]);
-    const denied = await fetchWorker("/text/test?model=openai", { headers });
+    // JSON mode keeps the raw 403; plain text gets the allow-link reply.
+    const denied = await fetchWorker("/text/test?model=openai&json=true", {
+        headers,
+    });
     expect(denied.status).toBe(403);
     const stored = await drizzle(env.DB)
         .select({ permissions: apikey.permissions })
@@ -261,7 +264,8 @@ test("future-name stored allowlists filter catalogs without rewriting the databa
         ),
     ).toEqual([resolveModelName("flux")]);
     expect(
-        (await fetchWorker("/text/test?model=openai", { headers })).status,
+        (await fetchWorker("/text/test?model=openai&json=true", { headers }))
+            .status,
     ).toBe(403);
     const stored = await drizzle(env.DB)
         .select({ permissions: apikey.permissions })
@@ -371,8 +375,15 @@ test("keyPermissionsLink resolves production and staging editor links", () => {
     expect(keyPermissionsLink("key-1", "staging")).toBe(
         "https://staging.enter.pollinations.ai/edit-key?id=key-1",
     );
-    expect(keyPermissionsLink("key-1", undefined, "owner/model a")).toBe(
+    expect(
+        keyPermissionsLink("key-1", undefined, { model: "owner/model a" }),
+    ).toBe(
         "https://enter.pollinations.ai/edit-key?id=key-1&model=owner%2Fmodel+a",
+    );
+    expect(
+        keyPermissionsLink("key-1", undefined, { permission: "machines" }),
+    ).toBe(
+        "https://enter.pollinations.ai/edit-key?id=key-1&permission=machines",
     );
 });
 
@@ -467,7 +478,7 @@ test("empty model permissions deny access and return an empty catalog", async ()
     });
 
     const generationResponse = await fetchWorker(
-        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}`,
+        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}&json=true`,
         { headers },
     );
     expect(generationResponse.status).toBe(403);

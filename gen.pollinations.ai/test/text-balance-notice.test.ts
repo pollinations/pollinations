@@ -426,3 +426,40 @@ it("omits the quest link when only paid Pollen can cover the model", async () =>
     }
     await waitOnExecutionContext(ctx);
 });
+
+it("links a blocked model to the key editor with the model preselected", async () => {
+    const caller = await createTestApiKey({
+        user: { packBalance: 10 },
+        allowedModels: ["black-forest-labs/flux.1-schnell"],
+    });
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${caller.key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+        env,
+        ctx,
+    );
+    const text = await response.text();
+    if (!TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(response.status, text).toBe(403);
+    } else {
+        expect(response.status, text).toBe(200);
+        const link = new URL("https://enter.pollinations.ai/edit-key");
+        link.search = new URLSearchParams({
+            id: caller.id,
+            model,
+            ref: "agent_model_permission",
+        }).toString();
+        expect(text).toContain(`[allow it for this key](${link})`);
+    }
+    await waitOnExecutionContext(ctx);
+});

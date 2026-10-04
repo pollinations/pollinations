@@ -342,7 +342,7 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     const apiKey = c.var.auth.apiKey;
     if (!apiKey?.permissions?.account?.includes("machines")) {
         throw new HTTPException(403, {
-            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
+            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT, { permission: "machines" })}`,
         });
     }
     await next();

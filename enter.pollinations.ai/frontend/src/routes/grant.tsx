@@ -138,7 +138,18 @@ function GrantPage() {
         };
     }, [userId, id, grant, agent, sig]);
 
-    const subject = key ? <KeySubject apiKey={key} /> : undefined;
+    const subject = key ? (
+        <KeySubject apiKey={key}>
+            <Text size="sm">
+                <InlineLink
+                    href={`/edit-key?id=${encodeURIComponent(id)}`}
+                    tone="quiet"
+                >
+                    View permissions
+                </InlineLink>
+            </Text>
+        </KeySubject>
+    ) : undefined;
 
     if (isPending) return <AuthModalLoading title={title} />;
     if (!user) {
@@ -162,22 +173,24 @@ function GrantPage() {
         return <AuthModalLoading title={title} />;
     }
 
-    const requested = model
-        ? {
-              label: askingAgent ? "Wants to use" : "Model requested",
-              value: model,
-          }
-        : {
-              label: askingAgent ? "Wants to" : "Permission requested",
-              value: accountPermissions.find(({ id }) => id === permission)
-                  ?.label,
-          };
+    const requested = (
+        <>
+            <Text size="sm">{model ? "Wants to use" : "Wants to"}</Text>
+            <div className="break-words">
+                <Text size="sm" weight="semibold" tone="strong">
+                    {model ??
+                        accountPermissions.find(({ id }) => id === permission)
+                            ?.label}
+                </Text>
+            </div>
+        </>
+    );
     const agentListing = catalog.find(
         (item) => getCatalogModelId(item) === askingAgent,
     );
-    // An agent's request reads top to bottom: who asks, what for, and the
-    // key it lands on. Without one, the key is the subject.
-    const agentSubject = askingAgent && (
+    // Every flow shows the key first. A request gen signed for an agent names
+    // the agent inside the request, since the grant still goes to the key.
+    const request = askingAgent ? (
         <AppAttribution
             icon={<BotIcon className="h-4 w-4" />}
             attribution={{
@@ -187,7 +200,11 @@ function GrantPage() {
                 githubUsername: getCommunityModelOwner(askingAgent),
             }}
             redirectUrl={null}
-        />
+        >
+            {requested}
+        </AppAttribution>
+    ) : (
+        <Surface>{requested}</Surface>
     );
     const alreadyAllowed = model
         ? !Array.isArray(key.permissions?.models) ||
@@ -221,12 +238,8 @@ function GrantPage() {
     return (
         <AuthFlowScreen
             title={`${title}?`}
-            subject={agentSubject || subject}
-            description={
-                agentSubject
-                    ? undefined
-                    : "This adds only what’s shown below to this key. Its spending limit, expiry, and other permissions stay the same. You can remove it later from your Keys page."
-            }
+            subject={subject}
+            description="This adds only what’s shown below to this key, so anything else using the key gets it too. Its spending limit, expiry, and other permissions stay the same. You can remove it later from your Keys page."
             error={error ?? undefined}
             actions={
                 <>
@@ -271,39 +284,13 @@ function GrantPage() {
                 </>
             }
         >
-            <Surface>
-                <Text size="sm">{requested.label}</Text>
-                <div className="break-words">
-                    <Text size="sm" weight="semibold" tone="strong">
-                        {requested.value}
-                    </Text>
-                </div>
-            </Surface>
+            {request}
             {model && (
                 <Text size="sm">
                     This model may spend Pollen when used. The key’s existing
                     spending limit still applies.
                 </Text>
             )}
-            {agentSubject && (
-                <>
-                    <div className="space-y-2">
-                        <Text size="sm">Added to key</Text>
-                        {subject}
-                    </div>
-                    <Text size="sm">
-                        Anything else using this key gets it too. Its spending
-                        limit, expiry, and other permissions stay the same. You
-                        can remove it later from your Keys page.
-                    </Text>
-                </>
-            )}
-            <InlineLink
-                href={`/edit-key?id=${encodeURIComponent(id)}`}
-                tone="quiet"
-            >
-                View current key permissions
-            </InlineLink>
         </AuthFlowScreen>
     );
 }

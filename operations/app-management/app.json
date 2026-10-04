@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Postcard Worlds",
+    "url": "https://tomdacatto.github.io/pollinations-postcard-worlds",
+    "description": "Type a place and an AI paints it as a postcard. A vision model finds the doors, paths and windows in the picture; click one to step into the next view, painted to match the last using the previous vie",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollinations-postcard-worlds",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15742",
+    "approvedDate": "2026-10-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "Chorus",
     "url": "https://xiaotian1171.github.io/chorus",

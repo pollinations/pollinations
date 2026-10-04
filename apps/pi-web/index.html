@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Pi in the browser - Pollinations</title>
+		<style>
+			body {
+				font-family: system-ui, sans-serif;
+				margin: 0;
+				background: #101418;
+				color: #e6e6e6;
+			}
+			main {
+				max-width: 860px;
+				margin: 0 auto;
+				padding: 16px;
+			}
+			h1 {
+				font-size: 20px;
+			}
+			section {
+				border: 1px solid #2a3340;
+				border-radius: 8px;
+				padding: 12px;
+				margin: 12px 0;
+			}
+			button,
+			select,
+			input,
+			textarea {
+				font: inherit;
+				background: #1b2230;
+				color: inherit;
+				border: 1px solid #39445a;
+				border-radius: 6px;
+				padding: 6px 10px;
+			}
+			button {
+				cursor: pointer;
+			}
+			button:disabled {
+				opacity: 0.5;
+				cursor: default;
+			}
+			textarea {
+				width: 100%;
+				box-sizing: border-box;
+				min-height: 64px;
+			}
+			#log,
+			#answer {
+				white-space: pre-wrap;
+				font-family: ui-monospace, monospace;
+				font-size: 13px;
+				max-height: 320px;
+				overflow-y: auto;
+			}
+			#answer {
+				background: #0c0f13;
+				border-radius: 6px;
+				padding: 8px;
+				min-height: 48px;
+			}
+			.err {
+				color: #ff7b72;
+			}
+			.tool {
+				color: #7ee787;
+			}
+			.user {
+				color: #79c0ff;
+			}
+			.dim {
+				color: #8b949e;
+			}
+			.row {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				align-items: center;
+			}
+			#status {
+				color: #d2a8ff;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1>Pi coding agent in the browser</h1>
+			<p class="dim">
+				The real <a href="https://www.wasmer.io/products/wasix">WASIX</a> Pi agent runs in a sandbox on this
+				page. Model requests go through your own Pollinations account (BYOP) - they spend your Pollen.
+			</p>
+
+			<section>
+				<div class="row">
+					<strong id="auth-status">not connected</strong>
+					<button id="connect">Connect Pollinations account</button>
+					<button id="disconnect" disabled>Disconnect</button>
+				</div>
+				<details>
+					<summary>or paste an API key</summary>
+					<div class="row">
+						<input id="paste-key" type="password" placeholder="sk_..." size="36" />
+						<button id="paste-connect">Use key</button>
+					</div>
+				</details>
+			</section>
+
+			<section>
+				<div class="row">
+					<label for="model">Model</label>
+					<select id="model">
+						<option value="openai/gpt-5.4-nano">openai/gpt-5.4-nano</option>
+					</select>
+					<button id="refresh-models" disabled>Load live catalog</button>
+					<span id="status">idle</span>
+				</div>
+			</section>
+
+			<section>
+				<textarea id="prompt" placeholder="e.g. Create hello.txt with a haiku about pollen"></textarea>
+				<div class="row">
+					<button id="run" disabled>Run Pi</button>
+					<button id="stop" disabled>Stop</button>
+					<button id="export">Download workspace ZIP</button>
+				</div>
+			</section>
+
+			<section>
+				<div id="answer"></div>
+				<div id="log"></div>
+			</section>
+
+			<section>
+				<div class="row">
+					<input id="shell" placeholder="shell command in the sandbox, e.g. ls -la" size="48" />
+					<button id="shell-go">Run shell</button>
+				</div>
+			</section>
+		</main>
+		<script type="module" src="./bundle.js"></script>
+	</body>
+</html>

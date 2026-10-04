@@ -1,0 +1,19 @@
+{
+  "name": "pi-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Run the real Pi coding agent in the browser, powered by your own Pollinations account (BYOP)",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/*.test.js",
+    "e2e": "node test/e2e/run-e2e.mjs"
+  },
+  "dependencies": {
+    "@wasmer/sdk": "0.19.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "puppeteer-core": "^24.0.0"
+  }
+}

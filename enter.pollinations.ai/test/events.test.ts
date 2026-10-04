@@ -124,9 +124,8 @@ test("Exponential backoff delay", async () => {
     }
     // Jitter still spreads retries out, so it is not simply pinned.
     const firstAttemptDelays = new Set(
-        Array.from(
-            { length: 50 },
-            () => exponentialBackoffDelay(1, backoffConfigWithJitter),
+        Array.from({ length: 50 }, () =>
+            exponentialBackoffDelay(1, backoffConfigWithJitter),
         ),
     );
     expect(firstAttemptDelays.size).toBeGreaterThan(1);

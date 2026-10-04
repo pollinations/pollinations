@@ -10,7 +10,6 @@ import {
     printResult,
     printTable,
 } from "../lib/output.js";
-import { parseDaysWindow } from "./earnings.js";
 
 interface UsageRecord {
     timestamp: string;
@@ -192,7 +191,7 @@ export const usageCommand = new Command("usage")
         collect,
         [] as string[],
     )
-    .option("--days <n>", "Rolling window in days, max 90")
+    .option("--days <n>", "Rolling window in days")
     .option("--csv", "Print the raw CSV export")
     .addHelpText(
         "after",
@@ -260,18 +259,6 @@ export const usageCommand = new Command("usage")
             }
         }
 
-        let days: number | undefined;
-        if (opts.days !== undefined) {
-            try {
-                days = parseDaysWindow(opts.days);
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "Invalid --days value",
-                );
-                throw new ExitSignal(1);
-            }
-        }
-
         let keyIds: string[] = [];
         if (filterKeys.length > 0) {
             const ids = filterKeys.filter(isKeyId);
@@ -296,7 +283,7 @@ export const usageCommand = new Command("usage")
         }
 
         const params = new URLSearchParams();
-        if (days !== undefined) params.set("days", String(days));
+        if (opts.days !== undefined) params.set("days", opts.days);
 
         try {
             if (opts.daily) {

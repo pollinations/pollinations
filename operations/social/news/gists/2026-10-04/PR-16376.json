@@ -1,0 +1,36 @@
+{
+  "pr_number": 16376,
+  "title": "Add Alibi to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16376",
+  "merged_at": "2026-10-04T06:28:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Alibi](https://tomdacatto.github.io/pollinations-alibi) to games\n- A voice murder mystery. Four AI suspects, each with their own voice and story: question them out loud (or type), keep a notebook of what each one claims, catch the contradiction in the culprit's alibi\n\nFixes #15740, fixes #15724",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Four suspects, one bad alibi",
+    "blurb": "Alibi joins the games collection: question four AI suspects by voice or text, take notes, and find the story that doesn’t add up. Detective work, minus the trench coat requirement.",
+    "summary": "Added Alibi to the games collection, a voice murder mystery where players question four voiced AI suspects, record their claims in a notebook, and identify the culprit through a contradictory alibi.",
+    "impact": "Players get a mystery they can investigate out loud or by typing, with a notebook to help compare all four suspects’ stories.",
+    "keywords": [
+      "Alibi",
+      "community game",
+      "voice",
+      "AI suspects",
+      "mystery",
+      "notebook"
+    ],
+    "visual_concept": "Depict Alibi as a cozy detective game: Polli, wearing a tiny detective hat, compares four distinct suspect portrait cards and voice-wave symbols against notes in an open notebook. A small flower and a code-plant soften the mystery setting; keep it playful rather than ominous.",
+    "image_prompt": "In a cozy pixel art detective nook, Polli in a tiny detective hat studies an open notebook beside four distinct suspect portrait cards and little speech-wave icons, with a flower and a code-plant growing by the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a prominent soft lime green (#ecf874) glow against warm cream and lavender, and dark purple (#110518) outlines; nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16376.jpg",
+    "prompt": "In a cozy pixel art detective nook, Polli in a tiny detective hat studies an open notebook beside four distinct suspect portrait cards and little speech-wave icons, with a flower and a code-plant growing by the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a prominent soft lime green (#ecf874) glow against warm cream and lavender, and dark purple (#110518) outlines; nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-04T06:29:21.485361+00:00",
+  "app_name": "Alibi",
+  "app_url": "https://tomdacatto.github.io/pollinations-alibi"
+}

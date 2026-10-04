@@ -76,7 +76,8 @@ function GrantPage() {
     );
     const [isGranting, setIsGranting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [askingAgent, setAskingAgent] = useState<string | null>(null);
+    // undefined while enter checks the link's agent signature.
+    const [askingAgent, setAskingAgent] = useState<string | null>();
     const { catalog } = useModelCategories(useOwnCommunityModels(!!userId));
     const grant = useMemo(
         () => (model ? { model } : permission ? { permission } : undefined),
@@ -117,16 +118,21 @@ function GrantPage() {
     }, [userId, id]);
 
     useEffect(() => {
-        setAskingAgent(null);
-        if (!userId || !id || !grant || !agent || !sig) return;
+        if (!userId || !id || !grant || !agent || !sig) {
+            setAskingAgent(null);
+            return;
+        }
         let canceled = false;
+        setAskingAgent(undefined);
         apiClient["api-keys"][":id"]["grant-agent"]
             .$get({ param: { id }, query: { ...grant, agent, sig } })
             .then((response) => (response.ok ? response.json() : null))
             .then((result) => {
                 if (!canceled) setAskingAgent(result?.agent ?? null);
             })
-            .catch(() => {});
+            .catch(() => {
+                if (!canceled) setAskingAgent(null);
+            });
         return () => {
             canceled = true;
         };
@@ -152,19 +158,36 @@ function GrantPage() {
             />
         );
     }
-    if (key === undefined) {
+    if (key === undefined || askingAgent === undefined) {
         return <AuthModalLoading title={title} />;
     }
 
     const requested = model
-        ? { label: "Model requested", value: model }
+        ? {
+              label: askingAgent ? "Wants to use" : "Model requested",
+              value: model,
+          }
         : {
-              label: "Permission requested",
+              label: askingAgent ? "Wants to" : "Permission requested",
               value: accountPermissions.find(({ id }) => id === permission)
                   ?.label,
           };
     const agentListing = catalog.find(
         (item) => getCatalogModelId(item) === askingAgent,
+    );
+    // An agent's request reads top to bottom: who asks, what for, and the
+    // key it lands on. Without one, the key is the subject.
+    const agentSubject = askingAgent && (
+        <AppAttribution
+            icon={<BotIcon className="h-4 w-4" />}
+            attribution={{
+                appName: agentListing
+                    ? getCatalogDisplayName(agentListing, askingAgent)
+                    : askingAgent,
+                githubUsername: getCommunityModelOwner(askingAgent),
+            }}
+            redirectUrl={null}
+        />
     );
     const alreadyAllowed = model
         ? !Array.isArray(key.permissions?.models) ||
@@ -198,8 +221,12 @@ function GrantPage() {
     return (
         <AuthFlowScreen
             title={`${title}?`}
-            subject={subject}
-            description="This adds only what’s shown below to this key. Its spending limit, expiry, and other permissions stay the same. You can remove it later from your Keys page."
+            subject={agentSubject || subject}
+            description={
+                agentSubject
+                    ? undefined
+                    : "This adds only what’s shown below to this key. Its spending limit, expiry, and other permissions stay the same. You can remove it later from your Keys page."
+            }
             error={error ?? undefined}
             actions={
                 <>
@@ -258,23 +285,18 @@ function GrantPage() {
                     spending limit still applies.
                 </Text>
             )}
-            {askingAgent && (
-                <div className="space-y-2">
-                    <Text size="sm">Requested by an agent using this key</Text>
-                    <AppAttribution
-                        icon={<BotIcon className="h-4 w-4" />}
-                        attribution={{
-                            appName: agentListing
-                                ? getCatalogDisplayName(
-                                      agentListing,
-                                      askingAgent,
-                                  )
-                                : askingAgent,
-                            githubUsername: getCommunityModelOwner(askingAgent),
-                        }}
-                        redirectUrl={null}
-                    />
-                </div>
+            {agentSubject && (
+                <>
+                    <div className="space-y-2">
+                        <Text size="sm">Added to key</Text>
+                        {subject}
+                    </div>
+                    <Text size="sm">
+                        Anything else using this key gets it too. Its spending
+                        limit, expiry, and other permissions stay the same. You
+                        can remove it later from your Keys page.
+                    </Text>
+                </>
             )}
             <InlineLink
                 href={`/edit-key?id=${encodeURIComponent(id)}`}

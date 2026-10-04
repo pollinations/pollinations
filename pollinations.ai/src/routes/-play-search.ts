@@ -7,7 +7,6 @@
  */
 export const PLAY_SEARCH_KEYS = [
     "tab",
-    "task",
     "model",
     "prompt",
     "size",

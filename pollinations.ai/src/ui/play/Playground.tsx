@@ -42,6 +42,7 @@ import { categoryLabel } from "@pollinations/ui/gen";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type CSSProperties,
+    Fragment,
     useCallback,
     useEffect,
     useMemo,
@@ -77,21 +78,32 @@ type PlaygroundModel = MediaModelMetadata & {
     supportedEndpoints: string[];
     voices: string[];
     paidOnly?: boolean;
+    /** Requests in the last 24 hours, from the catalog's health field. */
+    requests: number;
 };
 
+// Groups the audio model list; the first group holds the default model.
 const AUDIO_TASK_ORDER = [
-    "transcription",
     "speech-generation",
-    "audio-processing",
     "music-and-sound-effects",
+    "audio-processing",
+    "transcription",
 ] as const;
 type AudioTask = (typeof AUDIO_TASK_ORDER)[number];
-const AUDIO_TASK_LABEL: Record<AudioTask, string> = {
-    transcription: "Transcription",
-    "speech-generation": "Speech generation",
+// Model list headings follow the endpoint. Speech vs music is guessed from
+// the description, so both share one heading.
+const AUDIO_GROUP_LABEL: Record<AudioTask, string> = {
+    "speech-generation": "Speech, music & sound effects",
+    "music-and-sound-effects": "Speech, music & sound effects",
     "audio-processing": "Voice & cleanup",
-    "music-and-sound-effects": "Music & sound effects",
+    transcription: "Transcription",
 };
+
+/** `health` is a catalog field the SDK passes through untyped. */
+function recentRequests(model: ModelInfo): number {
+    const health = model.health as { requests?: unknown } | undefined;
+    return typeof health?.requests === "number" ? health.requests : 0;
+}
 
 function playgroundModel(model: ModelInfo): PlaygroundModel | null {
     const id = model.id ?? model.name;
@@ -115,6 +127,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         maxReferenceImages: model.max_reference_images,
         voices: model.voices ?? [],
         paidOnly: model.paid_only,
+        requests: recentRequests(model),
     };
 }
 
@@ -217,11 +230,37 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
     const audioPurpose = `${model.title} ${model.description}`.toLowerCase();
     if (
         audioPurpose.includes("music") ||
+        audioPurpose.includes("song") ||
         audioPurpose.includes("sound effect") ||
         audioPurpose.includes("soundscape")
     )
         return "music-and-sound-effects";
     return "speech-generation";
+}
+
+/**
+ * One model list per tab, most requested first. Audio models are grouped by
+ * what they do, then sorted within each group.
+ */
+function modelsInCategory(
+    models: PlaygroundModel[],
+    category: PlaygroundCategory,
+): PlaygroundModel[] {
+    const group = (model: PlaygroundModel) =>
+        category === "audio"
+            ? AUDIO_TASK_ORDER.indexOf(audioTaskForModel(model))
+            : 0;
+    return models
+        .filter((model) => model.category === category)
+        .sort((a, b) => group(a) - group(b) || b.requests - a.requests);
+}
+
+/** The catalog lists each tab's configured default model first. */
+function defaultModelId(
+    models: PlaygroundModel[],
+    category: PlaygroundCategory,
+): string {
+    return models.find((model) => model.category === category)?.id ?? "";
 }
 
 function ModalityTabs({
@@ -253,57 +292,6 @@ function ModalityTabs({
                 );
             })}
         </fieldset>
-    );
-}
-
-function AudioTaskPicker({
-    value,
-    onChange,
-}: {
-    value: AudioTask;
-    onChange: (task: AudioTask) => void;
-}) {
-    return (
-        <div className="flex min-w-0 items-center gap-3">
-            <Text as="span" size="sm" weight="bold" className="shrink-0">
-                Type
-            </Text>
-            <Dropdown
-                className="w-max max-w-[calc(100vw-2rem)] p-2"
-                trigger={(open) => (
-                    <Button
-                        type="button"
-                        className="w-fit max-w-full self-start justify-between gap-2"
-                        aria-label={`Audio type: ${AUDIO_TASK_LABEL[value]}`}
-                    >
-                        <span className="truncate">
-                            {AUDIO_TASK_LABEL[value]}
-                        </span>
-                        <ChevronIcon expanded={open} />
-                    </Button>
-                )}
-            >
-                {(close) => (
-                    <div className="flex flex-col gap-1">
-                        {AUDIO_TASK_ORDER.map((task) => (
-                            <TabButton
-                                key={task}
-                                active={task === value}
-                                size="sm"
-                                variant="ghost"
-                                className="w-full justify-start text-left"
-                                onClick={() => {
-                                    onChange(task);
-                                    close();
-                                }}
-                            >
-                                {AUDIO_TASK_LABEL[task]}
-                            </TabButton>
-                        ))}
-                    </div>
-                )}
-            </Dropdown>
-        </div>
     );
 }
 
@@ -351,11 +339,14 @@ function ModelPicker({
     selectedModel,
     isLoading,
     onSelectModel,
+    groupOf,
 }: {
     models: PlaygroundModel[];
     selectedModel: string;
     isLoading: boolean;
     onSelectModel: (modelId: string) => void;
+    /** Heading for a run of models; models arrive sorted by it. */
+    groupOf?: (model: PlaygroundModel) => string;
 }) {
     const selected = models.find((model) => model.id === selectedModel);
 
@@ -386,21 +377,40 @@ function ModelPicker({
                 {(close) => (
                     <ScrollArea className="max-h-80 pr-2">
                         <div className="flex flex-col gap-1">
-                            {models.map((model) => (
-                                <TabButton
-                                    key={model.id}
-                                    active={model.id === selectedModel}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="w-full justify-start text-left"
-                                    onClick={() => {
-                                        onSelectModel(model.id);
-                                        close();
-                                    }}
-                                >
-                                    <MediaModelOption model={model} />
-                                </TabButton>
-                            ))}
+                            {models.map((model, index) => {
+                                const group = groupOf?.(model);
+                                const startsGroup =
+                                    group &&
+                                    (index === 0 ||
+                                        group !== groupOf?.(models[index - 1]));
+                                return (
+                                    <Fragment key={model.id}>
+                                        {startsGroup && (
+                                            <Text
+                                                as="span"
+                                                size="xs"
+                                                weight="bold"
+                                                tone="muted"
+                                                className="px-3 pt-2"
+                                            >
+                                                {group}
+                                            </Text>
+                                        )}
+                                        <TabButton
+                                            active={model.id === selectedModel}
+                                            size="sm"
+                                            variant="ghost"
+                                            className="w-full justify-start text-left"
+                                            onClick={() => {
+                                                onSelectModel(model.id);
+                                                close();
+                                            }}
+                                        >
+                                            <MediaModelOption model={model} />
+                                        </TabButton>
+                                    </Fragment>
+                                );
+                            })}
                         </div>
                     </ScrollArea>
                 )}
@@ -615,10 +625,6 @@ export function Playground() {
     const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
         CATEGORY_ORDER.find((value) => value === search.tab) ?? "image",
     );
-    const [audioTask, setAudioTask] = useState<AudioTask>(
-        AUDIO_TASK_ORDER.find((value) => value === search.task) ??
-            "speech-generation",
-    );
     const [selectedModel, setSelectedModel] = useState(search.model ?? "");
     const [prompt, setPrompt] = useState(search.prompt ?? "");
     const [selectedResolution, setSelectedResolution] = useState(
@@ -669,7 +675,6 @@ export function Playground() {
     useEffect(() => {
         showInUrl({
             tab: activeCategory,
-            task: activeCategory === "audio" ? audioTask : undefined,
             model: selectedModel,
             prompt,
             size: selectedResolution,
@@ -685,7 +690,6 @@ export function Playground() {
     }, [
         showInUrl,
         activeCategory,
-        audioTask,
         selectedModel,
         prompt,
         selectedResolution,
@@ -707,7 +711,12 @@ export function Playground() {
             catalog.models
                 .filter((model) => !model.community)
                 .map(playgroundModel)
-                .filter((model): model is PlaygroundModel => model !== null),
+                .filter((model): model is PlaygroundModel => model !== null)
+                // Audio endpoints Play cannot call yet stay off the menu.
+                .filter(
+                    (model) =>
+                        model.category !== "audio" || !!audioEndpoint(model),
+                ),
         [catalog.models],
     );
 
@@ -715,54 +724,48 @@ export function Playground() {
         () => visibleModels.find((model) => model.id === selectedModel),
         [visibleModels, selectedModel],
     );
+    const audioTask =
+        currentModel?.category === "audio"
+            ? audioTaskForModel(currentModel)
+            : undefined;
 
-    // A linked ?model= opens that model's tab once the catalog knows it.
-    // Older links use an alias, such as ?model=flux.
-    useEffect(() => {
-        const linked = linkedModelRef.current;
-        const model = visibleModels.find(
-            (candidate) =>
-                candidate.id === linked || candidate.aliases.includes(linked),
-        );
-        const category = CATEGORY_ORDER.find(
-            (value) => value === model?.category,
-        );
-        if (!model || !category) return;
-        linkedModelRef.current = "";
-        setSelectedModel(model.id);
-        setActiveCategory(category);
-        if (category === "audio") setAudioTask(audioTaskForModel(model));
-    }, [visibleModels]);
     const categoryModels = useMemo(
-        () =>
-            visibleModels.filter(
-                (model) =>
-                    model.category === activeCategory &&
-                    (activeCategory !== "audio" ||
-                        audioTaskForModel(model) === audioTask),
-            ),
-        [activeCategory, audioTask, visibleModels],
+        () => modelsInCategory(visibleModels, activeCategory),
+        [activeCategory, visibleModels],
     );
 
+    // Picks the model for the open tab. One effect, so a linked ?model= and
+    // the tab default never race on the same render. A link opens that
+    // model's tab; older links use an alias, such as ?model=flux.
     useEffect(() => {
         if (!isHydrated || isLoading || catalogError) return;
+        if (visibleModels.length === 0) return;
+        const linked = linkedModelRef.current;
+        linkedModelRef.current = "";
+        const linkedModel = visibleModels.find(
+            (model) =>
+                !!linked &&
+                (model.id === linked || model.aliases.includes(linked)),
+        );
+        const linkedCategory = CATEGORY_ORDER.find(
+            (value) => value === linkedModel?.category,
+        );
+        if (linkedModel && linkedCategory) {
+            setSelectedModel(linkedModel.id);
+            setActiveCategory(linkedCategory);
+            return;
+        }
         // Keep a restored selection while discovery loads, or until the user
         // explicitly replaces a model that has left the catalog.
         if (selectedModel && !currentModel) return;
-        if (
-            currentModel?.category === activeCategory &&
-            (activeCategory !== "audio" ||
-                audioTaskForModel(currentModel) === audioTask)
-        )
-            return;
-        setSelectedModel(categoryModels[0]?.id ?? "");
+        if (currentModel?.category === activeCategory) return;
+        setSelectedModel(defaultModelId(visibleModels, activeCategory));
         setAudioFiles([]);
     }, [
         activeCategory,
-        audioTask,
-        categoryModels,
         currentModel,
         selectedModel,
+        visibleModels,
         isHydrated,
         isLoading,
         catalogError,
@@ -817,9 +820,7 @@ export function Playground() {
             : undefined;
     const isAudioTranscription =
         currentAudioEndpoint === "/v1/audio/transcriptions";
-    const showsAudioLength =
-        currentModel?.category === "audio" &&
-        audioTaskForModel(currentModel) === "music-and-sound-effects";
+    const showsAudioLength = audioTask === "music-and-sound-effects";
     const audioError =
         currentModel?.category === "audio"
             ? audioInputError(currentModel, prompt, audioFiles[0])
@@ -912,25 +913,7 @@ export function Playground() {
         if (category === activeCategory) return;
         setActiveCategory(category);
         setAudioFiles([]);
-        const firstModel = visibleModels.find(
-            (model) => model.category === category,
-        );
-        if (category === "audio" && firstModel)
-            setAudioTask(audioTaskForModel(firstModel));
-        setSelectedModel(firstModel?.id ?? "");
-    }
-
-    function selectAudioTask(task: AudioTask) {
-        if (task === audioTask) return;
-        setAudioTask(task);
-        setSelectedModel(
-            visibleModels.find(
-                (model) =>
-                    model.category === "audio" &&
-                    audioTaskForModel(model) === task,
-            )?.id ?? "",
-        );
-        setAudioFiles([]);
+        setSelectedModel(defaultModelId(visibleModels, category));
     }
 
     function selectModel(modelId: string) {
@@ -1123,17 +1106,19 @@ export function Playground() {
                 )}
                 <div className="flex flex-col gap-4 pt-6">
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                        {activeCategory === "audio" && (
-                            <AudioTaskPicker
-                                value={audioTask}
-                                onChange={selectAudioTask}
-                            />
-                        )}
                         <ModelPicker
                             models={categoryModels}
                             selectedModel={selectedModel}
                             isLoading={isLoading || !isHydrated}
                             onSelectModel={selectModel}
+                            groupOf={
+                                activeCategory === "audio"
+                                    ? (model) =>
+                                          AUDIO_GROUP_LABEL[
+                                              audioTaskForModel(model)
+                                          ]
+                                    : undefined
+                            }
                         />
                         {currentModel && currentModel.voices.length > 0 && (
                             <VoicePicker
@@ -1165,9 +1150,7 @@ export function Playground() {
                                 }
                                 placeholder={promptPlaceholder(
                                     activeCategory,
-                                    activeCategory === "audio"
-                                        ? audioTask
-                                        : undefined,
+                                    audioTask,
                                 )}
                                 className={cn(
                                     "lg:min-h-56",

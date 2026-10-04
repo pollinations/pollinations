@@ -1,0 +1,36 @@
+{
+  "pr_number": 16409,
+  "title": "Add Whisperwick to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16409",
+  "merged_at": "2026-10-04T10:18:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Whisperwick](https://kreggscode.github.io/whisperwick) to games\n- A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes \n\nFixes #15788, fixes #15726",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A little mystery joins game night",
+    "blurb": "Whisperwick joins the games collection. Gather 3–10 people around one device; the AI host handles the secrets, stories, and suspiciously confident votes.",
+    "summary": "Whisperwick by kreggscode joins the games collection: a pass-and-play social deduction game for 3–10 players whose AI host invents a new scenario each round, assigns secret roles, narrates the night, and reads the votes.",
+    "impact": "Groups get a one-device party game with fresh scenarios each round and an AI host to run the parts nobody wants to moderate.",
+    "keywords": [
+      "Whisperwick",
+      "community app",
+      "games",
+      "social deduction",
+      "AI host",
+      "pass-and-play"
+    ],
+    "visual_concept": "Depict Whisperwick as a cozy one-device mystery game: secret role cards, a glowing shared screen, and a CRT monitor robot acting as the AI host. Polli, wearing a tiny detective hat, studies a card with her friends; pixel flowers and vines keep the mystery warm rather than ominous. No project mascot or logo is identified.",
+    "image_prompt": "In a cozy pixel art game-night scene, friends gather around one glowing device while a chunky CRT monitor robot presents secret role cards and a fresh mystery; pixel flowers and vines frame the table, with lime green (#ecf874) prominent against warm cream and soft pastels. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wearing a tiny detective hat and studying her card alongside her friends, never oversized or insect-like, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16409.jpg",
+    "prompt": "In a cozy pixel art game-night scene, friends gather around one glowing device while a chunky CRT monitor robot presents secret role cards and a fresh mystery; pixel flowers and vines frame the table, with lime green (#ecf874) prominent against warm cream and soft pastels. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wearing a tiny detective hat and studying her card alongside her friends, never oversized or insect-like, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T10:19:18.228766+00:00",
+  "app_name": "Whisperwick",
+  "app_url": "https://kreggscode.github.io/whisperwick"
+}

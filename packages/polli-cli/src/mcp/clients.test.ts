@@ -479,6 +479,25 @@ describe("hermes yaml client", () => {
     });
 });
 
+describe("Claude config directory", () => {
+    it("reads servers and the key from CLAUDE_CONFIG_DIR", () => {
+        const ctx = freshCtx();
+        ctx.env.CLAUDE_CONFIG_DIR = join(ctx.home, "custom-claude");
+        writeJsonObject(join(ctx.env.CLAUDE_CONFIG_DIR, ".claude.json"), {
+            mcpServers: {
+                pollinations: {
+                    type: "http",
+                    url: SERVERS[0].url,
+                    headers: { Authorization: "Bearer sk-stored" },
+                },
+            },
+        });
+        const client = findClient("claude-code");
+        expect(client?.status(ctx).installed).toEqual(["pollinations"]);
+        expect(client?.existingKey?.(ctx)).toBe("sk-stored");
+    });
+});
+
 describe("real Claude CLI", () => {
     it.skipIf(!commandExists("claude", process.env))(
         "reinstalls and removes only owned servers",

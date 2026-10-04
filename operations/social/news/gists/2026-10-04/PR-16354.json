@@ -1,0 +1,34 @@
+{
+  "pr_number": 16354,
+  "title": "fix(sdk): preserve declared MIME for base64 image responses",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16354",
+  "merged_at": "2026-10-04T10:34:57Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16351\n\n- Preserves `media_type` when resolving base64 image items, allowing SVG responses to produce correct image metadata and data URLs.\n- Retains PNG fallback, URL-response MIME handling, response bytes and array order for generation and editing.\n- Adds image-resolution regressions and controls: three fail before the fix; all ten focused tests and 117 SDK tests pass afterward.\n- Verification: strict typecheck, ESM/CJS/browser/declaration builds, Biome, independent focused tests, and built-SDK native loopback checks pass. No live provider calls or Pollen used.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "SVGs keep their name tags",
+    "blurb": "An SVG should arrive as an SVG, even when it travels as base64. The SDK keeps its MIME label attached, so image metadata and data URLs describe the pixels correctly.",
+    "summary": "The SDK preserves `media_type` when resolving base64 image items, producing correct SVG metadata and data URLs while retaining the PNG fallback, URL-response MIME handling, response bytes, and image order in generation and editing.",
+    "impact": "Developers receiving base64 SVG images get the declared MIME type in their metadata and data URLs; PNG fallbacks and other image-response behavior stay intact.",
+    "keywords": [
+      "SDK",
+      "images",
+      "base64",
+      "SVG",
+      "MIME",
+      "data URLs"
+    ],
+    "visual_concept": "Depict an SDK image response as a little SVG picture carrying a clearly marked MIME tag through a retro computer, with a PNG picture nearby to represent the fallback. Polli helps the CRT monitor robot read the tag; code-plants make the scene feel like a small, well-tended workshop.",
+    "image_prompt": "In a cozy pixel art workshop, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny coder glasses as she hands an SVG picture with a 'SVG' tag to a delighted CRT monitor robot; a PNG picture and code-plants sit beside them. Strictly pixel art, with Polli small-to-medium in the scene, a prominent soft lime green (#ecf874) glow, warm cream and pastel gradients, dark purple (#110518) outlines, chunky sprites, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16354.jpg",
+    "prompt": "In a cozy pixel art workshop, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny coder glasses as she hands an SVG picture with a 'SVG' tag to a delighted CRT monitor robot; a PNG picture and code-plants sit beside them. Strictly pixel art, with Polli small-to-medium in the scene, a prominent soft lime green (#ecf874) glow, warm cream and pastel gradients, dark purple (#110518) outlines, chunky sprites, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T10:35:51.845325+00:00"
+}

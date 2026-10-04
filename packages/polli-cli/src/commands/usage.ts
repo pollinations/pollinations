@@ -4,6 +4,7 @@ import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
 import {
     ExitSignal,
+    fail,
     getOutputMode,
     printError,
     printResult,
@@ -320,12 +321,7 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            const limit = Number(opts.limit);
-            if (!Number.isInteger(limit) || limit < 1) {
-                printError("--limit must be a positive integer");
-                throw new ExitSignal(1);
-            }
-            params.set("limit", String(limit));
+            params.set("limit", opts.limit);
             if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));
             if (opts.csv) params.set("format", "csv");
@@ -349,9 +345,6 @@ export const usageCommand = new Command("usage")
                 })),
             );
         } catch (err) {
-            printError(
-                `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            throw new ExitSignal(1);
+            fail("Failed to fetch usage", err);
         }
     });

@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-10-04",
+  "period_start": "2026-09-27",
+  "period_end": "2026-10-03",
+  "generated_at": "2026-10-04T08:11:07.320495+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-04/images/linkedin.jpg"
+    }
+  ],
+  "text": "165 PRs merged Sep 27–Oct 3. Coding agents got more ways in and somewhere to run. Chat got room for larger media.\n\n·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol. 1 — agents, media & the front door\n\n1. Codex, Claude Code and Hermes gained Polli harnesses; Pi got native MCP setup. E2B-compatible sandboxes through Gen give agents somewhere to run code besides your laptop.\n\n2. Chat now handles 100 MiB inline images, large PDFs and supported audio. Streaming uploads reach 400 MiB. Fewer detours just to hand a model a file.\n\n3. The model shelf added Lightning Image Turbo, Gemini 3.5 Transcribe, Azure TTS and decision models. Weekly evals make the shelf easier to inspect.\n\n4. The website gained a new Home and searchable Apps page. App submissions now link to Quests, and issue reporters can claim rewards.\n\n5. Smaller fixes still count: SDK cancellation, Windows exit codes, mobile dialogs and auto top-up decline handling. Software has edges; we found some.\n\nCode and PRs: https://github.com/pollinations/pollinations — contributions welcome.\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

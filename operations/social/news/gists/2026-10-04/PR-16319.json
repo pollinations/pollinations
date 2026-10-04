@@ -1,0 +1,34 @@
+{
+  "pr_number": 16319,
+  "title": "fix(polli-cli): avoid duplicate usage validation errors",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16319",
+  "merged_at": "2026-10-04T10:37:45Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16318\n\n- Invalid history limits (`0`, `abc`, `2.5`) now print `--limit must be a positive integer` once, without the misleading `Failed to fetch usage: exit 1` message.\n- Reuses the existing `fail` helper to preserve intentional `ExitSignal` exits and genuine API-error details.\n- Adds actual-command regressions for invalid limits, no request on invalid input, successful history retrieval and API failure; authentication and responses are synthetic.\n\nValidation: 25 usage tests pass (also independently rerun); full CLI suite: 284 passed, 1 existing skip. Build, scoped Biome and diff checks pass. Strict TypeScript reports the same 36 pre-existing diagnostics on pristine base and fixed source. Full-suite local-server tests required permitted loopback access.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One error is plenty",
+    "blurb": "Polli CLI keeps its usage advice to one useful sentence. Invalid history limits no longer bring a second, misleading error along for the ride.",
+    "summary": "Polli CLI rejects history limits such as `0`, `abc`, and `2.5` with one `--limit must be a positive integer` message, without making a request or masking genuine API errors.",
+    "impact": "People entering an invalid `--limit` get one accurate explanation instead of a duplicate `Failed to fetch usage: exit 1` message.",
+    "keywords": [
+      "polli-cli",
+      "usage",
+      "history",
+      "limit",
+      "validation",
+      "errors"
+    ],
+    "visual_concept": "Polli CLI's usage command is a cozy retro terminal. Polli, wearing tiny reading glasses, points to a single clear validation message beside a rejected `--limit 0` input; a small code-plant reinforces the garden setting.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli in tiny reading glasses points to a retro terminal showing `--limit 0` and one pixel-font message: `positive integer`; a code-plant grows beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, dark purple (#110518) text, and warm lighting — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16319.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli in tiny reading glasses points to a retro terminal showing `--limit 0` and one pixel-font message: `positive integer`; a code-plant grows beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, dark purple (#110518) text, and warm lighting — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T10:39:28.455657+00:00"
+}

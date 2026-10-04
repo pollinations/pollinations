@@ -3,6 +3,7 @@ import { gen } from "../lib/api.js";
 import {
     clearCredentials,
     ENTER_URL,
+    LOGIN_CLIENT_ID,
     resolveApiKey,
     saveCredentials,
 } from "../lib/config.js";
@@ -137,8 +138,8 @@ export async function loginWithDeviceFlow(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            client_id: "pk_VZF38YW4tQX36SEn",
-            scope: "generate profile usage keys",
+            client_id: LOGIN_CLIENT_ID,
+            scope: "generate profile usage keys machines",
         }),
     }).catch((err) => {
         printError(

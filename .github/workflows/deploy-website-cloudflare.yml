@@ -1,15 +1,17 @@
 name: Deploy / pollinations.ai
 
 on:
-  push:
-    branches:
-      - production
-    paths:
-      - 'pollinations.ai/**'
-      - 'shared/**'
-      - 'packages/sdk/**'
-      - 'packages/ui/**'
-      - '.github/workflows/deploy-website-cloudflare.yml'
+  # Paused while the website v2 pages land on main (#14472): production keeps
+  # the old site until all pages are ready. Uncomment to resume deploys.
+  # push:
+  #   branches:
+  #     - production
+  #   paths:
+  #     - 'pollinations.ai/**'
+  #     - 'shared/**'
+  #     - 'packages/sdk/**'
+  #     - 'packages/ui/**'
+  #     - '.github/workflows/deploy-website-cloudflare.yml'
   workflow_dispatch:
 
 jobs:
@@ -25,8 +27,9 @@ jobs:
           node-version: '24'
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ./pollinations.ai
+        run: |
+          npm ci
+          npm ci --prefix pollinations.ai
 
       - name: Build and deploy to Cloudflare
         env:

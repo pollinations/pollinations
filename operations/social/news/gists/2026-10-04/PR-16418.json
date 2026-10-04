@@ -1,0 +1,36 @@
+{
+  "pr_number": 16418,
+  "title": "Add Chorus to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16418",
+  "merged_at": "2026-10-04T12:42:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Chorus](https://xiaotian1171.github.io/chorus) to learn\n- Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor\n\nFixes #16330, fixes #15727",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Study notes become earworms",
+    "blurb": "Chorus joins the learn collection with a useful trick: turn the notes that refuse to stick into a song that might.",
+    "summary": "Chorus was added to the learn collection and app registry, letting learners paste notes such as formulas or irregular verbs, choose a style, and turn them into a song.",
+    "impact": "Learners get a musical way to rehearse facts they keep forgetting, from formula sheets to irregular verbs.",
+    "keywords": [
+      "Chorus",
+      "learn",
+      "community app",
+      "study notes",
+      "music",
+      "memorization"
+    ],
+    "visual_concept": "Depict Chorus as a cozy music-making study desk: a page of formulas and irregular verbs becomes a trail of musical notes. Polli wears tiny headphones and helps guide the notes into a song, with lime-green code-plants growing beside the desk.",
+    "image_prompt": "At a cozy pixel-art study desk, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and gently guides notes from a formula sheet into floating musical notes, staying small-to-medium sized beside the desk. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent lime green (#ecf874) glow lights the desk and nearby code-plants against a warm cream background, with dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16418.jpg",
+    "prompt": "At a cozy pixel-art study desk, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and gently guides notes from a formula sheet into floating musical notes, staying small-to-medium sized beside the desk. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent lime green (#ecf874) glow lights the desk and nearby code-plants against a warm cream background, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-04T12:43:16.237719+00:00",
+  "app_name": "Chorus",
+  "app_url": "https://xiaotian1171.github.io/chorus"
+}

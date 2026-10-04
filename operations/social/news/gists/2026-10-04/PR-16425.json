@@ -1,0 +1,36 @@
+{
+  "pr_number": 16425,
+  "title": "Add Postcard Worlds to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16425",
+  "merged_at": "2026-10-04T14:23:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds) to games\n- Type a place and an AI paints it as a postcard. A vision model finds the doors, paths and windows in the picture; click one to step into the next view, painted to match the last using the previous vie\n\nFixes #15742, fixes #15728",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Wish you were here, again",
+    "blurb": "Type a place, get a painted postcard, then click a door or path to wander into the next one. Postcard Worlds makes sightseeing a pleasantly recursive activity.",
+    "summary": "Postcard Worlds joins the games list: it paints a place entered by the player, uses a vision model to find clickable doors, paths, and windows, and paints each next view to match the previous one.",
+    "impact": "Players get a postcard-sized world to explore by stepping through details in each AI-painted scene.",
+    "keywords": [
+      "Postcard Worlds",
+      "games",
+      "community app",
+      "image generation",
+      "vision model",
+      "interactive exploration"
+    ],
+    "visual_concept": "Depict the Postcard Worlds game as a stack of painted postcards, with a little doorway in the front postcard opening onto the next matching landscape. Polli, wearing a tiny travel scarf, steps toward the doorway; flowers and a lime-green garden path connect the scenes.",
+    "image_prompt": "A cozy pixel art scene shows painted postcards propped in a flower garden, their tiny doors and windows opening onto connected landscapes; a bold lime green (#ecf874) path leads from one postcard to the next. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wearing a tiny travel scarf and stepping through a postcard doorway. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, dark purple (#110518) outlines, chunky sprites, and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16425.jpg",
+    "prompt": "A cozy pixel art scene shows painted postcards propped in a flower garden, their tiny doors and windows opening onto connected landscapes; a bold lime green (#ecf874) path leads from one postcard to the next. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wearing a tiny travel scarf and stepping through a postcard doorway. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, dark purple (#110518) outlines, chunky sprites, and subtle CRT glow."
+  },
+  "generated_at": "2026-10-04T14:24:04.298215+00:00",
+  "app_name": "Postcard Worlds",
+  "app_url": "https://tomdacatto.github.io/pollinations-postcard-worlds"
+}

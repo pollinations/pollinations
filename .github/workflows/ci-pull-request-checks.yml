@@ -87,6 +87,7 @@ jobs:
         run: >-
           node --test
           .github/scripts/*.test.mjs
+          apps/openwebui/*.test.js
           enter.pollinations.ai/scripts/*.test.mjs
           enter.pollinations.ai/observability/scripts/*.test.mjs
           operations/app-management/*.test.js

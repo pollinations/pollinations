@@ -5,6 +5,8 @@
     "type": "module",
     "scripts": {
         "check": "wrangler deploy --dry-run",
+        "test": "node --test *.test.js && node scripts/check-model-ids.mjs",
+        "test:live-ids": "node scripts/check-model-ids.mjs --live",
         "deploy": "wrangler deploy",
         "deploy:staging": "wrangler deploy --env staging",
         "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} production'",

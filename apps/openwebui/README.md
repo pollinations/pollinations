@@ -16,7 +16,11 @@ paid from the signed-in user's own wallet.
 
 | File | Role |
 |------|------|
-| `worker.js` | Container class with every Open WebUI setting as env vars, plus a keepalive cron |
+| `config.js` | Every container setting as a pure `containerEnv(env)` function — the only place defaults change |
+| `config.test.js` | `node --test` assertions for billing, login, model discovery, MCP and banners, plus a catalog check |
+| `worker.js` | Container class, the referrer header and the keepalive cron; builds `envVars` from `config.js` |
+| `scripts/check-model-ids.mjs` | Fails when a referenced model id leaves the catalog (`--live`, `--refresh` for the fixture) |
+| `catalog.fixture.json` | Recorded ids from `GET /v1/models`, so the id check needs no network |
 | `wrangler.jsonc` | Container (pre-built image), custom domains, staging env |
 | `scripts/push-image.sh` | Mirror the upstream image into the Cloudflare registry |
 | `scripts/push-secrets.mjs` | Push `secrets/secrets.vars.json` (sops) to the Worker |
@@ -45,6 +49,37 @@ Secrets (per environment in `secrets/secrets.vars.json`):
 
 - `WEBUI_SECRET_KEY`: session signing key. Changing it logs everyone out.
 - `DATABASE_URL`: Postgres connection string (staging uses its own database).
+
+## Before/after walkthrough
+
+What a signed-in user sees after this change. Every row is covered by
+`npm test` in this directory (10 assertions plus a catalog check), so the
+columns below are checked, not just described:
+
+| Screen | Before | After |
+|--------|--------|-------|
+| First chat | `DEFAULT_MODELS=openai` is an **alias**, not a catalog id, so the picker fell back to the alphabetically first community model | `openai/gpt-5.4-mini` → `openai/gpt-5.4-nano` → `openai/gpt-5.5`; Open WebUI keeps the first id that exists, so a retired model only moves to the next one |
+| Sidebar | empty until the user pins something | `DEFAULT_PINNED_MODELS` fills it with an everyday chat model, a coding model, a small fast model and an image model while the user has no pins; a user's own pins always win afterwards |
+| New chat | nothing said who pays | one dismissible banner: chats spend your own Pollen, with balance and top-up links |
+| Share menu | "to community" uploads the chat to openwebui.com | `ENABLE_COMMUNITY_SHARING=false`; chats stay on this instance |
+| Regression safety | no tests in this app | `config.test.js` asserts the billing, login, discovery, MCP and banner wiring; `scripts/check-model-ids.mjs` fails when a referenced model id leaves the catalog |
+
+`scripts/check-model-ids.mjs` validates the ids in `config.js` against
+`catalog.fixture.json` (304 ids, recorded from `GET /v1/models`). Run it with
+`--live` to check against the gateway right now, or `--refresh` to re-record the
+fixture after the catalog moves on.
+
+Chat-level checks a reviewer can run in two minutes on staging
+(`npm run deploy:staging`, URL in `wrangler.jsonc`):
+
+1. Sign in with a Pollinations account: the consent screen mints the `sk_`,
+   and no password form appears.
+2. Open a new chat: the billing banner is on top, the sidebar shows the four
+   pinned models, and the picker starts on `openai/gpt-5.4-mini`.
+3. Send a prompt: the generated title proves `task.model.external` ran, and
+   `enter.pollinations.ai` shows that user's spend against their own wallet.
+4. Open the chat's **Tools** menu: the Pollinations MCP server is listed and
+   enabled, and a tool call bills the same user.
 
 ## Config vars are seeded once, not on every boot
 
@@ -78,6 +113,40 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
   psql -U openwebui -d openwebui -c \
   \"select key, value::text from config where key = 'tool_server.connections';\""
 ```
+
+### Reaching an existing installation
+
+The defaults this app ships are `DEFAULT_CONFIG` seeds: `ui.default_models`,
+`ui.default_pinned_models`, `ui.banners`, `ui.enable_community_sharing`,
+`models.default_metadata`, `ui.default_user_role` and `task.model.external` are
+inserted only while their row is *missing*. A database that has already booted
+keeps the old values, so editing `worker.js` alone changes nothing for the
+hosted instance or staging. Apply them to the stored rows instead; none of
+these keys is cached in memory, so the next request picks the change up (no
+container restart):
+
+```sql
+update config set value = '"openai/gpt-5.4-mini,openai/gpt-5.4-nano,openai/gpt-5.5"'
+  where key = 'ui.default_models';
+update config set value = '"openai/gpt-5.4-mini,openai/gpt-5.3-codex,openai/gpt-5.4-nano,openai/gpt-image-2"'
+  where key = 'ui.default_pinned_models';
+update config set value = 'false' where key = 'ui.enable_community_sharing';
+-- ui.banners stores the JSON array worker.js builds:
+update config set value = '[{"id":"pollinations-billing","type":"info","title":"Chats spend your own Pollen","content":"Text, images and tool calls are billed to the Pollen wallet you signed in with. [Check your balance](https://enter.pollinations.ai/pollen) or [top up](https://enter.pollinations.ai/top-up).","dismissible":true,"timestamp":1759500000}]' where key = 'ui.banners';
+```
+
+Read what is there before overwriting it so an installation's own banner list
+is extended rather than replaced:
+
+```bash
+ssh community-monitor "sudo docker exec openwebui-postgres \
+  psql -U openwebui -d openwebui -c \
+  \"select key, value::text from config where key in ('ui.banners','ui.default_models','ui.default_pinned_models','ui.enable_community_sharing','task.model.external');\""
+```
+
+Values are JSON, so a string seed is quoted JSON (`'"openai/…"'`) and a boolean
+seed is bare (`false`). The same applies to a fresh database: these rows are
+written from the environment on first boot only.
 
 ## Restarting the container
 

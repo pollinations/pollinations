@@ -2,7 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import {
     claimReward,
     recordRewards,
-    rewardKey,
+    rewardKeyFor,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq, inArray } from "drizzle-orm";
@@ -1379,7 +1379,7 @@ test("existing app rewards retain their original amounts and remain claimable on
     await recordRewards(
         db,
         originalRewards.map(({ questId, amount }) => ({
-            idempotencyKey: rewardKey(questId, user.githubId),
+            idempotencyKey: rewardKeyFor(questId, user.id, user.githubId),
             userId: user.id,
             questId,
             title: questId,
@@ -2478,4 +2478,26 @@ test("account quest history accepts account usage permission", async ({
     await expect(response.json()).resolves.toMatchObject({
         rewards: [],
     });
+});
+
+test("per-user reward keys survive an account without a GitHub id", () => {
+    const questId = "first_api_key";
+    const userId = "acct-1";
+
+    // #16153: rewardKey used to throw for these accounts, which aborted the
+    // whole quest check and lost every reward the account qualified for.
+    const withoutGithub = rewardKeyFor(questId, userId, null);
+    expect(withoutGithub).toBe("quest:first_api_key:user:acct-1");
+
+    // Linking GitHub later must not mint a second payout for the same quest,
+    // so the account id stays the leading segment of the key.
+    const withGithub = rewardKeyFor(questId, userId, 4242);
+    expect(withGithub).toBe("quest:first_api_key:user:acct-1:github:4242");
+    expect(withGithub.startsWith(withoutGithub)).toBe(true);
+
+    // Different accounts never share a key.
+    expect(rewardKeyFor(questId, "acct-2", null)).not.toBe(withoutGithub);
+
+    // The GitHub id still distinguishes accounts that share nothing else.
+    expect(rewardKeyFor(questId, "acct-1", 77)).not.toBe(withGithub);
 });

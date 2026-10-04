@@ -12,11 +12,43 @@ export const MAX_REWARD_AMOUNT = 10_000;
  * id, which outlives the account row, so a deleted-and-recreated account
  * cannot earn it again.
  */
-export function rewardKey(questId: string, githubId: number | null): string {
-    if (githubId === null) {
-        throw new Error(`Reward ${questId} requires a GitHub identity`);
-    }
+export function rewardKey(questId: string, githubId: number): string {
     return `quest:${questId}:github:${githubId}`;
+}
+
+/**
+ * Idempotency key for an account that has no GitHub identity linked.
+ *
+ * Most quests do not need a GitHub identity (creating an API key, using a
+ * text model, joining Discord), so refusing to key them on GitHub would deny
+ * those accounts rewards they qualify for. Keying on the account id lets them
+ * earn the reward the same way.
+ *
+ * The account id alone is a weaker identity than the GitHub id, which
+ * survives a delete-and-recreate of the account row. `rewardKeyFor` keeps
+ * this key as the stable prefix for every account and appends the GitHub id
+ * when one is known.
+ */
+export function accountRewardKey(questId: string, userId: string): string {
+    return `quest:${questId}:user:${userId}`;
+}
+
+/**
+ * Pick the idempotency key for a per-user reward.
+ *
+ * The account id leads the key in both branches, so an account's key does not
+ * change when it later links GitHub and a reward already on file cannot be
+ * paid twice. The GitHub id is appended when known, so the identity that
+ * outlives a deleted account row stays visible in the key.
+ */
+export function rewardKeyFor(
+    questId: string,
+    userId: string,
+    githubId: number | null,
+): string {
+    return githubId === null
+        ? accountRewardKey(questId, userId)
+        : `${accountRewardKey(questId, userId)}:github:${githubId}`;
 }
 
 export interface RecordRewardInput {

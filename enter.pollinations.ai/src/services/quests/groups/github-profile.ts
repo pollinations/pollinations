@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import { rewardKey } from "@shared/billing/rewards.ts";
+import { rewardKeyFor } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { githubApiHeaders } from "../../github-api.ts";
@@ -217,7 +217,11 @@ export async function evaluateUser(
             .where(
                 eq(
                     schema.rewards.idempotencyKey,
-                    rewardKey(establishedGitHubAccountQuest.id, user.githubId),
+                    rewardKeyFor(
+                        establishedGitHubAccountQuest.id,
+                        user.id,
+                        user.githubId,
+                    ),
                 ),
             )
             .limit(1);

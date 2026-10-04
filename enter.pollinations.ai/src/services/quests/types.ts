@@ -1,4 +1,7 @@
-import { type RecordRewardInput, rewardKey } from "@shared/billing/rewards.ts";
+import {
+    type RecordRewardInput,
+    rewardKeyFor,
+} from "@shared/billing/rewards.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
@@ -61,7 +64,7 @@ export function toReward(
         idempotencyKey:
             quest.scope === "once"
                 ? `quest:${quest.id}`
-                : rewardKey(quest.id, githubId),
+                : rewardKeyFor(quest.id, userId, githubId),
         userId,
         questId: quest.id,
         title: quest.title,

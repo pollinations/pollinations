@@ -1,7 +1,7 @@
 import {
     MAX_REWARD_AMOUNT,
     recordRewards,
-    rewardKey,
+    rewardKeyFor,
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -72,7 +72,7 @@ export const questGrantAdminRoutes = new Hono<Env>().post(
         const result = await recordRewards(
             db,
             matched.map((user) => ({
-                idempotencyKey: rewardKey(questId, user.githubId),
+                idempotencyKey: rewardKeyFor(questId, user.id, user.githubId),
                 userId: user.id,
                 amount: input.pollenAmount,
                 bucket: input.balanceBucket,

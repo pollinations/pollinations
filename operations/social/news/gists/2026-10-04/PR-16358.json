@@ -1,0 +1,34 @@
+{
+  "pr_number": 16358,
+  "title": "fix(play): exclude hidden references for models without image input",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16358",
+  "merged_at": "2026-10-04T15:00:10Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16355\n\n- Limits Play reference inputs to the selected model's image-input capability across generation requests and displayed/copied URLs.\n- Keeps stored attachments for switching back to a capable model; uses a small pure selector in the existing model-selection module.\n- Adds capability/state-preservation unit coverage. An actual-component state probe has three failing non-capable switches before the fix and six passing cases afterward, including image/text/video requests, URL copies, and switchbacks.\n- Verification: all 66 website tests, full SDK/UI/website build, website typecheck, Biome, and independent unit/component checks pass. Component probe uses presentation stand-ins and synthetic responses; no live provider calls or Pollen used.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "References know when to wait",
+    "blurb": "Play keeps reference images tucked away when the selected model can’t read them. Switch back to an image-capable model, and they’re still there.",
+    "summary": "Play filters reference images by the selected model’s image-input capability in image, text, and video requests and in displayed or copied URLs, while preserving attachments for model switchbacks.",
+    "impact": "Selecting a model without image input leaves references out of requests and copied URLs without deleting the images you attached.",
+    "keywords": [
+      "Play",
+      "reference images",
+      "model capabilities",
+      "image input",
+      "generation",
+      "URLs"
+    ],
+    "visual_concept": "Depict Play’s model selector as a small switchboard: reference-image cards rest safely in a drawer when the selected model cannot accept images, then remain ready for an image-capable model. Polli, wearing a tiny tool belt, gently closes the image-input gate; a code-plant grows beside the retro controls.",
+    "image_prompt": "In a cozy pixel art workshop, Polli wears a tiny tool belt and gently closes an image-input gate on a retro model switchboard, leaving little reference-image cards safe in a drawer beside a growing code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized or realistic, against a prominent soft lime green (#ecf874) and pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16358.jpg",
+    "prompt": "In a cozy pixel art workshop, Polli wears a tiny tool belt and gently closes an image-input gate on a retro model switchboard, leaving little reference-image cards safe in a drawer beside a growing code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized or realistic, against a prominent soft lime green (#ecf874) and pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-04T15:01:13.447073+00:00"
+}

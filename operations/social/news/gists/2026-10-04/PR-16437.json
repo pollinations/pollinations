@@ -1,0 +1,34 @@
+{
+  "pr_number": 16437,
+  "title": "docs: bump npm package versions in the PR that changes them",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16437",
+  "merged_at": "2026-10-04T20:39:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- `packages/sdk`, `packages/ui` and `packages/polli-cli` publish only when their version changes; CI skips versions already on npm\n- Fixes merged without a bump went unpublished (CLI #16279/#16292, 11 SDK PRs, 16 UI commits)\n- Adds one AGENTS.md rule: bump the version (and own lockfile, SDK changelog) in the same PR\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Aj15m1tbSVxFnVTaHpqi3X\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A number before takeoff",
+    "blurb": "A one-line rule gives package fixes their boarding pass: bump the version in the PR that changes the package. Otherwise, npm publishing politely skips them.",
+    "summary": "AGENTS.md now instructs contributors to bump the version of packages/sdk, packages/ui, or packages/polli-cli in the same PR as a change, along with the package lockfile and SDK changelog where applicable, so publish CI can detect a new version.",
+    "impact": "Contributors get a clear release checklist for SDK, UI, and CLI changes; this rule does not itself publish the previously skipped fixes.",
+    "keywords": [
+      "npm",
+      "versioning",
+      "SDK",
+      "UI",
+      "CLI",
+      "publishing"
+    ],
+    "visual_concept": "Show three seed packets labeled SDK, UI, and CLI waiting beside an npm-bound garden cart; Polli stamps a version number on a packet before placing it aboard. Her tiny clerk cap makes the release-process metaphor readable without implying the packages have already shipped.",
+    "image_prompt": "In a cozy pixel garden shed, Polli wears a tiny clerk cap and stamps a version number onto an SDK seed packet beside UI and CLI packets, ready for an npm-bound cart among sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, against a prominent lime green (#ecf874) and soft pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16437.jpg",
+    "prompt": "In a cozy pixel garden shed, Polli wears a tiny clerk cap and stamps a version number onto an SDK seed packet beside UI and CLI packets, ready for an npm-bound cart among sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, against a prominent lime green (#ecf874) and soft pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T20:41:27.377362+00:00"
+}

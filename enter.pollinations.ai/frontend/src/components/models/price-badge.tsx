@@ -45,14 +45,6 @@ const TOKEN_TYPE_LABELS: Record<PriceKind, string> = {
     audioOut: "audio",
 };
 
-const PRICE_UNIT_SUFFIX: Record<
-    Exclude<ModelPriceLine["unit"], "token">,
-    string
-> = {
-    second: "/sec",
-    request: "/gen",
-};
-
 const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
     text: { input: "Text in", output: "Text out" },
     image: { input: "Image in", output: "Image out" },
@@ -96,7 +88,7 @@ export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
 };
 
 export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
-    const displayedPrice = formatDisplayPrice(price, unit === "token");
+    const displayedPrice = formatDisplayPrice(price, unit);
     const tokenTypes = [
         ...new Set(subKinds.map((item) => TOKEN_TYPE_LABELS[item])),
     ];
@@ -119,9 +111,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
             </span>
             <span>
                 ${displayedPrice.value}
-                {unit === "token"
-                    ? `/${displayedPrice.tokenScale}`
-                    : PRICE_UNIT_SUFFIX[unit]}
+                {displayedPrice.suffix}
             </span>
         </Chip>
     );
@@ -645,10 +635,7 @@ export const ModelPricingLedger: FC<{
     );
 
     const rateRows = pricing.prices.flatMap((price) => {
-        const displayedPrice = formatDisplayPrice(
-            price.price,
-            price.unit === "token",
-        );
+        const displayedPrice = formatDisplayPrice(price.price, price.unit);
         const rows = [
             {
                 key: `${price.direction}-${price.kind}-${price.unit}`,
@@ -659,8 +646,8 @@ export const ModelPricingLedger: FC<{
                         : displayedPrice.value,
                 unit:
                     price.unit === "token"
-                        ? `/${displayedPrice.tokenScale} tokens`
-                        : PRICE_UNIT_SUFFIX[price.unit],
+                        ? `${displayedPrice.suffix} tokens`
+                        : displayedPrice.suffix,
                 Icon: PRICE_ICON[price.kind],
                 kind: price.kind,
                 section:

@@ -165,26 +165,39 @@ test("formatPricePer1M renders each decimal branch and strips trailing zeros", (
     expect(formatPricePer1M(1.5e-9)).toBe("0.0015"); // <0.01 -> 5 decimals
 });
 
-test("display prices stay compact and use a readable token scale", () => {
-    expect(formatDisplayPrice("2.0", true)).toEqual({
+test("display prices stay compact and use a readable unit scale", () => {
+    expect(formatDisplayPrice("2.0", "token")).toEqual({
         value: "2",
-        tokenScale: "M",
+        suffix: "/M",
     });
-    expect(formatDisplayPrice("120.0", true)).toEqual({
+    expect(formatDisplayPrice("120.0", "token")).toEqual({
         value: "0.12",
-        tokenScale: "K",
+        suffix: "/K",
     });
     expect(formatDisplayPrice("0.083333333333")).toEqual({
         value: "0.0833",
-        tokenScale: "M",
+        suffix: "/gen",
     });
     expect(formatDisplayPrice("0.00001")).toEqual({
         value: "0.00001",
-        tokenScale: "M",
+        suffix: "/gen",
     });
     expect(formatDisplayPrice("0.00000778")).toEqual({
         value: "0.00000778",
-        tokenScale: "M",
+        suffix: "/gen",
+    });
+    expect(formatDisplayPrice("0.05", "second")).toEqual({
+        value: "0.05",
+        suffix: "/sec",
+    });
+    expect(formatDisplayPrice("0.0015", "second")).toEqual({
+        value: "5.4",
+        suffix: "/hr",
+    });
+    // Transcription rates are set per hour; per second they round badly.
+    expect(formatDisplayPrice("0.000045277778", "second")).toEqual({
+        value: "0.163",
+        suffix: "/hr",
     });
 });
 
@@ -647,7 +660,7 @@ test("catalog prices expose audio second rates from registry pricing", () => {
                 ? {
                       direction: "input",
                       kind: "audioIn",
-                      price: promptAudioSeconds.toFixed(5),
+                      price: String(promptAudioSeconds),
                       unit: "second",
                   }
                 : Number.isFinite(completionAudioSeconds) &&
@@ -655,7 +668,7 @@ test("catalog prices expose audio second rates from registry pricing", () => {
                   ? {
                         direction: "output",
                         kind: "audioOut",
-                        price: completionAudioSeconds.toFixed(4),
+                        price: String(completionAudioSeconds),
                         unit: "second",
                     }
                   : undefined;

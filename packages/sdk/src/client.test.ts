@@ -122,6 +122,92 @@ describe("Convenience helpers", () => {
         }
     });
 
+    it.each([
+        true,
+        false,
+    ])("preserves text options and response metadata in raw mode (json: %s)", async (json) => {
+        const response = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "actual-model",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: '{"ok":true}' },
+                    finish_reason: "stop",
+                },
+            ],
+            usage: {
+                prompt_tokens: 2,
+                completion_tokens: 3,
+                total_tokens: 5,
+            },
+        };
+        fetchMock.mockResolvedValue(makeResponse(response));
+        const options = {
+            systemPrompt: "be concise",
+            model: "openai",
+            temperature: 0.5,
+            maxTokens: 42,
+            frequencyPenalty: 0.25,
+            presencePenalty: -0.25,
+            seed: -1,
+            json,
+            private: true,
+        };
+
+        await expect(generateText("hello", options)).resolves.toBe(
+            '{"ok":true}',
+        );
+        await expect(
+            generateText("hello", { ...options, raw: true }),
+        ).resolves.toMatchObject({
+            ...response,
+            text: '{"ok":true}',
+            tokens: { input: 2, output: 3, total: 5 },
+            actualModel: "actual-model",
+            requestId: "chatcmpl-test",
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const expectedBody = {
+            messages: [
+                { role: "system", content: "be concise" },
+                { role: "user", content: "hello" },
+            ],
+            model: "openai",
+            temperature: 0.5,
+            max_tokens: 42,
+            frequency_penalty: 0.25,
+            presence_penalty: -0.25,
+            seed: -1,
+            private: true,
+            stream: false,
+            ...(json ? { response_format: { type: "json_object" } } : {}),
+        };
+        expect(fetchMock.mock.calls.map(bodyOf)).toEqual([
+            expectedBody,
+            expectedBody,
+        ]);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("rejects an empty text prompt before dispatch (raw: %s)", async (raw) => {
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await expect(generateText("", { raw })).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+            message: "Prompt is required and must be a string",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("makes one request per text helper without inventing a seed", async () => {
         const response = {
             id: "chatcmpl-test",

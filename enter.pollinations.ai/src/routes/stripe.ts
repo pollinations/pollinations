@@ -289,20 +289,21 @@ type CheckoutUiMode = "hosted" | "custom";
 
 /**
  * Create a pack Checkout Session for the signed-in buyer. Every UI mode
- * shares everything (pricing, fee, tax, 3DS rule, metadata, card gate, ban
- * checks, Adaptive Pricing); only how Stripe shows it and returns the buyer
- * differs. Returns an error response, or a session with a url (hosted) or
- * client_secret (in the wallet).
+ * shares pricing, fees, tax, metadata, and buyer checks. The hosted crypto
+ * link selects only crypto and keeps USD pricing. Returns an error response
+ * or a session with a url (hosted) or client_secret (in the wallet).
  *
  * Path parameter is the pack key ("p2".."p100"). Pollen is the canonical
- * unit: 1 pollen ≈ $1. Checkout sends USD price_data and Stripe Adaptive
- * Pricing localizes presentment. CF-IPCountry → CohortId for analytics.
+ * unit: 1 pollen ≈ $1. Checkout sends USD price_data; Stripe Adaptive
+ * Pricing may localize the regular checkout. CF-IPCountry → CohortId for analytics.
  */
 async function createPackCheckoutSession(
     c: Context<Env>,
     uiMode: CheckoutUiMode,
 ): Promise<Response | Stripe.Checkout.Session> {
     const pack = getPollenPackByKey(c.req.param("packKey") ?? "");
+    const cryptoCheckout =
+        uiMode === "hosted" && c.req.query("payment_method") === "crypto";
 
     if (!pack) {
         return c.json({ error: "Invalid pack" }, 400);
@@ -369,7 +370,7 @@ async function createPackCheckoutSession(
         const requestThreeDSecure = !priorCredit || pack.amountUsd < 10;
 
         // packKey identifies the pack; the webhook looks up its fixed USD
-        // amount to credit, independent of how Adaptive Pricing localized the
+        // amount to credit, independent of how Adaptive Pricing may localize the
         // presentment currency.
         const packMetadata = {
             userId,
@@ -382,6 +383,9 @@ async function createPackCheckoutSession(
         const checkoutSession = await stripe.checkout.sessions.create({
             mode: "payment",
             payment_method_configuration: pmcId,
+            ...(cryptoCheckout && {
+                payment_method_types: ["crypto"] as const,
+            }),
             line_items: [
                 {
                     price_data: {
@@ -410,12 +414,13 @@ async function createPackCheckoutSession(
                     quantity: 1,
                 },
             ],
-            adaptive_pricing: { enabled: true },
-            ...(requestThreeDSecure && {
-                payment_method_options: {
-                    card: { request_three_d_secure: "any" },
-                },
-            }),
+            adaptive_pricing: { enabled: !cryptoCheckout },
+            ...(requestThreeDSecure &&
+                !cryptoCheckout && {
+                    payment_method_options: {
+                        card: { request_three_d_secure: "any" },
+                    },
+                }),
             // Enable discount/promotion codes
             allow_promotion_codes: true,
             // Automatic tax & VAT
@@ -431,9 +436,11 @@ async function createPackCheckoutSession(
             },
             // Optional "save for future purchases" checkbox. Saved cards are
             // prefilled on the buyer's next checkout.
-            saved_payment_method_options: {
-                payment_method_save: "enabled",
-            },
+            ...(!cryptoCheckout && {
+                saved_payment_method_options: {
+                    payment_method_save: "enabled",
+                },
+            }),
             payment_intent_data: {
                 metadata: packMetadata,
             },

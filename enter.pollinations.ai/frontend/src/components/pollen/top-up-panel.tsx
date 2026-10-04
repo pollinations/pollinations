@@ -166,6 +166,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (returnToTopUp.redirect)
             checkoutParams.set("redirect", returnToTopUp.redirect);
     }
+    const cryptoCheckoutParams = new URLSearchParams(checkoutParams);
+    cryptoCheckoutParams.set("payment_method", "crypto");
     const status = billing ? autoTopUpStatus(billing) : null;
     const selectedPack =
         chosenPack ??
@@ -285,18 +287,30 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-3">
                     {/* Filled: Buy only opens the checkout; its Confirm
                         (or Stripe's page) is the write. */}
-                    <Button
-                        size="lg"
-                        disabled={!selectedPack}
-                        onClick={startCheckout}
-                    >
-                        <span className="font-bold">
-                            <StableLabel
-                                text={buyLabel(selectedPack)}
-                                options={BUY_LABELS}
-                            />
-                        </span>
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button
+                            size="lg"
+                            disabled={!selectedPack}
+                            onClick={startCheckout}
+                        >
+                            <span className="font-bold">
+                                <StableLabel
+                                    text={buyLabel(selectedPack)}
+                                    options={BUY_LABELS}
+                                />
+                            </span>
+                        </Button>
+                        {selectedPack && (
+                            <InlineLink
+                                href={hostedCheckoutHref(
+                                    selectedPack.packKey,
+                                    cryptoCheckoutParams.toString(),
+                                )}
+                            >
+                                Pay with crypto (USD)
+                            </InlineLink>
+                        )}
+                    </div>
                     {/* A settings row: the label, then the switch flush with
                         the grid's right edge. The second line is the one
                         status slot (pack, problem, saving), sized for its

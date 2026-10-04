@@ -1,0 +1,34 @@
+{
+  "pr_number": 16347,
+  "title": "fix(sdk): preserve text options in raw generation",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16347",
+  "merged_at": "2026-10-04T09:49:59Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16344\n\n- Gives raw/plain text generation identical system messages, JSON response format, generation options, and prompt validation while retaining raw response metadata.\n- Reuses one internal text-to-chat adapter for plain, raw, and streaming calls; public client signatures remain unchanged.\n- Adds regressions for JSON true/false, metadata, and empty prompts: three fail before the fix; all six convenience-helper tests pass afterward.\n- Verification: all 116 SDK tests, strict typecheck, ESM/CJS/browser/declaration builds, Biome, and independent focused review pass. Built-SDK native loopback confirms identical raw/plain requests. No live provider calls or Pollen used.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Raw text remembers its options",
+    "blurb": "Raw text generation keeps its instructions and options, just like plain text generation. The metadata stays along for the ride.",
+    "summary": "The SDK routes plain, raw, and streaming text calls through one adapter so raw generation preserves system messages, JSON response format, generation options, and prompt validation without dropping response metadata.",
+    "impact": "SDK developers get matching raw and plain text requests, including JSON true/false settings, while raw responses retain their metadata; public client signatures stay the same.",
+    "keywords": [
+      "SDK",
+      "raw text",
+      "generation options",
+      "JSON response format",
+      "metadata",
+      "prompt validation"
+    ],
+    "visual_concept": "The SDK has no separate mascot: depict Polli comparing two friendly retro terminals labeled PLAIN and RAW, each showing matching JSON settings, with the RAW terminal also carrying a small metadata tag; code-plants connect the terminals to suggest their shared adapter.",
+    "image_prompt": "In a cozy pixel art garden workspace, two retro terminals labeled PLAIN and RAW show matching JSON settings, while the RAW terminal has a little metadata tag; lime green (#ecf874) code-plants curl around both screens against a soft pastel gradient and warm cream background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny debugging glasses and points between the terminals, small-to-medium sized with consistent rounded proportions, strictly pixel art and never realistic, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16347.jpg",
+    "prompt": "In a cozy pixel art garden workspace, two retro terminals labeled PLAIN and RAW show matching JSON settings, while the RAW terminal has a little metadata tag; lime green (#ecf874) code-plants curl around both screens against a soft pastel gradient and warm cream background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny debugging glasses and points between the terminals, small-to-medium sized with consistent rounded proportions, strictly pixel art and never realistic, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-04T09:50:55.770404+00:00"
+}

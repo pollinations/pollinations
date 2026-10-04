@@ -29,7 +29,6 @@ import {
     Input,
     LockIcon,
     MicIcon,
-    RobotIcon,
     ScrollArea,
     Slider,
     TabButton,
@@ -51,8 +50,6 @@ import {
 } from "react";
 import { API_BASE_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
-import { Chat } from "./Chat";
-import { errorMessage } from "./chat-models";
 import { MediaFact, MediaModelOption } from "./MediaModelDetails";
 import {
     type MediaModelMetadata,
@@ -64,6 +61,11 @@ import {
     generatePlaygroundAudio,
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
+
+function errorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    return "Something went wrong. Please try again.";
+}
 
 type PlaygroundModel = MediaModelMetadata & {
     id: string;
@@ -117,14 +119,12 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
 }
 
 const CATEGORY_ORDER = [
-    "text",
     "image",
     "video",
     "audio",
 ] as const satisfies readonly ModelCategory[];
 type PlaygroundCategory = (typeof CATEGORY_ORDER)[number];
 const CATEGORY_ICON = {
-    text: RobotIcon,
     image: ImageIcon,
     video: VideoIcon,
     audio: AudioIcon,
@@ -245,9 +245,7 @@ function ModalityTabs({
                         onClick={() => onSelectCategory(category)}
                     >
                         <CategoryIcon className="h-4 w-4 shrink-0" />
-                        {category === "text"
-                            ? "Agent"
-                            : categoryLabel(category)}
+                        {categoryLabel(category)}
                     </TabButton>
                 );
             })}
@@ -604,8 +602,6 @@ async function uploadReferenceImages(
 export function Playground() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
-    // One catalog for the whole page; Chat receives it instead of fetching
-    // its own copy.
     const catalog = useModelCatalog({
         baseUrl: API_BASE_URL,
         enabled: isHydrated,
@@ -614,7 +610,7 @@ export function Playground() {
     const search = useSearch({ from: "/play" });
     const navigate = useNavigate({ from: "/play" });
     const [activeCategory, setActiveCategory] = useState<PlaygroundCategory>(
-        CATEGORY_ORDER.find((value) => value === search.tab) ?? "text",
+        CATEGORY_ORDER.find((value) => value === search.tab) ?? "image",
     );
     const [audioTask, setAudioTask] = useState<AudioTask>(
         AUDIO_TASK_ORDER.find((value) => value === search.task) ??
@@ -663,9 +659,7 @@ export function Playground() {
         },
         [navigate],
     );
-    // Chat writes the Agent tab's inputs; this writes a media tab's.
     useEffect(() => {
-        if (activeCategory === "text") return;
         showInUrl({
             tab: activeCategory,
             task: activeCategory === "audio" ? audioTask : undefined,
@@ -738,13 +732,7 @@ export function Playground() {
     );
 
     useEffect(() => {
-        if (
-            activeCategory === "text" ||
-            !isHydrated ||
-            isLoading ||
-            catalogError
-        )
-            return;
+        if (!isHydrated || isLoading || catalogError) return;
         // Keep a restored selection while discovery loads, or until the user
         // explicitly replaces a model that has left the catalog.
         if (selectedModel && !currentModel) return;
@@ -905,7 +893,6 @@ export function Playground() {
         if (category === activeCategory) return;
         setActiveCategory(category);
         setAudioFiles([]);
-        if (category === "text") return;
         const firstModel = visibleModels.find(
             (model) => model.category === category,
         );
@@ -1100,112 +1087,133 @@ export function Playground() {
                 onSelectCategory={selectCategory}
             />
 
-            <Chat
-                catalog={catalog}
-                active={activeCategory === "text"}
-                initialAgentId={search.agent ?? null}
-                initialDraft={search.message ?? ""}
-                onDraftChange={showInUrl}
-            />
-
-            {activeCategory !== "text" && (
-                <div className="grid overflow-clip">
-                    {catalogError && (
-                        <div className="pt-4">
-                            <Alert intent="danger">
-                                Model catalog failed to load:{" "}
-                                {catalogError.message}
-                            </Alert>
-                        </div>
-                    )}
-                    <div className="flex flex-col gap-4 pt-6">
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                            {activeCategory === "audio" && (
-                                <AudioTaskPicker
-                                    value={audioTask}
-                                    onChange={selectAudioTask}
-                                />
-                            )}
-                            <ModelPicker
-                                models={categoryModels}
-                                selectedModel={selectedModel}
-                                isLoading={isLoading || !isHydrated}
-                                onSelectModel={selectModel}
+            <div className="grid overflow-clip">
+                {catalogError && (
+                    <div className="pt-4">
+                        <Alert intent="danger">
+                            Model catalog failed to load: {catalogError.message}
+                        </Alert>
+                    </div>
+                )}
+                <div className="flex flex-col gap-4 pt-6">
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                        {activeCategory === "audio" && (
+                            <AudioTaskPicker
+                                value={audioTask}
+                                onChange={selectAudioTask}
                             />
-                            {currentModel && currentModel.voices.length > 0 && (
-                                <VoicePicker
-                                    key={currentModel.id}
-                                    voices={currentModel.voices}
-                                    value={selectedVoice}
-                                    onChange={setSelectedVoice}
-                                />
-                            )}
-                        </div>
-                        {isHydrated &&
-                            !isLoading &&
-                            !catalogError &&
-                            selectedModel &&
-                            !currentModel && (
-                                <Alert intent="warning">
-                                    Your selected model is unavailable. Choose
-                                    another model to continue.
-                                </Alert>
-                            )}
-                        {isAudioTranscription && audioInput}
-                        {showPromptInput && (
-                            <FieldStack label={promptLabel}>
-                                <Textarea
-                                    value={prompt}
-                                    rows={isAudioTranscription ? 3 : 7}
-                                    onChange={(event) =>
-                                        setPrompt(event.target.value)
-                                    }
-                                    placeholder={promptPlaceholder(
-                                        activeCategory,
-                                        activeCategory === "audio"
-                                            ? audioTask
-                                            : undefined,
-                                    )}
-                                    className={cn(
-                                        "lg:min-h-56",
-                                        isAudioTranscription
-                                            ? "min-h-24"
-                                            : "min-h-44",
-                                    )}
-                                />
-                            </FieldStack>
                         )}
-                        {!isAudioTranscription && audioInput}
-
-                        {isReferenceImageListMode && (
-                            <FieldStack
-                                label="Reference images"
-                                action={
-                                    <span
-                                        role="img"
-                                        aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
-                                        className="inline-flex items-center gap-1.5 text-xs tabular-nums text-theme-text-muted"
-                                    >
-                                        <ImageIcon
-                                            aria-hidden="true"
-                                            className="h-3.5 w-3.5"
-                                        />
-                                        <span aria-hidden="true">
-                                            {referenceImages.length}/
-                                            {maxReferenceImages}
-                                        </span>
-                                    </span>
+                        <ModelPicker
+                            models={categoryModels}
+                            selectedModel={selectedModel}
+                            isLoading={isLoading || !isHydrated}
+                            onSelectModel={selectModel}
+                        />
+                        {currentModel && currentModel.voices.length > 0 && (
+                            <VoicePicker
+                                key={currentModel.id}
+                                voices={currentModel.voices}
+                                value={selectedVoice}
+                                onChange={setSelectedVoice}
+                            />
+                        )}
+                    </div>
+                    {isHydrated &&
+                        !isLoading &&
+                        !catalogError &&
+                        selectedModel &&
+                        !currentModel && (
+                            <Alert intent="warning">
+                                Your selected model is unavailable. Choose
+                                another model to continue.
+                            </Alert>
+                        )}
+                    {isAudioTranscription && audioInput}
+                    {showPromptInput && (
+                        <FieldStack label={promptLabel}>
+                            <Textarea
+                                value={prompt}
+                                rows={isAudioTranscription ? 3 : 7}
+                                onChange={(event) =>
+                                    setPrompt(event.target.value)
                                 }
-                            >
+                                placeholder={promptPlaceholder(
+                                    activeCategory,
+                                    activeCategory === "audio"
+                                        ? audioTask
+                                        : undefined,
+                                )}
+                                className={cn(
+                                    "lg:min-h-56",
+                                    isAudioTranscription
+                                        ? "min-h-24"
+                                        : "min-h-44",
+                                )}
+                            />
+                        </FieldStack>
+                    )}
+                    {!isAudioTranscription && audioInput}
+
+                    {isReferenceImageListMode && (
+                        <FieldStack
+                            label="Reference images"
+                            action={
+                                <span
+                                    role="img"
+                                    aria-label={`${referenceImages.length} of ${maxReferenceImages} reference images`}
+                                    className="inline-flex items-center gap-1.5 text-xs tabular-nums text-theme-text-muted"
+                                >
+                                    <ImageIcon
+                                        aria-hidden="true"
+                                        className="h-3.5 w-3.5"
+                                    />
+                                    <span aria-hidden="true">
+                                        {referenceImages.length}/
+                                        {maxReferenceImages}
+                                    </span>
+                                </span>
+                            }
+                        >
+                            <FileUpload
+                                value={referenceImages}
+                                onChange={setReferenceImages}
+                                variant="compact"
+                                maxFiles={maxReferenceImages}
+                                maxSizeBytes={IMAGE_UPLOAD_MAX_SIZE_BYTES}
+                                label={
+                                    <>
+                                        Drop images here or{" "}
+                                        <span className="underline">
+                                            browse
+                                        </span>
+                                    </>
+                                }
+                                onReject={rejectWith({
+                                    size: "Images must be under 5 MB each.",
+                                    count: `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
+                                    type: "Only image files are allowed.",
+                                })}
+                            />
+                            {referenceImages.length > 0 && (
+                                <UploadPrivacyNote />
+                            )}
+                        </FieldStack>
+                    )}
+
+                    {isVideoReferenceMode && (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <FieldStack label="First frame">
                                 <FileUpload
-                                    value={referenceImages}
-                                    onChange={setReferenceImages}
+                                    value={firstFrameFiles}
+                                    onChange={(files) =>
+                                        setFrameImage(0, files)
+                                    }
                                     variant="compact"
-                                    maxFiles={maxReferenceImages}
+                                    maxFiles={1}
                                     maxSizeBytes={IMAGE_UPLOAD_MAX_SIZE_BYTES}
                                     label={
                                         <>
-                                            Drop images here or{" "}
+                                            Drag first frame here or{" "}
                                             <span className="underline">
                                                 browse
                                             </span>
@@ -1213,321 +1221,280 @@ export function Playground() {
                                     }
                                     onReject={rejectWith({
                                         size: "Images must be under 5 MB each.",
-                                        count: `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
+                                        count: "Use one first frame.",
                                         type: "Only image files are allowed.",
                                     })}
                                 />
-                                {referenceImages.length > 0 && (
-                                    <UploadPrivacyNote />
-                                )}
                             </FieldStack>
-                        )}
 
-                        {isVideoReferenceMode && (
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <FieldStack label="First frame">
+                            {supportsLastFrame && (
+                                <FieldStack label="Last frame">
                                     <FileUpload
-                                        value={firstFrameFiles}
+                                        value={lastFrameFiles}
                                         onChange={(files) =>
-                                            setFrameImage(0, files)
+                                            setFrameImage(1, files)
                                         }
                                         variant="compact"
                                         maxFiles={1}
                                         maxSizeBytes={
                                             IMAGE_UPLOAD_MAX_SIZE_BYTES
                                         }
+                                        disabled={firstFrameFiles.length === 0}
                                         label={
-                                            <>
-                                                Drag first frame here or{" "}
-                                                <span className="underline">
-                                                    browse
-                                                </span>
-                                            </>
+                                            firstFrameFiles.length === 0 ? (
+                                                "Add first frame before last frame"
+                                            ) : (
+                                                <>
+                                                    Drag last frame here or{" "}
+                                                    <span className="underline">
+                                                        browse
+                                                    </span>
+                                                </>
+                                            )
                                         }
                                         onReject={rejectWith({
                                             size: "Images must be under 5 MB each.",
-                                            count: "Use one first frame.",
+                                            count: "Use one last frame.",
                                             type: "Only image files are allowed.",
                                         })}
                                     />
                                 </FieldStack>
+                            )}
+                        </div>
+                    )}
 
-                                {supportsLastFrame && (
-                                    <FieldStack label="Last frame">
-                                        <FileUpload
-                                            value={lastFrameFiles}
-                                            onChange={(files) =>
-                                                setFrameImage(1, files)
-                                            }
-                                            variant="compact"
-                                            maxFiles={1}
-                                            maxSizeBytes={
-                                                IMAGE_UPLOAD_MAX_SIZE_BYTES
-                                            }
-                                            disabled={
-                                                firstFrameFiles.length === 0
-                                            }
-                                            label={
-                                                firstFrameFiles.length === 0 ? (
-                                                    "Add first frame before last frame"
-                                                ) : (
-                                                    <>
-                                                        Drag last frame here or{" "}
-                                                        <span className="underline">
-                                                            browse
-                                                        </span>
-                                                    </>
-                                                )
-                                            }
-                                            onReject={rejectWith({
-                                                size: "Images must be under 5 MB each.",
-                                                count: "Use one last frame.",
-                                                type: "Only image files are allowed.",
-                                            })}
-                                        />
-                                    </FieldStack>
-                                )}
-                            </div>
-                        )}
+                    {isVideoReferenceMode && referenceImages.length > 0 && (
+                        <UploadPrivacyNote />
+                    )}
 
-                        {isVideoReferenceMode && referenceImages.length > 0 && (
-                            <UploadPrivacyNote />
-                        )}
+                    {isVisualModel && (
+                        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+                            {currentModel.resolutions.length > 1 ? (
+                                <FieldStack
+                                    label="Resolution"
+                                    className="w-fit min-w-0 max-w-full"
+                                >
+                                    <ButtonGroup aria-label="Resolution">
+                                        {currentModel.resolutions.map(
+                                            (resolution) => (
+                                                <TabButton
+                                                    key={resolution}
+                                                    active={
+                                                        mediaSettings.resolution ===
+                                                        resolution
+                                                    }
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setSelectedResolution(
+                                                            resolution,
+                                                        )
+                                                    }
+                                                >
+                                                    {resolution.toUpperCase()}
+                                                </TabButton>
+                                            ),
+                                        )}
+                                    </ButtonGroup>
+                                </FieldStack>
+                            ) : mediaSettings.resolution ? (
+                                <MediaFact
+                                    label={`Fixed resolution: ${mediaSettings.resolution}`}
+                                >
+                                    <ExpandIcon aria-hidden="true" />
+                                    <span aria-hidden="true">
+                                        {mediaSettings.resolution.toUpperCase()}
+                                    </span>
+                                </MediaFact>
+                            ) : null}
 
-                        {isVisualModel && (
-                            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-                                {currentModel.resolutions.length > 1 ? (
-                                    <FieldStack
-                                        label="Resolution"
-                                        className="w-fit min-w-0 max-w-full"
-                                    >
-                                        <ButtonGroup aria-label="Resolution">
-                                            {currentModel.resolutions.map(
-                                                (resolution) => (
-                                                    <TabButton
-                                                        key={resolution}
-                                                        active={
-                                                            mediaSettings.resolution ===
-                                                            resolution
-                                                        }
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            setSelectedResolution(
-                                                                resolution,
-                                                            )
-                                                        }
-                                                    >
-                                                        {resolution.toUpperCase()}
-                                                    </TabButton>
-                                                ),
-                                            )}
-                                        </ButtonGroup>
-                                    </FieldStack>
-                                ) : mediaSettings.resolution ? (
+                            {videoDuration &&
+                                (videoDuration.min === videoDuration.max ? (
                                     <MediaFact
-                                        label={`Fixed resolution: ${mediaSettings.resolution}`}
+                                        label={`Fixed duration: ${videoDuration.value} seconds`}
                                     >
-                                        <ExpandIcon aria-hidden="true" />
+                                        <ClockIcon aria-hidden="true" />
                                         <span aria-hidden="true">
-                                            {mediaSettings.resolution.toUpperCase()}
+                                            {videoDuration.value}s
                                         </span>
                                     </MediaFact>
-                                ) : null}
-
-                                {videoDuration &&
-                                    (videoDuration.min === videoDuration.max ? (
-                                        <MediaFact
-                                            label={`Fixed duration: ${videoDuration.value} seconds`}
-                                        >
-                                            <ClockIcon aria-hidden="true" />
-                                            <span aria-hidden="true">
-                                                {videoDuration.value}s
-                                            </span>
-                                        </MediaFact>
-                                    ) : (
-                                        <FieldStack
-                                            label="Duration"
-                                            className="w-56 max-w-full"
-                                            action={
-                                                <MediaFact
-                                                    label={`Selected duration: ${videoDuration.value} seconds`}
-                                                >
-                                                    <ClockIcon aria-hidden="true" />
-                                                    <span aria-hidden="true">
-                                                        {videoDuration.value}s
-                                                    </span>
-                                                </MediaFact>
-                                            }
-                                        >
-                                            <div className="flex flex-col gap-1">
-                                                <Slider
-                                                    aria-label="Video duration"
-                                                    aria-valuetext={`${videoDuration.value} seconds`}
-                                                    style={
-                                                        {
-                                                            "--polli-slider-fill":
-                                                                "var(--polli-color-text-soft)",
-                                                            "--polli-slider-track":
-                                                                "var(--polli-color-bg-active)",
-                                                        } as CSSProperties
-                                                    }
-                                                    min={
-                                                        videoDuration.options
-                                                            .length
-                                                            ? 0
-                                                            : videoDuration.min
-                                                    }
-                                                    max={
+                                ) : (
+                                    <FieldStack
+                                        label="Duration"
+                                        className="w-56 max-w-full"
+                                        action={
+                                            <MediaFact
+                                                label={`Selected duration: ${videoDuration.value} seconds`}
+                                            >
+                                                <ClockIcon aria-hidden="true" />
+                                                <span aria-hidden="true">
+                                                    {videoDuration.value}s
+                                                </span>
+                                            </MediaFact>
+                                        }
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            <Slider
+                                                aria-label="Video duration"
+                                                aria-valuetext={`${videoDuration.value} seconds`}
+                                                style={
+                                                    {
+                                                        "--polli-slider-fill":
+                                                            "var(--polli-color-text-soft)",
+                                                        "--polli-slider-track":
+                                                            "var(--polli-color-bg-active)",
+                                                    } as CSSProperties
+                                                }
+                                                min={
+                                                    videoDuration.options.length
+                                                        ? 0
+                                                        : videoDuration.min
+                                                }
+                                                max={
+                                                    videoDuration.options.length
+                                                        ? videoDuration.options
+                                                              .length - 1
+                                                        : videoDuration.max
+                                                }
+                                                step={
+                                                    videoDuration.options.length
+                                                        ? 1
+                                                        : videoDuration.step
+                                                }
+                                                value={
+                                                    videoDuration.options.length
+                                                        ? videoDuration.options.indexOf(
+                                                              videoDuration.value,
+                                                          )
+                                                        : videoDuration.value
+                                                }
+                                                onChange={(event) => {
+                                                    const value = Number(
+                                                        event.target.value,
+                                                    );
+                                                    setDuration(
                                                         videoDuration.options
                                                             .length
                                                             ? videoDuration
-                                                                  .options
-                                                                  .length - 1
-                                                            : videoDuration.max
-                                                    }
-                                                    step={
-                                                        videoDuration.options
-                                                            .length
-                                                            ? 1
-                                                            : videoDuration.step
-                                                    }
-                                                    value={
-                                                        videoDuration.options
-                                                            .length
-                                                            ? videoDuration.options.indexOf(
-                                                                  videoDuration.value,
-                                                              )
-                                                            : videoDuration.value
-                                                    }
-                                                    onChange={(event) => {
-                                                        const value = Number(
-                                                            event.target.value,
-                                                        );
-                                                        setDuration(
-                                                            videoDuration
-                                                                .options.length
-                                                                ? videoDuration
-                                                                      .options[
-                                                                      value
-                                                                  ]
-                                                                : value,
-                                                        );
-                                                    }}
-                                                />
-                                                <div
-                                                    aria-hidden="true"
-                                                    className="flex justify-between text-xs tabular-nums text-theme-text-muted"
-                                                >
-                                                    <span>
-                                                        {videoDuration.min}s
-                                                    </span>
-                                                    <span>
-                                                        {videoDuration.max}s
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </FieldStack>
-                                    ))}
-
-                                {customSize &&
-                                    (
-                                        [
-                                            ["Width", width, setWidth],
-                                            ["Height", height, setHeight],
-                                        ] as const
-                                    ).map(([label, value, setValue]) => (
-                                        <FieldStack
-                                            key={label}
-                                            label={label}
-                                            className="w-28"
-                                        >
-                                            <Input
-                                                aria-label={label}
-                                                type="number"
-                                                min={1}
-                                                step={1}
-                                                placeholder="Auto"
-                                                value={value}
-                                                onChange={(event) =>
-                                                    setValue(event.target.value)
-                                                }
+                                                                  .options[
+                                                                  value
+                                                              ]
+                                                            : value,
+                                                    );
+                                                }}
                                             />
-                                        </FieldStack>
-                                    ))}
+                                            <div
+                                                aria-hidden="true"
+                                                className="flex justify-between text-xs tabular-nums text-theme-text-muted"
+                                            >
+                                                <span>
+                                                    {videoDuration.min}s
+                                                </span>
+                                                <span>
+                                                    {videoDuration.max}s
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </FieldStack>
+                                ))}
 
-                                <FieldStack label="Seed" className="w-36">
-                                    <Input
-                                        aria-label="Seed"
-                                        type="number"
-                                        min={1}
-                                        step={1}
-                                        placeholder="Random"
-                                        value={seed}
-                                        onChange={(event) =>
-                                            setSeed(event.target.value)
-                                        }
-                                    />
-                                </FieldStack>
-                            </div>
-                        )}
+                            {customSize &&
+                                (
+                                    [
+                                        ["Width", width, setWidth],
+                                        ["Height", height, setHeight],
+                                    ] as const
+                                ).map(([label, value, setValue]) => (
+                                    <FieldStack
+                                        key={label}
+                                        label={label}
+                                        className="w-28"
+                                    >
+                                        <Input
+                                            aria-label={label}
+                                            type="number"
+                                            min={1}
+                                            step={1}
+                                            placeholder="Auto"
+                                            value={value}
+                                            onChange={(event) =>
+                                                setValue(event.target.value)
+                                            }
+                                        />
+                                    </FieldStack>
+                                ))}
 
-                        {error && <Alert intent="danger">{error}</Alert>}
+                            <FieldStack label="Seed" className="w-36">
+                                <Input
+                                    aria-label="Seed"
+                                    type="number"
+                                    min={1}
+                                    step={1}
+                                    placeholder="Random"
+                                    value={seed}
+                                    onChange={(event) =>
+                                        setSeed(event.target.value)
+                                    }
+                                />
+                            </FieldStack>
+                        </div>
+                    )}
 
-                        {/* Not connected is not a broken state, so the button
+                    {error && <Alert intent="danger">{error}</Alert>}
+
+                    {/* Not connected is not a broken state, so the button
                             does not sit there disabled under a 🚫 cursor with
                             no explanation — it becomes the connect action. The
                             tooltip covers the cases that genuinely are blocked
                             (nothing typed, model not on this key). */}
-                        {blockedReason ? (
-                            <Tooltip
-                                triggerAs="span"
-                                align="center"
-                                content={blockedReason}
-                                className="self-end"
-                            >
-                                <Button size="lg" disabled>
-                                    <GenerateIcon className="mr-2 h-4 w-4" />
-                                    {generateLabel}
-                                </Button>
-                            </Tooltip>
-                        ) : (
-                            <Button
-                                size="lg"
-                                disabled={isGenerating}
-                                // Wrapped: login() takes an optional request
-                                // object, so passing the ref directly would
-                                // hand it the click event.
-                                onClick={needsSignIn ? () => login() : generate}
-                                className="self-end"
-                            >
-                                {needsSignIn ? (
-                                    <LockIcon className="mr-2 h-4 w-4" />
-                                ) : (
-                                    <GenerateIcon className="mr-2 h-4 w-4" />
-                                )}
-                                {isGenerating
-                                    ? isAudioTranscription
-                                        ? "Transcribing…"
-                                        : "Generating…"
-                                    : needsSignIn
-                                      ? connectLabel
-                                      : generateLabel}
+                    {blockedReason ? (
+                        <Tooltip
+                            triggerAs="span"
+                            align="center"
+                            content={blockedReason}
+                            className="self-end"
+                        >
+                            <Button size="lg" disabled>
+                                <GenerateIcon className="mr-2 h-4 w-4" />
+                                {generateLabel}
                             </Button>
-                        )}
+                        </Tooltip>
+                    ) : (
+                        <Button
+                            size="lg"
+                            disabled={isGenerating}
+                            // Wrapped: login() takes an optional request
+                            // object, so passing the ref directly would
+                            // hand it the click event.
+                            onClick={needsSignIn ? () => login() : generate}
+                            className="self-end"
+                        >
+                            {needsSignIn ? (
+                                <LockIcon className="mr-2 h-4 w-4" />
+                            ) : (
+                                <GenerateIcon className="mr-2 h-4 w-4" />
+                            )}
+                            {isGenerating
+                                ? isAudioTranscription
+                                    ? "Transcribing…"
+                                    : "Generating…"
+                                : needsSignIn
+                                  ? connectLabel
+                                  : generateLabel}
+                        </Button>
+                    )}
 
-                        {apiUrl && (
-                            <CodeBlock
-                                language="API URL"
-                                code={apiUrl}
-                                // A URL has no spaces to wrap at on phones.
-                                codeClassName="break-all"
-                            />
-                        )}
-                    </div>
-
-                    {result && <ResultPanel result={result} />}
+                    {apiUrl && (
+                        <CodeBlock
+                            language="API URL"
+                            code={apiUrl}
+                            // A URL has no spaces to wrap at on phones.
+                            codeClassName="break-all"
+                        />
+                    )}
                 </div>
-            )}
+
+                {result && <ResultPanel result={result} />}
+            </div>
         </div>
     );
 }

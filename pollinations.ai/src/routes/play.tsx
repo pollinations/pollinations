@@ -39,9 +39,9 @@ function PlayPage() {
                 {/* The monitor robot, showing off something it just made. */}
                 <HeroScene page="play" compactBottom>
                     <ContentHeader
-                        eyebrow="Models and agents, in the browser"
+                        eyebrow="Models in the browser"
                         title="Try it out."
-                        subtitle="Chat with an agent or create images, video and audio. Connect your account to use your own Pollen."
+                        subtitle="Create images, video and audio. Connect your account to use your own Pollen."
                         variant="page"
                     />
                     <div className="self-start">

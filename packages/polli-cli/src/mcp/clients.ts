@@ -252,7 +252,7 @@ const yamlClient = (adapter: {
         if (doc.contents === null) doc.contents = doc.createNode({}) as never;
         if (
             !isMap(doc.contents) ||
-            (doc.has(table) && !isMap(doc.get(table)))
+            (doc.get(table) != null && !isMap(doc.get(table)))
         ) {
             throw new Error(
                 `${path}: expected YAML mappings for config and ${table}`,
@@ -264,6 +264,8 @@ const yamlClient = (adapter: {
         if (JSON.stringify(entries) === JSON.stringify(before)) {
             return { installed: ownedEntryNames(entries), removed };
         }
+        // A bare `mcp_servers:` has no mapping to write into yet.
+        if (doc.get(table) == null) doc.set(table, doc.createNode({}));
         for (const name of Object.keys(before)) {
             if (!(name in entries)) doc.deleteIn([table, name]);
         }

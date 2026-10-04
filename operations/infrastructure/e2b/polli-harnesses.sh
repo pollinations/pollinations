@@ -19,10 +19,6 @@ if [ "$(id -u)" != 0 ] &&
     mkdir ~/.pollinations/harnesses 2>/dev/null; then
     chmod 600 ~/.pollinations/credentials*.json
     echo "Connecting the coding harnesses to Pollinations (first login only)..."
-    # Claude Code's harness configures Claude Code Router through its service.
-    ccr start >/dev/null 2>&1 &
-    sleep 2
-    pids=""
     for harness in opencode pi hermes openclaw claude-code; do
         (
             log=~/.pollinations/harnesses/$harness.log
@@ -32,8 +28,6 @@ if [ "$(id -u)" != 0 ] &&
                 echo "  $harness: failed, see $log"
             fi
         ) &
-        pids="$pids $!"
     done
-    # Not plain `wait`: the router keeps running.
-    wait $pids
+    wait
 fi

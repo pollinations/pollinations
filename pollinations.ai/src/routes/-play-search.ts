@@ -10,7 +10,6 @@ export const PLAY_SEARCH_KEYS = [
     "agent",
     "message",
     "tab",
-    "task",
     "model",
     "prompt",
     "size",

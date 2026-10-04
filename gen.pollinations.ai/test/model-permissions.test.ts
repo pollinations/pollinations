@@ -203,7 +203,7 @@ test("restored auth snapshots normalize aliases once without expanding model or 
     const forbidden = await app.request("/other%2Fcustom");
     expect(forbidden.status).toBe(403);
     expect(await forbidden.text()).toBe(
-        "Model 'other/custom' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
+        "Model 'other/custom' is not allowed for this API key. The key owner can allow it at https://enter.pollinations.ai/edit-key?id=test&model=other%2Fcustom",
     );
     expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
         403,
@@ -303,11 +303,15 @@ test("restored auth allows old and future names without expanding account or com
             account: ["profile"],
         });
     }
-    for (const model of ["other/custom", "flux"]) {
+    // The link names the canonical id the key's model list stores, not the alias.
+    for (const [model, linked] of [
+        ["other/custom", "other%2Fcustom"],
+        ["flux", "black-forest-labs%2Fflux.1-schnell"],
+    ]) {
         const res = await app.request(`/${encodeURIComponent(model)}`);
         expect(res.status).toBe(403);
         expect(await res.text()).toBe(
-            `Model '${model}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test`,
+            `Model '${model}' is not allowed for this API key. The key owner can allow it at https://enter.pollinations.ai/edit-key?id=test&model=${linked}`,
         );
     }
     expect(snapshot.apiKey.permissions.models).toEqual([
@@ -367,6 +371,9 @@ test("keyPermissionsLink resolves production and staging editor links", () => {
     expect(keyPermissionsLink("key-1", "staging")).toBe(
         "https://staging.enter.pollinations.ai/edit-key?id=key-1",
     );
+    expect(keyPermissionsLink("key-1", undefined, "owner/model a")).toBe(
+        "https://enter.pollinations.ai/edit-key?id=key-1&model=owner%2Fmodel+a",
+    );
 });
 
 test("requireModelAccess uses staging host for staging environment", async () => {
@@ -394,7 +401,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
+        "Model 'forbidden-model' is not allowed for this API key. The key owner can allow it at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id&model=forbidden-model",
     );
 });
 

@@ -1,5 +1,6 @@
 import { apiClient } from "@frontend/api.ts";
-import { AuthModal } from "@pollinations/ui/auth";
+import { Text } from "@pollinations/ui";
+import { AuthInfoCard, AuthModal } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
@@ -12,12 +13,15 @@ import {
     readRedirectUris,
     shouldPostKeyMetadata,
 } from "./key-type.ts";
+import { withRequestedModel } from "./model-selection.ts";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     /** Use grant-specific wording in the standalone editor. */
     accessContext?: "app" | "device";
+    /** A model a request was blocked from: preselected so saving allows it. */
+    requestedModel?: string;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
     /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
@@ -33,6 +37,7 @@ function cleanRedirectUris(uris: string[]): string[] {
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     accessContext,
+    requestedModel,
     onUpdate,
     onClose,
     header,
@@ -61,8 +66,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
           )
         : null;
 
+    const savedModels = apiKey.permissions?.models ?? null;
+    const initialModels = withRequestedModel(savedModels, requestedModel);
+    const missingModel =
+        initialModels !== savedModels ? requestedModel : undefined;
+
     const keyPermissions = useKeyPermissions({
-        allowedModels: apiKey.permissions?.models ?? null,
+        allowedModels: initialModels,
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
         expiryDays,
@@ -146,6 +156,17 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     value: isPublishable ? plaintextKey : undefined,
                 }}
                 error={error}
+                notice={
+                    missingModel && (
+                        <AuthInfoCard title={`Allow ${missingModel}?`}>
+                            <Text size="sm">
+                                This link asks to let this key use the model.
+                                It’s selected below. Save to allow it, or cancel
+                                to leave the key unchanged.
+                            </Text>
+                        </AuthInfoCard>
+                    )
+                }
                 isSubmitting={isSubmitting}
                 onSubmit={(event) => {
                     event.preventDefault();

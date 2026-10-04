@@ -46,6 +46,8 @@ type KeyDialogContentProps = {
     existingKey?: { prefix: string; value?: string };
     createdKey?: string;
     error: string | null;
+    /** Shown above the fields, e.g. why the standalone editor was opened. */
+    notice?: ReactNode;
     isSubmitting: boolean;
     showFields?: boolean;
     onSubmit: FormEventHandler<HTMLFormElement>;
@@ -72,6 +74,7 @@ export function KeyDialogContent({
     existingKey,
     createdKey,
     error,
+    notice,
     isSubmitting,
     showFields = true,
     onSubmit,
@@ -214,6 +217,7 @@ export function KeyDialogContent({
                     )}
                 </DialogHeader>
                 {error && <ErrorBanner>{error}</ErrorBanner>}
+                {notice}
                 {createdKey !== undefined ? (
                     <AuthInfoCard>
                         <FieldStack

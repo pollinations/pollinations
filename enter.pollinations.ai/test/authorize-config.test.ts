@@ -3,6 +3,7 @@ import {
     setConsentModelGroup,
     toggleConsentModel,
     toggleConsentModelGroup,
+    withRequestedModel,
     withUncataloguedModels,
 } from "@frontend/components/keys/model-selection.ts";
 import {
@@ -37,6 +38,22 @@ describe("normalizeAllowedModelSelection", () => {
         expect(
             normalizeAllowedModelSelection(["a", "b", "x"], allModelIds),
         ).toEqual(["a", "b", "x"]);
+    });
+});
+
+describe("withRequestedModel", () => {
+    it("adds a blocked model to a restricted key", () => {
+        expect(withRequestedModel(["a"], "owner/b")).toEqual(["a", "owner/b"]);
+    });
+
+    it("never narrows an unrestricted key to the requested model", () => {
+        expect(withRequestedModel(null, "owner/b")).toBeNull();
+    });
+
+    it("keeps the saved list when the model is already allowed or absent", () => {
+        const saved = ["a", "owner/b"];
+        expect(withRequestedModel(saved, "owner/b")).toBe(saved);
+        expect(withRequestedModel(saved, undefined)).toBe(saved);
     });
 });
 

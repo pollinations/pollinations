@@ -17,6 +17,17 @@ export function normalizeAllowedModelSelection(
     return hasExactFullSelection ? null : next;
 }
 
+/** Add a model a request was blocked from. An unrestricted (null) list
+ * already allows every model, so it stays unrestricted. */
+export function withRequestedModel(
+    savedModels: string[] | null,
+    requestedModel: string | undefined,
+): string[] | null {
+    if (!requestedModel || !savedModels || savedModels.includes(requestedModel))
+        return savedModels;
+    return [...savedModels, requestedModel];
+}
+
 /** Catalog models plus selected IDs it lacks (retired, misspelled or not yet
  * loaded), so bulk toggles can reach every model the selection holds. */
 export function withUncataloguedModels(

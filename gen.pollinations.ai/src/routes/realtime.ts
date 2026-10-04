@@ -34,7 +34,10 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { keyPermissionsLink } from "@/middleware/auth.ts";
+import {
+    keyPermissionsLink,
+    modelNotAllowedMessage,
+} from "@/middleware/auth.ts";
 import {
     reduceAdjustmentsToEventFields,
     requestIdentity,
@@ -130,9 +133,9 @@ function requireAllowedModel(c: Context<Env>, model: string): void {
     const apiKey = c.var.auth.apiKey;
     const allowedModels = apiKey?.permissions?.models;
     if (apiKey && allowedModels && !allowedModels.includes(model)) {
-        const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
+        const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT, model);
         throw new HTTPException(403, {
-            message: `Model '${model}' is not allowed for this API key. Manage key permissions at ${link}`,
+            message: modelNotAllowedMessage(model, link),
         });
     }
 }

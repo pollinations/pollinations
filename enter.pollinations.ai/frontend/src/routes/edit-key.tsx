@@ -28,12 +28,15 @@ import { updateApiKey } from "../lib/update-api-key.ts";
 type EditKeySearch = {
     id: string;
     redirect?: string;
+    /** A model a request was blocked from; preselected for the owner to allow. */
+    model?: string;
 };
 
 /**
  * Standalone key editor for one key, shown on the auth-flow background.
- * Linked from the key-budget notice gen returns inside chats, so the user
- * can raise the budget and go back to the app.
+ * Linked from the key-budget notice gen returns inside chats, and from
+ * model-not-allowed errors, so the user can raise the budget or allow the
+ * model and go back to the app.
  */
 export const Route = createFileRoute("/edit-key")({
     head: () => ({
@@ -42,6 +45,10 @@ export const Route = createFileRoute("/edit-key")({
     validateSearch: (search: Record<string, unknown>): EditKeySearch => ({
         id: typeof search.id === "string" ? search.id : "",
         redirect: parseAppUrl(search.redirect) ?? undefined,
+        model:
+            typeof search.model === "string" && search.model
+                ? search.model
+                : undefined,
     }),
     component: EditKeyPage,
 });
@@ -49,7 +56,7 @@ export const Route = createFileRoute("/edit-key")({
 type Outcome = "editing" | "saved" | "closed";
 
 function EditKeyPage() {
-    const { id, redirect } = Route.useSearch();
+    const { id, redirect, model } = Route.useSearch();
     const navigate = useNavigate({ from: "/edit-key" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
@@ -180,6 +187,7 @@ function EditKeyPage() {
             key={apiKey.id}
             apiKey={apiKey}
             accessContext={accessContext}
+            requestedModel={model}
             header={<AuthModalHeader>{accountIdentity}</AuthModalHeader>}
             footnote={footnotes.dashboard}
             onUpdate={async (keyId, updates) => {

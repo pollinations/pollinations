@@ -1522,6 +1522,17 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         expect(result.buffer.byteLength).toBe(3);
     });
 
+    it("keeps the declared media type of a b64_json response", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                data: [{ b64_json: "PHN2Zy8+", media_type: "image/svg+xml" }],
+            }),
+        );
+
+        const result = await newClient().imageEdit("make it a vector");
+        expect(result.contentType).toBe("image/svg+xml");
+    });
+
     it("throws INVALID_RESPONSE / status 500 when the item has neither url nor b64_json", async () => {
         const client = newClient();
 

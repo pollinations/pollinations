@@ -28,17 +28,9 @@ export function createMessageTransform(systemMessage: string): TransformFn {
             .filter((msg) => msg.role === "system")
             .map((msg) =>
                 Array.isArray(msg.content)
-                    ? msg.content
-                          .flatMap((part) =>
-                              part &&
-                              typeof part === "object" &&
-                              "type" in part &&
-                              part.type === "text" &&
-                              "text" in part &&
-                              typeof part.text === "string"
-                                  ? [part.text]
-                                  : [],
-                          )
+                    ? (msg.content as { type: string; text?: string }[])
+                          .filter((part) => part.type === "text")
+                          .map((part) => part.text)
                           .join("\n")
                     : String(msg.content || ""),
             )

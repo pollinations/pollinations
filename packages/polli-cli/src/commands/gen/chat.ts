@@ -155,12 +155,13 @@ export function createChatCommand() {
                             ? err.message
                             : "Failed to save transcript",
                     );
-                    return false;
+                    // Once readline closes, a failed autosave cannot be retried.
+                    if (closed) process.exitCode = 1;
+                    return;
                 }
                 if (!isJson) {
                     process.stderr.write(chalk.green(`Saved to ${path}\n`));
                 }
-                return true;
             };
 
             let closed = false;
@@ -216,8 +217,7 @@ export function createChatCommand() {
 
             rl.on("close", () => {
                 closed = true;
-                if (opts.save && !saveTranscript(opts.save))
-                    process.exitCode = 1;
+                if (opts.save) saveTranscript(opts.save);
                 process.exitCode ??= 0;
             });
         });

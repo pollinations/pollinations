@@ -3787,6 +3787,65 @@ test("POST /api/webhooks/stripe charge.succeeded records the gate fingerprint wi
     });
 });
 
+test("crypto pack charge creates one claimable 5-Pollen reward", async ({
+    mocks,
+    sessionToken,
+}) => {
+    await mocks.enable("tinybird");
+    expect(sessionToken).toBeTruthy();
+    const userId = await getSeededUserId();
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ githubId: null })
+        .where(eq(userTable.id, userId));
+    const chargeEvent = {
+        id: "evt_crypto_quest",
+        type: "charge.succeeded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_crypto_quest",
+                object: "charge",
+                amount: 500,
+                currency: "usd",
+                status: "succeeded",
+                metadata: { userId, packKey: "p5" },
+                payment_method_details: { type: "card" },
+            },
+        },
+    };
+
+    expect((await postSignedStripeWebhook(chargeEvent)).status).toBe(200);
+    const notEarned = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM rewards WHERE quest_id = 'crypto_top_up' AND user_id = ?",
+    )
+        .bind(userId)
+        .first<{ count: number }>();
+    expect(notEarned?.count).toBe(0);
+
+    chargeEvent.data.object.payment_method_details.type = "crypto";
+    delete (chargeEvent.data.object.metadata as { packKey?: string }).packKey;
+    chargeEvent.id = "evt_crypto_without_pack";
+    expect((await postSignedStripeWebhook(chargeEvent)).status).toBe(200);
+    const noPackReward = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM rewards WHERE quest_id = 'crypto_top_up' AND user_id = ?",
+    )
+        .bind(userId)
+        .first<{ count: number }>();
+    expect(noPackReward?.count).toBe(0);
+
+    chargeEvent.data.object.metadata.packKey = "p5";
+    chargeEvent.id = "evt_crypto_quest_retry";
+    expect((await postSignedStripeWebhook(chargeEvent)).status).toBe(200);
+    expect((await postSignedStripeWebhook(chargeEvent)).status).toBe(200);
+    const reward = await env.DB.prepare(
+        "SELECT COUNT(*) AS count, pollen_amount AS amount, claimed_at AS claimedAt FROM rewards WHERE quest_id = 'crypto_top_up' AND user_id = ?",
+    )
+        .bind(userId)
+        .first<{ count: number; amount: number; claimedAt: number | null }>();
+    expect(reward).toMatchObject({ count: 1, amount: 5, claimedAt: null });
+});
+
 test("POST /api/webhooks/stripe payment_intent.payment_failed records latest charge fingerprint", async ({
     sessionToken,
     mocks,

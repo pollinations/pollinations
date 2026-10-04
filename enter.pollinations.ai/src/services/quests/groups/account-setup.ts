@@ -1,3 +1,4 @@
+import { recordRewards } from "@shared/billing/rewards.ts";
 import { sql } from "drizzle-orm";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import {
@@ -17,10 +18,10 @@ import {
  *   - early_adopter  -> user.created_at           (registered 9+ months ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
+ *   - crypto_top_up -> charge.succeeded webhook (one crypto pack payment)
  *
- * The SQL decides whether the current user qualifies. The rewards table is the
- * single idempotency layer, so quest code does not filter already rewarded
- * users.
+ * SQL evaluates the D1-backed quests. The Stripe webhook records the crypto
+ * quest. Both use the rewards table for idempotency.
  */
 
 type SetupQuestRow = {
@@ -120,6 +121,32 @@ const topUpSinceLaunchQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
+const cryptoTopUpQuest: QuestDefinition = {
+    id: "crypto_top_up",
+    title: "Pay with crypto",
+    description: "[Top up](/pollen#buy-pollen) Pollen using crypto.",
+    category: "grow",
+    scope: "perUser",
+    rewardAmount: 5,
+    balanceBucket: "tier",
+};
+
+export async function recordCryptoTopUpReward(
+    db: QuestEvaluationContext["db"],
+    userId: string,
+): Promise<void> {
+    await recordRewards(db, [
+        {
+            idempotencyKey: `quest:${cryptoTopUpQuest.id}:user:${userId}`,
+            userId,
+            questId: cryptoTopUpQuest.id,
+            title: cryptoTopUpQuest.title,
+            amount: cryptoTopUpQuest.rewardAmount,
+            bucket: cryptoTopUpQuest.balanceBucket,
+        },
+    ]);
+}
+
 const overHundredPollenSinceLaunchQuest = {
     id: "top_up_100_since_launch",
     title: "Top up 100 Pollen",
@@ -136,6 +163,7 @@ export const TOP_UP_QUEST_IDS = [
     legacyFirstTopUpQuest.id,
     legacyOverHundredPollenQuest.id,
     topUpSinceLaunchQuest.id,
+    cryptoTopUpQuest.id,
     overHundredPollenSinceLaunchQuest.id,
 ];
 
@@ -147,6 +175,7 @@ const QUESTS = [
     legacyFirstTopUpQuest,
     legacyOverHundredPollenQuest,
     topUpSinceLaunchQuest,
+    cryptoTopUpQuest,
     overHundredPollenSinceLaunchQuest,
 ];
 

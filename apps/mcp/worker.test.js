@@ -313,11 +313,25 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
             authorization: new Headers(init.headers).get("authorization"),
         });
 
-        if (url.endsWith("/audio/models?community=false")) {
-            return Response.json([
+        const audioModels = new URL(url);
+        if (
+            audioModels.pathname === "/audio/models" &&
+            audioModels.searchParams.get("community") === "false"
+        ) {
+            // Mirrors the gateway contract: listModels forwards discovery
+            // filters and Gen narrows the catalog, the MCP does not.
+            let models = [
                 { name: "speech-test" },
                 { name: "audio-agent", agent: true },
-            ]);
+            ];
+            const agent = audioModels.searchParams.get("agent");
+            if (agent !== null) {
+                const wantsAgents = agent === "true" || agent === "1";
+                models = models.filter(
+                    (model) => (model.agent === true) === wantsAgents,
+                );
+            }
+            return Response.json(models);
         }
         if (url.endsWith("/video/models")) {
             return Response.json([{ name: "veo" }]);

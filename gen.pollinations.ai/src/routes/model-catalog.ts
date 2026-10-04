@@ -68,6 +68,63 @@ export function attachModelHealth(
     };
 }
 
+// Capabilities are enums like `tool_calling` and `web_search`; callers may pass
+// `tool-calling`, `Tool Calling` or `websearch`, so match on alphanumerics only.
+const normalizeCapability = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const searchableCatalogText = (entry: GenerationModelEntry) =>
+    [
+        entry.info.name,
+        ...entry.info.aliases,
+        entry.info.title,
+        entry.info.description ?? "",
+        entry.info.publisher,
+    ]
+        .join("\n")
+        .toLowerCase();
+
+// Discovery-only narrowing (query text, capabilities, agent flag) evaluated on
+// the already permission-, source- and reliability-filtered list. It never
+// reorders, so catalog order survives and limit only trims the final result.
+function buildDiscoveryFilter(
+    query: ModelListQueryParams,
+): (entry: GenerationModelEntry) => boolean {
+    const terms =
+        query.query?.trim().toLowerCase().split(/\s+/).filter(Boolean) ?? [];
+    const wantedCapabilities = (query.capabilities ?? [])
+        .map(normalizeCapability)
+        .filter(Boolean);
+    const wantsAgents =
+        query.agent === undefined
+            ? undefined
+            : query.agent === "true" || query.agent === "1";
+
+    return (entry) => {
+        if (
+            wantsAgents !== undefined &&
+            (entry.info.agent === true) !== wantsAgents
+        ) {
+            return false;
+        }
+        if (wantedCapabilities.length > 0) {
+            const owned = new Set(
+                entry.info.capabilities.map(normalizeCapability),
+            );
+            if (
+                !wantedCapabilities.every((capability) => owned.has(capability))
+            ) {
+                return false;
+            }
+        }
+        if (terms.length > 0) {
+            const text = searchableCatalogText(entry);
+            if (!terms.every((term) => text.includes(term))) return false;
+        }
+        return true;
+    };
+}
+
 // Discovery only: callers apply access checks before entering this function.
 export async function filterCatalogEntries(
     c: Context<Env>,
@@ -94,7 +151,7 @@ export async function filterCatalogEntries(
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
-    return filtered
+    const listed = filtered
         .map((entry) => attachModelHealth(entry, lookup))
         .filter(
             (entry) =>
@@ -103,4 +160,6 @@ export async function filterCatalogEntries(
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );
+    const matches = listed.filter(buildDiscoveryFilter(query));
+    return query.limit === undefined ? matches : matches.slice(0, query.limit);
 }

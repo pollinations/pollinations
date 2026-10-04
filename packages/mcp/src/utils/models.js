@@ -22,10 +22,12 @@ async function fetchModels(url, context) {
     return response.json();
 }
 
-export function getModels(type = "all", context, community) {
+// `filters` are discovery params (query, capabilities, agent, limit) forwarded
+// verbatim to the gateway: Gen does the filtering, the MCP stays a thin proxy.
+export function getModels(type = "all", context, community, filters = {}) {
     const path = MODEL_PATHS[type];
     if (!path) throw new Error(`Unknown model type: ${type}`);
-    return fetchModels(buildUrl(path, { community }), context);
+    return fetchModels(buildUrl(path, { community, ...filters }), context);
 }
 
 export const getImageModels = (context) => getModels("image", context);

@@ -57,6 +57,29 @@ hiding still apply. Owners can manage all their models in My Models.
 Time-windowed traffic, latency and fallback breakdowns are served separately by
 `/models/status`, described in [Public Stats](/docs#tag/public-stats).
 
+### Search filters
+
+The same list endpoints accept optional discovery filters so agents and clients
+can pull a small relevant subset instead of the whole catalog. They combine
+with the source and reliability filters and with each other using AND
+semantics, after visibility, API-key permissions, source and reliability have
+already been applied:
+
+| Parameter | Effect |
+|-----------|--------|
+| `query` | Case-insensitive search over canonical name, aliases, title, description and publisher. Every whitespace-separated word must match somewhere in that text. |
+| `capabilities` | Comma- or pipe-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model must advertise **every** listed capability. Matching ignores case, spaces, `-` and `_`, so `web-search` matches `web_search`. |
+| `agent` | `true`/`1` keeps only agents, `false`/`0` drops agents. Omit for both. |
+| `limit` | Return at most this many models. Applied last, so the catalog order decides which models survive; a query matching fewer models returns all of them. Invalid values (such as `limit=0`) return **400 Bad Request**. |
+
+```bash
+curl 'https://gen.pollinations.ai/models?query=flux&capabilities=tool_calling,reasoning&limit=5'
+```
+
+The Pollinations MCP `listModels` tool forwards these same parameters, so an
+agent that needs "the three cheapest text models with tool calling" gets three
+rows instead of the full catalog.
+
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
 Modalities, video frame controls, voices, and context length remain separate

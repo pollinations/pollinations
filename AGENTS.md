@@ -171,6 +171,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Search targeted paths.
 - Keep scratch files clearly labeled in `temp/`.
 - `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
+- `packages/sdk`, `packages/ui` and `packages/polli-cli` publish to npm from `main` only when their `version` changes; CI skips a version already on npm. A PR that changes what one of them ships bumps that version (prereleases take the next number on the same tag, e.g. `5.1.0-alpha.8`), including the package's own `package-lock.json` where it has one. SDK changes also get a `CHANGELOG.md` entry.
 
 ## Testing
 

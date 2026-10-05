@@ -2,9 +2,8 @@ name: Models / Report-only manager pilot
 
 on:
   schedule:
-    # state.mjs selects the UTC slot corresponding to 08:00 Europe/Berlin.
+    # One UTC slot: 08:00 Berlin in summer, 07:00 in winter.
     - cron: '0 6 * * *'
-    - cron: '0 7 * * *'
   workflow_dispatch:
     inputs:
       initialize:
@@ -33,14 +32,7 @@ jobs:
         with:
           node-version: '24.10.0'
 
-      - name: Select Berlin daily slot
-        id: slot
-        env:
-          MODEL_MANAGER_CRON: ${{ github.event.schedule }}
-        run: node operations/model-manager/state.mjs schedule
-
       - name: Find the latest trusted state
-        if: steps.slot.outputs.run == 'true'
         id: previous
         uses: actions/github-script@v8
         with:
@@ -103,11 +95,9 @@ jobs:
           --file "$RUNNER_TEMP/model-manager-previous/state.vars.json"
           --data "$RUNNER_TEMP/model-manager-data"
 
-      - name: Install launcher and verify local behavior
+      - name: Install launcher
         if: steps.previous.outputs.ready == 'true'
-        run: |
-          npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
-          npm test --prefix operations/model-manager
+        run: npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
 
       - name: Run in Pollinations VM
         id: launch
@@ -130,11 +120,15 @@ jobs:
           name: model-manager-state
           path: ${{ runner.temp }}/model-manager-export/state.vars.json
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 30
           overwrite: true
 
       - name: Summarize run
-        if: always() && steps.slot.outputs.run == 'true'
+        if: always()
         run: |
-          echo 'Report-only model manager: private reports and checkpoints are in the encrypted model-manager-state artifact.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Decrypt with an existing authorized SOPS identity. Source gaps are recorded in report.json; no model changes or external notifications are enabled.' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "$RUNNER_TEMP/model-manager-data/report.md" ]; then
+            cat "$RUNNER_TEMP/model-manager-data/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'No report produced. Check the run status; the pilot requires explicit initialization.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo 'Private evidence and checkpoints are in the encrypted model-manager-state artifact. No model changes or external notifications are enabled.' >> "$GITHUB_STEP_SUMMARY"

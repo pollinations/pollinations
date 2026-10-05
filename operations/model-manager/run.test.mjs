@@ -4,6 +4,8 @@ import {
     analyze,
     comparePublicPricing,
     dayKey,
+    historySnapshot,
+    reportDigest,
     reportHtml,
     runRates,
     textAssessmentCost,
@@ -243,4 +245,139 @@ test("Reports escape source markup and reject executable URLs", () => {
     assert.ok(!html.includes("<script>evil()"));
     assert.ok(!html.includes('href="javascript:'));
     assert.ok(html.includes("&lt;img"));
+});
+
+test("Partial or missing source days do not rediscover known identities or hide revisions", () => {
+    const model = {
+        id: "lab/model",
+        version: "a",
+        signals: [{ kind: "catalog" }],
+    };
+    const snapshot = {
+        at: "2026-10-05T06:00:00Z",
+        registry: [],
+        liveCatalog: [],
+        sources: [{ source: "fal", observations: [model] }],
+    };
+    const history = [
+        { ...snapshot, at: "2026-10-03T06:00:00Z" },
+        {
+            at: "2026-10-04T06:00:00Z",
+            sources: [{ source: "fal", status: "partial", observations: [] }],
+        },
+    ];
+    assert.deepEqual(analyze(snapshot, history), []);
+    const changed = {
+        ...snapshot,
+        sources: [
+            { source: "fal", observations: [{ ...model, version: "b" }] },
+        ],
+    };
+    assert.match(analyze(changed, history)[0].reasons[0], /revision changed/);
+    const unknown = {
+        ...snapshot,
+        sources: [
+            { source: "fal", observations: [{ ...model, id: "lab/unknown" }] },
+        ],
+    };
+    assert.match(
+        analyze(unknown, history)[0].reasons[0],
+        /First observed.*coverage may be incomplete/,
+    );
+    assert.deepEqual(
+        analyze(snapshot, [history[0], { at: history[1].at, sources: [] }]),
+        [],
+    );
+});
+
+test("Compact history preserves trend and revision decisions without catalog or schema copies", () => {
+    const model = {
+        id: "lab/model",
+        runs: 1100,
+        version: "new",
+        signals: [{ kind: "catalog" }],
+        inputSchema: { large: "unused" },
+    };
+    const snapshot = {
+        at: "2026-10-05T06:00:00Z",
+        registry: [],
+        liveCatalog: [],
+        sources: [{ source: "replicate", observations: [model] }],
+    };
+    const history = [400, 500, 600, 700].map((runs, index) => ({
+        ...snapshot,
+        at: `2026-10-0${index + 1}T06:00:00Z`,
+        sources: [
+            {
+                source: "replicate",
+                observations: [{ ...model, runs, version: "old" }],
+            },
+        ],
+    }));
+    assert.deepEqual(
+        analyze(snapshot, history.map(historySnapshot)),
+        analyze(snapshot, history),
+    );
+    const compact = historySnapshot(snapshot);
+    assert.equal(compact.registry, undefined);
+    assert.equal(compact.sources[0].observations[0].inputSchema, undefined);
+});
+
+test("Daily digest limits new leads, exposes gaps and excludes private metadata", () => {
+    const report = {
+        at: "2026-10-05",
+        account: "private@example.com",
+        keyBudgetBefore: 5,
+        sources: [{ source: "fal", status: "partial", observations: [] }],
+        gaps: [
+            {
+                source: "fal",
+                label: "catalog-11",
+                status: "unavailable",
+                privateValue: "private-detail",
+            },
+        ],
+        assessment: { text: "</pre><script>evil()</script>" },
+        findings: Array.from({ length: 7 }, (_, index) => ({
+            id: `lead-${index}`,
+            kind: "investigate",
+            newFinding: index !== 0,
+            reason: "<img onerror=evil()>",
+            url: "javascript:evil()",
+        })),
+    };
+    const digest = reportDigest(report);
+    assert.match(
+        digest,
+        /New leads: 6 · Already recorded: 1 · Coverage gaps: 1/,
+    );
+    assert.match(digest, /catalog-11/);
+    assert.ok(!digest.includes("lead-0"));
+    assert.ok(digest.includes("lead-5"));
+    assert.ok(!digest.includes("lead-6"));
+    assert.ok(!digest.includes("private@example.com"));
+    assert.ok(!digest.includes("private-detail"));
+    assert.ok(!digest.includes("<script>"));
+    assert.ok(!digest.includes('href="javascript:'));
+    assert.match(digest, /&lt;img/);
+});
+
+test("A missing Replicate collection day does not repeat the editorial seed", () => {
+    const model = { id: "lab/model", signals: [{ kind: "collection" }] };
+    const history = [
+        day("2026-10-03T06:00:00Z", model),
+        {
+            at: "2026-10-04T06:00:00Z",
+            sources: [{ source: "replicate", observations: [] }],
+        },
+    ];
+    assert.deepEqual(
+        trendReasons(
+            { source: "replicate" },
+            model,
+            history,
+            "2026-10-05T06:00:00Z",
+        ),
+        [],
+    );
 });

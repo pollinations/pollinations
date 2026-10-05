@@ -246,7 +246,6 @@ export async function fal() {
 function replicateModel(m, signal) {
     if (typeof m.owner !== "string" || typeof m.name !== "string")
         throw new Error("Source schema changed: missing Replicate owner/name");
-    const schema = m.latest_version?.openapi_schema?.components?.schemas;
     return {
         id: `${m.owner}/${m.name}`,
         url: `https://replicate.com/${m.owner}/${m.name}`,
@@ -255,8 +254,6 @@ function replicateModel(m, signal) {
         version: m.latest_version?.id,
         createdAt: m.latest_version?.created_at,
         licenseUrl: m.license_url,
-        inputSchema: schema?.Input,
-        outputSchema: schema?.Output,
         signals: [signal],
     };
 }
@@ -349,31 +346,4 @@ export async function replicate(token, history) {
         }));
     }
     return finish(source);
-}
-
-export async function falPrices(ids, token) {
-    if (!token)
-        return {
-            status: "unavailable",
-            prices: [],
-            reason: "Existing FAL_KEY required",
-        };
-    const url = new URL("https://api.fal.ai/v1/models/pricing");
-    for (const id of ids.slice(0, 50))
-        url.searchParams.append("endpoint_id", id);
-    if (!ids.length) return { status: "complete", prices: [] };
-    try {
-        const data = await json(url, { Authorization: `Key ${token}` });
-        return {
-            status: data.has_more || ids.length > 50 ? "partial" : "complete",
-            prices: rows(data, "prices"),
-            url: url.href,
-        };
-    } catch {
-        return {
-            status: "unavailable",
-            prices: [],
-            reason: "Authenticated pricing request failed",
-        };
-    }
 }

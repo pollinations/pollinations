@@ -8,7 +8,7 @@ import { dayKey } from "./analyze.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const STATE_FILE =
-    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|notified\.json|pilot\.json|report\.(json|html)|verification\.json)$/;
+    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|notified\.json|pilot\.json|report\.(json|html|md)|verification\.json)$/;
 
 export function pilotDecision(pilot, at = new Date().toISOString()) {
     const today = dayKey(at);
@@ -25,27 +25,13 @@ export function pilotDecision(pilot, at = new Date().toISOString()) {
     return "run";
 }
 
-// Two UTC cron slots preserve 08:00 Berlin; select the slot by UTC offset,
-// not the actual dispatch hour, because Actions may dispatch late.
-export function scheduledSlot(cron, at = new Date().toISOString()) {
-    const berlinHour = Number(
-        new Intl.DateTimeFormat("en-GB", {
-            timeZone: "Europe/Berlin",
-            hour: "2-digit",
-            hourCycle: "h23",
-        }).format(new Date(at)),
-    );
-    const offset = (berlinHour - new Date(at).getUTCHours() + 24) % 24;
-    return cron === `0 ${8 - offset} * * *`;
-}
-
 export async function stateFiles(data) {
     const names = (await readdir(data)).filter((name) => STATE_FILE.test(name));
     const retained = new Set(
         names
             .filter((name) => name.startsWith("snapshot-"))
             .sort()
-            .slice(-90),
+            .slice(-14),
     );
     const files = {};
     for (const name of names) {
@@ -127,14 +113,7 @@ if (
         if (positionals[0] === "seal") await seal(data, resolve(values.file));
         else if (positionals[0] === "restore")
             await restore(resolve(values.file), data);
-        else if (positionals[0] === "schedule") {
-            const selected =
-                process.env.GITHUB_EVENT_NAME !== "schedule" ||
-                scheduledSlot(process.env.MODEL_MANAGER_CRON);
-            await writeFile(process.env.GITHUB_OUTPUT, `run=${selected}\n`, {
-                flag: "a",
-            });
-        } else throw new Error("Expected seal, restore or schedule");
+        else throw new Error("Expected seal or restore");
     } catch {
         // CLI errors can contain decrypted subprocess buffers; never dump them.
         console.error(

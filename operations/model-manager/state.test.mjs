@@ -5,42 +5,27 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { sourceBundle } from "./bundle.mjs";
-import { pilotDecision, scheduledSlot, stateFiles } from "./state.mjs";
+import { pilotDecision, stateFiles } from "./state.mjs";
 
-test("VM source bundle excludes credentials and macOS migration sidecars", async () => {
-    const { archive } = await sourceBundle();
-    const entries = execFileSync("tar", ["-tzf", "-"], {
-        input: archive,
-        encoding: "utf8",
-    }).split("\n");
-    assert(
-        entries.some((name) =>
-            name.endsWith("enter.pollinations.ai/scripts/code-agent-sdk.mjs"),
-        ),
+test("VM bundle runs without a checkout or installed dependencies", async () => {
+    const { code, manifest } = await sourceBundle();
+    const directory = await mkdtemp(
+        join(tmpdir(), "model-manager-bundle-test-"),
     );
-    assert(
-        entries.some((name) =>
-            name.endsWith("gen.pollinations.ai/tsconfig.json"),
-        ),
-    );
-    assert(!entries.some((name) => /(^|\/)\._|(^|\/)secrets\//.test(name)));
-    const migrations = entries.filter((name) =>
-        /enter\.pollinations\.ai\/drizzle\/[^/]+\.sql$/.test(name),
-    );
-    const tracked = execFileSync(
-        "git",
-        ["ls-files", "enter.pollinations.ai/drizzle/*.sql"],
-        { encoding: "utf8", cwd: new URL("../../", import.meta.url) },
-    )
-        .trim()
-        .split("\n")
-        .filter(
-            (name) =>
-                !name
-                    .slice("enter.pollinations.ai/drizzle/".length)
-                    .includes("/"),
-        );
-    assert.equal(migrations.length, tracked.length);
+    try {
+        const file = join(directory, "run.mjs");
+        await writeFile(file, code);
+        const output = execFileSync(process.execPath, [file, "--help"], {
+            cwd: directory,
+            encoding: "utf8",
+        });
+        assert.match(output, /Report-only model manager/);
+        assert.match(manifest.revision, /^[a-f0-9]{40}$/);
+        assert.match(manifest.bundleSha256, /^[a-f0-9]{64}$/);
+        assert.ok(!code.includes("code-agent-sdk"));
+    } finally {
+        await rm(directory, { recursive: true, force: true });
+    }
 });
 
 test("Pilot stops after 14 Berlin calendar days, including the DST change", () => {
@@ -64,20 +49,12 @@ test("Pilot stops after 14 Berlin calendar days, including the DST change", () =
     assert.throws(() => pilotDecision({ ...pilot, startedDay: "invalid" }));
 });
 
-test("Daily slot follows Berlin DST and tolerates delayed Actions dispatch", () => {
-    assert.equal(scheduledSlot("0 6 * * *", "2026-10-24T08:45:00Z"), true);
-    assert.equal(scheduledSlot("0 7 * * *", "2026-10-24T08:45:00Z"), false);
-    assert.equal(scheduledSlot("0 6 * * *", "2026-10-25T08:45:00Z"), false);
-    assert.equal(scheduledSlot("0 7 * * *", "2026-10-25T08:45:00Z"), true);
-    assert.equal(scheduledSlot("0 6 * * *", "2027-03-28T06:30:00Z"), true);
-});
-
-test("State retains 90 daily snapshots and omits credential files and locks", async () => {
+test("State retains the 14 pilot snapshots and omits credential files and locks", async () => {
     const directory = await mkdtemp(
         join(tmpdir(), "model-manager-state-test-"),
     );
     try {
-        for (let day = 0; day < 95; day++) {
+        for (let day = 0; day < 20; day++) {
             const at = new Date(Date.UTC(2026, 0, 1 + day))
                 .toISOString()
                 .slice(0, 10);
@@ -93,7 +70,7 @@ test("State retains 90 daily snapshots and omits credential files and locks", as
         );
         await writeFile(join(directory, "run.lock"), "lock");
         const files = await stateFiles(directory);
-        assert.equal(Object.keys(files).length, 91);
+        assert.equal(Object.keys(files).length, 15);
         assert.equal(files["snapshot-2026-01-01.json"], undefined);
         assert.equal(files["prod.vars.json"], undefined);
         assert.equal(files["run.lock"], undefined);

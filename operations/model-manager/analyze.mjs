@@ -120,7 +120,15 @@ export function trendReasons(source, model, history, at) {
             );
         if (
             model.signals.some((s) => s.kind === "collection") &&
-            !previousModel?.signals.some((s) => s.kind === "collection")
+            !history.some((day) =>
+                day.sources
+                    .find((s) => s.source === "replicate")
+                    ?.observations.some(
+                        (m) =>
+                            m.id === model.id &&
+                            m.signals.some((s) => s.kind === "collection"),
+                    ),
+            )
         )
             reasons.push(
                 "New curated API collection seed; editorial evidence, not measured trend",
@@ -160,6 +168,29 @@ export function comparePublicPricing(registry, live) {
     return differences;
 }
 
+// Only these observations feed trend baselines, revision diffs and the watchlist.
+export function historySnapshot(snapshot) {
+    return {
+        at: snapshot.at,
+        sources: snapshot.sources.map((source) => ({
+            source: source.source,
+            status: source.status,
+            queries: source.queries?.map(({ label, status }) => ({
+                label,
+                status,
+            })),
+            observations: source.observations.map(
+                ({ id, version, runs, signals }) => ({
+                    id,
+                    version,
+                    runs,
+                    signals,
+                }),
+            ),
+        })),
+    };
+}
+
 export function analyze(snapshot, history, notified = {}) {
     const findings = [];
     const allCurrent = [
@@ -171,17 +202,22 @@ export function analyze(snapshot, history, notified = {}) {
         })),
     ];
     for (const source of snapshot.sources) {
-        const previousModels = history
-            .at(-1)
-            ?.sources.find((s) => s.source === source.source)?.observations;
+        // Missing entries in a partial scan are not removals. Compare against
+        // the last actual observation of each identity across retained days.
+        const previousModels = new Map();
+        for (const day of history)
+            for (const model of day.sources.find(
+                (s) => s.source === source.source,
+            )?.observations ?? [])
+                previousModels.set(model.id, model);
         for (const model of source.observations) {
             const existing = allCurrent.find(
                 (m) => m.name === model.id || m.aliases?.includes(model.id),
             );
             const reasons = trendReasons(source, model, history, snapshot.at);
-            const old = previousModels?.find((m) => m.id === model.id);
+            const old = previousModels.get(model.id);
             if (
-                previousModels &&
+                previousModels.size &&
                 !old &&
                 model.signals.some((s) =>
                     [
@@ -193,7 +229,7 @@ export function analyze(snapshot, history, notified = {}) {
                 )
             )
                 reasons.push(
-                    "New to the successfully observed source population; release and identity need verification",
+                    "First observed in retained history; earlier coverage may be incomplete, release and identity unverified",
                 );
             const versionChanged =
                 old?.version && model.version && old.version !== model.version;
@@ -340,4 +376,30 @@ export function reportHtml(report) {
         )
         .join("");
     return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model manager report</title><style>body{font:15px system-ui;max-width:1200px;margin:40px auto;padding:0 24px;color:#162130;background:#fafbf9}h1{font-size:28px}table{width:100%;border-collapse:collapse;background:white}th,td{text-align:left;padding:12px;border-bottom:1px solid #ddd;vertical-align:top}th{background:#edf2ed}a{color:#215944}pre{white-space:pre-wrap}small{color:#566}li{margin:8px 0}</style><h1>Model catalog manager · report-only prototype</h1><p>${escapeHtml(report.at)} · Account: ${escapeHtml(report.account)} · Repository: ${escapeHtml(report.revision)}</p><p>${report.findings.filter((f) => f.newFinding).length} new of ${report.findings.length} research findings. These are leads, not approved model changes or verified billing defects.</p><ul>${report.sources.map((s) => `<li>${escapeHtml(s.source)}: <b>${escapeHtml(s.status)}</b> · ${s.observations.length} identities · ${s.queries.filter((q) => q.status !== "complete").length} incomplete queries</li>`).join("")}</ul><h2>Research queue</h2><table><thead><tr><th>Observation</th><th>Action</th><th>Model</th><th>Evidence / reason</th><th>Verification status</th></tr></thead><tbody>${table}</tbody></table><h2>Capability and billing coverage</h2><p>Execution: ${escapeHtml(report.execution ?? "local")}</p><p>This discovery run performs no model integration probes or catalog changes. The optional assessment is a separate inference call. Prices and capability metadata are observations; exact-route probes, invoice/usage reconciliation and authenticated local E2E remain required.</p><ul>${(report.unimplementedCoverage ?? []).map((gap) => `<li>${escapeHtml(gap)}</li>`).join("")}</ul><h2>Access and source gaps</h2><pre>${escapeHtml(JSON.stringify(report.gaps, null, 2))}</pre><h2>Agent assessment · ${escapeHtml(report.assessment?.status ?? "not_requested")}</h2><pre>${escapeHtml(report.assessment?.text ?? "Assessment not run")}</pre><small>Usage and spend evidence: ${escapeHtml(JSON.stringify(report.assessment?.usage ?? null))}. State and source snapshots are stored beside this report.</small></html>`;
+}
+
+// Public digest deliberately excludes account metadata, raw responses and spend logs.
+// Dynamic text stays inside escaped HTML blocks so it cannot inject Markdown or HTML.
+export function reportDigest(report) {
+    const fresh = report.findings.filter((finding) => finding.newFinding);
+    const leads = fresh
+        .slice(0, 5)
+        .map(
+            (finding) =>
+                `<li><a href="${safeLink(finding.url)}">${escapeHtml(finding.id)}</a> · ${escapeHtml(finding.kind.replaceAll("_", " "))}<p>${escapeHtml(finding.reason ?? finding.reasons?.join("; "))}</p></li>`,
+        )
+        .join("");
+    const coverage = report.sources
+        .map(
+            (source) =>
+                `<li>${escapeHtml(source.source)}: ${escapeHtml(source.status)} · ${source.observations.length} identities</li>`,
+        )
+        .join("");
+    const gaps = report.gaps
+        .map(
+            (gap) =>
+                `<li>${escapeHtml(gap.source)} · ${escapeHtml(gap.label ?? "query")} · ${escapeHtml(gap.status)}${gap.error ? ` · ${escapeHtml(gap.error)}` : ""}</li>`,
+        )
+        .join("");
+    return `## Model manager · report-only\n\n<p>${escapeHtml(report.at)} · New leads: ${fresh.length} · Already recorded: ${report.findings.length - fresh.length} · Coverage gaps: ${report.gaps.length}.</p>\n\n### Next investigations (up to five)\n\n<ul>${leads || "<li>No new leads.</li>"}</ul>\n\n### Agent assessment\n\n<pre>${escapeHtml(report.assessment?.text ?? report.assessment?.reason ?? "Assessment not requested")}</pre>\n\n### Source coverage\n\n<ul>${coverage}${gaps}</ul>\n\nDiscovery evidence only. Capabilities, exact provider routes, billing correctness and retirement notices still need verification.\n`;
 }

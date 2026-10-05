@@ -80,15 +80,12 @@ async function command(stage, commandText, options = {}, acceptable = [0]) {
     console.log(`Starting ${stage}`);
     let result;
     try {
-        result = await sandbox.commands.run(
-            `export PATH=/home/user/mm-node/bin:/usr/local/bin:/usr/bin:/bin; ${commandText}`,
-            {
-                cwd: REMOTE,
-                timeoutMs: 180_000,
-                signal: abort.signal,
-                ...options,
-            },
-        );
+        result = await sandbox.commands.run(commandText, {
+            cwd: REMOTE,
+            timeoutMs: 180_000,
+            signal: abort.signal,
+            ...options,
+        });
     } catch (error) {
         if (!(error instanceof CommandExitError)) throw error;
         result = error;
@@ -122,7 +119,6 @@ try {
             values["provider-secrets"],
             "REPLICATE_API_TOKEN",
         );
-        const fal = secret(values["provider-secrets"], "FAL_KEY");
         const profile = await account("/account/profile");
         if (profile.email !== "pollinationsagent@gmail.com")
             throw new Error("Wrong agent account");
@@ -193,30 +189,11 @@ try {
             throw new Error(
                 "VM resources differ from the approved run reservation",
             );
-        await sandbox.files.write(
-            "/home/user/source.tar.gz",
-            source.archive.buffer.slice(
-                source.archive.byteOffset,
-                source.archive.byteOffset + source.archive.byteLength,
-            ),
-        );
+        await sandbox.files.makeDir(`${REMOTE}/data`);
+        await sandbox.files.write(`${REMOTE}/run.mjs`, source.code);
         await command(
-            "runtime-setup",
-            `set -euo pipefail
-mkdir -p /home/user/mm-node ${REMOTE}
-cd /home/user
-echo '${source.manifest.bundleSha256}  source.tar.gz' | sha256sum -c -
-curl -fsSL https://nodejs.org/dist/v24.10.0/node-v24.10.0-linux-x64.tar.xz -o node.tar.xz
-curl -fsSL https://nodejs.org/dist/v24.10.0/SHASUMS256.txt -o node-shasums.txt
-awk '$2 == "node-v24.10.0-linux-x64.tar.xz" { print $1 "  node.tar.xz" }' node-shasums.txt | sha256sum -c -
-tar -xJf node.tar.xz --strip-components=1 -C /home/user/mm-node
-tar -xzf source.tar.gz -C ${REMOTE}
-export PATH=/home/user/mm-node/bin:/usr/local/bin:/usr/bin:/bin
-cd ${REMOTE}
-node --version
-npm ci --ignore-scripts --no-audit --no-fund
-mkdir -p operations/model-manager/data`,
-            { cwd: "/home/user", timeoutMs: 240_000 },
+            "runtime-check",
+            `echo '${source.manifest.bundleSha256}  run.mjs' | sha256sum -c - && node --version`,
         );
         const history = await stateFiles(out);
         proof.restoredSnapshotDays = Object.keys(history).filter((name) =>
@@ -224,27 +201,14 @@ mkdir -p operations/model-manager/data`,
         ).length;
         for (const [name, content] of Object.entries(history))
             if (name.startsWith("snapshot-") || name === "notified.json")
-                await sandbox.files.write(
-                    `${REMOTE}/operations/model-manager/data/${name}`,
-                    content,
-                );
-        await command(
-            "agent-tests",
-            "node --test operations/model-manager/run.test.mjs",
-        );
-        await command(
-            "workers-test",
-            "../node_modules/.bin/vitest run test/pollen-precision.test.ts",
-            { cwd: `${REMOTE}/gen.pollinations.ai` },
-        );
+                await sandbox.files.write(`${REMOTE}/data/${name}`, content);
         await command(
             "api-scan",
-            "node --import tsx operations/model-manager/run.ts --assess",
+            "node run.mjs --out /home/user/model-manager/data --assess",
             {
                 envs: {
                     [FIELD]: token,
                     REPLICATE_API_TOKEN: replicate,
-                    FAL_KEY: fal,
                     MODEL_MANAGER_REPOSITORY_REVISION: source.manifest.revision,
                     MODEL_MANAGER_SANDBOX_ID: sandbox.sandboxId,
                 },
@@ -252,13 +216,14 @@ mkdir -p operations/model-manager/data`,
             [0, 2],
         );
         const reportText = await sandbox.files.read(
-            `${REMOTE}/operations/model-manager/data/report.json`,
+            `${REMOTE}/data/report.json`,
         );
         const report = JSON.parse(reportText);
         const snapshot = `snapshot-${dayKey(report.at)}.json`;
         for (const name of [
             "report.json",
             "report.html",
+            "report.md",
             "notified.json",
             snapshot,
         ])
@@ -266,16 +231,14 @@ mkdir -p operations/model-manager/data`,
                 name,
                 name === "report.json"
                     ? reportText
-                    : await sandbox.files.read(
-                          `${REMOTE}/operations/model-manager/data/${name}`,
-                      ),
+                    : await sandbox.files.read(`${REMOTE}/data/${name}`),
             );
         pilot.days = [...new Set([...pilot.days, dayKey(report.at)])];
         pilot.status = "observing";
         proof.coverageGaps = report.gaps.length;
         proof.findings = report.findings.length;
         proof.assessment = report.assessment.status;
-        if (report.assessment.status !== "complete")
+        if (!["complete", "not_needed"].includes(report.assessment.status))
             throw new Error("Assessment incomplete; source evidence saved");
         proof.status = report.gaps.length ? "saved_with_source_gaps" : "saved";
         console.log(

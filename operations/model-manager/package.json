@@ -6,6 +6,8 @@
         "test": "node --test *.test.mjs"
     },
     "dependencies": {
-        "e2b": "2.52.0"
+        "e2b": "2.52.0",
+        "esbuild": "0.27.3",
+        "zod": "4.5.4"
     }
 }

@@ -1,12 +1,5 @@
 import { execFileSync } from "node:child_process";
-import {
-    mkdir,
-    readdir,
-    readFile,
-    rename,
-    rm,
-    writeFile,
-} from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -18,10 +11,16 @@ import {
     getModels,
     getRegistryModelDefinition,
 } from "../../shared/registry/registry.ts";
-import { analyze, dayKey, reportHtml, textAssessmentCost } from "./analyze.mjs";
+import {
+    analyze,
+    dayKey,
+    historySnapshot,
+    reportDigest,
+    reportHtml,
+    textAssessmentCost,
+} from "./analyze.mjs";
 import {
     fal,
-    falPrices,
     huggingFace,
     openRouter,
     replicate,
@@ -45,7 +44,7 @@ const { values } = parseArgs({
 
 if (values.help) {
     console.log(
-        `Report-only model manager. Run from any directory:\n  node --import tsx ${join(HERE, "run.ts")} [--out /absolute/path] [--secrets /absolute/encrypted.json] [--assess] [--model public-id]\n\nPublic collection needs no Pollinations key. --assess reads POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER from the environment or supplied SOPS file, verifies the agent account, and makes one bounded inference call. Provider read-only access uses existing REPLICATE_API_TOKEN/FAL_KEY from the same sources. Cloud launchers inject only the required runtime environment variables into the VM. No keys are created or changed.\nExit 2 means a report was saved with incomplete source coverage.`,
+        `Report-only model manager. Options: [--out /absolute/path] [--secrets /absolute/encrypted.json] [--assess] [--model public-id]\n\nPublic collection needs no Pollinations key. --assess reads POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER from the environment or supplied SOPS file, verifies the agent account, and makes one bounded inference call only when there are new leads. Provider read-only access uses existing REPLICATE_API_TOKEN from the same sources. Cloud launchers inject only the required runtime environment variables into the VM. No keys are created or changed.\nExit 2 means a report was saved with incomplete source coverage.`,
     );
     process.exit(0);
 }
@@ -77,6 +76,8 @@ async function assessment(report: {
     findings: ReturnType<typeof analyze>;
     gaps: unknown[];
 }) {
+    if (!report.findings.some((finding) => finding.newFinding))
+        return { status: "not_needed", reason: "No new leads to assess" };
     const token = credential("POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER");
     if (!token)
         return {
@@ -169,199 +170,157 @@ async function assessment(report: {
 async function main() {
     const out = resolve(values.out);
     await mkdir(out, { recursive: true, mode: 0o700 });
-    const lock = join(out, "run.lock");
-    await mkdir(lock).catch(() => {
-        throw new Error(
-            "Another run owns this output directory. Inspect run.lock before recovering an interrupted run.",
-        );
-    });
+    const history = [];
+    for (const name of (await readdir(out))
+        .filter((name) => /^snapshot-\d{4}-\d{2}-\d{2}\.json$/.test(name))
+        .sort()
+        .slice(-14))
+        history.push(JSON.parse(await readFile(join(out, name), "utf8")));
+    const at = new Date().toISOString();
+    // Same-day retries replace the snapshot, never count as another daily trend observation.
+    const previousDays = history.filter((day) => dayKey(day.at) !== dayKey(at));
+    let notified = {};
     try {
-        await writeFile(
-            join(lock, "owner.json"),
-            JSON.stringify({
-                pid: process.pid,
-                startedAt: new Date().toISOString(),
-            }),
-            { mode: 0o600 },
+        notified = JSON.parse(
+            await readFile(join(out, "notified.json"), "utf8"),
         );
-        const history = [];
-        for (const name of (await readdir(out))
-            .filter((name) => /^snapshot-\d{4}-\d{2}-\d{2}\.json$/.test(name))
-            .sort()
-            .slice(-90))
-            history.push(JSON.parse(await readFile(join(out, name), "utf8")));
-        const at = new Date().toISOString();
-        // Same-day retries replace the snapshot, never count as another daily trend observation.
-        const previousDays = history.filter(
-            (day) => dayKey(day.at) !== dayKey(at),
-        );
-        let notified = {};
-        try {
-            notified = JSON.parse(
-                await readFile(join(out, "notified.json"), "utf8"),
-            );
-        } catch (error) {
-            if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-        }
-        const registry = getModels().map((name) => {
-            const model = getRegistryModelDefinition(name);
-            return {
-                name,
-                aliases: model.aliases,
-                provider: model.provider,
-                cost: model.cost,
-                costVariants: model.costVariants,
-                priceMultiplier: model.priceMultiplier,
-                retirementDate: model.retirementDate,
-                hidden: model.hidden,
-                fallbackOnly: model.fallbackOnly,
-                public: modelInfoFromDefinition(name, model),
-            };
-        });
-        const categories = [...new Set(registry.map((m) => m.public.category))];
-        const sources = [];
-        const [hf, or, fa, re] = await Promise.allSettled([
-            huggingFace(categories, previousDays.at(-1)?.at),
-            openRouter(),
-            fal(),
-            replicate(credential("REPLICATE_API_TOKEN"), previousDays),
-        ]);
-        for (const [index, result] of [hf, or, fa, re].entries()) {
-            const source =
-                result.status === "fulfilled"
-                    ? result.value
-                    : {
-                          source: [
-                              "huggingface",
-                              "openrouter",
-                              "fal",
-                              "replicate",
-                          ][index],
-                          status: "unavailable",
-                          observations: [],
-                          queries: [
-                              {
-                                  status: "unavailable",
-                                  error: "Collector failed",
-                              },
-                          ],
-                      };
-            sources.push(source);
-            console.log(
-                `${source.source}: ${source.status}, ${source.observations.length} identities`,
-            );
-        }
-        let liveCatalog = [];
-        const gaps = sources.flatMap((s) =>
-            s.queries
-                .filter((q) => q.status !== "complete")
-                .map((q) => ({ source: s.source, ...q })),
-        );
-        try {
-            liveCatalog = rows(
-                JSON.parse(
-                    (await request(`${BASE}/models?reliability=all`)).text,
-                ),
-            );
-        } catch {
-            gaps.push({
-                source: "pollinations",
-                status: "unavailable",
-                error: "Deployed catalog unavailable",
-            });
-        }
-        const falIds = sources
-            .find((s) => s.source === "fal")
-            .observations.filter(
-                (m) =>
-                    registry.some(
-                        (r) => r.name === m.id || r.aliases.includes(m.id),
-                    ) || m.signals.some((s) => s.kind === "editorial"),
-            )
-            .map((m) => m.id)
-            .slice(0, 50);
-        const pricing = await falPrices(falIds, credential("FAL_KEY"));
-        if (pricing.status !== "complete")
-            gaps.push({
-                source: "fal_pricing",
-                status: pricing.status,
-                reason: pricing.reason,
-            });
-        const revision =
-            process.env.MODEL_MANAGER_REPOSITORY_REVISION ??
-            execFileSync("git", ["rev-parse", "HEAD"], {
-                cwd: HERE,
-                encoding: "utf8",
-            }).trim();
-        const snapshot = {
-            at,
-            account: ACCOUNT,
-            revision,
-            registry,
-            liveCatalog,
-            sources,
-            pricing,
-        };
-        const findings = analyze(snapshot, previousDays, notified).sort(
-            (a, b) =>
-                [
-                    "retirement_review",
-                    "pricing_review",
-                    "model_review",
-                    "sourcing_lead",
-                    "investigate",
-                    "lifecycle_lead",
-                ].indexOf(a.kind) -
-                [
-                    "retirement_review",
-                    "pricing_review",
-                    "model_review",
-                    "sourcing_lead",
-                    "investigate",
-                    "lifecycle_lead",
-                ].indexOf(b.kind),
-        );
-        const report = {
-            ...snapshot,
-            findings,
-            gaps,
-            mode: "report_only",
-            execution: process.env.MODEL_MANAGER_SANDBOX_ID
-                ? `Pollinations VM ${process.env.MODEL_MANAGER_SANDBOX_ID}`
-                : "local; Pollinations VM execution validation pending launcher/template selection",
-            assessment: values.assess ? null : { status: "not_requested" },
-            unimplementedCoverage: [
-                "Coding-harness integration and model-change E2E in a Pollinations VM",
-                "Official provider lifecycle notice re-verification",
-                "Exact-route account/billing reconciliation",
-                "Capability and authenticated generation E2E",
-                "Replicate task-specific top-10 persistence",
-                "Weekly HF download backstop",
-            ],
-        };
-        if (values.assess) report.assessment = await assessment(report);
-        if (
-            ["failed", "blocked_access", "blocked_budget"].includes(
-                report.assessment.status,
-            )
-        )
-            gaps.push({ source: "assessment", ...report.assessment });
-        await save(
-            join(out, `snapshot-${dayKey(at)}.json`),
-            JSON.stringify(snapshot),
-        );
-        await save(join(out, "report.json"), JSON.stringify(report, null, 2));
-        await save(join(out, "report.html"), reportHtml(report));
-        for (const finding of findings.filter((f) => f.newFinding))
-            notified[finding.fingerprint] = at;
-        await save(join(out, "notified.json"), JSON.stringify(notified));
-        console.log(
-            `Saved ${findings.length} research findings to ${join(out, "report.html")}`,
-        );
-        if (gaps.length) process.exitCode = 2;
-    } finally {
-        await rm(lock, { recursive: true });
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
+    const registry = getModels().map((name) => {
+        const model = getRegistryModelDefinition(name);
+        return {
+            name,
+            aliases: model.aliases,
+            provider: model.provider,
+            cost: model.cost,
+            costVariants: model.costVariants,
+            priceMultiplier: model.priceMultiplier,
+            retirementDate: model.retirementDate,
+            hidden: model.hidden,
+            fallbackOnly: model.fallbackOnly,
+            public: modelInfoFromDefinition(name, model),
+        };
+    });
+    const categories = [...new Set(registry.map((m) => m.public.category))];
+    const sources = [];
+    const [hf, or, fa, re] = await Promise.allSettled([
+        huggingFace(categories, previousDays.at(-1)?.at),
+        openRouter(),
+        fal(),
+        replicate(credential("REPLICATE_API_TOKEN"), previousDays),
+    ]);
+    for (const [index, result] of [hf, or, fa, re].entries()) {
+        const source =
+            result.status === "fulfilled"
+                ? result.value
+                : {
+                      source: ["huggingface", "openrouter", "fal", "replicate"][
+                          index
+                      ],
+                      status: "unavailable",
+                      observations: [],
+                      queries: [
+                          {
+                              status: "unavailable",
+                              error: "Collector failed",
+                          },
+                      ],
+                  };
+        sources.push(source);
+        console.log(
+            `${source.source}: ${source.status}, ${source.observations.length} identities`,
+        );
+    }
+    let liveCatalog = [];
+    const gaps = sources.flatMap((s) =>
+        s.queries
+            .filter((q) => q.status !== "complete")
+            .map((q) => ({ source: s.source, ...q })),
+    );
+    try {
+        liveCatalog = rows(
+            JSON.parse((await request(`${BASE}/models?reliability=all`)).text),
+        );
+    } catch {
+        gaps.push({
+            source: "pollinations",
+            status: "unavailable",
+            error: "Deployed catalog unavailable",
+        });
+    }
+    const revision =
+        process.env.MODEL_MANAGER_REPOSITORY_REVISION ??
+        execFileSync("git", ["rev-parse", "HEAD"], {
+            cwd: HERE,
+            encoding: "utf8",
+        }).trim();
+    const snapshot = {
+        at,
+        account: ACCOUNT,
+        revision,
+        registry,
+        liveCatalog,
+        sources,
+    };
+    const findings = analyze(snapshot, previousDays, notified).sort(
+        (a, b) =>
+            [
+                "retirement_review",
+                "pricing_review",
+                "model_review",
+                "sourcing_lead",
+                "investigate",
+                "lifecycle_lead",
+            ].indexOf(a.kind) -
+            [
+                "retirement_review",
+                "pricing_review",
+                "model_review",
+                "sourcing_lead",
+                "investigate",
+                "lifecycle_lead",
+            ].indexOf(b.kind),
+    );
+    const report = {
+        ...snapshot,
+        findings,
+        gaps,
+        mode: "report_only",
+        execution: process.env.MODEL_MANAGER_SANDBOX_ID
+            ? `Pollinations VM ${process.env.MODEL_MANAGER_SANDBOX_ID}`
+            : "local",
+        assessment: values.assess ? null : { status: "not_requested" },
+        unimplementedCoverage: [
+            "Coding-harness integration and model-change E2E in a Pollinations VM",
+            "Official provider lifecycle notice re-verification",
+            "Exact-route account/billing reconciliation",
+            "Capability and authenticated generation E2E",
+            "Replicate task-specific top-10 persistence",
+            "Weekly HF download backstop",
+        ],
+    };
+    if (values.assess) report.assessment = await assessment(report);
+    if (
+        ["failed", "blocked_access", "blocked_budget"].includes(
+            report.assessment.status,
+        )
+    )
+        gaps.push({ source: "assessment", ...report.assessment });
+    await save(
+        join(out, `snapshot-${dayKey(at)}.json`),
+        JSON.stringify(historySnapshot(snapshot)),
+    );
+    await save(join(out, "report.json"), JSON.stringify(report, null, 2));
+    await save(join(out, "report.html"), reportHtml(report));
+    await save(join(out, "report.md"), reportDigest(report));
+    for (const finding of findings.filter((f) => f.newFinding))
+        notified[finding.fingerprint] = at;
+    await save(join(out, "notified.json"), JSON.stringify(notified));
+    console.log(
+        `Saved ${findings.length} research findings to ${join(out, "report.html")}`,
+    );
+    if (gaps.length) process.exitCode = 2;
 }
 
 main().catch((error) => {

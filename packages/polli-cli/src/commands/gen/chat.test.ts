@@ -86,6 +86,29 @@ afterEach(() => {
 });
 
 describe("polli gen chat session lifecycle", () => {
+    it("totals provider-reported usage across streamed turns on exit", async () => {
+        prepare(
+            async () =>
+                new Response(
+                    [
+                        'data: {"choices":[{"delta":{"content":"hi"}}]}',
+                        'data: {"choices":[],"usage":{"total_tokens":7}}',
+                        "data: [DONE]",
+                        "",
+                    ].join("\n\n"),
+                ),
+        );
+
+        const line = await startSession();
+        await line("hello");
+        await line("again");
+        await line("/exit");
+
+        expect(process.stderr.write).toHaveBeenCalledWith(
+            expect.stringContaining("Session ended. 14 tokens used."),
+        );
+    });
+
     it("ends on /exit without sending it and without prompting a closed interface", async () => {
         const fetch = prepare(async () => Response.json({ ok: true }));
 

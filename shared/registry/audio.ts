@@ -189,14 +189,7 @@ export const AUDIO_VOICES = [
 export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
 const AUDIO_BASE_SERVICES = {
     "elevenlabs/eleven-v3": {
-        aliases: [
-            "tts",
-            "text-to-speech",
-            "eleven",
-            "tts-1",
-            "tts-1-hd",
-            "elevenlabs",
-        ],
+        aliases: ["tts", "text-to-speech", "eleven", "elevenlabs"],
         provider: "elevenlabs",
         publisher: "ElevenLabs",
         category: "audio",
@@ -447,6 +440,7 @@ const AUDIO_BASE_SERVICES = {
             // Vertex bills a fixed $0.04 for each 30-second generated clip.
             completionAudioTokens: 0.04,
         },
+        flatRate: true,
         title: "Lyria 3 Clip Preview",
         description:
             "30-second music with vocals, lyrics, or instrumental arrangements",
@@ -589,7 +583,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1": {
-        aliases: [],
+        aliases: ["tts-1"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -606,7 +600,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1-hd": {
-        aliases: [],
+        aliases: ["tts-1-hd"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -636,6 +630,7 @@ const AUDIO_BASE_SERVICES = {
             promptTextTokens: 0.5 / 1_000_000,
             completionAudioTokens: 9 / 1_000_000,
         },
+        priceUnits: { completionAudioTokens: { unit: "token" } },
         title: "Gemini 3.8 Flash TTS",
         description:
             "Expressive, style-steerable speech across 30 voices for creative narration",
@@ -657,6 +652,7 @@ const AUDIO_BASE_SERVICES = {
             promptTextTokens: 0.5 / 1_000_000,
             completionAudioTokens: 6 / 1_000_000,
         },
+        priceUnits: { completionAudioTokens: { unit: "token" } },
         title: "Gemini 3.8 Flash Lite TTS",
         description: "Fast, high-throughput speech across 30 voices",
         inputModalities: ["text"],
@@ -864,6 +860,7 @@ const AUDIO_BASE_SERVICES = {
             // OpenRouter, verified 2026-08-19: $15 per 1M UTF-8 input bytes.
             completionAudioTokens: (15 / 1_000_000) * 1.055,
         },
+        priceUnits: { completionAudioTokens: { unit: "byte" } },
         title: "Fish Audio S2.1 Pro",
         description:
             "Multilingual expressive speech with natural-language emotion and delivery control",

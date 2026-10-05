@@ -390,6 +390,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000583333333333333,
     },
   },
+  "black-forest-labs/flux-3-image": {
+    "cost": {
+      "completionImageTokens": 0.02532,
+    },
+    "costVariants": {
+      "2k": {
+        "completionImageTokens": 0.05275,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.02532,
+    },
+  },
   "black-forest-labs/flux.1-kontext-pro": {
     "cost": {
       "completionImageTokens": 0.04,
@@ -595,6 +608,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.0422,
+    },
+  },
+  "bytedance/seedream-5.0-flash": {
+    "cost": {
+      "completionImageTokens": 0.01899,
+    },
+    "costVariants": {
+      "2k": {
+        "completionImageTokens": 0.01899,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.01899,
     },
   },
   "bytedance/seedream-5.0-lite": {
@@ -1527,6 +1553,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000000633,
     },
   },
+  "inclusionai/ling-3.1-flash": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
+  "inclusionai/ling-3.1-flash:vercel:novita": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
   "inferenceport-ai/lightning-image-turbo": {
     "cost": {
       "completionImageTokens": 0.02,
@@ -1992,6 +2042,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "nvidia/nemotron-3-ultra": {
+    "cost": {
+      "completionTextTokens": 0.0000024,
+      "promptCachedTokens": 0.00000012,
+      "promptTextTokens": 0.0000006,
+    },
+    "price": {
+      "completionTextTokens": 0.0000024,
+      "promptCachedTokens": 0.00000012,
+      "promptTextTokens": 0.0000006,
+    },
+  },
+  "nvidia/nemotron-3-ultra:deepinfra": {
     "cost": {
       "completionTextTokens": 0.0000022,
       "promptCachedTokens": 0.0000001,
@@ -2853,12 +2915,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3-coder-30b-a3b-instruct": {
     "cost": {
-      "completionTextTokens": 0.00000026,
-      "promptTextTokens": 0.00000007,
+      "completionTextTokens": 0.0000006,
+      "promptTextTokens": 0.00000015,
     },
     "price": {
-      "completionTextTokens": 0.00000026,
-      "promptTextTokens": 0.00000007,
+      "completionTextTokens": 0.0000006,
+      "promptTextTokens": 0.00000015,
     },
   },
   "qwen/qwen3-coder-next": {

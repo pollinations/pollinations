@@ -74,7 +74,7 @@ State plainly: `This adds/changes the public API: ...` Then ask for explicit con
 
 ### Secrets are a separate approval
 
-Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, dedicated-PR requirement, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
+Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
 
 ## Workflow
 

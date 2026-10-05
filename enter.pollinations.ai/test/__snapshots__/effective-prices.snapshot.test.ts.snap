@@ -1621,6 +1621,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000000422,
     },
   },
+  "liquid/d1:vercel": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000004,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000004,
+    },
+  },
   "lykon/dreamshaper-8-lcm": {
     "cost": {
       "completionImageTokens": 0.0001,

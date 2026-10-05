@@ -478,6 +478,33 @@ describe("static provider fallbacks", () => {
         expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
     });
 
+    it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
+        const primary = TEXT_SERVICES["liquid/d1"];
+        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
+        expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(findModelByName("liquid/d1:vercel")?.config()).toMatchObject({
+            model: "liquid/d1",
+            provider: "vercel",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        const billing = calculateUsageBilling({
+            model: "liquid/d1",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),

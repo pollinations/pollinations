@@ -312,7 +312,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 | `POST /v1/messages` | Anthropic Messages API — Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
-**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, liquid/d1, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
 
 ### Responses API
 
@@ -899,7 +899,7 @@ Generate images from text prompts via a simple GET request. Returns JPEG, PNG, o
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 ```
 
-**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
+**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
 
 ### Community image models
 
@@ -909,7 +909,7 @@ Community image models use a `community/owner/model` id and support generation t
 
 Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-3`, `qwen/qwen-image-3:fal`, `qwen/qwen-image-3:replicate`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
+**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-3`, `qwen/qwen-image-3:fal`, `qwen/qwen-image-3:replicate`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -1109,7 +1109,7 @@ Transform the speaker identity in an audio file while preserving its words, timi
 | Field | Type | Description |
 |---|---|---|
 | `model` | `string` | default: `"elevenlabs/eleven-multilingual-sts-v2"` |
-| `audio` * | `string · binary` | Source audio, up to 50 MB. ElevenLabs supports clips up to five minutes. |
+| `file` * | `string · binary` | Source audio, up to 50 MB. ElevenLabs supports clips up to five minutes. `audio` is accepted as an alias. |
 | `voice` | `string` | Target preset voice name or custom ElevenLabs voice ID. · default: `"alloy"` |
 | `response_format` | `"mp3"` \| `"opus"` \| `"aac"` \| `"wav"` \| `"pcm"` | default: `"mp3"` |
 
@@ -1122,7 +1122,7 @@ Transform the speaker identity in an audio file while preserving its words, timi
 ```bash
 curl -X POST "https://gen.pollinations.ai/v1/audio/voice-changer" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
-  -F "audio=@./input.mp3"
+  -F "file=@./input.bin"
 ```
 
 ---
@@ -1136,7 +1136,7 @@ Remove music, ambient sound, and other background noise from an audio or video f
 | Field | Type | Description |
 |---|---|---|
 | `model` | `string` | default: `"elevenlabs/voice-isolator"` |
-| `audio` * | `string · binary` | Source audio or video, up to 50 MB and at least 4.6 seconds long. |
+| `file` * | `string · binary` | Source audio or video, up to 50 MB and at least 4.6 seconds long. `audio` is accepted as an alias. |
 
 <sub>`*` = required field</sub>
 
@@ -1147,7 +1147,7 @@ Remove music, ambient sound, and other background noise from an audio or video f
 ```bash
 curl -X POST "https://gen.pollinations.ai/v1/audio/voice-isolator" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
-  -F "audio=@./input.mp3"
+  -F "file=@./input.bin"
 ```
 
 ---
@@ -1349,8 +1349,8 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 | `voice` | `query` | `string` | Voice preset or custom provider voice ID. Dialogue voices come from labels in the text. · default: `"alloy"` |
 | `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format. Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav and raw 24 kHz pcm; other explicit formats are rejected. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3.5`, `google/lyria-3-clip-preview`, and `elevenlabs/eleven-text-to-sound-v2` support mp3 only. |
 | `model` | `query` | `string` | Audio model for speech, dialogue, music, or sound-effect generation |
-| `duration` | `query` | `string` | Music duration in seconds (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` 3-300; `google/lyria-3-clip-preview` fixed at 30) |
-| `seconds` | `query` | `number` | Audio duration in seconds for Stable Audio models, 1-380 · range: `1…380` |
+| `duration` | `query` | `string` | Output duration in seconds for music and sound effects. Each model lists its range as `min_duration` and `max_duration`, or `allowed_durations`, in `/audio/models`. |
+| `seconds` | `query` | `number` | Alias for `duration`. · range: `0.5…380` |
 | `steps` | `query` | `integer` | Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8) · range: `1…100` |
 | `negative_prompt` | `query` | `string` | Negative prompt for `stability-ai/stable-audio-3` |
 | `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` only) · default: `"false"` |
@@ -1498,7 +1498,7 @@ Returns available embedding models with pricing, capabilities, and supported inp
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -1506,7 +1506,7 @@ Returns available embedding models with pricing, capabilities, and supported inp
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1702,7 +1702,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -1710,7 +1710,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1871,7 +1871,7 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -1879,7 +1879,7 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1913,7 +1913,7 @@ Returns all available 3D model generation models with pricing, capabilities, and
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -1921,7 +1921,7 @@ Returns all available 3D model generation models with pricing, capabilities, and
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1955,7 +1955,7 @@ Returns all available image and video generation models with pricing, capabiliti
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -1963,7 +1963,7 @@ Returns all available image and video generation models with pricing, capabiliti
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1997,7 +1997,7 @@ Returns all available video generation models with pricing, capabilities, and me
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -2005,7 +2005,7 @@ Returns all available video generation models with pricing, capabilities, and me
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -2039,7 +2039,7 @@ Returns all available text generation and community text models with pricing, ca
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -2047,7 +2047,7 @@ Returns all available text generation and community text models with pricing, ca
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -2081,7 +2081,7 @@ Returns all available audio models (text-to-speech, music generation, and transc
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
@@ -2089,7 +2089,7 @@ Returns all available audio models (text-to-speech, music generation, and transc
 | `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
 | `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
+| `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and private visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
 <sub>`*` = required parameter</sub>
 
@@ -2215,7 +2215,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/provider" \
 
 #### `GET` `/account/my-models/{id}/fallback-candidates` — List Fallback Candidates
 
-Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.
+Community models this model may declare as fallbacks: registered, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.
 
 ⚙️ **Parameters**
 
@@ -2324,9 +2324,8 @@ Update a community model owned by the authenticated account. Code-agent names, t
 | `name` | `string` | length: `1…120` |
 | `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
 | `description` | `string` | max length: `1000` |
-| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
+| `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
-| `hidden` | `boolean` | — |
 | `baseUrl` | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
 | `api` | `"chat_completions"` \| `"responses"` | — |
 | `url` | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
@@ -2339,7 +2338,7 @@ Update a community model owned by the authenticated account. Code-agent names, t
 | `advertised` | `object` | Owner-declared catalog metadata for text models. |
 | `advertised.capabilities` | `"tool_calling"` \| `"reasoning"`[] | — |
 | `advertised.contextLength` | `integer` | max: `10000000` |
-| `fallbacks` | `string`[] | Community model ids ("<owner>/<name>") tried in order when this model's upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field. |
+| `fallbacks` | `string`[] | Community model ids ("community/<owner>/<name>") tried in order when this model's upstream fails, or an empty array to clear them. Each must be another registered community model of the same modality, public or owned by you, and priced at or below this model on every price field. |
 | `promptTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
 | `promptCachedPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
 | `promptCacheWritePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
@@ -2626,7 +2625,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `name` * | `string` | length: `1…120` |
 | `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
 | `description` | `string` | max length: `1000` |
-| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
+| `visibility` | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. · default: `"private"` |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
 | `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
 | `upstreamModel` | `string` | length: `1…253` |
@@ -2644,12 +2643,9 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `name` * | `string` | — |
 | `title` * | `string` | — |
 | `description` * | `any` | — |
-| `visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
+| `visibility` * | `"private"` \| `"public"` | "private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account. |
 | `requiredSafetyFeatures` * | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `pending` * | `object` \| `null` | — |
-| `hidden` * | `boolean` | — |
-| `hiddenReason` * | `any` | — |
-| `hiddenAt` * | `any` | — |
 | `createdAt` * | `string` | — |
 | `updatedAt` * | `string` | — |
 | `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Input types accepted by the agent. Defaults to text. |
@@ -3094,7 +3090,7 @@ Returns your request history with per-request details: model used, token counts,
 |---|---|---|---|
 | `format` | `query` | `"json"` \| `"csv"` | default: `"json"` |
 | `limit` | `query` | `number` | default: `100` · range: `1…50000` |
-| `before` | `query` | `string` | — |
+| `before` | `query` | `string` \| `string · date-time` | — |
 | `before_event_id` | `query` | `string` | — |
 | `days` | `query` | `integer` | default: `30` · range: `1…90` |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |
@@ -3428,7 +3424,7 @@ Returns usage history for the API key used in the request. No scope required —
 |---|---|---|---|
 | `format` | `query` | `"json"` \| `"csv"` | default: `"json"` |
 | `limit` | `query` | `number` | default: `100` · range: `1…50000` |
-| `before` | `query` | `string` | — |
+| `before` | `query` | `string` \| `string · date-time` | — |
 | `before_event_id` | `query` | `string` | — |
 | `days` | `query` | `integer` | default: `30` · range: `1…90` |
 | `granularity` | `query` | `"day"` \| `"week"` \| `"month"` | — |

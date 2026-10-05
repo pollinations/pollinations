@@ -1488,7 +1488,7 @@ export class Pollinations {
                         body.error ||
                         "Device flow failed",
                     body.error || "DEVICE_FLOW_ERROR",
-                    400,
+                    tokenRes.status,
                 );
             }
             throw new PollinationsError(

@@ -4,6 +4,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.9] - 2026-10-05
+
+### Fixed
+- `authorizeDevice().poll()` errors keep the token endpoint's HTTP status
+  instead of always reporting 400.
+
 ## [5.1.0-alpha.8] - 2026-10-04
 
 ### Added

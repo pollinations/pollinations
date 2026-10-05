@@ -862,6 +862,31 @@ describe("static provider fallbacks", () => {
         ).toBeUndefined();
     });
 
+    it("routes Ling fallback through Vercel Novita with launch pricing", () => {
+        const primary = "inclusionai/ling-3.1-flash";
+        const route = `${primary}:vercel:novita`;
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([route]);
+        expect(TEXT_SERVICES[route]).toMatchObject({
+            provider: "vercel",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            cost: {
+                promptTextTokens: 0,
+                promptCachedTokens: 0,
+                completionTextTokens: 0,
+            },
+        });
+        expect(findModelByName(route)?.config()).toMatchObject({
+            model: primary,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        });
+        expect(getVisibleTextModels()).not.toContain(route);
+    });
+
     it("uses the same primary and single fallback for both API formats", () => {
         const primary = "meta/llama-4-scout";
         const novita = `${primary}:openrouter:novita-bf16`;

@@ -775,7 +775,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
+                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Agents report each tool they run on the server as an `mcp_call` item with its result, and return caller-supplied function calls for the client to execute. To continue, send the output items back as input, adding a function_call_output for each function call. Caller tool names must not start with mcp__; tool_choice supports only auto.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",

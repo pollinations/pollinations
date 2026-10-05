@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { McpCallError } from "./function-items.ts";
 
 const SafeMcpPartSchema = z.union([
     z.object({ type: z.literal("text"), text: z.string() }),
@@ -75,4 +76,22 @@ export function safeMcpModelOutput({ output }: { output: unknown }) {
               type: "text" as const,
               value: "Tool completed without text or linked output.",
           };
+}
+
+/** Keep Chat rendering and model-visible replay consistent with structured errors. */
+export function mcpErrorText(error: McpCallError): string {
+    if (error.type !== "mcp_tool_execution_error") return error.message;
+    const content = error.content;
+    if (
+        content &&
+        typeof content === "object" &&
+        "content" in content &&
+        Array.isArray(content.content)
+    ) {
+        const output = safeMcpModelOutput({ output: content });
+        return output.type === "text"
+            ? output.value
+            : output.value.map((part) => part.text).join("\n");
+    }
+    return typeof content === "string" ? content : JSON.stringify(content);
 }

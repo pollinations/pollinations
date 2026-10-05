@@ -1,3 +1,4 @@
+import { isBlockedHostname } from "@shared/community-endpoint-urls.ts";
 import { z } from "zod";
 
 // Experimental OCR API exposed at `/alpha/ocr`. The request and response
@@ -7,11 +8,29 @@ import { z } from "zod";
 const OcrDocumentUrlSchema = z
     .object({
         type: z.literal("document_url"),
-        document_url: z.string().url().meta({
-            description:
-                "URL of the document to process (PDF or image). Must be reachable by the upstream.",
-            example: "https://example.com/invoice.pdf",
-        }),
+        document_url: z
+            .string()
+            .url()
+            .refine(
+                (value) => {
+                    const url = new URL(value);
+                    return (
+                        url.protocol === "https:" &&
+                        !url.username &&
+                        !url.password &&
+                        !isBlockedHostname(url.hostname)
+                    );
+                },
+                {
+                    message:
+                        "document_url must be a public https URL without credentials",
+                },
+            )
+            .meta({
+                description:
+                    "Public https URL of the document to process (PDF or image). The URL is fetched by the upstream, so private hosts and embedded credentials are rejected.",
+                example: "https://example.com/invoice.pdf",
+            }),
     })
     .meta({ description: "Document referenced by URL." });
 

@@ -15,7 +15,7 @@ import {
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { textCache } from "@/middleware/text-cache.ts";
+import { perRequestTextCache, textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import { generateOcrResponse } from "@/ocr/handler.ts";
 import {
@@ -875,7 +875,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Extract structured content from documents and images and get Markdown with layout and bounding boxes for embedded images. The request and response follow Mistral's OCR API, but `/alpha/ocr` is experimental and may change without a version bump.",
                 "",
-                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64. The URL must be reachable by the upstream.",
+                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64. `document_url` must be a public https URL that the upstream can fetch; private hosts and embedded credentials are rejected.",
                 "",
                 "**Models:** `mistral-ocr` is the only listing today. Defaults to `mistral-ocr`.",
                 "",
@@ -898,7 +898,7 @@ export const proxyRoutes = new Hono<Env>()
         resolveModel("generate.ocr", { supportedEndpoint: "/alpha/ocr" }),
         track("generate.ocr"),
         prepareGenerationRequest,
-        textCache,
+        perRequestTextCache,
         every(generationAccess, deduplicateGeneration),
         apiKeyBudgetReservation,
         generateOcrResponse,

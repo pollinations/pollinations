@@ -74,3 +74,15 @@ const textCacheAdapter: GenerationCacheAdapter = {
 export const textCache = createGenerationCache(textCacheAdapter);
 export const textExecutionCache =
     createGenerationExecutionCache(textCacheAdapter);
+
+// Routes whose request body does not describe the fetched resource must never
+// serve a stored response: an OCR body carries a document_url, so the same key
+// would replay a document that has since changed — or one caller's signed URL.
+// The cache still carries the detached execution's result back to its caller,
+// so only the key is request-scoped: written once, read back by that request,
+// never matched again.
+export const perRequestTextCache = createGenerationCache({
+    ...textCacheAdapter,
+    getKey: async (c) =>
+        `${await textCacheAdapter.getKey(c)}:${c.get("requestId")}`,
+});

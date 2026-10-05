@@ -8,7 +8,7 @@ Extract structured content from documents and images. Returns Markdown with layo
 |----------|-------------|
 | `POST /alpha/ocr` | Document in, structured Markdown out |
 
-**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). The URL must be reachable by the upstream provider. Set `include_image_base64: true` to embed extracted images as base64 in `pages[].images[].image_base64`. Use `pages` to restrict processing to specific 0-based page indices.
+**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). `document_url` must be a public https URL that the upstream provider fetches; private hosts and embedded credentials are rejected. Every request re-reads the document — an OCR response is stored only for the request that produced it and is never served to a later request. Set `include_image_base64: true` to embed extracted images as base64 in `pages[].images[].image_base64`. Use `pages` to restrict processing to specific 0-based page indices.
 
 **Output:** `pages[]` carries the page `index`, `markdown`, detected `images` (with `top_left_x/y` and `bottom_right_x/y` bounding boxes), and `dimensions`. `usage_info` reports `pages_processed` and `doc_size_bytes`.
 

@@ -142,6 +142,109 @@ describe("POST /alpha/ocr", () => {
         );
     });
 
+    it.each([
+        ["a non-https scheme", "http://example.com/invoice.pdf"],
+        ["a file scheme", "file:///etc/passwd"],
+        ["a private host", "https://169.254.169.254/latest/meta-data"],
+        ["embedded credentials", "https://user:pass@example.com/invoice.pdf"],
+    ])("rejects document_url with %s", async (_label, documentUrl) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 0 },
+        });
+        const before = await getUserBalance(db, caller.userId);
+        const upstream = vi.fn(async () => Response.json(OCR_RESPONSE));
+        vi.stubGlobal("fetch", upstream);
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/alpha/ocr", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    document: {
+                        type: "document_url",
+                        document_url: documentUrl,
+                    },
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(400);
+        expect(upstream).not.toHaveBeenCalled();
+        expect(await getUserBalance(db, caller.userId)).toEqual(before);
+    });
+
+    it("re-runs the upstream for an identical request instead of serving a stored response", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 1, packBalance: 0 },
+        });
+        const before = await getUserBalance(db, caller.userId);
+        const changedResponse = {
+            ...OCR_RESPONSE,
+            pages: OCR_RESPONSE.pages.map((page) => ({
+                ...page,
+                markdown: "Invoice #42\nTotal: $999",
+            })),
+            usage_info: { pages_processed: 1 },
+        };
+        const upstreamResponses = [OCR_RESPONSE, changedResponse];
+        let upstreamCalls = 0;
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === MISTRAL_OCR_URL) {
+                    const next =
+                        upstreamResponses[
+                            Math.min(
+                                upstreamCalls,
+                                upstreamResponses.length - 1,
+                            )
+                        ];
+                    upstreamCalls += 1;
+                    return Response.json(next);
+                }
+                if (request.url.startsWith("http://localhost:7181/")) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const send = () =>
+            fetchGen(
+                new Request("https://gen.pollinations.ai/alpha/ocr", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        document: {
+                            type: "document_url",
+                            document_url: "https://example.com/invoice.pdf",
+                        },
+                    }),
+                }),
+            );
+
+        const first = await send();
+        const second = await send();
+
+        expect(first.status).toBe(200);
+        expect(await first.json()).toEqual(OCR_RESPONSE);
+        expect(second.status).toBe(200);
+        expect(await second.json()).toEqual(changedResponse);
+        expect(upstreamCalls).toBe(2);
+        expect(
+            before.tierBalance -
+                (await getUserBalance(db, caller.userId)).tierBalance,
+        ).toBeCloseTo((PAGES_PROCESSED + 1) * PRICE_PER_PAGE, 10);
+    });
+
     it("charges nothing when the upstream provider fails", async () => {
         const caller = await createTestApiKey({
             user: { tierBalance: 1, packBalance: 0 },

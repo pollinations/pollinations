@@ -8,6 +8,7 @@ import {
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
     mapOpenRouterGeminiImageUsage,
 } from "../../src/image/models/openRouterImageModel.ts";
@@ -396,6 +397,160 @@ describe("OpenRouter FLUX.2 Max", () => {
             status: 400,
             message: "FLUX.2 Max supports at most 8 reference images",
         });
+    });
+});
+
+describe("OpenRouter Seedream 5.0 Flash", () => {
+    const flashParams: ImageParams = {
+        ...baseParams,
+        model: "bytedance/seedream-5.0-flash",
+    };
+
+    function setEnvAndMock(
+        requests: Record<string, unknown>[],
+        usage: { cost?: number } | null = { cost: 0.018 },
+    ) {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        return vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                const href = typeof url === "string" ? url : url.toString();
+                if (href === REFERENCE_IMAGE_URL) {
+                    return new Response(PNG, {
+                        headers: { "Content-Type": "image/png" },
+                    });
+                }
+                if (href !== OPENROUTER_IMAGE_URL) {
+                    return new Response("unexpected URL", { status: 404 });
+                }
+                requests.push(
+                    JSON.parse(init?.body as string) as Record<string, unknown>,
+                );
+                return Response.json({
+                    data: [{ b64_json: PNG.toString("base64") }],
+                    usage: usage ?? undefined,
+                });
+            });
+    }
+
+    it("maps size, resolution and references to the OpenRouter request", async () => {
+        const requests: Record<string, unknown>[] = [];
+        setEnvAndMock(requests);
+
+        const result = await callOpenRouterSeedreamFlashAPI("test prompt", {
+            ...flashParams,
+            width: 720,
+            height: 1280,
+            resolution: "2k",
+            image: [REFERENCE_IMAGE_URL],
+        });
+
+        expect(requests[0]).toEqual({
+            model: "bytedance-seed/seedream-5-0-flash",
+            prompt: "test prompt",
+            n: 1,
+            seed: 42,
+            resolution: "2K",
+            aspect_ratio: "9:16",
+            provider: { only: ["seed"], allow_fallbacks: false },
+            input_references: [
+                { type: "image_url", image_url: { url: PNG_DATA_URI } },
+            ],
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "bytedance/seedream-5.0-flash",
+            providerBilling: { units: 0.018, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
+    it("defaults to 1K and a square image", async () => {
+        const requests: Record<string, unknown>[] = [];
+        setEnvAndMock(requests);
+
+        await callOpenRouterSeedreamFlashAPI("test prompt", flashParams);
+
+        expect(requests[0]).toMatchObject({
+            resolution: "1K",
+            aspect_ratio: "1:1",
+        });
+    });
+
+    it("honors the explicit aspect ratio ahead of dimensions", async () => {
+        const requests: Record<string, unknown>[] = [];
+        setEnvAndMock(requests);
+
+        await callOpenRouterSeedreamFlashAPI("test prompt", {
+            ...flashParams,
+            aspectRatio: "16:9",
+            width: 720,
+            height: 1280,
+        });
+
+        expect(requests[0].aspect_ratio).toBe("16:9");
+    });
+
+    it("maps adaptive aspect ratio to the provider's auto mode", async () => {
+        const requests: Record<string, unknown>[] = [];
+        setEnvAndMock(requests);
+
+        await callOpenRouterSeedreamFlashAPI("test prompt", {
+            ...flashParams,
+            aspectRatio: "adaptive",
+        });
+
+        expect(requests[0].aspect_ratio).toBe("auto");
+    });
+
+    it("preserves the provider receipt when it differs from the listed rate", async () => {
+        setEnvAndMock([], { cost: 0.027 });
+
+        const result = await callOpenRouterSeedreamFlashAPI(
+            "test prompt",
+            flashParams,
+        );
+
+        expect(result.trackingData.providerBilling).toEqual({
+            units: 0.027,
+            unitCost: 1.055,
+        });
+    });
+
+    it.each([
+        null,
+        { cost: 0 },
+        { cost: -0.018 },
+        { cost: Infinity },
+    ])("rejects an invalid provider receipt: %j", async (usage) => {
+        setEnvAndMock([], usage);
+
+        await expect(
+            callOpenRouterSeedreamFlashAPI("test prompt", flashParams),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("accepts ten reference images", async () => {
+        const requests: Record<string, unknown>[] = [];
+        setEnvAndMock(requests);
+
+        await callOpenRouterSeedreamFlashAPI("test prompt", {
+            ...flashParams,
+            image: Array(10).fill(REFERENCE_IMAGE_URL),
+        });
+
+        expect(requests[0].input_references).toHaveLength(10);
+    });
+
+    it("rejects more than ten reference images", async () => {
+        await expect(
+            callOpenRouterSeedreamFlashAPI("test prompt", {
+                ...flashParams,
+                image: Array(11).fill("https://example.com/ref.png"),
+            }),
+        ).rejects.toMatchObject({ status: 400 });
     });
 });
 

@@ -9,7 +9,14 @@ import { dayKey } from "./analyze.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const RESERVATION = 0.1222; // Ten minutes of VM compute + 0.1 Pollen assessment.
 const STATE_FILE =
-    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|notified\.json|pilot\.json|report\.(json|html)|verification\.json)$/;
+    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|pending\.json|notified\.json|pilot\.json|report\.(json|html)|verification\.json)$/;
+
+export function recordCompletion(pilot, report) {
+    if (!["complete", "not_needed"].includes(report.assessment.status))
+        throw new Error("Assessment incomplete; source evidence saved");
+    pilot.days = [...new Set([...pilot.days, dayKey(report.at)])];
+    pilot.status = "observing";
+}
 
 export function pilotDecision(pilot, at = new Date().toISOString()) {
     const today = dayKey(at);

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { dayKey } from "./analyze.mjs";
 import { sourceBundle } from "./bundle.mjs";
-import { pilotDecision, stateFiles } from "./state.mjs";
+import { pilotDecision, recordCompletion, stateFiles } from "./state.mjs";
 
 test("VM bundle runs without a checkout or installed dependencies", async () => {
     const { code, manifest } = await sourceBundle();
@@ -50,6 +50,19 @@ test("Pilot stops after 14 Berlin calendar days, including the DST change", () =
     assert.throws(() => pilotDecision({ ...pilot, startedDay: "invalid" }));
 });
 
+test("Failed assessment leaves today runnable; completion stops further paid work", () => {
+    const at = "2026-10-05T06:00:00Z";
+    const pilot = { startedDay: dayKey(at), days: [], spentPollen: 0.02 };
+    const report = { at, assessment: { status: "failed" } };
+    assert.throws(() => recordCompletion(pilot, report));
+    assert.equal(pilotDecision(pilot, at), "run");
+    assert.deepEqual(pilot.days, []);
+    report.assessment.status = "complete";
+    recordCompletion(pilot, report);
+    assert.equal(pilotDecision(pilot, at), "already_recorded");
+    assert.equal(pilot.spentPollen, 0.02);
+});
+
 test("State retains the 14 pilot snapshots and omits credential files and locks", async () => {
     const directory = await mkdtemp(
         join(tmpdir(), "model-manager-state-test-"),
@@ -66,18 +79,23 @@ test("State retains the 14 pilot snapshots and omits credential files and locks"
         }
         await writeFile(join(directory, "notified.json"), "{}");
         await writeFile(
+            join(directory, "pending.json"),
+            '[{"fingerprint":"unselected"}]',
+        );
+        await writeFile(
             join(directory, "prod.vars.json"),
             "fake credential fixture",
         );
         await writeFile(join(directory, "run.lock"), "lock");
         await writeFile(join(directory, "report.md"), "Previous run summary");
         const files = await stateFiles(directory);
-        assert.equal(Object.keys(files).length, 15);
+        assert.equal(Object.keys(files).length, 16);
         assert.equal(files["snapshot-2026-01-01.json"], undefined);
         assert.equal(files["prod.vars.json"], undefined);
         assert.equal(files["run.lock"], undefined);
         assert.equal(files["report.md"], undefined);
         assert.equal(files["notified.json"], "{}");
+        assert.equal(files["pending.json"], '[{"fingerprint":"unselected"}]');
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

@@ -6,7 +6,12 @@ import { parseArgs } from "node:util";
 import { CommandExitError, Sandbox } from "e2b";
 import { dayKey } from "./analyze.mjs";
 import { sourceBundle } from "./bundle.mjs";
-import { pilotDecision, RESERVATION, stateFiles } from "./state.mjs";
+import {
+    pilotDecision,
+    RESERVATION,
+    recordCompletion,
+    stateFiles,
+} from "./state.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -97,6 +102,26 @@ async function command(stage, commandText, options = {}, acceptable = [0]) {
     if (!acceptable.includes(result.exitCode))
         throw new Error(`${stage} failed with exit ${result.exitCode}`);
     console.log(`${stage}: exit ${result.exitCode}`);
+}
+
+async function exportReport() {
+    const reportText = await sandbox.files.read(`${REMOTE}/data/report.json`);
+    const report = JSON.parse(reportText);
+    for (const name of [
+        "report.json",
+        "report.html",
+        "report.md",
+        "notified.json",
+        "pending.json",
+        `snapshot-${dayKey(report.at)}.json`,
+    ])
+        await save(
+            name,
+            name === "report.json"
+                ? reportText
+                : await sandbox.files.read(`${REMOTE}/data/${name}`),
+        );
+    return report;
 }
 
 try {
@@ -196,50 +221,51 @@ try {
             `echo '${source.manifest.bundleSha256}  run.mjs' | sha256sum -c - && node --version`,
         );
         const history = await stateFiles(out);
+        const previousReport = history["report.json"]
+            ? JSON.parse(history["report.json"])
+            : null;
+        const resume =
+            previousReport?.assessmentInput &&
+            dayKey(previousReport.at) === dayKey(proof.startedAt);
         proof.restoredSnapshotDays = Object.keys(history).filter((name) =>
             name.startsWith("snapshot-"),
         ).length;
         for (const [name, content] of Object.entries(history))
-            if (name.startsWith("snapshot-") || name === "notified.json")
+            if (
+                name.startsWith("snapshot-") ||
+                ["notified.json", "pending.json"].includes(name) ||
+                (resume && name === "report.json")
+            )
                 await sandbox.files.write(`${REMOTE}/data/${name}`, content);
-        await command(
-            "api-scan",
-            "node run.mjs --out /home/user/model-manager/data --assess",
-            {
-                envs: {
-                    [FIELD]: token,
-                    REPLICATE_API_TOKEN: replicate,
-                    MODEL_MANAGER_REPOSITORY_REVISION: source.manifest.revision,
-                    MODEL_MANAGER_SANDBOX_ID: sandbox.sandboxId,
-                },
+        const options = {
+            envs: {
+                [FIELD]: token,
+                REPLICATE_API_TOKEN: replicate,
+                MODEL_MANAGER_REPOSITORY_REVISION: source.manifest.revision,
+                MODEL_MANAGER_SANDBOX_ID: sandbox.sandboxId,
             },
+        };
+        if (!resume) {
+            await command(
+                "api-scan",
+                "node run.mjs --out /home/user/model-manager/data",
+                options,
+                [0, 2],
+            );
+            await exportReport(); // Preserve successful providers before inference.
+        }
+        proof.resumedAssessment = !!resume;
+        await command(
+            "assessment",
+            "node run.mjs --out /home/user/model-manager/data --assess-only",
+            options,
             [0, 2],
         );
-        const reportText = await sandbox.files.read(
-            `${REMOTE}/data/report.json`,
-        );
-        const report = JSON.parse(reportText);
-        const snapshot = `snapshot-${dayKey(report.at)}.json`;
-        for (const name of [
-            "report.json",
-            "report.html",
-            "report.md",
-            "notified.json",
-            snapshot,
-        ])
-            await save(
-                name,
-                name === "report.json"
-                    ? reportText
-                    : await sandbox.files.read(`${REMOTE}/data/${name}`),
-            );
-        pilot.days = [...new Set([...pilot.days, dayKey(report.at)])];
-        pilot.status = "observing";
+        const report = await exportReport();
         proof.coverageGaps = report.gaps.length;
         proof.findings = report.findings.length;
         proof.assessment = report.assessment.status;
-        if (!["complete", "not_needed"].includes(report.assessment.status))
-            throw new Error("Assessment incomplete; source evidence saved");
+        recordCompletion(pilot, report);
         proof.status = report.gaps.length ? "saved_with_source_gaps" : "saved";
         console.log(
             `Saved report: ${report.findings.length} leads, ${report.gaps.length} coverage gaps`,

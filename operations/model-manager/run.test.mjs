@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createServer } from "node:http";
 import { test } from "node:test";
 import {
     ASSESSMENT_MODEL,
@@ -10,20 +11,150 @@ import {
     comparePublicPricing,
     dayKey,
     historySnapshot,
+    pendingFindings,
     reportDigest,
     reportHtml,
     reportIssue,
+    researchEvidence,
     runRates,
+    settleAssessment,
     textAssessmentCost,
     trendReasons,
 } from "./analyze.mjs";
-import { nextPage, rows } from "./collectors.mjs";
+import { nextPage, query, request, rows } from "./collectors.mjs";
 
 const day = (at, model) => ({
     at,
     sources: [{ source: "replicate", observations: [model] }],
 });
 const trend = (rank, task = null) => ({ kind: "trending", rank, task });
+
+test("Failed batches remain pending; successful batches settle only their five selected leads", () => {
+    const at = "2026-10-05T06:00:00Z";
+    const snapshot = {
+        at,
+        registry: [],
+        liveCatalog: [],
+        sources: [
+            {
+                source: "huggingface",
+                observations: Array.from({ length: 7 }, (_, i) => ({
+                    id: `lab/${i}`,
+                    task: "text-generation",
+                    signals: [trend(1)],
+                })),
+            },
+        ],
+    };
+    const findings = analyze(snapshot, [], {});
+    const pending = pendingFindings([], findings, at);
+    const report = {
+        ...snapshot,
+        revision: "test",
+        findings: pending,
+        gaps: [],
+        assessment: { status: "failed" },
+    };
+    report.assessmentInput = researchEvidence(report);
+    const original = JSON.stringify(report.assessmentInput);
+    assert.equal(report.assessmentInput.findings.length, 5);
+    assert.deepEqual(settleAssessment(pending, report, {}), {
+        pending,
+        notified: {},
+    });
+    report.assessment.status = "complete";
+    const settled = settleAssessment(pending, report, {});
+    assert.equal(settled.pending.length, 2);
+    assert.equal(Object.keys(settled.notified).length, 5);
+    const tomorrow = { ...snapshot, at: "2026-10-06T06:00:00Z", sources: [] };
+    assert.equal(analyze(tomorrow, [snapshot], settled.notified).length, 0);
+    assert.deepEqual(
+        pendingFindings(settled.pending, [], tomorrow.at),
+        settled.pending,
+    );
+    assert.equal(JSON.stringify(report.assessmentInput), original);
+});
+
+test("Research evidence supplies only a bounded relevant checkout inventory", () => {
+    const report = {
+        at: "2026-10-05T06:00:00Z",
+        revision: "test",
+        sources: [],
+        gaps: Array.from({ length: 300 }, () => ({
+            source: "replicate",
+            label: "watchlist",
+            status: "unavailable",
+            error: "Source time budget exceeded",
+        })),
+        findings: [
+            { newFinding: true, id: "lab/new", task: "text-generation" },
+        ],
+        registry: Array.from({ length: 20 }, (_, i) => ({
+            name: `existing-${i}`,
+            hidden: i === 0,
+            public: {
+                category: i === 1 ? "image" : "text",
+                description: "capability ".repeat(40),
+                capabilities: ["tools"],
+            },
+        })),
+    };
+    const input = researchEvidence(report);
+    assert.equal(input.findings.length, 1);
+    assert.equal(input.gaps[0].count, 300);
+    assert.equal(input.gaps[0].examples.length, 3);
+    assert.ok(Buffer.byteLength(JSON.stringify(input)) < 12000);
+    assert.equal(input.inventory.length, 6);
+    assert.ok(
+        input.inventory.every(
+            (m) =>
+                m.category === "text" &&
+                m.id !== "existing-0" &&
+                m.description.length <= 160,
+        ),
+    );
+    report.findings[0].task = "unknown";
+    assert.equal(researchEvidence(report).inventory.length, 0);
+});
+
+test("Source deadline cancels a stalled response body, preserves observations and skips further requests", async () => {
+    let requests = 0;
+    const server = createServer((req, res) => {
+        requests++;
+        res.setHeader("content-type", "application/json");
+        if (req.url === "/stall") res.write('{"items":');
+        else res.end('{"items":[{"id":"available", "signals":[]}]}');
+    });
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const url = `http://127.0.0.1:${server.address().port}`;
+    const source = {
+        observations: [],
+        queries: [],
+        signal: AbortSignal.timeout(200),
+    };
+    const load = async (path) =>
+        JSON.parse((await request(`${url}${path}`, {}, source.signal)).text);
+    try {
+        await query(source, "fast", `${url}/fast`, () => load("/fast"));
+        await query(source, "stalled", `${url}/stall`, () => load("/stall"));
+        await query(source, "skipped", `${url}/skip`, () => load("/skip"));
+        assert.equal(requests, 2);
+        assert.equal(source.observations.length, 1);
+        assert.deepEqual(
+            source.queries.map((q) => q.status),
+            ["complete", "unavailable", "unavailable"],
+        );
+        assert.equal(source.queries[1].error, "Source time budget exceeded");
+        const other = { observations: [], queries: [] };
+        await query(other, "healthy", `${url}/fast`, async () =>
+            JSON.parse((await request(`${url}/fast`)).text),
+        );
+        assert.equal(other.observations.length, 1);
+    } finally {
+        server.closeAllConnections();
+        await new Promise((resolve) => server.close(resolve));
+    }
+});
 
 test("Hosted assessment ignores caller overrides and rejects oversized or invalid evidence", () => {
     const input = JSON.stringify({

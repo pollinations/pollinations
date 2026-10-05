@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { HF_TASKS } from "./collectors.mjs";
 
 const DAY = 86400_000;
 export const dayKey = (at) =>
@@ -8,6 +9,114 @@ export const dayKey = (at) =>
         month: "2-digit",
         day: "2-digit",
     }).format(new Date(at));
+
+export function pendingFindings(pending, findings, at) {
+    const priority = [
+        "retirement_review",
+        "pricing_review",
+        "model_review",
+        "sourcing_lead",
+        "investigate",
+        "lifecycle_lead",
+    ];
+    return [
+        ...new Map(
+            [
+                ...pending,
+                ...findings
+                    .filter((f) => f.newFinding)
+                    .map((f) => ({ ...f, observedAt: at })),
+            ].map((f) => [f.fingerprint, f]),
+        ).values(),
+    ].sort((a, b) => priority.indexOf(a.kind) - priority.indexOf(b.kind));
+}
+
+export function researchEvidence(report) {
+    const findings = report.findings.filter((f) => f.newFinding).slice(0, 5);
+    const categories = new Set(
+        findings.flatMap((f) => {
+            const own = report.registry.find((m) => m.name === f.id)?.public
+                .category;
+            const upstream = report.sources
+                .find((s) => s.source === f.source)
+                ?.observations.find((m) => m.id === f.id);
+            return own
+                ? [own]
+                : Object.entries(HF_TASKS)
+                      .filter(
+                          ([category, tasks]) =>
+                              tasks.includes(f.task) ||
+                              tasks.includes(upstream?.task) ||
+                              upstream?.outputModalities?.includes(
+                                  category === "embedding"
+                                      ? "embeddings"
+                                      : category,
+                              ),
+                      )
+                      .map(([category]) => category);
+        }),
+    );
+    const inventory = [...categories]
+        .flatMap((category) =>
+            report.registry
+                .filter(
+                    (m) =>
+                        !m.hidden &&
+                        !m.fallbackOnly &&
+                        m.public.category === category,
+                )
+                .slice(0, 6)
+                .map((m) => ({
+                    id: m.name,
+                    category,
+                    description: m.public.description?.slice(0, 160),
+                    capabilities: m.public.capabilities?.slice(0, 8),
+                })),
+        )
+        .slice(0, 12);
+    return {
+        at: report.at,
+        revision: report.revision,
+        findings: findings.map((f) => ({
+            ...f,
+            description: f.description?.slice(0, 600),
+        })),
+        inventory,
+        inventoryCoverage:
+            "Limited checkout inventory for mapped categories; advertised capabilities, not verified equivalence. Unmapped categories have no supplied alternatives.",
+        gaps: [...new Set(report.gaps.map((g) => g.source))].map((source) => {
+            const gaps = report.gaps.filter((g) => g.source === source);
+            return {
+                source,
+                count: gaps.length,
+                examples: gaps
+                    .slice(0, 3)
+                    .map(({ label, status, error, count }) => ({
+                        label,
+                        status,
+                        error,
+                        count,
+                    })),
+            };
+        }),
+    };
+}
+
+export function settleAssessment(pending, report, notified) {
+    if (report.assessment.status !== "complete") return { pending, notified };
+    const completed = new Set(
+        report.assessmentInput.findings.map((f) => f.fingerprint),
+    );
+    return {
+        pending: pending.filter((f) => !completed.has(f.fingerprint)),
+        notified: {
+            ...notified,
+            ...Object.fromEntries(
+                [...completed].map((fingerprint) => [fingerprint, report.at]),
+            ),
+        },
+    };
+}
 
 export function textAssessmentCost(model, inputBytes, maxOutput = 1200) {
     if (
@@ -401,7 +510,7 @@ export function reportDigest(report) {
                 `<li>${escapeHtml(gap.source)} · ${escapeHtml(gap.label ?? "query")} · ${escapeHtml(gap.status)}</li>`,
         )
         .join("");
-    return `## Model manager · report-only\n\n<p>${escapeHtml(report.at)} · New leads: ${fresh.length} · Already recorded: ${report.findings.length - fresh.length} · Coverage gaps: ${report.gaps.length}.</p>\n\n### Next investigations (up to five)\n\n<ul>${leads || "<li>No new leads.</li>"}</ul>\n\n### Source coverage\n\n<ul>${coverage}${gaps}</ul>\n\nDiscovery evidence only. Capabilities, exact provider routes, billing correctness and retirement notices still need verification.\n`;
+    return `## Model manager · report-only\n\n<p>${escapeHtml(report.at)} · New leads: ${fresh.length} · Already recorded: ${report.findings.length - fresh.length} · Coverage gaps: ${report.gaps.length} · Pending after this run: ${report.pendingCount ?? 0}.</p>\n\n### Next investigations (up to five)\n\n<ul>${leads || "<li>No new leads.</li>"}</ul>\n\n### Source coverage\n\n<ul>${coverage}${gaps}</ul>\n\nDiscovery evidence only. Capabilities, exact provider routes, billing correctness and retirement notices still need verification.\n`;
 }
 
 export function reportIssue(report) {

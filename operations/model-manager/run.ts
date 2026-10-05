@@ -17,8 +17,11 @@ import {
     analyze,
     dayKey,
     historySnapshot,
+    pendingFindings,
     reportDigest,
     reportHtml,
+    researchEvidence,
+    settleAssessment,
     textAssessmentCost,
 } from "./analyze.mjs";
 import {
@@ -39,6 +42,7 @@ const { values } = parseArgs({
         out: { type: "string", default: join(HERE, "data") },
         secrets: { type: "string" },
         assess: { type: "boolean", default: false },
+        "assess-only": { type: "boolean", default: false },
         model: {
             type: "string",
             default: "community/pollinations-ai/model-manager-agent",
@@ -49,7 +53,7 @@ const { values } = parseArgs({
 
 if (values.help) {
     console.log(
-        `Report-only model manager. Options: [--out /absolute/path] [--secrets /absolute/encrypted.json] [--assess] [--model public-id]\n\nPublic collection needs no Pollinations key. --assess reads POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER from the environment or supplied SOPS file, verifies the agent account, and makes one bounded inference call only when there are new leads. Provider read-only access uses existing REPLICATE_API_TOKEN from the same sources. Cloud launchers inject only the required runtime environment variables into the VM. No keys are created or changed.\nExit 2 means a report was saved with incomplete source coverage.`,
+        `Report-only model manager. Options: [--out /absolute/path] [--secrets /absolute/encrypted.json] [--assess | --assess-only] [--model public-id]\n\nPublic collection needs no Pollinations key. --assess collects and assesses; --assess-only resumes the saved batch without collection. Both read POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER from the environment or supplied SOPS file, verify the agent account, and make one bounded inference call only when leads are pending. Provider read-only access uses existing REPLICATE_API_TOKEN from the same sources. Cloud launchers inject only the required runtime environment variables into the VM. No keys are created or changed.\nExit 2 means a report was saved with incomplete source coverage.`,
     );
     process.exit(0);
 }
@@ -80,6 +84,7 @@ async function assessment(report: {
     liveCatalog: ModelInfo[];
     findings: ReturnType<typeof analyze>;
     gaps: unknown[];
+    assessmentInput: ReturnType<typeof researchEvidence>;
 }) {
     if (!report.findings.some((finding) => finding.newFinding))
         return { status: "not_needed", reason: "No new leads to assess" };
@@ -115,12 +120,7 @@ async function assessment(report: {
                 status: "blocked_access",
                 reason: "Private model-manager agent is not available to this key",
             };
-        const evidence = JSON.stringify({
-            at: report.at,
-            revision: report.revision,
-            findings: report.findings.filter((f) => f.newFinding).slice(0, 5),
-            gaps: report.gaps,
-        });
+        const evidence = JSON.stringify(report.assessmentInput);
         if (Buffer.byteLength(evidence) > 12000)
             return {
                 status: "blocked_budget",
@@ -189,9 +189,55 @@ async function assessment(report: {
     }
 }
 
+async function persistReport(out, report, pending, notified) {
+    const settled = settleAssessment(pending, report, notified);
+    report.pendingCount = settled.pending.length;
+    // Save the completed response first; an interrupted local write can be
+    // settled again without repeating inference.
+    await save(join(out, "report.json"), JSON.stringify(report, null, 2));
+    await save(join(out, "pending.json"), JSON.stringify(settled.pending));
+    await save(join(out, "notified.json"), JSON.stringify(settled.notified));
+    await save(join(out, "report.html"), reportHtml(report));
+    await save(join(out, "report.md"), reportDigest(report));
+    console.log(
+        `Saved ${report.findings.length} research findings; ${report.pendingCount} pending`,
+    );
+    if (report.gaps.length) process.exitCode = 2;
+}
+
+async function assessReport(report) {
+    if (["complete", "not_needed"].includes(report.assessment.status)) return;
+    report.gaps = report.gaps.filter((gap) => gap.source !== "assessment");
+    report.assessment = await assessment(report);
+    if (
+        ["failed", "blocked_access", "blocked_budget"].includes(
+            report.assessment.status,
+        )
+    )
+        report.gaps.push({ source: "assessment", ...report.assessment });
+}
+
 async function main() {
     const out = resolve(values.out);
     await mkdir(out, { recursive: true, mode: 0o700 });
+    async function readState(name, fallback) {
+        try {
+            return JSON.parse(await readFile(join(out, name), "utf8"));
+        } catch (error) {
+            if (error.code !== "ENOENT") throw error;
+            return fallback;
+        }
+    }
+    const notified = await readState("notified.json", {});
+    const pending = await readState("pending.json", []);
+    if (values["assess-only"]) {
+        const report = await readState("report.json", null);
+        if (!report?.assessmentInput)
+            throw new Error("No saved research batch to assess");
+        await assessReport(report);
+        await persistReport(out, report, pending, notified);
+        return;
+    }
     const history = [];
     for (const name of (await readdir(out))
         .filter((name) => /^snapshot-\d{4}-\d{2}-\d{2}\.json$/.test(name))
@@ -201,14 +247,6 @@ async function main() {
     const at = new Date().toISOString();
     // Same-day retries replace the snapshot, never count as another daily trend observation.
     const previousDays = history.filter((day) => dayKey(day.at) !== dayKey(at));
-    let notified = {};
-    try {
-        notified = JSON.parse(
-            await readFile(join(out, "notified.json"), "utf8"),
-        );
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    }
     const registry = getModels().map((name) => {
         const model = getRegistryModelDefinition(name);
         return {
@@ -261,9 +299,7 @@ async function main() {
             .map((q) => ({ source: s.source, ...q })),
     );
     try {
-        const token = values.assess
-            ? credential("POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER")
-            : undefined;
+        const token = credential("POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER");
         liveCatalog = rows(
             JSON.parse(
                 (
@@ -295,48 +331,33 @@ async function main() {
         liveCatalog,
         sources,
     };
-    const priority = [
-        "retirement_review",
-        "pricing_review",
-        "model_review",
-        "sourcing_lead",
-        "investigate",
-        "lifecycle_lead",
-    ];
-    const findings = analyze(snapshot, previousDays, notified).sort(
-        (a, b) => priority.indexOf(a.kind) - priority.indexOf(b.kind),
-    );
+    const findings = analyze(snapshot, previousDays, notified);
+    const waiting = pendingFindings(pending, findings, at);
+    const waitingIds = new Set(waiting.map((f) => f.fingerprint));
     const report = {
         ...snapshot,
-        findings,
+        findings: [
+            ...waiting,
+            ...findings.filter((f) => !waitingIds.has(f.fingerprint)),
+        ],
         gaps,
         mode: "report_only",
         execution: process.env.MODEL_MANAGER_SANDBOX_ID
             ? `Pollinations VM ${process.env.MODEL_MANAGER_SANDBOX_ID}`
             : "local",
-        assessment: values.assess ? null : { status: "not_requested" },
+        assessment: { status: "not_requested" },
+        assessmentInput: null,
     };
-    if (values.assess) report.assessment = await assessment(report);
-    if (
-        ["failed", "blocked_access", "blocked_budget"].includes(
-            report.assessment.status,
-        )
-    )
-        gaps.push({ source: "assessment", ...report.assessment });
+    report.assessmentInput = researchEvidence(report);
     await save(
         join(out, `snapshot-${dayKey(at)}.json`),
         JSON.stringify(historySnapshot(snapshot)),
     );
-    await save(join(out, "report.json"), JSON.stringify(report, null, 2));
-    await save(join(out, "report.html"), reportHtml(report));
-    await save(join(out, "report.md"), reportDigest(report));
-    for (const finding of findings.filter((f) => f.newFinding))
-        notified[finding.fingerprint] = at;
-    await save(join(out, "notified.json"), JSON.stringify(notified));
-    console.log(
-        `Saved ${findings.length} research findings to ${join(out, "report.html")}`,
-    );
-    if (gaps.length) process.exitCode = 2;
+    await persistReport(out, report, waiting, notified);
+    if (values.assess) {
+        await assessReport(report);
+        await persistReport(out, report, waiting, notified);
+    }
 }
 
 main().catch((error) => {

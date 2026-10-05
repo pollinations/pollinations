@@ -2,10 +2,12 @@
 export const USER_AGENT =
     "Mozilla/5.0 (compatible; PollinationsModelManager/0.1)";
 
-export async function request(url, headers = {}) {
+export async function request(url, headers = {}, signal) {
     const response = await fetch(url, {
         headers: { "User-Agent": USER_AGENT, ...headers },
-        signal: AbortSignal.timeout(30_000),
+        signal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+            : AbortSignal.timeout(30_000),
         redirect: "error",
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -26,8 +28,8 @@ export async function request(url, headers = {}) {
     return { text, headers: response.headers };
 }
 
-async function json(url, headers) {
-    return JSON.parse((await request(url, headers)).text);
+async function json(url, headers, signal) {
+    return JSON.parse((await request(url, headers, signal)).text);
 }
 
 export function rows(data, key) {
@@ -46,8 +48,9 @@ export function nextPage(next, current) {
     return url.href;
 }
 
-async function query(source, label, url, load) {
+export async function query(source, label, url, load) {
     try {
+        source.signal?.throwIfAborted();
         const result = await load();
         for (const item of result.items) {
             if (typeof item.id !== "string" || !item.id)
@@ -75,17 +78,20 @@ async function query(source, label, url, load) {
             label,
             url,
             status: "unavailable",
-            error: error.message.startsWith("HTTP ")
-                ? error.message
-                : "Request failed or source schema changed",
+            error: source.signal?.aborted
+                ? "Source time budget exceeded"
+                : error.message.startsWith("HTTP ")
+                  ? error.message
+                  : "Request failed or source schema changed",
         });
     }
 }
 
 function finish(source) {
+    const { signal, ...result } = source;
     const complete = source.queries.every((q) => q.status === "complete");
     return {
-        ...source,
+        ...result,
         status: complete
             ? "complete"
             : source.observations.length
@@ -103,8 +109,17 @@ export const HF_TASKS = {
     "3d": ["image-to-3d", "text-to-3d"],
 };
 
-export async function huggingFace(categories, previousTime) {
-    const source = { source: "huggingface", observations: [], queries: [] };
+export async function huggingFace(
+    categories,
+    previousTime,
+    signal = AbortSignal.timeout(45_000),
+) {
+    const source = {
+        source: "huggingface",
+        observations: [],
+        queries: [],
+        signal,
+    };
     const tasks = [
         ...new Set(categories.flatMap((category) => HF_TASKS[category] ?? [])),
     ];
@@ -125,7 +140,7 @@ export async function huggingFace(categories, previousTime) {
         ])
             url.searchParams.append("expand[]", field);
         await query(source, task ?? "global", url.href, async () => ({
-            items: rows(await json(url)).map((m, i) => ({
+            items: rows(await json(url, {}, signal)).map((m, i) => ({
                 id: m.id,
                 url: `https://huggingface.co/${m.id}`,
                 task: m.pipeline_tag,
@@ -142,7 +157,7 @@ export async function huggingFace(categories, previousTime) {
     const url =
         "https://huggingface.co/api/models?sort=createdAt&direction=-1&limit=200&expand[]=createdAt&expand[]=pipeline_tag&expand[]=sha";
     await query(source, "newest", url, async () => {
-        const response = await request(url);
+        const response = await request(url, {}, signal);
         const list = rows(JSON.parse(response.text));
         const cutoff = previousTime
             ? Date.parse(previousTime) - 48 * 3600_000
@@ -166,16 +181,21 @@ export async function huggingFace(categories, previousTime) {
     return finish(source);
 }
 
-export async function openRouter() {
-    const source = { source: "openrouter", observations: [], queries: [] };
+export async function openRouter(signal = AbortSignal.timeout(45_000)) {
+    const source = {
+        source: "openrouter",
+        observations: [],
+        queries: [],
+        signal,
+    };
     for (const [label, suffix] of [
-        ["catalog", ""],
-        ["newest", "?sort=newest&limit=50"],
-        ["weekly", "?sort=top-weekly&limit=20"],
+        ["catalog", "?output_modalities=all"],
+        ["newest", "?output_modalities=all&sort=newest&limit=50"],
+        ["weekly", "?output_modalities=all&sort=top-weekly&limit=20"],
     ]) {
         const url = `https://openrouter.ai/api/v1/models${suffix}`;
         await query(source, label, url, async () => {
-            const data = await json(url);
+            const data = await json(url, {}, signal);
             const list = rows(data, "data");
             return {
                 partial: label === "catalog" && data.total_count > list.length,
@@ -200,14 +220,14 @@ export async function openRouter() {
     return finish(source);
 }
 
-export async function fal() {
-    const source = { source: "fal", observations: [], queries: [] };
+export async function fal(signal = AbortSignal.timeout(45_000)) {
+    const source = { source: "fal", observations: [], queries: [], signal };
     let url = "https://api.fal.ai/v1/models?limit=100";
     for (let page = 0; url && page < 20; page++) {
         let next = null;
         const current = url;
         await query(source, `catalog-${page + 1}`, current, async () => {
-            const data = await json(current);
+            const data = await json(current, {}, signal);
             if (data.has_more && !data.next_cursor)
                 throw new Error("Source pagination missing cursor");
             if (data.has_more) {
@@ -258,8 +278,17 @@ function replicateModel(m, signal) {
     };
 }
 
-export async function replicate(token, history) {
-    const source = { source: "replicate", observations: [], queries: [] };
+export async function replicate(
+    token,
+    history,
+    signal = AbortSignal.timeout(45_000),
+) {
+    const source = {
+        source: "replicate",
+        observations: [],
+        queries: [],
+        signal,
+    };
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     if (!token) {
         source.queries.push({
@@ -277,10 +306,12 @@ export async function replicate(token, history) {
     ]) {
         const url = `https://api.replicate.com/v1/collections/${slug}`;
         await query(source, `collection-${task}`, url, async () => ({
-            items: rows(await json(url, headers), "models").map((m) => ({
-                ...replicateModel(m, { kind: "collection", task }),
-                task,
-            })),
+            items: rows(await json(url, headers, signal), "models").map(
+                (m) => ({
+                    ...replicateModel(m, { kind: "collection", task }),
+                    task,
+                }),
+            ),
         }));
     }
     for (const sort of ["model_created_at", "latest_version_created_at"]) {
@@ -293,7 +324,7 @@ export async function replicate(token, history) {
             const current = url;
             let next = null;
             await query(source, sort, current, async () => {
-                const data = await json(current, headers);
+                const data = await json(current, headers, signal);
                 const list = rows(data, "results");
                 count += list.length;
                 // The model record lacks a documented creation timestamp; don't use its version date as model creation.
@@ -341,7 +372,9 @@ export async function replicate(token, history) {
         const url = `https://api.replicate.com/v1/models/${id}`;
         await query(source, "watchlist", url, async () => ({
             items: [
-                replicateModel(await json(url, headers), { kind: "tracked" }),
+                replicateModel(await json(url, headers, signal), {
+                    kind: "tracked",
+                }),
             ],
         }));
     }

@@ -53,6 +53,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [Media Storage](#media-storage)
   - [Account](#account)
   - [🔗 Account](#-account)
+  - [Other](#other)
   - [Quests](#quests)
   - [📊 Monitor](#-monitor)
   - [3D](#3d)
@@ -521,6 +522,7 @@ The context limit is 64k tokens for `state` and all questions together, and 32k 
 #### `POST` `/v1/messages` — Create Message (Anthropic-compatible)
 
 Anthropic Messages API for Claude Code, the Anthropic SDKs, and other Messages clients. Point the client's base URL at `https://gen.pollinations.ai` and authenticate with `Authorization: Bearer`.
+JSON request bodies may be up to 32 MiB, including inline images.
 
 Runs every model that lists `/v1/messages` in `supported_endpoints` — the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.
 
@@ -577,6 +579,7 @@ curl -X POST "https://gen.pollinations.ai/v1/messages" \
 Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
+JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.
 
 Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.
 
@@ -715,6 +718,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/decisions" \
 #### `POST` `/v1/responses` — Create Response
 
 Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.
+JSON request bodies may be up to 32 MiB, including inline images.
 
 Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.
 
@@ -1032,7 +1036,7 @@ Generate videos from text prompts or reference images. Returns MP4.
 https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4
 ```
 
-**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, bytedance/seedance-2.5, alibaba/happyhorse-1.1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video
+**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, bytedance/seedance-2.5, alibaba/happyhorse-1.1, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video
 
 ### Community video models
 
@@ -1042,7 +1046,7 @@ Community video models use a `community/owner/model` id and work on `/video/{pro
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:fal`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:fal`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:openrouter`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`.
+**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:fal`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:fal`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:openrouter`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `heygen/heygen-video-1`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -1068,8 +1072,8 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
 | `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. · range: `1…120` |
-| `aspectRatio` | `query` | `string` | Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. |
-| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `google/gemini-omni-1.1-flash`, `wan`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio. · default: `false` |
+| `aspectRatio` | `query` | `string` | Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`. |
+| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1497,6 +1501,10 @@ Returns available embedding models with pricing, capabilities, and supported inp
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1594,6 +1602,23 @@ it does not change generation permissions.
 curl 'https://gen.pollinations.ai/v1/models?source=official'
 ```
 
+To search or narrow a list instead of fetching the whole catalog, add any of:
+
+| Parameter | Effect |
+|-----------|--------|
+| `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
+| `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
+| `limit` | At most this many models (1-500), in catalog order |
+
+They apply after the access, source and reliability rules above, so `limit`
+never counts a model the caller cannot see. Unknown capabilities and values
+outside these ranges return **400 Bad Request**.
+
+```bash
+curl 'https://gen.pollinations.ai/text/models?query=gpt&capabilities=reasoning,tool_calling&limit=5'
+```
+
 OpenAI-compatible clients that append `/models` to their base URL can use the
 equivalent header instead of the query parameter:
 
@@ -1680,6 +1705,10 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1698,6 +1727,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].aliases` * | `string`[] | — |
 | `data[].category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `data[].community` * | `boolean` | — |
+| `data[].tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
 | `data[].title` * | `string` | — |
 | `data[].description` | `string` | — |
 | `data[].input_modalities` | `string`[] | — |
@@ -1735,6 +1765,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "OpenAI"
     },
     {
@@ -1745,6 +1780,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Claude"
     },
     {
@@ -1755,6 +1795,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Gemini"
     }
   ]
@@ -1786,6 +1831,8 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `aliases` * | `string`[] | — |
 | `category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `community` * | `boolean` | — |
+| `tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
+| `tags[].name` * | `string` | — |
 | `title` * | `string` | — |
 | `description` | `string` | — |
 | `input_modalities` | `string`[] | — |
@@ -1827,6 +1874,10 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1865,6 +1916,10 @@ Returns all available 3D model generation models with pricing, capabilities, and
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1903,6 +1958,10 @@ Returns all available image and video generation models with pricing, capabiliti
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1941,6 +2000,10 @@ Returns all available video generation models with pricing, capabilities, and me
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1979,6 +2042,10 @@ Returns all available text generation and community text models with pricing, ca
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -2017,6 +2084,10 @@ Returns all available audio models (text-to-speech, music generation, and transc
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -2629,7 +2700,17 @@ Stored image, video, audio, and 3D files are linked through `Link: <https://medi
 | `GET /media?tag={tag}` | List the public gallery for a tag (no auth) |
 | `DELETE /media/{id}` | Delete a published item you own (secret `sk_` key) |
 
-Upload requires an API key; retrieval is public. The decoded/file-size limit is 100MB for both upload formats. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Two upload formats are accepted:
+Upload requires an API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
+
+Raw file body (streams to storage; returns a random, unlisted ID):
+
+```bash
+curl -X POST "https://media.pollinations.ai/upload" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: video/mp4" \
+  -H "X-File-Name: video.mp4" \
+  --data-binary @path/to/video.mp4
+```
 
 Multipart form (browsers, files on disk):
 
@@ -2656,7 +2737,7 @@ Untagged files cannot be deleted. They expire after 30 days, but reads refresh r
 
 #### `POST` `/upload` — Upload media
 
-Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
+Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
 
 **Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.
 
@@ -3244,7 +3325,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `expiresIn` | `integer` | Expiry in seconds from now |
 | `allowedModels` | `string`[] \| `null` | Model IDs this key can access. null = all models |
 | `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
-| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too. |
+| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
 
@@ -3493,6 +3574,29 @@ curl "https://gen.pollinations.ai/account/integrations/toolkits?search=:search" 
 ```bash
 curl -X DELETE "https://gen.pollinations.ai/account/integrations/key_abc123" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+### Other
+
+#### `POST` `/account/polli/harness-on` — postAccountPolliHarnessOn
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `harness` * | `string` | — |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` — OK
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/account/polli/harness-on" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"harness":"opencode"}'
 ```
 
 ### Quests

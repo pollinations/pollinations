@@ -438,9 +438,9 @@ export async function callOpenRouterSeedreamFlashAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 14) {
+    if (safeParams.image.length > 10) {
         throw UpstreamError.fromProvider(400, {
-            message: `Seedream 5.0 Flash supports at most 14 reference images (received ${safeParams.image.length}).`,
+            message: `Seedream 5.0 Flash supports at most 10 reference images (received ${safeParams.image.length}).`,
         });
     }
     const apiKey = requireOpenRouterImageApiKey();
@@ -459,11 +459,15 @@ export async function callOpenRouterSeedreamFlashAPI(
         n: 1,
         seed: safeParams.seed,
         resolution: safeParams.resolution === "2k" ? "2K" : "1K",
-        aspect_ratio: closestRatioLogSpace(
-            safeParams.width,
-            safeParams.height,
-            SEEDREAM_FLASH_ASPECT_RATIOS,
-        ),
+        aspect_ratio:
+            safeParams.aspectRatio === "adaptive"
+                ? "auto"
+                : (safeParams.aspectRatio ??
+                  closestRatioLogSpace(
+                      safeParams.width,
+                      safeParams.height,
+                      SEEDREAM_FLASH_ASPECT_RATIOS,
+                  )),
         provider: {
             only: ["seed"],
             allow_fallbacks: false,
@@ -483,15 +487,25 @@ export async function callOpenRouterSeedreamFlashAPI(
         throw buildOpenRouterNoImageError(data);
     }
 
+    const providerCost = data.usage?.cost;
+    if (
+        typeof providerCost !== "number" ||
+        !Number.isFinite(providerCost) ||
+        providerCost <= 0
+    ) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+
     logOps("Seedream 5.0 Flash generation complete", {
         referenceImages: inputReferences.length,
-        providerCost: data.usage?.cost,
+        providerCost,
     });
 
     return {
         buffer: base64ToBuffer(encodedImage),
         trackingData: {
             actualModel: "bytedance/seedream-5.0-flash",
+            providerBilling: { units: providerCost, unitCost: 1.055 },
             usage: { completionImageTokens: 1 },
         },
     };

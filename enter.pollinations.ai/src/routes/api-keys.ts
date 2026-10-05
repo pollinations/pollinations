@@ -116,7 +116,7 @@ async function updateKeyMetadata(
  *
  * Permissions format: { models?: string[], account?: string[] }
  * - models: canonical IDs from /models = restrict to specific models
- * - account: ["profile", "usage", "keys"] = allow access to account endpoints
+ * - account: ["profile", "usage", "keys", "machines"] = allow access to account endpoints and hosted sandboxes
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
@@ -137,7 +137,7 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions: ["profile", "usage", "keys"]. null = none',
+            'Account permissions: ["profile", "usage", "keys", "machines"]. null = none',
         ),
     expiresAt: z
         .string()
@@ -187,7 +187,7 @@ const CreateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions: ["profile", "usage", "keys"]. null = none',
+            'Account permissions: ["profile", "usage", "keys", "machines"]. null = none',
         ),
     metadata: z.record(z.string(), z.unknown()).optional(),
 });

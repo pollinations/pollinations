@@ -1,0 +1,34 @@
+{
+  "pr_number": 16508,
+  "title": "feat: accept GET for x402 prepaid keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16508",
+  "merged_at": "2026-10-05T15:13:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Accept GET as well as POST for bodyless x402 prepaid-key purchases, following Apify AGI’s interface.\n- Keep the existing payment, key issuance, and replay handling shared between both methods.\n- Document and test both methods, including their 402 challenges and OpenAPI operations.\n\nFollow-up to #16444.\n\nTests: Enter typecheck; x402-keys integration suite (7 passed).",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two paths to a prepaid key",
+    "blurb": "GET joins POST at the x402 prepaid-key counter. Both take the same payment path and hand back a key; the HTTP method no longer needs to be a negotiation.",
+    "summary": "The x402 prepaid-key purchase endpoint accepts bodyless GET alongside POST, with both methods sharing 402 payment challenges, key issuance, and replay handling and appearing in OpenAPI.",
+    "impact": "Clients using Apify AGI’s GET interface can purchase prepaid keys while retaining the same payment and replay behavior as POST.",
+    "keywords": [
+      "x402",
+      "prepaid keys",
+      "GET",
+      "POST",
+      "payments",
+      "OpenAPI"
+    ],
+    "visual_concept": "Depict GET and POST as two garden paths leading to one small prepaid-key counter, with a 402 payment sign and a key behind it. Polli, wearing a tiny cashier visor, welcomes a CRT monitor robot arriving by the GET path; code-plants and flowers make the shared destination clear.",
+    "image_prompt": "In a cozy pixel art garden, paths labeled GET and POST meet at a little prepaid-key counter marked 402, where Polli in a tiny cashier visor hands a pixel key to a friendly CRT monitor robot; code-plants bloom beside the paths. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and strictly pixel art, amid prominent lime green (#ecf874), soft pastel gradients and warm lighting: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16508.jpg",
+    "prompt": "In a cozy pixel art garden, paths labeled GET and POST meet at a little prepaid-key counter marked 402, where Polli in a tiny cashier visor hands a pixel key to a friendly CRT monitor robot; code-plants bloom beside the paths. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and strictly pixel art, amid prominent lime green (#ecf874), soft pastel gradients and warm lighting: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-05T15:14:11.882698+00:00"
+}

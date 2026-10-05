@@ -4,10 +4,8 @@ import {
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import {
-    getAvailableBalance,
-    getUserBalance,
-} from "@shared/billing/balance.ts";
+import { getAvailableBalance } from "@shared/billing/balance.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -36,6 +34,7 @@ import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import {
     hasAccountPermission,
     requireAccountPermission,
@@ -107,9 +106,15 @@ const CreateKeySchema = z.object({
         .number()
         .int()
         .positive()
-        .max(365 * SECONDS_PER_DAY)
+        .refine(
+            (seconds) =>
+                Number.isFinite(
+                    new Date(Date.now() + seconds * 1000).getTime(),
+                ),
+            "Expiry is outside the supported date range",
+        )
         .optional()
-        .describe("Expiry in seconds from now (max 365 days)"),
+        .describe("Expiry in seconds from now"),
     allowedModels: z
         .array(z.string())
         .nullable()
@@ -127,7 +132,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too.',
+            'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes.',
         ),
     redirectUris: z
         .array(z.string())
@@ -1016,8 +1021,9 @@ export const accountRoutes = new Hono<Env>()
                 // negative is clamped here exactly as it is when spending is
                 // authorized — a raw tier + pack sum would under-report the
                 // Pollen the account can actually spend.
-                const balances = await getUserBalance(
+                const balances = await getFundedUserBalance(
                     drizzle(c.env.DB),
+                    c.env.DB,
                     user.id,
                 );
                 accountBalance = {
@@ -1507,8 +1513,36 @@ export const accountRoutes = new Hono<Env>()
                 accountPermissions,
                 metadata,
                 defaultCreatedVia: "api",
+                createdByApiKeyId: c.var.auth.apiKey?.id,
+                originAppKeyId:
+                    c.var.auth.apiKey?.byopClientKeyId ??
+                    (c.var.auth.apiKey?.metadata?.keyType === "publishable"
+                        ? c.var.auth.apiKey.id
+                        : (c.var.auth.apiKey?.metadata?.originAppKeyId as
+                              | string
+                              | undefined)),
             });
             return c.json(created);
+        },
+    )
+    .post(
+        "/polli/harness-on",
+        validator(
+            "json",
+            z.object({
+                harness: z
+                    .string()
+                    .regex(/^[a-z0-9-]{1,32}$/)
+                    .meta({ example: "opencode" }),
+            }),
+        ),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            captureFromRequest(c, "polli_harness_on", user.id, {
+                harness: c.req.valid("json").harness,
+            });
+            return c.json({ ok: true });
         },
     )
     .delete(

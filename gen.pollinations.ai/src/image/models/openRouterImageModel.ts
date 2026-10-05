@@ -12,6 +12,7 @@ import {
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
     base64ToBuffer,
+    detectMimeType,
     downloadUserImage,
     readImageDimensions,
     toDataUri,
@@ -36,6 +37,26 @@ const RECRAFT_FLASH_ASPECT_RATIOS = [
 ] as const;
 const FLUX2_MAX_MODEL = "black-forest-labs/flux.2-max";
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
+const SEEDREAM_FLASH_MODEL = "bytedance-seed/seedream-5-0-flash";
+const SEEDREAM_FLASH_ASPECT_RATIOS = [
+    "1:1",
+    "1:2",
+    "2:1",
+    "2:3",
+    "3:2",
+    "3:4",
+    "4:3",
+    "4:5",
+    "5:4",
+    "9:16",
+    "16:9",
+    "9:19.5",
+    "19.5:9",
+    "9:20",
+    "20:9",
+    "9:21",
+    "21:9",
+] as const;
 const SVG_MEDIA_TYPE = "image/svg+xml";
 const SEEDREAM_PRO_ASPECT_RATIOS = [
     "1:1",
@@ -413,6 +434,83 @@ export async function callOpenRouterSeedreamProAPI(
     };
 }
 
+export async function callOpenRouterSeedreamFlashAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 10) {
+        throw UpstreamError.fromProvider(400, {
+            message: `Seedream 5.0 Flash supports at most 10 reference images (received ${safeParams.image.length}).`,
+        });
+    }
+    const apiKey = requireOpenRouterImageApiKey();
+    const downloadedImages = await Promise.all(
+        safeParams.image.map((image) => downloadUserImage(image)),
+    );
+    const inputReferences = downloadedImages.map((downloaded) => ({
+        type: "image_url",
+        image_url: {
+            url: `data:${downloaded.mimeType};base64,${downloaded.buffer.toString("base64")}`,
+        },
+    }));
+    const requestBody: Record<string, unknown> = {
+        model: SEEDREAM_FLASH_MODEL,
+        prompt,
+        n: 1,
+        seed: safeParams.seed,
+        resolution: safeParams.resolution === "2k" ? "2K" : "1K",
+        aspect_ratio:
+            safeParams.aspectRatio === "adaptive"
+                ? "auto"
+                : (safeParams.aspectRatio ??
+                  closestRatioLogSpace(
+                      safeParams.width,
+                      safeParams.height,
+                      SEEDREAM_FLASH_ASPECT_RATIOS,
+                  )),
+        provider: {
+            only: ["seed"],
+            allow_fallbacks: false,
+        },
+    };
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Seedream 5.0 Flash request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    const providerCost = data.usage?.cost;
+    if (
+        typeof providerCost !== "number" ||
+        !Number.isFinite(providerCost) ||
+        providerCost <= 0
+    ) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+
+    logOps("Seedream 5.0 Flash generation complete", {
+        referenceImages: inputReferences.length,
+        providerCost,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: "bytedance/seedream-5.0-flash",
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+            usage: { completionImageTokens: 1 },
+        },
+    };
+}
+
 export async function callOpenRouterGrokImagineProAPI(
     prompt: string,
     safeParams: ImageParams,
@@ -580,19 +678,47 @@ export async function callOpenRouterFlux2MaxAPI(
         throw buildOpenRouterNoImageError(data);
     }
 
+    const providerCost = data.usage?.cost;
+    if (typeof providerCost !== "number" || !(providerCost > 0)) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+    // OpenRouter only takes an aspect ratio and picks the pixels itself, so the
+    // caller is charged for the image it returns, not the size it requested.
+    const buffer = base64ToBuffer(encodedImage);
+    const output = readImageDimensions(buffer, detectMimeType(buffer));
+    if (!output) {
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter FLUX.2 Max returned an image of unknown size",
+        });
+    }
+    // Reference megapixels are charged like on the Replicate primary.
+    const usage: Usage = {};
+    addUsage(
+        usage,
+        "promptImageTokens",
+        downloadedImages.reduce((megapixels, { buffer, mimeType }) => {
+            const input = readImageDimensions(buffer, mimeType);
+            return input
+                ? megapixels + (input.width * input.height) / 1_000_000
+                : megapixels;
+        }, 0),
+    );
+    usage.completionImageTokens = (output.width * output.height) / 1_000_000;
+
     logOps("FLUX.2 Max generation complete", {
         referenceImages: inputReferences.length,
-        providerCost: data.usage?.cost,
+        providerCost,
+        output,
     });
 
     return {
-        buffer: base64ToBuffer(encodedImage),
+        buffer,
         trackingData: {
             actualModel: "black-forest-labs/flux.2-max:openrouter",
-            usage: {
-                completionImageTokens:
-                    (safeParams.width * safeParams.height) / 1_000_000,
-            },
+            // Our cost is OpenRouter's reported charge plus its 5.5%
+            // credit-purchase fee (#14895), not BFL's tiered megapixel formula.
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+            usage,
         },
     };
 }

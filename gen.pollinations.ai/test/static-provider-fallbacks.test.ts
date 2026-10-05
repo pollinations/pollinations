@@ -381,6 +381,7 @@ describe("static provider fallbacks", () => {
 
     it.each([
         "openai/gpt-6-luna",
+        "openai/gpt-6.1-sol",
         "openai/gpt-6-sol",
     ] as const)("keeps the same price and Quest access when %s falls back to OpenAI", (model) => {
         const primary = TEXT_SERVICES[model];
@@ -810,6 +811,80 @@ describe("static provider fallbacks", () => {
         ]) {
             expect(textCapabilityError(sonar, request)).toBeUndefined();
         }
+    });
+
+    it("rejects image input only for models without image input", () => {
+        const chat = {
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "What color is this?" },
+                        {
+                            type: "image_url",
+                            image_url: { url: "https://example.com/a.png" },
+                        },
+                    ],
+                },
+            ],
+        };
+        const responses = {
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_image",
+                            image_url: "https://example.com/a.png",
+                        },
+                    ],
+                },
+            ],
+        };
+        for (const request of [chat, responses]) {
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-oss-20b"],
+                    request,
+                ),
+            ).toBe("This model does not support image input");
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-5.4-nano"],
+                    request,
+                ),
+            ).toBeUndefined();
+        }
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-oss-20b"], {
+                messages: [{ role: "user", content: "Hello" }],
+            }),
+        ).toBeUndefined();
+    });
+
+    it("routes Ling fallback through Vercel Novita with launch pricing", () => {
+        const primary = "inclusionai/ling-3.1-flash";
+        const route = `${primary}:vercel:novita`;
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([route]);
+        expect(TEXT_SERVICES[route]).toMatchObject({
+            provider: "vercel",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            cost: {
+                promptTextTokens: 0,
+                promptCachedTokens: 0,
+                completionTextTokens: 0,
+            },
+        });
+        expect(findModelByName(route)?.config()).toMatchObject({
+            model: primary,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        });
+        expect(getVisibleTextModels()).not.toContain(route);
     });
 
     it("uses the same primary and single fallback for both API formats", () => {

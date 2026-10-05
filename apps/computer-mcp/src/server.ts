@@ -47,32 +47,17 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
             },
         },
         async ({ command, stdin, cwd = HOME }, context) => {
-            // stdin goes through a file in /tmp, not the runtime's stdin
-            // option: @cloudflare/computer 0.3.0 hands stdin to the shell as
-            // a latin1 byte string, and a `>` redirect then writes each UTF-8
-            // byte as its own character. A file read by `<` stays UTF-8.
-            const stdinPath =
-                stdin === undefined
-                    ? undefined
-                    : `${TMP_DIR}/.stdin-${crypto.randomUUID()}`;
             try {
                 await workspace.fs
                     .mkdir(cwd, { recursive: true })
                     .catch(() => undefined);
                 await workspace.fs.mkdir(TMP_DIR, { recursive: true });
-                if (stdinPath !== undefined) {
-                    await workspace.fs.writeFile(stdinPath, stdin ?? "");
-                }
-                const handle = await workspace.runtime.exec(
-                    stdinPath === undefined
-                        ? command
-                        : `{\n${command}\n} < ${stdinPath}`,
-                    {
-                        cwd,
-                        encoding: "utf8",
-                        timeoutMs: COMMAND_TIMEOUT_MS,
-                    },
-                );
+                const handle = await workspace.runtime.exec(command, {
+                    cwd,
+                    encoding: "utf8",
+                    timeoutMs: COMMAND_TIMEOUT_MS,
+                    stdin,
+                });
                 const onAbort = () => void handle.kill().catch(() => undefined);
                 context.signal.addEventListener("abort", onAbort, {
                     once: true,

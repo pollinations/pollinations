@@ -16,9 +16,9 @@ import {
     callMinimaxH3MaxTurboAPI,
 } from "./models/minimaxH3Model.ts";
 import { callMMAudioAPI } from "./models/mmaudioReplicateModel.ts";
-import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
+    callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
@@ -65,7 +65,6 @@ export function validateVideoFrameCount(safeParams: ImageParams): void {
 export async function createAndReturnVideo(
     prompt: string,
     safeParams: ImageParams,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
     logOps("Starting video generation:", { prompt, model: safeParams.model });
     validateVideoFrameCount(safeParams);
@@ -117,9 +116,6 @@ export async function createAndReturnVideo(
         case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
-        case "amazon/nova-reel-v1":
-            result = await callNovaReelAPI(prompt, safeParams, requestId);
-            break;
         case "x-ai/grok-imagine-video:openrouter":
         case "x-ai/grok-imagine-video-1.5":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
@@ -129,6 +125,9 @@ export async function createAndReturnVideo(
             break;
         case "alibaba/happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
+            break;
+        case "heygen/heygen-video-1":
+            result = await callHeyGenVideoAPI(prompt, safeParams);
             break;
         case "minimax/minimax-h3":
             result = await callMinimaxH3API(prompt, safeParams);

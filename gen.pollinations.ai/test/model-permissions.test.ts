@@ -127,6 +127,49 @@ test("legacy stored allowlists still filter catalogs after canonical promotion",
     });
 });
 
+test("stored MAI Image 2.5 permissions allow the 2.6 Flash catalog entry", async () => {
+    const currentModel = "microsoft/mai-image-2.6-flash";
+    const oldModel = "microsoft/mai-image-2.5-flash";
+    const { key, id } = await createTestApiKey({
+        allowedModels: [currentModel],
+        user: { packBalance: 100 },
+    });
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify({ models: [oldModel] }) })
+        .where(eq(apikey.id, id));
+
+    const response = await fetchWorker("/image/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        aliases: string[];
+    }[];
+    expect(models).toEqual([
+        expect.objectContaining({ name: currentModel, aliases: [oldModel] }),
+    ]);
+    expect(resolveModelName(oldModel)).toBe(currentModel);
+
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: { id, permissions: { models: [oldModel] } },
+        }),
+    );
+    app.get("/check", (c) => {
+        c.set("model", { requested: oldModel, resolved: currentModel });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+    const allowed = await app.request("/check");
+    expect(allowed.status).toBe(200);
+    expect(await allowed.json()).toEqual({ models: [currentModel] });
+});
+
 test("restored auth snapshots normalize aliases once without expanding model or account scope", async () => {
     const snapshot = {
         user: { id: "permission-test", tier: "seed" },
@@ -393,6 +436,19 @@ test("filters image model list by API key permissions", async ({
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
 });
 
+test("applies the model list limit after API key permissions", async ({
+    restrictedApiKey,
+}) => {
+    const response = await fetchWorker("/models?limit=1", {
+        headers: { Authorization: `Bearer ${restrictedApiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { name: string }[];
+    expect(body).toHaveLength(1);
+    expect(RESTRICTED_TEST_MODELS).toContain(body[0].name);
+});
+
 test("rejects aliases in new model permissions", async () => {
     await expect(
         createTestApiKey({
@@ -473,15 +529,33 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Jev is the one OpenRouter route free-tier accounts may select, so it is
-    // visible to both keys and cannot take part in this comparison.
-    const openRouterModelNames = getVisibleTextModels().filter(
-        (model) =>
-            getRegistryModelDefinition(model).provider === "openrouter" &&
-            model !== "typesafe/jev-1.13",
-    );
+    // Only the approved low-cost models are exempt from paid balance.
+    const questPollenModels = new Set([
+        "typesafe/jev-1.13",
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+        "inclusionai/ling-3.1-flash",
+    ]);
+    const openRouterModelNames = getVisibleTextModels().filter((model) => {
+        const definition = getRegistryModelDefinition(model);
+        return (
+            definition.provider === "openrouter" &&
+            !questPollenModels.has(model)
+        );
+    });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
+
+    for (const model of questPollenModels) {
+        expect(
+            freeModelNames.has(model),
+            `${model} visible to Quest Pollen`,
+        ).toBe(true);
+        expect(
+            paidModelNames.has(model),
+            `${model} visible to paid users`,
+        ).toBe(true);
+    }
 
     expect(openRouterModelNames.length).toBeGreaterThan(0);
     expect(
@@ -506,7 +580,11 @@ test("makes Azure GPT-6 models available to Quest Pollen accounts", async ({
     apiKey,
     paidApiKey,
 }) => {
-    const models = ["openai/gpt-6-sol", "openai/gpt-6-luna"] as const;
+    const models = [
+        "openai/gpt-6-sol",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-luna",
+    ] as const;
     const [freeResponse, paidResponse] = await Promise.all([
         fetchWorker("/v1/models", {
             headers: { Authorization: `Bearer ${apiKey}` },

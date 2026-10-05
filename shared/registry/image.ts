@@ -135,6 +135,10 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.015,
             completionImageTokens: 0.015,
         },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
+        },
         billing: {
             adjustments: [
                 {
@@ -173,6 +177,10 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.05,
             completionImageTokens: 0.05,
         },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
+        },
         title: "FLUX.2 Flex",
         description:
             "Typography-focused generation and multi-reference editing with adjustable prompt guidance",
@@ -193,6 +201,10 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             promptImageTokens: 0.03,
             completionImageTokens: 0.03,
+        },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
         },
         billing: {
             adjustments: [
@@ -218,33 +230,8 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 8, // Replicate and OpenRouter both cap the API at 8 reference images.
     },
-    "microsoft/mai-image-2.5-flash": {
-        aliases: [],
-        provider: "azure",
-        publisher: "Microsoft",
-        category: "image",
-        addedDate: new Date("2026-09-05").getTime(),
-        // Azure retirement schedule; the model catalog says 2026-11-15.
-        retirementDate: new Date("2026-10-01").getTime(),
-        paidOnly: false,
-        priceMultiplier: 0.75,
-        perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
-        // Azure Global Standard meters and invoiced usage, verified 2026-09-05.
-        // Output tokens = pixels / 1024, so a 1024x1024 image is 1,024 tokens.
-        cost: {
-            promptTextTokens: perMillion(1.75),
-            promptImageTokens: perMillion(1.75),
-            completionImageTokens: perMillion(19.5),
-        },
-        title: "MAI Image 2.5 Flash",
-        description:
-            "Quick photorealistic generation and single-reference editing with accurate text rendering",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 1, // Azure MAI edit route takes one input image.
-    },
     "microsoft/mai-image-2.6-flash": {
-        aliases: [],
+        aliases: ["microsoft/mai-image-2.5-flash"],
         provider: "azure",
         publisher: "Microsoft",
         category: "image",
@@ -399,6 +386,51 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    "bytedance/seedream-5.0-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-10-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter Seed endpoint, verified 2026-10-05: a flat $0.018 per
+            // image at both 1K and 2K, plus the 5.5% credit fee.
+            completionImageTokens: 0.018 * 1.055, // per image
+        },
+        ...defineCostVariants(
+            {
+                "2k": { completionImageTokens: 0.018 * 1.055 },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested image resolution is 2K.",
+                },
+            },
+            "1K",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "2k": "2K",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.0 Flash",
+        description:
+            "Image generation and editing at 1K or 2K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
@@ -699,6 +731,8 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "1080p"],
+        // Omitted size/audio used to give portrait video with billed audio.
+        cacheVersion: "2026-09-30-landscape-audio-opt-in",
         title: "Veo 3.1 Fast",
         description: "Fast video with optional audio at 720p or 1080p",
         inputModalities: ["text", "image"],
@@ -843,6 +877,7 @@ const IMAGE_BASE_SERVICES = {
                 },
             ],
         ),
+        resolutions: ["720p"],
         title: "Seedance 2.0",
         description:
             "720p video with natively synced sound, from text, images, or references",
@@ -948,6 +983,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.1, // per sec (720p, includes audio)
         },
+        resolutions: ["720p"],
         title: "Wan 2.6",
         description:
             "Video with sound from text or an image (720p, 5/10/15s clips)",
@@ -974,6 +1010,7 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
+        resolutions: ["480p"],
         title: "Wan 2.2",
         description:
             "Cheap 5-second silent clips at 480p — great for quick drafts",
@@ -1249,6 +1286,9 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionImageTokens: perMillion(0.02),
         },
+        priceUnits: {
+            completionImageTokens: { unit: "megapixel", quantity: 1_000_000 },
+        },
         ...defineCostVariants(
             {
                 edit: {
@@ -1509,6 +1549,7 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.002, // per start-frame image
             completionVideoSeconds: 0.07, // per sec at 720p
         },
+        resolutions: ["720p"],
         title: "Grok Video Pro",
         description: "Short videos from text or an image (720p, 1-15s)",
         inputModalities: ["text", "image"],
@@ -1680,6 +1721,7 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             completionVideoSeconds: 0.0988 * 1.055, // per sec at 720p
         },
+        resolutions: ["720p"],
         title: "HappyHorse 1.1",
         description: "Text and first-frame video generation at 720p",
         inputModalities: ["text", "image"],
@@ -1687,6 +1729,57 @@ const IMAGE_BASE_SERVICES = {
         videoCapabilities: ["start_frame"],
         maxReferenceImages: 1,
         minDuration: 3,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "heygen/heygen-video-1": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "HeyGen",
+        category: "video",
+        addedDate: new Date("2026-09-30").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // OpenRouter HeyGen endpoint, 50% launch discount through October 2026
+        // (list $0.02/s at 480p, $0.03/s at 768p), verified 2026-10-01:
+        // a 5s 480p clip billed 5 x $0.01. Includes the 5.5% OpenRouter
+        // credit fee. Raise to list price when the discount ends.
+        cost: {
+            completionVideoSeconds: 0.01 * 1.055, // per sec at 480p
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.015 * 1.055 },
+            },
+            matchResolution("768p"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+            },
+            "480p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "480p",
+                        "768p": "768p",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["480p", "768p"],
+        title: "HeyGen Video 1",
+        description:
+            "Text and first-frame video with synchronized dialogue, ambience and effects at 480p or 768p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 5,
         maxDuration: 15,
         defaultDuration: 5,
     },
@@ -1832,15 +1925,15 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch rates, verified 2026-09-27. Update cost and price in a
-        // separate PR when the promotion ends on 2026-09-30; keep multiplier 1.
+        // fal published post-promotion rates (promotion ends 2026-09-30).
+        // Deploy ahead of the cutoff; a few hours of early activation is accepted.
         cost: {
-            completionVideoSeconds: 0.0125, // Also fal's rate per reported billing unit.
+            completionVideoSeconds: 0.025, // Also fal's rate per reported billing unit.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.02 },
-                "1080p": { completionVideoSeconds: 0.04 },
+                "768p": { completionVideoSeconds: 0.04 },
+                "1080p": { completionVideoSeconds: 0.08 },
             },
             matchResolution("768p", "1080p"),
             {
@@ -1931,6 +2024,25 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 5, // Pollinations route cap.
     },
+    "inferenceport-ai/lightning-image-turbo": {
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "image",
+        addedDate: new Date("2026-09-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        perUserRpm: 15,
+        cost: {
+            completionImageTokens: 0.02, // per image
+        },
+        title: "Lightning Image Turbo",
+        description:
+            "Image generation with up to two reference images for visual guidance",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 2,
+    },
     // Pruna p-video is one Replicate model priced per second by resolution:
     // 720p $0.02/s and 1080p $0.04/s in standard mode.
     "prunaai/p-video": {
@@ -1986,77 +2098,6 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 1,
         maxDuration: 10,
         defaultDuration: 5,
-    },
-    "amazon/nova-canvas-v1": {
-        aliases: ["amazon-nova-canvas", "nova-canvas"],
-        provider: "aws",
-        publisher: "Amazon",
-        category: "image",
-        addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy endOfLifeTime.
-        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
-        priceMultiplier: 1,
-        // AWS Cost Explorer Nova Canvas Standard meters, verified 2026-08-24.
-        cost: {
-            completionImageTokens: 0.04, // per image
-        },
-        ...defineCostVariants(
-            {
-                "2048": {
-                    completionImageTokens: 0.06, // per image when either side exceeds 1024px
-                },
-            },
-            ({ input }) =>
-                (input?.maxImageDimension ?? 0) > 1024 ? "2048" : undefined,
-            {
-                "2048": {
-                    label: "2048 tier",
-                    description:
-                        "Applies when either output dimension exceeds 1024 pixels.",
-                },
-            },
-            "1024 tier",
-            [
-                {
-                    "key": "image_size",
-                    "label": "Max side",
-                    "unit": "px",
-                    "values": {
-                        "2048": ">1024",
-                        "": "≤1024",
-                    },
-                },
-            ],
-        ),
-        title: "Nova Canvas",
-        description: "Image generation with editing and inpainting tools",
-        inputModalities: ["text", "image"],
-        outputModalities: ["image"],
-        maxReferenceImages: 1, // Nova Canvas route forwards one input image.
-    },
-    "amazon/nova-reel-v1": {
-        aliases: ["amazon-nova-reel", "nova-reel"],
-        provider: "aws",
-        publisher: "Amazon",
-        category: "video",
-        addedDate: new Date("2026-03-23").getTime(),
-        // Bedrock Legacy endOfLifeTime.
-        retirementDate: new Date("2026-09-30T08:00:00Z").getTime(),
-        priceMultiplier: 1,
-        cost: {
-            completionVideoSeconds: 0.08, // per sec
-        },
-        title: "Nova Reel",
-        description:
-            "Long-form video — clips from 6 seconds up to 2 minutes at 720p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video"],
-        videoCapabilities: ["start_frame"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
-        minDuration: 6,
-        maxDuration: 120,
-        defaultDuration: 6,
-        durationStep: 6,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

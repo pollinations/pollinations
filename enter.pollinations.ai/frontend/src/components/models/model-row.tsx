@@ -69,7 +69,7 @@ export const PerPollenEstimate: FC<{
         ? "This model is free to use."
         : isUnavailable
           ? "Usage data from the last 7 days is unavailable, so this estimate cannot be calculated."
-          : `About ${value} ${requestLabel} per pollen. Estimated from the median observed cost over the last 7 days.`;
+          : `About ${value} ${requestLabel} per $1. Estimated from the median observed cost over the last 7 days.`;
     const tooltip = isFree ? (
         <span>
             This model is{" "}
@@ -88,7 +88,7 @@ export const PerPollenEstimate: FC<{
     ) : (
         <span className="flex flex-col gap-0.5">
             <strong className="font-semibold text-theme-text-strong">
-                About {value} {requestLabel} per pollen
+                About {value} {requestLabel} per $1
             </strong>
             <span className="text-theme-text-muted">
                 Estimated from the median observed cost over the last 7 days.
@@ -110,18 +110,17 @@ export const PerPollenEstimate: FC<{
                     prefix={!isFree && !isUnavailable ? "≈" : undefined}
                 />
             ) : (
-                <ModelRateValue value={value} unit="req /pollen" />
+                <ModelRateValue value={value} unit="req /$1" />
             )}
         </Tooltip>
     );
 };
 
 export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
-    const modelDescription = getModelDescriptionWithoutName(model);
+    // Description renders inline on the row; tooltip keeps the denser metadata.
     const videoDuration = formatVideoDuration(model);
 
     if (
-        !modelDescription &&
         (!model.agent || !model.baseModel) &&
         model.contextLength == null &&
         !videoDuration
@@ -131,7 +130,6 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
 
     return (
         <span className="flex max-w-sm flex-col gap-1.5 text-left">
-            {modelDescription && <span>{modelDescription}</span>}
             {model.agent && model.baseModel && (
                 <span className="text-xs text-theme-text-muted">
                     <strong className="font-semibold text-theme-text-base">
@@ -174,7 +172,7 @@ export function ModelTitle({ model }: { model: ModelPrice }) {
     ) : href ? (
         <InlineLink
             href={href}
-            className="inline-flex min-w-0 max-w-full items-baseline"
+            className="model-title-link inline-flex min-w-0 max-w-full items-baseline"
             aria-label={`Open ${title} in Play`}
         >
             <span className="min-w-0 truncate">{title}</span>
@@ -200,6 +198,7 @@ export function ModelTitle({ model }: { model: ModelPrice }) {
 }
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
+    const modelDescription = getModelDescriptionWithoutName(model);
     const brandLogoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
@@ -254,6 +253,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             showCopyIcon
                         />
                     </div>
+                    {modelDescription && (
+                        <p className="line-clamp-2 text-xs leading-snug text-theme-text-muted">
+                            {modelDescription}
+                        </p>
+                    )}
                     {model.brandUrl && model.publisher && (
                         <InlineLink
                             href={model.brandUrl}
@@ -351,7 +355,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     pricing={pricing}
                     requestBadge={<BalanceAccessChip access={balanceAccess} />}
                     hasTools={pollinationsTools}
-                    requestEstimate={<PerPollenEstimate model={model} ledger />}
+                    requestEstimate={
+                        !model.agent && (
+                            <PerPollenEstimate model={model} ledger />
+                        )
+                    }
                 />
             </div>
         </Surface>

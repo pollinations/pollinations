@@ -109,6 +109,83 @@ describe("System One adapter", () => {
         expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("routes liquid/d1 to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "liquid/d1",
+                });
+                return Response.json({
+                    model: "liquid/d1-20260930",
+                    answers,
+                    usage: { input_tokens: 38, output_tokens: 0 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "liquid/d1",
+                modelConfig: { ...modelConfig, model: "liquid/d1" },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("preserves native decisions through the Vercel D1 route (stream=%s)", async (stream) => {
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+                );
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "liquid/d1",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "liquid/d1",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 0 },
+                });
+            },
+        );
+        const result = await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "liquid/d1:vercel",
+                stream,
+                modelConfig: {
+                    ...modelConfig,
+                    model: "liquid/d1",
+                    directEndpoint:
+                        "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+                },
+            },
+            vi.fn(),
+        );
+        expect(
+            JSON.parse(String(result.choices?.[0]?.message?.content)),
+        ).toEqual(answers);
+        expect(result.usage).toEqual({
+            prompt_tokens: 312,
+            completion_tokens: 0,
+            total_tokens: 312,
+        });
+        if (stream) {
+            if (!result.responseStream) throw new Error("Missing stream");
+            const body = await new Response(
+                requireChatStreamUsage(result.responseStream),
+            ).text();
+            expect(body).toContain('"prompt_tokens":312');
+            expect(body).toContain("data: [DONE]");
+        }
+    });
+
     it("routes jaredpalmer/kev-4b to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

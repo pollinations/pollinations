@@ -2,7 +2,7 @@ DESCRIPTION >
     Public model statistics computed once per hour by public_model_stats_refresh.
 
 SCHEMA >
-    `model` String `json:$.model`,
+    `model` LowCardinality(String) `json:$.model`,
     `request_count` UInt64 `json:$.request_count`,
     `success_count` UInt64 `json:$.success_count`,
     `priced_success_count` UInt64 `json:$.priced_success_count`,

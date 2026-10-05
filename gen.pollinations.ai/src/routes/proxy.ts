@@ -352,6 +352,11 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         aliases: entry.info.aliases,
         category: entry.info.category,
         community: entry.info.community,
+        // Open WebUI's model tag shape; its model picker filters by these.
+        tags: [
+            { name: entry.info.category },
+            ...(entry.info.community ? [{ name: "community" }] : []),
+        ],
         title: entry.info.title,
         description: entry.info.description,
         input_modalities: entry.info.input_modalities,

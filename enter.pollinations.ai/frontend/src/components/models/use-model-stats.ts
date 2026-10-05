@@ -1,6 +1,6 @@
 /**
  * Hook to fetch real-time model statistics
- * Uses the backend /api/model-stats endpoint which caches Tinybird data server-side (6h TTL)
+ * Uses /api/model-stats: hourly Tinybird snapshot, five-minute delivery cache.
  */
 
 import { useEffect, useMemo, useState } from "react";

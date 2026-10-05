@@ -17,6 +17,10 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
+import {
+    fetchCatalogHealthRows,
+    fetchModelHealthRows,
+} from "../src/routes/model-status.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     const { default: worker } = await import("../src/index.ts");
@@ -144,7 +148,7 @@ test("official models stay discoverable across every list regardless of reliabil
     expect(registry.resolve(failing[0].id)).toBe(failing[0]);
 });
 
-test("counts final fallback rescues, retains unknown models and fails open on unavailable analytics", async () => {
+test("counts final fallback rescues and retains unknown models", async () => {
     const id = "openai/gpt-5-nano";
     mockCatalogHealth(
         [
@@ -185,7 +189,10 @@ test("counts final fallback rescues, retains unknown models and fails open on un
     expect(models.some((model) => model.health.success_rate === null)).toBe(
         true,
     );
-    vi.restoreAllMocks();
+});
+
+test("fails open on unavailable analytics without caching the failed feed", async () => {
+    const id = "openai/gpt-5-nano";
     mockCatalogHealth([], 503);
     const unavailable = await fetchWorker("/text/models");
     expect(unavailable.status).toBe(200);
@@ -195,6 +202,60 @@ test("counts final fallback rescues, retains unknown models and fails open on un
     }[];
     expect(all.some((model) => model.name === id)).toBe(true);
     expect(all.every((model) => model.health.status === "unknown")).toBe(true);
+    mockCatalogHealth([
+        {
+            model: id,
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 50,
+            errors_5xx: 0,
+        },
+    ]);
+    const recovered = await fetchWorker("/text/models");
+    expect(await recovered.json()).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                name: id,
+                health: expect.objectContaining({ status: "healthy" }),
+            }),
+        ]),
+    );
+});
+
+test("shares five-minute health feeds across catalog lists and model retrieval", async () => {
+    const upstream = mockCatalogHealth([]);
+    await fetchWorker("/models");
+    await fetchWorker("/v1/models");
+    await fetchWorker("/text/models");
+    await fetchWorker("/v1/models/gpt-5-nano");
+    const healthCalls = upstream.mock.calls.filter(([input]) =>
+        String(input).includes("model_route_health.json"),
+    );
+    expect(healthCalls).toHaveLength(1);
+    expect(
+        await env.KV.get(
+            "model-health:/v0/pipes/model_route_health.json:1440",
+            "json",
+        ),
+    ).toEqual({ value: [], ttl: 300 });
+});
+
+test("caches community and official health independently and refreshes expired entries", async () => {
+    const communityRows = [{ model: "community/test/model", status_2xx: 50 }];
+    const officialRows = [{ model: "openai/gpt-5-nano", status_2xx: 40 }];
+    const upstream = mockCatalogHealth(communityRows, 200, officialRows);
+    expect(await fetchCatalogHealthRows(env.KV)).toEqual(communityRows);
+    expect(await fetchModelHealthRows(env.KV)).toEqual(officialRows);
+    await fetchCatalogHealthRows(env.KV);
+    await fetchModelHealthRows(env.KV);
+    expect(upstream).toHaveBeenCalledTimes(2);
+    // An expired KV entry is absent; emulate that without a five-minute wait.
+    await env.KV.delete("model-health:/v0/pipes/model_catalog_health.json:");
+    mockCatalogHealth([{ model: "community/test/model", status_2xx: 45 }]);
+    expect(await fetchCatalogHealthRows(env.KV)).toEqual([
+        { model: "community/test/model", status_2xx: 45 },
+    ]);
+    expect(await fetchModelHealthRows(env.KV)).toEqual(officialRows);
 });
 
 test("show all does not bypass key permissions or paid access", async ({

@@ -106,7 +106,7 @@ beforeEach(async () => {
             value: {
                 data: [{ model: "typesafe/jev-1.13", avg_cost_usd: 0.001 }],
             },
-            ttl: 3600,
+            ttl: 300,
         }),
     );
 });

@@ -47,7 +47,7 @@ function fakeStatsEnv(
                 value: {
                     data: [{ model, avg_cost_usd: price }],
                 },
-                ttl: 3600,
+                ttl: 300,
             }),
             put: async () => undefined,
         } as unknown as KVNamespace,

@@ -23,7 +23,7 @@ beforeEach(async () => {
         "model-stats-v3",
         JSON.stringify({
             value: { data: [{ model, avg_cost_usd: 0.001 }] },
-            ttl: 3600,
+            ttl: 300,
         }),
     );
 });
@@ -389,7 +389,7 @@ it("omits the quest link when only paid Pollen can cover the model", async () =>
         "model-stats-v3",
         JSON.stringify({
             value: { data: [{ model: paidOnlyModel, avg_cost_usd: 0.001 }] },
-            ttl: 3600,
+            ttl: 300,
         }),
     );
     const caller = await createTestApiKey({

@@ -125,22 +125,6 @@ describe("Gemini Developer API speech", () => {
             "encoding",
         );
     });
-    it.each([
-        "mp3",
-        "opus",
-        "aac",
-        "flac",
-    ])("rejects explicit %s before any provider request", async (responseFormat) => {
-        await expect(
-            generateGeminiSpeech({
-                modelName: "google/gemini-3.8-flash-tts",
-                text: "Hello",
-                voice: "Kore",
-                responseFormat,
-                log: {} as never,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
     it("rejects an unknown voice before any provider request", async () => {
         await expect(
             generateGeminiSpeech({

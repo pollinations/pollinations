@@ -1,11 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { authClient } from "../auth.ts";
-import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
-import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
-import {
-    isDashboardPath,
-    SIGNED_OUT_NAV_ITEMS,
-} from "../components/layout/dashboard-theme.ts";
+import { useState } from "react";
+import { DashboardSignInDialog } from "../components/auth/dashboard-sign-in-trigger.tsx";
+import { isDashboardPath } from "../components/layout/dashboard-theme.ts";
 import { NewsFaq } from "../components/news-faq";
 
 type SignInSearch = {
@@ -26,13 +22,12 @@ function parseNext(value: unknown): string | undefined {
     return `${url.pathname}${url.search}${url.hash}`;
 }
 
-export const Route = createFileRoute("/sign-in")({
+export const Route = createFileRoute("/_dashboard/sign-in")({
     validateSearch: (search: Record<string, unknown>): SignInSearch => ({
         next: parseNext(search.next),
     }),
-    beforeLoad: async ({ search }) => {
-        const result = await authClient.getSession();
-        if (!result.data?.user) return;
+    beforeLoad: ({ context, search }) => {
+        if (!context.user) return;
 
         const pendingRedirectUrl = localStorage.getItem("pending_redirect_url");
         if (pendingRedirectUrl) {
@@ -56,10 +51,11 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function SignInPage() {
+    const [open, setOpen] = useState(true);
     return (
-        <DashboardShell navItems={SIGNED_OUT_NAV_ITEMS}>
-            <DashboardSignInBanner defaultOpen />
+        <>
+            {open && <DashboardSignInDialog onCancel={() => setOpen(false)} />}
             <NewsFaq />
-        </DashboardShell>
+        </>
     );
 }

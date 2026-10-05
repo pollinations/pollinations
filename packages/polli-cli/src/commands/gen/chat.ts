@@ -125,7 +125,10 @@ export function createChatCommand() {
 
                     process.stderr.write(`${chalk.yellow("ai")} > `);
                     let content = "";
-                    for await (const chunk of streamSSE(res)) {
+                    for await (const chunk of streamSSE(res, (event) => {
+                        if (typeof event.usage?.total_tokens === "number")
+                            totalTokens += event.usage.total_tokens;
+                    })) {
                         content += chunk;
                         process.stderr.write(chunk);
                     }

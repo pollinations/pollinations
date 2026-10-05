@@ -382,6 +382,22 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Nex AGI fp8 tag for Nex-N2.5-Pro (verified 2026-10-06):
+    // tools/tool_choice, structured_outputs, logprobs, top_k and
+    // reasoning_effort advertised; no response_format, penalties,
+    // repetition_penalty, stop, seed, min_p or logit_bias.
+    openRouterNexPro: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter Novita tag for Ling 3.1 Flash (verified 2026-10-05): no
     // response_format, structured outputs or logprobs; reasoning_effort
     // "none" turns thinking off.

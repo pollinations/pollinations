@@ -199,6 +199,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Nex N2.5 Pro to Nex AGI fp8 on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nex-agi/nex-n2.5-pro",
+        });
+
+        expect(result.options.model).toBe("nex-agi/nex-n2.5-pro");
+        expect(result.options.provider).toEqual({
+            only: ["nex-agi/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Ling 3.1 Flash to Novita on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.1-flash",

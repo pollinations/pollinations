@@ -2141,9 +2141,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 5,
         cost: {
-            // OpenRouter Novita rates once the free launch period ended
-            // (2026-10-14), including the mandatory 5.5% OpenRouter credit
-            // fee.
+            // OpenRouter Novita rates after the free launch period ends
+            // (2026-10-13 16:00 UTC), including the 5.5% OpenRouter credit fee.
             promptTextTokens: perMillion(0.06) * 1.055,
             promptCachedTokens: perMillion(0.012) * 1.055,
             completionTextTokens: perMillion(0.18) * 1.055,

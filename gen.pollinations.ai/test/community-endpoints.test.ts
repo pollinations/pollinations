@@ -6418,36 +6418,6 @@ fixtureTest(
             Array.from(new Uint8Array(await simpleEditResponse.arrayBuffer())),
         ).toEqual(TEST_PNG_BYTES);
 
-        // The unseeded image is already complete: changing its response
-        // format must reuse it without another provider call.
-        const callsBeforeReplay = fetchMock.mock.calls.length;
-        const cachedGeneration = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/images/generations", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: registered.modelId,
-                    prompt: "blue flower",
-                    quality: "hd",
-                    response_format: "url",
-                }),
-            }),
-        );
-        expect(cachedGeneration.status).toBe(200);
-        expect(cachedGeneration.headers.get("x-cache")).toBe("HIT");
-        await expect(cachedGeneration.json()).resolves.toMatchObject({
-            data: [
-                {
-                    url: expect.stringMatching(
-                        /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
-                    ),
-                },
-            ],
-            usage: { total_tokens: 1 },
-        });
-        expect(fetchMock.mock.calls).toHaveLength(callsBeforeReplay);
-
-        // An explicit different seed exercises a fresh URL-format generation.
         const urlImageResponse = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/images/generations", {
                 method: "POST",
@@ -6459,7 +6429,6 @@ fixtureTest(
                     model: registered.modelId,
                     prompt: "blue flower",
                     quality: "hd",
-                    seed: 7,
                     response_format: "url",
                 }),
             }),

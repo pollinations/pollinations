@@ -93,6 +93,10 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.015,
             completionImageTokens: 0.015,
         },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
+        },
         billing: {
             adjustments: [
                 {
@@ -131,6 +135,10 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.05,
             completionImageTokens: 0.05,
         },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
+        },
         title: "FLUX.2 Flex",
         description:
             "Typography-focused generation and multi-reference editing with adjustable prompt guidance",
@@ -151,6 +159,10 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             promptImageTokens: 0.03,
             completionImageTokens: 0.03,
+        },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
         },
         billing: {
             adjustments: [
@@ -332,6 +344,51 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    "bytedance/seedream-5.0-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-10-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter Seed endpoint, verified 2026-10-05: a flat $0.018 per
+            // image at both 1K and 2K, plus the 5.5% credit fee.
+            completionImageTokens: 0.018 * 1.055, // per image
+        },
+        ...defineCostVariants(
+            {
+                "2k": { completionImageTokens: 0.018 * 1.055 },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested image resolution is 2K.",
+                },
+            },
+            "1K",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "2k": "2K",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.0 Flash",
+        description:
+            "Image generation and editing at 1K or 2K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
@@ -632,6 +689,8 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "1080p"],
+        // Omitted size/audio used to give portrait video with billed audio.
+        cacheVersion: "2026-09-30-landscape-audio-opt-in",
         title: "Veo 3.1 Fast",
         description: "Fast video with optional audio at 720p or 1080p",
         inputModalities: ["text", "image"],
@@ -1184,6 +1243,9 @@ const IMAGE_BASE_SERVICES = {
         // (UInt32 usage columns), so perMillion(x) = $x per megapixel.
         cost: {
             completionImageTokens: perMillion(0.02),
+        },
+        priceUnits: {
+            completionImageTokens: { unit: "megapixel", quantity: 1_000_000 },
         },
         ...defineCostVariants(
             {

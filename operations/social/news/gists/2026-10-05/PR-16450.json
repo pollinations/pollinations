@@ -1,0 +1,34 @@
+{
+  "pr_number": 16450,
+  "title": "feat: tag /v1/models entries by category for Open WebUI's model filter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16450",
+  "merged_at": "2026-10-05T04:29:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `tags` to every `/v1/models` entry in Open WebUI's format (`[{name}]`): the model's category (`text`, `image`, `audio`, `video`, `embedding`, `realtime`, `3d`), plus `community` for community models and `agent` for agents\n- Open WebUI's model picker turns these tags into a filter dropdown, so users can show only image models, only agents, and so on\n- Adds the field to `OpenAIModelSchema` and the docs example; extends the retrieve and managed-agent tests\n\nOther clients ignore the extra field. Open WebUI needs a production promotion before it sees the tags, and it caches the model list for 5 minutes.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0173LR1AQTLF2njvmaJQD3BS\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A sorter for the hive",
+    "blurb": "Every model gets a little label: text, image, audio, and the rest. Open WebUI can turn those labels into a filter dropdown, which beats scrolling past the entire garden.",
+    "summary": "Every `/v1/models` entry gains Open WebUI-compatible `tags` for its category—text, image, audio, video, embedding, realtime, or 3d—with additional `community` and `agent` tags where applicable.",
+    "impact": "Open WebUI's model picker can filter for image models, agents, and other tagged groups; clients that do not use tags can ignore the extra field.",
+    "keywords": [
+      "models",
+      "Open WebUI",
+      "model picker",
+      "tags",
+      "filtering",
+      "API"
+    ],
+    "visual_concept": "Depict an Open WebUI-style model picker as a friendly CRT screen with a category filter dropdown. Polli, wearing tiny librarian glasses, helps the monitor robot sort model cards into labeled flower pots; no Open WebUI mascot is specified.",
+    "image_prompt": "In a cozy pixel art garden workspace, a friendly CRT monitor robot displays a model-picker dropdown while Polli in tiny librarian glasses sorts image, audio, and text model cards into flower pots beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16450.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a friendly CRT monitor robot displays a model-picker dropdown while Polli in tiny librarian glasses sorts image, audio, and text model cards into flower pots beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-05T04:31:06.407738+00:00"
+}

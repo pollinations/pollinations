@@ -310,7 +310,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
     expect(registry.resolve(id)?.visible).toBe(true);
 });
 
-test("FLUX.3 launch pricing expires across warm catalog lists and retrieve", async () => {
+test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async () => {
     type CatalogPrice = Pick<ModelInfo, "pricing" | "pricing_variants"> & {
         name?: string;
         id?: string;
@@ -321,10 +321,16 @@ test("FLUX.3 launch pricing expires across warm catalog lists and retrieve", asy
     const registry = await getGenerationModelRegistry(env);
     for (const [time, rate, twoK] of [
         [cutoff - 1, 0.024, 0.05],
-        [cutoff, 0.048, 0.1],
+        [cutoff, 0.024, 0.05],
+        [cutoff + 60_000, 0.048, 0.1],
     ]) {
         now.mockReturnValue(time);
-        expect(await getGenerationModelRegistry(env)).toBe(registry);
+        const currentRegistry = await getGenerationModelRegistry(env);
+        if (time < cutoff + 60_000) {
+            expect(currentRegistry).toBe(registry);
+        } else {
+            expect(currentRegistry).not.toBe(registry);
+        }
         for (const path of [
             "/models",
             "/image/models",

@@ -383,7 +383,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
 }
 
 // Resolve one model by ID or alias against the caller-visible registry view.
-// Returns null when unknown, hidden, or a private community model owned by
+// Returns null when unknown, unavailable, or a private community model owned by
 // someone else.
 async function resolveVisibleModelEntry(
     c: Context<Env>,

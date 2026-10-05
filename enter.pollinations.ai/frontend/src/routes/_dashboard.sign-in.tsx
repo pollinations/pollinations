@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { DashboardSignInDialog } from "../components/auth/dashboard-sign-in-trigger.tsx";
+import { DashboardSignInDialog } from "../components/auth/dashboard-sign-in-banner.tsx";
 import { isDashboardPath } from "../components/layout/dashboard-theme.ts";
 import { NewsFaq } from "../components/news-faq";
 

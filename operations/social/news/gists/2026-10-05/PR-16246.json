@@ -1,0 +1,34 @@
+{
+  "pr_number": 16246,
+  "title": "feat(mcp,gen): search and filter the model catalog",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16246",
+  "merged_at": "2026-10-05T10:26:47Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16168\r\n\r\n## What changes\r\n\r\n- Every Gen model-list route (`/models`, `/text|image|video|audio|embeddings|3d/models`, `/v1/models`) accepts `query`, `capabilities`, `agent` and `limit`.\r\n- The MCP `listModels` tool forwards them next to `type` and `community`. It no longer filters agents itself, so it stays a thin proxy.\r\n\r\n| Parameter | Behaviour |\r\n|---|---|\r\n| `query` | Case-insensitive; every word must appear in the name, aliases, title, description or publisher |\r\n| `capabilities` | Comma-separated; a model needs all of them; unknown values return 400 |\r\n| `agent` | `true`/`1` agents only, `false`/`0` no agents |\r\n| `limit` | 1-500; applied last, after visibility, key permissions, source and reliability, in catalog order |\r\n\r\nSource size: Gen +61/-9 (`model-catalog.ts`, `schemas/models.ts`); MCP +28/-14, mostly the tool schema. `listModels` forwards, and `getModels` takes a filter object.\r\n\r\n## Real `listModels` calls\r\n\r\nRun through the actual MCP handler against the actual Gen worker code (Vitest workers pool, real registry):\r\n\r\n```\r\nlistModels({})                                      GET /models                              -> 203 models\r\nlistModels({\"type\":\"text\"})                         GET /text/models                         -> 100 models\r\nlistModels({\"query\":\"claude\",\"limit\":3})            GET /models?query=claude&limit=3         -> anthropic/claude-sonnet-5.5, anthropic/claude-opus-5.5, anthropic/claude-fable-5.1\r\nlistModels({\"type\":\"text\",\"query\":\"gemini flash\"})  GET /text/models?query=gemini+flash      -> 6 models (google/gemini-3.8-flash, ...-3.7-flash, ...-3.5-flash-lite, ...)\r\nlistModels({\"type\":\"text\",\"capabilities\":[\"reasoning\",\"web_search\"],\"limit\":5})\r\n                                                    GET /text/models?limit=5&capabilities=reasoning%2Cweb_search\r\n                                                                                             -> google/gemini-3.1-pro-preview\r\nlistModels({\"type\":\"image\",\"query\":\"flux\",\"limit",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Find the right flower",
+    "blurb": "The model catalog gets a search box, in API form. Ask for Claude, require reasoning and web search, or keep agents out of the results.",
+    "summary": "Gen’s model-list routes gain case-insensitive, all-word query search, all-required capability filters, agent selection, and a 1–500 result limit; MCP’s listModels forwards the same filters instead of filtering agents itself.",
+    "impact": "Developers can narrow model listings across text, image, video, audio, embeddings, and 3D, with limits applied after visibility and permission checks in catalog order.",
+    "keywords": [
+      "model catalog",
+      "model search",
+      "Gen API",
+      "MCP",
+      "capabilities",
+      "filters"
+    ],
+    "visual_concept": "A cozy model-catalog garden: labeled code-plants represent different model types, while a small search lens and filter tags represent query and capability matching. Polli, wearing tiny librarian glasses, helps a curious CRT monitor robot find a matching plant.",
+    "image_prompt": "In a cozy pixel art garden-library, a cute chunky CRT monitor robot examines model code-plants through a little search lens while Polli, wearing tiny librarian glasses, points to the matching flower; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium sized and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) foliage and glow, warm cream background, dark purple (#110518) outlines, chunky sprites, and a small pixel-font sign reading 'MODELS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16246.jpg",
+    "prompt": "In a cozy pixel art garden-library, a cute chunky CRT monitor robot examines model code-plants through a little search lens while Polli, wearing tiny librarian glasses, points to the matching flower; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium sized and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) foliage and glow, warm cream background, dark purple (#110518) outlines, chunky sprites, and a small pixel-font sign reading 'MODELS'."
+  },
+  "generated_at": "2026-10-05T10:27:50.111402+00:00"
+}

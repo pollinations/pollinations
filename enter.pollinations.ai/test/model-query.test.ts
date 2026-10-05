@@ -89,13 +89,15 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official models of every status without replacing explicit or unfinished filters", () => {
-        expect(ensureModelQueryDefaults("")).toBe("source:official status:all");
+    it("preselects reliable official models without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe(
+            "source:official status:reliable",
+        );
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:all capability:reasoning",
+            "source:official status:reliable capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:all source:community",
+            "status:reliable source:community",
         );
         expect(ensureModelQueryDefaults("status:reliable")).toBe(
             "source:official status:reliable",
@@ -109,22 +111,21 @@ describe("model query defaults", () => {
     });
 });
 
-it("filters only community models at the API cutoff, keeps unknown and permits show all", () => {
-    for (const successRate of [0, 70, 80, 82, 90, 100, null]) {
-        const candidate = model({
-            community: true,
-            health: {
-                status: successRate == null ? "unknown" : "degraded",
-                requests: successRate == null ? 0 : 50,
-                success_rate: successRate,
-            },
-        });
-        const visible = successRate == null || successRate > 80;
-        expect(matches(candidate, "source:community status:reliable")).toBe(
-            visible,
-        );
-        expect(matches(candidate, "status:reliable")).toBe(visible);
-        expect(matches(candidate, "status:all")).toBe(true);
+it("filters every model source at the same cutoff, keeps unknown and permits show all", () => {
+    for (const community of [false, true]) {
+        for (const successRate of [0, 70, 80, 82, 90, 100, null]) {
+            const candidate = model({
+                community,
+                health: {
+                    status: successRate == null ? "unknown" : "degraded",
+                    requests: successRate == null ? 0 : 50,
+                    success_rate: successRate,
+                },
+            });
+            const visible = successRate == null || successRate > 80;
+            expect(matches(candidate, "status:reliable")).toBe(visible);
+            expect(matches(candidate, "status:all")).toBe(true);
+        }
     }
     const official = model({
         health: { status: "down", requests: 50, success_rate: 0 },
@@ -136,9 +137,9 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             "status:reliable",
         ),
     ).toBe(false);
-    // Official models without recent traffic stay listed by default (#15377).
+    // Models without recent traffic stay listed by default.
     expect(matches(model(), ensureModelQueryDefaults(""))).toBe(true);
-    expect(matches(official, ensureModelQueryDefaults(""))).toBe(true);
+    expect(matches(official, ensureModelQueryDefaults(""))).toBe(false);
     expect(
         matches(
             model({

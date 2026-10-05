@@ -2,14 +2,16 @@
   "name": "floret",
   "version": "1.0.0",
   "private": true,
-  "description": "Cloudflare Worker that fronts the Floret container",
+  "description": "Floret entrypoint for per-run E2B sandboxes",
   "main": "worker.js",
   "type": "module",
   "scripts": {
+    "build": "node scripts/build-worker.mjs",
+    "test": "wrangler deploy --dry-run --outdir temp/worker && node --test gateway.test.js model-catalog.test.js worker-runtime.test.js tests/worker.test.js",
     "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "@cloudflare/containers": "^0.3.7"
+    "e2b": "2.52.0"
   },
   "devDependencies": {
     "miniflare": "4.20260730.0",

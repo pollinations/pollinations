@@ -1,65 +1,95 @@
 import assert from "node:assert/strict";
-import { registerHooks } from "node:module";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { createFetchMock, Miniflare } from "miniflare";
 
-// Keep the real Containers SDK and Worker modules; replace only platform bases.
-const platform = `export class DurableObject {
-    constructor(ctx, env) { this.ctx = ctx; this.env = env; }
-}
-export class WorkerEntrypoint extends DurableObject {}`;
-const hooks = registerHooks({
-    resolve(specifier, context, nextResolve) {
-        if (specifier === "cloudflare:workers") {
-            return {
-                url: `data:text/javascript,${encodeURIComponent(platform)}`,
-                shortCircuit: true,
-            };
-        }
-        if (
-            context.parentURL?.includes("/@cloudflare/containers/") &&
-            specifier.startsWith(".") &&
-            !specifier.endsWith(".js")
-        ) {
-            return nextResolve(`${specifier}.js`, context);
-        }
-        return nextResolve(specifier, context);
-    },
-});
-const { ContainerProxy, FloretContainer } = await import("./worker.js");
-hooks.deregister();
-
-test("installed SDK dispatches private catalog requests to the Worker binding", async () => {
-    let snapshots = 0;
-    const proxy = new ContainerProxy(
-        {
-            props: {
-                className: FloretContainer.name,
-                containerId: "test-container",
-                enableInternet: false,
-                interceptAll: false,
+// Exercise the bundled Worker, real catalog DO and installed E2B SDK in workerd.
+// Only remote HTTP services are replaced; no Floret code or SDK is mocked.
+test("the bundled Worker authenticates before E2B and preserves control API failures", async () => {
+    const mock = createFetchMock();
+    mock.disableNetConnect();
+    mock.get("https://enter.pollinations.ai")
+        .intercept({ path: "/api/account/key", method: "GET" })
+        .reply(200, { valid: true })
+        .persist();
+    mock.get("https://gen.pollinations.ai")
+        .intercept({ path: "/models", method: "GET" })
+        .reply(200, [
+            {
+                name: "test",
+                category: "text",
+                capabilities: ["chat"],
+                pricing: { currency: "pollen", prompt: "0", completion: "0" },
             },
+        ])
+        .persist();
+    const mf = new Miniflare({
+        modules: [
+            {
+                type: "ESModule",
+                path: fileURLToPath(
+                    new URL("./temp/worker/worker.js", import.meta.url),
+                ),
+            },
+        ],
+        compatibilityDate: "2026-01-01",
+        compatibilityFlags: ["nodejs_compat"],
+        durableObjects: {
+            FLORET_CATALOG: { className: "FloretCatalog", useSQLite: true },
         },
-        {
-            FLORET_CATALOG: {
-                getByName(name) {
-                    assert.equal(name, "global");
+        fetchMock: mock,
+        cf: false,
+    });
+    try {
+        assert.deepEqual(
+            await (await mf.dispatchFetch("https://floret.test/health")).json(),
+            { status: "ok" },
+        );
+        assert.equal(
+            (
+                await mf.dispatchFetch(
+                    "https://floret.test/v1/chat/completions",
+                    { method: "POST" },
+                )
+            ).status,
+            401,
+        );
+        let creates = 0;
+        for (const status of [401, 402, 403, 429, 503]) {
+            mock.get("https://gen.pollinations.ai")
+                .intercept({ path: "/alpha/e2b/v2/sandboxes", method: "POST" })
+                .reply(() => {
+                    creates++;
                     return {
-                        async snapshot() {
-                            snapshots++;
-                            return {
-                                version: "1",
-                                catalog: [{ name: "test" }],
-                            };
+                        statusCode: status,
+                        data: JSON.stringify({
+                            code: status,
+                            message: "sandbox rejected",
+                        }),
+                        responseOptions: {
+                            headers: { "Content-Type": "application/json" },
                         },
                     };
+                });
+            const response = await mf.dispatchFetch(
+                "https://floret.test/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Bearer sk_existing",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "floret",
+                        messages: [{ role: "user", content: "hi" }],
+                    }),
                 },
-            },
-        },
-    );
-    const response = await proxy.fetch(
-        new Request("http://floret-catalog.internal/snapshot"),
-    );
-    assert.equal(response.status, 200);
-    assert.equal(snapshots, 1);
-    assert.equal((await response.json()).version, "1");
+            );
+            assert.equal(response.status, status);
+        }
+        assert.equal(creates, 5, "No duplicate VM purchases or create retries");
+        mock.assertNoPendingInterceptors();
+    } finally {
+        await mf.dispose();
+    }
 });

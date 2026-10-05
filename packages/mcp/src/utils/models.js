@@ -22,10 +22,23 @@ async function fetchModels(url, context) {
     return response.json();
 }
 
-export function getModels(type = "all", context, filters) {
+export function getModels(type = "all", context, filters = {}) {
     const path = MODEL_PATHS[type];
     if (!path) throw new Error(`Unknown model type: ${type}`);
-    return fetchModels(buildUrl(path, filters), context);
+    // Backward compatibility: a bare boolean third argument meant `community`.
+    if (typeof filters === "boolean") filters = { community: filters };
+    // Gen performs all filtering; the MCP only forwards parameters. `false`
+    // booleans and empty arrays are meaningful and must not be dropped, so the
+    // empty entries are removed here rather than in buildUrl.
+    const params = Object.fromEntries(
+        Object.entries(filters).filter(
+            ([, value]) =>
+                value !== undefined &&
+                value !== null &&
+                !(Array.isArray(value) && value.length === 0),
+        ),
+    );
+    return fetchModels(buildUrl(path, params), context);
 }
 
 export const getImageModels = (context) => getModels("image", context);

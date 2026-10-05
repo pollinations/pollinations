@@ -1,11 +1,14 @@
 import { ModelCapabilitySchema } from "@shared/registry/model-info.ts";
 import { z } from "zod";
 
-export const splitList = (value: string) =>
-    value
-        .split(",")
-        .map((item) => item.trim())
+// One query value can carry several entries: `|` matches the separator the
+// other list parameters use, `,` reads naturally in a hand-written URL.
+function parseList(value: string): string[] {
+    return value
+        .split(/[|,]/)
+        .map((entry) => entry.trim())
         .filter(Boolean);
+}
 
 export const ModelListQueryParamsSchema = z.object({
     reliability: z.enum(["reliable", "all"]).optional().meta({
@@ -22,28 +25,34 @@ export const ModelListQueryParamsSchema = z.object({
     }),
     query: z.string().optional().meta({
         description:
-            "Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match.",
+            "Case-insensitive text search over each model's canonical name, aliases, title, description and publisher. Every whitespace-separated word must appear somewhere in that text, so words can match different fields. Combines with the other filters using AND semantics.",
     }),
     capabilities: z
         .string()
-        .optional()
+        .transform(parseList)
         .refine(
-            (value) =>
-                splitList(value ?? "").every(
-                    (item) => ModelCapabilitySchema.safeParse(item).success,
+            (capabilities) =>
+                capabilities.every(
+                    (capability) =>
+                        ModelCapabilitySchema.safeParse(capability).success,
                 ),
-            { message: "Unknown capability" },
+            {
+                message:
+                    "Unknown capability. Supported values: tool_calling, reasoning, web_search, code_execution, pollinations_models.",
+            },
         )
+        .optional()
         .meta({
-            description: `Comma-separated capabilities (${ModelCapabilitySchema.options.join(", ")}). A model must have all of them.`,
+            description:
+                "Keep only models advertising every listed capability (AND semantics). Separate multiple values with `|` or `,`, for example `capabilities=tool_calling,reasoning`. Supported values: tool_calling, reasoning, web_search, code_execution, pollinations_models; any other value returns 400 Bad Request.",
         }),
     agent: z.enum(["true", "false", "1", "0"]).optional().meta({
         description:
-            "`true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both.",
+            "Agent filter: `true`/`1` for agents only, `false`/`0` to exclude them.",
     }),
     limit: z.coerce.number().int().min(1).max(500).optional().meta({
         description:
-            "Return at most this many models (1-500), after every other filter and in catalog order.",
+            "Maximum number of models to return. Applied after visibility, API-key permissions, source, reliability and every other filter, so catalog order decides which models fit.",
     }),
 });
 

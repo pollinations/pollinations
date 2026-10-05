@@ -49,7 +49,9 @@ public Media URL. No download or re-upload is needed, and binary data does not
 consume model context. Anyone with the link can access it; expired files return 404.
 
 Models, voices, capabilities, and pricing come from the live registry. Use
-`listModels` before selecting a model or voice.
+`listModels` before selecting a model or voice. `listModels` accepts
+`query`, `capabilities`, `agent`, and `limit` parameters to narrow results
+server-side.
 
 ## Development
 

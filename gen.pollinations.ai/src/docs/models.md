@@ -13,6 +13,8 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
+All model list endpoints accept the search and filter parameters described in [Search and filter parameters](#search-and-filter-parameters).
+
 ### Filters
 
 All model list endpoints above accept the same optional `source` filter:
@@ -88,6 +90,19 @@ Built-in models may use separate upstream routes for Chat and Responses.
 Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
+
+### Search and filter parameters
+
+All model list endpoints accept the following optional query parameters. Filters combine with AND semantics and only narrow the catalog the caller is already allowed to see; they do not change generation permissions.
+
+- **`query`**: Case-insensitive text search over canonical name, aliases, title, description, and publisher. Every whitespace-separated word must appear (AND semantics). Example: `?query=flux+reasoning`
+- **`capabilities`**: Comma or pipe-separated list. Keeps only models advertising EVERY listed capability. Supported values: `tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`. Unknown values return 400. Example: `?capabilities=tool_calling,reasoning`
+- **`agent`**: `true`/`false`/`1`/`0`. `true` returns only agents, `false` excludes them.
+- **`limit`**: Integer 1–500. Applied AFTER visibility, API-key permissions, source, reliability, and all other filters. Example: `?limit=10`
+
+```bash
+curl 'https://gen.pollinations.ai/v1/models?query=flux+reasoning&capabilities=tool_calling,reasoning&limit=10'
+```
 
 ### Chat parameters
 

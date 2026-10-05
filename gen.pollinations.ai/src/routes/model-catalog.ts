@@ -69,6 +69,48 @@ export function attachModelHealth(
     };
 }
 
+// Every field the discovery `query` filter searches, joined so a term can
+// match any one of them. `name` is the canonical id and `aliases` keeps the
+// older `owner/model` ids reachable; `title`, `description` and `publisher`
+// cover the human-readable catalog text. A missing `description` contributes
+// nothing instead of the string "undefined".
+function catalogSearchText(entry: GenerationModelEntry): string {
+    return [
+        entry.info.name,
+        ...entry.info.aliases,
+        entry.info.title,
+        entry.info.description ?? "",
+        entry.info.publisher,
+    ]
+        .join("\n")
+        .toLowerCase();
+}
+
+function matchesSearchQuery(
+    entry: GenerationModelEntry,
+    terms: readonly string[],
+): boolean {
+    if (terms.length === 0) return true;
+    const text = catalogSearchText(entry);
+    return terms.every((term) => text.includes(term));
+}
+
+function matchesCapabilities(
+    entry: GenerationModelEntry,
+    capabilities: readonly string[],
+): boolean {
+    if (capabilities.length === 0) return true;
+    const declared = new Set<string>(entry.info.capabilities);
+    return capabilities.every((capability) => declared.has(capability));
+}
+
+function matchesAgent(
+    entry: GenerationModelEntry,
+    agent: boolean | undefined,
+): boolean {
+    return agent === undefined || (entry.info.agent === true) === agent;
+}
+
 // Discovery only: callers apply access checks before entering this function.
 export async function filterCatalogEntries(
     c: Context<Env>,
@@ -120,7 +162,30 @@ export async function filterCatalogEntries(
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );
+
+    // Text, capability and agent filters narrow the catalog the caller is
+    // already allowed to see: visibility, API-key permissions, source and
+    // reliability have all run above, so these can only remove entries.
+    const terms = (query.query ?? "")
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+    const capabilities = query.capabilities ?? [];
+    const agent =
+        query.agent === undefined
+            ? undefined
+            : query.agent === "true" || query.agent === "1";
+    const matches = reliable.filter(
+        (entry) =>
+            matchesSearchQuery(entry, terms) &&
+            matchesCapabilities(entry, capabilities) &&
+            matchesAgent(entry, agent),
+    );
+
+    // `limit` is applied last, so catalog ordering decides which of the
+    // matching models fit and no filter can surface a hidden one.
     return query.limit === undefined
-        ? reliable
-        : reliable.slice(0, query.limit);
+        ? matches
+        : matches.slice(0, query.limit);
 }

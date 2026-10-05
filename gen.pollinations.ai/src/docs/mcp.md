@@ -128,7 +128,9 @@ model health, usage, earnings, quests, and API keys.
 | `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
-clients should not rely on a hardcoded model list.
+clients should not rely on a hardcoded model list. `listModels` accepts
+`query`, `capabilities`, `agent`, and `limit` parameters to narrow results
+server-side.
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone

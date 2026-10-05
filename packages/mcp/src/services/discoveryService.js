@@ -8,11 +8,12 @@ import {
 import { getModels } from "../utils/models.js";
 
 async function listModels(params, context) {
-    const { type, capabilities, ...filters } = params;
-    const models = await getModels(type || "all", context, {
-        ...filters,
-        capabilities: capabilities?.join(","),
-    });
+    // Gen owns the filtering: visibility, API-key permissions, source,
+    // reliability, the discovery filters and the result limit all run there.
+    // This tool only forwards parameters and returns the live response, so no
+    // search logic lives in the MCP.
+    const { type, ...filters } = params;
+    const models = await getModels(type || "all", context, filters);
     return createMCPResponse([createTextContent(models, true)]);
 }
 
@@ -28,7 +29,7 @@ async function getModelStatus(params, context) {
 export const discoveryTools = [
     [
         "listModels",
-        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Gen filters the catalog server-side, so narrow with query, capabilities, agent, community and limit instead of fetching every model.",
+        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Gen filters the catalog server-side, so narrow with query, capabilities, agent, community or limit instead of reading every model into context.",
         {
             type: z
                 .enum([
@@ -42,6 +43,26 @@ export const discoveryTools = [
                 ])
                 .optional()
                 .describe("Model type (default: all)"),
+            query: z
+                .string()
+                .optional()
+                .describe(
+                    "Case-insensitive search over canonical name, aliases, title, description and publisher; every whitespace-separated word must match",
+                ),
+            capabilities: z
+                .array(
+                    z.enum([
+                        "tool_calling",
+                        "reasoning",
+                        "web_search",
+                        "code_execution",
+                        "pollinations_models",
+                    ]),
+                )
+                .optional()
+                .describe(
+                    "Keep only models advertising every listed capability (AND semantics)",
+                ),
             community: z
                 .boolean()
                 .optional()
@@ -52,25 +73,15 @@ export const discoveryTools = [
                 .boolean()
                 .optional()
                 .describe("True for agents only, false to exclude agents"),
-            query: z
-                .string()
-                .optional()
-                .describe(
-                    "Search name, aliases, title, description and publisher; every word must match",
-                ),
-            capabilities: z
-                .array(z.string())
-                .optional()
-                .describe(
-                    "Keep models with all of these capabilities, e.g. tool_calling, reasoning, web_search",
-                ),
             limit: z
                 .number()
                 .int()
                 .min(1)
                 .max(500)
                 .optional()
-                .describe("Return at most this many models"),
+                .describe(
+                    "Maximum number of models returned; Gen applies it after every other filter",
+                ),
         },
         listModels,
     ],

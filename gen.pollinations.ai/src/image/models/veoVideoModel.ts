@@ -11,7 +11,6 @@ import {
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 import type { TrackingData } from "../utils/trackingHeaders.ts";
-import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
 const logOps = debug("pollinations:veo:ops");
@@ -38,14 +37,15 @@ async function processImageForVeo(
     }
 }
 
-// The gateway always fills width/height (1024×1024 by default), so only
-// dimensions the caller set pick the ratio; otherwise aspectRatio, then 16:9.
+// Explicit aspectRatio wins; otherwise only caller-set dimensions pick the
+// orientation, with square dimensions and omitted dimensions defaulting wide.
 function veoAspectRatio(params: ImageParams): "16:9" | "9:16" {
-    return calculateVideoResolution(
-        params.dimensionsExplicit
-            ? { width: params.width, height: params.height }
-            : { aspectRatio: params.aspectRatio },
-    ).aspectRatio;
+    if (params.aspectRatio === "16:9" || params.aspectRatio === "9:16") {
+        return params.aspectRatio;
+    }
+    return params.dimensionsExplicit && params.height > params.width
+        ? "9:16"
+        : "16:9";
 }
 
 // Veo API constants

@@ -185,6 +185,37 @@ describe("Veo request defaults", () => {
 
         expect(requests[0].parameters).toMatchObject({ aspectRatio: "9:16" });
     });
+
+    it.each([
+        [720, 1280, "16:9", "16:9"],
+        [1280, 720, "9:16", "9:16"],
+        [1024, 1024, "16:9", "16:9"],
+        [1024, 1024, undefined, "16:9"],
+    ] as const)("resolves %ix%i with aspectRatio=%s to %s on both routes", async (width, height, aspectRatio, expected) => {
+        const params: ImageParams = {
+            ...gatewayDefaults,
+            width,
+            height,
+            dimensionsExplicit: true,
+            aspectRatio,
+        };
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockVeoFetch(requests);
+        await callVeoAPI("a paper boat", params);
+
+        const inputs: Record<string, unknown>[] = [];
+        mockReplicateFetch(inputs);
+        await callVeoReplicateAPI("a paper boat", {
+            ...params,
+            model: "google/veo-3.1-fast:replicate",
+        });
+
+        expect(requests[0].parameters).toMatchObject({
+            aspectRatio: expected,
+        });
+        expect(inputs[0]).toMatchObject({ aspect_ratio: expected });
+    });
 });
 
 describe("veoVideoModel resolution selection", () => {

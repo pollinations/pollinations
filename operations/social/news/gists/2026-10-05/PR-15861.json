@@ -1,0 +1,34 @@
+{
+  "pr_number": 15861,
+  "title": "fix: display model prices in their billing units",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15861",
+  "merged_at": "2026-10-05T10:11:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix Qwen Image 2.1 showing zero per generation: it now shows 0.02 Pollen per billable megapixel (0.0367 for edits, via the existing operation control). FLUX.2 rates are labelled per megapixel too.\n- Add optional `pricing_units` to the public `/models` response. Registry entries declare the billed unit next to their rates when the pricing field name doesn't describe it. Displayed rate = `pricing[field] × quantity` (quantity defaults to 1), e.g. Qwen `0.00000002 × 1,000,000 = 0.02` per megapixel. Other clients can now show these prices correctly, and the dashboard's per-model unit table is gone.\n- Mark Lyria 3 Clip as flat-rate: it shows 0.04 per clip instead of 0.6/sec, and gen's per-request estimate is corrected to 0.04.\n- Restore missing image, video, text, cache and audio rate rows. Show Gemini TTS and Transcribe per token, and character- or byte-billed speech in its real unit. Update the pricing legend to match.\n- Keep small rates from rounding to zero, fix the combined cache-write scale, and stop paid variants or requests over 1 Pollen from looking free or cheaper. Provider rates and billed amounts are unchanged.\n\nDeploy order: Enter and gen deploy independently. Deploy gen first, confirm `/models` returns `pricing_units`, then deploy Enter. Otherwise Qwen and FLUX show the wrong unit until gen ships.\n\nValidation: Enter pricing tests, price snapshot and typecheck pass. gen `/models`, OpenAPI, docs and Lyria billing tests and typecheck pass. Biome is clean. The UI was checked locally against a catalog built from this branch's registry.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Prices get their units back",
+    "blurb": "A price without its billing unit is a fairly adventurous number. Model listings get clearer labels for megapixels, clips, tokens, characters, and bytes.",
+    "summary": "The public /models response gains optional pricing_units so clients can display billed quantities correctly; the model catalog also fixes Qwen Image 2.1, FLUX.2, and Lyria 3 Clip labels and restores missing rate rows without changing provider rates or billed amounts.",
+    "impact": "Qwen Image 2.1 displays 0.02 Pollen per billable megapixel (0.0367 for edits), while Lyria 3 Clip displays and estimates 0.04 per clip instead of 0.6 per second; small rates and other billing units remain legible.",
+    "keywords": [
+      "pricing",
+      "billing units",
+      "/models",
+      "Qwen Image 2.1",
+      "FLUX.2",
+      "Lyria 3 Clip"
+    ],
+    "visual_concept": "Polli helps the monitor robot sort model price tags on a cozy catalog screen: a pixel tile tagged 0.02 per megapixel and a music-clip tile tagged 0.04 per clip. Small code-plants and a prominent lime-green glow tie the corrected labels to the garden-like setting.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny accountant glasses and helps a cheerful CRT monitor robot arrange two clear pixel-font price tags, '0.02 / MP' beside an image tile and '0.04 / CLIP' beside a music tile, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-15861.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny accountant glasses and helps a cheerful CRT monitor robot arrange two clear pixel-font price tags, '0.02 / MP' beside an image tile and '0.04 / CLIP' beside a music tile, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-05T10:12:49.771794+00:00"
+}

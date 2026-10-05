@@ -279,12 +279,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
-        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
-        // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
-        transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.coding),
-            stripReasoning,
-        ),
+        config: portkeyConfig["qwen-coder-bedrock"],
+        // No default coding prompt: it makes Bedrock narrate before a tool
+        // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning
+        // mode, and Bedrock rejects stop with a ValidationException.
+        transform: pipe(stripReasoning, omitParameters("stop")),
     },
     {
         name: "qwen/qwen3-coder-next",

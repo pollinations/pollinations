@@ -23,10 +23,7 @@ interface ChatResponse {
 export function createChatCommand() {
     return new Command("chat")
         .description("Interactive multi-turn chat session")
-        .option(
-            "--model <model>",
-            "Text model (default: from config or 'openai')",
-        )
+        .option("--model <model>", "Text model (default: API default)")
         .option("--system <msg>", "System message")
         .option("--temperature <n>", "Randomness (0-2)")
         .option("--max-tokens <n>", "Maximum output tokens")
@@ -59,7 +56,7 @@ export function createChatCommand() {
             if (!isJson) {
                 process.stderr.write(
                     chalk.green(
-                        `\nChat session started (model: ${opts.model})\n`,
+                        `\nChat session started (model: ${opts.model ?? "API default"})\n`,
                     ) +
                         chalk.dim(
                             "Type /exit to quit, /clear to reset, /save <path> to save\n\n",
@@ -125,7 +122,10 @@ export function createChatCommand() {
 
                     process.stderr.write(`${chalk.yellow("ai")} > `);
                     let content = "";
-                    for await (const chunk of streamSSE(res)) {
+                    for await (const chunk of streamSSE(res, (event) => {
+                        if (typeof event.usage?.total_tokens === "number")
+                            totalTokens += event.usage.total_tokens;
+                    })) {
                         content += chunk;
                         process.stderr.write(chunk);
                     }
@@ -147,7 +147,18 @@ export function createChatCommand() {
                             `${m.role === "user" ? "You" : "AI"}: ${m.content}`,
                     )
                     .join("\n\n");
-                writeFileSync(path, transcript, "utf-8");
+                try {
+                    writeFileSync(path, transcript, "utf-8");
+                } catch (err) {
+                    printError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to save transcript",
+                    );
+                    // Once readline closes, a failed autosave cannot be retried.
+                    if (closed) process.exitCode = 1;
+                    return;
+                }
                 if (!isJson) {
                     process.stderr.write(chalk.green(`Saved to ${path}\n`));
                 }

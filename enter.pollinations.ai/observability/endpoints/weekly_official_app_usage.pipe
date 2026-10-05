@@ -1,0 +1,47 @@
+DESCRIPTION >
+    Successful final requests through verified official Pollinations app keys.
+    Explicit IDs exclude unrelated apps and internal dashboard login clients.
+TOKEN tinybird_read READ
+NODE official_app_counts
+SQL >
+    %
+    WITH multiIf(
+        api_key_client_id = 'jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0' OR api_key_id = 'jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0', 'cli',
+        api_key_client_id = 'Y9HSuQ7mFi1iIYBSiV1XAVyZWzOAUHNW' OR api_key_id = 'Y9HSuQ7mFi1iIYBSiV1XAVyZWzOAUHNW', 'play',
+        api_key_client_id = 'S43dqgKr3939Is9pr2Vroe9RGohvpn9i' OR api_key_id = 'S43dqgKr3939Is9pr2Vroe9RGohvpn9i', 'openwebui',
+        api_key_client_id = '2G4dsgjxjg0lLWDRmNugvE6ju3l71haW' OR api_key_id = '2G4dsgjxjg0lLWDRmNugvE6ju3l71haW', 'playground',
+        api_key_client_id = 'KklSboVMMECtsZmmf4SYsZqKQ4uOuuav' OR api_key_id = 'KklSboVMMECtsZmmf4SYsZqKQ4uOuuav', 'build',
+        api_key_client_id = '5WV7MgAXb6ZN2328YQbBrSzaRjVMsQZn' OR api_key_id = '5WV7MgAXb6ZN2328YQbBrSzaRjVMsQZn', 'catgpt',
+        api_key_client_id = 'pMq6IbSN9CtftgcElobsW5jbq79w9t1M' OR api_key_id = 'pMq6IbSN9CtftgcElobsW5jbq79w9t1M', 'catgptLegacy',
+        api_key_client_id = 'lr34qA3hdcZ3BwSvjBQDNhJgbtao0A0U' OR api_key_id = 'lr34qA3hdcZ3BwSvjBQDNhJgbtao0A0U', 'sdk',
+        api_key_client_id = '4yFVBtnEIYYEeilfHKCUgiRHrJliEXNQ' OR api_key_id = '4yFVBtnEIYYEeilfHKCUgiRHrJliEXNQ', 'websim',
+        api_key_client_id = 'BMC49P8zkpSj3BdwSLatZlILqCe0At7E' OR api_key_id = 'BMC49P8zkpSj3BdwSLatZlILqCe0At7E', 'openclaw',
+        api_key_client_id = 'YEGF9OFOCc28C1FljHXTGXCqPYXWBdOQ' OR api_key_id = 'YEGF9OFOCc28C1FljHXTGXCqPYXWBdOQ', 'sirius',
+        api_key_client_id = 'x07tEO3mtqPpwhLeXWqpcVnhhQTUUCJj' OR api_key_id = 'x07tEO3mtqPpwhLeXWqpcVnhhQTUUCJj', 'wallet',
+        ''
+    ) AS app
+    SELECT
+        formatDateTime(toStartOfWeek(start_time, 1), '%Y-%m-%d') AS week,
+        countIf(app != '') AS officialApp_all,
+        countIf(app = 'cli') AS officialApp_cli,
+        countIf(app = 'play') AS officialApp_play,
+        countIf(app = 'openwebui') AS officialApp_openwebui,
+        countIf(app = 'playground') AS officialApp_playground,
+        countIf(app = 'build') AS officialApp_build,
+        countIf(app = 'catgpt') AS officialApp_catgpt,
+        countIf(app = 'catgptLegacy') AS officialApp_catgptLegacy,
+        countIf(app = 'sdk') AS officialApp_sdk,
+        countIf(app = 'websim') AS officialApp_websim,
+        countIf(app = 'openclaw') AS officialApp_openclaw,
+        countIf(app = 'sirius') AS officialApp_sirius,
+        countIf(app = 'wallet') AS officialApp_wallet
+    FROM generation_events_classified
+    WHERE traffic_group = 'regular' AND environment = 'production'
+        AND is_final AND response_status >= 200 AND response_status < 300
+        AND model_provider_used != 'community'
+        AND start_time >= toDate({{Date(start_date, '2026-08-03')}})
+        AND start_time < toDate({{Date(start_date, '2026-08-03')}}) + INTERVAL 7 DAY
+    GROUP BY week
+    ORDER BY week
+TYPE endpoint
+

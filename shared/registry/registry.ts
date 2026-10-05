@@ -222,6 +222,8 @@ export type ModelDefinition = {
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
     fallbackOnly?: boolean;
+    /** Change when the same request starts producing different media, so old cached results are not served. */
+    cacheVersion?: string;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];

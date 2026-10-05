@@ -76,7 +76,7 @@ export async function callSeedance25API(
         duration: DURATION,
         resolution,
         aspect_ratio: resolveAspectRatio(safeParams),
-        generate_audio: safeParams.audio,
+        generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;

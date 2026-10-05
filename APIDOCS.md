@@ -1702,6 +1702,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].aliases` * | `string`[] | — |
 | `data[].category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `data[].community` * | `boolean` | — |
+| `data[].tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
 | `data[].title` * | `string` | — |
 | `data[].description` | `string` | — |
 | `data[].input_modalities` | `string`[] | — |
@@ -1739,6 +1740,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "OpenAI"
     },
     {
@@ -1749,6 +1755,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Claude"
     },
     {
@@ -1759,6 +1770,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Gemini"
     }
   ]
@@ -1790,6 +1806,8 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `aliases` * | `string`[] | — |
 | `category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `community` * | `boolean` | — |
+| `tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
+| `tags[].name` * | `string` | — |
 | `title` * | `string` | — |
 | `description` | `string` | — |
 | `input_modalities` | `string`[] | — |

@@ -228,14 +228,16 @@ export function CommunityEndpoints({
         }
     }
 
-    async function handleSyncAgent(): Promise<void> {
-        if (!editingAgent) return;
+    async function handleSyncAgent(): Promise<string> {
+        if (!editingAgent) throw new Error("No agent selected");
         const response = await apiClient.account.agents[":id"].sync.$post({
             param: { id: editingAgent.id },
         });
         if (!response.ok) throw new Error(await readError(response));
+        const { deployedCommitSha } = await response.json();
         await loadEndpoints();
         await onChange?.();
+        return deployedCommitSha;
     }
 
     async function handleCreate(

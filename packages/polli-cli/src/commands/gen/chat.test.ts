@@ -86,6 +86,29 @@ afterEach(() => {
 });
 
 describe("polli gen chat session lifecycle", () => {
+    it("totals provider-reported usage across streamed turns on exit", async () => {
+        prepare(
+            async () =>
+                new Response(
+                    [
+                        'data: {"choices":[{"delta":{"content":"hi"}}]}',
+                        'data: {"choices":[],"usage":{"total_tokens":7}}',
+                        "data: [DONE]",
+                        "",
+                    ].join("\n\n"),
+                ),
+        );
+
+        const line = await startSession();
+        await line("hello");
+        await line("again");
+        await line("/exit");
+
+        expect(process.stderr.write).toHaveBeenCalledWith(
+            expect.stringContaining("Session ended. 14 tokens used."),
+        );
+    });
+
     it("ends on /exit without sending it and without prompting a closed interface", async () => {
         const fetch = prepare(async () => Response.json({ ok: true }));
 
@@ -135,6 +158,23 @@ describe("polli gen chat session lifecycle", () => {
 
         expect(fetch).toHaveBeenCalledTimes(1);
         expect(process.exitCode).toBe(0);
+    });
+
+    it("labels an omitted model as the API default without sending a model", async () => {
+        prepare(async () => new Response(STREAM_OK));
+
+        const line = await startSession();
+        expect(process.stderr.write).toHaveBeenCalledWith(
+            expect.stringContaining("model: API default"),
+        );
+        expect(createChatCommand().helpInformation()).toContain(
+            "Text model (default: API default)",
+        );
+
+        await line("hello");
+        const body = vi.mocked(fetch).mock.calls[0][1]?.body as string;
+        expect(JSON.parse(body)).not.toHaveProperty("model");
+        await line("/exit");
     });
 
     it("does not prompt a closed interface when stdin ends mid-turn", async () => {

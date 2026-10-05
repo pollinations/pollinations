@@ -1,0 +1,34 @@
+{
+  "pr_number": 16245,
+  "title": "feat: add FLUX.3 Image via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16245",
+  "merged_at": "2026-10-05T13:53:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `black-forest-labs/flux-3-image` through OpenRouter `/api/v1/images`, pinned to BFL with provider fallback disabled: 1K/2K, fifteen aspect ratios, and up to ten editing references. Paid-only, multiplier 1, no aliases or Pollinations GPU.\n- Honors explicit/adaptive framing and inlines downloaded references because BFL does not follow redirects. Omits unsupported upstream seed; a fresh pinned probe returned HTTP 400 when seed was supplied.\n- Bills positive, finite provider-reported cost plus the 5.5% OpenRouter fee. Launch rates end **October 8, 15:00 UTC**: $0.024/$0.05 → $0.048/$0.10 plus fee. Catalog metadata refreshes once per registry build, within 60 seconds; billing uses actual receipts. [Provider pricing](https://bfl.ai/pricing).\n- Updated from main after [#16504](https://github.com/pollinations/pollinations/pull/16504) merged. Shared image-route changes are absent from this diff. The per-read `info` getter has been removed.\n- Validation: 136 integrated regression tests, Gen typecheck and Biome pass. Three fresh live executions after the main update verified disconnect/rejoin, JSON/multipart portrait edits, cached media, and one reconciled wallet debit/event per execution. Earlier 26-execution coverage includes all ratios, 2K, 1/2/10 references and Chat/Responses. No compatible economical fallback approved: fal lacks 9:21 and billed $0.12 at 2K; Replicate exceeded five minutes.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "More room for the picture",
+    "blurb": "FLUX.3 Image joins the model garden with fifteen ways to frame a shot and room for ten reference images. Polli brought a very large scrapbook.",
+    "summary": "Adds paid-only black-forest-labs/flux-3-image through OpenRouter’s /api/v1/images endpoint, supporting 1K/2K output, fifteen aspect ratios, and up to ten editing references, with billing based on provider-reported cost plus a 5.5% fee.",
+    "impact": "Image requests gain portrait-to-wide framing and reference-based edits; 1K/2K rates are $0.024/$0.05 through October 8 at 15:00 UTC, then $0.048/$0.10, plus the 5.5% fee.",
+    "keywords": [
+      "FLUX.3 Image",
+      "OpenRouter",
+      "image generation",
+      "image editing",
+      "aspect ratios",
+      "billing"
+    ],
+    "visual_concept": "FLUX.3 Image is an image model from Black Forest Labs, reached through OpenRouter; depict it as a cozy picture-making desk rather than inventing a provider mascot. Polli, wearing a tiny painter’s beret, arranges reference pictures beside fifteen differently shaped frames while a friendly CRT robot admires the finished image; flowers and a lime-green code-plant connect the desk to the garden.",
+    "image_prompt": "At a cozy pixel art picture-making desk, Polli arranges little reference pictures beside portrait and wide frames while a friendly CRT-headed robot holds up a finished landscape; flowers and a code-plant grow around a prominent lime green (#ecf874) work surface. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny painter’s beret; she is small-to-medium sized and strictly pixel art, never realistic, in a cozy pixel art, 8-bit aesthetic with soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16245.jpg",
+    "prompt": "At a cozy pixel art picture-making desk, Polli arranges little reference pictures beside portrait and wide frames while a friendly CRT-headed robot holds up a finished landscape; flowers and a code-plant grow around a prominent lime green (#ecf874) work surface. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny painter’s beret; she is small-to-medium sized and strictly pixel art, never realistic, in a cozy pixel art, 8-bit aesthetic with soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-05T13:54:45.756680+00:00"
+}

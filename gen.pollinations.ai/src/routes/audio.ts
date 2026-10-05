@@ -92,14 +92,13 @@ const CreateSpeechRequestSchema = z
                     "The audio format for the output. Each model lists its formats as response_formats in /audio/models, and the first is the default. Models without that list choose their own format.",
                 example: "mp3",
             }),
-        duration: z.number().min(0.5).max(300).optional().meta({
+        duration: z.number().min(0.5).max(380).optional().meta({
             description:
-                "Output duration in seconds (elevenlabs/music-v2 and elevenlabs/music-v2.5 3-300; google/lyria-3-clip-preview fixed at 30; elevenlabs/eleven-text-to-sound-v2 0.5-30)",
+                "Output duration in seconds for music and sound effects. Each model lists its range as min_duration and max_duration, or allowed_durations, in /audio/models.",
             example: 30,
         }),
-        seconds: z.number().min(1).max(380).optional().meta({
-            description:
-                "Audio duration in seconds for stability-ai/stable-audio-3-medium and stability-ai/stable-audio-3, 1-380.",
+        seconds: z.number().min(0.5).max(380).optional().meta({
+            description: "Alias for duration.",
             example: 30,
         }),
         steps: z.number().int().min(1).max(100).optional().meta({
@@ -1980,19 +1979,12 @@ function resolveQwenVoice(voice: string): string {
 
 export async function generateLyria3Clip(opts: {
     prompt: string;
-    durationSeconds?: number;
     projectId: string;
     accessToken: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, durationSeconds, projectId, accessToken, log } = opts;
+    const { prompt, projectId, accessToken, log } = opts;
 
-    if (durationSeconds !== undefined && durationSeconds !== 30) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "google/lyria-3-clip-preview generates fixed 30-second clips; duration must be 30 or omitted.",
-        });
-    }
     if (!projectId || !accessToken) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Lyria service is not configured",
@@ -2970,7 +2962,7 @@ export async function generateStableAudio3Medium(opts: {
     // A reference clip switches fal from text-to-audio to audio-to-audio
     // (style transfer) — a different endpoint, body field, and flat fee.
     const isAudioToAudio = referenceAudio !== undefined;
-    const duration = Math.min(380, Math.max(1, seconds ?? 30));
+    const duration = seconds ?? 30;
     const input: Record<string, unknown> = {
         prompt,
         duration,
@@ -3096,7 +3088,7 @@ export async function generateStableAudio3Large(opts: {
     const endpoint = isAudioToAudio
         ? STABLE_AUDIO_3_LARGE_A2A_ENDPOINT
         : STABLE_AUDIO_3_LARGE_ENDPOINT;
-    const duration = Math.min(380, Math.max(1, seconds));
+    const duration = seconds;
 
     const formData = new FormData();
     formData.append("prompt", prompt);
@@ -3221,7 +3213,6 @@ async function dispatchAudioGeneration(
         communityEndpoint?: FallbackCandidate["communityEndpoint"];
         seed?: number;
         duration?: number;
-        seconds?: number;
         steps?: number;
         negativePrompt?: string;
         instrumental?: boolean;
@@ -3248,7 +3239,6 @@ async function dispatchAudioGeneration(
         responseFormat,
         seed,
         duration,
-        seconds,
         steps,
         negativePrompt,
         instrumental,
@@ -3330,7 +3320,6 @@ async function dispatchAudioGeneration(
             c,
             await generateLyria3Clip({
                 prompt: text,
-                durationSeconds: duration,
                 projectId: c.env.GOOGLE_PROJECT_ID,
                 accessToken: accessToken ?? "",
                 log,
@@ -3343,7 +3332,7 @@ async function dispatchAudioGeneration(
             c,
             await generateStableAudio3Medium({
                 prompt: text,
-                seconds: seconds ?? duration,
+                seconds: duration,
                 steps,
                 seed,
                 referenceAudio,
@@ -3358,7 +3347,7 @@ async function dispatchAudioGeneration(
             c,
             await generateStableAudio3Large({
                 prompt: text,
-                seconds: seconds ?? duration,
+                seconds: duration,
                 steps,
                 seed,
                 negativePrompt,
@@ -3526,6 +3515,28 @@ export function resolveSpeechOptions(
     };
 }
 
+// `seconds` is an alias for `duration`. Models list the durations they accept
+// in the registry; the others ignore it.
+export function resolveAudioDuration(
+    model: string,
+    { minDuration, maxDuration, allowedDurations }: ModelDefinition,
+    duration: number | undefined,
+): number | undefined {
+    if (duration === undefined) return undefined;
+    const accepted = allowedDurations
+        ? allowedDurations.includes(duration)
+        : duration >= (minDuration ?? duration) &&
+          duration <= (maxDuration ?? duration);
+    if (!accepted) {
+        const range =
+            allowedDurations?.join(", ") ?? `${minDuration}-${maxDuration}`;
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported duration for ${model}: ${duration}. It accepts ${range} seconds.`,
+        });
+    }
+    return duration;
+}
+
 async function generateAudioFromSpeechRequest(
     c: AudioContext,
     request: CreateSpeechRequest,
@@ -3537,11 +3548,14 @@ async function generateAudioFromSpeechRequest(
         request.voice,
         request.response_format,
     );
+    const duration = resolveAudioDuration(
+        c.var.model.resolved,
+        c.var.model.definition,
+        request.duration ?? request.seconds,
+    );
     const {
         input,
         safe,
-        duration,
-        seconds,
         steps,
         negative_prompt,
         instrumental,
@@ -3596,7 +3610,6 @@ async function generateAudioFromSpeechRequest(
             communityEndpoint: candidate.communityEndpoint,
             seed,
             duration,
-            seconds,
             steps,
             negativePrompt: negative_prompt,
             instrumental,
@@ -3655,7 +3668,7 @@ export async function handleVoiceChanger(c: AudioContext): Promise<Response> {
         });
     }
 
-    const audio = formData.get("audio");
+    const audio = formData.get("file") ?? formData.get("audio");
     if (!(audio instanceof File)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "Missing required audio file.",
@@ -3688,7 +3701,7 @@ export async function handleVoiceIsolator(c: AudioContext): Promise<Response> {
             message: "Invalid multipart form data",
         });
     }
-    const audio = formData.get("audio");
+    const audio = formData.get("file") ?? formData.get("audio");
     if (!(audio instanceof File)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message: "Missing required audio file.",
@@ -3980,18 +3993,18 @@ export const audioRoutes = new Hono<Env>()
                     "multipart/form-data": {
                         schema: {
                             type: "object",
-                            required: ["audio"],
+                            required: ["file"],
                             properties: {
                                 model: {
                                     type: "string",
                                     default:
                                         "elevenlabs/eleven-multilingual-sts-v2",
                                 },
-                                audio: {
+                                file: {
                                     type: "string",
                                     format: "binary",
                                     description:
-                                        "Source audio, up to 50 MB. ElevenLabs supports clips up to five minutes.",
+                                        "Source audio, up to 50 MB. ElevenLabs supports clips up to five minutes. `audio` is accepted as an alias.",
                                 },
                                 voice: {
                                     type: "string",
@@ -4059,17 +4072,17 @@ export const audioRoutes = new Hono<Env>()
                     "multipart/form-data": {
                         schema: {
                             type: "object",
-                            required: ["audio"],
+                            required: ["file"],
                             properties: {
                                 model: {
                                     type: "string",
                                     default: "elevenlabs/voice-isolator",
                                 },
-                                audio: {
+                                file: {
                                     type: "string",
                                     format: "binary",
                                     description:
-                                        "Source audio or video, up to 50 MB and at least 4.6 seconds long.",
+                                        "Source audio or video, up to 50 MB and at least 4.6 seconds long. `audio` is accepted as an alias.",
                                 },
                             },
                         },

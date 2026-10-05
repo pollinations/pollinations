@@ -1,0 +1,34 @@
+{
+  "pr_number": 16431,
+  "title": "fix: show API default in chat model banner",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16431",
+  "merged_at": "2026-10-05T04:08:10Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16430\n\n- Shows `API default` in the chat banner when `--model` is omitted, replacing `undefined`.\n- Corrects help to describe the existing API-selected default.\n- Adds one regression covering the banner, help and omitted request model. Explicit model behavior is preserved.\n- Verified: all 284 CLI tests, build and scoped Biome; native default/explicit controls and 12 parent-review tests with the separate streamed-token fix.\n\nStrict TypeScript diagnostics remain identical to the 36 existing baseline errors. Local tests used the already installed dependency cache.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Undefined leaves the chat",
+    "blurb": "The chat banner says `API default` when you skip `--model`. The API still picks the model; the terminal just tells the truth about it.",
+    "summary": "The Polli CLI chat banner displays `API default` instead of `undefined` when `--model` is omitted, and help text clarifies that the API selects the default model.",
+    "impact": "CLI users get an accurate banner and help text while requests without `--model` continue to leave model selection to the API; explicit model selection is unchanged.",
+    "keywords": [
+      "Polli CLI",
+      "chat",
+      "model banner",
+      "API default",
+      "help text",
+      "bug fix"
+    ],
+    "visual_concept": "Depict the Polli CLI as a cozy retro terminal with a chat banner reading 'API default'. Polli, wearing tiny terminal-operator glasses, points out the corrected label beside a small code-plant; the terminal represents the CLI, not a newly selected model.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro terminal displays a chat banner reading 'API default' as Polli points to it beside a sprouting code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny terminal-operator glasses; she is small-to-medium within the scene, strictly pixel art, with consistent rounded proportions. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) text."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16431.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro terminal displays a chat banner reading 'API default' as Polli points to it beside a sprouting code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny terminal-operator glasses; she is small-to-medium within the scene, strictly pixel art, with consistent rounded proportions. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) text."
+  },
+  "generated_at": "2026-10-05T04:09:07.741589+00:00"
+}

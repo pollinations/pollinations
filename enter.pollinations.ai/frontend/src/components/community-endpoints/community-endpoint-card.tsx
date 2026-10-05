@@ -26,7 +26,7 @@ import {
     communityEndpointPriceFieldsForModality,
 } from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
@@ -65,6 +65,16 @@ export function CommunityEndpointCard({
               COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
             : 0;
     const relistIsDelayed = Date.now() < relistAt;
+    const [, refreshRelistTime] = useState(0);
+    useEffect(() => {
+        const remaining = relistAt - Date.now();
+        if (remaining <= 0) return;
+        const timer = setTimeout(
+            () => refreshRelistTime(Date.now()),
+            remaining,
+        );
+        return () => clearTimeout(timer);
+    }, [relistAt]);
     const visibilityTooltip = relistIsDelayed
         ? `Relist available at ${new Date(relistAt).toLocaleTimeString([], { timeStyle: "short" })}`
         : isToggling

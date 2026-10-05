@@ -1,0 +1,33 @@
+{
+  "pr_number": 16346,
+  "title": "fix(cli): preserve sandbox ID after SSH setup failure",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16346",
+  "merged_at": "2026-10-05T04:04:16Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16343\n\n- Prints the created sandbox ID when local SSH setup fails, while retaining exit code 1 and the underlying error.\n- Reports the partial setup failure once and omits the SSH-ready command; normal creation and remote failures are unchanged.\n- Adds actual-command tests for human/JSON output using native temporary files and synthetic HTTP responses: two regressions fail before the fix, all six pass after it.\n- Verification: all 286 CLI tests, build, Biome and independent focused review pass. Used installed Vitest 2.1.9; strict TypeScript has the same 36 diagnostics as main. No live VM or Pollen used.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keep the sandbox receipt",
+    "blurb": "If SSH setup trips after a sandbox is created, the CLI keeps the useful part: its ID. No pretend SSH-ready command, just one clear error and a way to find the sandbox.",
+    "summary": "The polli CLI prints the created sandbox ID when local SSH setup fails, while retaining exit code 1, reporting the underlying error once, and omitting the SSH-ready command.",
+    "impact": "Developers can identify a sandbox created before SSH setup failed, without mistaking the partial setup for a successful connection.",
+    "keywords": [
+      "polli-cli",
+      "sandbox",
+      "SSH",
+      "error handling",
+      "sandbox ID"
+    ],
+    "visual_concept": "Depict a small sandbox garden with a clear ID tag that Polli retrieves after an SSH cable comes loose. A friendly CRT robot shows a single error on its screen; no connected-terminal imagery. Polli wears a tiny tool belt, with lime-green code-plants and warm pastel surroundings.",
+    "image_prompt": "In a cozy pixel garden, Polli gently lifts an ID tag from a newly built sandbox while a loose SSH cable rests beside it and a friendly CRT robot displays one small error symbol. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) code-plants, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16346.jpg",
+    "prompt": "In a cozy pixel garden, Polli gently lifts an ID tag from a newly built sandbox while a loose SSH cable rests beside it and a friendly CRT robot displays one small error symbol. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) code-plants, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-05T04:05:15.644227+00:00"
+}

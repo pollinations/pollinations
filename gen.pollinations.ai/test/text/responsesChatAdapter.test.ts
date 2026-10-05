@@ -1017,6 +1017,38 @@ describe("Chat Completions over Responses", () => {
         expect(options.seed).toBe(42);
     });
 
+    it("raises token caps below the Responses floor of 16 (#16500)", () => {
+        const small = chatToResponsesRequest(
+            [{ role: "user", content: "Hi" }],
+            {
+                model: "provider-model",
+                max_tokens: 10,
+            },
+        );
+        expect(small.max_output_tokens).toBe(16);
+
+        const viaCompletionParam = chatToResponsesRequest(
+            [{ role: "user", content: "Hi" }],
+            { model: "provider-model", max_completion_tokens: 1 },
+        );
+        expect(viaCompletionParam.max_output_tokens).toBe(16);
+
+        const normal = chatToResponsesRequest(
+            [{ role: "user", content: "Hi" }],
+            {
+                model: "provider-model",
+                max_tokens: 128,
+            },
+        );
+        expect(normal.max_output_tokens).toBe(128);
+
+        const uncapped = chatToResponsesRequest(
+            [{ role: "user", content: "Hi" }],
+            { model: "provider-model" },
+        );
+        expect(uncapped).not.toHaveProperty("max_output_tokens");
+    });
+
     it("accepts named messages and drops the unsupported name field", () => {
         expect(
             chatToResponsesRequest(

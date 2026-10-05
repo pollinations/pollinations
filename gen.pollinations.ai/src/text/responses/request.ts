@@ -50,6 +50,18 @@ export function validateDirectResponsesRequest(
     }
 }
 
+/**
+ * OpenAI's Responses API rejects max_output_tokens below 16 with an error
+ * that names a parameter Chat Completions callers never sent (#16500).
+ * Raise small caps to the upstream floor so requests the rest of the
+ * catalog accepts succeed here too.
+ */
+export const MIN_RESPONSES_OUTPUT_TOKENS = 16;
+
+export function raiseToResponsesOutputFloor(value: number): number {
+    return Math.max(value, MIN_RESPONSES_OUTPUT_TOKENS);
+}
+
 export function buildDirectResponsesRequestBody(
     request: CreateResponseRequest,
     target: DirectResponsesTarget,
@@ -84,5 +96,10 @@ export function buildDirectResponsesRequestBody(
     )
         delete body.context_management;
     if (!body.stream) delete body.stream_options;
+    if (typeof body.max_output_tokens === "number") {
+        body.max_output_tokens = raiseToResponsesOutputFloor(
+            body.max_output_tokens,
+        );
+    }
     return cleanNullAndUndefined(body) as Record<string, unknown>;
 }

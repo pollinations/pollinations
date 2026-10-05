@@ -1,5 +1,6 @@
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
 import type { ChatMessage, ServiceError, TransformOptions } from "../types.js";
+import { raiseToResponsesOutputFloor } from "./request.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -441,7 +442,12 @@ export function chatToResponsesRequest(
                 : { summary: "auto" }),
         };
     }
-    if (maxOutputTokens != null) request.max_output_tokens = maxOutputTokens;
+    if (maxOutputTokens != null) {
+        // The Responses upstream rejects caps below its floor of 16 with an
+        // error naming a parameter the Chat caller never sent (#16500).
+        request.max_output_tokens =
+            raiseToResponsesOutputFloor(maxOutputTokens);
+    }
     if (options.temperature != null) request.temperature = options.temperature;
     if (options.top_p != null) request.top_p = options.top_p;
     if (options.frequency_penalty != null) {

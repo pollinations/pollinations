@@ -218,6 +218,29 @@ describe("direct Responses transport", () => {
         });
     });
 
+    it("raises caller and default max_output_tokens below the floor of 16 (#16500)", () => {
+        const small = request({
+            model: "qwen/qwen3.8-max-0902",
+            max_output_tokens: 10,
+        });
+        const target = resolveDirectResponsesTarget(small.model, small);
+        if (!target) throw new Error("expected direct target");
+        expect(
+            buildDirectResponsesRequestBody(small, target).max_output_tokens,
+        ).toBe(16);
+
+        const normal = request({
+            model: "qwen/qwen3.8-max-0902",
+            max_output_tokens: 128,
+        });
+        const normalTarget = resolveDirectResponsesTarget(normal.model, normal);
+        if (!normalTarget) throw new Error("expected direct target");
+        expect(
+            buildDirectResponsesRequestBody(normal, normalTarget)
+                .max_output_tokens,
+        ).toBe(128);
+    });
+
     it("passes Responses JSON directly with only target resolution and defaults", async () => {
         const body = {
             id: "resp_test",

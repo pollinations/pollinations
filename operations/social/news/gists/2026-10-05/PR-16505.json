@@ -1,0 +1,34 @@
+{
+  "pr_number": 16505,
+  "title": "fix: serve catalog health from an hourly materialized view",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16505",
+  "merged_at": "2026-10-05T13:24:40Z",
+  "labels": [],
+  "pr_body_excerpt": "Every `/models` list ran two raw-event scans: the last 50 community requests over 7 days, and 24h official health. Each Cloudflare location cached them for only 60s, so a few hundred locations meant tens of thousands of scans a day. Over the last 3 days these two feeds used about 6 CPU-hours a day in prod.\n\n- Adds `model_health_hourly`, a materialized view holding final 2xx/5xx counts plus the latest 50 requests per model and hour, with an 8-day TTL and a backfill capped at 8 days\n- `model_catalog_health` now merges hourly state (at most 168 rows per model) instead of scanning 7 days of events\n- Adds `model_health_24h` for official models and agents; gen points `fetchModelHealthRows` at it in place of `model_route_health?minutes=1440`\n- `model_route_health` stays as it is for `/models/status` and the monitor\n\nParity against prod events (read-only SQL):\n\n| Feed | Matches current output |\n|---|---|\n| community last 50 | 491 / 491 models identical |\n| official 24h status | 499 / 501; 2 differ by one request in the extra partial hour |\n\n**Deploy order:** Tinybird prod first, then gen. Gen reaching prod first would show \"unknown\" health on official models until Tinybird lands.\n\nReplaces #16497 (KV cache, which stampedes at expiry).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01EiESgQiwYbspATwyFa9EJt\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Health checks stop digging",
+    "blurb": "The model catalog gets tidy hourly health snapshots instead of repeatedly excavating raw events. Less digging, same useful signals.",
+    "summary": "The /models health feeds use an hourly materialized view with an 8-day TTL, merging at most 168 hourly rows per model for community health and using model_health_24h for official models and agents.",
+    "impact": "Model listings retain last-50 community and 24-hour official health signals without repeated seven-day raw-event scans.",
+    "keywords": [
+      "models",
+      "catalog",
+      "health",
+      "Tinybird",
+      "materialized view",
+      "performance"
+    ],
+    "visual_concept": "Polli organizes hourly health records into neat flower pots beside a retro model-catalog terminal, while a friendly CRT robot reads the latest signals. The garden suggests stored hourly snapshots replacing repeated searches through a large event archive.",
+    "image_prompt": "In a cozy pixel-art garden shed, Polli wears a tiny gardener's apron and sorts lime green (#ecf874) hourly record tiles into flower pots beside a friendly CRT robot reading model-health signals; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, mint and peach highlights, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16505.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli wears a tiny gardener's apron and sorts lime green (#ecf874) hourly record tiles into flower pots beside a friendly CRT robot reading model-health signals; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, mint and peach highlights, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-05T13:25:48.102907+00:00"
+}

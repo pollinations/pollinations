@@ -1,4 +1,4 @@
-name: Models / Report-only manager pilot
+name: Models / Researcher pilot
 
 on:
   schedule:
@@ -8,10 +8,6 @@ on:
     inputs:
       initialize:
         description: 'Start the first 14-day pilot when no saved state exists'
-        type: boolean
-        default: false
-      verify_stack:
-        description: 'Build and validate isolated Enter + Gen in a Pollinations sandbox (no daily pilot activation)'
         type: boolean
         default: false
 
@@ -25,7 +21,7 @@ concurrency:
 
 jobs:
   scan:
-    if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main' && inputs.verify_stack != true
+    if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -201,35 +197,3 @@ jobs:
               return;
             }
             await github.rest.issues.createComment({...issue, body});
-
-  verify-stack:
-    if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.verify_stack == true
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '24.10.0'
-      - uses: nhedger/setup-sops@v3
-      - name: Install sandbox SDK
-        run: npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
-      - name: Verify in Pollinations sandbox
-        id: verify
-        env:
-          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-        run: node operations/model-manager/launch.mjs --verify-stack --out "$RUNNER_TEMP/model-manager-stack"
-      - name: Encrypt verification evidence
-        if: always() && steps.verify.outputs.checkpoint == 'true'
-        run: node operations/model-manager/state.mjs seal --data "$RUNNER_TEMP/model-manager-stack" --file "$RUNNER_TEMP/model-manager-export/state.vars.json"
-      - uses: actions/upload-artifact@v4
-        if: always() && steps.verify.outputs.checkpoint == 'true'
-        with:
-          name: model-manager-stack-verification
-          path: ${{ runner.temp }}/model-manager-export/state.vars.json
-          if-no-files-found: error
-          retention-days: 30

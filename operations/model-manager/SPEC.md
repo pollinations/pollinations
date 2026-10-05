@@ -1,4 +1,4 @@
-# Model catalog manager pilot
+# Model researcher pilot
 
 A private Pollinations prompt agent and Pollinations VM, using the same APIs available to clients under `pollinationsagent@gmail.com`. API-only collection; no browser automation.
 
@@ -45,17 +45,11 @@ The encrypted checkpoint retains compact history, suppression, exact selected in
 
 The pilot stops after 14 Berlin calendar days or 2 Pollen. Reserve 0.1222 Pollen per run: 0.0222 for ten minutes of 2-vCPU/2-GiB compute plus 0.1 for inference. Check live agent availability/rates before each inference, bounding prompt size at 32,000 bytes plus evidence and output at 1,200 tokens. Reconcile interrupted spending from the dedicated key ledger; unverified spending consumes the reservation. An exceeded reservation stops further paid work for review.
 
-## Credentials and manual integration validation
+## Credentials
 
 SOPS stays on the trusted host. Existing inputs are `POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER` from `operations/model-manager/secrets/prod.vars.json`, `REPLICATE_API_TOKEN` from Gen's production SOPS file, and Actions `SOPS_AGE_KEY`. The dedicated key permits profile/usage/machines, excludes key management and restricts inference to the private agent and its base model. No runtime Keychain dependency or new credentials.
 
-`node operations/model-manager/launch.mjs --verify-stack --out /absolute/private/output` (or manual `verify_stack: true`) uploads the trusted tracked working checkout, including candidate edits, to a Pollinations VM. This is a source copy based on `main`, not a GitHub fork. It does not activate daily research or publish.
-
-The sandbox installs checksum-verified Node 24.10.0 and lockfile dependencies with lifecycle scripts disabled, runs the existing Gen agent-run-token, prompt-agent Responses, text-cache and billing-deduction tests unchanged, builds SDK/UI and Enter/Gen, migrates isolated local D1 and starts both workers. Build/test scripts execute the supplied checkout, so only trusted candidate code may use this credentialed path.
-
-Test inputs come from existing dev SOPS files: Azure provider access (`AZURE_MYCELI_PROD_API_KEY`), Better Auth secrets and verified staging Tinybird ingest/read access. **Local application state and staging telemetry do not make the provider credential a staging credential:** the probe uses a real Azure provider account and can incur its normal inference charges. The host verifies Tinybird workspace names before injection. No production databases or deployments are used; secret material and the SOPS identity are never in source uploads or public reports.
-
-Seed only the hash of the authorized runtime key in disposable D1, register the private agent through local Enter and call it through local Gen. Require actual usage, wallet settlement, identical-request cache retrieval without another debit, and exactly one charged staging Tinybird event whose total price matches the wallet. The free parent agent also emits an event. Both workers and the VM are cleaned up; manual validation has a 20-minute lease and 0.1-Pollen compute reservation. Evidence is encrypted by CI. This validates the development stack, not every model capability.
+Repository editing and Enter/Gen build, capability and billing tests belong to the separate model resolver. This researcher uploads only its bundled collector and research state; it has no stack-validation mode or provider test credentials. The existing private agent ID and credential names stay stable.
 
 ## Activation and later model changes
 

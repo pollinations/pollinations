@@ -235,37 +235,3 @@ test("Skipped and failed launches remove stale summaries and emit current workfl
         }
     }
 });
-
-test("Manual stack validation bypasses daily pilot state and fails before renting without credentials", async () => {
-    const data = await mkdtemp(join(tmpdir(), "model-manager-manual-test-"));
-    try {
-        await writeFile(join(data, "pilot.json"), "malformed daily state");
-        const result = spawnSync(
-            process.execPath,
-            [
-                new URL("launch.mjs", import.meta.url).pathname,
-                "--verify-stack",
-                "--out",
-                data,
-            ],
-            {
-                encoding: "utf8",
-                env: { PATH: "", POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER: "" },
-            },
-        );
-        assert.equal(result.status, 1, result.stderr);
-        const proof = JSON.parse(
-            await readFile(join(data, "verification.json"), "utf8"),
-        );
-        assert.equal(proof.status, "failed");
-        assert.match(proof.error, /sops/);
-        assert.equal(proof.sandboxId, undefined);
-        assert.equal(proof.resumedAssessment, undefined);
-        assert.equal(
-            await readFile(join(data, "pilot.json"), "utf8"),
-            "malformed daily state",
-        );
-    } finally {
-        await rm(data, { recursive: true, force: true });
-    }
-});

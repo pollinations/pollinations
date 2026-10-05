@@ -95,6 +95,7 @@ jobs:
           operations/community-monitor/*.test.mjs
           operations/model-evals/*.test.js
           operations/model-monitor/src/*.test.js
+          apps/pi-browser/test/*.test.mjs
 
       - name: Test model catalog and accounting compatibility
         run: npx vitest run --config apps/model-compatibility.vitest.config.ts

@@ -1501,6 +1501,10 @@ Returns available embedding models with pricing, capabilities, and supported inp
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1598,6 +1602,23 @@ it does not change generation permissions.
 curl 'https://gen.pollinations.ai/v1/models?source=official'
 ```
 
+To search or narrow a list instead of fetching the whole catalog, add any of:
+
+| Parameter | Effect |
+|-----------|--------|
+| `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
+| `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
+| `limit` | At most this many models (1-500), in catalog order |
+
+They apply after the access, source and reliability rules above, so `limit`
+never counts a model the caller cannot see. Unknown capabilities and values
+outside these ranges return **400 Bad Request**.
+
+```bash
+curl 'https://gen.pollinations.ai/text/models?query=gpt&capabilities=reasoning,tool_calling&limit=5'
+```
+
 OpenAI-compatible clients that append `/models` to their base URL can use the
 equivalent header instead of the query parameter:
 
@@ -1684,6 +1705,10 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1849,6 +1874,10 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1887,6 +1916,10 @@ Returns all available 3D model generation models with pricing, capabilities, and
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1925,6 +1958,10 @@ Returns all available image and video generation models with pricing, capabiliti
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -1963,6 +2000,10 @@ Returns all available video generation models with pricing, capabilities, and me
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -2001,6 +2042,10 @@ Returns all available text generation and community text models with pricing, ca
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 
@@ -2039,6 +2084,10 @@ Returns all available audio models (text-to-speech, music generation, and transc
 | `reliability` | `query` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `query` | `query` | `string` | Search the canonical name, aliases, title, description and publisher. Case-insensitive; every whitespace-separated word must match. |
+| `capabilities` | `query` | `string` | Comma-separated capabilities (tool_calling, reasoning, web_search, code_execution, pollinations_models). A model must have all of them. |
+| `agent` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | `true`/`1` returns only agents, `false`/`0` excludes agents. Omit for both. |
+| `limit` | `query` | `integer` | Return at most this many models (1-500), after every other filter and in catalog order. · range: `1…500` |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 | `pollinations-model-reliability` | `header` | `"reliable"` \| `"all"` | Defaults to reliable: public community proxy models need more than 80% success across the last 50 eligible requests within seven days, or no observations. Official models, agents, and private models are unaffected. Fallback rescues count as successes. Use all to bypass only this discovery filter; permissions and manual visibility still apply. Exact-ID calls and fallback routing are unaffected. |
 

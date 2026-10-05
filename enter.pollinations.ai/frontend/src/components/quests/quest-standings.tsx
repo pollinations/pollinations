@@ -42,7 +42,7 @@ function nudge(
     if (rank === 1) return `You're leading ${monthName(standings.month)}.`;
     const above = rows.find((row) => row.rank === rank - 1);
     if (!above) return null;
-    const gap = above.totalPollen - you.totalPollen;
+    const gap = Math.max(above.totalPollen - you.totalPollen, 0.25);
     const pass = byReward.find((quest) => quest.reward > gap);
     const target = `${formatPollen(gap)} Pollen to pass @${above.githubLogin}`;
     return pass

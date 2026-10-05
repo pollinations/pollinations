@@ -1,0 +1,159 @@
+{
+  "date": "2026-10-04",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-04",
+  "title": "The community made games out of mysteries, impostors, and postcards",
+  "summary": "A community-heavy day brought eleven new apps, new model Quests, sturdier generation requests, and fewer ways for CLI configuration to go sideways.\n\nEleven apps joined the games and learning collections. Players can question voiced suspects in Alibi and Whodunnit, try three real-or-AI guessing games, or pass one device around for Mole Party, Whisperwick, and Liar’s Supper. Postcard Worlds turns generated scenes into places to explore; Tunemory and Chorus turn study notes into songs.\n\nNew Quests reward trying video and community models, and community-model publishers can earn Pollen when others use their models. Model rates now show dollar amounts directly, x402 prepaid-key buyers can choose an exact amount, and CLI and MCP earnings reports can cover up to 365 days. Key edits preserve an unchanged expiry, key permissions print readably in the CLI, and the Quests page puts categories before bonus rewards.\n\nNew chats default to gpt-5.4-nano, with four ready-to-pick model pins, a Pollen-balance link, and third-party chat sharing off by default. Existing installations can apply the settings without losing their own pins or chats. Production also moved to a larger instance after health checks began timing out.",
+  "pr_count": 37,
+  "prs": [
+    {
+      "number": 15732,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 15998,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16217,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16249,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16276,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16279,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16289,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16292,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16311,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16319,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16347,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16348,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16352,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16353,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16354,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16358,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16360,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16362,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16376,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16377,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16383,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16386,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16387,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16397,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16398,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16400,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16408,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16409,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16411,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16412,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16417,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16418,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16425,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16426,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16436,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16438,
+      "date": "2026-10-04"
+    },
+    {
+      "number": 16444,
+      "date": "2026-10-04"
+    }
+  ],
+  "generated_at": "2026-10-05T06:45:05.004316+00:00"
+}

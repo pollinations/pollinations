@@ -388,6 +388,23 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     expect(usageCalls).toHaveLength(1);
     expect(usageCalls[0].query.before).toBe("2026-04-14 12:10:00");
     expect(usageCalls[0].query.before_event_id).toBe("event-1");
+
+    // Clients send the cursor back as ISO 8601, which Tinybird's DateTime()
+    // rejects, so it must reach the pipe as "YYYY-MM-DD HH:MM:SS".
+    const isoCursor = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&limit=25&before=2026-04-14T12%3A10%3A00.000Z&before_event_id=event-1",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(isoCursor.status).toBe(200);
+    expect(mocks.tinybird.state.pipeCalls.at(-1)?.query.before).toBe(
+        "2026-04-14 12:10:00",
+    );
+
+    const invalidCursor = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&before=not-a-date",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(invalidCursor.status).toBe(400);
 });
 
 test("GET /api/account/usage accepts account usage permission", async ({

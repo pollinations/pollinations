@@ -3,7 +3,7 @@ import { z } from "zod";
 
 // One query value can carry several entries: `|` matches the separator the
 // other list parameters use, `,` reads naturally in a hand-written URL.
-function parseList(value: string): string[] {
+export function splitList(value: string): string[] {
     return value
         .split(/[|,]/)
         .map((entry) => entry.trim())

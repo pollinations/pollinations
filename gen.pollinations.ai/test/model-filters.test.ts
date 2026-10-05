@@ -22,25 +22,37 @@ test("query filter matches canonical names case-insensitively", async () => {
 test("query filter matches aliases", async () => {
     const response = await fetchWorker("/models?query=openai/gpt-4o");
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string; aliases?: string[] }[];
+    const models = (await response.json()) as {
+        name: string;
+        aliases?: string[];
+    }[];
     expect(models.length).toBeGreaterThan(0);
     for (const model of models) {
-        const haystack = [model.name, ...(model.aliases ?? [])].join(" ").toLowerCase();
+        const haystack = [model.name, ...(model.aliases ?? [])]
+            .join(" ")
+            .toLowerCase();
         expect(haystack).toContain("openai/gpt-4o");
     }
 });
 
 test("query filter requires every whitespace-separated word", async () => {
-    const response = await fetchWorker("/models?query=flux+nonexistentword12345");
+    const response = await fetchWorker(
+        "/models?query=flux+nonexistentword12345",
+    );
     expect(response.status).toBe(200);
     const models = (await response.json()) as { name: string }[];
     expect(models).toHaveLength(0);
 });
 
 test("capabilities filter keeps only models with every listed capability", async () => {
-    const response = await fetchWorker("/models?capabilities=tool_calling,reasoning");
+    const response = await fetchWorker(
+        "/models?capabilities=tool_calling,reasoning",
+    );
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string; capabilities?: string[] }[];
+    const models = (await response.json()) as {
+        name: string;
+        capabilities?: string[];
+    }[];
     expect(models.length).toBeGreaterThan(0);
     for (const model of models) {
         const caps = new Set(model.capabilities ?? []);
@@ -50,15 +62,19 @@ test("capabilities filter keeps only models with every listed capability", async
 });
 
 test("capabilities filter rejects unknown values with 400", async () => {
-    const response = await fetchWorker("/models?capabilities=not_a_real_capability");
+    const response = await fetchWorker(
+        "/models?capabilities=not_a_real_capability",
+    );
     expect(response.status).toBe(400);
 });
 
 test("agent filter returns only agents when true", async () => {
     const response = await fetchWorker("/models?agent=true");
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string; agent?: boolean }[];
-    expect(models.length).toBeGreaterThan(0);
+    const models = (await response.json()) as {
+        name: string;
+        agent?: boolean;
+    }[];
     for (const model of models) {
         expect(model.agent).toBe(true);
     }
@@ -67,7 +83,10 @@ test("agent filter returns only agents when true", async () => {
 test("agent filter excludes agents when false", async () => {
     const response = await fetchWorker("/models?agent=false");
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string; agent?: boolean }[];
+    const models = (await response.json()) as {
+        name: string;
+        agent?: boolean;
+    }[];
     expect(models.length).toBeGreaterThan(0);
     for (const model of models) {
         expect(model.agent).not.toBe(true);
@@ -88,9 +107,14 @@ test("limit caps the result after all other filters", async () => {
 });
 
 test("combined filters apply AND semantics", async () => {
-    const response = await fetchWorker("/models?query=flux&capabilities=tool_calling&limit=2");
+    const response = await fetchWorker(
+        "/models?query=flux&capabilities=tool_calling&limit=2",
+    );
     expect(response.status).toBe(200);
-    const models = (await response.json()) as { name: string; capabilities?: string[] }[];
+    const models = (await response.json()) as {
+        name: string;
+        capabilities?: string[];
+    }[];
     expect(models.length).toBeLessThanOrEqual(2);
     for (const model of models) {
         expect(model.name.toLowerCase()).toContain("flux");
@@ -106,10 +130,14 @@ test("private visibility models appear under filters for restricted keys", async
     });
     await drizzle(env.DB)
         .update(apikey)
-        .set({ permissions: JSON.stringify({ models: ["openai/gpt-4o-mini"] }) })
+        .set({
+            permissions: JSON.stringify({ models: ["openai/gpt-4o-mini"] }),
+        })
         .where(eq(apikey.id, id));
     const headers = { Authorization: `Bearer ${key}` };
-    const response = await fetchWorker("/models?query=gpt-4o&limit=5", { headers });
+    const response = await fetchWorker("/models?query=gpt-4o&limit=5", {
+        headers,
+    });
     expect(response.status).toBe(200);
     const models = (await response.json()) as { name: string }[];
     expect(models.length).toBeGreaterThan(0);

@@ -21,7 +21,11 @@ test("listModels forwards query, capabilities, agent and limit to Gen", async (t
         calls.push({ url, init });
         if (url.includes("/models")) {
             return Response.json([
-                { name: "openai", aliases: ["openai/gpt-4o"], capabilities: ["tool_calling", "reasoning"] },
+                {
+                    name: "openai",
+                    aliases: ["openai/gpt-4o"],
+                    capabilities: ["tool_calling", "reasoning"],
+                },
                 { name: "flux", aliases: [], capabilities: ["image"] },
             ]);
         }
@@ -39,8 +43,15 @@ test("listModels forwards query, capabilities, agent and limit to Gen", async (t
     const result = await handler(params, CONTEXT);
     assert.equal(calls.length, 1);
     const url = calls[0].url;
-    assert.ok(url.includes("query=openai+gpt") || url.includes("query=openai%20gpt"), `query not forwarded: ${url}`);
-    assert.ok(url.includes("capabilities=tool_calling") || url.includes("capabilities=tool_calling%2Creasoning"), `capabilities not forwarded: ${url}`);
+    assert.ok(
+        url.includes("query=openai+gpt") || url.includes("query=openai%20gpt"),
+        `query not forwarded: ${url}`,
+    );
+    assert.ok(
+        url.includes("capabilities=tool_calling") ||
+            url.includes("capabilities=tool_calling%2Creasoning"),
+        `capabilities not forwarded: ${url}`,
+    );
     assert.ok(url.includes("agent=false"), `agent not forwarded: ${url}`);
     assert.ok(url.includes("limit=10"), `limit not forwarded: ${url}`);
     assert.ok(result.content[0].text.includes("openai"));
@@ -70,9 +81,18 @@ test("listModels drops empty capabilities array but keeps false booleans", async
     };
     await handler(params, CONTEXT);
     const url = calls[0].url;
-    assert.ok(!url.includes("capabilities"), `empty capabilities should be dropped: ${url}`);
-    assert.ok(url.includes("agent=false"), `agent=false must be forwarded: ${url}`);
-    assert.ok(url.includes("community=false"), `community=false must be forwarded: ${url}`);
+    assert.ok(
+        !url.includes("capabilities"),
+        `empty capabilities should be dropped: ${url}`,
+    );
+    assert.ok(
+        url.includes("agent=false"),
+        `agent=false must be forwarded: ${url}`,
+    );
+    assert.ok(
+        url.includes("community=false"),
+        `community=false must be forwarded: ${url}`,
+    );
 });
 
 test("listModels backward compatibility: boolean third argument means community", async (t) => {
@@ -93,8 +113,14 @@ test("listModels backward compatibility: boolean third argument means community"
     const { getModels } = await import("../src/utils/models.js");
     // Direct call with boolean (legacy signature)
     await getModels("all", CONTEXT, true);
-    assert.ok(calls[0].url.includes("community=true"), `boolean true should become community=true: ${calls[0].url}`);
+    assert.ok(
+        calls[0].url.includes("community=true"),
+        `boolean true should become community=true: ${calls[0].url}`,
+    );
     calls.length = 0;
     await getModels("all", CONTEXT, false);
-    assert.ok(calls[0].url.includes("community=false"), `boolean false should become community=false: ${calls[0].url}`);
+    assert.ok(
+        calls[0].url.includes("community=false"),
+        `boolean false should become community=false: ${calls[0].url}`,
+    );
 });

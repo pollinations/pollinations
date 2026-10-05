@@ -185,7 +185,5 @@ export async function filterCatalogEntries(
 
     // `limit` is applied last, so catalog ordering decides which of the
     // matching models fit and no filter can surface a hidden one.
-    return query.limit === undefined
-        ? matches
-        : matches.slice(0, query.limit);
+    return query.limit === undefined ? matches : matches.slice(0, query.limit);
 }

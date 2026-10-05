@@ -320,6 +320,7 @@ const AUDIO_BASE_SERVICES = {
             "Preserves delivery and emotion while transforming speaker identity",
         inputModalities: ["audio"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "aac", "wav", "pcm"],
         voices: ELEVENLABS_VOICES as string[],
         supportedEndpoints: ["/v1/audio/voice-changer"],
     },

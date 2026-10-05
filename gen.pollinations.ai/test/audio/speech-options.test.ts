@@ -37,6 +37,7 @@ describe("resolveSpeechOptions", () => {
         ["google/gemini-3.8-flash-tts", "mp3"],
         ["fish-audio/s2.1-pro", "wav"],
         ["elevenlabs/eleven-v3", "flac"],
+        ["elevenlabs/eleven-multilingual-sts-v2", "flac"],
         ["elevenlabs/eleven-text-to-sound-v2", "wav"],
     ] as const)("rejects %s with %s before any provider request", (model, responseFormat) => {
         expect(() => resolve(model, "alloy", responseFormat)).toThrow(

@@ -102,3 +102,30 @@ describe("model per-pollen calculations", () => {
         );
     });
 });
+
+it("does not promise a whole request when one costs more than a Pollen", () => {
+    expect(calculatePerPollen(model({ realAvgCost: 2 }))).toBe("<1");
+});
+
+it("does not label a model with paid variants as wholly free", () => {
+    const [priced] = getModelPricesFromCatalog([
+        {
+            name: "example/mixed-pricing",
+            category: "video",
+            pricing: { currency: "pollen" },
+            pricing_variants: [
+                {
+                    name: "hd",
+                    label: "HD",
+                    description: "HD output",
+                    pricing: {
+                        currency: "pollen",
+                        completionVideoSeconds: "0.1",
+                    },
+                },
+            ],
+        },
+    ]);
+    expect(priced.free).toBe(false);
+    expect(calculatePerPollen(priced)).toBe("—");
+});

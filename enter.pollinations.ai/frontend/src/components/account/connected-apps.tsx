@@ -66,7 +66,7 @@ function AppCard({
     return (
         <Surface className="flex min-h-16 items-center justify-between gap-3 p-4">
             <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#fff] shadow-sm ring-1 ring-[rgba(0,0,0,0.18)]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#fff] ring-1 ring-[rgba(0,0,0,0.18)]">
                     {logo ? (
                         <img
                             src={logo}
@@ -274,7 +274,6 @@ export function ConnectedApps() {
                     connectionsLoading ||
                     (searching && displayedConnections.length === 0)
                 }
-                label={searchQuery ? "Searching apps…" : "Loading apps…"}
             >
                 <div className="flex flex-col gap-2" aria-live="polite">
                     {!connectionsLoading &&
@@ -363,7 +362,7 @@ export function ConnectedApps() {
                     <span>
                         Connect your apps so Pollinations agents can read Gmail,
                         search GitHub, update Sheets, and post to Slack. Enable
-                        “Connected Apps” in your agent, then try “Summarize my
+                        “Connectors” in your agent, then try “Summarize my
                         unread Gmail.” Connections powered by{" "}
                         <InlineLink href="https://composio.dev" size="sm">
                             Composio

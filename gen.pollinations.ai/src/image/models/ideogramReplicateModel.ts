@@ -186,8 +186,6 @@ async function callIdeogramReplicateAPI(
     return {
         buffer: imageBuffer,
         // Ideogram applies its own content moderation upstream.
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: variant.trackingLabel,
             // Flat per-image pricing on Replicate; report 1 image token.

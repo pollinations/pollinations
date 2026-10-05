@@ -27,11 +27,6 @@ const MAI_ROUTES: Record<
     string,
     { deployment: string; title: string; maxPixels: number }
 > = {
-    "microsoft/mai-image-2.5-flash": {
-        deployment: "MAI-Image-2.5-Flash",
-        title: "MAI Image 2.5 Flash",
-        maxPixels: 1024 * 1024,
-    },
     "microsoft/mai-image-2.6-flash": {
         deployment: "MAI-Image-2.6-Flash",
         title: "MAI Image 2.6 Flash",
@@ -210,8 +205,6 @@ export async function callAzureMaiImage(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage: {

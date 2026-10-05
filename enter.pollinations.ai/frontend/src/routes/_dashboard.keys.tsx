@@ -16,8 +16,8 @@ import {
     type CreateApiKeyResponse,
 } from "../components/keys";
 import {
-    DashboardLoading,
     LoadError,
+    PageLoading,
 } from "../components/layout/dashboard-loading.tsx";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
 import { updateApiKey } from "../lib/update-api-key.ts";
@@ -104,15 +104,7 @@ function KeysPage() {
     return (
         <Await
             promise={apiKeys}
-            fallback={
-                <div className="flex flex-col gap-6">
-                    <DashboardLoading
-                        title="Secrets"
-                        label="Loading secret keys…"
-                    />
-                    <DashboardLoading title="Apps" label="Loading app keys…" />
-                </div>
-            }
+            fallback={<PageLoading titles={["Secrets", "Apps"]} />}
         >
             {(keys) => (
                 <KeysContent
@@ -143,7 +135,7 @@ function KeysContent({
 
     if (keys === null) {
         return (
-            <div className="flex flex-col gap-6">
+            <>
                 {["Secrets", "Apps"].map((title) => (
                     <Section key={title} title={title}>
                         <LoadError onRetry={onRetry}>
@@ -151,18 +143,18 @@ function KeysContent({
                         </LoadError>
                     </Section>
                 ))}
-            </div>
+            </>
         );
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             {apiKeys === null && (
                 <LoadError onRetry={onRetry}>
                     Couldn’t refresh keys. Showing the last loaded list.
                 </LoadError>
             )}
             <ApiKeyList apiKeys={keys} {...actions} />
-        </div>
+        </>
     );
 }

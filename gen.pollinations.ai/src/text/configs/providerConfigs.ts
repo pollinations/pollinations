@@ -168,23 +168,34 @@ export function createVercelAIGatewayModelConfig(
     );
 }
 
-export function createPerplexityModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return {
-        provider: "perplexity-ai",
-        authKey: process.env.PERPLEXITY_API_KEY,
-        ...overrides,
-    };
-}
-
-export function createOVHcloudModelConfig(
-    overrides: ModelOverride = {},
+/**
+ * Perplexity's Agent API takes Responses requests. Its models search only
+ * when given the web_search tool (and skip it for simple questions unless
+ * required), and cite inline only when asked to; the cited numbers are the IDs
+ * of the returned search results.
+ */
+export function createPerplexityAgentConfig(
+    model: string,
+    webSearch: unknown = {},
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
-        "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
-        textEnvironmentValue("OVHCLOUD_API_KEY"),
-        overrides,
+        "https://api.perplexity.ai",
+        textEnvironmentValue("PERPLEXITY_API_KEY"),
+        {
+            model,
+            responsesEndpoint: "https://api.perplexity.ai/v1/agent",
+            responsesDefaults: {
+                instructions:
+                    "Cite sources inline with bracketed numbers that match the search result IDs, like [1][2].",
+                tools: [
+                    {
+                        type: "web_search",
+                        ...(webSearch as Record<string, unknown>),
+                    },
+                ],
+                tool_choice: "required",
+            },
+        },
     );
 }
 

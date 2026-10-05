@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import { textEnvironmentValue } from "../environment.js";
+import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
@@ -9,9 +10,8 @@ import {
     createFireworksModelConfig,
     createMistralModelConfig,
     createOpenRouterModelConfig,
-    createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
-    createPerplexityModelConfig,
+    createPerplexityAgentConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -74,6 +74,12 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    "span-01-lite": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "respan/span-01-lite",
+    }),
     // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
     // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
     // OpenRouter exposes no floating alias, so the version is pinned here.
@@ -83,6 +89,24 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "typesafe/jev-1.13",
     }),
+    "kev-4b": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "jaredpalmer/kev-4b",
+    }),
+    "liquid-d1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "liquid/d1",
+    }),
+    "liquid/d1:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "liquid/d1",
+        }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -172,15 +196,39 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra-datazone/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6.1-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
+    "gpt-6-luna": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-luna/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
 
     // -- OpenAI direct (GPT-6) -------------------------------------------------
-    "gpt-6-sol": () => ({
+    "gpt-6-sol-openai": () => ({
         provider: "openai",
         responsesEndpoint: "https://api.openai.com/v1/responses",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
         model: "gpt-6-sol",
     }),
-    "gpt-6-luna": () => ({
+    "gpt-6.1-sol-openai": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6.1-sol",
+    }),
+    "gpt-6-luna-openai": () => ({
         provider: "openai",
         responsesEndpoint: "https://api.openai.com/v1/responses",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
@@ -239,6 +287,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
     }),
 
+    // -- xAI direct -----------------------------------------------------------
+    "grok-4.6-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.6",
+    }),
+
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
         createAzureResponsesModelConfig(
@@ -295,6 +351,22 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "inclusionai/ling-3.1-flash": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.1-flash",
+        "novita",
+    ),
+    "inclusionai/ling-3.1-flash:vercel:novita": () =>
+        createVercelAIGatewayModelConfig({
+            model: "inclusionai/ling-3.1-flash",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        }),
+    "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.0-flash-vl",
+        "deepinfra/fp16",
+    ),
     "hy3-openrouter-phala": createPinnedOpenRouterConfig(
         "tencent/hy3",
         "phala",
@@ -694,6 +766,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "anthropic/claude-sonnet-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",
@@ -743,6 +820,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
+    // -- AWS Bedrock (Qwen) ---------------------------------------------------
+    "qwen-coder-bedrock": () =>
+        createBedrockNativeConfig({ model: "qwen.qwen3-coder-30b-a3b-v1:0" }),
+
     // -- Google Vertex AI (Gemini) -------------------------------------------
     "google/gemini-3-flash-preview": createVertexGeminiConfig(
         "gemini-3-flash-preview",
@@ -784,22 +865,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Perplexity -----------------------------------------------------------
-    "sonar": () => createPerplexityModelConfig({ model: "sonar" }),
-    "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
-    "sonar-reasoning-pro": () =>
-        createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
-    "perplexity/sonar": createPinnedOpenRouterConfig(
-        "perplexity/sonar",
-        "perplexity",
-    ),
-    "perplexity/sonar-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-pro",
-        "perplexity",
-    ),
-    "perplexity/sonar-reasoning-pro": createPinnedOpenRouterConfig(
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ),
+    // The Sonar transform turns the caller's search options into web_search
+    // tool settings.
+    "perplexity/sonar": (options?: TransformOptions) =>
+        createPerplexityAgentConfig(
+            "perplexity/sonar",
+            options?.perplexityWebSearch,
+        ),
 
     "accounts/fireworks/models/glm-5p3": () =>
         createFireworksModelConfig({
@@ -818,6 +890,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        }),
+    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
         }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
@@ -883,12 +959,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudOAIConfig({
             model: "gpt-oss-20b",
             "max-tokens": 1500,
-            responsesEndpoint:
-                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
-        }),
-    "qwen3-coder-30b-a3b-instruct": () =>
-        createOVHcloudModelConfig({
-            model: "Qwen3-Coder-30B-A3B-Instruct",
             responsesEndpoint:
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
         }),

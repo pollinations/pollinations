@@ -1,9 +1,9 @@
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import { useRouterState } from "@tanstack/react-router";
-import { DashboardLoading } from "./dashboard-loading.tsx";
+import { PageLoading } from "./dashboard-loading.tsx";
 import { DashboardShell } from "./dashboard-shell.tsx";
 
-const pageSections: Record<string, readonly string[]> = {
+const pageTitles: Record<string, readonly string[]> = {
     "/news": ["Announcements", "News", "FAQ"],
     "/models": ["Models"],
     "/my-models": ["Agents", "Models"],
@@ -22,18 +22,17 @@ const pageSections: Record<string, readonly string[]> = {
 
 const authTitles: Record<string, string> = {
     "/sign-in": "Sign in",
-    "/app/sign-in": "Sign in",
+    "/app/sign-in": "Sign in to Pollinations",
     "/authorize": "Connect",
     "/device": "Allow your device",
     "/edit-key": "Edit key",
     "/top-up": "Top-up",
 };
 
-/** Route-level loading uses the same cards as section-level loading. */
 export function DashboardPending() {
-    const { location, dashboardReady } = useRouterState({
+    const { pathname, dashboardReady } = useRouterState({
         select: (state) => ({
-            location: state.location,
+            pathname: state.location.pathname,
             dashboardReady: state.matches.some(
                 (match) =>
                     match.routeId === "/_dashboard" &&
@@ -41,31 +40,12 @@ export function DashboardPending() {
             ),
         }),
     });
-    let titles = pageSections[location.pathname];
+    const titles = pageTitles[pathname];
     if (!titles) {
-        return (
-            <AuthModalLoading
-                title={authTitles[location.pathname] ?? "Loading"}
-            />
-        );
+        const title = authTitles[pathname];
+        return title ? <AuthModalLoading title={title} /> : null;
     }
-    if (location.pathname === "/models") {
-        const category = location.search.category;
-        titles = [
-            category === "agent"
-                ? "Agents"
-                : category === "mcp"
-                  ? "MCP"
-                  : "Models",
-        ];
-    }
-    const content = (
-        <div className="flex flex-col gap-6">
-            {titles.map((title) => (
-                <DashboardLoading key={title} title={title} label="Loading…" />
-            ))}
-        </div>
-    );
+    const content = <PageLoading titles={titles} />;
     // A child route waits inside the existing shell; the session check does not.
     return dashboardReady ? (
         content

@@ -133,76 +133,6 @@ function estimateCost(model) {
     return p * EST_PROMPT_TOKENS + c * EST_COMPLETION_TOKENS;
 }
 
-// Check usage fields for missing or internally inconsistent values. A short
-// probe can still have many prompt or cached tokens if an upstream adds or
-// reuses its own prefix; neither is evidence of incorrect billing.
-function billingSanityFlags(usage, content) {
-    const flags = [];
-    if (!usage) {
-        flags.push("no usage object returned");
-        return flags;
-    }
-    const {
-        prompt_tokens: p,
-        completion_tokens: c,
-        total_tokens: total,
-    } = usage;
-    const cached =
-        usage.prompt_tokens_details?.cached_tokens ??
-        usage.cached_input_tokens ??
-        usage.cache_read_input_tokens ??
-        0;
-    if (p === 0) flags.push("prompt_tokens=0 for a non-empty prompt");
-    if (p != null && cached > p)
-        flags.push("cached_tokens exceeds prompt_tokens");
-    const reasoning =
-        usage.completion_tokens_details?.reasoning_tokens ??
-        usage.reasoning_tokens ??
-        0;
-    if (c != null && reasoning > c)
-        flags.push("reasoning_tokens exceeds completion_tokens");
-    if (p != null && c != null && total != null && total !== p + c)
-        flags.push(
-            "total_tokens differs from prompt_tokens + completion_tokens",
-        );
-    if (c === 0) flags.push("completion_tokens=0 despite a successful reply");
-    if (!content?.trim()) flags.push("empty completion content");
-    return flags;
-}
-
-function imageBillingSanityFlags(usage) {
-    const flags = [];
-    if (!usage) {
-        flags.push("no image usage object returned");
-        return flags;
-    }
-    const input = usage.input_tokens;
-    const output = usage.output_tokens;
-    const total = usage.total_tokens;
-    const text = usage.input_tokens_details?.text_tokens;
-    const image = usage.input_tokens_details?.image_tokens;
-    if (output === 0) flags.push("output_tokens=0 despite a generated image");
-    if (
-        input != null &&
-        text != null &&
-        image != null &&
-        input !== text + image
-    )
-        flags.push(
-            "image input_tokens differs from text_tokens + image_tokens",
-        );
-    if (
-        input != null &&
-        output != null &&
-        total != null &&
-        total !== input + output
-    )
-        flags.push(
-            "image total_tokens differs from input_tokens + output_tokens",
-        );
-    return flags;
-}
-
 async function probeText(model) {
     const started = Date.now();
     const requestPath = "/v1/chat/completions";
@@ -294,9 +224,6 @@ async function probeText(model) {
                 : (errorMessage ??
                   `text request failed with HTTP ${res.status}`),
         };
-        if (res.ok && !protocolError) {
-            result.billingFlags = billingSanityFlags(usage, content);
-        }
         return result;
     } catch (err) {
         return {
@@ -345,9 +272,6 @@ async function probeImage(model, operation) {
             probeMarker: marker,
             ...imageProbeResult(res, body, model.name),
         };
-        if (res.ok) {
-            result.billingFlags = imageBillingSanityFlags(result.usage);
-        }
         return result;
     } catch (err) {
         return {
@@ -561,23 +485,11 @@ const nextState = {
 };
 fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
 
-// Aggregate billing-sanity flags per model (union across its probes this
-// cycle) -- surfaced separately from health status since a model can be
-// perfectly healthy (200s, fast) while still reporting implausible usage.
-const billingFlagsByModel = {};
-for (const r of results) {
-    if (!r.billingFlags?.length) continue;
-    const set = new Set(billingFlagsByModel[r.model] ?? []);
-    for (const f of r.billingFlags) set.add(f);
-    billingFlagsByModel[r.model] = [...set];
-}
-
 const out = {
     ts: new Date().toISOString(),
     actualSpend,
     skippedModels,
     results,
-    billingFlagsByModel,
 };
 if (targeted) {
     // One-off diagnostics update the cadence but not the routine result file.
@@ -614,10 +526,3 @@ if (skippedModels.length) {
 console.log(
     `estimated ${estimatedSpend.toFixed(4)} pollen, actual ${actualSpend.toFixed(4)}`,
 );
-const flaggedModels = Object.keys(billingFlagsByModel);
-if (flaggedModels.length) {
-    console.log(`\nbilling sanity flags (${flaggedModels.length} models):`);
-    for (const model of flaggedModels) {
-        console.log(`  ${model}: ${billingFlagsByModel[model].join("; ")}`);
-    }
-}

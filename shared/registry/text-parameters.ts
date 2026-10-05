@@ -163,8 +163,8 @@ export const CHAT_PARAMETERS = {
     azureOpenModels: [...CHAT, ...SAMPLING, ...PENALTIES, "seed", "stop"],
     // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
-    // Exact OVH model OpenAPI confirms these; top_k is rejected, not honored.
-    ovhQwenCoder: [...TOOL_CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
+    bedrockQwenCoder: [...TOOL_CHAT, ...SAMPLING],
     openRouterMistralSmall32: [
         ...SAMPLED_CHAT,
         ...PENALTIES,
@@ -203,21 +203,6 @@ export const CHAT_PARAMETERS = {
         "web_search_options",
         "search_domain_filter",
         "search_recency_filter",
-    ],
-    openRouterSonar: [
-        ...CHAT,
-        ...SAMPLING,
-        ...PENALTIES,
-        "top_k",
-        "web_search_options",
-    ],
-    openRouterSonarReasoning: [
-        ...CHAT,
-        ...SAMPLING,
-        ...PENALTIES,
-        ...OPENROUTER_REASONING,
-        "top_k",
-        "web_search_options",
     ],
     laguna: [...CHAT, ...TOOLS, ...OPENROUTER_REASONING, "temperature"],
     longcat: [
@@ -396,6 +381,41 @@ export const CHAT_PARAMETERS = {
         "seed",
         ...OPENROUTER_REASONING,
         "reasoning_effort",
+    ],
+    // OpenRouter Novita tag for Ling 3.1 Flash (verified 2026-10-05): no
+    // response_format, structured outputs or logprobs; reasoning_effort
+    // "none" turns thinking off.
+    openRouterLing31: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
+    openRouterLing: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "logit_bias",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
     ],
     // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
     openRouterGlmFlashx: [

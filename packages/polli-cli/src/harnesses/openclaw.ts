@@ -23,7 +23,7 @@ import type {
 const ID = "openclaw";
 const LABEL = "OpenClaw";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "moonshotai/kimi-k2.6";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 // Key is stored once in env.vars and referenced as ${VAR} from the provider,
 // matching OpenClaw's own config-level variable substitution.
 const KEY_ENV = "POLLI_OPENCLAW_API_KEY";

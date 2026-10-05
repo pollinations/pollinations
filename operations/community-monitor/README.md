@@ -33,7 +33,7 @@ Live-only on the box, never committed:
   Configure `mcp-discord` without `--config`; it inherits `DISCORD_TOKEN` from
   the service environment. Never place the token in MCP command-line arguments.
 - `state.json` — cycle-to-cycle memory (last-replied message ids, alert state,
-  probe backoff and billing flags). Preserve it during deployments to retain cooldowns and
+  probe backoff and protocol alerts). Preserve it during deployments to retain cooldowns and
   prevent duplicate posts.
 - `people_mapping.json` — GitHub↔Discord identity map the agent maintains
   for tagging owners correctly. Contains real Discord user IDs, so it stays
@@ -216,9 +216,10 @@ Health data is edge-cached for 60 seconds. `reliability=all` (or the
 `Pollinations-Model-Reliability: all` header) bypasses only this filter.
 
 This is discovery only: exact-ID calls and fallback targets remain available.
-Manual hiding, privacy, key permissions and paid access remain unchanged.
+Owners use Private to remove a model from public access; key permissions and
+paid access still apply to public models.
 No stored health flag, daily audit, hide/relist writes or recovery streaks.
-The monitor retains diagnostics, billing/protocol warnings, served-model and
+The monitor retains requested diagnostics, protocol warnings, served-model and
 fallback notices, official-model alerts and daily leaderboards. After a daily
 leaderboard posts, it reports only community models newly filtered from
 discovery and those back in listings since the previous check, with their
@@ -226,27 +227,11 @@ current success rates. The first check records a baseline without posting a
 long list. It posts at most two messages per cycle, with no routine
 listing-transition chatter.
 
-## Coordinated rollout
+## Manual-hide retirement
 
-The EC2 updater follows main while gateway deployments follow production.
-Do not merge and let an old live updater try to install the removed audit script.
-
-1. Pause `community-monitor.service` before merging this PR. Preserve state,
-   credentials and cooldowns. Do not run the old policy during the cutover.
-2. Validate and deploy Tinybird to staging first, verify the new pipe and public
-   read-token access, then deploy to production when approved (see the Tinybird
-   deployment skill). Benchmark the seven-day scan before enabling it in prod.
-3. Promote/deploy Gen and Enter through the normal production GitHub Actions
-   workflow. Verify default and `reliability=all` catalogs, exact-ID calls and
-   fallback routing. Missing analytics fails open; it does not validate rollout.
-4. Back up rows with `hidden_by = 'monitor'`, then clear only those old automatic
-   hides in D1. Leave owner/admin hides and publication/privacy state unchanged:
-   `UPDATE community_endpoint SET hidden_at = NULL, hidden_reason = NULL, hidden_by = NULL, updated_at = unixepoch() WHERE hidden_by = 'monitor';`
-   Read back the affected rows and verify both catalog modes after registry-cache
-   expiry. This is a one-time maintainer action, never a monitor duty.
-5. Install the merged updater and runtime files using the commands above before
-   restarting the service. The old updater still names the deleted audit script,
-   so it cannot bootstrap this change itself. Archive the obsolete live audit
-   script and its output; preserve state but ignore old recovery/audit keys.
-   Check the live prompt/revision and one full cycle. No model-state writes,
-   selective probes, and the unchanged 30-minute wake-up should be observed.
+Migration `0067_retire_manual_community_hiding.sql` makes previously manually
+hidden models Private before Gen stops reading the old hide fields. It preserves
+their latest queued configuration and retains the old hide fields as history.
+Monitor-hidden rows stay Public and follow the reliability rule above. Run the
+D1 migration before deploying the matching Gen and Enter code, then verify
+Private access, public catalogs, and exact-ID calls.

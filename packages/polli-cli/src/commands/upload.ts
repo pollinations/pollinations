@@ -1,28 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
-import { basename, extname } from "node:path";
+import { createReadStream, existsSync, statSync } from "node:fs";
+import { basename } from "node:path";
 import { Command } from "commander";
 import { requireKey } from "../lib/api.js";
 import { MEDIA_URL } from "../lib/config.js";
+import { mimeTypeFor } from "../lib/mime.js";
 import { fail, getOutputMode, printMeta } from "../lib/output.js";
-
-const MIME_BY_EXT: Record<string, string> = {
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".png": "image/png",
-    ".gif": "image/gif",
-    ".webp": "image/webp",
-    ".svg": "image/svg+xml",
-    ".bmp": "image/bmp",
-    ".mp3": "audio/mpeg",
-    ".wav": "audio/wav",
-    ".ogg": "audio/ogg",
-    ".m4a": "audio/mp4",
-    ".flac": "audio/flac",
-    ".aac": "audio/aac",
-    ".mp4": "video/mp4",
-    ".webm": "video/webm",
-    ".mov": "video/quicktime",
-};
 
 interface UploadResponse {
     id: string;
@@ -44,21 +26,21 @@ export const uploadCommand = new Command("upload")
             fail(`File not found: ${file}`);
         }
 
-        const mime =
-            MIME_BY_EXT[extname(file).toLowerCase()] ||
-            "application/octet-stream";
-        const form = new FormData();
-        form.append(
-            "file",
-            new Blob([readFileSync(file)], { type: mime }),
-            basename(file),
-        );
+        const mime = mimeTypeFor(file);
+        const size = statSync(file).size;
 
-        const res = await fetch(`${MEDIA_URL}/upload`, {
+        const uploadRequest: RequestInit & { duplex: "half" } = {
             method: "POST",
-            headers: { Authorization: `Bearer ${key}` },
-            body: form,
-        });
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": mime,
+                "Content-Length": String(size),
+                "X-File-Name": basename(file),
+            },
+            body: createReadStream(file) as unknown as BodyInit,
+            duplex: "half",
+        };
+        const res = await fetch(`${MEDIA_URL}/upload`, uploadRequest);
 
         if (!res.ok) {
             const text = await res.text().catch(() => "");

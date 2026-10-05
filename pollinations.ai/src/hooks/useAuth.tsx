@@ -81,8 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem(STORAGE_KEY, key);
             setUserApiKey(key);
             // Clean URL fragment without reload
+            // Keep the router's history state; only the URL changes.
             window.history.replaceState(
-                {},
+                window.history.state,
                 "",
                 window.location.pathname + window.location.search,
             );

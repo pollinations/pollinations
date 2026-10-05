@@ -32,7 +32,7 @@ export function fetchCatalogHealthRows(): Promise<ModelHealthRow[]> {
 // Official models and agents retain their existing 24-hour health display.
 export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
     const url = new URL(MODEL_ROUTE_HEALTH_URL);
-    url.searchParams.set("minutes", "1440");
+    url.pathname = "/v0/pipes/model_health_24h.json";
     return fetchHealthRows(url);
 }
 
@@ -49,9 +49,21 @@ export const modelStatusRoutes = new Hono<Env>().get(
             "",
             "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
             "",
-            "Cached for 60 seconds per window.",
+            "Cached for 60 seconds per window and traffic scope.",
         ].join("\n"),
         parameters: [
+            {
+                name: "traffic",
+                in: "query",
+                required: false,
+                description:
+                    "Traffic population: all requests (default), or regular usage excluding legacy APIs and Pollinations-internal traffic.",
+                schema: {
+                    type: "string",
+                    enum: ["all", "regular"],
+                    default: "all",
+                },
+            },
             {
                 name: "minutes",
                 in: "query",
@@ -75,6 +87,10 @@ export const modelStatusRoutes = new Hono<Env>().get(
     }),
     async (c) => {
         const url = new URL(MODEL_ROUTE_HEALTH_URL);
+        const traffic = c.req.query("traffic") ?? "all";
+        if (traffic !== "all" && traffic !== "regular")
+            return c.json({ error: "traffic must be all or regular" }, 400);
+        url.searchParams.set("traffic", traffic);
         const minutes = c.req.query("minutes");
         if (minutes !== undefined) url.searchParams.set("minutes", minutes);
         const upstream = await fetch(url, {

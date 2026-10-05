@@ -23,21 +23,6 @@ import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
     [
-        "perplexity/sonar:openrouter:perplexity",
-        "perplexity/sonar",
-        "perplexity",
-    ],
-    [
-        "perplexity/sonar-pro:openrouter:perplexity",
-        "perplexity/sonar-pro",
-        "perplexity",
-    ],
-    [
-        "perplexity/sonar-reasoning-pro:openrouter:perplexity",
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-    ],
-    [
         "qwen/qwen3.8-27b:openrouter:akashml-fp8",
         "qwen/qwen3.8-27b",
         "akashml/fp8",
@@ -306,63 +291,6 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it.each([
-        "sonar",
-        "sonar-pro",
-        "sonar-reasoning-pro",
-    ] as const)("keeps %s on direct Perplexity with an OpenRouter fallback", (upstream) => {
-        const model = `perplexity/${upstream}` as const;
-        const primary: ModelDefinition = TEXT_SERVICES[model];
-        expect(primary).toMatchObject({
-            provider: "perplexity",
-            priceMultiplier: 1,
-            fallbacks: [`${model}:openrouter:perplexity`],
-        });
-        expect(primary).not.toHaveProperty("paidOnly", true);
-        expect(findModelByName(model)?.config()).toMatchObject({
-            provider: "perplexity-ai",
-            model: upstream,
-        });
-    });
-
-    it.each([
-        ["perplexity/sonar", "low", 0.005],
-        ["perplexity/sonar", "high", 0.012],
-        ["perplexity/sonar-pro", "high", 0.014],
-        ["perplexity/sonar-reasoning-pro", "high", 0.014],
-    ] as const)("bills %s %s search once when OpenRouter reports a total cost", (model, searchContextSize, searchFee) => {
-        const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES[`${model}:openrouter:perplexity`];
-        const usage = { promptTextTokens: 100, completionTextTokens: 20 };
-        const expected =
-            100 * primary.cost.promptTextTokens +
-            20 * primary.cost.completionTextTokens +
-            searchFee;
-        // OpenRouter's numeric cost already includes token and search costs.
-        const completion = { usage: { cost: expected } };
-        for (const output of [
-            completion,
-            { streamEvents: [{ choices: [] }, completion] },
-        ]) {
-            const billed = calculateUsageBilling({
-                model,
-                usage,
-                servedBy: fallback,
-                quotedBy: primary,
-                output,
-                input: { searchContextSize },
-            });
-            expect(billed.cost.totalCost).toBeCloseTo(expected * 1.055, 12);
-            expect(billed.price.totalPrice).toBeCloseTo(expected, 12);
-            expect(billed.adjustments).toHaveLength(1);
-            expect(billed.adjustments[0]).toMatchObject({
-                kind: "search_request",
-                units: 1,
-                cost: searchFee * 1.055,
-            });
-        }
-    });
-
     it("uses the identical Sweden checkpoint as the GPT-5.3 Codex fallback", () => {
         const primary = TEXT_SERVICES["openai/gpt-5.3-codex"];
         const fallback = TEXT_SERVICES["openai/gpt-5.3-codex:azure:sweden"];
@@ -431,7 +359,7 @@ describe("static provider fallbacks", () => {
                 usage: { promptTextTokens: 272_000, promptCachedTokens: 1 },
             }),
         ).toBe("long_context");
-        expect(fallback.priceMultiplier).toBe(0.75);
+        expect(fallback.priceMultiplier).toBe(1);
         expect(fallback.paidOnly).not.toBe(true);
         const billing = calculateUsageBilling({
             model: "openai/gpt-6-astra",
@@ -440,7 +368,7 @@ describe("static provider fallbacks", () => {
             quotedBy: primary,
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
-        expect(billing.price.totalPrice).toBe(0.00027);
+        expect(billing.price.totalPrice).toBe(0.00036);
         const model = findModelByName("openai/gpt-6-astra:azure:datazone");
         expect(model?.useResponsesApi).toBe(true);
         expect(model?.config()).toMatchObject({
@@ -448,6 +376,26 @@ describe("static provider fallbacks", () => {
             "azure-resource-name": "myceli-prod-eastus",
             responsesEndpoint:
                 "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it.each([
+        "openai/gpt-6-luna",
+        "openai/gpt-6.1-sol",
+        "openai/gpt-6-sol",
+    ] as const)("keeps the same price and Quest access when %s falls back to OpenAI", (model) => {
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openai`];
+        expect(primary.provider).toBe("azure");
+        expect(primary.fallbacks).toEqual([`${model}:openai`]);
+        expect(primary.paidOnly).toBe(false);
+        expect(fallback.provider).toBe("openai");
+        expect(fallback.paidOnly).toBe(false);
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.costVariants).toEqual(primary.costVariants);
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
+            responsesEndpoint: "https://api.openai.com/v1/responses",
         });
     });
 
@@ -530,6 +478,33 @@ describe("static provider fallbacks", () => {
         expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
     });
 
+    it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
+        const primary = TEXT_SERVICES["liquid/d1"];
+        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
+        expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(findModelByName("liquid/d1:vercel")?.config()).toMatchObject({
+            model: "liquid/d1",
+            provider: "openai",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        const billing = calculateUsageBilling({
+            model: "liquid/d1",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),
@@ -593,6 +568,7 @@ describe("static provider fallbacks", () => {
         });
         expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
             "x-ai/grok-4.6:azure:sweden",
+            "x-ai/grok-4.6:xai",
         ]);
         expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
             TEXT_SERVICES["x-ai/grok-4.6"].cost,
@@ -834,6 +810,110 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("rejects JSON mode on Sonar before generation but keeps JSON schema", () => {
+        const sonar = TEXT_SERVICES["perplexity/sonar"];
+        for (const request of [
+            { response_format: { type: "json_object" } },
+            { text: { format: { type: "json_object" } } },
+        ]) {
+            expect(textCapabilityError(sonar, request)).toMatch(
+                /does not support JSON mode/,
+            );
+        }
+        for (const request of [
+            {
+                response_format: {
+                    type: "json_schema",
+                    json_schema: {
+                        name: "answer",
+                        schema: {
+                            type: "object",
+                            properties: { capital: { type: "string" } },
+                        },
+                    },
+                },
+            },
+            { response_format: { type: "text" } },
+            {},
+        ]) {
+            expect(textCapabilityError(sonar, request)).toBeUndefined();
+        }
+    });
+
+    it("rejects image input only for models without image input", () => {
+        const chat = {
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "What color is this?" },
+                        {
+                            type: "image_url",
+                            image_url: { url: "https://example.com/a.png" },
+                        },
+                    ],
+                },
+            ],
+        };
+        const responses = {
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_image",
+                            image_url: "https://example.com/a.png",
+                        },
+                    ],
+                },
+            ],
+        };
+        for (const request of [chat, responses]) {
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-oss-20b"],
+                    request,
+                ),
+            ).toBe("This model does not support image input");
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-5.4-nano"],
+                    request,
+                ),
+            ).toBeUndefined();
+        }
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-oss-20b"], {
+                messages: [{ role: "user", content: "Hello" }],
+            }),
+        ).toBeUndefined();
+    });
+
+    it("routes Ling fallback through Vercel Novita with launch pricing", () => {
+        const primary = "inclusionai/ling-3.1-flash";
+        const route = `${primary}:vercel:novita`;
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([route]);
+        expect(TEXT_SERVICES[route]).toMatchObject({
+            provider: "vercel",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            cost: {
+                promptTextTokens: 0,
+                promptCachedTokens: 0,
+                completionTextTokens: 0,
+            },
+        });
+        expect(findModelByName(route)?.config()).toMatchObject({
+            model: primary,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        });
+        expect(getVisibleTextModels()).not.toContain(route);
+    });
+
     it("uses the same primary and single fallback for both API formats", () => {
         const primary = "meta/llama-4-scout";
         const novita = `${primary}:openrouter:novita-bf16`;
@@ -876,6 +956,11 @@ describe("static provider fallbacks", () => {
             responsesEndpoint:
                 "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
             responsesAuthHeader: "api-key",
+        });
+        expect(findModelByName("x-ai/grok-4.6:xai")?.config()).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.x.ai/v1/chat/completions",
+            model: "grok-4.6",
         });
         expect(
             findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),

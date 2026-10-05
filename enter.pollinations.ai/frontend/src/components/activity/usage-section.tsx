@@ -1,6 +1,5 @@
 import {
     InlineLink,
-    LoadingStatus,
     Table,
     TableBody,
     TableCell,
@@ -140,7 +139,6 @@ export const UsageSection: FC<UsageSectionProps> = ({
 
             <UsageChartView
                 loading={loading}
-                refreshing={refreshing}
                 error={error}
                 fetchUsage={fetchUsage}
                 chartData={chartData}
@@ -156,13 +154,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
 
 type UsageChartViewProps = Pick<
     ReturnType<typeof useUsageData>,
-    | "loading"
-    | "refreshing"
-    | "error"
-    | "fetchUsage"
-    | "chartData"
-    | "stats"
-    | "hasData"
+    "loading" | "error" | "fetchUsage" | "chartData" | "stats" | "hasData"
 > & {
     metric: Metric;
     period: ActivityPeriod;
@@ -171,7 +163,6 @@ type UsageChartViewProps = Pick<
 
 const UsageChartView: FC<UsageChartViewProps> = ({
     loading,
-    refreshing,
     error,
     fetchUsage,
     chartData,
@@ -183,8 +174,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
 }) => {
     return (
         <>
-            <SectionContent loading={loading} label="Loading usage…">
-                {refreshing && <LoadingStatus>Updating usage…</LoadingStatus>}
+            <SectionContent loading={loading}>
                 {error && (
                     <LoadError onRetry={() => fetchUsage()}>{error}</LoadError>
                 )}

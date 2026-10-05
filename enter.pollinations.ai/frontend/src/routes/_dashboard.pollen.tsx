@@ -1,34 +1,40 @@
-import { Section } from "@pollinations/ui";
-import {
-    getPollenPackByAmount,
-    getPollenPackByKey,
-    isPollenPackKey,
-    POLLEN_PACKS,
-    type PollenPackKey,
-} from "@shared/pollen-packs.ts";
+import { Section, Surface } from "@pollinations/ui";
+import { isPollenPackKey, type PollenPackKey } from "@shared/pollen-packs.ts";
 import {
     Await,
     createFileRoute,
     redirect,
     useNavigate,
+    useRouter,
 } from "@tanstack/react-router";
-import { useDeferredValue } from "react";
+import { Suspense, useDeferredValue } from "react";
 import { apiClient } from "../api.ts";
 import {
     LoadError,
-    SectionContent,
+    PageStatus,
 } from "../components/layout/dashboard-loading.tsx";
-import { BuyPollenPanel, PollenBalance } from "../components/pollen";
+import {
+    BillingPanel,
+    BuyPollenPanel,
+    EditOnStripeLink,
+    PollenBalance,
+} from "../components/pollen";
+import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import { checkoutReturnSearch } from "../lib/top-up-search.ts";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/pollen")({
     validateSearch: (
         search: Record<string, unknown>,
-    ): { pack?: PollenPackKey } => ({
+    ): {
+        pack?: PollenPackKey;
+        session_id?: string;
+    } => ({
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
                 ? search.pack
                 : undefined,
+        ...checkoutReturnSearch(search),
     }),
     beforeLoad: ({ context, location }) => {
         if (!context.user) {
@@ -49,33 +55,30 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 
 function PollenPage() {
     const retry = useDashboardRetry("balance");
-    const { pack } = Route.useSearch();
+    const { pack, session_id: checkoutSessionId } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
+    const router = useRouter();
+    // Balance and billing both come from loaders; rerun them once credited.
+    const reloadWallet = () => void router.invalidate();
     const { balance, earnings } = useDeferredValue(
         DashboardRoute.useLoaderData(),
     );
     const { billing } = useDeferredValue(Route.useLoaderData());
-    const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
-
-    function selectPack(amount: number): void {
-        const selected = getPollenPackByAmount(amount);
-        if (selected) void navigate({ search: { pack: selected.packKey } });
-    }
 
     return (
-        <div className="flex flex-col gap-6">
-            <Section title="Wallet">
-                <Await
-                    promise={balance}
-                    fallback={
-                        <SectionContent loading label="Loading balance…" />
-                    }
-                >
+        <>
+            <Section title="Pollen">
+                <Await promise={balance} fallback={<PageStatus />}>
                     {(balances) =>
                         balances ? (
                             <Await
                                 promise={earnings}
-                                fallback={<PollenBalance {...balances} />}
+                                fallback={
+                                    <>
+                                        <PollenBalance {...balances} />
+                                        <PageStatus />
+                                    </>
+                                }
                             >
                                 {(earnings) => (
                                     <PollenBalance
@@ -93,24 +96,44 @@ function PollenPage() {
                 </Await>
             </Section>
             <Section title="Top-up" id="buy-pollen">
-                <Await
-                    promise={billing}
-                    fallback={
-                        <SectionContent
-                            loading
-                            label="Loading billing details…"
+                {checkoutSessionId && (
+                    <Surface>
+                        <CheckoutConfirmation
+                            sessionId={checkoutSessionId}
+                            onCredited={reloadWallet}
+                            onRetry={() => void navigate({ search: { pack } })}
                         />
-                    }
-                >
-                    {(billingState) => (
-                        <BuyPollenPanel
-                            initialBillingState={billingState}
-                            selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                            onSelectedPackAmountChange={selectPack}
-                        />
-                    )}
-                </Await>
+                    </Surface>
+                )}
+                <Suspense fallback={<PageStatus />}>
+                    <Await promise={billing}>
+                        {(billingState) => (
+                            <BuyPollenPanel
+                                initialBilling={billingState}
+                                onWalletChange={reloadWallet}
+                                initialPack={pack}
+                            />
+                        )}
+                    </Await>
+                </Suspense>
             </Section>
-        </div>
+            {/* The Top-up section above shows the page's one loading status. */}
+            <Section title="Billing" id="billing" action={<EditOnStripeLink />}>
+                <Suspense fallback={null}>
+                    <Await promise={billing}>
+                        {(billingState) =>
+                            billingState ? (
+                                <BillingPanel billing={billingState} />
+                            ) : (
+                                // Not "none saved": it may well be there.
+                                <LoadError onRetry={reloadWallet}>
+                                    Couldn’t load your billing details.
+                                </LoadError>
+                            )
+                        }
+                    </Await>
+                </Suspense>
+            </Section>
+        </>
     );
 }

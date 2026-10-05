@@ -477,6 +477,20 @@ export interface AudioGenerateOptions extends RequestOptions {
     seed?: number;
 }
 
+/** Options for POST /v1/audio/speech */
+export interface AudioSpeechOptions extends AudioGenerateOptions {
+    /** Public audio URL for models that support reference audio */
+    referenceAudio?: string;
+}
+
+/** File-based voice conversion or speech isolation. */
+export interface AudioTransformOptions extends RequestOptions {
+    operation: "voice-changer" | "voice-isolator";
+    model?: AudioModel;
+    /** Target voice for voice-changer. */
+    voice?: AudioVoice;
+}
+
 /** Response from dedicated audio endpoints (binary audio data) */
 export interface AudioBinaryResponse {
     /** The generated audio as a Buffer (Node.js) or ArrayBuffer (browser) */
@@ -652,12 +666,8 @@ export interface UploadResponse {
 // Decisions (TypeSafe / Jev)
 // ============================================================================
 
-/** Decision model identifier (defaults to 'typesafe/jev-1.13' / 'jev') */
-export type DecisionModel = string;
-
 /**
- * State, instructions, and criteria all accept any JSON:
- * a string, a record, or an array of records/values.
+ * State, instructions, and criteria accept a string, object, or array.
  */
 export type DecisionContent = string | Record<string, unknown> | unknown[];
 
@@ -737,17 +747,10 @@ export interface DecisionUsage {
 /** Options for requesting a decision (POST /alpha/decisions) */
 export interface DecisionOptions extends RequestOptions {
     /** Decision model to use (default: 'typesafe/jev-1.13') */
-    model?: DecisionModel;
+    model?: string;
     /** The facts/context to decide on */
     state: DecisionContent;
     /** Questions to answer about the state, keyed by custom names */
-    questions: Record<string, DecisionQuestion>;
-}
-
-/** Wire request payload sent to the decisions endpoint */
-export interface DecisionRequest {
-    model?: string;
-    state: DecisionContent;
     questions: Record<string, DecisionQuestion>;
 }
 
@@ -1013,7 +1016,7 @@ export interface CreateKeyOptions {
      * Account permissions to grant (e.g. `["profile", "usage"]`).
      * Without this, scoped keys cannot read account state beyond their
      * own key metadata, budget, and per-key usage.
-     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
     /**

@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 
 import { agentsCommand } from "./commands/agents.js";
-import { authCommand } from "./commands/auth.js";
+import { authCommand, whoamiCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
 import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
@@ -13,12 +13,13 @@ import { mcpCommand } from "./commands/mcp.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
+import { sandboxCommand } from "./commands/sandbox/index.js";
 import { updateCommand } from "./commands/update.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
-import { configureHelp, setOutputMode } from "./lib/output.js";
+import { configureHelp, ExitSignal, setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
 import { notifyUpdate } from "./lib/update-notice.js";
 
@@ -60,6 +61,7 @@ program
 
 // Auth & account
 program.addCommand(authCommand);
+program.addCommand(whoamiCommand);
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
 program.addCommand(earningsCommand);
@@ -69,6 +71,9 @@ program.addCommand(myModelsCommand);
 
 // Coding harness integrations
 program.addCommand(harnessCommand);
+
+// E2B sandboxes
+program.addCommand(sandboxCommand);
 
 // Generation
 program.addCommand(createGenCommand());
@@ -90,6 +95,13 @@ if (process.argv.length <= 2) {
 }
 
 program.parseAsync(process.argv).catch((err) => {
+    if (err instanceof ExitSignal) {
+        // Set the code and let the event loop drain: an immediate
+        // process.exit() here aborts libuv on Windows after network I/O
+        // (nodejs/node#56645) and loses the intended exit code.
+        process.exitCode = err.code;
+        return;
+    }
     process.stderr.write(`${err instanceof Error ? err.message : err}\n`);
-    process.exit(1);
+    process.exitCode = 1;
 });

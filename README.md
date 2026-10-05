@@ -28,16 +28,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [🎮 GATEKEEPER](https://khuzaima3232.github.io/gatekeeper) | A 60-second arcade arena whose rules are written live by an AI. Before every run, a language model invents the terms of that run - which colour sustains you, which colour is fatal on contact, whether | [@Khuzaima3232](https://github.com/Khuzaima3232) |
-| [🛠️ ShouldIApply](https://notsointresting.github.io/shouldiapply) | ShouldIApply tells job seekers their real, calibrated odds of passing a job's initial screen — before they waste the effort applying. Paste your resume and a job description. The app sends them to Pol | [@notsointresting](https://github.com/notsointresting) |
-| [🎬 Aizen (TTS)](https://fantasyvvillain-pixel.github.io/Aizen-) | App Description: A static web app with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE sign-in flow entirely on the client side, without the need for a backend server | [@fantasyvvillain-pixel](https://github.com/fantasyvvillain-pixel) |
-| [🖼️ Bees Pollination](https://halimyassine.github.io/bees-pollination-app) | Bees Pollination is a simple AI image generation app powered by Pollinations. Users connect their Pollinations account, enter a text prompt, and generate an image directly in the browser using the Pol | [@halimyassine](https://github.com/halimyassine) |
-| [🖼️ Atelier — Pollinations Image Studio](https://image.xt1171.eu.org) | Atelier is a bilingual (English / 简体中文) image studio built on the Pollinations image API. Users write a prompt, generate with the live model catalog, refine results with reference-image editing, and k | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [🖼️ aaarraaa](https://aaarraaarr990-rgb.github.io/Monster) | App Description: A static web app with an Arabic (RTL) interface that fully implements Pollinations.ai’s BYOP OAuth 2.1 PKCE login flow on the client side without any backend servers. After logging in | [@aaarraaarr990-rgb](https://github.com/aaarraaarr990-rgb) |
-| [🎬 Text to speech](https://thinglover21-ux.github.io/My-app-mod) | App Description: A static web application featuring an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, without a backend server. | [@thinglover21-ux](https://github.com/thinglover21-ux) |
-| [💬 Oracle Mystique](https://oracle-mystique.up.railway.app) | Oracle Mystique : AI-powered tarot reading with 3 cards (Past/Present/Future), AI-generated illustrations, interpretation in English. Full BYOP OAuth2 implementation. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
-| [🖼️ PersonaMorph](https://personamorph-ai-production.up.railway.app) | A professional AI Identity Studio allowing users to connect their Pollinations wallets and transform their photos into various artistic personas using the /v1/images/edits endpoint. Features: OAuth 2. | [@stykdofus-ux](https://github.com/stykdofus-ux) |
-| [🖼️ baboolharech](https://baboolharech-lgtm.github.io/Fith) | App Description: A static web application featuring an Arabic (RTL) interface that fully implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow on the client side, without a backend server. Aft | [@baboolharech-lgtm](https://github.com/baboolharech-lgtm) |
+| [📚 Pollinations Quest Starter](https://elite-surely-machine-enemies.trycloudflare.com) | A zero-backend web app that walks a brand-new Pollinations user through the seven setup quests on one page. You paste your API key (kept only in browser localStorage - no server, no data collection) a | [@lingt11](https://github.com/lingt11) |
+| [🎮 Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds) | Type a place and an AI paints it as a postcard. A vision model finds the doors, paths and windows in the picture; click one to step into the next view, painted to match the last using the previous vie | [@tomdacatto](https://github.com/tomdacatto) |
+| [📚 Chorus](https://xiaotian1171.github.io/chorus) | Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [📚 Tunemory](https://tomdacatto.github.io/pollinations-tunemory) | Turn a fact, formula or word list into a short catchy song that helps you remember it. Paste your notes, pick a style, and get lyrics that keep every fact and number (checked in code before they are s | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Liar's Supper](https://xiaotian1171.github.io/liars-supper) | A party deduction game for one device passed around the table. The host sets a scene, deals every player a secret role, narrates three twists while the table argues on a timer, then takes a private vo | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
+| [🎮 Mole Party](https://tomdacatto.github.io/pollinations-mole-party) | Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
+| [🎮 Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) | Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi | [@NamanSoni78](https://github.com/NamanSoni78) |
+| [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-09-23** – **🤖 GPT-5.3 Codex** `openai/gpt-5.3-codex` is now available with a 400K-token context window, tool use, structured output, images, files, reasoning, streaming, and terminal workflows. [Try the API](https://gen.pollinations.ai/docs)
-- **2026-09-23** – **🚀 MiMo V2.6 Flash and Pro** Two Xiaomi models join the text API with image input, tools, streaming, JSON schema, reasoning controls, and a frankly excessive 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-23** – **🎨 New Azure image models** Generate and edit with `microsoft/mai-image-2.6`, its faster Flash sibling, and `black-forest-labs/flux.1.1-pro` through the existing image API. [Try image generation](https://pollinations.ai/play)
-- **2026-09-23** – **✨ Floret gets 3D output** Floret now uses shared authenticated media tools and can produce downloadable 3D generations alongside editable, publishable media.
-- **2026-09-23** – **⚡ GPT Image overflow** `gpt-image-2`, Flare, and Sunburst can absorb larger generation bursts through Azure with OpenAI fallback; Flare and Sunburst also cost 25% less.
-- **2026-09-23** – **🎯 ShouldIApply** Paste a resume and job description to estimate your odds of clearing the initial screen before beginning the traditional application odyssey. [Try it](https://notsointresting.github.io/shouldiapply) <!-- app -->
-- **2026-09-22** – **🚀 Claude Opus 5.5** `anthropic/claude-opus-5.5` is available through the unified API: 1M-token context, image input, adaptive thinking, automatic tools, and up to 128K output tokens. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-22** – **🚀 GPT-6 Sol and Luna** Two new paid OpenAI models, `openai/gpt-6-sol` and `openai/gpt-6-luna`, now work through the existing text API. No new endpoint ritual required. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-09-22** – **✨ GLM-5.3 FlashX** `z-ai/glm-5.3-flashx` brings 1M-token context, image input, and up to 131K output tokens to the unified text API, routed directly to Z.AI. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-21** – **🔗 MCP moves into the workshop** `polli mcp` can discover, install, inspect, and remove Pollinations MCP servers across 13 coding agents—without eating anyone else’s config. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
+- **2026-10-04** – **🌟 New Quests for video and community models** Earn Pollen for trying a video or community model; model publishers can earn it when others use their models.
+- **2026-10-04** – **🔗 Claude Code connects directly** Polli CLI can connect Claude Code to Pollinations’ `/v1/messages` endpoint, with model aliases and a separate config that leaves your Claude settings alone. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
+- **2026-10-04** – **🎨 Explore a painted world** In Postcard Worlds, enter a place, then step through doors and paths in AI-painted scenes that carry the view forward. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds) <!-- app -->
+- **2026-10-04** – **🎵 Turn study notes into songs** Tunemory makes short songs from facts, formulas, or word lists and checks the lyrics for missing details. [Try it](https://tomdacatto.github.io/pollinations-tunemory) <!-- app -->
+- **2026-10-03** – **🔗 More tools for MCP clients** Check usage and earnings, browse quests, and manage API keys from your MCP client. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).
+- **2026-10-03** – **📱 Sandboxes from `polli`** Create, list, and stop sandboxes from the CLI, then generate SSH configuration to connect. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).
+- **2026-10-03** – **✨ PDFs and audio in chat requests** Send inline PDFs to OpenRouter models or base64 audio to Inkling; Gen handles the media transfer behind the scenes. [API docs](https://gen.pollinations.ai/docs).
+- **2026-10-03** – **🎨 Sixteen design decisions from one sentence** Jev Assembler turns a page description into choices for layout, typography, palette, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler) <!-- app -->
+- **2026-10-02** – **🚀 A little room to compute** Create E2B-compatible sandboxes through the gen API or `polli sandbox`, then connect over SSH. The coding-agent template comes with five agents ready to use. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-10-02** – **🤖 The models meet Alice** Compare official and community models on weekly puzzle evals, with past runs and uncertainty shown alongside the scores. [See the rankings](https://model-monitor.pollinations.ai)
 ---
 
 ## 🌱 Introduction
@@ -112,7 +112,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run agentic coding tools such as Bloom CLI, DeepSeek Harness, OpenCode, Pi, and Prime Agent on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
+Run tools such as Bloom CLI, DeepSeek Harness, Hermes Agent, OpenCode, Pi, Prime Agent, and tgpt on Pollinations models. `polli harness` edits the tool's own config so it calls Pollinations with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on
@@ -351,20 +351,23 @@ Other OpenAI SDKs work too: [Go](https://github.com/openai/openai-go), [Java](ht
 **Vercel AI SDK:**
 
 ```typescript
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 
-const client = createOpenAI({
+const pollinations = createOpenAICompatible({
+  name: "pollinations",
   baseURL: "https://gen.pollinations.ai/v1",
   apiKey: "YOUR_API_KEY",
 });
 
 const { text } = await generateText({
-  model: client("openai"),
+  model: pollinations.chatModel("openai"),
   prompt: "Hello!",
 });
 console.log(text);
 ```
+
+Streaming, image, and embedding examples: [API docs → Vercel AI SDK](APIDOCS.md#-vercel-ai-sdk).
 
 ## Architecture
 

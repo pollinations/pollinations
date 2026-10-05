@@ -12,9 +12,10 @@ then choose a server:
 | Server | Endpoint | Use it for | Details |
 | --- | --- | --- | --- |
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
+| Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
-| Connected Apps | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 
 Send the key with every request:
@@ -46,7 +47,8 @@ npx @pollinations/cli mcp remove cursor         # remove all Pollinations entrie
 ```
 
 Supported clients: Claude Code, Codex CLI, VS Code, Cursor, OpenCode, Gemini
-CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Warp.
+CLI, GitHub Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, Warp, Hermes Agent,
+and Pi (0.99+).
 
 Keys are stored locally in plaintext in client configs and reused on reinstall.
 Codex instead references `POLLI_MCP_CODEX_API_KEY` in `~/.codex/.env`.
@@ -104,11 +106,11 @@ with another endpoint from the table to use FFmpeg or Exa Search.
 The Pollinations server exposes the main Pollinations API as agent-friendly
 tools. Agents can discover live models, delegate text requests, generate and
 edit media, create embeddings and 3D assets, transcribe audio, and inspect
-model health and account balance.
+model health, usage, earnings, quests, and API keys.
 
 | Tool | Purpose |
 | --- | --- |
-| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
+| `listModels` | Search and list live models, aliases, capabilities, voices, endpoints, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
@@ -118,6 +120,12 @@ model health and account balance.
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
 | `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+| `getUsage` | List recent requests or a daily usage summary; requires `account:usage` permission |
+| `getEarnings` | Show developer earnings from BYOP apps and community models; requires `account:usage` permission |
+| `listQuests` | List quests with reward and claim state; requires `account:usage` permission |
+| `listKeys` | List API keys; requires `account:keys` permission |
+| `createKey` | Create a secret or publishable app key; requires `account:keys` permission |
+| `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
 clients should not rely on a hardcoded model list.
@@ -125,6 +133,14 @@ clients should not rely on a hardcoded model list.
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone
 with the link can access it, and it expires after 30 days.
+
+### Ask Jev MCP
+
+`jev_decide` accepts `state` and a map of `questions`, each using `choice`,
+`score`, or `noul` (probability). It returns typed answers with confidence or
+probabilities. Include relevant facts in `state`; confidence can remain high
+when facts are missing. Calls use Jev's listed model rate with no additional
+MCP fee.
 
 ### FFmpeg MCP
 
@@ -142,9 +158,9 @@ path.
 - `web_fetch_exa` reads one or more known URLs as clean text when the search
   highlights are not enough.
 
-### Connected Apps MCP
+### Connectors MCP
 
-Connected Apps uses Composio to discover and run tools in each user's own
+The Connectors MCP uses Composio to discover and run tools in each user's own
 accounts. Enable it in your agent or connect the MCP endpoint, then ask for a
 specific task, such as “Summarize my unread Gmail” or “Find open issues in my
 GitHub repository.”

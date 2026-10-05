@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 import type {
     CreateChatCompletionRequest,
     MessageContentPart,
@@ -86,7 +87,7 @@ async function checkSafetyTexts(
         const guardrailEnv = resolveBedrockGuardrailEnv(c.env);
         if (!guardrailEnv) {
             setSafetyHeader(c, "X-Safety-Status", "misconfigured");
-            throw safetyError(503, "service_unavailable", {
+            throw new HTTPException(503, {
                 message: "Safety service not configured",
             });
         }
@@ -101,7 +102,7 @@ async function checkSafetyTexts(
             error: String(error),
         });
         setSafetyHeader(c, "X-Safety-Status", "unavailable");
-        throw safetyError(503, "service_unavailable", {
+        throw new HTTPException(503, {
             message: "Safety service temporarily unavailable",
         });
     }
@@ -113,12 +114,9 @@ async function checkSafetyTexts(
         features,
     );
     if (blockedFeatures.size > 0) {
-        throw safetyError(400, "content_blocked", {
-            message: "Request blocked by safety filter",
-            safety: {
-                applied: [...features],
-                triggered: [...blockedFeatures],
-            },
+        throw new UpstreamError(400, {
+            message: `Request blocked by safety filter: ${[...blockedFeatures].join(", ")}`,
+            errorCode: "content_blocked",
         });
     }
 
@@ -329,29 +327,10 @@ function getRequestFeatures(safeValue: SafeValue) {
     const normalized = normalizeSafeValue(safeValue);
     const invalid = invalidSafeTokens(normalized);
     if (invalid.length > 0) {
-        throw safetyError(400, "invalid_safe", {
-            message: `Unknown safe feature: ${invalid.join(", ")}`,
-            safety: {
-                valid: [...VALID_SAFE_TOKENS].join(","),
-            },
+        throw new HTTPException(400, {
+            message: `Unknown safe feature: ${invalid.join(", ")}. Valid: ${[...VALID_SAFE_TOKENS].join(", ")}`,
         });
     }
 
     return parseSafeFeatures(normalized);
-}
-
-function safetyError(
-    status: 400 | 503,
-    code: string,
-    extra: { message: string; safety?: object },
-): HTTPException {
-    const body = JSON.stringify({
-        error: { type: "safety_error", code, ...extra },
-    });
-    return new HTTPException(status, {
-        res: new Response(body, {
-            status,
-            headers: { "Content-Type": "application/json" },
-        }),
-    });
 }

@@ -10,6 +10,7 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { Await, useLoaderData } from "@tanstack/react-router";
 import type { FC, KeyboardEvent, ReactNode } from "react";
 import { useDeferredValue } from "react";
+import { PageStatus } from "../layout/dashboard-loading.tsx";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
@@ -125,7 +126,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
     );
 };
 
-/** Same height as the chart and loading states so the card never jumps. */
+/** Same height as the chart so the card never jumps. */
 export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
     children,
 }) => (
@@ -228,7 +229,10 @@ export function ActivityKeyFilter({
         <Await
             promise={apiKeys}
             fallback={
-                <ActivityFilter {...props} missingLabel="Loading key name…" />
+                <>
+                    <ActivityFilter {...props} />
+                    <PageStatus />
+                </>
             }
         >
             {(keys) => {

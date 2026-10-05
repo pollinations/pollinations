@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { largeChatBody } from "../middleware/large-chat-body.ts";
 import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
@@ -215,7 +216,7 @@ const model3dHandlers = factory.createHandlers(
 
 // Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
-    textBodyLimit,
+    every(largeChatBody, textBodyLimit),
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
     resolveModel("generate.text", {
@@ -351,6 +352,12 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         aliases: entry.info.aliases,
         category: entry.info.category,
         community: entry.info.community,
+        // Open WebUI's model tag shape; its model picker filters by these.
+        tags: [
+            { name: entry.info.category },
+            ...(entry.info.community ? [{ name: "community" }] : []),
+            ...(entry.info.agent ? [{ name: "agent" }] : []),
+        ],
         title: entry.info.title,
         description: entry.info.description,
         input_modalities: entry.info.input_modalities,
@@ -376,7 +383,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
 }
 
 // Resolve one model by ID or alias against the caller-visible registry view.
-// Returns null when unknown, hidden, or a private community model owned by
+// Returns null when unknown, unavailable, or a private community model owned by
 // someone else.
 async function resolveVisibleModelEntry(
     c: Context<Env>,
@@ -680,6 +687,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
+                "JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.",
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
@@ -710,7 +718,16 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+                ...errorResponseDescriptions(
+                    400,
+                    401,
+                    402,
+                    403,
+                    413,
+                    429,
+                    500,
+                    502,
+                ),
             },
         }),
         ...chatCompletionHandlers,
@@ -752,12 +769,13 @@ export const proxyRoutes = new Hono<Env>()
             summary: "Create Response",
             description: [
                 "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
+                "JSON request bodies may be up to 32 MiB, including inline images.",
                 "",
                 "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.",
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
+                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",
@@ -788,7 +806,16 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+                ...errorResponseDescriptions(
+                    400,
+                    401,
+                    402,
+                    403,
+                    413,
+                    429,
+                    500,
+                    502,
+                ),
             },
         }),
         ...responsesHandlers,
@@ -973,7 +1000,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
                 "",
-                "Seedance 2.0 and 2.5 also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.",
+                "Seedance 2.0, Seedance 2.5, Wan 3.0, and MiniMax H3 Max also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.",
                 "",
                 "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
@@ -1114,11 +1141,11 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 `**Known voice presets:** ${AUDIO_VOICES.join(", ")}. ElevenLabs models also accept a custom voice ID.`,
                 "",
-                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
+                "**Output formats:** Model-dependent. Defaults to mp3 except Gemini TTS (wav); Gemini TTS supports wav and raw 24 kHz pcm and rejects other explicit formats. Other available formats include opus, aac, and flac.",
                 "",
                 "**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.",
                 "",
-                "**Music generation:** Set `model=elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; the ElevenLabs Music models support `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
+                "**Music generation:** Set `model=elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `google/lyria-3.5`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3.5` returns MP3 songs with approximate length described in the prompt and does not accept `duration`; `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; the ElevenLabs Music models support `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {

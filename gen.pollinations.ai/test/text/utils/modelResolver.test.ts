@@ -317,17 +317,24 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Nemotron directly to DeepInfra without fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "nvidia/nemotron-3-ultra",
-        });
-
-        expect(result.options.model).toBe(
+    it.each([
+        [
+            "nvidia/nemotron-3-ultra",
+            "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+            "https://api.fireworks.ai/inference/v1",
+        ],
+        [
+            "nvidia/nemotron-3-ultra:deepinfra",
             "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
-        );
+            "https://api.deepinfra.com/v1/openai",
+        ],
+    ])("routes %s directly to its provider", (model, upstream, host) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(upstream);
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            "custom-host": host,
         });
         expect(result.options.provider).toBeUndefined();
     });

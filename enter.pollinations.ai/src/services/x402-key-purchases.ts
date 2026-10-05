@@ -19,6 +19,14 @@ type Purchase = {
 
 const encoder = new TextEncoder();
 
+export function purchaseAmountUsd(value: string): number | undefined {
+    const pack = getPollenPackByKey(value);
+    if (pack) return pack.amountUsd;
+    if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(value)) return undefined;
+    const amount = Number(value);
+    return amount >= 0.01 && amount <= 10_000 ? amount : undefined;
+}
+
 async function encryptionKey(secret: string): Promise<Uint8Array<ArrayBuffer>> {
     return new Uint8Array(
         await crypto.subtle.digest(
@@ -141,8 +149,8 @@ export async function creditPurchase(
         throw new Error("Purchase record does not match the issued key");
     }
     if (purchase.credited_at !== null) return;
-    const pack = getPollenPackByKey(purchase.pack_key);
-    if (!pack) throw new Error("Purchase has an unknown Pollen pack");
+    const amountUsd = purchaseAmountUsd(purchase.pack_key);
+    if (!amountUsd) throw new Error("Purchase has an invalid amount");
 
     // D1 batch is transactional. Every update checks the pending purchase;
     // after the final update marks it complete, a replay changes no balances.
@@ -158,13 +166,13 @@ export async function creditPurchase(
                 `UPDATE user SET pack_balance = ROUND(COALESCE(pack_balance, 0) + ?, ${POLLEN_BILLING_PRECISION})
              WHERE id = ? AND ${eligible}`,
             )
-            .bind(pack.amountUsd, userId, id),
+            .bind(amountUsd, userId, id),
         db
             .prepare(
                 `UPDATE apikey SET pollen_balance = ROUND(pollen_balance + ?, ${POLLEN_BILLING_PRECISION})
              WHERE id = ? AND user_id = ? AND ${eligible}`,
             )
-            .bind(pack.amountUsd, keyId, userId, id),
+            .bind(amountUsd, keyId, userId, id),
         db
             .prepare(
                 `UPDATE x402_key_purchase SET credited_at = ?

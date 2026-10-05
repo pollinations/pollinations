@@ -13,12 +13,4 @@ describe("model dropdown option", () => {
         expect(html).toContain(`aria-label="${label}"`);
         expect(html).toContain(color);
     });
-
-    it("does not invent a payment type when the catalog omits it", () => {
-        const html = renderToStaticMarkup(
-            <MediaModelOption model={{ title: "Example model" }} />,
-        );
-        expect(html).toContain("Example model");
-        expect(html).not.toContain("Pollen");
-    });
 });

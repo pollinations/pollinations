@@ -95,7 +95,7 @@ type PlaygroundModel = MediaModelMetadata & {
     inputModalities: string[];
     supportedEndpoints: string[];
     voices: string[];
-    paidOnly?: boolean;
+    paidOnly: boolean;
     /** Requests in the last 24 hours, from the catalog's health field. */
     requests: number;
 };
@@ -144,7 +144,8 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         durationStep: model.duration_step,
         maxReferenceImages: model.max_reference_images,
         voices: model.voices ?? [],
-        paidOnly: model.paid_only,
+        // Gen treats a missing flag as not paid-only.
+        paidOnly: model.paid_only ?? false,
         requests: recentRequests(model),
     };
 }

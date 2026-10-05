@@ -343,6 +343,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "inclusionai/ling-3.1-flash",
         "novita",
     ),
+    "inclusionai/ling-3.1-flash:vercel:novita": () =>
+        createVercelAIGatewayModelConfig({
+            model: "inclusionai/ling-3.1-flash",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        }),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

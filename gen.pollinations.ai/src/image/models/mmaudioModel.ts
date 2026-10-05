@@ -137,6 +137,7 @@ export async function callMMAudioAPI(
         durationSeconds: durations.video,
         trackingData: {
             actualModel: safeParams.model,
+            // Fal bills the requested window even when the source is shorter.
             usage: { completionVideoSeconds: billedSeconds ?? duration },
             ...(computeSeconds === undefined
                 ? {}

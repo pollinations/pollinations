@@ -1,0 +1,34 @@
+{
+  "pr_number": 16250,
+  "title": "feat: add Ling 3.1 Flash with Vercel fallback",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16250",
+  "merged_at": "2026-10-05T11:23:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `inclusionai/ling-3.1-flash`: no aliases, 262144 context, text input/output, tools and reasoning; primary pinned to OpenRouter Novita.\n- Launch pricing: zero cost, `priceMultiplier: 1`, `paidOnly: false`; available with Quest Pollen.\n- Adds hidden fallback `inclusionai/ling-3.1-flash:vercel:novita`, pinned to the same checkpoint through Vercel. Uses the existing fallback mechanism and credentials; both gateways depend on Novita.\n- Excludes unsupported structured outputs, `response_format`, `logprobs` and `top_logprobs`.\n- Pricing follow-up #16256 must activate on October 13, 2026 at 16:00 UTC (18:00 Berlin), per [Novita's promotion notice](https://www.linkedin.com/posts/novita-ai-labs_ling-31-flash-api-playground-novita-activity-7510737414517248000-M4mT).\n\n## Verification\n\n- 161 Gen and 63 Enter focused tests pass; Gen typecheck and formatting pass.\n- Forced real primary failure: Vercel passes Chat and Responses (streaming/non-streaming), native text, tools, reasoning, token limits, long-prefix caching, identical-response cache HIT, permissions and a three-request burst.\n- Staging final billing events match response usage, attribute the hidden Vercel route, and record zero cost/price; the local wallet is unchanged. No missing-rate warnings.\n- #16256 remains blocked until Vercel's post-promotion rates are verified; its fallback cost currently reflects the free promotion.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Ling takes the scenic route",
+    "blurb": "Ling 3.1 Flash joins the model garden with room for long conversations, tools, and reasoning. If its OpenRouter route stalls, a hidden Vercel route leads to the same Novita checkpoint.",
+    "summary": "Adds inclusionai/ling-3.1-flash with a 262,144-token context, text, tools, and reasoning, routed primarily through OpenRouter Novita with a hidden Vercel fallback to the same checkpoint.",
+    "impact": "Developers get Ling 3.1 Flash at zero launch pricing, including with Quest Pollen, while the fallback keeps requests on the same checkpoint; structured outputs and logprobs are not supported.",
+    "keywords": [
+      "Ling 3.1 Flash",
+      "text models",
+      "OpenRouter",
+      "Vercel",
+      "fallback",
+      "Quest Pollen"
+    ],
+    "visual_concept": "Depict Ling 3.1 Flash as a glowing text-model terminal with two garden paths labeled OpenRouter and Vercel converging on one Novita flower pot, making the shared checkpoint and fallback clear. Polli, wearing a tiny navigator scarf, points the friendly CRT monitor robot toward the alternate path.",
+    "image_prompt": "In a cozy pixel garden, two softly lit paths marked OpenRouter and Vercel lead to the same Novita code-flower beside a glowing Ling 3.1 Flash terminal; a curious CRT monitor robot follows Polli along the second path. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny navigator scarf and stays small-to-medium in the scene, never oversized or insect-like, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16250.jpg",
+    "prompt": "In a cozy pixel garden, two softly lit paths marked OpenRouter and Vercel lead to the same Novita code-flower beside a glowing Ling 3.1 Flash terminal; a curious CRT monitor robot follows Polli along the second path. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny navigator scarf and stays small-to-medium in the scene, never oversized or insect-like, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-05T11:24:29.099287+00:00"
+}

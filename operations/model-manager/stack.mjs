@@ -1,8 +1,8 @@
 // Runs inside the Pollinations VM. No deployment, purchases or key creation.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { createHash } from "node:crypto";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import agent from "./agent.json" with { type: "json" };
 
@@ -105,6 +105,11 @@ try {
     assert.equal(databases.length, 1, "Expected one isolated D1 database");
     const { DatabaseSync } = await import("node:sqlite");
     const db = new DatabaseSync(join(dbDir, databases[0]));
+    const { defaultKeyHasher } = await import(
+        createRequire(join(root, "enter.pollinations.ai/package.json")).resolve(
+            "@better-auth/api-key",
+        )
+    );
     // Seed the existing credential's hash in disposable test state; no new key.
     db.prepare(
         "INSERT INTO user (id,name,email,email_verified,tier_balance,pack_balance,github_username,created_at,updated_at,auto_top_up_enabled) VALUES (?,?,?,1,10,10,?,strftime('%s','now'),strftime('%s','now'),0)",
@@ -120,7 +125,7 @@ try {
         "model-manager-e2e-key",
         "local-test",
         "sk",
-        createHash("sha256").update(token).digest("base64url"),
+        await defaultKeyHasher(token),
         "model-manager-e2e",
         JSON.stringify({ account: ["profile", "usage", "keys"] }),
     );

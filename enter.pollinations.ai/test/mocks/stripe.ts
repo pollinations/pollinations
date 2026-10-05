@@ -428,6 +428,16 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                         : (session.payment_intent ?? null),
             });
         })
+        .post("/v1/checkout/sessions/:id", async (c) => {
+            const form = await parseForm(c.req.raw);
+            recordRequest(c, state, form);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
+            session.metadata = { ...session.metadata, ...parseMetadata(form) };
+            return c.json(session);
+        })
         .post("/v1/checkout/sessions/:id/expire", (c) => {
             recordRequest(c, state);
             const session = state.checkoutSessions.find(

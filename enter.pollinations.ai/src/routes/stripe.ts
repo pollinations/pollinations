@@ -1,5 +1,10 @@
 import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
+    CHECKOUT_CONSENT_TEXT,
+    CHECKOUT_CONSENT_VERSION,
+    CHECKOUT_INVOICE_FOOTER,
+} from "@shared/billing/checkout-consent.ts";
+import {
     calculateServiceFeeCents,
     describePollenPack,
     getPollenPackByKey,
@@ -69,6 +74,44 @@ export const stripeRoutes = new Hono<Env>()
             sessionId: session.id,
             publishableKey: c.env.STRIPE_PUBLISHABLE_KEY,
         });
+    })
+
+    // Custom Checkout has no native terms checkbox. Record the signed-in
+    // buyer's explicit request before Stripe.js confirms the payment.
+    .post("/checkout/sessions/:sessionId/consent", async (c) => {
+        const user = await requireSessionUser(c);
+        const body = await c.req.json().catch(() => null);
+        if (body?.accepted !== true) {
+            return c.json(
+                { error: "Consent must be explicitly accepted" },
+                400,
+            );
+        }
+        const stripe = createStripeClient(c.env);
+        const session = await stripe.checkout.sessions
+            .retrieve(c.req.param("sessionId"))
+            .catch((error) => {
+                if (error?.code === "resource_missing") return null;
+                throw error;
+            });
+        if (
+            !session ||
+            session.metadata?.userId !== user.id ||
+            session.ui_mode !== "custom"
+        ) {
+            return c.json({ error: "Checkout session not found" }, 404);
+        }
+        if (session.status !== "open") {
+            return c.json({ error: "Checkout session is no longer open" }, 409);
+        }
+        await stripe.checkout.sessions.update(session.id, {
+            metadata: {
+                immediate_service_version: CHECKOUT_CONSENT_VERSION,
+                immediate_service_accepted_at: new Date().toISOString(),
+                immediate_service_text: CHECKOUT_CONSENT_TEXT,
+            },
+        });
+        return c.json({ accepted: true });
     })
 
     /**
@@ -437,10 +480,19 @@ async function createPackCheckoutSession(
             payment_intent_data: {
                 metadata: packMetadata,
             },
+            ...(uiMode === "hosted" && {
+                consent_collection: { terms_of_service: "required" as const },
+                custom_text: {
+                    terms_of_service_acceptance: {
+                        message: CHECKOUT_CONSENT_TEXT,
+                    },
+                },
+            }),
             // Invoice creation after payment
             invoice_creation: {
                 enabled: true,
                 invoice_data: {
+                    footer: CHECKOUT_INVOICE_FOOTER,
                     rendering_options: {
                         amount_tax_display: "exclude_tax",
                     },

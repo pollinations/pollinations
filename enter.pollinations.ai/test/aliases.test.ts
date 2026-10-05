@@ -31,6 +31,10 @@ test("OpenAI speech model names resolve to the OpenAI TTS models", () => {
     expect(resolveModelName("tts-1-hd")).toBe("openai/tts-1-hd");
 });
 
+test("OpenAI transcription model name resolves to GPT Transcribe", () => {
+    expect(resolveModelName("gpt-4o-transcribe")).toBe("openai/gpt-transcribe");
+});
+
 function requiredCostRate(model: ModelName, field: UsageType): number {
     const rate = getCostDefinition(model)?.[field];
 

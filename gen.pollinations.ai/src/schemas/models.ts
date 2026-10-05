@@ -29,7 +29,7 @@ export const ModelListQueryParamsSchema = z.object({
     }),
     capabilities: z
         .string()
-        .transform(parseList)
+        .transform(splitList)
         .refine(
             (capabilities) =>
                 capabilities.every(

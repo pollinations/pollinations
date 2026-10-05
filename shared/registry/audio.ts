@@ -191,14 +191,7 @@ export const AUDIO_VOICES = [
 export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
     "elevenlabs/eleven-v3": {
-        aliases: [
-            "tts",
-            "text-to-speech",
-            "eleven",
-            "tts-1",
-            "tts-1-hd",
-            "elevenlabs",
-        ],
+        aliases: ["tts", "text-to-speech", "eleven", "elevenlabs"],
         provider: "elevenlabs",
         publisher: "ElevenLabs",
         category: "audio",
@@ -592,7 +585,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1": {
-        aliases: [],
+        aliases: ["tts-1"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -609,7 +602,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1-hd": {
-        aliases: [],
+        aliases: ["tts-1-hd"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",

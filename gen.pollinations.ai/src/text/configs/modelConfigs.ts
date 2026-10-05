@@ -351,6 +351,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    // Nex AGI serves Nex N2.5 Mini itself; OpenRouter exposes no other
+    // endpoint for it, so the route is pinned with fallbacks disabled.
+    "nex-agi/nex-n2.5-mini": createPinnedOpenRouterConfig(
+        "nex-agi/nex-n2.5-mini",
+        "nex-agi/bf16",
+    ),
     "inclusionai/ling-3.1-flash": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.1-flash",
         "novita",

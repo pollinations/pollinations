@@ -901,6 +901,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["tencent/hy3"],
     },
     {
+        name: "nex-agi/nex-n2.5-mini",
+        config: portkeyConfig["nex-agi/nex-n2.5-mini"],
+    },
+    {
         name: "inclusionai/ling-3.1-flash",
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
     },

@@ -2161,6 +2161,40 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "nex-agi/nex-n2.5-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI bf16 rates (verified 2026-10-05), including
+            // the mandatory 5.5% OpenRouter credit fee. nex-agi/bf16 is the
+            // model's only OpenRouter endpoint and the :free variant publishes
+            // none at all, so no fallback route is declared. OpenRouter bills
+            // one prompt rate, so any image tokens it breaks out of the prompt
+            // total are rated identically instead of billing zero.
+            promptTextTokens: perMillion(0.025) * 1.055,
+            promptCachedTokens: perMillion(0.0025) * 1.055,
+            promptImageTokens: perMillion(0.025) * 1.055,
+            completionTextTokens: perMillion(0.1) * 1.055,
+        },
+        title: "Nex N2.5 Mini",
+        description:
+            "Agentic coding model with image input and switchable reasoning for visual feedback loops",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        // The bf16 route advertises supports_tool_choice but omits tools and
+        // tool_choice from supported_parameters, and rejects tool requests
+        // with OpenRouter's "No endpoints found that support tool use".
+        tools: false,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "inclusionai/ling-3.1-flash": {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],

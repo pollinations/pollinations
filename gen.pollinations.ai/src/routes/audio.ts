@@ -2430,6 +2430,9 @@ const GEMINI_TTS_MODELS = {
 const GEMINI_TTS_ENDPOINT =
     "https://generativelanguage.googleapis.com/v1beta/interactions";
 
+// Zero-valued counters may be omitted from the usage object (proto3 JSON drops
+// defaults), so the extra token counters accept "absent" or 0. Any non-zero
+// value is still rejected because it would change what we bill.
 const GeminiSpeechResponseSchema = z.object({
     status: z.literal("completed"),
     usage: z.object({
@@ -2447,9 +2450,9 @@ const GeminiSpeechResponseSchema = z.object({
                 tokens: z.number().int().nonnegative(),
             }),
         ),
-        total_cached_tokens: z.literal(0),
-        total_thought_tokens: z.literal(0),
-        total_tool_use_tokens: z.literal(0),
+        total_cached_tokens: z.literal(0).optional(),
+        total_thought_tokens: z.literal(0).optional(),
+        total_tool_use_tokens: z.literal(0).optional(),
     }),
     steps: z.array(
         z.object({
@@ -2471,9 +2474,16 @@ const GeminiSpeechResponseSchema = z.object({
 export function parseGeminiSpeechResponse(
     data: unknown,
     responseFormat: string,
+    log?: Logger,
 ) {
     const parsed = GeminiSpeechResponseSchema.safeParse(data);
     if (!parsed.success) {
+        // Paths and codes only: the body holds the user's audio.
+        log?.warn("Gemini TTS response rejected: issues={issues}", {
+            issues: parsed.error.issues.map(
+                (issue) => `${issue.path.join(".")}:${issue.code}`,
+            ),
+        });
         throw new UpstreamError(502, {
             message: "Google returned incomplete speech or invalid usage",
         });
@@ -2631,6 +2641,7 @@ export async function generateGeminiSpeech(opts: {
     const { bytes, usage } = parseGeminiSpeechResponse(
         await response.json(),
         responseFormat,
+        log,
     );
     log.info("Gemini TTS success: model={model}, usage={usage}", {
         model: modelName,
@@ -2680,6 +2691,10 @@ function pcmToWav(
 export async function readOpenRouterSpeechUsage(
     generationId: string,
     apiKey: string,
+    onUnavailable?: () => {
+        promptTextTokens: number;
+        completionAudioTokens: number;
+    },
 ) {
     const endpoint = `https://openrouter.ai/api/v1/generation?id=${encodeURIComponent(generationId)}`;
     for (let attempt = 0; attempt < 30; attempt++) {
@@ -2712,9 +2727,36 @@ export async function readOpenRouterSpeechUsage(
             completionAudioTokens: parsed.data.data.native_tokens_completion,
         };
     }
+    // The audio is already generated and paid for by this point. Failing the
+    // request here discards it and bills nobody, so settle on an estimate.
+    if (onUnavailable) return onUnavailable();
     throw new UpstreamError(502, {
         message: "OpenRouter speech usage is not available",
     });
+}
+
+// Gemini TTS bills generated audio at 25 tokens per second. PCM here is
+// 24 kHz, mono, 16-bit, i.e. 48,000 bytes per second.
+const GEMINI_TTS_AUDIO_TOKENS_PER_SECOND = 25;
+const GEMINI_TTS_PCM_BYTES_PER_SECOND = 24_000 * 2;
+
+export function estimateGeminiSpeechUsage(
+    text: string,
+    instructions: string | undefined,
+    pcmByteLength: number,
+) {
+    return {
+        promptTextTokens: Math.ceil(
+            ([...text].length + [...(instructions ?? "")].length) / 4,
+        ),
+        completionAudioTokens: Math.max(
+            1,
+            Math.ceil(
+                (pcmByteLength / GEMINI_TTS_PCM_BYTES_PER_SECOND) *
+                    GEMINI_TTS_AUDIO_TOKENS_PER_SECOND,
+            ),
+        ),
+    };
 }
 
 export async function generateOpenRouterGeminiSpeech(opts: {
@@ -2771,7 +2813,12 @@ export async function generateOpenRouterGeminiSpeech(opts: {
             message:
                 "OpenRouter returned incomplete speech audio or no generation ID",
         });
-    const usage = await readOpenRouterSpeechUsage(generationId, apiKey);
+    const usage = await readOpenRouterSpeechUsage(generationId, apiKey, () => {
+        console.warn(
+            `OpenRouter speech usage unavailable for ${generationId}; billing estimated usage`,
+        );
+        return estimateGeminiSpeechUsage(text, instructions, pcm.length);
+    });
     return new Response(responseFormat === "pcm" ? pcm : pcmToWav(pcm, 24000), {
         headers: {
             "Content-Type":

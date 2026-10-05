@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+    estimateGeminiSpeechUsage,
     generateGeminiSpeech,
     parseGeminiSpeechResponse,
+    readOpenRouterSpeechUsage,
 } from "../src/routes/audio.ts";
 
 // Usage shape captured from a real Gemini Developer API TTS response. Internal
@@ -53,6 +55,18 @@ describe("Gemini Developer API speech", () => {
         );
         expect([...bytes]).toEqual([1, 2, 3, 4]);
         expect(usage).toEqual({
+            promptTextTokens: 5,
+            completionAudioTokens: 76,
+        });
+    });
+    it.each([
+        "total_cached_tokens",
+        "total_thought_tokens",
+        "total_tool_use_tokens",
+    ] as const)("accepts a response that omits zero-valued %s", (field) => {
+        const data = speechResponse();
+        delete (data.usage as Partial<typeof data.usage>)[field];
+        expect(parseGeminiSpeechResponse(data, "pcm").usage).toEqual({
             promptTextTokens: 5,
             completionAudioTokens: 76,
         });
@@ -151,5 +165,50 @@ describe("Gemini Developer API speech", () => {
                 log: {} as never,
             }),
         ).rejects.toMatchObject({ status: 400 });
+    });
+});
+
+describe("OpenRouter Gemini speech usage", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+    });
+
+    it("estimates 25 audio tokens per second of 24 kHz mono PCM", () => {
+        // 2 seconds of PCM16 at 24 kHz = 96,000 bytes.
+        expect(
+            estimateGeminiSpeechUsage("hello world!", undefined, 96_000),
+        ).toEqual({ promptTextTokens: 3, completionAudioTokens: 50 });
+        expect(
+            estimateGeminiSpeechUsage("abcd", "efgh", 2).completionAudioTokens,
+        ).toBe(1);
+    });
+
+    it("settles on the estimate when the generation record never appears", async () => {
+        vi.useFakeTimers();
+        const fetchMock = vi.fn(async () => new Response("", { status: 404 }));
+        vi.stubGlobal("fetch", fetchMock);
+        const pending = readOpenRouterSpeechUsage("gen-1", "key", () => ({
+            promptTextTokens: 1,
+            completionAudioTokens: 2,
+        }));
+        await vi.runAllTimersAsync();
+        await expect(pending).resolves.toEqual({
+            promptTextTokens: 1,
+            completionAudioTokens: 2,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(30);
+    });
+
+    it("still throws when no estimate is supplied", async () => {
+        vi.useFakeTimers();
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response("", { status: 404 })),
+        );
+        const pending = readOpenRouterSpeechUsage("gen-1", "key");
+        const assertion = expect(pending).rejects.toThrow("not available");
+        await vi.runAllTimersAsync();
+        await assertion;
     });
 });

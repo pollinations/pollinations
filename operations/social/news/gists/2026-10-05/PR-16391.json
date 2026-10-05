@@ -1,0 +1,34 @@
+{
+  "pr_number": 16391,
+  "title": "fix(ui): keep prose punctuation outside tool links",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16391",
+  "merged_at": "2026-10-05T03:57:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps trailing prose punctuation and unmatched closing parentheses outside tool-detail HTTPS links.\n- Preserves balanced URL parentheses, embedded query punctuation and exact double-quoted URL tokens, including JSON values.\n- Extends the existing SSR tests: six regressions fail on old source; fixed 17 pass, independently rerun by parent. Full UI suite: 108 pass.\n- Full UI typecheck, package build including declarations, and Biome pass after loading existing SDK sources and cached dependencies. No dependency changes.\n\nFixes #16389\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The period knows its place",
+    "blurb": "Tool-detail links leave sentence punctuation in the sentence. Parentheses that belong to the URL get to stay.",
+    "summary": "Fixed tool-detail HTTPS link parsing so trailing prose punctuation and unmatched closing parentheses stay outside links, while balanced URL parentheses, query punctuation, and double-quoted URL tokens remain intact.",
+    "impact": "Clicking a tool-detail link targets the intended URL without swallowing the sentence's punctuation or dropping valid characters from the address.",
+    "keywords": [
+      "UI",
+      "tool details",
+      "links",
+      "URL parsing",
+      "punctuation",
+      "SSR"
+    ],
+    "visual_concept": "A cozy code garden represents the tool-detail UI: Polli, wearing tiny editor glasses, gently moves a period outside a glowing URL link while balanced parentheses remain nestled around a code-plant. A small retro terminal makes the link behavior legible without turning the scene into a screenshot.",
+    "image_prompt": "The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. In a cozy pixel art code garden, small-to-medium Polli wears tiny editor glasses and carefully places a pixel period beside, not inside, a glowing HTTPS link on a retro terminal, with balanced parentheses around a sprouting code-plant; use prominent lime green (#ecf874), dark purple (#110518) outlines, soft pastel gradients, warm lighting, chunky sprites, and retro gaming vibes in a strictly pixel art, 8-bit aesthetic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16391.jpg",
+    "prompt": "The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. In a cozy pixel art code garden, small-to-medium Polli wears tiny editor glasses and carefully places a pixel period beside, not inside, a glowing HTTPS link on a retro terminal, with balanced parentheses around a sprouting code-plant; use prominent lime green (#ecf874), dark purple (#110518) outlines, soft pastel gradients, warm lighting, chunky sprites, and retro gaming vibes in a strictly pixel art, 8-bit aesthetic."
+  },
+  "generated_at": "2026-10-05T03:58:09.206798+00:00"
+}

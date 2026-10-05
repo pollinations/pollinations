@@ -139,7 +139,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`.",
+            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`.",
     }),
     audio: z.coerce.boolean().optional().meta({
         description:

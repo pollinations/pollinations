@@ -382,6 +382,23 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Novita tag for Ling 3.1 Flash (verified 2026-10-05): no
+    // response_format, structured outputs or logprobs; reasoning_effort
+    // "none" turns thinking off.
+    openRouterLing31: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
     openRouterLing: [
         "max_tokens",

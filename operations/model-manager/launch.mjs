@@ -258,7 +258,7 @@ try {
         await command(
             "assessment",
             "node run.mjs --out /home/user/model-manager/data --assess-only",
-            options,
+            { ...options, timeoutMs: 240_000 },
             [0, 2],
         );
         const report = await exportReport();

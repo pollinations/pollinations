@@ -10,6 +10,60 @@ export const dayKey = (at) =>
         day: "2-digit",
     }).format(new Date(at));
 
+// Caller limits belong to the runner; instructions are managed in the agent UI.
+export function assessmentRequest(input, model) {
+    if (typeof input !== "string" || Buffer.byteLength(input) > 12000)
+        throw new Error("Research evidence must be at most 12000 bytes");
+    const evidence = JSON.parse(input);
+    if (
+        !Number.isFinite(Date.parse(evidence.at)) ||
+        !Array.isArray(evidence.findings) ||
+        evidence.findings.length < 1 ||
+        evidence.findings.length > 5 ||
+        !Array.isArray(evidence.gaps)
+    )
+        throw new Error("Evidence requires a timestamp, 1–5 findings and gaps");
+    return {
+        model,
+        input,
+        max_output_tokens: 1200,
+        reasoning: { effort: "none" },
+        store: false,
+        stream: false,
+    };
+}
+
+export async function storeAssessment(base, token, at, text) {
+    if (!token) throw new Error("Computer storage requires an authorized key");
+    const response = await fetch(`${base}/mcp/computer`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "content-type": "application/json",
+            Accept: "application/json, text/event-stream",
+        },
+        body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: {
+                name: "bash",
+                arguments: {
+                    command: `mkdir -p /workspace/model-manager && cat > /workspace/model-manager/assessment-${dayKey(at)}.json`,
+                    cwd: "/workspace",
+                    stdin: JSON.stringify({ at, mode: "report_only", text }),
+                },
+            },
+        }),
+        signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok)
+        throw new Error(`Computer storage HTTP ${response.status}`);
+    const body = await response.json();
+    if (body.error || !body.result || body.result.isError)
+        throw new Error("Computer storage failed");
+}
+
 export function pendingFindings(pending, findings, at) {
     const priority = [
         "retirement_review",

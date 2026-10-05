@@ -12,9 +12,10 @@ import {
     getModels,
     getRegistryModelDefinition,
 } from "../../shared/registry/registry.ts";
-import { ASSESSMENT_MODEL, ASSESSMENT_PROMPT } from "./agent.ts";
+
 import {
     analyze,
+    assessmentRequest,
     dayKey,
     historySnapshot,
     pendingFindings,
@@ -22,6 +23,7 @@ import {
     reportHtml,
     researchEvidence,
     settleAssessment,
+    storeAssessment,
     textAssessmentCost,
 } from "./analyze.mjs";
 import {
@@ -95,30 +97,28 @@ async function assessment(report: {
             reason: "POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER required from runtime environment or SOPS",
         };
     try {
-        const profile = JSON.parse(
-            (
-                await request(`${BASE}/account/profile`, {
-                    Authorization: `Bearer ${token}`,
-                })
-            ).text,
-        );
+        const [profileResponse, catalogResponse] = await Promise.all([
+            request(`${BASE}/account/profile`, {
+                Authorization: `Bearer ${token}`,
+            }),
+            request(`${BASE}/models?reliability=all`, {
+                Authorization: `Bearer ${token}`,
+            }),
+        ]);
+        const profile = JSON.parse(profileResponse.text);
+        const catalog = rows(JSON.parse(catalogResponse.text));
         if (profile.email !== ACCOUNT)
             return {
                 status: "blocked_access",
                 reason: "Credential does not belong to the selected agent account",
             };
-        const model = report.liveCatalog.find(
-            (m) =>
-                m.name === ASSESSMENT_MODEL ||
-                m.aliases?.includes(ASSESSMENT_MODEL),
-        );
-        const hosted = report.liveCatalog.find(
+        const hosted = catalog.find(
             (m) => m.name === values.model || m.aliases?.includes(values.model),
         );
-        if (!hosted?.agent)
+        if (!hosted?.agent || !hosted.base_model)
             return {
                 status: "blocked_access",
-                reason: "Private model-manager agent is not available to this key",
+                reason: "Private prompt agent is not available to this key",
             };
         const evidence = JSON.stringify(report.assessmentInput);
         if (Buffer.byteLength(evidence) > 12000)
@@ -127,8 +127,8 @@ async function assessment(report: {
                 reason: "Research evidence exceeds the hosted agent's 12000-byte limit",
             };
         const maximumCost = textAssessmentCost(
-            model,
-            Buffer.byteLength(ASSESSMENT_PROMPT + evidence),
+            hosted,
+            32000 + Buffer.byteLength(evidence),
         );
         if (maximumCost === null)
             return {
@@ -146,13 +146,7 @@ async function assessment(report: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                model: values.model,
-                input: evidence,
-                max_output_tokens: 1200,
-                store: false,
-                stream: false,
-            }),
+            body: JSON.stringify(assessmentRequest(evidence, values.model)),
             signal: AbortSignal.timeout(120_000),
         });
         if (!response.ok)
@@ -174,7 +168,6 @@ async function assessment(report: {
         return {
             status: "complete",
             model: values.model,
-            baseModel: ASSESSMENT_MODEL,
             text,
             usage: body.usage,
             estimatedUpperBoundPollen: maximumCost + COMPUTER_TOOL_CALL_PRICE,
@@ -205,14 +198,53 @@ async function persistReport(out, report, pending, notified) {
     if (report.gaps.length) process.exitCode = 2;
 }
 
-async function assessReport(report) {
+async function assessReport(report, out) {
     if (["complete", "not_needed"].includes(report.assessment.status)) return;
     report.gaps = report.gaps.filter((gap) => gap.source !== "assessment");
-    report.assessment = await assessment(report);
+    if (report.assessment.status !== "storage_pending") {
+        report.assessment = await assessment(report);
+        if (report.assessment.status === "complete") {
+            report.assessment.status = "storage_pending";
+            // Preserve paid inference before a separate Computer write.
+            await save(join(out, "report.json"), JSON.stringify(report));
+        }
+    }
+    if (report.assessment.status === "storage_pending") {
+        try {
+            const token = credential(
+                "POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER",
+            );
+            if (
+                !token ||
+                JSON.parse(
+                    (
+                        await request(`${BASE}/account/profile`, {
+                            Authorization: `Bearer ${token}`,
+                        })
+                    ).text,
+                ).email !== ACCOUNT
+            )
+                throw new Error("Wrong storage account");
+            await storeAssessment(
+                BASE,
+                token,
+                report.at,
+                report.assessment.text,
+            );
+            report.assessment.status = "complete";
+            delete report.assessment.reason;
+        } catch {
+            report.assessment.reason =
+                "Computer storage failed; retry reuses the saved inference";
+        }
+    }
     if (
-        ["failed", "blocked_access", "blocked_budget"].includes(
-            report.assessment.status,
-        )
+        [
+            "failed",
+            "storage_pending",
+            "blocked_access",
+            "blocked_budget",
+        ].includes(report.assessment.status)
     )
         report.gaps.push({ source: "assessment", ...report.assessment });
 }
@@ -234,7 +266,7 @@ async function main() {
         const report = await readState("report.json", null);
         if (!report?.assessmentInput)
             throw new Error("No saved research batch to assess");
-        await assessReport(report);
+        await assessReport(report, out);
         await persistReport(out, report, pending, notified);
         return;
     }
@@ -355,7 +387,7 @@ async function main() {
     );
     await persistReport(out, report, waiting, notified);
     if (values.assess) {
-        await assessReport(report);
+        await assessReport(report, out);
         await persistReport(out, report, waiting, notified);
     }
 }

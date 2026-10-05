@@ -1540,6 +1540,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000000633,
     },
   },
+  "inclusionai/ling-3.1-flash": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
+  "inclusionai/ling-3.1-flash:vercel:novita": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
   "inferenceport-ai/lightning-image-turbo": {
     "cost": {
       "completionImageTokens": 0.02,

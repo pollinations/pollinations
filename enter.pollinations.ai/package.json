@@ -10,11 +10,11 @@
         "build:ui": "npm run build --prefix ../packages/sdk && npm run build --prefix ../packages/ui",
         "decrypt-vars": "node scripts/decrypt-dev-vars.mjs",
         "check-tokens": "node scripts/check-testing-tokens.mjs",
-        "dev": "npm run decrypt-vars && CLOUDFLARE_ENV=local vite dev",
+        "dev": "npm run decrypt-vars && npm run migrate:development && CLOUDFLARE_ENV=local vite dev",
         "predev": "npm run build:ui",
         "dev:frontend": "vite dev --config frontend/vite.config.ts",
         "predev:frontend": "npm run build:ui",
-        "dev:worker": "npm run decrypt-vars && vite build --mode=development && wrangler dev --port 3001 --local --persist-to .wrangler/state --show-interactive-dev-session false",
+        "dev:worker": "npm run decrypt-vars && npm run migrate:development && vite build --mode=development && wrangler dev --port 3001 --local --persist-to frontend/.wrangler/state --show-interactive-dev-session false",
         "dev:production": "npm run decrypt-vars:production && CLOUDFLARE_ENV=production vite dev",
         "pretest": "npm run build:ui && npm run test:code-agent-sdk && mkdir -p dist/client",
         "test": "vitest run",
@@ -30,7 +30,7 @@
         "gen:types": "npm run gen:types:runtime && npm run gen:types:bindings",
         "migrate:staging": "wrangler d1 migrations apply DB --remote --env staging",
         "migrate:production": "wrangler d1 migrations apply DB --remote --env production",
-        "migrate:development": "wrangler d1 migrations apply DB --local",
+        "migrate:development": "wrangler d1 migrations apply DB --local --persist-to frontend/.wrangler/state",
         "build:frontend": "vite build --config frontend/vite.config.ts",
         "prebuild:frontend": "npm run build:ui",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
@@ -81,7 +81,7 @@
     "devDependencies": {
         "@ai-sdk/openai-compatible": "3.0.30",
         "@better-auth/cli": "^1.4.1",
-        "@cloudflare/vite-plugin": "^1.15.2",
+        "@cloudflare/vite-plugin": "1.45.0",
         "@cloudflare/vitest-pool-workers": "^0.10.10",
         "@drizzle-team/brocli": "^0.11.0",
         "@hono/node-server": "^1.19.6",
@@ -94,13 +94,13 @@
         "ai": "7.0.66",
         "drizzle-kit": "^0.31.7",
         "esbuild": "0.25.12",
-        "miniflare": "4.20260424.0",
+        "miniflare": "4.20260710.0",
         "openai": "^6.29.0",
         "tsx": "^4.20.6",
         "typescript": "^5.9.3",
         "vite": "^7.2.4",
         "vite-tsconfig-paths": "^5.1.4",
         "vitest": "^3.2.4",
-        "wrangler": "^4.55.0"
+        "wrangler": "4.111.0"
     }
 }

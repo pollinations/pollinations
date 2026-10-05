@@ -218,7 +218,11 @@ export type ModelDefinition = {
     search?: boolean;
     codeExecution?: boolean;
     contextLength?: number;
+    // Audio voices; the first entry is the default.
     voices?: string[];
+    // Audio output formats; the first entry is the default. Omitted when the
+    // model ignores response_format.
+    responseFormats?: string[];
     isSpecialized?: boolean;
     paidOnly?: boolean; // Models that require paid balance only
     alpha?: boolean; // Experimental models with potential instability

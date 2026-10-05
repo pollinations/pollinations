@@ -114,7 +114,9 @@ export const KOKORO_VOICES = [
     "zm_yunyang",
 ] as const;
 
+// First entry is the default voice.
 export const XAI_TTS_VOICES = [
+    "eve",
     "altair",
     "ara",
     "atlas",
@@ -123,7 +125,6 @@ export const XAI_TTS_VOICES = [
     "castor",
     "celeste",
     "cosmo",
-    "eve",
     "helios",
     "helix",
     "iris",
@@ -145,11 +146,12 @@ export const XAI_TTS_VOICES = [
     "zenith",
 ] as const;
 
+// First entry is the default voice.
 export const GEMINI_TTS_VOICES = [
+    "Kore",
     "Zephyr",
     "Puck",
     "Charon",
-    "Kore",
     "Fenrir",
     "Leda",
     "Orus",
@@ -214,6 +216,7 @@ const AUDIO_BASE_SERVICES = {
             "Expressive speech with emotion controls, audio tags, and character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "aac", "wav", "pcm"],
         voices: ELEVENLABS_VOICES as string[],
         supportedEndpoints: [
             "/audio/{text}",
@@ -240,6 +243,7 @@ const AUDIO_BASE_SERVICES = {
             "Low-latency speech in 32 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "aac", "wav", "pcm"],
         voices: ELEVENLABS_VOICES as string[],
         supportedEndpoints: [
             "/audio/{text}",
@@ -271,6 +275,7 @@ const AUDIO_BASE_SERVICES = {
             "Emotionally rich speech in 29 languages with character timestamps",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "aac", "wav", "pcm"],
         voices: ELEVENLABS_VOICES as string[],
         supportedEndpoints: [
             "/audio/{text}",
@@ -295,6 +300,7 @@ const AUDIO_BASE_SERVICES = {
             "Multi-speaker conversations with expressive voices and audio cues",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "aac", "wav", "pcm"],
         voices: ELEVENLABS_VOICES as string[],
     },
     "elevenlabs/eleven-multilingual-sts-v2": {
@@ -434,6 +440,7 @@ const AUDIO_BASE_SERVICES = {
             "Full songs with vocals or instrumental arrangements; describe structure and approximate duration in the prompt",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3"],
     },
     "google/lyria-3-clip-preview": {
         aliases: ["lyria", "lyria-3", "lyria-3-clip"],
@@ -453,6 +460,7 @@ const AUDIO_BASE_SERVICES = {
             "30-second music with vocals, lyrics, or instrumental arrangements",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3"],
     },
     "elevenlabs/eleven-text-to-sound-v2": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
@@ -470,6 +478,8 @@ const AUDIO_BASE_SERVICES = {
         description: "Sound effects from a text description",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        // Billing derives seconds from the 128 kbps MP3 byte rate.
+        responseFormats: ["mp3"],
     },
     "openai/whisper-large-v3": {
         aliases: ["whisper-1", "whisper-large-v3", "whisper"],
@@ -586,6 +596,7 @@ const AUDIO_BASE_SERVICES = {
             "Expressive multilingual speech across 28 built-in voices with inline style controls",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "wav", "pcm"],
         voices: [...XAI_TTS_VOICES],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
@@ -603,6 +614,7 @@ const AUDIO_BASE_SERVICES = {
             "Low-latency speech synthesis with six voices and six output formats",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "aac", "flac", "wav", "pcm"],
         voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
@@ -620,6 +632,7 @@ const AUDIO_BASE_SERVICES = {
             "Higher-quality speech synthesis with six voices and six output formats",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "aac", "flac", "wav", "pcm"],
         voices: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
@@ -643,6 +656,7 @@ const AUDIO_BASE_SERVICES = {
             "Expressive, style-steerable speech across 30 voices for creative narration",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["wav", "pcm"],
         voices: [...GEMINI_TTS_VOICES],
     },
     "google/gemini-3.8-flash-lite-tts": {
@@ -664,6 +678,7 @@ const AUDIO_BASE_SERVICES = {
         description: "Fast, high-throughput speech across 30 voices",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["wav", "pcm"],
         voices: [...GEMINI_TTS_VOICES],
     },
     "assemblyai/universal-2": {
@@ -854,6 +869,7 @@ const AUDIO_BASE_SERVICES = {
             "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "wav"],
     },
     "fish-audio/s2.1-pro": {
         aliases: ["fish-audio-s2.1-pro"],
@@ -873,6 +889,7 @@ const AUDIO_BASE_SERVICES = {
             "Multilingual expressive speech with natural-language emotion and delivery control",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "pcm"],
     },
     "qwen/qwen3-tts-flash": {
         aliases: ["qwen3-tts", "qwen3-tts-flash", "qwen-tts"],
@@ -933,6 +950,7 @@ const AUDIO_BASE_SERVICES = {
             "English conversational speech with six reading and dialogue voices",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "flac", "wav", "pcm"],
         voices: [...CSM_VOICES],
     },
     "hexgrad/kokoro-82m": {
@@ -952,6 +970,7 @@ const AUDIO_BASE_SERVICES = {
             "Lightweight multilingual speech across 54 voices and eight languages",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        responseFormats: ["mp3", "opus", "flac", "wav", "pcm"],
         voices: [...KOKORO_VOICES],
     },
 } satisfies Record<string, ModelDefinition>;

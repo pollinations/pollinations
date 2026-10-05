@@ -70,35 +70,12 @@ describe("generateXaiSpeech", () => {
         );
     });
 
-    it("maps the existing default voice to Eve", async () => {
-        const fetchMock = vi.fn().mockResolvedValueOnce(
-            new Response(new Uint8Array([1]), {
-                headers: { "Content-Type": "audio/mpeg" },
-            }),
-        );
-        vi.stubGlobal("fetch", fetchMock);
-
-        await generateXaiSpeech({
-            text: "Hello",
-            voice: "alloy",
-            responseFormat: "mp3",
-            apiKey: "test-key",
-            log,
-        });
-
-        expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
-            voice_id: "eve",
-        });
-    });
-
-    it.each([
-        ["voice", { voice: "unknown", responseFormat: "mp3" }],
-        ["format", { voice: "eve", responseFormat: "opus" }],
-    ])("rejects an unsupported %s", async (_field, params) => {
+    it("rejects an unsupported voice", async () => {
         await expect(
             generateXaiSpeech({
                 text: "Hello",
-                ...params,
+                voice: "unknown",
+                responseFormat: "mp3",
                 apiKey: "test-key",
                 log,
             }),

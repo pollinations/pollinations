@@ -895,6 +895,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
     },
     {
+        name: "inclusionai/ling-3.1-flash:vercel:novita",
+        config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
+    },
+    {
         name: "inclusionai/ling-3.0-flash-vl",
         config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },

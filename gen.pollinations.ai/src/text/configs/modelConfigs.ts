@@ -357,6 +357,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         "nex-agi/nex-n2.5-mini",
         "nex-agi/bf16",
     ),
+    // Same shape for Pro: its single serving endpoint is nex-agi/fp8 and the
+    // :free variant publishes none, so there is nothing to fall back to.
+    "nex-agi/nex-n2.5-pro": createPinnedOpenRouterConfig(
+        "nex-agi/nex-n2.5-pro",
+        "nex-agi/fp8",
+    ),
     "inclusionai/ling-3.1-flash": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.1-flash",
         "novita",

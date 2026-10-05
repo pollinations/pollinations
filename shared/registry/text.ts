@@ -2195,6 +2195,37 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
+    "nex-agi/nex-n2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexPro,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI fp8 rates (verified 2026-10-06), including
+            // the mandatory 5.5% OpenRouter credit fee. nex-agi/fp8 is the
+            // model's only OpenRouter endpoint and the :free variant publishes
+            // none at all, so no fallback route is declared. OpenRouter bills
+            // one prompt rate, so any image tokens it breaks out of the prompt
+            // total are rated identically instead of billing zero.
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            promptImageTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(0.25) * 1.055,
+        },
+        title: "Nex N2.5 Pro",
+        description:
+            "Agentic coding model with a visual feedback loop for multi-file changes, tool use, image input and switchable reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "inclusionai/ling-3.1-flash": {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],

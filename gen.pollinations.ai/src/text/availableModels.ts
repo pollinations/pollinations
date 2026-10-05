@@ -905,6 +905,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["nex-agi/nex-n2.5-mini"],
     },
     {
+        name: "nex-agi/nex-n2.5-pro",
+        config: portkeyConfig["nex-agi/nex-n2.5-pro"],
+    },
+    {
         name: "inclusionai/ling-3.1-flash",
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
     },

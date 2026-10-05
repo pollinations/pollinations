@@ -431,6 +431,22 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Nex AGI fp8 tag for Nex N2.5 Pro (verified 2026-10-06).
+    // Unlike the Mini route, this one declares tools/tool_choice, which is
+    // what makes Pro the tool-calling sibling. Everything else that the
+    // endpoint advertises is listed here; nothing extra is claimed.
+    openRouterNexPro: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
     openRouterGlmFlashx: [
         "max_tokens",

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "Pollinations Quest Starter",
+    "url": "https://elite-surely-machine-enemies.trycloudflare.com",
+    "description": "A zero-backend web app that walks a brand-new Pollinations user through the seven setup quests on one page. You paste your API key (kept only in browser localStorage - no server, no data collection) a",
+    "language": "zh",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "lingt11",
+    "githubUserId": "168626894",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-04",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16421",
+    "approvedDate": "2026-10-05",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🎮",
     "name": "Postcard Worlds",
     "url": "https://tomdacatto.github.io/pollinations-postcard-worlds",

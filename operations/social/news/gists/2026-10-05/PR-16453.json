@@ -1,0 +1,32 @@
+{
+  "pr_number": 16453,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16453",
+  "merged_at": "2026-10-05T04:46:45Z",
+  "labels": [],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The API notes grew",
+    "blurb": "The API reference picked up 18 lines from the OpenAPI spec. Even the documentation gets tended.",
+    "summary": "Regenerated APIDOCS.md from the OpenAPI spec, adding 18 lines to keep the API reference in sync.",
+    "impact": "Developers get an API reference that reflects the latest generated spec without having to read the spec itself.",
+    "keywords": [
+      "documentation",
+      "API reference",
+      "OpenAPI",
+      "APIDOCS.md"
+    ],
+    "visual_concept": "Polli tends an open API reference book as 18 small code-leaves sprout from its pages; a cozy reading desk makes the documentation update tangible without suggesting a new API feature.",
+    "image_prompt": "In a cozy pixel art garden library, Polli, wearing tiny librarian glasses, gently straightens an open API reference book as code-leaves sprout from its pages beside lime green (#ecf874) flower pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, in strictly pixel art style, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi warmth like Stardew Valley or A Short Hike, and a nostalgic, emotionally warm atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16453.jpg",
+    "prompt": "In a cozy pixel art garden library, Polli, wearing tiny librarian glasses, gently straightens an open API reference book as code-leaves sprout from its pages beside lime green (#ecf874) flower pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, in strictly pixel art style, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi warmth like Stardew Valley or A Short Hike, and a nostalgic, emotionally warm atmosphere."
+  },
+  "generated_at": "2026-10-05T04:47:35.673366+00:00"
+}

@@ -44,12 +44,14 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
-| Developer earnings | `polli earnings` (`--days <n>`, max 90) |
+| Developer earnings | `polli earnings` (`--days <n>`) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
+| Start a Linux sandbox (alpha) | `polli sandbox create` (then `list`, `logs <id>`, `timeout <id> <seconds>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
+| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -185,7 +187,7 @@ polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
 polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
-polli earnings --days 7  # rolling window, max 90
+polli earnings --days 7  # rolling window
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```

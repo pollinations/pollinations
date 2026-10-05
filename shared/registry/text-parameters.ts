@@ -163,8 +163,8 @@ export const CHAT_PARAMETERS = {
     azureOpenModels: [...CHAT, ...SAMPLING, ...PENALTIES, "seed", "stop"],
     // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
-    // Exact OVH model OpenAPI confirms these; top_k is rejected, not honored.
-    ovhQwenCoder: [...TOOL_CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
+    bedrockQwenCoder: [...TOOL_CHAT, ...SAMPLING],
     openRouterMistralSmall32: [
         ...SAMPLED_CHAT,
         ...PENALTIES,
@@ -382,8 +382,9 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
-    // OpenRouter Novita tag for Ling 3.1 Flash (2026-10-02): no response_format
-    // or structured outputs; reasoning_effort "none" turns thinking off.
+    // OpenRouter Novita tag for Ling 3.1 Flash (verified 2026-10-05): no
+    // response_format, structured outputs or logprobs; reasoning_effort
+    // "none" turns thinking off.
     openRouterLing31: [
         "max_tokens",
         "stream",
@@ -393,7 +394,6 @@ export const CHAT_PARAMETERS = {
         "top_k",
         ...PENALTIES,
         "repetition_penalty",
-        ...LOGPROBS,
         "stop",
         "seed",
         ...OPENROUTER_REASONING,

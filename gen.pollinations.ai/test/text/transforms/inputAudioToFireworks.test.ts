@@ -33,6 +33,20 @@ describe("Fireworks audio input", () => {
                                 format: "pcm16",
                             },
                         },
+                        {
+                            type: "input_audio",
+                            input_audio: {
+                                data: "data:audio/wav;base64,bm90LWF1ZGlv",
+                                format: "wav",
+                            },
+                        },
+                        {
+                            type: "input_audio",
+                            input_audio: {
+                                data: "https://media.pollinations.ai/recording",
+                                format: "ogg",
+                            },
+                        },
                     ],
                 },
             ],
@@ -57,6 +71,18 @@ describe("Fireworks audio input", () => {
                 type: "audio_url",
                 audio_url: {
                     url: "data:audio/pcm16;base64,AAABAA==",
+                },
+            },
+            {
+                type: "audio_url",
+                audio_url: {
+                    url: "data:audio/wav;base64,bm90LWF1ZGlv",
+                },
+            },
+            {
+                type: "audio_url",
+                audio_url: {
+                    url: "https://media.pollinations.ai/recording",
                 },
             },
         ]);

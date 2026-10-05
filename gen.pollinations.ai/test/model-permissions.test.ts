@@ -436,6 +436,19 @@ test("filters image model list by API key permissions", async ({
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
 });
 
+test("applies the model list limit after API key permissions", async ({
+    restrictedApiKey,
+}) => {
+    const response = await fetchWorker("/models?limit=1", {
+        headers: { Authorization: `Bearer ${restrictedApiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { name: string }[];
+    expect(body).toHaveLength(1);
+    expect(RESTRICTED_TEST_MODELS).toContain(body[0].name);
+});
+
 test("rejects aliases in new model permissions", async () => {
     await expect(
         createTestApiKey({

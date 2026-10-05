@@ -843,8 +843,6 @@ type CommunityEndpointRuntimeBase = {
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbacks: string[];
-    hiddenAt: number | null;
-    hiddenReason: string | null;
 } & CommunityEndpointPrices;
 
 /** A third-party server, reached with its registered upstream bearer secret. */
@@ -906,7 +904,6 @@ export type CommunityModelDefinitionInput = {
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
-    hidden?: boolean;
     paidOnly?: boolean;
 } & CommunityEndpointPrices;
 
@@ -1094,7 +1091,6 @@ export function communityModelDefinition(
               }
             : {}),
         requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
-        hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
             : {}),

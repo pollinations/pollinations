@@ -25,6 +25,7 @@ import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
 import {
     callOpenRouterFlux2MaxAPI,
+    callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
@@ -903,6 +904,9 @@ const generateImage = async (
 
         case "black-forest-labs/flux.2-max:openrouter":
             return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
+
+        case "black-forest-labs/flux-3-image":
+            return await callOpenRouterFlux3API(prompt, safeParams);
 
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {

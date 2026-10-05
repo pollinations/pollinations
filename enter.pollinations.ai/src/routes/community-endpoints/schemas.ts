@@ -71,12 +71,12 @@ const FallbacksSchema = z
     .array(z.string().trim().min(1))
     .max(MAX_FALLBACK_TARGETS)
     .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
+        'Community model ids ("community/<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another registered community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
     );
 const VisibilitySchema = z
     .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
     .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
+        '"private": owner-only and free at runtime; saved prices and fallbacks are retained. "public": callable by anyone and listed in the catalog when reliability permits. Publishing requires an allowlisted account.',
     );
 const PaidOnlySchema = z
     .boolean()
@@ -211,7 +211,6 @@ const CommonUpdateFieldsSchema = {
     description: EndpointFieldsSchema.description,
     visibility: VisibilitySchema.optional(),
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
-    hidden: z.boolean().optional(),
 } as const;
 const ProxyUpdateSchema = z
     .object({
@@ -264,9 +263,7 @@ export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
-    code_agent: CodeAgentUpdateSchema.extend({
-        hidden: CommonUpdateFieldsSchema.hidden,
-    }),
+    code_agent: CodeAgentUpdateSchema,
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 
@@ -343,9 +340,6 @@ const CommunityEndpointResponseFieldsSchema = {
     visibility: VisibilitySchema,
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
     pending: PendingCommunityEndpointChangeSchema,
-    hidden: z.boolean(),
-    hiddenReason: z.string().nullable(),
-    hiddenAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 } as const;

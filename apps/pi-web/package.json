@@ -1,0 +1,19 @@
+{
+  "name": "@pollinations/pi-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "vendor": "node vendor.mjs",
+    "start": "node serve.mjs",
+    "test": "node --test test/*.test.mjs",
+    "e2e": "node test/e2e.mjs"
+  },
+  "dependencies": {
+    "@wasmer/sdk": "0.19.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright-core": "^1.49.0"
+  }
+}

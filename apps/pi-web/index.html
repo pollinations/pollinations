@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pi in the browser · Pollinations</title>
+<style>
+  :root { color-scheme: dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --fg:#e6edf3; --dim:#8b949e; --accent:#7ee787; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  h1 { font-size:16px; margin:0; font-weight:600; }
+  header p { margin:0; color:var(--dim); font-size:13px; }
+  main { display:grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr); gap:14px; padding:14px; align-items:start; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:0 0 10px; font-weight:600; }
+  label { display:block; font-size:12px; color:var(--dim); margin:0 0 4px; }
+  input, select, textarea, button { font:inherit; color:var(--fg); background:#0d1117; border:1px solid var(--line); border-radius:8px; padding:8px 10px; width:100%; }
+  textarea { min-height:90px; resize:vertical; }
+  button { background:#21262d; cursor:pointer; }
+  button.primary { background:var(--accent); color:#0d1117; border-color:var(--accent); font-weight:600; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:8px; }
+  .row > * { flex:1; }
+  .stack { display:flex; flex-direction:column; gap:10px; }
+  #log { margin:0; padding:10px; background:#0d1117; border:1px solid var(--line); border-radius:8px; height:220px; overflow:auto; font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; }
+  #files { margin:0; padding:0; list-style:none; max-height:200px; overflow:auto; font:12px/1.6 ui-monospace,monospace; }
+  #files li { cursor:pointer; padding:1px 4px; border-radius:4px; }
+  #files li:hover { background:#21262d; }
+  #preview { margin:8px 0 0; padding:10px; background:#0d1117; border:1px solid var(--line); border-radius:8px; max-height:220px; overflow:auto; font:12px/1.55 ui-monospace,monospace; white-space:pre-wrap; }
+  .badge { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--dim); }
+  .badge.ok { color:var(--accent); border-color:var(--accent); }
+  .hint { font-size:12px; color:var(--dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pi in the browser</h1>
+  <p>the real Pi coding agent, running in a WASIX sandbox on your Pollen</p>
+  <span id="status" class="badge">idle</span>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Connect</h2>
+    <div class="stack">
+      <div>
+        <label for="key">Pollinations API key (stays in this tab)</label>
+        <div class="row">
+          <input id="key" type="password" placeholder="sk_… or paste from the authorize URL" autocomplete="off" />
+          <button id="connect" style="flex:0 0 auto">Connect</button>
+        </div>
+        <p class="hint" id="authhint">Get one with Bring Your Own Pollen — the key is only used for gen.pollinations.ai.</p>
+      </div>
+      <div>
+        <label for="model">Model</label>
+        <input id="model" value="openai/gpt-5.4-nano" />
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Ask Pi</h2>
+    <div class="stack">
+      <textarea id="prompt">Create hello.mjs that prints the first ten squares, then run it with node.</textarea>
+      <div class="row">
+        <button id="run" class="primary" disabled>Run Pi</button>
+        <button id="refresh" style="flex:0 0 auto">Refresh files</button>
+      </div>
+      <pre id="log">Waiting for a key.</pre>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Sandbox files</h2>
+    <ul id="files"></ul>
+    <pre id="preview"></pre>
+  </section>
+
+  <section class="panel">
+    <h2>How it works</h2>
+    <p class="hint">
+      Pi runs inside a WebAssembly sandbox with networking disabled. When it
+      makes an HTTP call, the request is written to <code>/workspace/.bridge</code>
+      and answered by this page, which adds your key and talks to
+      gen.pollinations.ai. Your key never enters the sandbox.
+    </p>
+  </section>
+</main>
+
+<script type="importmap">
+{ "imports": { "@wasmer/sdk": "./vendor/@wasmer/sdk/dist/index.js" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

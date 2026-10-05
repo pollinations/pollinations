@@ -480,6 +480,21 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "nvidia/nemotron-3-ultra": {
+        "nvidia/nemotron-3-ultra:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-30").getTime(),
+            cost: {
+                // DeepInfra standard-tier rates (2026-09-30). Flex is
+                // deliberately excluded because requests may wait up to ten
+                // minutes.
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(2.2),
+            },
+        },
+    },
     "mistralai/mistral-small-4": {
         "mistralai/mistral-small-4:openrouter": {
             provider: "openrouter",

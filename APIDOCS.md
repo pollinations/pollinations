@@ -53,6 +53,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [Media Storage](#media-storage)
   - [Account](#account)
   - [🔗 Account](#-account)
+  - [Other](#other)
   - [Quests](#quests)
   - [📊 Monitor](#-monitor)
   - [3D](#3d)
@@ -521,6 +522,7 @@ The context limit is 64k tokens for `state` and all questions together, and 32k 
 #### `POST` `/v1/messages` — Create Message (Anthropic-compatible)
 
 Anthropic Messages API for Claude Code, the Anthropic SDKs, and other Messages clients. Point the client's base URL at `https://gen.pollinations.ai` and authenticate with `Authorization: Bearer`.
+JSON request bodies may be up to 32 MiB, including inline images.
 
 Runs every model that lists `/v1/messages` in `supported_endpoints` — the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.
 
@@ -577,6 +579,7 @@ curl -X POST "https://gen.pollinations.ai/v1/messages" \
 Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
+JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.
 
 Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.
 
@@ -715,6 +718,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/decisions" \
 #### `POST` `/v1/responses` — Create Response
 
 Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.
+JSON request bodies may be up to 32 MiB, including inline images.
 
 Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.
 
@@ -1032,7 +1036,7 @@ Generate videos from text prompts or reference images. Returns MP4.
 https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4
 ```
 
-**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, bytedance/seedance-2.5, alibaba/happyhorse-1.1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video
+**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, bytedance/seedance-2.5, alibaba/happyhorse-1.1, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video
 
 ### Community video models
 
@@ -1042,7 +1046,7 @@ Community video models use a `community/owner/model` id and work on `/video/{pro
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:fal`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:fal`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:openrouter`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`.
+**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:fal`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:fal`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:openrouter`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `heygen/heygen-video-1`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -1698,6 +1702,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].aliases` * | `string`[] | — |
 | `data[].category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `data[].community` * | `boolean` | — |
+| `data[].tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
 | `data[].title` * | `string` | — |
 | `data[].description` | `string` | — |
 | `data[].input_modalities` | `string`[] | — |
@@ -1735,6 +1740,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "OpenAI"
     },
     {
@@ -1745,6 +1755,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Claude"
     },
     {
@@ -1755,6 +1770,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Gemini"
     }
   ]
@@ -1786,6 +1806,8 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `aliases` * | `string`[] | — |
 | `category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `community` * | `boolean` | — |
+| `tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
+| `tags[].name` * | `string` | — |
 | `title` * | `string` | — |
 | `description` | `string` | — |
 | `input_modalities` | `string`[] | — |
@@ -2629,7 +2651,17 @@ Stored image, video, audio, and 3D files are linked through `Link: <https://medi
 | `GET /media?tag={tag}` | List the public gallery for a tag (no auth) |
 | `DELETE /media/{id}` | Delete a published item you own (secret `sk_` key) |
 
-Upload requires an API key; retrieval is public. The decoded/file-size limit is 100MB for both upload formats. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Two upload formats are accepted:
+Upload requires an API key; retrieval is public. Multipart FormData and raw file uploads can reach 400 MiB through `media.pollinations.ai`. Base64 JSON uploads remain limited to 100 MiB because they buffer the file in Worker memory. Files use a 30-day lifecycle from upload or the latest refresh. Retrieving the file body refreshes that lifecycle only when the object is at least 15 days old; metadata and HEAD requests do not refresh it. Three upload formats are accepted:
+
+Raw file body (streams to storage; returns a random, unlisted ID):
+
+```bash
+curl -X POST "https://media.pollinations.ai/upload" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: video/mp4" \
+  -H "X-File-Name: video.mp4" \
+  --data-binary @path/to/video.mp4
+```
 
 Multipart form (browsers, files on disk):
 
@@ -2656,7 +2688,7 @@ Untagged files cannot be deleted. They expire after 30 days, but reads refresh r
 
 #### `POST` `/upload` — Upload media
 
-Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
+Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
 
 **Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.
 
@@ -3244,7 +3276,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `expiresIn` | `integer` | Expiry in seconds from now |
 | `allowedModels` | `string`[] \| `null` | Model IDs this key can access. null = all models |
 | `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
-| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too. |
+| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
 
@@ -3493,6 +3525,29 @@ curl "https://gen.pollinations.ai/account/integrations/toolkits?search=:search" 
 ```bash
 curl -X DELETE "https://gen.pollinations.ai/account/integrations/key_abc123" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+### Other
+
+#### `POST` `/account/polli/harness-on` — postAccountPolliHarnessOn
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `harness` * | `string` | — |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` — OK
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/account/polli/harness-on" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"harness":"opencode"}'
 ```
 
 ### Quests

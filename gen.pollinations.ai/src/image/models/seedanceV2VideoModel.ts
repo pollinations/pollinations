@@ -106,7 +106,7 @@ export async function callSeedanceV2API(
             safeParams.aspectRatio,
             definition.title,
         ),
-        generate_audio: safeParams.audio,
+        generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;

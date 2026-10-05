@@ -38,6 +38,30 @@ LibreChat administrators can set it in the custom endpoint's `headers` map.
 The client can use any returned model ID for generation without forwarding the
 catalog header.
 
+### Search and narrow results
+
+Every list endpoint above also accepts these optional discovery filters.
+
+| Parameter | Keeps models that |
+|-----------|-------------------|
+| `query` | Contain the term in their name, alias, title, description, or publisher (case-insensitive) |
+| `capabilities` | Advertise **every** listed capability: `tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models` |
+| `agent` | Are agents (`true`/`1`) or are not (`false`/`0`) |
+| `limit` | Fit within the first N (1–500) entries of the filtered catalog |
+
+Separate multiple capabilities with `|` or `,`. Filters combine with AND:
+
+```bash
+curl 'https://gen.pollinations.ai/text/models?capabilities=tool_calling,reasoning&limit=5'
+curl 'https://gen.pollinations.ai/models?query=claude&agent=false&limit=3'
+```
+
+Visibility, key permissions, source, reliability, and catalog ordering apply
+before `limit` trims the response, so a small `limit` returns the top matches
+of everything the caller may actually use rather than the first rows of the
+full catalog. Invalid values return **400 Bad Request**. None of these filters
+change generation permissions.
+
 Lists default to `reliability=reliable`: public community proxy models need more than
 80% success across the last 50 eligible final requests within seven days.
 Official models, agents, and owner-only private models are unaffected. There is no minimum sample size.

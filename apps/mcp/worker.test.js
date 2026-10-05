@@ -313,11 +313,20 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
             authorization: new Headers(init.headers).get("authorization"),
         });
 
-        if (url.endsWith("/audio/models?community=false")) {
-            return Response.json([
+        if (url.includes("/audio/models")) {
+            // Gen applies the filters now, so answer the way it does: keep
+            // only agents when `agent` is set.
+            const models = [
                 { name: "speech-test" },
                 { name: "audio-agent", agent: true },
-            ]);
+            ];
+            const agent = new URL(url).searchParams.get("agent");
+            if (agent === null) return Response.json(models);
+            return Response.json(
+                models.filter(
+                    (model) => Boolean(model.agent) === (agent === "true"),
+                ),
+            );
         }
         if (url.endsWith("/video/models")) {
             return Response.json([{ name: "veo" }]);

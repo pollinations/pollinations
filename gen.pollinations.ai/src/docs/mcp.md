@@ -110,7 +110,7 @@ model health, usage, earnings, quests, and API keys.
 
 | Tool | Purpose |
 | --- | --- |
-| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
+| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing; search with `query` and narrow with `capabilities`, `agent`, `community`, and `limit` |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
@@ -128,7 +128,9 @@ model health, usage, earnings, quests, and API keys.
 | `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
-clients should not rely on a hardcoded model list.
+clients should not rely on a hardcoded model list. Pass `query`,
+`capabilities`, `agent`, `community`, or `limit` to receive a small relevant
+subset instead of the whole catalog.
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone

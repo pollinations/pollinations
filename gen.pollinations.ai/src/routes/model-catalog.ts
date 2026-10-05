@@ -19,6 +19,21 @@ type HealthLookup = (entry: GenerationModelEntry) => ModelHealth;
 const isCommunityProxy = (entry: GenerationModelEntry) =>
     entry.info.community && !entry.info.agent;
 
+// The catalog text `query` searches, matching what every model-list route
+// returns to the caller.
+function catalogText(entry: GenerationModelEntry): string {
+    return [
+        entry.info.name,
+        ...entry.info.aliases,
+        entry.info.title,
+        entry.info.description,
+        entry.info.publisher,
+    ]
+        .filter(Boolean)
+        .join("\n")
+        .toLowerCase();
+}
+
 // A missing feed must not turn discovery into a 502 or label a model
 // healthy; an empty row set makes every lookup resolve to "unknown".
 export async function getModelHealthLookup(
@@ -83,18 +98,31 @@ export async function filterCatalogEntries(
               : "official";
     const source =
         query.source ?? communitySource ?? headers["pollinations-model-source"];
-    const filtered = entries.filter(
+    const agent =
+        query.agent === undefined
+            ? undefined
+            : query.agent === "true" || query.agent === "1";
+    const capabilities = query.capabilities ?? [];
+    const search = query.query?.trim().toLowerCase();
+    const matches = entries.filter(
         (entry) =>
-            source === undefined ||
-            entry.info.community === (source === "community"),
+            (source === undefined ||
+                entry.info.community === (source === "community")) &&
+            capabilities.every((capability) =>
+                entry.info.capabilities.some(
+                    (entryCapability) => entryCapability === capability,
+                ),
+            ) &&
+            (agent === undefined || Boolean(entry.info.agent) === agent) &&
+            (!search || catalogText(entry).includes(search)),
     );
 
-    const lookup = await getModelHealthLookup(filtered);
+    const lookup = await getModelHealthLookup(matches);
     const reliability =
         query.reliability ??
         headers["pollinations-model-reliability"] ??
         "reliable";
-    return filtered
+    const discoverable = matches
         .map((entry) => attachModelHealth(entry, lookup))
         .filter(
             (entry) =>
@@ -103,4 +131,9 @@ export async function filterCatalogEntries(
                 entry.communityEndpoint?.visibility === "private" ||
                 isModelReliable(entry.info.health?.success_rate),
         );
+    // `limit` comes last so visibility, permissions, source, reliability and
+    // the search filters above still run against the whole catalog.
+    return query.limit === undefined
+        ? discoverable
+        : discoverable.slice(0, query.limit);
 }

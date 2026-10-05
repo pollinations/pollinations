@@ -25,11 +25,10 @@ export async function readResponseBytes(
         return new Uint8Array(arrayBuffer);
     }
 
-    // Fill one allocation when the size is known. Grow unknown/misreported
-    // bodies without retaining all chunks alongside a second full-sized copy.
-    let bytes = new Uint8Array(
-        Math.min(declaredSize > 0 ? declaredSize : 64 * 1024, maxBytes),
-    );
+    // Grow one native backing store to the bytes received. This avoids trusting
+    // Content-Length for allocation or copying a second full-sized media body.
+    const buffer = new ArrayBuffer(0, { maxByteLength: maxBytes });
+    const bytes = new Uint8Array(buffer);
     const reader = response.body.getReader();
     let total = 0;
     try {
@@ -38,13 +37,7 @@ export async function readResponseBytes(
             if (done) break;
             const nextTotal = total + value.byteLength;
             if (nextTotal > maxBytes) throw tooLarge(nextTotal);
-            if (nextTotal > bytes.length) {
-                const grown = new Uint8Array(
-                    Math.min(maxBytes, Math.max(nextTotal, bytes.length * 2)),
-                );
-                grown.set(bytes.subarray(0, total));
-                bytes = grown;
-            }
+            buffer.resize(nextTotal);
             bytes.set(value, total);
             total = nextTotal;
         }
@@ -54,7 +47,7 @@ export async function readResponseBytes(
     } finally {
         reader.releaseLock();
     }
-    return bytes.subarray(0, total);
+    return bytes;
 }
 
 /** Read a bounded response as UTF-8 text without buffering an untrusted body. */

@@ -3318,6 +3318,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "sony/mmaudio-v2": {
     "cost": {
+      "completionVideoSeconds": 0.001,
+    },
+    "price": {
+      "completionVideoSeconds": 0.001,
+    },
+  },
+  "sony/mmaudio-v2:replicate": {
+    "cost": {
       "completionVideoSeconds": 0,
     },
     "price": {

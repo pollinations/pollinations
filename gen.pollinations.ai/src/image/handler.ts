@@ -432,6 +432,7 @@ export async function generateImageOrVideoResponse(
                 formatFallbackTarget(servedIndex),
             );
         }
+        headers.set("content-length", String(result.buffer.length));
         const body = new ReadableStream<Uint8Array>({
             start(controller) {
                 controller.enqueue(result.buffer);

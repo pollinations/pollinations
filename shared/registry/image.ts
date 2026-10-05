@@ -12,7 +12,7 @@ export type ImageModelName = keyof typeof IMAGE_SERVICES;
 const IMAGE_BASE_SERVICES = {
     "sony/mmaudio-v2": {
         aliases: [],
-        provider: "replicate",
+        provider: "fal",
         publisher: "Sony AI",
         category: "video",
         title: "MMAudio V2",
@@ -26,33 +26,13 @@ const IMAGE_BASE_SERVICES = {
         // The single reference video is the source that gets a soundtrack.
         videoCapabilities: ["audio_output", "reference_videos"],
         maxReferenceVideos: 1,
-        // Output keeps the source dimensions; no resolution parameter is accepted.
-        resolutions: ["source"],
-        // Replicate sets no upper bound; fal documents 1-30s for this model.
+        // Output keeps source dimensions. Fal supports 1-30 seconds.
         minDuration: 1,
         maxDuration: 30,
         // Read up to the supported limit; the provider stops at the source length.
         defaultDuration: 30,
-        // Billed from Replicate's reported GPU time on L40S:
-        // https://replicate.com/pricing (verified 2026-09-26).
-        cost: { completionVideoSeconds: 0 },
-        billing: {
-            adjustments: [
-                {
-                    id: "replicate.mmaudio.compute.v1",
-                    description: "Replicate L40S execution time",
-                    kind: "compute",
-                    unit: "second",
-                    unitCost: 0.000975,
-                    publicPricing: {
-                        label: "GPU execution",
-                        quantity: 1,
-                        unit: "second",
-                    },
-                    countUnits: (_output, input) => input?.computeSeconds ?? 0,
-                },
-            ],
-        },
+        // https://fal.ai/models/fal-ai/mmaudio-v2: $0.001 per billed second.
+        cost: { completionVideoSeconds: 0.001 },
     },
     "krea/krea-2-medium": {
         aliases: ["krea-2", "krea"],

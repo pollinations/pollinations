@@ -16,7 +16,7 @@ import {
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
-import { MMAUDIO_VERSION } from "../../src/image/models/mmaudioReplicateModel.ts";
+import { MMAUDIO_VERSION } from "../../src/image/models/mmaudioModel.ts";
 import { mp4TrackDurations } from "../../src/image/utils/mp4.ts";
 import worker from "../../src/index.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
@@ -45,6 +45,8 @@ const mp4 = Buffer.concat([
 ]);
 
 let status = 200;
+let falUnits: string | undefined = "6";
+let falBodies: Record<string, unknown>[];
 let computeSeconds = 4.074095673;
 let mediaBytes: Uint8Array = mp4;
 let replicateBodies: Record<string, unknown>[];
@@ -70,6 +72,37 @@ function makeMocks() {
             state: {},
             reset() {},
             handlerMap: {
+                "queue.fal.run": async (request: Request) => {
+                    if (request.method === "POST") {
+                        falBodies.push(await request.json());
+                        started?.();
+                        await gate;
+                        if (status !== 200)
+                            return Response.json(
+                                { detail: "Request rejected" },
+                                { status },
+                            );
+                        return Response.json({
+                            status_url: "https://queue.fal.run/status",
+                            response_url: "https://queue.fal.run/result",
+                        });
+                    }
+                    if (request.url.endsWith("/status"))
+                        return Response.json({ status: "COMPLETED" });
+                    return Response.json(
+                        {
+                            video: {
+                                url: "https://media.example.com/result.mp4",
+                            },
+                        },
+                        {
+                            headers:
+                                falUnits === undefined
+                                    ? {}
+                                    : { "x-fal-billable-units": falUnits },
+                        },
+                    );
+                },
                 "api.replicate.com": async (request: Request) => {
                     replicateBodies.push(await request.json());
                     started?.();
@@ -97,6 +130,8 @@ function makeMocks() {
 
 beforeEach(async () => {
     status = 200;
+    falUnits = "6";
+    falBodies = [];
     computeSeconds = 4.074095673;
     mediaBytes = mp4;
     replicateBodies = [];
@@ -108,6 +143,7 @@ beforeEach(async () => {
     bindings = withInlineGenerationCoordinator({
         ...env,
         REPLICATE_API_TOKEN: "replicate-test",
+        FAL_KEY: "fal-test",
     });
 });
 afterEach(async () => {
@@ -140,135 +176,156 @@ const body = (): Record<string, string> => ({
     seed: "42",
 });
 const computeRate =
-    IMAGE_SERVICES["sony/mmaudio-v2"].billing.adjustments[0].unitCost;
+    IMAGE_SERVICES["sony/mmaudio-v2:replicate"].billing?.adjustments?.[0]
+        ?.unitCost ?? 0;
 
-test("Replicate bills reported GPU time and rejoins one generation", async () => {
-    const { key, userId } = await createTestApiKey({
-        user: { packBalance: 1 },
-        allowedModels: ["sony/mmaudio-v2"],
-    });
-    const input = body();
-    gate = new Promise<void>((resolve) => {
-        release = resolve;
-    });
-    const ready = new Promise<void>((resolve) => {
-        started = resolve;
-    });
-    const controller = new AbortController();
-    const first = request(key, input, controller.signal);
-    await ready;
-    controller.abort();
-    const joined = request(key, input);
-    release?.();
-    const responses = await Promise.all([first, joined]);
-    responses.push(await request(key, input));
-    for (const response of responses) {
-        expect(response.status).toBe(200);
-        expect(response.headers.get("content-type")).toBe("video/mp4");
-        expect(response.headers.get("x-cache")).toBe("HIT");
-        expect(new Uint8Array(await response.arrayBuffer())).toEqual(
-            new Uint8Array(mp4),
-        );
-    }
-    expect(replicateBodies).toEqual([
-        {
-            version: MMAUDIO_VERSION,
-            input: {
-                video: input.reference_videos,
+test(
+    "fal bills reported seconds and rejoins one generation",
+    { timeout: 30000 },
+    async () => {
+        const { key, userId } = await createTestApiKey({
+            user: { packBalance: 1 },
+            allowedModels: ["sony/mmaudio-v2"],
+        });
+        const input = body();
+        gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const ready = new Promise<void>((resolve) => {
+            started = resolve;
+        });
+        const controller = new AbortController();
+        const first = request(key, input, controller.signal);
+        await ready;
+        controller.abort();
+        const joined = request(key, input);
+        release?.();
+        const responses = await Promise.all([first, joined]);
+        responses.push(await request(key, input));
+        for (const response of responses) {
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toBe("video/mp4");
+            expect(response.headers.get("x-cache")).toBe("HIT");
+            expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+                new Uint8Array(mp4),
+            );
+        }
+        expect(replicateBodies).toHaveLength(0);
+        expect(falBodies).toEqual([
+            {
+                video_url: input.reference_videos,
                 prompt: input.prompt,
                 duration: 30,
                 seed: 42,
+                negative_prompt: "music",
                 num_steps: 25,
                 cfg_strength: 4.5,
             },
-        },
-    ]);
-    const billed = mocks.tinybird.state.events.filter(
-        (event) => event.isBilledUsage,
-    );
-    expect(billed).toHaveLength(1);
-    // Prices are rounded to 8 decimals; costs keep full precision.
-    expect(billed[0].totalPrice).toBeCloseTo(computeSeconds * computeRate, 8);
-    expect(billed[0]).toMatchObject({
-        totalCost: computeSeconds * computeRate,
-        modelProviderUsed: "replicate",
-        adjustmentUnits: { "replicate.mmaudio.compute.v1": 4.074095673 },
-    });
-    const balance = await getUserBalance(drizzle(env.DB), userId);
-    expect(balance.packBalance).toBeCloseTo(
-        1 - computeSeconds * computeRate,
-        8,
-    );
-});
-
-test("explicit duration overrides the full-clip default", async ({
-    paidApiKey,
-}) => {
-    for (const duration of [1, 8, 30]) {
-        const response = await request(paidApiKey, {
-            ...body(),
-            duration: String(duration),
+        ]);
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        // Prices are rounded to 8 decimals; costs keep full precision.
+        expect(billed[0].totalPrice).toBeCloseTo(0.006, 8);
+        expect(billed[0]).toMatchObject({
+            totalCost: 0.006,
+            modelProviderUsed: "fal",
+            tokenCountCompletionVideoSeconds: 6,
         });
-        expect(response.status).toBe(200);
-        expect(replicateBodies.at(-1)).toMatchObject({ input: { duration } });
-    }
-});
+        const balance = await getUserBalance(drizzle(env.DB), userId);
+        expect(balance.packBalance).toBeCloseTo(1 - 0.006, 8);
+    },
+);
 
-test("invalid source and unsupported fields fail before the provider runs", async ({
-    paidApiKey,
-}) => {
-    const invalidInputs: Record<string, string>[] = [
-        { reference_videos: "http://127.0.0.1/test.mp4" },
-        { reference_videos: "" },
-        {
-            reference_videos:
-                "https://example.com/a.mp4|https://example.com/b.mp4",
-        },
-        { duration: "0" },
-        { duration: "31" },
-        { image: "https://example.com/frame.png" },
-    ];
-    for (const invalid of invalidInputs) {
+test(
+    "explicit duration overrides the full-clip default",
+    { timeout: 30000 },
+    async ({ paidApiKey }) => {
+        for (const duration of [1, 8, 30]) {
+            const response = await request(paidApiKey, {
+                ...body(),
+                duration: String(duration),
+            });
+            expect(response.status).toBe(200);
+            expect(falBodies.at(-1)).toMatchObject({ duration });
+        }
+    },
+);
+
+test(
+    "invalid source and unsupported fields fail before the provider runs",
+    { timeout: 30000 },
+    async ({ paidApiKey }) => {
+        const invalidInputs: Record<string, string>[] = [
+            { reference_videos: "http://127.0.0.1/test.mp4" },
+            { reference_videos: "" },
+            {
+                reference_videos:
+                    "https://example.com/a.mp4|https://example.com/b.mp4",
+            },
+            { duration: "0" },
+            { duration: "31" },
+            { image: "https://example.com/frame.png" },
+            { resolution: "720p" },
+            { resolution: "source" },
+        ];
+        for (const invalid of invalidInputs) {
+            expect(
+                (await request(paidApiKey, { ...body(), ...invalid })).status,
+            ).toBe(400);
+        }
+        expect(replicateBodies).toHaveLength(0);
+        expect(falBodies).toHaveLength(0);
+    },
+);
+
+test(
+    "paid access and model permissions are enforced",
+    { timeout: 30000 },
+    async ({ apiKey, restrictedApiKey }) => {
+        expect((await request(apiKey, body())).status).toBe(402);
+        expect((await request(restrictedApiKey, body())).status).toBe(403);
+        expect(replicateBodies).toHaveLength(0);
+        expect(falBodies).toHaveLength(0);
+    },
+);
+
+test(
+    "provider validation errors are not billed",
+    { timeout: 30000 },
+    async ({ paidApiKey }) => {
+        status = 422;
+        // The media route reports provider input validation as 400; 422 is reserved
+        // for content-policy rejections.
+        expect((await request(paidApiKey, body())).status).toBe(400);
         expect(
-            (await request(paidApiKey, { ...body(), ...invalid })).status,
-        ).toBe(400);
-    }
-    expect(replicateBodies).toHaveLength(0);
-});
+            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(0);
+    },
+);
 
-test("paid access and model permissions are enforced", async ({
-    apiKey,
-    restrictedApiKey,
-}) => {
-    expect((await request(apiKey, body())).status).toBe(402);
-    expect((await request(restrictedApiKey, body())).status).toBe(403);
-    expect(replicateBodies).toHaveLength(0);
-});
+test(
+    "missing usage on both providers cannot produce a free success",
+    { timeout: 30000 },
+    async ({ paidApiKey }) => {
+        computeSeconds = 0;
+        falUnits = undefined;
+        expect((await request(paidApiKey, body())).status).toBe(502);
+        expect(
+            mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(0);
+    },
+);
 
-test("provider validation errors are not billed", async ({ paidApiKey }) => {
-    status = 422;
-    // The media route reports provider input validation as 400; 422 is reserved
-    // for content-policy rejections.
-    expect((await request(paidApiKey, body())).status).toBe(400);
-    expect(
-        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
-    ).toHaveLength(0);
-});
-
-test("missing Replicate usage cannot produce a free success", async ({
-    paidApiKey,
-}) => {
-    computeSeconds = 0;
-    expect((await request(paidApiKey, body())).status).toBe(502);
-    expect(
-        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
-    ).toHaveLength(0);
-});
-
-test("malformed media is rejected", async ({ paidApiKey }) => {
-    mediaBytes = new TextEncoder().encode('{"error":"broken output"}');
-    expect((await request(paidApiKey, body())).status).toBe(502);
-});
+test(
+    "malformed media is rejected",
+    { timeout: 30000 },
+    async ({ paidApiKey }) => {
+        mediaBytes = new TextEncoder().encode('{"error":"broken output"}');
+        expect((await request(paidApiKey, body())).status).toBe(502);
+    },
+);
 
 test("track parser keeps compute, video and audio durations distinct and rejects truncation", () => {
     expect(mp4TrackDurations(mp4)).toEqual({ video: 5, audio: 5.04 });
@@ -280,19 +337,77 @@ test("track parser keeps compute, video and audio durations distinct and rejects
     ).toThrow();
 });
 
-test("catalog shows the source-video input and GPU pricing, scaled by the multiplier", () => {
+test(
+    "fallback keeps the fal price and records Replicate GPU cost",
+    { timeout: 30000 },
+    async () => {
+        const { key, userId } = await createTestApiKey({
+            user: { packBalance: 1 },
+            allowedModels: ["sony/mmaudio-v2"],
+        });
+        status = 503;
+        mocks.providers.handlerMap["api.replicate.com"] = async (request) => {
+            replicateBodies.push(await request.json());
+            return Response.json({
+                id: "fallback-test",
+                status: "succeeded",
+                output: "https://media.example.com/result.mp4",
+                metrics: { predict_time: computeSeconds },
+            });
+        };
+        await mocks.enable("tinybird", "providers");
+        const input = body();
+        expect((await request(key, input)).status).toBe(200);
+        expect((await request(key, input)).status).toBe(200);
+        expect(falBodies).toHaveLength(1);
+        expect(replicateBodies).toHaveLength(1);
+        expect(replicateBodies[0]).toMatchObject({
+            version: MMAUDIO_VERSION,
+            input: { negative_prompt: "music", duration: 30 },
+        });
+        const billed = mocks.tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        expect(billed[0]).toMatchObject({
+            totalPrice: 0.03,
+            totalCost: computeSeconds * computeRate,
+            modelProviderUsed: "replicate",
+            adjustmentUnits: { "replicate.mmaudio.compute.v1": computeSeconds },
+            fallbackUsed: true,
+        });
+        expect(
+            (await getUserBalance(drizzle(env.DB), userId)).packBalance,
+        ).toBeCloseTo(0.97, 8);
+    },
+);
+
+test(
+    "large seeds fit fal's accepted range",
+    { timeout: 30000 },
+    async ({ paidApiKey }) => {
+        expect(
+            (await request(paidApiKey, { ...body(), seed: "15493081" })).status,
+        ).toBe(200);
+        expect(falBodies[0].seed).toBe(15493081 % 65536);
+    },
+);
+
+test("catalog shows source-video input and per-second pricing", () => {
     const definition = IMAGE_SERVICES["sony/mmaudio-v2"];
     const info = modelInfoFromDefinition("sony/mmaudio-v2", definition);
     expect(info.video_capabilities).toContain("reference_videos");
     expect(info.max_reference_videos).toBe(1);
     expect(info.default_duration).toBe(30);
-    expect(info.pricing_adjustments).toHaveLength(1);
+    expect(info.resolutions).toBeUndefined();
+    expect(definition.provider).toBe("fal");
     const billed = calculateUsageBilling({
         model: "sony/mmaudio-v2",
-        servedBy: { ...definition, priceMultiplier: 2 },
+        quotedBy: definition,
+        servedBy: IMAGE_SERVICES["sony/mmaudio-v2:replicate"],
         usage: { completionVideoSeconds: 5 },
         input: { computeSeconds: 100 },
     });
     expect(billed.cost.totalCost).toBeCloseTo(100 * computeRate);
-    expect(billed.price.totalPrice).toBeCloseTo(100 * computeRate * 2);
+    expect(billed.price.totalPrice).toBe(0.005);
 });

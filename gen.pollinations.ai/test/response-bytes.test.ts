@@ -35,6 +35,7 @@ describe("bounded response reader", () => {
         );
         expect([...bytes]).toEqual([1, 2, 3, 4]);
         expect(bytes.byteLength).toBe(4);
+        expect(bytes.buffer.byteLength).toBe(4);
     });
 
     it.each([
@@ -63,6 +64,22 @@ describe("bounded response reader", () => {
         );
         expect([...bytes]).toEqual([7, 8]);
         expect(bytes.byteLength).toBe(2);
+        expect(bytes.buffer.byteLength).toBe(2);
+    });
+
+    it("does not retain a doubled allocation for unknown-length video", async () => {
+        const size = 33 * 1024 * 1024;
+        const chunks = Array.from(
+            { length: 33 },
+            () => new Uint8Array(1024 * 1024),
+        );
+        const bytes = await readResponseBytes(
+            streamed(chunks),
+            64 * 1024 * 1024,
+            tooLarge,
+        );
+        expect(bytes.byteLength).toBe(size);
+        expect(bytes.buffer.byteLength).toBe(size);
     });
 
     it("cancels an oversized stream instead of downloading the rest", async () => {

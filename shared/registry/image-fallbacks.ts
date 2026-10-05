@@ -9,6 +9,31 @@ import { perMillion } from "./price-helpers";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "sony/mmaudio-v2": {
+        "sony/mmaudio-v2:replicate": {
+            provider: "replicate",
+            // Replicate charges GPU runtime; callers retain the fal requested-duration quote.
+            cost: { completionVideoSeconds: 0 },
+            billing: {
+                adjustments: [
+                    {
+                        id: "replicate.mmaudio.compute.v1",
+                        description: "Replicate L40S execution time",
+                        kind: "compute",
+                        unit: "second",
+                        unitCost: 0.000975,
+                        publicPricing: {
+                            label: "GPU execution",
+                            quantity: 1,
+                            unit: "second",
+                        },
+                        countUnits: (_output, input) =>
+                            input?.computeSeconds ?? 0,
+                    },
+                ],
+            },
+        },
+    },
     "alibaba/wan-2.7-image": {
         "alibaba/wan-2.7-image:replicate": { provider: "replicate" },
     },

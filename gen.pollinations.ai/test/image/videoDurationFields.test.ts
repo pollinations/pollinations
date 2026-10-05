@@ -31,7 +31,14 @@ describe("video duration registry fields", () => {
 
     it.each(videoModelIds)("%s declares its output resolutions", (name) => {
         const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
-        expect(info.resolutions?.length).toBeGreaterThan(0);
+        // MMAudio preserves an existing source video instead of selecting a tier.
+        if (
+            name === "sony/mmaudio-v2" ||
+            name === "sony/mmaudio-v2:replicate"
+        ) {
+            expect(info.max_reference_videos).toBe(1);
+            expect(info.resolutions).toBeUndefined();
+        } else expect(info.resolutions?.length).toBeGreaterThan(0);
     });
 
     it.each(nonVideoModelIds)("%s omits duration fields", (name) => {

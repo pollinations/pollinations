@@ -1313,7 +1313,7 @@ export class Pollinations {
         model,
         signal,
     }: DecisionOptions): Promise<DecisionResponse> {
-        const response = await fetchWithTimeout(
+        return fetchWithTimeout(
             `${this.baseUrl}/alpha/decisions`,
             {
                 method: "POST",
@@ -1322,13 +1322,13 @@ export class Pollinations {
             },
             this.textTimeout,
             signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return response.json() as Promise<DecisionResponse>;
+            },
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<DecisionResponse>;
     }
 
     // ============================================================================

@@ -1,0 +1,34 @@
+{
+  "pr_number": 16441,
+  "title": "fix: keep unknown usage out of paid breakdowns",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16441",
+  "merged_at": "2026-10-05T04:16:31Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16440\n\n- Counts only explicit `pack` rows in Paid request/Pollen totals and model breakdowns, matching the existing chart classification.\n- Keeps unknown/null rows in overall aggregates without labeling them Paid or Quest.\n- Adds one regression for mixed unknown/null/pack/tier usage through the real hook.\n- Verified: 15 focused tests, scoped Biome and actual rendered-badge controls; the regression fails on baseline.\n\nFull Enter build/typecheck remain blocked by missing cached dependencies with identical baseline diagnostics. The Cloudflare suite was not run because its required secret setup was unavailable.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Paid means pack, actually",
+    "blurb": "The activity page gets a tidier ledger: only requests explicitly marked as pack usage count as Paid. Unknown usage still counts toward the overall total, without being assigned a category it never had.",
+    "summary": "Enter’s activity breakdown counts only explicit `pack` rows in Paid request and Pollen totals and per-model breakdowns, matching the chart while retaining unknown and null rows in overall aggregates.",
+    "impact": "Users get Paid totals that reflect identified pack usage; unknown and null usage still contributes to overall totals without appearing as Paid or Quest.",
+    "keywords": [
+      "Enter",
+      "activity",
+      "usage",
+      "Pollen",
+      "paid breakdown",
+      "pack"
+    ],
+    "visual_concept": "Depict Enter’s usage dashboard as a cozy garden ledger: labeled pack tokens go into a Paid basket, while unmarked tokens remain in an overall-total basket. Polli, wearing tiny accountant glasses, sorts the tokens; a small code-plant and lime-green screen tie the scene to the activity UI.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny accountant glasses and gently sorts tokens marked 'pack' into a Paid basket while unmarked tokens stay in a separate total basket beside a glowing activity chart and a small code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style, with a prominent soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16441.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny accountant glasses and gently sorts tokens marked 'pack' into a Paid basket while unmarked tokens stay in a separate total basket beside a glowing activity chart and a small code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style, with a prominent soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-05T04:17:31.502183+00:00"
+}

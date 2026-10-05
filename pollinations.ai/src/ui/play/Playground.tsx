@@ -43,6 +43,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type CSSProperties,
     Fragment,
+    type ReactNode,
     useCallback,
     useEffect,
     useMemo,
@@ -51,7 +52,7 @@ import {
 } from "react";
 import { API_BASE_URL } from "../../config";
 import { PLAY_SEARCH_KEYS, type PlaySearch } from "../../routes/-play-search";
-import { MediaFact, MediaModelOption } from "./MediaModelDetails";
+import { MediaModelOption } from "./MediaModelOption";
 import {
     type MediaModelMetadata,
     mediaModelSettings,
@@ -62,6 +63,25 @@ import {
     generatePlaygroundAudio,
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
+
+/** A fixed setting shown as an icon and value instead of a control. */
+function MediaFact({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <span
+            role="img"
+            aria-label={label}
+            className="inline-flex items-center gap-1 text-xs tabular-nums text-theme-text-muted [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0"
+        >
+            {children}
+        </span>
+    );
+}
 
 function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -357,7 +377,7 @@ function ModelPicker({
             </Text>
             <Dropdown
                 portalled={false}
-                className="w-[34rem] max-w-[calc(100vw-2rem)] p-2"
+                className="w-80 max-w-[calc(100vw-2rem)] p-2"
                 trigger={(open) => (
                     <Button
                         type="button"

@@ -390,6 +390,8 @@ const AUDIO_BASE_SERVICES = {
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 3,
+        maxDuration: 300,
     },
     "elevenlabs/music-v2.5": {
         aliases: [],
@@ -410,6 +412,8 @@ const AUDIO_BASE_SERVICES = {
             "Richer, better prompt-following music from text or a reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 3,
+        maxDuration: 300,
     },
     "google/lyria-3.5": {
         aliases: [],
@@ -448,6 +452,7 @@ const AUDIO_BASE_SERVICES = {
             "30-second music with vocals, lyrics, or instrumental arrangements",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        allowedDurations: [30],
     },
     "elevenlabs/eleven-text-to-sound-v2": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
@@ -820,6 +825,8 @@ const AUDIO_BASE_SERVICES = {
         description: "Long-form stereo music and soundscapes in studio quality",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 1,
+        maxDuration: 380,
     },
     "stability-ai/stable-audio-3": {
         // Distinct from stable-audio-3-medium (fal): this is the larger
@@ -849,6 +856,8 @@ const AUDIO_BASE_SERVICES = {
             "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 1,
+        maxDuration: 380,
     },
     "fish-audio/s2.1-pro": {
         aliases: ["fish-audio-s2.1-pro"],

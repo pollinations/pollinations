@@ -2,6 +2,8 @@
 
 A private Pollinations prompt agent and Pollinations VM, using the same APIs available to clients under `pollinationsagent@gmail.com`. API-only collection; no browser automation.
 
+Architecture: [tracking issue #16544](https://github.com/pollinations/pollinations/issues/16544). Discovery and pricing researchers supply evidence; one catalog manager applies the maintained model-management policy, edits code, tests and proposes PRs. This pilot combines discovery with limited pricing/lifecycle leads until the pricing researcher exists. The catalog manager's resolver foundation is [draft #16543](https://github.com/pollinations/pollinations/pull/16543).
+
 ## Outcome and boundaries
 
 Daily research leads cover discovery, checkout/deployed public-price differences, alternative sourcing and retirement notices. Successful assessments appear in [the public pilot issue](https://github.com/pollinations/pollinations/issues/16517). The agent stays private. Research does not approve capabilities, reconcile provider bills, confirm retirements, change models, open PRs or deploy. Health monitoring belongs elsewhere.
@@ -43,13 +45,15 @@ The scan job has read-only contents/actions permissions. Only a separate publish
 
 The encrypted checkpoint retains compact history, suppression, exact selected input, paid response, pilot accounting and redacted execution proof. Restore only this workflow's trusted `main` artifacts, including previous attempts. Missing/expired evidence cannot silently restart a paid pilot. Only successful current-day execution can prepare a readable artifact. Public output excludes account metadata, credentials, raw responses and logs; the CI summary uses the same sanitized report.
 
+Findings and price history are data, not another agent. The existing `report.json` contains structured findings with source evidence, fingerprints and an observation timestamp. A future catalog-manager handoff should use a sanitized finding from this data, not parse assessment prose or execution logs. No handoff is implemented yet; compact snapshots retain discovery signals, not a historical price grid.
+
 The pilot stops after 14 Berlin calendar days or 2 Pollen. Reserve 0.1222 Pollen per run: 0.0222 for ten minutes of 2-vCPU/2-GiB compute plus 0.1 for inference. Check live agent availability/rates before each inference, bounding prompt size at 32,000 bytes plus evidence and output at 1,200 tokens. Reconcile interrupted spending from the dedicated key ledger; unverified spending consumes the reservation. An exceeded reservation stops further paid work for review.
 
 ## Credentials
 
 SOPS stays on the trusted host. Existing inputs are `POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER` from `operations/model-manager/secrets/prod.vars.json`, `REPLICATE_API_TOKEN` from Gen's production SOPS file, and Actions `SOPS_AGE_KEY`. The dedicated key permits profile/usage/machines, excludes key management and restricts inference to the private agent and its base model. No runtime Keychain dependency or new credentials.
 
-Repository editing and Enter/Gen build, capability and billing tests belong to the separate model resolver. This researcher uploads only its bundled collector and research state; it has no stack-validation mode or provider test credentials. The existing private agent ID and credential names stay stable.
+Repository editing and Enter/Gen build, capability and billing tests belong to the catalog manager, whose execution foundation lives in `operations/model-resolver` on its separate branch. This researcher uploads only its bundled collector and research state; it has no stack-validation mode or provider test credentials. The existing private agent ID and credential names stay stable.
 
 ## Activation and later model changes
 

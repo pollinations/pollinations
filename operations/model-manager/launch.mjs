@@ -243,7 +243,6 @@ try {
             await exportReport(); // Preserve successful providers before inference.
         }
         proof.resumedAssessment = !!resume;
-        let report;
         try {
             await command(
                 "assessment",
@@ -251,9 +250,18 @@ try {
                 { ...options, timeoutMs: 180_000 },
                 [0, 2],
             );
-        } finally {
-            report = await exportReport();
+        } catch (error) {
+            try {
+                await exportReport();
+            } catch (exportError) {
+                proof.reportExportError = redact(exportError.message).slice(
+                    0,
+                    1000,
+                );
+            }
+            throw error;
         }
+        const report = await exportReport();
         proof.coverageGaps = report.gaps.length;
         proof.findings = report.findings.length;
         proof.assessment = report.assessment.status;

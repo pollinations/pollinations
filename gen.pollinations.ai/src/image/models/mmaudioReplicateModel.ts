@@ -92,7 +92,7 @@ export async function callMMAudioAPI(
     }
 
     return {
-        buffer: Buffer.from(bytes),
+        buffer: Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength),
         mimeType: "video/mp4",
         durationSeconds: durations.video,
         trackingData: {

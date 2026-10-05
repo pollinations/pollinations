@@ -17,7 +17,7 @@ const IMAGE_BASE_SERVICES = {
         title: "MMAudio V2",
         description:
             "Adds synchronized sound effects and ambience to an existing video",
-        addedDate: new Date("2026-09-26").getTime(),
+        addedDate: new Date("2026-10-05").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         inputModalities: ["text", "video"],

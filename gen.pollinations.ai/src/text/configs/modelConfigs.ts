@@ -101,12 +101,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "liquid/d1",
     }),
-    "liquid/d1:vercel": () => ({
-        provider: "vercel",
-        directEndpoint: "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
-        authKey: textEnvironmentValue("AI_GATEWAY_API_KEY"),
-        model: "liquid/d1",
-    }),
+    "liquid/d1:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "liquid/d1",
+        }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(

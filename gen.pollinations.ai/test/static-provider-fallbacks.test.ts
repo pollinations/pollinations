@@ -491,7 +491,7 @@ describe("static provider fallbacks", () => {
         });
         expect(findModelByName("liquid/d1:vercel")?.config()).toMatchObject({
             model: "liquid/d1",
-            provider: "vercel",
+            provider: "openai",
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
         });

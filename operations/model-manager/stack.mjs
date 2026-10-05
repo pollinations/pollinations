@@ -17,7 +17,7 @@ function command(args, cwd = root, env = {}) {
         cwd,
         env: {
             ...process.env,
-            NODE_OPTIONS: "--max-old-space-size=1200",
+            NODE_OPTIONS: "--max-old-space-size=1536",
             ...env,
         },
         stdio: "pipe",
@@ -72,6 +72,19 @@ async function json(url, body) {
 try {
     console.log("Installing checkout dependencies");
     command(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"]);
+    console.log("Running existing Gen regression tests");
+    command(
+        [
+            "npm",
+            "test",
+            "--",
+            "test/agent-run-token.test.ts",
+            "test/text/agents/responses.test.ts",
+            "test/text-cache.test.ts",
+            "test/billing-deduction.test.ts",
+        ],
+        join(root, "gen.pollinations.ai"),
+    );
     command(["npm", "run", "build:ui"], join(root, "enter.pollinations.ai"));
     console.log("Building Enter and Gen");
     command(

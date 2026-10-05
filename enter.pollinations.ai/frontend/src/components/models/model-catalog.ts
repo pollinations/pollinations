@@ -54,12 +54,8 @@ const OUTPUT_PRICE_FIELDS: PriceField[] = [
 // the pricing UI shows an estimated audio-second equivalent.
 const ESTIMATED_TTS_CHARS_PER_SECOND = 15;
 
-const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
-    const pricePerSecond = pricePerChar * ESTIMATED_TTS_CHARS_PER_SECOND;
-    return pricePerSecond < 0.001
-        ? pricePerSecond.toFixed(5)
-        : pricePerSecond.toFixed(4);
-};
+const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string =>
+    String(pricePerChar * ESTIMATED_TTS_CHARS_PER_SECOND);
 
 // A 200 response with an empty array, a non-array body, or entries that all
 // lack an identifiable name/id is indistinguishable from "no models" to the
@@ -273,13 +269,13 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
                 [
                     "output",
                     "video",
-                    formatPrice(completionVideoSeconds, (v) => v.toFixed(3)),
+                    formatPrice(completionVideoSeconds, String),
                     "second",
                 ],
                 [
                     "output",
                     "audioOut",
-                    formatPrice(completionAudioSeconds, (v) => v.toFixed(3)),
+                    formatPrice(completionAudioSeconds, String),
                     "second",
                 ],
             ),
@@ -350,7 +346,7 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
             prices: priceLines([
                 "input",
                 "audioIn",
-                formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
+                formatPrice(promptAudioSeconds, String),
                 "second",
             ]),
         };
@@ -387,7 +383,7 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
                 prices: priceLines([
                     "input",
                     "audioIn",
-                    formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
+                    formatPrice(promptAudioSeconds, String),
                     "second",
                 ]),
             };
@@ -398,7 +394,7 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
                 prices: priceLines([
                     "output",
                     "audioOut",
-                    formatPrice(completionAudioSeconds, (v) => v.toFixed(4)),
+                    formatPrice(completionAudioSeconds, String),
                     "second",
                 ]),
             };

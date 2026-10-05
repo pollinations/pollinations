@@ -2,6 +2,8 @@
  * Price formatting utilities
  */
 
+import type { PriceUnit } from "./types.ts";
+
 export const formatPricePer1M = (price: number): string => {
     const per1M = Number((price * 1000000).toPrecision(15));
     // toFixed(2) loses precision below 1¢ (e.g. 0.015 → "0.01" via IEEE 754).
@@ -33,13 +35,35 @@ const smallDisplayPriceNumber = new Intl.NumberFormat("en", {
     maximumFractionDigits: 8,
 });
 
+// Display scales per unit, checked in order: a rate uses the first scale whose
+// threshold it reaches. Expensive per-million token rates read per thousand;
+// sub-cent per-second rates (audio) read per hour, so audio models share one
+// unit while video stays per second.
+const PRICE_SCALES: Record<
+    PriceUnit,
+    { from: number; factor: number; suffix: string }[]
+> = {
+    token: [
+        { from: 100, factor: 1 / 1000, suffix: "/K" },
+        { from: 0, factor: 1, suffix: "/M" },
+    ],
+    second: [
+        { from: 0.01, factor: 1, suffix: "/sec" },
+        { from: 0, factor: 3600, suffix: "/hr" },
+    ],
+    request: [{ from: 0, factor: 1, suffix: "/gen" }],
+};
+
 export const formatDisplayPrice = (
     price: string,
-    tokenPrice = false,
-): { value: string; tokenScale: "K" | "M" } => {
+    unit: PriceUnit = "request",
+): { value: string; suffix: string } => {
     const numericPrice = Number(price);
-    const tokenScale = tokenPrice && numericPrice >= 100 ? "K" : "M";
-    const scaledPrice = tokenScale === "K" ? numericPrice / 1000 : numericPrice;
+    const scales = PRICE_SCALES[unit];
+    const scale =
+        scales.find(({ from }) => numericPrice >= from) ??
+        scales[scales.length - 1];
+    const scaledPrice = numericPrice * scale.factor;
 
     return {
         value: Number.isFinite(scaledPrice)
@@ -48,7 +72,7 @@ export const formatDisplayPrice = (
                   : displayPriceNumber
               ).format(scaledPrice)
             : price,
-        tokenScale,
+        suffix: scale.suffix,
     };
 };
 

@@ -15,6 +15,26 @@ import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 
 const community = KPIS.find((row) => row.key === "communityModels");
 
+describe("Official app requests", () => {
+    const row = KPIS.find((item) => item.key === "officialApps");
+    it("defaults to all, switches keys and exposes every view to the graph", () => {
+        expect(kpiView(row).key).toBe("officialApp_all");
+        const week = {
+            officialApp_all: 9,
+            officialApp_cli: 4,
+            officialApp_play: 5,
+        };
+        expect([0, 1, 2].map((i) => kpiValue(kpiView(row, i), week))).toEqual([
+            9, 4, 5,
+        ]);
+        for (let i = 0; i < row.views.length; i++) {
+            expect(kpiViewById(kpiViewId(row, i)).key).toBe(row.views[i].key);
+        }
+        expect(kpiValue(kpiView(row), {})).toBeUndefined();
+        expect(kpiValue(kpiView(row), { officialApp_all: 0 })).toBe(0);
+    });
+});
+
 describe("Pollen spend by category", () => {
     const row = KPIS.find((item) => item.key === "pollenByCategory");
 

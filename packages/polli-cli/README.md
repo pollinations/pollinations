@@ -113,7 +113,7 @@ polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
-polli earnings               # developer earnings (default 30 days, --days up to 90)
+polli earnings               # developer earnings (default 30 days, --days <n>)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
@@ -141,7 +141,7 @@ polli agents delete <id>
 
 Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
-`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
+`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, `keys`, and `machines`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
 ## Coding harnesses
 
@@ -183,6 +183,19 @@ servers. Run `/reload` in Pi afterward; remove them with `polli mcp remove pi`.
 Model setup remains compatible with older Pi versions.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
+
+## Sandboxes
+
+Linux VMs from E2B, paid from your wallet (alpha).
+
+```bash
+polli sandbox create              # prints the id and sets up ssh
+ssh <id>.polli                    # scp and rsync work too
+polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
+polli sandbox kill <id>
+```
+
+The default template comes logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

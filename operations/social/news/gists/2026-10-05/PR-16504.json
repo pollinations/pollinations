@@ -1,0 +1,34 @@
+{
+  "pr_number": 16504,
+  "title": "fix: preserve OpenAI image replay identity and edit framing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16504",
+  "merged_at": "2026-10-05T13:07:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes `/v1/images/generations` injecting a random default seed before cache lookup. Identical unseeded requests now use the existing seed 42 and reuse or rejoin one generation; callers wanting another image must vary their explicit seed. This behavioral change affects all image models.\n- Preserves the existing `aspectRatio` field through both JSON and multipart edits instead of silently dropping it.\n- Separates shared route changes from [FLUX.3 #16245](https://github.com/pollinations/pollinations/pull/16245), which should merge after this fix. No model definitions or provider routes change here.\n- Validation: 51 focused Workers tests, Gen typecheck and Biome pass. Three real Seedream 5.0 Flash executions verified disconnect/rejoin, one upstream execution, stored media replay, portrait edits through both transports, one wallet debit/event per execution, and provider-reported costs against staging Tinybird. Provider calls were live; wallet, coordinator and media storage used local fixtures.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Same seed, same picture",
+    "blurb": "An unseeded image request stops rolling the dice before checking the cache. Image edits keep their requested framing, too.",
+    "summary": "The /v1/images/generations route uses seed 42 for unseeded requests before cache lookup, allowing identical requests across all image models to reuse or rejoin one generation; JSON and multipart edits also retain aspectRatio.",
+    "impact": "Repeated unseeded requests can replay the same image instead of starting separate generations; callers can set a different explicit seed for a different image, and edits keep their requested aspect ratio.",
+    "keywords": [
+      "images",
+      "OpenAI API",
+      "seed",
+      "cache",
+      "replay",
+      "aspectRatio"
+    ],
+    "visual_concept": "Polli sorts identical seed packets marked 42 into one glowing image frame, while a second portrait-shaped frame represents edits retaining their aspect ratio. A small code-plant garden ties the cache and framing fixes together; no new model or provider mascot is needed.",
+    "image_prompt": "In a cozy pixel art garden workstation, Polli places matching seed packets marked '42' beside one glowing picture frame while a portrait-shaped frame sits intact on the editing desk, with lime green (#ecf874) code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny gardener's apron, and shares the frame with the objects. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16504.jpg",
+    "prompt": "In a cozy pixel art garden workstation, Polli places matching seed packets marked '42' beside one glowing picture frame while a portrait-shaped frame sits intact on the editing desk, with lime green (#ecf874) code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny gardener's apron, and shares the frame with the objects. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "generated_at": "2026-10-05T13:08:31.965295+00:00"
+}

@@ -1,5 +1,3 @@
-import { getLogger } from "@logtape/logtape";
-import { cached } from "@shared/cache.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
@@ -12,6 +10,7 @@ const MODEL_ROUTE_HEALTH_URL =
 
 async function fetchHealthRows(url: URL): Promise<ModelHealthRow[]> {
     const upstream = await fetch(url, {
+        cf: { cacheTtl: 60, cacheEverything: true },
         signal: AbortSignal.timeout(5_000),
     });
     if (!upstream.ok) {
@@ -23,35 +22,18 @@ async function fetchHealthRows(url: URL): Promise<ModelHealthRow[]> {
     return body.data;
 }
 
-function cachedHealthRows(
-    kv: KVNamespace,
-    url: URL,
-): Promise<ModelHealthRow[]> {
-    return cached(fetchHealthRows, {
-        kv,
-        log: getLogger(["gen", "model-health"]),
-        ttl: 300,
-        keyGenerator: (url) =>
-            `model-health:${url.pathname}:${url.searchParams.get("minutes") ?? ""}`,
-    })(url);
-}
-
 // Community discovery uses its bounded 50-request sample.
-export function fetchCatalogHealthRows(
-    kv: KVNamespace,
-): Promise<ModelHealthRow[]> {
+export function fetchCatalogHealthRows(): Promise<ModelHealthRow[]> {
     const url = new URL(MODEL_ROUTE_HEALTH_URL);
     url.pathname = "/v0/pipes/model_catalog_health.json";
-    return cachedHealthRows(kv, url);
+    return fetchHealthRows(url);
 }
 
 // Official models and agents retain their existing 24-hour health display.
-export function fetchModelHealthRows(
-    kv: KVNamespace,
-): Promise<ModelHealthRow[]> {
+export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
     const url = new URL(MODEL_ROUTE_HEALTH_URL);
     url.searchParams.set("minutes", "1440");
-    return cachedHealthRows(kv, url);
+    return fetchHealthRows(url);
 }
 
 // Exists only for the shared edge cache: Tinybird runs the query on every

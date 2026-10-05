@@ -23,19 +23,18 @@ const isCommunityProxy = (entry: GenerationModelEntry) =>
 // A missing feed must not turn discovery into a 502 or label a model
 // healthy; an empty row set makes every lookup resolve to "unknown".
 export async function getModelHealthLookup(
-    kv: KVNamespace,
     entries: GenerationModelEntry[],
 ): Promise<HealthLookup> {
     const community = entries.some(isCommunityProxy);
     const official = entries.some((entry) => !isCommunityProxy(entry));
     const [catalogRows, officialRows] = await Promise.all([
-        (community ? fetchCatalogHealthRows(kv) : Promise.resolve([])).catch(
+        (community ? fetchCatalogHealthRows() : Promise.resolve([])).catch(
             (error) => {
                 console.warn("Community catalog health unavailable", error);
                 return [];
             },
         ),
-        (official ? fetchModelHealthRows(kv) : Promise.resolve([])).catch(
+        (official ? fetchModelHealthRows() : Promise.resolve([])).catch(
             (error) => {
                 console.warn("Official model health unavailable", error);
                 return [];
@@ -107,7 +106,7 @@ export async function filterCatalogEntries(
         return words.every((word) => text.includes(word));
     });
 
-    const lookup = await getModelHealthLookup(c.env.KV, filtered);
+    const lookup = await getModelHealthLookup(filtered);
     const reliability =
         query.reliability ??
         headers["pollinations-model-reliability"] ??

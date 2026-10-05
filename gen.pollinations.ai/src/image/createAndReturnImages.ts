@@ -30,6 +30,7 @@ import {
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
@@ -936,6 +937,9 @@ const generateImage = async (
 
         case "bytedance/seedream-5.0-lite:fal":
             return await callFalFallbackImage(prompt, safeParams);
+
+        case "bytedance/seedream-5.0-flash":
+            return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
         case "bytedance/seedream-5.0-pro":
             return await callSeedream5ProAPI(prompt, safeParams);

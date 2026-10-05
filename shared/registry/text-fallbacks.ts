@@ -10,6 +10,18 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "inclusionai/ling-3.1-flash": {
+        "inclusionai/ling-3.1-flash:vercel:novita": {
+            provider: "vercel",
+            // Same Novita checkpoint through a separate gateway. Both routes
+            // are free during the launch promotion; recheck rates at cutover.
+            cost: {
+                promptTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
     "qwen/qwen3.8-max": {
@@ -477,6 +489,21 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.07) * 1.055,
                 promptCachedTokens: perMillion(0.04) * 1.055,
                 completionTextTokens: perMillion(0.2) * 1.055,
+            },
+        },
+    },
+    "nvidia/nemotron-3-ultra": {
+        "nvidia/nemotron-3-ultra:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-30").getTime(),
+            cost: {
+                // DeepInfra standard-tier rates (2026-09-30). Flex is
+                // deliberately excluded because requests may wait up to ten
+                // minutes.
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(2.2),
             },
         },
     },

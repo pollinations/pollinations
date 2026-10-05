@@ -336,6 +336,18 @@ describe("json config clients", () => {
 });
 
 describe("hermes yaml client", () => {
+    it("installs into a bare mcp_servers section", async () => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, "model:\n  provider: openai-api\nmcp_servers:\n");
+        const client = findClient("hermes");
+        await client?.install(ctx, SERVERS, "sk-test");
+        const config = parse(readFileSync(file, "utf8"));
+        expect(config.model.provider).toBe("openai-api");
+        expect(config.mcp_servers.pollinations.url).toBe(SERVERS[0].url);
+    });
+
     it("preserves comments within foreign MCP entries and skips collisions", async () => {
         const ctx = freshCtx();
         const file = join(hermesHome(ctx), "config.yaml");

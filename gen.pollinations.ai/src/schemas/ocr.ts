@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-// Mistral-style OCR API. The request and response shapes mirror Mistral's
-// `/v1/ocr` so clients can target Pollinations as a drop-in.
+// Experimental OCR API exposed at `/alpha/ocr`. The request and response
+// shapes mirror Mistral's `/v1/ocr`, but they are not a stability contract —
+// the alpha path may change without a version bump.
 
 const OcrDocumentUrlSchema = z
     .object({
@@ -36,7 +37,7 @@ export const CreateOcrRequestSchema = z
     .object({
         model: z.string().optional().meta({
             description:
-                "OCR model id. Defaults to `mistral-ocr`. See `/v1/models` for available models.",
+                "OCR model id. Defaults to `mistral-ocr`. Only the models served by this experimental endpoint are accepted.",
             example: "mistral-ocr",
         }),
         document: OcrDocumentSchema,

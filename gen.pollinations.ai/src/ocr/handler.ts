@@ -1,78 +1,47 @@
 import { UpstreamError } from "@shared/error.ts";
-import { getOcrProviderModelId } from "@shared/registry/ocr.ts";
-import type { ModelDefinition, Usage } from "@shared/registry/registry.ts";
+import type { Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
+import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { Env } from "@/env.ts";
+import { withModelFallbackResponse } from "../fallback.ts";
 import type { CreateOcrRequest, CreateOcrResponse } from "../schemas/ocr.ts";
 
-// Per-provider upstream config. The host/key are read from env so plugging in
-// a new OCR backend is a one-line binding change — the request/response
-// handling and billing below stay provider-agnostic (Mistral-shaped).
-type OcrProviderConfig = {
-    host: (env: CloudflareBindings) => string | undefined;
-    key: (env: CloudflareBindings) => string | undefined;
-};
-
-const OCR_PROVIDERS: Record<string, OcrProviderConfig> = {
-    mistral: {
-        host: () => "https://api.mistral.ai",
-        key: (env) => env.MISTRAL_API_KEY,
-    },
-    paddle: {
-        host: (env) => env.PADDLE_OCR_HOST,
-        key: (env) => env.PADDLE_OCR_API_KEY,
-    },
-    baidu: {
-        host: (env) => env.BAIDU_OCR_HOST,
-        key: (env) => env.BAIDU_OCR_API_KEY,
-    },
-};
+// Mistral's wire contract for the one shipped OCR listing. The host/key come
+// from env so the binding — not the code — changes if the key rotates.
+const MISTRAL_OCR_URL = "https://api.mistral.ai/v1/ocr";
+const MISTRAL_OCR_MODEL = "mistral-ocr-latest";
 
 export async function generateOcr(
     env: CloudflareBindings,
     request: CreateOcrRequest,
-    serviceDef: ModelDefinition,
-    responseModel: string = request.model ?? "",
+    responseModel: string,
 ): Promise<Response> {
-    const config = OCR_PROVIDERS[serviceDef.provider];
-    if (!config) {
-        throw new Error(`Unsupported OCR provider: ${serviceDef.provider}`);
+    if (!env.MISTRAL_API_KEY) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Mistral OCR is not configured (missing MISTRAL_API_KEY)",
+        });
     }
 
-    const host = config.host(env);
-    const apiKey = config.key(env);
-    if (!host) {
-        throw new Error(
-            `OCR provider "${serviceDef.provider}" upstream host is not configured`,
-        );
-    }
-    if (!apiKey) {
-        throw new Error(
-            `OCR provider "${serviceDef.provider}" API key is not configured`,
-        );
-    }
-
-    const upstreamBody = {
-        model: getOcrProviderModelId(responseModel),
-        document: request.document,
-        include_image_base64: request.include_image_base64 ?? false,
-        ...(request.pages ? { pages: request.pages } : {}),
-    };
-
-    const upstreamRes = await fetch(`${host}/v1/ocr`, {
+    const upstreamRes = await fetch(MISTRAL_OCR_URL, {
         method: "POST",
         headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${env.MISTRAL_API_KEY}`,
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(upstreamBody),
+        body: JSON.stringify({
+            model: MISTRAL_OCR_MODEL,
+            document: request.document,
+            include_image_base64: request.include_image_base64 ?? false,
+            ...(request.pages ? { pages: request.pages } : {}),
+        }),
     });
 
     if (!upstreamRes.ok) {
         const text = await upstreamRes.text();
-        throw new UpstreamError(upstreamRes.status as ContentfulStatusCode, {
+        throw UpstreamError.fromProvider(upstreamRes.status, {
             message: `OCR upstream for "${responseModel}" failed: ${text}`,
-            requestUrl: new URL(`${host}/v1/ocr`),
+            requestUrl: new URL(MISTRAL_OCR_URL),
             responseBody: text,
         });
     }
@@ -88,10 +57,25 @@ export async function generateOcr(
     });
 }
 
-// OCR billing: image-input-heavy, text-output-light. Each processed page is
-// one input image token; the returned markdown is approximated as 1 token per
-// 4 characters of output. Providers that report token usage directly can
-// override this by populating usage_info.
+/** Route handler shared by the gateway chain and the durable executor. */
+export async function generateOcrResponse(c: Context<Env>): Promise<Response> {
+    const requestBody = c.req.valid("json" as never) as CreateOcrRequest;
+    return withModelFallbackResponse(
+        c.var.model,
+        (candidate) =>
+            generateOcr(
+                c.env,
+                { ...requestBody, model: candidate.id },
+                candidate.id,
+            ),
+        c.var.track?.attempts,
+    );
+}
+
+// OCR billing: one input image token per processed page, rated in the registry
+// at Mistral's per-page price. `usage_info.pages_processed` is what the
+// provider reports, so it — not the response body — drives the charge; the
+// returned markdown is reported as completion tokens for telemetry only.
 function ocrUsageFromResponse(data: CreateOcrResponse): Usage {
     const pagesProcessed =
         data.usage_info?.pages_processed ?? data.pages.length;

@@ -15,7 +15,7 @@
  *   gen.pollinations.ai/audio/*       -> audio generation
  *   gen.pollinations.ai/video/*       -> video generation
  *   gen.pollinations.ai/v1/*          -> OpenAI-compatible generation
- *   gen.pollinations.ai/v1/ocr        -> structured document extraction (OCR)
+ *   gen.pollinations.ai/alpha/*       -> experimental native routes (OCR, decisions)
  */
 
 import { handleError } from "@shared/error.ts";

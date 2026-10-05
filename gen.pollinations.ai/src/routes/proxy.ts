@@ -17,7 +17,7 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
-import { generateOcr } from "@/ocr/handler.ts";
+import { generateOcrResponse } from "@/ocr/handler.ts";
 import {
     MediaChatCompletionSchema,
     MediaResponseSchema,
@@ -868,18 +868,18 @@ export const proxyRoutes = new Hono<Env>()
         every(apiKeyBudgetReservation, generateEmbeddingsResponse),
     )
     .post(
-        "/v1/ocr",
+        "/alpha/ocr",
         describeRoute({
             tags: ["📄 OCR"],
-            summary: "Optical Character Recognition",
+            summary: "Optical Character Recognition (experimental)",
             description: [
-                "Extract structured content from documents and images, returning Markdown with layout and bounding boxes for embedded images (Mistral OCR API shape).",
+                "Extract structured content from documents and images and get Markdown with layout and bounding boxes for embedded images. The request and response follow Mistral's OCR API, but `/alpha/ocr` is experimental and may change without a version bump.",
                 "",
-                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64.",
+                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64. The URL must be reachable by the upstream.",
                 "",
-                "**Models:** `mistral-ocr` (Mistral OCR 4), `paddle-ocr` (PaddleOCR, 80+ languages), `baidu-unlimited-ocr` (high-volume). Defaults to `mistral-ocr`.",
+                "**Models:** `mistral-ocr` is the only listing today. Defaults to `mistral-ocr`.",
                 "",
-                "**Billing:** Input is billed per processed page (image-input tokens); the returned Markdown is billed as completion text tokens.",
+                "**Billing:** $0.004 per page reported in `usage_info.pages_processed`. The returned Markdown is included in that per-page price.",
             ].join("\n"),
             responses: {
                 200: {
@@ -895,30 +895,13 @@ export const proxyRoutes = new Hono<Env>()
         }),
         textBodyLimit,
         validator("json", CreateOcrRequestSchema),
-        resolveModel("generate.ocr"),
+        resolveModel("generate.ocr", { supportedEndpoint: "/alpha/ocr" }),
         track("generate.ocr"),
-        generationAccess,
-        async (c) => {
-            const requestBody = c.req.valid("json" as never) as z.infer<
-                typeof CreateOcrRequestSchema
-            >;
-            const { response, servedEntry } = await withModelFallbackResponse(
-                c.var.model,
-                (candidate) =>
-                    generateOcr(
-                        c.env,
-                        {
-                            ...requestBody,
-                            model: candidate.id,
-                        },
-                        candidate.definition ?? c.var.model.definition,
-                        candidate.id,
-                    ),
-                c.var.track?.failedCalls,
-            );
-            if (servedEntry) c.set("servedModelEntry", servedEntry);
-            return response;
-        },
+        prepareGenerationRequest,
+        textCache,
+        every(generationAccess, deduplicateGeneration),
+        apiKeyBudgetReservation,
+        generateOcrResponse,
     )
     .post(
         "/text",

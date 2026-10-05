@@ -112,10 +112,10 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
         return ["/audio/{text}", "/v1/audio/speech"];
     }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
+    if (eventType === "generate.ocr") return ["/alpha/ocr"];
     if (eventType === "generate.realtime") {
         return ["/realtime", "/v1/realtime"];
     }
-    if (eventType === "generate.ocr") return ["/alpha/ocr"];
     return IMAGE_MODEL_ENDPOINTS;
 }
 

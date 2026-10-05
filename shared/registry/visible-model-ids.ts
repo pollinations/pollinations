@@ -6,6 +6,7 @@ import {
     effectiveCommunityEndpointVisibility,
 } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
+import { modelSequenceModelId } from "../model-sequences.ts";
 import {
     getModels,
     getRegistryModelDefinition,
@@ -36,6 +37,21 @@ export async function validateModelPermissionIds(
         );
     for (const row of rows) {
         if (row.owner) canonicalIds.add(communityModelId(row.owner, row.name));
+    }
+    const sequenceRows = await drizzle(dbBinding)
+        .select({
+            owner: schema.user.githubUsername,
+            name: schema.modelSequence.name,
+        })
+        .from(schema.modelSequence)
+        .innerJoin(
+            schema.user,
+            eq(schema.modelSequence.ownerUserId, schema.user.id),
+        );
+    for (const row of sequenceRows) {
+        if (row.owner) {
+            canonicalIds.add(modelSequenceModelId(row.owner, row.name));
+        }
     }
     for (const id of modelIds) {
         if (!canonicalIds.has(id)) {
@@ -112,6 +128,29 @@ export async function getVisibleModelIdsForUser(
         if (model.ownerGithubUsername) {
             modelIds.add(
                 communityModelId(model.ownerGithubUsername, model.name),
+            );
+        }
+    }
+
+    // Sequences are private, so only the owner's own join the visible set.
+    const sequences = await db
+        .select({
+            ownerGithubUsername: schema.user.githubUsername,
+            name: schema.modelSequence.name,
+        })
+        .from(schema.modelSequence)
+        .innerJoin(
+            schema.user,
+            eq(schema.modelSequence.ownerUserId, schema.user.id),
+        )
+        .where(eq(schema.modelSequence.ownerUserId, userId));
+    for (const sequence of sequences) {
+        if (sequence.ownerGithubUsername) {
+            modelIds.add(
+                modelSequenceModelId(
+                    sequence.ownerGithubUsername,
+                    sequence.name,
+                ),
             );
         }
     }

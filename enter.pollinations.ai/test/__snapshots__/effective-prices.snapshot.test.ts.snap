@@ -597,6 +597,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.0422,
     },
   },
+  "bytedance/seedream-5.0-flash": {
+    "cost": {
+      "completionImageTokens": 0.01899,
+    },
+    "costVariants": {
+      "2k": {
+        "completionImageTokens": 0.01899,
+      },
+    },
+    "price": {
+      "completionImageTokens": 0.01899,
+    },
+  },
   "bytedance/seedream-5.0-lite": {
     "cost": {
       "completionImageTokens": 0.035,

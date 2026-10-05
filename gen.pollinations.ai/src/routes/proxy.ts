@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { largeChatBody } from "../middleware/large-chat-body.ts";
 import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
@@ -215,7 +216,7 @@ const model3dHandlers = factory.createHandlers(
 
 // Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
-    textBodyLimit,
+    every(largeChatBody, textBodyLimit),
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
     resolveModel("generate.text", {
@@ -351,6 +352,12 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         aliases: entry.info.aliases,
         category: entry.info.category,
         community: entry.info.community,
+        // Open WebUI's model tag shape; its model picker filters by these.
+        tags: [
+            { name: entry.info.category },
+            ...(entry.info.community ? [{ name: "community" }] : []),
+            ...(entry.info.agent ? [{ name: "agent" }] : []),
+        ],
         title: entry.info.title,
         description: entry.info.description,
         input_modalities: entry.info.input_modalities,
@@ -680,6 +687,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
+                "JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.",
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
@@ -710,7 +718,16 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+                ...errorResponseDescriptions(
+                    400,
+                    401,
+                    402,
+                    403,
+                    413,
+                    429,
+                    500,
+                    502,
+                ),
             },
         }),
         ...chatCompletionHandlers,
@@ -752,6 +769,7 @@ export const proxyRoutes = new Hono<Env>()
             summary: "Create Response",
             description: [
                 "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
+                "JSON request bodies may be up to 32 MiB, including inline images.",
                 "",
                 "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.",
                 "",
@@ -788,7 +806,16 @@ export const proxyRoutes = new Hono<Env>()
                         },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+                ...errorResponseDescriptions(
+                    400,
+                    401,
+                    402,
+                    403,
+                    413,
+                    429,
+                    500,
+                    502,
+                ),
             },
         }),
         ...responsesHandlers,

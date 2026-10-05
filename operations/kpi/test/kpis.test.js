@@ -15,6 +15,26 @@ import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 
 const community = KPIS.find((row) => row.key === "communityModels");
 
+describe("Official app requests", () => {
+    const row = KPIS.find((item) => item.key === "officialApps");
+    it("defaults to all, switches keys and exposes every view to the graph", () => {
+        expect(kpiView(row).key).toBe("officialApp_all");
+        const week = {
+            officialApp_all: 9,
+            officialApp_cli: 4,
+            officialApp_play: 5,
+        };
+        expect([0, 1, 2].map((i) => kpiValue(kpiView(row, i), week))).toEqual([
+            9, 4, 5,
+        ]);
+        for (let i = 0; i < row.views.length; i++) {
+            expect(kpiViewById(kpiViewId(row, i)).key).toBe(row.views[i].key);
+        }
+        expect(kpiValue(kpiView(row), {})).toBeUndefined();
+        expect(kpiValue(kpiView(row), { officialApp_all: 0 })).toBe(0);
+    });
+});
+
 describe("Pollen spend by category", () => {
     const row = KPIS.find((item) => item.key === "pollenByCategory");
 
@@ -466,12 +486,34 @@ describe("gross margin row", () => {
 });
 
 describe("cash coverage row", () => {
-    it("compares Stripe cash against the week's compute cost", () => {
-        expect(kpiValue(coverage, marginWeek)).toBeCloseTo(60.91, 1);
+    it("compares Stripe cash against compute cost across all traffic", () => {
+        // Regular-only cost (3740) would read 60.91% and hide legacy compute.
+        expect(
+            kpiValue(coverage, { ...marginWeek, costUsdAll: 4556 }),
+        ).toBeCloseTo(50, 0);
     });
 
     it("blanks a week with no cost rather than dividing by zero", () => {
-        expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
+        expect(kpiValue(coverage, { revenue: 100, costUsdAll: 0 })).toBeNull();
+    });
+});
+
+describe("legacy row", () => {
+    const legacy = KPIS.find((row) => row.key === "legacyRequests");
+    const week = {
+        legacyRequests: 4_445_921,
+        requestsAll: 7_621_720,
+        legacyCostUsd: 120,
+    };
+
+    it("cycles requests, share of all requests, and compute cost", () => {
+        expect(
+            [0, 1, 2].map((i) => kpiValue(kpiView(legacy, i), week)),
+        ).toEqual([4_445_921, (4_445_921 / 7_621_720) * 100, 120]);
+    });
+
+    it("counts a falling legacy share as progress", () => {
+        expect(kpiView(legacy, 1).lowerIsBetter).toBe(true);
     });
 });
 

@@ -240,6 +240,18 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6.1-sol",
+        config: portkeyConfig["gpt-6.1-sol"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6.1-sol:openai",
+        config: portkeyConfig["gpt-6.1-sol-openai"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
         name: "openai/gpt-6-luna",
         config: portkeyConfig["gpt-6-luna"],
         transform: omitOpenAISampling,
@@ -267,12 +279,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
-        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
-        // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
-        transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.coding),
-            stripReasoning,
-        ),
+        config: portkeyConfig["qwen-coder-bedrock"],
+        // No default coding prompt: it makes Bedrock narrate before a tool
+        // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning
+        // mode, and Bedrock rejects stop with a ValidationException.
+        transform: pipe(stripReasoning, omitParameters("stop")),
     },
     {
         name: "qwen/qwen3-coder-next",
@@ -668,8 +679,18 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "respan/span-01-lite",
+        config: portkeyConfig["span-01-lite"],
+        useSystemOneApi: true,
+    },
+    {
         name: "typesafe/jev-1.13",
         config: portkeyConfig["jev-1.13"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "jaredpalmer/kev-4b",
+        config: portkeyConfig["kev-4b"],
         useSystemOneApi: true,
     },
     {
@@ -753,6 +774,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3-ultra",
+        config: portkeyConfig[
+            "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
+        ],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "nvidia/nemotron-3-ultra:deepinfra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: createReasoningEffortTransform("toggle"),
     },

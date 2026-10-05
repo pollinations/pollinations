@@ -327,6 +327,7 @@ test("retrieves a model by canonical ID", async () => {
         aliases: expect.any(Array),
         category: "text",
         community: false,
+        tags: [{ name: "text" }],
         title: expect.any(String),
     });
 });

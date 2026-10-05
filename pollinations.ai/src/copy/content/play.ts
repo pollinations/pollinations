@@ -11,8 +11,6 @@ export const PLAY_PAGE_NO_TRANSLATE = new Set([
 ]);
 
 export const PLAY_PAGE = {
-    pageTitle: "play",
-    pageDescription: "playground for poking at models",
     // Page titles and navigation
     createTitle: "Create",
     subtitlePrefix: "🎛️ A",

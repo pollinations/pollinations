@@ -739,9 +739,8 @@ export const Models: FC = () => {
                         <p className="flex items-start gap-1.5">
                             <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>requests /pollen</strong> — estimated
-                                from the median observed cost over the last 7
-                                days.
+                                <strong>requests /$1</strong> — estimated from
+                                the median observed cost over the last 7 days.
                             </span>
                         </p>
                     </div>

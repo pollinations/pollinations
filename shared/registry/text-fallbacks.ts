@@ -57,6 +57,9 @@ export const TEXT_FALLBACKS = {
     "openai/gpt-6-sol": {
         "openai/gpt-6-sol:openai": { provider: "openai" },
     },
+    "openai/gpt-6.1-sol": {
+        "openai/gpt-6.1-sol:openai": { provider: "openai" },
+    },
     "openai/gpt-6-luna": {
         "openai/gpt-6-luna:openai": { provider: "openai" },
     },
@@ -474,6 +477,21 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.07) * 1.055,
                 promptCachedTokens: perMillion(0.04) * 1.055,
                 completionTextTokens: perMillion(0.2) * 1.055,
+            },
+        },
+    },
+    "nvidia/nemotron-3-ultra": {
+        "nvidia/nemotron-3-ultra:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-30").getTime(),
+            cost: {
+                // DeepInfra standard-tier rates (2026-09-30). Flex is
+                // deliberately excluded because requests may wait up to ten
+                // minutes.
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(2.2),
             },
         },
     },

@@ -1,0 +1,29 @@
+name: Models / Resolver checks
+
+on:
+  pull_request:
+    paths:
+      - 'operations/model-resolver/**'
+      - '.github/workflows/models-resolver-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'operations/model-resolver/**'
+      - '.github/workflows/models-resolver-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.10.0'
+      - run: npm ci --prefix operations/model-resolver --workspaces=false --ignore-scripts --no-audit --no-fund
+      - run: npm test --prefix operations/model-resolver --workspaces=false

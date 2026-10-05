@@ -186,7 +186,9 @@ export const AUDIO_VOICES = [
     ...GEMINI_TTS_VOICES,
 ];
 
-export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
+// Requests without a model must work on Quest Pollen, so the default stays
+// on a model that is not paid-only.
+export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
     "elevenlabs/eleven-v3": {
         aliases: [

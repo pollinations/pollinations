@@ -1,4 +1,4 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio";
+import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d";
@@ -25,6 +25,12 @@ function serviceAliasTestCases(
         serviceDefinition.aliases.map((alias) => [alias, serviceId]),
     );
 }
+
+test("The default audio model works without paid balance", () => {
+    expect(getRegistryModelDefinition(DEFAULT_AUDIO_MODEL).paidOnly).not.toBe(
+        true,
+    );
+});
 
 function requiredCostRate(model: ModelName, field: UsageType): number {
     const rate = getCostDefinition(model)?.[field];

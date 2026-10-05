@@ -498,7 +498,7 @@ test("crypto checkout offers only crypto in USD without card options", async ({
     )?.body;
     expectUsdPriceData(body, 5);
     expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
-    expect(body?.payment_method_configuration).toBe(stripePmcId);
+    expect(body?.payment_method_configuration).toBeUndefined();
     expect(body?.["payment_method_types[0]"]).toBe("crypto");
     expect(
         body?.["payment_method_options[card][request_three_d_secure]"],
@@ -4131,6 +4131,8 @@ test("wallet and hosted checkout create the same session apart from how Stripe r
     const { success_url, cancel_url, ...hostedShared } = hostedBody ?? {};
     const { ui_mode, return_url, ...walletShared } = walletBody ?? {};
     expect(walletShared).toEqual(hostedShared);
+    expect(hostedShared.payment_method_configuration).toBe(stripePmcId);
+    expect(hostedShared["payment_method_types[0]"]).toBeUndefined();
     expect(
         hostedShared["saved_payment_method_options[payment_method_save]"],
     ).toBe("enabled");

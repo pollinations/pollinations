@@ -382,10 +382,9 @@ async function createPackCheckoutSession(
 
         const checkoutSession = await stripe.checkout.sessions.create({
             mode: "payment",
-            payment_method_configuration: pmcId,
-            ...(cryptoCheckout && {
-                payment_method_types: ["crypto"] as const,
-            }),
+            ...(cryptoCheckout
+                ? { payment_method_types: ["crypto"] as const }
+                : { payment_method_configuration: pmcId }),
             line_items: [
                 {
                     price_data: {

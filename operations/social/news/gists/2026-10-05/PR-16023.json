@@ -1,0 +1,34 @@
+{
+  "pr_number": 16023,
+  "title": "fix: Veo defaults to landscape and bills audio only when requested",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16023",
+  "merged_at": "2026-10-05T09:38:46Z",
+  "labels": [],
+  "pr_body_excerpt": "Two Veo bugs, both on the Vertex primary and the Replicate fallback:\n\n| | Before | After |\n|---|---|---|\n| Default orientation | The gateway always fills 1024×1024, which Veo's ratio helper mapped to **9:16**; `aspectRatio` was ignored unless width/height were also sent | Explicit `aspectRatio` wins; otherwise caller-set dimensions pick the orientation; square or omitted dimensions default to **16:9** |\n| Omitted `audio` | Runtime default was `true`, so Veo generated and billed audio (+$0.02/s) although the docs and code said it was off | Veo generates and bills audio only with `audio=true` |\n\n- `audio` now stays unset when omitted, so each model applies its own default. Seedance 2.0/2.5, wan-3.0 and the Alibaba wan route keep audio on by default via an explicit `?? true` (their price doesn't change with audio).\n- Docs: `audio` no longer claims `default(false)` for every model. It now lists which models honor `audio=false` (Seedance 2.0 family, Seedance 2.5, wan-3.0), which always generate audio (wan2.6, wan-2.7, grok-imagine-video-1.5, gemini-omni, MiniMax H3 family), and Veo's opt-in. Veo is added to the models that default to 16:9.\n- Cache: adds an optional registry `cacheVersion` that the media cache key includes, and sets it on Veo, so URLs cached under the old portrait-with-audio defaults generate fresh instead of replaying the old video.\n\n**Local E2E through gen:**\n\n| Request | Output | Audio | Billed |\n|---|---|---|---|\n| Veo, no params | 1280×720 | none | 0.32 (4s video) |\n| Veo `aspectRatio=9:16&audio=true` | 720×1280 | aac | 0.40 (+0.08 audio) |\n| seedance-2.0-fast, `audio` omitted | 864×496 | aac (unchanged) | 0.28 |\n\nPack balance moved by exactly 1.00 = sum of the three events.\n\nCache: the same Veo URL generated on `main` (720×1280, audio, 0.40) and then on this branch produced a fresh 1280×720 video without audio (0.32) instead of the cached one; the repeat request hit the new entry.\n\nTests: gen image suite, docs/OpenAPI and fallback tests (821), typec",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Veo finds the wide angle",
+    "blurb": "Veo stops treating a square default as a request for portrait video. It also leaves the soundtrack—and its bill—out unless asked.",
+    "summary": "Veo honors explicit aspectRatio, uses caller-set dimensions for orientation, defaults to 16:9 when dimensions are square or omitted, and generates audio only with audio=true; a cache version prevents old portrait-with-audio results from being replayed.",
+    "impact": "A default four-second Veo request produces 1280×720 video without audio at 0.32 instead of portrait video with audio at 0.40; other video models retain their existing audio defaults.",
+    "keywords": [
+      "Veo",
+      "video",
+      "aspectRatio",
+      "audio",
+      "billing",
+      "media cache"
+    ],
+    "visual_concept": "Veo is a video model, not a mascot: show a little retro video monitor displaying a wide 16:9 landscape, with a separate, unselected music-note button. Polli adjusts the monitor while a vine curls around it; a fresh film frame beside the screen hints that old cached results are replaced.",
+    "image_prompt": "In a cozy pixel art garden studio, Polli adjusts a retro monitor showing a wide 16:9 meadow video, while an unselected music-note button and a fresh film frame sit beside it among small flowers and vines. Polli is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, rounded light blue translucent wings, and tiny director’s headphones; chunky retro sprites, prominent lime green (#ecf874), dark purple (#110518) details, a warm cream and soft pastel gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16023.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli adjusts a retro monitor showing a wide 16:9 meadow video, while an unselected music-note button and a fresh film frame sit beside it among small flowers and vines. Polli is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, rounded light blue translucent wings, and tiny director’s headphones; chunky retro sprites, prominent lime green (#ecf874), dark purple (#110518) details, a warm cream and soft pastel gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-05T09:39:39.843529+00:00"
+}

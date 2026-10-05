@@ -1,0 +1,140 @@
+name: Models / Report-only manager pilot
+
+on:
+  schedule:
+    # state.mjs selects the UTC slot corresponding to 08:00 Europe/Berlin.
+    - cron: '0 6 * * *'
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      initialize:
+        description: 'Start the first 14-day pilot when no saved state exists'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: model-manager-pilot
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.10.0'
+
+      - name: Select Berlin daily slot
+        id: slot
+        env:
+          MODEL_MANAGER_CRON: ${{ github.event.schedule }}
+        run: node operations/model-manager/state.mjs schedule
+
+      - name: Find the latest trusted state
+        if: steps.slot.outputs.run == 'true'
+        id: previous
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const repo = {...context.repo};
+            const runs = await github.rest.actions.listWorkflowRuns({
+              ...repo, workflow_id: 'models-manager-pilot.yml',
+              branch: 'main', status: 'completed', per_page: 100
+            });
+            let expired = false;
+            // A rerun is currently in_progress, so its earlier attempt is absent
+            // from the completed-run list. Restore its artifact first.
+            const previousIds = runs.data.workflow_runs
+              .filter(run => run.head_repository?.id === context.payload.repository.id)
+              .map(run => run.id);
+            for (const id of [context.runId, ...previousIds]) {
+              const result = await github.rest.actions.listWorkflowRunArtifacts({
+                ...repo, run_id: id, per_page: 100
+              });
+              const artifact = result.data.artifacts.find(a => a.name === 'model-manager-state');
+              if (!artifact) continue;
+              if (artifact.expired) { expired = true; continue; }
+              core.setOutput('artifact', String(artifact.id));
+              core.setOutput('run', String(id));
+              core.setOutput('ready', 'true');
+              return;
+            }
+            if (expired) throw new Error('Pilot state expired; restore operator-held evidence before restarting.');
+            if (Number(process.env.GITHUB_RUN_ATTEMPT) > 1) {
+              throw new Error('Retry has no saved state; reconcile the previous attempt before retrying paid work.');
+            }
+            // Missing/deleted history must never silently restart a paid pilot.
+            if (context.eventName === 'workflow_dispatch' && context.payload.inputs?.initialize === 'true') {
+              core.setOutput('ready', 'true');
+              core.info('Initializing the explicitly requested pilot.');
+            } else {
+              core.setOutput('ready', 'false');
+              core.warning('No saved state: restore it, or manually initialize the first pilot. No paid run started.');
+            }
+
+      - name: Download encrypted state
+        if: steps.previous.outputs.artifact != ''
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.previous.outputs.artifact }}
+          run-id: ${{ steps.previous.outputs.run }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/model-manager-previous
+          merge-multiple: true
+
+      - uses: nhedger/setup-sops@v3
+        if: steps.previous.outputs.ready == 'true'
+
+      - name: Restore history
+        if: steps.previous.outputs.artifact != ''
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: >-
+          node operations/model-manager/state.mjs restore
+          --file "$RUNNER_TEMP/model-manager-previous/state.vars.json"
+          --data "$RUNNER_TEMP/model-manager-data"
+
+      - name: Install launcher and verify local behavior
+        if: steps.previous.outputs.ready == 'true'
+        run: |
+          npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
+          npm test --prefix operations/model-manager
+
+      - name: Run in Pollinations VM
+        id: launch
+        if: steps.previous.outputs.ready == 'true'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: node operations/model-manager/launch.mjs --out "$RUNNER_TEMP/model-manager-data"
+
+      - name: Encrypt reports and checkpoints
+        if: always() && steps.launch.outcome != 'skipped' && steps.previous.outputs.ready == 'true'
+        run: >-
+          node operations/model-manager/state.mjs seal
+          --data "$RUNNER_TEMP/model-manager-data"
+          --file "$RUNNER_TEMP/model-manager-export/state.vars.json"
+
+      - name: Preserve encrypted state
+        if: always() && steps.launch.outcome != 'skipped' && steps.previous.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-manager-state
+          path: ${{ runner.temp }}/model-manager-export/state.vars.json
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: true
+
+      - name: Summarize run
+        if: always() && steps.slot.outputs.run == 'true'
+        run: |
+          echo 'Report-only model manager: private reports and checkpoints are in the encrypted model-manager-state artifact.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Decrypt with an existing authorized SOPS identity. Source gaps are recorded in report.json; no model changes or external notifications are enabled.' >> "$GITHUB_STEP_SUMMARY"

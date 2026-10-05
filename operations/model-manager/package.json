@@ -1,0 +1,11 @@
+{
+    "name": "pollinations-model-manager",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "node --test *.test.mjs"
+    },
+    "dependencies": {
+        "e2b": "2.52.0"
+    }
+}

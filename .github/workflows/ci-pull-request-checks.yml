@@ -94,6 +94,7 @@ jobs:
           operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
           operations/model-evals/*.test.js
+          operations/model-manager/*.test.mjs
           operations/model-monitor/src/*.test.js
 
       - name: Test model catalog and accounting compatibility

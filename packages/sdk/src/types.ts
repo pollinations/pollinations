@@ -873,6 +873,7 @@ export interface KeyInfo {
         account?: string[] | null;
     };
     pollenBudget?: number | null;
+    questPollenOnly?: boolean;
     rateLimitEnabled?: boolean;
 }
 
@@ -893,6 +894,7 @@ export interface AccountKey {
     } | null;
     metadata: Record<string, unknown> | null;
     pollenBalance: number | null;
+    questPollenOnly?: boolean;
     enabled: boolean;
 }
 
@@ -918,6 +920,8 @@ export interface CreateKeyOptions {
      * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
+    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    questPollenOnly?: boolean;
     /**
      * Allowed OAuth redirect URIs for publishable app keys. Required when
      * creating a `publishable` key that drives the `/authorize` BYOP flow.
@@ -949,6 +953,7 @@ export interface CreatedKey {
         account?: string[];
     } | null;
     pollenBudget: number | null;
+    questPollenOnly?: boolean;
 }
 
 // ============================================================================

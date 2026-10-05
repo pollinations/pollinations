@@ -1737,6 +1737,8 @@ export class Pollinations {
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
             body.accountPermissions = options.accountPermissions;
+        if (options.questPollenOnly !== undefined)
+            body.questPollenOnly = options.questPollenOnly;
         if (options.redirectUris) body.redirectUris = options.redirectUris;
         if (options.earningsEnabled !== undefined)
             body.earningsEnabled = options.earningsEnabled;

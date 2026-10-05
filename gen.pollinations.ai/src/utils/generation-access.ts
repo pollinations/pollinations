@@ -9,7 +9,7 @@ import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
-import type { AuthVariables } from "@/middleware/auth.ts";
+import { type AuthVariables, keyPermissionsLink } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
@@ -51,8 +51,23 @@ export async function checkBalance(
     }
 
     const userBalance = await balance.getBalance(auth.user.id);
+    // A Quest Pollen only key can never draw on the paid balance.
+    const questPollenOnly = auth.apiKey?.questPollenOnly ?? false;
+    const spendable = questPollenOnly
+        ? { ...userBalance, packBalance: 0 }
+        : userBalance;
 
-    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
+    if (!canCoverEstimatedCharge(spendable, estimatedCost, isPaidOnly)) {
+        if (questPollenOnly) {
+            const allowPaid = `allow paid Pollen for this key at ${keyPermissionsLink(auth.apiKey?.id ?? "", env.ENVIRONMENT)}`;
+            throw new PaymentRequiredError(
+                "QUEST_POLLEN_ONLY",
+                isPaidOnly
+                    ? `This model needs paid Pollen, but this API key only spends Quest Pollen. To use it, ${allowPaid}.`
+                    : `Not enough Quest Pollen. This request costs ~${estimatedCost.toFixed(4)} pollen, but you have ${Math.max(0, userBalance.tierBalance).toFixed(4)} Quest Pollen, and this API key only spends Quest Pollen. Complete a quest at https://enter.pollinations.ai/quests or ${allowPaid}.`,
+                isPaidOnly,
+            );
+        }
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);

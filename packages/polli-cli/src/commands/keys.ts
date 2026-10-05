@@ -46,6 +46,7 @@ interface SingleKeyInfo {
     expiresAt: string | null;
     permissions: { models?: string[]; account?: string[] } | null;
     pollenBudget: number | null;
+    questPollenOnly?: boolean;
     rateLimitEnabled: boolean;
 }
 
@@ -137,6 +138,7 @@ const info = new Command("info")
                 name: keyInfo.name ?? "-",
                 expires: keyInfo.expiresAt ?? "never",
                 budget: keyInfo.pollenBudget ?? "unlimited",
+                quest_pollen_only: keyInfo.questPollenOnly ?? false,
                 rate_limited: keyInfo.rateLimitEnabled,
                 model_restrictions:
                     keyInfo.permissions?.models?.join(", ") ??
@@ -165,6 +167,10 @@ const create = new Command("create")
         "Restrict to model categories (text, image, video, audio, 3d, embedding, realtime); a model ID allows its whole category",
     )
     .option("--budget <pollen>", "Pollen budget cap")
+    .option(
+        "--quest-pollen-only",
+        "Never spend paid Pollen; requests stop when Quest Pollen runs out",
+    )
     .option(
         "--redirect-uri <uri...>",
         "Allowed BYOP redirect URI(s) for publishable app keys",
@@ -208,6 +214,7 @@ Examples:
                 body.pollenBudget = budget;
             }
             if (opts.permissions) body.accountPermissions = opts.permissions;
+            if (opts.questPollenOnly === true) body.questPollenOnly = true;
             if (opts.redirectUri) body.redirectUris = opts.redirectUri;
             if (opts.earnings === true) body.earningsEnabled = true;
 

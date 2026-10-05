@@ -75,6 +75,7 @@ const createKey = (
         models,
         budget,
         permissions,
+        questPollenOnly,
         redirectUri,
         earnings,
     },
@@ -89,6 +90,7 @@ const createKey = (
             allowedModels: models,
             pollenBudget: budget,
             accountPermissions: permissions,
+            questPollenOnly,
             redirectUris: redirectUri,
             earningsEnabled: earnings,
         },
@@ -204,6 +206,12 @@ export const accountTools = [
                 .optional()
                 .describe(
                     'Account permissions, e.g. ["profile", "usage"]; "keys" lets the new key create keys',
+                ),
+            questPollenOnly: z
+                .boolean()
+                .optional()
+                .describe(
+                    "Never spend paid Pollen; requests stop when Quest Pollen runs out",
                 ),
             redirectUri: z
                 .array(z.string())

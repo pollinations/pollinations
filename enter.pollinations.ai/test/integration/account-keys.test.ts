@@ -201,6 +201,45 @@ describe("Account Key Management API", () => {
             expect(grandchild.permissions?.account ?? []).not.toContain("keys");
         });
 
+        test("should keep keys created by a Quest Pollen only key Quest Pollen only", async ({
+            sessionToken,
+        }) => {
+            const parentKey = await createApiKeyViaApi(sessionToken, {
+                name: "quest-parent",
+                accountPermissions: ["keys"],
+                questPollenOnly: true,
+            });
+
+            const createChild = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${parentKey.key}`,
+                    },
+                    body: JSON.stringify({ name: "quest-child" }),
+                },
+            );
+            expect(createChild.status).toBe(200);
+            expect((await createChild.json()).questPollenOnly).toBe(true);
+
+            // The owner can lift the restriction from the dashboard.
+            const update = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${parentKey.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ questPollenOnly: false }),
+                },
+            );
+            expect(update.status).toBe(200);
+            expect((await update.json()).questPollenOnly).toBe(false);
+        });
+
         test("should create key via API key with account:keys permission", async ({
             sessionToken,
         }) => {

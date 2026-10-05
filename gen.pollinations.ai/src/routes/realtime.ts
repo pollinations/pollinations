@@ -99,6 +99,7 @@ type RealtimeBillingContext = {
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
+    questPollenOnly?: boolean;
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelRequested: string;
@@ -848,6 +849,7 @@ async function settleRealtimeSession(
             apiKeyReservedAmount: tracking.apiKeyReservedAmount,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
+            questPollenOnly: tracking.questPollenOnly,
         });
         c.var.balance.apiKeyReservation = undefined;
     }
@@ -1389,6 +1391,7 @@ async function createRealtimeBillingContext(
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,

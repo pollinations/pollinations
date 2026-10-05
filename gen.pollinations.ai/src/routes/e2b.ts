@@ -175,7 +175,14 @@ async function requireFunds(c: E2bContext, price: number) {
         c.env.DB,
         c.var.auth.requireUser().id,
     );
-    if (!canCoverEstimatedCharge(balance, price)) {
+    if (apiKey?.questPollenOnly) {
+        if (!canCoverEstimatedCharge({ ...balance, packBalance: 0 }, price)) {
+            throw new PaymentRequiredError(
+                "QUEST_POLLEN_ONLY",
+                `Not enough Quest Pollen for this sandbox lease (${price} pollen), and this API key only spends Quest Pollen. Complete a quest at https://enter.pollinations.ai/quests or allow paid Pollen for this key at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}.`,
+            );
+        }
+    } else if (!canCoverEstimatedCharge(balance, price)) {
         throw new PaymentRequiredError(
             "INSUFFICIENT_BALANCE",
             `Insufficient balance for this sandbox lease (${price} pollen). Top up at https://enter.pollinations.ai/top-up.`,
@@ -200,6 +207,7 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
+            questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
         c.var.log.error("Sandbox lease charge failed: {error}", {

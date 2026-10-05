@@ -128,6 +128,12 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe("Pollen budget cap for this key. null = unlimited"),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -177,6 +183,12 @@ const CreateApiKeySchema = z.object({
         .optional()
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out",
         ),
     accountPermissions: z
         .array(z.string())
@@ -239,6 +251,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresIn: input.expiresIn,
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
+                questPollenOnly: input.questPollenOnly,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
                 defaultCreatedVia: createdVia,
@@ -291,6 +304,7 @@ export const apiKeysRoutes = new Hono<Env>()
                         : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    questPollenOnly: key.questPollenOnly,
                     byopClientKeyId: key.byopClientKeyId,
                 })),
             });
@@ -316,6 +330,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name,
                 allowedModels,
                 pollenBudget,
+                questPollenOnly,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -352,10 +367,15 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            const d1Updates: Record<string, string | number | Date | null> = {};
+            const d1Updates: Record<
+                string,
+                string | number | boolean | Date | null
+            > = {};
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
+            if (questPollenOnly !== undefined)
+                d1Updates.questPollenOnly = questPollenOnly;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
@@ -373,6 +393,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name: updated?.name,
                 permissions: updated?.permissions,
                 pollenBalance: updated?.pollenBalance ?? null,
+                questPollenOnly: updated?.questPollenOnly ?? false,
                 expiresAt: updated?.expiresAt ?? null,
             });
         },

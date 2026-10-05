@@ -125,6 +125,12 @@ const CreateKeySchema = z.object({
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -1417,6 +1423,7 @@ export const accountRoutes = new Hono<Env>()
                     permissions: apikeyTable.permissions,
                     metadata: apikeyTable.metadata,
                     pollenBalance: apikeyTable.pollenBalance,
+                    questPollenOnly: apikeyTable.questPollenOnly,
                     enabled: apikeyTable.enabled,
                 })
                 .from(apikeyTable)
@@ -1443,6 +1450,7 @@ export const accountRoutes = new Hono<Env>()
                     permissions: parsePermissions(key.permissions),
                     metadata: parseMetadata(key.metadata),
                     pollenBalance: key.pollenBalance,
+                    questPollenOnly: key.questPollenOnly,
                     enabled: key.enabled,
                 })),
             });
@@ -1473,6 +1481,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 allowedModels,
                 pollenBudget,
+                questPollenOnly,
                 accountPermissions,
                 redirectUris,
                 earningsEnabled,
@@ -1497,6 +1506,10 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 allowedModels,
                 pollenBudget,
+                // A child key can't spend what its creator can't.
+                questPollenOnly:
+                    questPollenOnly ||
+                    (c.var.auth.apiKey?.questPollenOnly ?? false),
                 accountPermissions,
                 metadata,
                 defaultCreatedVia: "api",
@@ -1651,6 +1664,11 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Remaining pollen budget for this key, null = unlimited (uses user balance)",
                                         ),
+                                    questPollenOnly: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether this key spends only Quest Pollen, never paid Pollen",
+                                        ),
                                     rateLimitEnabled: z
                                         .boolean()
                                         .describe(
@@ -1769,6 +1787,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
+                questPollenOnly: apiKey.questPollenOnly ?? false,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)

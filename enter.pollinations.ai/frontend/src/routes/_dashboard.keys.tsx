@@ -75,6 +75,7 @@ function KeysPage() {
                 accountPermissions: formState.accountPermissions?.length
                     ? formState.accountPermissions
                     : undefined,
+                questPollenOnly: formState.questPollenOnly,
             },
         });
 

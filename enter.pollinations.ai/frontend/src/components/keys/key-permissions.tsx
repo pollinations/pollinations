@@ -12,6 +12,7 @@ export interface KeyPermissions {
     pollenBudget: number | null;
     expiryDays: number | null;
     accountPermissions: string[] | null;
+    questPollenOnly: boolean;
 }
 
 export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
@@ -25,6 +26,9 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
     const [accountPermissions, setAccountPermissions] = useState<
         string[] | null
     >(initial.accountPermissions ?? []);
+    const [questPollenOnly, setQuestPollenOnly] = useState(
+        initial.questPollenOnly ?? false,
+    );
 
     return {
         permissions: {
@@ -32,11 +36,13 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
             pollenBudget,
             expiryDays,
             accountPermissions,
+            questPollenOnly,
         },
         setAllowedModels,
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
+        setQuestPollenOnly,
     };
 }
 
@@ -71,6 +77,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setPollenBudget,
         setExpiryDays,
         setAccountPermissions,
+        setQuestPollenOnly,
     } = value;
     const catalog = useModelCatalog();
 
@@ -94,19 +101,32 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     const limitInputs = (
         <>
             <KeyLimitInput
-                kind="budget"
-                accessContext={accessContext}
-                value={permissions.pollenBudget}
-                onChange={setPollenBudget}
-                disabled={disabled}
-            />
-            <KeyLimitInput
                 kind="expiry"
                 accessContext={accessContext}
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}
                 disabled={disabled}
             />
+            <KeyLimitInput
+                kind="budget"
+                accessContext={accessContext}
+                value={permissions.pollenBudget}
+                onChange={setPollenBudget}
+                disabled={disabled}
+            />
+            <AuthAccessItem
+                checked={permissions.questPollenOnly}
+                onChange={setQuestPollenOnly}
+                disabled={disabled}
+                info={
+                    <InfoTip
+                        text={`This ${accessContext ?? "key"} never spends paid Pollen. Requests stop when Quest Pollen runs out.`}
+                        label="Quest Pollen only information"
+                    />
+                }
+            >
+                Quest Pollen only
+            </AuthAccessItem>
         </>
     );
     const modelsItem = (

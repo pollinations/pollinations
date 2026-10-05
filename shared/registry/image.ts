@@ -25,6 +25,8 @@ const IMAGE_BASE_SERVICES = {
         // The single reference video is the source that gets a soundtrack.
         videoCapabilities: ["audio_output", "reference_videos"],
         maxReferenceVideos: 1,
+        // Output keeps the source dimensions; no resolution parameter is accepted.
+        resolutions: ["source"],
         // Replicate sets no upper bound; fal documents 1-30s for this model.
         minDuration: 1,
         maxDuration: 30,

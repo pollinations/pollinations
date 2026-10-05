@@ -579,7 +579,7 @@ curl -X POST "https://gen.pollinations.ai/v1/messages" \
 Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
-JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. For requests over 32 MiB, each data URI may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days. Base64-only input_audio.data and file.file_data fields are not offloaded.
+JSON request bodies may be up to 100 MiB when inline media use image_url.url, video_url.url, or file.file_url data URIs. Larger requests also accept PDF file_data on OpenRouter models (a PDF data URI or raw base64 with mime_type application/pdf) and base64 input_audio.data on thinkingmachines/inkling. For requests over 32 MiB, each inline media item may be up to 20 MiB and the chat JSON must shrink below 16 MiB after media are replaced with URLs. Stored media are unlisted but publicly readable for provider access; retention is 30 days.
 
 Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.
 
@@ -1702,6 +1702,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].aliases` * | `string`[] | — |
 | `data[].category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `data[].community` * | `boolean` | — |
+| `data[].tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
 | `data[].title` * | `string` | — |
 | `data[].description` | `string` | — |
 | `data[].input_modalities` | `string`[] | — |
@@ -1739,6 +1740,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "OpenAI"
     },
     {
@@ -1749,6 +1755,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Claude"
     },
     {
@@ -1759,6 +1770,11 @@ curl "https://gen.pollinations.ai/v1/models?reliability=reliable&source=official
       "aliases": [],
       "category": "text",
       "community": false,
+      "tags": [
+        {
+          "name": "text"
+        }
+      ],
       "title": "Gemini"
     }
   ]
@@ -1790,6 +1806,8 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `aliases` * | `string`[] | — |
 | `category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
 | `community` * | `boolean` | — |
+| `tags` * | `object`[] | Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents. |
+| `tags[].name` * | `string` | — |
 | `title` * | `string` | — |
 | `description` | `string` | — |
 | `input_modalities` | `string`[] | — |

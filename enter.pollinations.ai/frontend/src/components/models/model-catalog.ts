@@ -1,10 +1,6 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
-import {
-    formatPrice,
-    formatPriceFlat,
-    formatPricePer1M,
-} from "./formatters.ts";
+import { formatPriceFlat, formatPricePer1M } from "./formatters.ts";
 import type { ModelCategory, ModelPrice, ModelPriceLine } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
@@ -22,6 +18,7 @@ type PriceField =
     | "promptAudioSeconds"
     | "promptImageTokens"
     | "promptVideoTokens"
+    | "promptVideoSeconds"
     | "completionTextTokens"
     | "completionReasoningTokens"
     | "completionAudioTokens"
@@ -38,6 +35,7 @@ const INPUT_PRICE_FIELDS: PriceField[] = [
     "promptAudioSeconds",
     "promptImageTokens",
     "promptVideoTokens",
+    "promptVideoSeconds",
 ];
 
 const OUTPUT_PRICE_FIELDS: PriceField[] = [
@@ -49,17 +47,6 @@ const OUTPUT_PRICE_FIELDS: PriceField[] = [
     "completionVideoSeconds",
     "completionVideoTokens",
 ];
-
-// Display-only conversion for char-billed TTS. Billing remains character-based;
-// the pricing UI shows an estimated audio-second equivalent.
-const ESTIMATED_TTS_CHARS_PER_SECOND = 15;
-
-const formatEstimatedTtsPricePerSecond = (pricePerChar: number): string => {
-    const pricePerSecond = pricePerChar * ESTIMATED_TTS_CHARS_PER_SECOND;
-    return pricePerSecond < 0.001
-        ? pricePerSecond.toFixed(5)
-        : pricePerSecond.toFixed(4);
-};
 
 // A 200 response with an empty array, a non-array body, or entries that all
 // lack an identifiable name/id is indistinguishable from "no models" to the
@@ -151,17 +138,27 @@ function priceSum(pricing: ApiPricing | undefined, fields: PriceField[]) {
     return total > 0 ? total : undefined;
 }
 
-type PriceLineInput = [
-    ModelPriceLine["direction"],
-    ModelPriceLine["kind"],
-    string | undefined,
-    ModelPriceLine["unit"],
-];
-
-const priceLines = (...lines: PriceLineInput[]): ModelPriceLine[] =>
-    lines.flatMap(([direction, kind, price, unit]) =>
-        price ? [{ direction, kind, price, unit }] : [],
-    );
+// Every billable field gets its own row, including mixed-modality models.
+const PRICE_FIELDS: Record<
+    PriceField,
+    [ModelPriceLine["direction"], ModelPriceLine["kind"]]
+> = {
+    promptTextTokens: ["input", "text"],
+    promptCachedTokens: ["input", "cached"],
+    promptCacheWriteTokens: ["input", "cacheWrite"],
+    promptAudioTokens: ["input", "audioIn"],
+    promptAudioSeconds: ["input", "audioIn"],
+    promptImageTokens: ["input", "image"],
+    promptVideoTokens: ["input", "video"],
+    promptVideoSeconds: ["input", "video"],
+    completionTextTokens: ["output", "text"],
+    completionReasoningTokens: ["output", "reasoning"],
+    completionAudioTokens: ["output", "audioOut"],
+    completionAudioSeconds: ["output", "audioOut"],
+    completionImageTokens: ["output", "image"],
+    completionVideoTokens: ["output", "video"],
+    completionVideoSeconds: ["output", "video"],
+};
 
 export function getCatalogCategory(model: ApiModelInfo): ModelCategory {
     if (model.category) return model.category;
@@ -205,7 +202,14 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
             model.pricing !== undefined &&
             inputSortPrice === undefined &&
             outputSortPrice === undefined &&
-            !model.pricing_adjustments?.some(({ price }) => Number(price) > 0),
+            !model.pricing_adjustments?.some(
+                ({ price }) => Number(price) > 0,
+            ) &&
+            !model.pricing_variants?.some(({ pricing }) =>
+                [...INPUT_PRICE_FIELDS, ...OUTPUT_PRICE_FIELDS].some(
+                    (field) => priceNumber(pricing, field) !== undefined,
+                ),
+            ),
         alpha: model.alpha,
         addedDate: model.added_date,
         inputSortPrice,
@@ -228,280 +232,59 @@ function modelPriceFromPricing(model: ApiModelInfo): ModelPrice | null {
     const pricing = model.pricing;
     if (!pricing) return price;
 
-    const promptTextTokens = priceNumber(pricing, "promptTextTokens");
-    const promptCachedTokens = priceNumber(pricing, "promptCachedTokens");
-    const promptCacheWriteTokens = priceNumber(
-        pricing,
-        "promptCacheWriteTokens",
-    );
-    const promptAudioTokens = priceNumber(pricing, "promptAudioTokens");
-    const promptAudioSeconds = priceNumber(pricing, "promptAudioSeconds");
-    const promptImageTokens = priceNumber(pricing, "promptImageTokens");
-    const promptVideoTokens = priceNumber(pricing, "promptVideoTokens");
-    const completionTextTokens = priceNumber(pricing, "completionTextTokens");
-    const completionReasoningTokens = priceNumber(
-        pricing,
-        "completionReasoningTokens",
-    );
-    const completionAudioTokens = priceNumber(pricing, "completionAudioTokens");
-    const completionAudioSeconds = priceNumber(
-        pricing,
-        "completionAudioSeconds",
-    );
-    const completionImageTokens = priceNumber(pricing, "completionImageTokens");
-    const completionVideoSeconds = priceNumber(
-        pricing,
-        "completionVideoSeconds",
-    );
-    const completionVideoTokens = priceNumber(pricing, "completionVideoTokens");
-
-    if (price.type === "video") {
-        if (completionVideoTokens) {
-            return {
-                ...price,
-                prices: priceLines([
-                    "output",
-                    "video",
-                    formatPrice(completionVideoTokens, formatPricePer1M),
-                    "token",
-                ]),
-            };
+    const imageIsFlat =
+        model.flat_rate ?? !priceNumber(pricing, "promptTextTokens");
+    price.prices = (
+        Object.entries(PRICE_FIELDS) as [
+            PriceField,
+            [ModelPriceLine["direction"], ModelPriceLine["kind"]],
+        ][]
+    ).flatMap(([field, [direction, kind]]) => {
+        const rate = priceNumber(pricing, field);
+        if (rate === undefined) return [];
+        let unit: ModelPriceLine["unit"] = "token";
+        let quantity = 1;
+        if (field.endsWith("Seconds")) {
+            unit = "second";
+        } else if (
+            field.endsWith("ImageTokens") &&
+            ((price.type === "image" && imageIsFlat) ||
+                price.type === "3d" ||
+                (price.type === "video" &&
+                    !priceNumber(pricing, "completionVideoTokens")))
+        ) {
+            unit = direction === "input" ? "image" : "request";
+        } else if (price.type === "audio" && field.endsWith("AudioTokens")) {
+            // TTS output is billed per input character; audio input stays in
+            // tokens (e.g. transcription).
+            unit = model.flat_rate
+                ? "request"
+                : field === "completionAudioTokens"
+                  ? "character"
+                  : "token";
         }
-        return {
-            ...price,
-            prices: priceLines(
-                [
-                    "output",
-                    "video",
-                    formatPrice(completionVideoSeconds, (v) => v.toFixed(3)),
-                    "second",
-                ],
-                [
-                    "output",
-                    "audioOut",
-                    formatPrice(completionAudioSeconds, (v) => v.toFixed(3)),
-                    "second",
-                ],
-            ),
-        };
-    }
-
-    if (price.type === "image") {
-        const isFlatRate = model.flat_rate ?? !promptTextTokens;
-        if (!isFlatRate) {
-            return {
-                ...price,
-                prices: priceLines(
-                    [
-                        "input",
-                        "text",
-                        formatPrice(promptTextTokens, formatPricePer1M),
-                        "token",
-                    ],
-                    [
-                        "input",
-                        "image",
-                        formatPrice(promptImageTokens, formatPricePer1M),
-                        "token",
-                    ],
-                    [
-                        "output",
-                        "image",
-                        formatPrice(completionImageTokens, formatPricePer1M),
-                        "token",
-                    ],
-                ),
-            };
+        const declared = model.pricing_units?.[field];
+        if (declared) {
+            unit = declared.unit;
+            quantity = declared.quantity ?? 1;
         }
-        return {
-            ...price,
-            prices: priceLines(
-                [
-                    "input",
-                    "image",
-                    formatPrice(promptImageTokens, formatPriceFlat),
-                    "request",
-                ],
-                [
-                    "output",
-                    "image",
-                    formatPrice(completionImageTokens, formatPriceFlat),
-                    "request",
-                ],
-            ),
-        };
-    }
-
-    if ((price.type as string) === "3d") {
-        return {
-            ...price,
-            prices: priceLines([
-                "output",
-                "3d",
-                formatPrice(completionImageTokens, formatPriceFlat),
-                "request",
-            ]),
-        };
-    }
-
-    if (price.type === "realtime" && promptAudioSeconds) {
-        return {
-            ...price,
-            prices: priceLines([
-                "input",
-                "audioIn",
-                formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
-                "second",
-            ]),
-        };
-    }
-
-    if (price.type === "audio") {
-        // Flat per-generation models (e.g. Stable Audio): one fee per request,
-        // independent of length. Show flat "/gen" In/Out audio prices instead of
-        // estimating a per-second rate. Both flat-fee music and per-character TTS
-        // store their price in completionAudioTokens, so the registry flat_rate
-        // flag is what tells them apart.
-        if (model.flat_rate) {
-            return {
-                ...price,
-                prices: priceLines(
-                    [
-                        "input",
-                        "audioIn",
-                        formatPrice(promptAudioTokens, formatPriceFlat),
-                        "request",
-                    ],
-                    [
-                        "output",
-                        "audioOut",
-                        formatPrice(completionAudioTokens, formatPriceFlat),
-                        "request",
-                    ],
-                ),
-            };
-        }
-        if (promptAudioSeconds) {
-            return {
-                ...price,
-                prices: priceLines([
-                    "input",
-                    "audioIn",
-                    formatPrice(promptAudioSeconds, (v) => v.toFixed(5)),
-                    "second",
-                ]),
-            };
-        }
-        if (completionAudioSeconds) {
-            return {
-                ...price,
-                prices: priceLines([
-                    "output",
-                    "audioOut",
-                    formatPrice(completionAudioSeconds, (v) => v.toFixed(4)),
-                    "second",
-                ]),
-            };
-        }
-        return {
-            ...price,
-            prices: priceLines([
-                "output",
-                "audioOut",
-                formatPrice(
-                    completionAudioTokens,
-                    formatEstimatedTtsPricePerSecond,
-                ),
-                "second",
-            ]),
-        };
-    }
-
-    if (price.type === "embedding") {
-        return {
-            ...price,
-            prices: priceLines(
-                [
-                    "input",
-                    "text",
-                    formatPrice(promptTextTokens, formatPricePer1M),
-                    "token",
-                ],
-                [
-                    "input",
-                    "image",
-                    formatPrice(promptImageTokens, formatPricePer1M),
-                    "token",
-                ],
-                [
-                    "input",
-                    "audioIn",
-                    formatPrice(promptAudioTokens, formatPricePer1M),
-                    "token",
-                ],
-                [
-                    "input",
-                    "video",
-                    formatPrice(promptVideoTokens, formatPricePer1M),
-                    "token",
-                ],
-            ),
-        };
-    }
-
-    return {
-        ...price,
-        prices: priceLines(
-            [
-                "input",
-                "text",
-                formatPrice(promptTextTokens, formatPricePer1M),
-                "token",
-            ],
-            [
-                "input",
-                "cached",
-                formatPrice(promptCachedTokens, formatPricePer1M),
-                "token",
-            ],
-            [
-                "input",
-                "cacheWrite",
-                formatPrice(promptCacheWriteTokens, formatPricePer1M),
-                "token",
-            ],
-            [
-                "input",
-                "audioIn",
-                formatPrice(promptAudioTokens, formatPricePer1M),
-                "token",
-            ],
-            [
-                "input",
-                "image",
-                formatPrice(promptImageTokens, formatPricePer1M),
-                "token",
-            ],
-            [
-                "output",
-                "text",
-                formatPrice(completionTextTokens, formatPricePer1M),
-                "token",
-            ],
-            [
-                "output",
-                "reasoning",
-                formatPrice(completionReasoningTokens, formatPricePer1M),
-                "token",
-            ],
-            [
-                "output",
-                "audioOut",
-                formatPrice(completionAudioTokens, formatPricePer1M),
-                "token",
-            ],
-        ),
-    };
+        const scaledRate = rate * quantity;
+        const value =
+            unit === "token"
+                ? formatPricePer1M(scaledRate)
+                : unit === "character" || unit === "byte"
+                  ? formatPriceFlat(scaledRate * 1000)
+                  : formatPriceFlat(scaledRate);
+        return [
+            {
+                direction,
+                kind: price.type === "3d" && kind === "image" ? "3d" : kind,
+                price: value,
+                unit,
+            },
+        ];
+    });
+    return price;
 }
 
 function modelPriceFromCatalog(model: ApiModelInfo): ModelPrice | null {

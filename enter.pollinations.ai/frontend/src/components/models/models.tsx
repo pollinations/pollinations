@@ -4,10 +4,12 @@ import {
     BotIcon,
     ClockIcon,
     EditableCombobox,
+    ImageIcon,
     InlineLink,
     McpIcon,
     Section,
     SparklesIcon,
+    SpeakerIcon,
     TabButton,
     TokensIcon,
     UsageIcon,
@@ -715,8 +717,23 @@ export const Models: FC = () => {
                         <p className="flex items-start gap-1.5">
                             <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/sec</strong> — per second of
-                                video/audio; TTS is estimated from text length.
+                                <strong>/sec</strong> — per second of video or
+                                audio.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/MP · /image</strong> — per megapixel,
+                                or per reference image.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/K chars · /K bytes</strong> — speech
+                                priced per thousand characters or UTF-8 bytes of
+                                input text.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">

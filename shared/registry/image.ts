@@ -93,6 +93,10 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.015,
             completionImageTokens: 0.015,
         },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
+        },
         billing: {
             adjustments: [
                 {
@@ -131,6 +135,10 @@ const IMAGE_BASE_SERVICES = {
             promptImageTokens: 0.05,
             completionImageTokens: 0.05,
         },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
+        },
         title: "FLUX.2 Flex",
         description:
             "Typography-focused generation and multi-reference editing with adjustable prompt guidance",
@@ -151,6 +159,10 @@ const IMAGE_BASE_SERVICES = {
         cost: {
             promptImageTokens: 0.03,
             completionImageTokens: 0.03,
+        },
+        priceUnits: {
+            promptImageTokens: { unit: "megapixel" },
+            completionImageTokens: { unit: "megapixel" },
         },
         billing: {
             adjustments: [
@@ -1186,6 +1198,9 @@ const IMAGE_BASE_SERVICES = {
         // (UInt32 usage columns), so perMillion(x) = $x per megapixel.
         cost: {
             completionImageTokens: perMillion(0.02),
+        },
+        priceUnits: {
+            completionImageTokens: { unit: "megapixel", quantity: 1_000_000 },
         },
         ...defineCostVariants(
             {

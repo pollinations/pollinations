@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import {
     ensureModelQueryDefaults,
     getModelQueryDraftFilter,
@@ -209,6 +209,31 @@ describe("model query filter tokens", () => {
                 "source:official flux access:paid ",
             ),
         ).toBe("paid ");
+    });
+
+    it("keeps free text in selectable draft values while hiding completed filters", () => {
+        const candidate = model({ name: "openai/gpt", publisher: "OpenAI" });
+        const query = "source:official gpt publisher:o";
+        const draft = getModelQueryDraftFilter(query, true);
+        assert(draft);
+        const filters = getModelQueryFilterTokens(query).filter(
+            ({ index }) => index !== draft?.index,
+        );
+        const visibleSearch = getModelQueryVisibleSearch(query, filters, draft);
+        const prefix = getModelQueryVisibleSearch(query, filters, {
+            ...draft,
+            value: "",
+        });
+        const options = getModelQuerySuggestions(query, [candidate]).map(
+            (option) => getModelQueryDraftSuggestionValue(option, prefix),
+        );
+
+        expect(visibleSearch).toBe("gpt o");
+        expect(options).toEqual(["gpt openai "]);
+        expect(options[0].includes(visibleSearch)).toBe(true);
+        expect(getModelQueryDraftSuggestionValue("publisher:openai ")).toBe(
+            "openai ",
+        );
     });
 
     it("treats filters unsupported by the current tab as plain text", () => {

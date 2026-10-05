@@ -212,11 +212,18 @@ export function getModelQueryVisibleSearch(
         .join(" ");
 }
 
-export function getModelQueryDraftSuggestionValue(option: string): string {
+export function getModelQueryDraftSuggestionValue(
+    option: string,
+    prefix = "",
+): string {
     const trimmedOption = option.trimEnd();
     const token = trimmedOption.slice(trimmedOption.lastIndexOf(" ") + 1);
     const trailingSpace = option.endsWith(" ") ? " " : "";
-    return `${token.slice(token.indexOf(":") + 1)}${trailingSpace}`;
+    return (
+        [prefix, token.slice(token.indexOf(":") + 1)]
+            .filter(Boolean)
+            .join(" ") + trailingSpace
+    );
 }
 
 function getModelAccess(model: ModelPrice): ModelAccess {

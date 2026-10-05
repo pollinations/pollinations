@@ -18,6 +18,7 @@ const fallback = "google/lyria-3.5:fal";
 const options = {
     model: primary,
     prompt: "A short folk song",
+    responseFormat: "mp3",
     geminiApiKey: "test-gemini",
     falKey: "test-fal",
 } as const;
@@ -64,6 +65,7 @@ describe("Lyria 3.5", () => {
     });
 
     it.each([
+        { responseFormat: "wav" },
         { durationSeconds: 30 },
         { referenceAudio: new File(["audio"], "reference.mp3") },
     ])("rejects unsupported options before starting a billable job: %j", async (unsupported) => {

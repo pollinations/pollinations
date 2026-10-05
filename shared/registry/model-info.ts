@@ -173,7 +173,6 @@ export const ModelInfoSchema = z.object({
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
-    response_formats: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean().optional(),
     pending_change: z
@@ -313,7 +312,6 @@ export function modelInfoFromDefinition(
         reasoning: service.reasoning,
         context_length: service.contextLength,
         voices: service.voices,
-        response_formats: service.responseFormats,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,
         alpha: service.alpha,

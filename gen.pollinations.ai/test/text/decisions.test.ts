@@ -18,6 +18,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../../src/middleware/text-balance-notice.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const DECISIONS_HOST = "openrouter.ai";
@@ -59,6 +60,18 @@ function createDecisionsMock() {
             state.response = undefined;
         },
         handlerMap: {
+            "ai-gateway.vercel.sh": async (request: Request) => {
+                state.requests.push({
+                    pathname: new URL(request.url).pathname,
+                    authorization: request.headers.get("authorization"),
+                    body: await request.json(),
+                });
+                return Response.json({
+                    model: "liquid/d1",
+                    answers,
+                    usage: { input_tokens: 452, output_tokens: 0 },
+                });
+            },
             [DECISIONS_HOST]: async (request: Request) => {
                 state.requests.push({
                     pathname: new URL(request.url).pathname,
@@ -91,6 +104,7 @@ const test = baseTest.extend<{
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     mocks: async ({}, use) => {
         env.OPENROUTER_API_KEY = "openrouter-test-key";
+        env.AI_GATEWAY_API_KEY = "vercel-test-key";
         const tinybird = createMockTinybird();
         const decisions = createDecisionsMock();
         const fetchMock = createFetchMock({ tinybird, decisions });
@@ -258,6 +272,143 @@ test("routes Span-01 Lite under its own id and bills nothing", async ({
         tierBalance: 1,
         packBalance: 0,
     });
+});
+
+test("routes Liquid D1 under its own id and bills input tokens", async ({
+    mocks,
+}) => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 1 },
+    });
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "liquid/d1",
+        state: "Disk at 93%.",
+        questions: { act: { type: "noul", instructions: "Act now?" } },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "liquid/d1",
+        provider: "Liquid AI",
+    });
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "liquid/d1" },
+    });
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        eventType: "generate.text",
+        responseStatus: 200,
+        modelRequested: "liquid/d1",
+        modelProviderUsed: "openrouter",
+        tokenCountPromptText: 452,
+        tokenCountCompletionText: 73,
+        isBilledUsage: true,
+    });
+    expect(event.totalCost).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 12);
+    const { tierBalance, packBalance } = await getUserBalance(
+        drizzle(env.DB),
+        userId,
+    );
+    expect(tierBalance).toBe(0);
+    expect(packBalance).toBeCloseTo(1 - (452 * 0.04 * 1.055) / 1_000_000, 7);
+});
+
+test("falls back native D1 decisions and records Vercel cost with the public quote", async ({
+    mocks,
+}) => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 1 },
+        allowedModels: ["liquid/d1"],
+    });
+    mocks.decisions.state.response = Response.json(
+        { error: { message: "Upstream unavailable" } },
+        { status: 503 },
+    );
+    const { response, wait } = await post("/alpha/decisions", key, {
+        model: "liquid/d1",
+        state: "Fictional weather: heavy rain tomorrow.",
+        questions,
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("liquid/d1:vercel");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await expect(response.json()).resolves.toMatchObject({
+        model: "liquid/d1",
+        provider: "Liquid AI",
+        answers,
+        usage: { input_tokens: 452, output_tokens: 0 },
+    });
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(2);
+    expect(mocks.decisions.state.requests[1]).toMatchObject({
+        pathname: "/typesafe/v1/systemone",
+        authorization: "Bearer vercel-test-key",
+        body: { model: "liquid/d1" },
+    });
+    const events = mocks.tinybird.state.events;
+    expect(events.filter((event) => event.isBilledUsage)).toHaveLength(1);
+    const billed = events.find((event) => event.isBilledUsage);
+    expect(billed).toMatchObject({
+        modelRequested: "liquid/d1",
+        modelUsed: "liquid/d1:vercel",
+        modelProviderUsed: "vercel",
+        isFinal: true,
+    });
+    expect(billed?.totalCost).toBeCloseTo((452 * 0.04) / 1_000_000, 12);
+    expect(billed?.totalPrice).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 8);
+    expect(events).toContainEqual(
+        expect.objectContaining({
+            modelUsed: "liquid/d1",
+            modelProviderUsed: "openrouter",
+            isBilledUsage: false,
+            isFinal: false,
+        }),
+    );
+    const balance = await getUserBalance(drizzle(env.DB), userId);
+    expect(balance.tierBalance).toBe(0);
+    expect(balance.packBalance).toBeCloseTo(1 - (billed?.totalPrice ?? 0), 8);
+});
+
+test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
+    apiKey,
+    mocks,
+}) => {
+    const payload = {
+        state: "Fictional weather: heavy rain tomorrow.",
+        questions: { rain: { type: "noul", instructions: "Will it rain?" } },
+    };
+    for (const [path, body] of [
+        ["/alpha/decisions", { model: "liquid/d1", ...payload }],
+        [
+            "/v1/chat/completions",
+            {
+                model: "liquid/d1",
+                messages: [{ role: "user", content: JSON.stringify(payload) }],
+            },
+        ],
+    ] as const) {
+        const { response, wait } = await post(path, apiKey, body);
+        const showsNotice =
+            path === "/v1/chat/completions" && TEXT_BALANCE_NOTICE_ENABLED;
+        expect(response.status).toBe(showsNotice ? 200 : 402);
+        if (showsNotice) {
+            const notice = (await response.json()) as {
+                choices: { message: { content: string } }[];
+                usage: { total_tokens: number };
+            };
+            expect(notice.choices[0].message.content).toContain(
+                "This model needs paid Pollen",
+            );
+            expect(notice.usage.total_tokens).toBe(0);
+            expect(response.headers.get("cache-control")).toBe(
+                "private, no-store",
+            );
+        }
+        await wait();
+    }
+    expect(mocks.decisions.state.requests).toHaveLength(0);
 });
 
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {

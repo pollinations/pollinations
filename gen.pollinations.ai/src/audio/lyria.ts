@@ -10,11 +10,17 @@ type LyriaModel = "google/lyria-3.5" | "google/lyria-3.5:fal";
 export async function generateLyria35(opts: {
     model: LyriaModel;
     prompt: string;
+    responseFormat: string;
     durationSeconds?: number;
     referenceAudio?: File;
     geminiApiKey?: string;
     falKey?: string;
 }): Promise<Response> {
+    if (opts.responseFormat !== "mp3") {
+        throw new UpstreamError(400, {
+            message: "google/lyria-3.5 supports mp3 output only.",
+        });
+    }
     if (opts.durationSeconds !== undefined) {
         throw new UpstreamError(400, {
             message:

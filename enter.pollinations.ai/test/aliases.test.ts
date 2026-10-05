@@ -1,4 +1,4 @@
-import { AUDIO_SERVICES } from "@shared/registry/audio";
+import { AUDIO_SERVICES, DEFAULT_AUDIO_MODEL } from "@shared/registry/audio";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings";
 import { IMAGE_SERVICES } from "@shared/registry/image";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d";
@@ -25,6 +25,11 @@ function serviceAliasTestCases(
         serviceDefinition.aliases.map((alias) => [alias, serviceId]),
     );
 }
+
+test("OpenAI speech model names resolve to the OpenAI TTS models", () => {
+    expect(resolveModelName("tts-1")).toBe("openai/tts-1");
+    expect(resolveModelName("tts-1-hd")).toBe("openai/tts-1-hd");
+});
 
 function requiredCostRate(model: ModelName, field: UsageType): number {
     const rate = getCostDefinition(model)?.[field];
@@ -143,6 +148,12 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     const price = calculatePrice(model, usage);
 
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
+});
+
+test("The default audio model works without paid balance", () => {
+    expect(getRegistryModelDefinition(DEFAULT_AUDIO_MODEL).paidOnly).not.toBe(
+        true,
+    );
 });
 
 test("GPT-5.5 is available without paid-only gating", () => {

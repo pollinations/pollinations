@@ -149,7 +149,7 @@ workerTest(
             await expect(response.json()).resolves.toMatchObject({
                 error: {
                     message: expect.stringContaining(
-                        "Unsupported response_format for elevenlabs/eleven-v3",
+                        "supports mp3, opus, aac, wav, and pcm",
                     ),
                 },
             });

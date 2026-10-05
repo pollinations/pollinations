@@ -54,4 +54,24 @@ describe("OpenRouter Fish Audio TTS", () => {
             String(new TextEncoder().encode(text).byteLength),
         );
     });
+
+    it.each([
+        "opus",
+        "aac",
+        "flac",
+        "wav",
+    ])("rejects unsupported %s before calling OpenRouter", async (responseFormat) => {
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            generateOpenRouterFishSpeech({
+                text: "Hello",
+                voice: "alloy",
+                responseFormat,
+                apiKey: "test-openrouter-key",
+                log,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
 });

@@ -72,4 +72,37 @@ describe("ElevenLabs sound effects", () => {
             duration_seconds: 30,
         });
     });
+
+    it("rejects non-mp3 response_format instead of silently downgrading", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            generateSoundEffect({
+                prompt: "ocean waves",
+                responseFormat: "wav",
+                apiKey: "test-eleven-key",
+                log,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+
+        // Must reject before hitting ElevenLabs (no spurious billed generation).
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("allows the default mp3 response_format", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(new Uint8Array(16000), {
+                headers: { "content-type": "audio/mpeg" },
+            }),
+        );
+
+        const response = await generateSoundEffect({
+            prompt: "camera shutter",
+            responseFormat: "mp3",
+            apiKey: "test-eleven-key",
+            log,
+        });
+
+        expect(response.status).toBe(200);
+    });
 });

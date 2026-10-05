@@ -81,7 +81,7 @@ const CreateSpeechRequestSchema = z
             .string()
             .default("alloy")
             .meta({
-                description: `The voice to use. Each model lists its voices in /audio/models; alloy selects the model's first voice. Presets include ${AUDIO_VOICES.join(", ")}; ElevenLabs models also accept a custom voice ID.`,
+                description: `The voice to use. Model-specific presets include ${AUDIO_VOICES.join(", ")}; ElevenLabs models also accept a custom voice ID.`,
                 example: "rachel",
             }),
         response_format: z
@@ -89,7 +89,7 @@ const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Each model lists its formats as response_formats in /audio/models, and the first is the default. Models without that list choose their own format.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(380).optional().meta({
@@ -290,6 +290,7 @@ function mapOutputFormat(format: string): string {
         mp3: "mp3_44100_128",
         opus: "opus_48000_128",
         aac: "m4a_aac_44100_128",
+        flac: "pcm_44100", // ElevenLabs doesn't support flac, use pcm
         wav: "wav_44100",
         pcm: "pcm_44100",
     };
@@ -1848,16 +1849,32 @@ export async function generateSoundEffect(opts: {
     durationSeconds?: number;
     loop?: boolean;
     promptInfluence?: number;
+    responseFormat?: string;
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, durationSeconds, loop, promptInfluence, apiKey, log } =
-        opts;
+    const {
+        prompt,
+        durationSeconds,
+        loop,
+        promptInfluence,
+        responseFormat,
+        apiKey,
+        log,
+    } = opts;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Sound effects service is not configured (missing API key)",
+        });
+    }
+    // SFX always returns 128 kbps MP3. The per-second price is derived from the
+    // MP3 byte rate, so honoring other formats would need per-format billing
+    // math — reject instead of silently downgrading (default "mp3" passes).
+    if (responseFormat && responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
         });
     }
     if (prompt.length > 1000) {
@@ -1915,19 +1932,23 @@ const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
 const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
+const XAI_TTS_FORMATS = ["mp3", "wav", "pcm"] as const;
 
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
+const DEEPINFRA_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
 const DEEPINFRA_TTS_CONFIGS = {
     "sesame/csm-1b": {
         modelId: "sesame/csm-1b",
         voices: CSM_VOICES,
+        defaultVoice: "conversational_a",
         maxCharacters: 200,
     },
     "hexgrad/kokoro-82m": {
         modelId: "hexgrad/Kokoro-82M",
         voices: KOKORO_VOICES,
+        defaultVoice: "af_alloy",
         maxCharacters: 10_000,
     },
 } as const satisfies Partial<
@@ -1936,6 +1957,7 @@ const DEEPINFRA_TTS_CONFIGS = {
         {
             modelId: string;
             voices: readonly string[];
+            defaultVoice: string;
             maxCharacters: number;
         }
     >
@@ -1979,12 +2001,18 @@ function resolveQwenVoice(voice: string): string {
 
 export async function generateLyria3Clip(opts: {
     prompt: string;
+    responseFormat: string;
     projectId: string;
     accessToken: string;
     log: Logger;
 }): Promise<Response> {
-    const { prompt, projectId, accessToken, log } = opts;
+    const { prompt, responseFormat, projectId, accessToken, log } = opts;
 
+    if (responseFormat !== "mp3") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `google/lyria-3-clip-preview only supports mp3 output; response_format=${responseFormat} is not available.`,
+        });
+    }
     if (!projectId || !accessToken) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Lyria service is not configured",
@@ -2169,7 +2197,7 @@ async function parseSpeechRequest(
                     | "flac"
                     | "opus"
                     | "aac"
-                    | "pcm") || undefined,
+                    | "pcm") || "mp3",
             duration: parseOptionalNumber(formData.get("duration"), "duration"),
             // fal-ai/stable-audio-3/medium controls.
             seconds: parseOptionalNumber(formData.get("seconds"), "seconds"),
@@ -2306,6 +2334,7 @@ export async function generateQwenTts(opts: {
 
 const OPENROUTER_SPEECH_ENDPOINT = "https://openrouter.ai/api/v1/audio/speech";
 const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
+const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
 
 export async function generateOpenRouterFishSpeech(opts: {
     text: string;
@@ -2319,6 +2348,16 @@ export async function generateOpenRouterFishSpeech(opts: {
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+
+    if (
+        !OPENROUTER_FISH_TTS_FORMATS.includes(
+            responseFormat as (typeof OPENROUTER_FISH_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for fish-audio/s2.1-pro: ${responseFormat}. Supported formats: ${OPENROUTER_FISH_TTS_FORMATS.join(", ")}.`,
         });
     }
 
@@ -2488,13 +2527,27 @@ export function parseGeminiSpeechResponse(
     };
 }
 
-function resolveGeminiSpeechVoice(modelName: string, requestedVoice: string) {
+function resolveGeminiSpeechVoice(
+    modelName: string,
+    requestedVoice: string,
+    responseFormat: string,
+) {
     const voice = GEMINI_TTS_VOICES.find(
-        (candidate) => candidate.toLowerCase() === requestedVoice.toLowerCase(),
+        (candidate) =>
+            candidate.toLowerCase() ===
+            (requestedVoice === "alloy"
+                ? "Kore"
+                : requestedVoice
+            ).toLowerCase(),
     );
     if (!voice) {
         throw new UpstreamError(400, {
             message: `Invalid voice for ${modelName}: ${requestedVoice}. Supported voices: ${GEMINI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+    if (responseFormat !== "wav" && responseFormat !== "pcm") {
+        throw new UpstreamError(400, {
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: wav, pcm.`,
         });
     }
     return voice;
@@ -2510,7 +2563,11 @@ export async function generateGeminiSpeech(opts: {
     log: Logger;
 }): Promise<Response> {
     const { modelName, text, responseFormat, instructions, apiKey, log } = opts;
-    const voice = resolveGeminiSpeechVoice(modelName, opts.voice);
+    const voice = resolveGeminiSpeechVoice(
+        modelName,
+        opts.voice,
+        responseFormat,
+    );
     if (!apiKey) {
         throw new UpstreamError(500, {
             message: "Google Gemini is not configured (missing API key)",
@@ -2663,7 +2720,11 @@ export async function generateOpenRouterGeminiSpeech(opts: {
         instructions,
         apiKey,
     } = opts;
-    const voice = resolveGeminiSpeechVoice(upstreamModel, opts.voice);
+    const voice = resolveGeminiSpeechVoice(
+        upstreamModel,
+        opts.voice,
+        responseFormat,
+    );
     if (!apiKey)
         throw new UpstreamError(500, {
             message: "OpenRouter is not configured (missing API key)",
@@ -2717,7 +2778,7 @@ export async function generateXaiSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { text, voice, responseFormat, apiKey, log } = opts;
+    const { text, responseFormat, apiKey, log } = opts;
     const inputCharacters = [...text].length;
 
     if (!apiKey) {
@@ -2726,9 +2787,20 @@ export async function generateXaiSpeech(opts: {
         });
     }
 
+    const voice = opts.voice === "alloy" ? "eve" : opts.voice;
     if (!(XAI_TTS_VOICES as readonly string[]).includes(voice)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for x-ai/grok-tts: ${voice}. Supported voices: ${XAI_TTS_VOICES.join(", ")}.`,
+            message: `Invalid voice for x-ai/grok-tts: ${opts.voice}. Supported voices: ${XAI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+
+    if (
+        !XAI_TTS_FORMATS.includes(
+            responseFormat as (typeof XAI_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for x-ai/grok-tts: ${responseFormat}. Supported formats: ${XAI_TTS_FORMATS.join(", ")}.`,
         });
     }
 
@@ -2834,7 +2906,7 @@ export async function generateDeepInfraSpeech(opts: {
     apiKey: string;
     log: Logger;
 }): Promise<Response> {
-    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+    const { modelName, text, responseFormat, apiKey, log } = opts;
     const config = DEEPINFRA_TTS_CONFIGS[modelName];
     const inputCharacters = [...text].length;
 
@@ -2850,9 +2922,20 @@ export async function generateDeepInfraSpeech(opts: {
         });
     }
 
+    const voice = opts.voice === "alloy" ? config.defaultVoice : opts.voice;
     if (!(config.voices as readonly string[]).includes(voice)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for ${modelName}: ${voice}. Supported voices: ${config.voices.join(", ")}.`,
+            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${config.voices.join(", ")}.`,
+        });
+    }
+
+    if (
+        !DEEPINFRA_AUDIO_FORMATS.includes(
+            responseFormat as (typeof DEEPINFRA_AUDIO_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: ${DEEPINFRA_AUDIO_FORMATS.join(", ")}.`,
         });
     }
 
@@ -3081,6 +3164,13 @@ export async function generateStableAudio3Large(opts: {
         });
     }
 
+    if (!["mp3", "wav"].includes(responseFormat)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "stability-ai/stable-audio-3 supports response_format values: mp3, wav",
+        });
+    }
+
     // A reference clip switches Large to audio-to-audio (style transfer): a
     // different endpoint that takes the clip in `audio` (which defines the
     // output length) instead of `duration`. Both modes bill the same flat fee.
@@ -3296,6 +3386,7 @@ async function dispatchAudioGeneration(
             await generateLyria35({
                 model,
                 prompt: text,
+                responseFormat,
                 durationSeconds: duration,
                 referenceAudio,
                 geminiApiKey: c.env.GEMINI_API_KEY,
@@ -3320,6 +3411,7 @@ async function dispatchAudioGeneration(
             c,
             await generateLyria3Clip({
                 prompt: text,
+                responseFormat,
                 projectId: c.env.GOOGLE_PROJECT_ID,
                 accessToken: accessToken ?? "",
                 log,
@@ -3367,6 +3459,7 @@ async function dispatchAudioGeneration(
                 durationSeconds: duration,
                 loop,
                 promptInfluence,
+                responseFormat,
                 apiKey,
                 log,
             }),
@@ -3488,33 +3581,6 @@ async function dispatchAudioGeneration(
     }
 }
 
-// The registry lists each speech model's voices and response formats, and the
-// first entry of each is the default. OpenAI's default voice, alloy, selects
-// the model's first voice when the model has no voice by that name.
-export function resolveSpeechOptions(
-    model: string,
-    { voices = [], responseFormats }: ModelDefinition,
-    voice: string,
-    responseFormat: string | undefined,
-): { voice: string; responseFormat: string } {
-    if (
-        responseFormat &&
-        responseFormats &&
-        !responseFormats.includes(responseFormat)
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for ${model}: ${responseFormat}. It only supports ${responseFormats.join(", ")}.`,
-        });
-    }
-    return {
-        voice:
-            voice === "alloy" && !voices.includes(voice)
-                ? (voices[0] ?? voice)
-                : voice,
-        responseFormat: responseFormat ?? responseFormats?.[0] ?? "mp3",
-    };
-}
-
 // `seconds` is an alias for `duration`. Models list the durations they accept
 // in the registry; the others ignore it.
 export function resolveAudioDuration(
@@ -3542,12 +3608,6 @@ async function generateAudioFromSpeechRequest(
     request: CreateSpeechRequest,
     log: Logger,
 ): Promise<Response> {
-    const { voice, responseFormat } = resolveSpeechOptions(
-        c.var.model.resolved,
-        c.var.model.definition,
-        request.voice,
-        request.response_format,
-    );
     const duration = resolveAudioDuration(
         c.var.model.resolved,
         c.var.model.definition,
@@ -3556,6 +3616,10 @@ async function generateAudioFromSpeechRequest(
     const {
         input,
         safe,
+        voice,
+        response_format = c.var.model.resolved in GEMINI_TTS_MODELS
+            ? "wav"
+            : "mp3",
         steps,
         negative_prompt,
         instrumental,
@@ -3589,7 +3653,7 @@ async function generateAudioFromSpeechRequest(
         }));
         const response = await generateElevenLabsDialogue({
             inputs: safeInputs,
-            responseFormat,
+            responseFormat: response_format,
             seed,
             apiKey: c.env.ELEVENLABS_API_KEY,
             log,
@@ -3606,7 +3670,7 @@ async function generateAudioFromSpeechRequest(
         dispatchAudioGeneration(c, candidate.id, {
             text: safeInput,
             voice,
-            responseFormat,
+            responseFormat: response_format,
             communityEndpoint: candidate.communityEndpoint,
             seed,
             duration,
@@ -3676,18 +3740,20 @@ export async function handleVoiceChanger(c: AudioContext): Promise<Response> {
     }
     const voice = formData.get("voice");
     const responseFormat = formData.get("response_format");
-    const options = resolveSpeechOptions(
-        c.var.model.resolved,
-        c.var.model.definition,
-        typeof voice === "string" && voice !== "" ? voice : "alloy",
+    const resolvedFormat =
         typeof responseFormat === "string" && responseFormat !== ""
             ? responseFormat
-            : undefined,
-    );
+            : "mp3";
+    if (!["mp3", "opus", "aac", "wav", "pcm"].includes(resolvedFormat)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: "response_format must be mp3, opus, aac, wav, or pcm.",
+        });
+    }
 
     return changeVoiceWithElevenLabs({
         audio,
-        ...options,
+        voice: typeof voice === "string" && voice !== "" ? voice : "alloy",
+        responseFormat: resolvedFormat,
         apiKey: c.env.ELEVENLABS_API_KEY,
         log,
     });
@@ -3727,8 +3793,13 @@ export async function handleSpeechWithTimestamps(
     c: AudioContext,
 ): Promise<Response> {
     const log = c.get("log").getChild("tts-timestamps");
-    const request = await parseSpeechRequest(c);
-    const { input, safe, seed } = request;
+    const {
+        input,
+        safe,
+        voice,
+        response_format = "mp3",
+        seed,
+    } = await parseSpeechRequest(c);
     const modelName = c.var.model.resolved;
     if (!(modelName in ELEVENLABS_TTS_MODEL_IDS)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
@@ -3736,19 +3807,19 @@ export async function handleSpeechWithTimestamps(
                 "Timestamped speech supports elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, and elevenlabs/eleven-multilingual-v2.",
         });
     }
-    const { voice, responseFormat } = resolveSpeechOptions(
-        modelName,
-        c.var.model.definition,
-        request.voice,
-        request.response_format,
-    );
+    if (response_format === "flac") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "Timestamped speech supports mp3, opus, aac, wav, and pcm output.",
+        });
+    }
     const safeInput = await applySafetyToInput(c, input, safe);
     return withAudioFallback(c, (candidate) =>
         generateElevenLabsSpeechWithTimestamps({
             modelName: candidate.id as ElevenLabsTtsModelName,
             text: safeInput,
             voice,
-            responseFormat,
+            responseFormat: response_format,
             seed,
             apiKey: c.env.ELEVENLABS_API_KEY,
             log,
@@ -4167,7 +4238,7 @@ export const audioRoutes = new Hono<Env>()
                                         "pcm",
                                     ],
                                     description:
-                                        "Each model lists its formats as response_formats in /audio/models, and the first is the default.",
+                                        "Defaults to mp3 except Gemini TTS (wav). Gemini TTS supports wav or raw 24 kHz pcm and rejects other explicit formats.",
                                 },
                                 duration: {
                                     type: "number",

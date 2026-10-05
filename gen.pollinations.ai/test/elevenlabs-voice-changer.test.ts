@@ -173,7 +173,7 @@ workerTest(
         expect(response.status).toBe(400);
         await expect(response.json()).resolves.toMatchObject({
             error: {
-                message: expect.stringContaining("Unsupported response_format"),
+                message: expect.stringContaining("response_format must be"),
             },
         });
     },

@@ -25,7 +25,7 @@ polli sandbox kill <id>
 
 Templates can include preinstalled packages, so each new sandbox skips installing them. Start a public template with `polli sandbox create <template-name-or-id>`.
 
-To prepare your own, follow [E2B's template guide](https://docs.e2b.dev/template/quickstart). Building templates requires an E2B account and key; it is not available through the Pollinations API. A private template in your E2B account is not automatically accessible through Pollinations.
+To prepare your own, follow [E2B's template guide](https://docs.e2b.dev/template/quickstart). Building templates requires an E2B account and key.
 
 ### Cost and limits
 

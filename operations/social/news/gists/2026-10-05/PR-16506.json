@@ -1,0 +1,34 @@
+{
+  "pr_number": 16506,
+  "title": "fix: point tts-1 aliases at the OpenAI TTS models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16506",
+  "merged_at": "2026-10-05T13:19:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix `model=tts-1` / `tts-1-hd` resolving to paid-only `elevenlabs/eleven-v3`; they now resolve to `openai/tts-1` / `openai/tts-1-hd` (Azure, Quest Pollen OK).\n- Last 30 days: 1,540 `tts-1` requests from ~95 users, ~14% OK. Almost all failures were the paid-balance 402.\n- Azure TTS handled 30 req/min bursts this week without a 429.\n- `elevenlabs`, `eleven`, `tts`, `text-to-speech` stay on ElevenLabs v3.\n\n| `model=tts-1` | Before | After |\n|---|---|---|\n| Model | ElevenLabs v3 (paid only) | OpenAI TTS (Azure) |\n| Price | $100 / 1M chars | $15 / 1M chars |\n| Voices | ElevenLabs + mapped OpenAI names | alloy, echo, fable, onyx, nova, shimmer |\n\nTradeoff: the ~210 successful `tts-1` calls a month from paid users switch to OpenAI TTS; ElevenLabs-only voice names now get a 400.\n\nPart of the audio API cleanup (no new endpoints).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01M1RaZKWKKZTr4qgYQtMRro\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The right voice answers",
+    "blurb": "The `tts-1` aliases find their intended voices. Quest Pollen works for these calls, and ElevenLabs keeps its own names.",
+    "summary": "`tts-1` and `tts-1-hd` resolve to Azure-hosted `openai/tts-1` and `openai/tts-1-hd` instead of paid-only ElevenLabs v3; ElevenLabs aliases remain unchanged.",
+    "impact": "`tts-1` accepts Quest Pollen and costs $15 rather than $100 per million characters, with OpenAI voices alloy, echo, fable, onyx, nova, and shimmer; ElevenLabs-only voice names require an ElevenLabs alias.",
+    "keywords": [
+      "audio",
+      "TTS",
+      "model aliases",
+      "OpenAI",
+      "Azure",
+      "Quest Pollen"
+    ],
+    "visual_concept": "Depict the audio alias correction as a small signpost pointing `tts-1` toward a friendly OpenAI TTS sound booth, while a separate path to ElevenLabs remains intact. Polli, wearing tiny headphones, listens beside flowering code-plants; a CRT monitor robot holds a speech-wave display.",
+    "image_prompt": "In a cozy pixel art garden studio, a sign marked `tts-1` points to a softly glowing sound booth while a separate ElevenLabs path winds past flowers; a chunky CRT monitor robot holds a speech-wave display beside Polli. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and stays small-to-medium in the scene. Strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream, mint and lavender, and dark purple #110518 outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16506.jpg",
+    "prompt": "In a cozy pixel art garden studio, a sign marked `tts-1` points to a softly glowing sound booth while a separate ElevenLabs path winds past flowers; a chunky CRT monitor robot holds a speech-wave display beside Polli. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and stays small-to-medium in the scene. Strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream, mint and lavender, and dark purple #110518 outlines."
+  },
+  "generated_at": "2026-10-05T13:19:59.241858+00:00"
+}

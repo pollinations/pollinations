@@ -1,6 +1,6 @@
 # Model catalog manager agent
 
-Internal Pollinations operations agent. Runs through Pollinations’ existing sandbox/VM feature and inference API, using `pollinationsagent@gmail.com`. This does not add a customer-facing product. The first iteration is API-only: no browser agents or scraping.
+Internal Pollinations operations agent using the same hosted-agent, Computer and sandbox APIs available to clients, under `pollinationsagent@gmail.com`. This does not add a customer-facing product. The first iteration is API-only: no browser agents or scraping.
 
 ## Pilot: implemented scope
 
@@ -8,7 +8,7 @@ The report-only pilot collects Hugging Face, Replicate, OpenRouter and fal obser
 
 The daily GitHub Actions summary shows up to five new leads and source gaps. Successful runs publish those leads and the full agent assessment as dated comments in [the public pilot issue](https://github.com/pollinations/pollinations/issues/16517), readable without SOPS access. Publication excludes credentials, account metadata, raw responses and execution logs. Full JSON/HTML evidence and checkpoints remain in the SOPS-encrypted artifact. Names, advertised rates and provider metadata are discovery evidence; they do not establish exact-route equivalence, tested capabilities or billing correctness.
 
-Priority: retirement reviews, price discrepancies, configured-model version changes, sourcing leads, discovery, then unmatched lifecycle leads. Unchanged findings are suppressed for 30 days; changed revisions, prices or deadlines reopen them. No new leads means no assessment call. Missing/partial sources are visible and do not fail unrelated collection.
+Priority: retirement reviews, price discrepancies, configured-model version changes, sourcing leads, discovery, then unmatched lifecycle leads. Unchanged findings are suppressed for 30 days; changed revisions, prices or deadlines reopen them. No new leads means no assessment call. The assessment runs through the private hosted code agent `community/pollinations-ai/model-manager-agent`, with one non-streaming base-model call and one Computer write. It accepts at most five findings in 12,000 bytes of JSON evidence, enforces its own prompt/model/output limit, and rejects streaming pilot requests before inference. Missing/partial sources are visible and do not fail unrelated collection.
 
 ## Exact discovery rules
 
@@ -41,11 +41,15 @@ Known pilot gaps: weekly HF download backstop, Replicate task top-10 persistence
 
 [The workflow](../../.github/workflows/models-manager-pilot.yml) runs only in the upstream repository on `main`, with read-only contents/actions permissions, issue-comment write access and one concurrency group. It uses one daily 06:00 UTC schedule (08:00 Berlin in summer, 07:00 in winter); dispatch can be delayed. Manual runs share the same state. A recorded Berlin day starts no VM or inference call.
 
+The deterministic collector stays in the sandbox: hosted code agents have a 64-subrequest ceiling, authenticated Replicate collection still needs SOPS injection, and a validated compact snapshot is about 298 KB, above Computer’s 64-KiB tool-output limit. Moving full collection/history into hosted tools must preserve source coverage and budget recovery.
+
+The private hosted agent executes the assessment and writes its readable result to `/workspace/model-manager/assessment-YYYY-MM-DD.json` through Computer MCP, using the Berlin observation day. The code and prompt are maintained in `operations/model-manager/agent.ts`; publish that self-contained file at the root of [the dedicated source repository](https://github.com/pollinations/model-manager-agent), then sync the existing agent through the client interface. D1 stores its private listing, repository and deployed revision; this code agent’s prompt lives in the source, not a D1 prompt-agent configuration. Computer holds assessment copies; the encrypted checkpoint remains authoritative for discovery history, accounting and recovery.
+
 The trusted host installs the root lockfile dependencies for registry/build code and the separate E2B launcher package, then builds one Node-compatible ESM executable from the runner and existing registry/pricing helpers. `launch.mjs` uploads that executable and compact history to a pinned Pollinations VM through `https://gen.pollinations.ai/alpha/e2b`. The VM uses its existing Node runtime: no monorepo install, downloaded runtime, source archive or daily test suite. Tests run in PR CI.
 
 The VM has a ten-minute kill-on-timeout lease. The launcher verifies its template/resources and ownership, exports results, and kills it in `finally`; signals cancel SDK work and trigger cleanup. It does not extend leases or automatically retry paid calls. A detected existing pilot VM blocks a second paid run.
 
-The pilot stops after 14 Berlin calendar days or 2 Pollen total. Each run reserves 0.1222 Pollen: at most 0.0222 for ten minutes of 2-vCPU/2-GiB compute at the full tariff plus 0.1 for assessment. Account-key spending reconciles interrupted runs; unverified spending consumes the reservation. An exceeded reservation stops further work pending review. Budget checks precede paid work and do not replace validation requirements.
+The pilot stops after 14 Berlin calendar days or 2 Pollen total. Each run reserves 0.1222 Pollen: at most 0.0222 for ten minutes of 2-vCPU/2-GiB compute at the full tariff plus 0.1 for assessment and its Computer write. The input/output upper bound uses the base-model rate sheet and the existing shared Computer tool price. Account-key spending reconciles interrupted runs; unverified spending consumes the reservation. An exceeded reservation stops further work pending review. Budget checks precede paid work and do not replace validation requirements.
 
 Credential sources:
 
@@ -53,9 +57,11 @@ Credential sources:
 - Existing `gen.pollinations.ai/secrets/prod.vars.json`: `REPLICATE_API_TOKEN` for read-only API collection.
 - Existing Actions `SOPS_AGE_KEY`: decrypts selected fields on the trusted host; never enters the VM.
 
-The dedicated account key is named `pollinations-key-agent-model-manager`, permits profile/usage/machines, excludes key management, and restricts inference to `openai/gpt-6-luna`. Its existing 5-Pollen cap and 4 November 2026 expiry are unchanged. Future agents use `pollinations-key-agent-<role>` and `POLLINATIONS_API_KEY_AGENT_<ROLE>`; provision them only when needed with separate scoped approval. No runtime Keychain dependency or duplicated provider credentials.
+The dedicated account key is named `pollinations-key-agent-model-manager`, permits profile/usage/machines, excludes key management, and allows only the private agent and its base model `openai/gpt-6-luna`. The private-agent permission was separately approved and verified on 5 October 2026; no key creation or rotation was needed. Its existing 5-Pollen cap and 4 November 2026 expiry remain in place (the dashboard advanced the expiry timestamp by one second on save). Future agents use `pollinations-key-agent-<role>` and `POLLINATIONS_API_KEY_AGENT_<ROLE>`; provision them only when needed with separate scoped approval. No runtime Keychain dependency or duplicated provider credentials.
 
 Retain the 14 pilot snapshots with only observation time, source/query status, identities, revisions, run counts and trend signals. Current reports retain full collected metadata; historical catalogs, schemas and descriptions are not copied. Keep suppression state, pilot accounting and redacted execution proof. SOPS-encrypt reports/checkpoints into one artifact retained for 30 days. Public summaries contain deterministic findings and coverage; the public issue also contains the generated assessment. Account metadata and logs stay encrypted. Publication uses the built-in GitHub Actions token on the trusted host, never in the VM; it requires successful evidence from the current Berlin day. A same-day rerun can retry failed publication without repeating paid work, and the observation timestamp prevents duplicate comments. Summary Markdown is rebuilt for each run, never restored; skipped/failed runs show their current status instead of old results.
+
+GitHub is not connected to this account’s app connector yet. Keep the verified CI issue publisher until the client connector is connected and its required operations are tested. CI currently schedules the VM collector and publishes its result; it does not host the assessment prompt or model execution.
 
 Restore only this workflow’s trusted `main` artifacts, including an earlier attempt of a rerun. Missing, deleted or expired evidence must not silently restart a paid pilot. Restored filenames are allowlisted, existing files are not overwritten, and collected source content is never executed. Artifacts provide durable evidence; an evictable cache is insufficient.
 

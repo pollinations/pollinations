@@ -74,6 +74,14 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
+export const PRICE_UNITS = ["megapixel", "token", "byte"] as const;
+
+// Billed unit for a usage field whose name or category default misdescribes
+// it. `quantity` usage units make one billed unit. Display-only.
+export type PriceUnits = Partial<
+    Record<UsageType, { unit: (typeof PRICE_UNITS)[number]; quantity?: number }>
+>;
+
 // USD-equivalent amounts per usage type, plus what Pollinations pays the provider.
 export type UsageCost = Usage & {
     totalCost: number;
@@ -219,9 +227,12 @@ export type ModelDefinition = {
     // a per-second rate from a per-token cost. Used to disambiguate flat-fee
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
+    priceUnits?: PriceUnits;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
     fallbackOnly?: boolean;
+    /** Change when the same request starts producing different media, so old cached results are not served. */
+    cacheVersion?: string;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
@@ -377,9 +388,10 @@ export type UsageBilling = {
     cost: UsageCost;
     price: UsagePrice;
     adjustments: BillingAdjustment[];
-    // Per-unit Pollen price sheet actually applied (effective cost ×
-    // multiplier). Telemetry must record THIS sheet, not the request-time
-    // base sheet, so recorded rates always reproduce the billed totals.
+    // Effective per-unit Pollen price sheet (cost variant × multiplier), not
+    // the request-time base sheet. Provider-reported billing units can differ
+    // from public usage units, so this sheet alone may not reproduce totals
+    // overridden by providerBilling; those use its units and unitCost.
     priceDefinition: PriceDefinition;
     // Name of the applied cost variant, if any (financial identity — distinct
     // from modelUsed, which stays observational).
@@ -481,10 +493,9 @@ function rateAgainst(
 /**
  * What the generation cost us, and what the caller pays for it.
  *
- * These come apart exactly when a fallback served: the caller is charged the
- * listing they asked for, while cost — and the serving owner's reward — follow
- * the model that actually ran. Charging the server's price instead would let
- * the amount on the invoice depend on which upstream happened to be up.
+ * Trusted provider billing units and their rate replace estimated cost;
+ * price is that cost times the serving model's multiplier. A fallback still
+ * charges the requested listing's price.
  */
 export function calculateUsageBilling({
     model,
@@ -495,6 +506,18 @@ export function calculateUsageBilling({
     input,
 }: UsageBillingInput): UsageBilling {
     const served = rateAgainst(model, usage, servedBy, output, input);
+    // Provider units need not match public usage units (e.g. weighted video
+    // seconds), so the receipt gives a total, not a per-usage-type breakdown.
+    if (input?.providerBilling) {
+        const totalCost =
+            input.providerBilling.units * input.providerBilling.unitCost;
+        served.cost = { totalCost };
+        served.price = {
+            totalPrice: roundPollenLedgerAmount(
+                totalCost * servedBy.priceMultiplier,
+            ),
+        };
+    }
     if (quotedBy === servedBy) {
         return { ...served, servedPrice: served.price.totalPrice };
     }

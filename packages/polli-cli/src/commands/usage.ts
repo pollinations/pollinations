@@ -3,12 +3,13 @@ import { Command } from "commander";
 import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
 import {
+    ExitSignal,
+    fail,
     getOutputMode,
     printError,
     printResult,
     printTable,
 } from "../lib/output.js";
-import { parseDaysWindow } from "./earnings.js";
 
 interface UsageRecord {
     timestamp: string;
@@ -190,7 +191,7 @@ export const usageCommand = new Command("usage")
         collect,
         [] as string[],
     )
-    .option("--days <n>", "Rolling window in days, max 90")
+    .option("--days <n>", "Rolling window in days")
     .option("--csv", "Print the raw CSV export")
     .addHelpText(
         "after",
@@ -221,7 +222,7 @@ export const usageCommand = new Command("usage")
             printError(
                 "--key, --model, --days and --csv require --history or --daily",
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
 
         // The daily endpoint has no `models` param, and a raw CSV export
@@ -231,7 +232,7 @@ export const usageCommand = new Command("usage")
             printError(
                 "--model can't filter the raw --daily --csv export (the endpoint has no models param)",
             );
-            process.exit(1);
+            throw new ExitSignal(1);
         }
 
         // Default: show balance (unless --history or --daily)
@@ -254,19 +255,7 @@ export const usageCommand = new Command("usage")
                 printError(
                     `Failed to fetch balance: ${err instanceof Error ? err.message : "unknown"}`,
                 );
-                process.exit(1);
-            }
-        }
-
-        let days: number | undefined;
-        if (opts.days !== undefined) {
-            try {
-                days = parseDaysWindow(opts.days);
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "Invalid --days value",
-                );
-                process.exit(1);
+                throw new ExitSignal(1);
             }
         }
 
@@ -288,13 +277,13 @@ export const usageCommand = new Command("usage")
                             ? err.message
                             : "Failed to resolve keys",
                     );
-                    process.exit(1);
+                    throw new ExitSignal(1);
                 }
             }
         }
 
         const params = new URLSearchParams();
-        if (days !== undefined) params.set("days", String(days));
+        if (opts.days !== undefined) params.set("days", opts.days);
 
         try {
             if (opts.daily) {
@@ -332,12 +321,7 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            const limit = Number(opts.limit);
-            if (!Number.isInteger(limit) || limit < 1) {
-                printError("--limit must be a positive integer");
-                process.exit(1);
-            }
-            params.set("limit", String(limit));
+            params.set("limit", opts.limit);
             if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));
             if (opts.csv) params.set("format", "csv");
@@ -361,9 +345,6 @@ export const usageCommand = new Command("usage")
                 })),
             );
         } catch (err) {
-            printError(
-                `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch usage", err);
         }
     });

@@ -10,7 +10,6 @@ import {
     createFireworksModelConfig,
     createMistralModelConfig,
     createOpenRouterModelConfig,
-    createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityAgentConfig,
     createVercelAIGatewayModelConfig,
@@ -75,6 +74,12 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    "span-01-lite": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "respan/span-01-lite",
+    }),
     // -- TypeSafe AI via OpenRouter's decisions endpoint. Its own protocol, so
     // it bypasses Portkey and the Chat transforms — see systemOneClient.ts.
     // OpenRouter exposes no floating alias, so the version is pinned here.
@@ -83,6 +88,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "typesafe/jev-1.13",
+    }),
+    "kev-4b": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "jaredpalmer/kev-4b",
     }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
@@ -179,6 +190,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-sol/chat/completions?api-version=2025-04-01-preview",
             azureOpenAIParameters,
         ),
+    "gpt-6.1-sol": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6.1-sol/chat/completions?api-version=2025-04-01-preview",
+            azureOpenAIParameters,
+        ),
     "gpt-6-luna": () =>
         createAzureResponsesModelConfig(
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
@@ -192,6 +209,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesEndpoint: "https://api.openai.com/v1/responses",
         authKey: textEnvironmentValue("OPENAI_API_KEY"),
         model: "gpt-6-sol",
+    }),
+    "gpt-6.1-sol-openai": () => ({
+        provider: "openai",
+        responsesEndpoint: "https://api.openai.com/v1/responses",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6.1-sol",
     }),
     "gpt-6-luna-openai": () => ({
         provider: "openai",
@@ -716,6 +739,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "anthropic/claude-sonnet-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",
@@ -764,6 +792,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createBedrockNativeConfig({ model: "us.amazon.nova-micro-v1:0" }),
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
+
+    // -- AWS Bedrock (Qwen) ---------------------------------------------------
+    "qwen-coder-bedrock": () =>
+        createBedrockNativeConfig({ model: "qwen.qwen3-coder-30b-a3b-v1:0" }),
 
     // -- Google Vertex AI (Gemini) -------------------------------------------
     "google/gemini-3-flash-preview": createVertexGeminiConfig(
@@ -832,6 +864,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
         }),
+    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+        }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/inkling",
@@ -896,12 +932,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudOAIConfig({
             model: "gpt-oss-20b",
             "max-tokens": 1500,
-            responsesEndpoint:
-                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
-        }),
-    "qwen3-coder-30b-a3b-instruct": () =>
-        createOVHcloudModelConfig({
-            model: "Qwen3-Coder-30B-A3B-Instruct",
             responsesEndpoint:
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
         }),

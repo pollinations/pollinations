@@ -101,6 +101,7 @@ describe("resolveModelConfig", () => {
 
     it.each([
         "gpt-6-sol",
+        "gpt-6.1-sol",
         "gpt-6-luna",
     ])("routes %s through Azure with direct OpenAI fallback", (model) => {
         const canonical = `openai/${model}`;
@@ -234,6 +235,16 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Claude Sonnet 5.5 to the Bedrock global inference profile", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-sonnet-5.5",
+        });
+
+        expect(result.options.model).toBe("global.anthropic.claude-sonnet-5-5");
+        expect(result.options.modelConfig?.provider).toBe("bedrock");
+        expect(result.options.max_tokens).toBe(128000);
+    });
+
     it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5.5",
@@ -306,17 +317,60 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Nemotron directly to DeepInfra without fallback", () => {
+    it.each([
+        "qwen/qwen3-coder-30b-a3b-instruct",
+        "qwen3-coder",
+        "qwen3-coder-30b-a3b-instruct",
+        "qwen-coder",
+    ])("routes %s directly to Bedrock", (model) => {
         const result = resolveModelConfig(messages, {
-            model: "nvidia/nemotron-3-ultra",
+            model,
+            stop: ["STOP"],
+            reasoning_effort: "high",
         });
 
-        expect(result.options.model).toBe(
+        expect(result.options.model).toBe("qwen.qwen3-coder-30b-a3b-v1:0");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "bedrock",
+            "aws-region": "us-east-1",
+        });
+        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
+        expect(result.messages).toEqual(messages);
+    });
+
+    it("removes unsupported controls without injecting a coder prompt", async () => {
+        const definition = findModelByName("qwen-coder");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen-coder",
+            stop: ["STOP"],
+            reasoning_effort: "high",
+            temperature: 0.2,
+        });
+
+        expect(transformed?.messages).toEqual(messages);
+        expect(transformed?.options.stop).toBeUndefined();
+        expect(transformed?.options.reasoning_effort).toBeUndefined();
+        expect(transformed?.options.temperature).toBe(0.2);
+    });
+
+    it.each([
+        [
+            "nvidia/nemotron-3-ultra",
+            "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+            "https://api.fireworks.ai/inference/v1",
+        ],
+        [
+            "nvidia/nemotron-3-ultra:deepinfra",
             "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
-        );
+            "https://api.deepinfra.com/v1/openai",
+        ],
+    ])("routes %s directly to its provider", (model, upstream, host) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(upstream);
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            "custom-host": host,
         });
         expect(result.options.provider).toBeUndefined();
     });

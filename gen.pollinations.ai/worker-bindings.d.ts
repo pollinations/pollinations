@@ -20,6 +20,7 @@ interface CloudflareBindings {
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
+    E2B_API_KEY?: string;
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
@@ -68,6 +69,7 @@ interface CloudflareBindings {
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
     FIREWORKS_API_KEY: string;
     FIREWORKS_NEO_API_KEY: string;
+    GEMINI_API_KEY?: string;
     GOOGLE_CLIENT_EMAIL: string;
     GOOGLE_PRIVATE_KEY: string;
     GOOGLE_PRIVATE_KEY_ID: string;

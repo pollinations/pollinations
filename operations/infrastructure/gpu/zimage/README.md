@@ -49,35 +49,49 @@ The setup defaults to `HEARTBEAT_ENABLED=false`, which prevents registry
 registration but does not isolate a connector in the shared named tunnel.
 Validate local health and generation while cloudflared is stopped. The setup
 does not create `/root/.cloudflared/tunnel-enabled`, so reboots also remain
-local-only. Creating that marker and starting `/root/onstart.sh` is the
-production canary step: it waits for local `/health` and then joins the shared
-tunnel pool, where it may immediately receive live traffic.
+local-only. For isolated public-path qualification, use a dedicated canary
+tunnel and hostname with registration disabled. Creating that marker and
+starting `/root/onstart.sh` waits for local `/health` before connecting the
+configured tunnel. If it is the shared production tunnel, the worker may
+immediately receive live traffic, even with registration disabled.
 
 Automated replacement preparation must stop before joining the shared
 production tunnel. Follow the fleet-wide qualification and human approval
 policy in
 [`manage-vast-gpu-fleet`](../../../../.claude/skills/manage-vast-gpu-fleet/SKILL.md).
 
-Run direct verification first, then start the tunnel and benchmark the real
-Z-Image pipeline:
+Run direct verification first, then start the isolated canary tunnel and
+benchmark the real Z-Image pipeline (not a shared production connector):
 
 ```bash
 source .env.zimage
 curl -fsS "http://127.0.0.1:$PORT/health"
-# Run an authenticated local generation before starting the shared tunnel.
+# PUBLIC_IP must be the dedicated canary hostname during qualification.
+# Run an authenticated local generation before starting the canary tunnel.
 touch /root/.cloudflared/tunnel-enabled
 /root/onstart.sh
+curl -fsS --retry 12 --retry-all-errors --retry-delay 2 --max-time 5 "https://$PUBLIC_IP/health"
 bash verify-vast.sh
-"$VENV/bin/python" benchmark-vast.py --duration 300 --concurrency 4
+"$VENV/bin/python" benchmark-vast.py --duration 300 --concurrency 3
 ```
 
-Enable production registration only after the worker passes verification and
-the fleet projects to at least 1.25 completed images/second:
+Compare measured throughput and latency with recent demand and the permitted
+Fal spillover budget; do not assume a fixed capacity from the GPU name. The
+older 1.25 images/second target was not demonstrated by the September canary.
+Promotion requires explicit human approval of the measured capacity. After
+approval and any separately approved connector-token replacement, configure
+the production hostname and tunnel before enabling registration:
 
 ```bash
+# Confirm PUBLIC_IP and the connector token identify the production tunnel.
 sed -i 's/export HEARTBEAT_ENABLED=false/export HEARTBEAT_ENABLED=true/' .env.zimage
 /root/onstart.sh
 ```
+
+When retiring the old connector, removing `tunnel-enabled` prevents reconnects
+after container restart but does not stop the running screen restart loop.
+Drain cloudflared with its supervisor prevented from restarting it, and verify
+that no live connector returns before declaring the replacement the sole worker.
 
 Operational logs are `/root/zimage.log` and `/root/cloudflared.log`. Tokens are
 stored only in mode-0600 files on the rental host. Some Vast hosts drop the SRV
@@ -90,6 +104,25 @@ local DNS helper so isolated model restarts keep outbound DNS. Hugging Face Xet
 is disabled by default because its token/download path failed on otherwise
 healthy Vast hosts; standard HTTP and process-level retries resume reliably
 from the local cache.
+
+### September 2026 RTX 5090 qualification
+
+Instance `52731560` preserved the production checkpoint revision, Z-Image code,
+and runtime dependencies. Qualification used a dedicated Cloudflare tunnel:
+
+- 134/134 mixed-size generations completed in 122.502 seconds at concurrency
+  3: **65.6 images/minute**, 2.737s p50, 2.752s p95, and 2.859s p99. This is
+  measured benchmark throughput, not an SLA or a per-user allowance.
+- Local/public fixed-seed parity passed at 512×512, 1024×1024, and 768×1152.
+  Maximum 1536×1536 generation passed; oversized input returned 422 and
+  unauthenticated requests returned 403.
+- An eight-request burst admitted three and rejected five with intentional
+  queue-full 503s, each within 61ms on the public path.
+- Full container reboot restored the model in approximately eight seconds
+  and all four tunnel connections in fourteen seconds; post-reboot parity
+  passed. No CUDA, OOM, or traceback errors occurred during qualification.
+- Local model readiness preceded initial tunnel readiness; the first public
+  probe returned 530. Wait for public health before running verification.
 
 ### July 2026 RTX 5090 canary
 

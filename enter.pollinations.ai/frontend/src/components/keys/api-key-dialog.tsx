@@ -1,3 +1,4 @@
+import { Dialog } from "@pollinations/ui";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import {
@@ -6,7 +7,6 @@ import {
     uniqueNamesGenerator,
 } from "unique-names-generator";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
-import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -144,7 +144,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     ]);
 
     return (
-        <ResourceDialog open={isOpen} onOpenChange={setIsOpen} size="lg">
+        <Dialog
+            open={isOpen}
+            onOpenChange={setIsOpen}
+            size="lg"
+            // Keep the expanding form stable; center the completed result.
+            contentClassName={createdKey ? undefined : "resource-dialog"}
+        >
             <KeyDialogContent
                 mode="create"
                 app={simplified}
@@ -169,6 +175,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     )
                 }
             />
-        </ResourceDialog>
+        </Dialog>
     );
 };

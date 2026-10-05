@@ -1,17 +1,13 @@
 @import "@pollinations/ui/app.css";
 
+/* Expanding a form should not move its controls around the screen. */
 .resource-dialog {
-    /* Keep controls stationary when expandable content changes height. */
     margin-block: 0;
-    height: auto;
-    max-height: calc(100dvh - 2rem);
 }
 
-@media (min-width: 40rem) {
-    .resource-dialog {
-        margin-block-start: 1rem;
-        max-height: calc(100dvh - 3rem);
-    }
+.model-title-link,
+.model-title-link span {
+    text-decoration: none;
 }
 
 .catalog-search .polli-input-shell,

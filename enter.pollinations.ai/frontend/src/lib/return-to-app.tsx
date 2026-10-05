@@ -1,4 +1,4 @@
-import { Button, ExternalLinkIcon } from "@pollinations/ui";
+import { ArrowLeftIcon, Button } from "@pollinations/ui";
 import type { FC } from "react";
 
 /** An absolute http(s) URL, else null. Used for the `redirect` search param. */
@@ -62,8 +62,9 @@ export const ReturnToApp: FC<{ returnUrl: string | null }> = ({
                 as="a"
                 href={returnUrl}
                 intent="neutral"
-                icon={<ExternalLinkIcon />}
-                className="min-h-11 w-full"
+                icon={<ArrowLeftIcon />}
+                size="lg"
+                className="w-full"
             >
                 Back to {new URL(returnUrl).hostname}
             </Button>

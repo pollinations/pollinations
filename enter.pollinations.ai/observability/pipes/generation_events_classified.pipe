@@ -1,19 +1,43 @@
 DESCRIPTION >
-    generation_event_v2 plus traffic_group: 'legacy' for the two legacy public
-    API bridge keys, 'everything_else' for all other keys. Exact key IDs, so
-    renamed keys keep their group. Changing the list requires repopulating
-    generation_usage_hourly.
+    Reporting categories: regular, legacy, operations (bots, monitors,
+    automation) and dev (staff development and tests). Staff personal accounts
+    are dev as a whole. The pollinationsagent account mixes legacy bridges,
+    operations, the x402 buyer aggregate and first-party app keys, so its keys
+    are classified by exact ID and anything unlisted counts as regular. Add new
+    operations keys here. Keep deleted IDs for historical reporting. Changing
+    these rules requires repopulating the dependent usage, BYOP and
+    first-activity aggregates.
 
 NODE classified_events
 SQL >
     SELECT
         *,
-        if(
+        multiIf(
             api_key_id IN (
-                'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image bridge
-                '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps'  -- legacy text bridge
-            ),
-            'legacy',
-            'everything_else'
+                'lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz', -- raw-buzzard: legacy image
+                '89idjaTSg2hI4YwZDuO8ZME5Ma6GrFps' -- legacy text
+            ), 'legacy',
+            api_key_id IN (
+                'OHD2QWIGKWUHr1GVM403RKgUIWl2nLQS', -- quixotic-hare: community model monitor
+                'I5jnMf7tp5HrkWnjHgexYya1SI6UthK4', -- POLLI VECTOR DB
+                'uzCJ8RSt0ZLYr3WCmuv5sniTRDinO5GM', -- POLLI CODE: GitHub bot
+                '620Mnys8GuzzcCdH58S6sSEdC8IoHzH7', -- PLN_GITHUB_NEWS_KEY
+                '0JUUkMirP86ZkeBs82h721NTajBv51K8', -- PLN_GITHUB_AUTOPOLLY_KEY
+                'BvQo6jDl0VKOSjyidF5dUs5VXd1XangJ', -- discord bot family
+                'KXu9XCPN5uVMpEWxuhipcZgcIs4un2W9', -- PROD__POLLI_DISCORD_BOT__GEN_API
+                'rRB9xb02l4CknB7ywPka4O5kdeiqRH0k', -- polli-harness-pi
+                'iQ0EmWh1CY5VIVXfZT5S9tGpOazwOQmF' -- PROD__POLLI_COMMUNITY_MODEL_PROXY
+            ), 'operations',
+            api_key_id IN (
+                'mjOXmaf8SPr1qF934NlXciCqRVOfL9Ut', -- DEV_ELLIOT
+                'POtjGzxhQ7BhrCJXnsc8Y9i6sb259GVh' -- ITACHI-DEV
+            )
+            OR user_id IN (
+                '328eJMEXiBAhRskZcmKINOx3CoidBc6x', -- ElliotEtag
+                'ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh', -- elliot@pollinations.ai
+                'pSuZFfxdFpRIDq0MJKwvT1y4LZ7cyA9n', -- voodoohop (Thomas)
+                'oUHeC9bMreSyrFhF9OYwF0vIJvkBugw3' -- thomashmyceli (Thomas)
+            ), 'dev',
+            'regular'
         ) AS traffic_group
     FROM generation_event_v2

@@ -55,10 +55,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     );
 
     const expiryDays = apiKey.expiresAt
-        ? Math.ceil(
-              (new Date(apiKey.expiresAt).getTime() - Date.now()) /
-                  (1000 * 60 * 60 * 24),
-          )
+        ? (new Date(apiKey.expiresAt).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24)
         : null;
 
     const keyPermissions = useKeyPermissions({

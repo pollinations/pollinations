@@ -1,0 +1,33 @@
+{
+  "pr_number": 16530,
+  "title": "fix: accept gpt-4o-transcribe as a GPT Transcribe alias",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16530",
+  "merged_at": "2026-10-05T17:42:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `gpt-4o-transcribe` as an alias of `openai/gpt-transcribe`\n- Fixes OpenAI clients whose default transcription model name was rejected\n- Adds an alias test so the OpenAI name stays supported\n\n| Request `model` on `/v1/audio/transcriptions` | Before | After |\n|---|---|---|\n| `gpt-4o-transcribe` | 400 \"Invalid model or alias\" | Transcribed by GPT Transcribe |\n| `whisper-1`, `gpt-transcribe` | Works | Unchanged |\n\n`gpt-4o-mini-tts` is deliberately not aliased. `tts-1` would ignore its `instructions` and reject its newer voices (`coral`, `ash`, `sage`…).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01M1RaZKWKKZTr4qgYQtMRro\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive recognizes that name",
+    "blurb": "OpenAI clients call it `gpt-4o-transcribe`; the hive knows it as GPT Transcribe. The two names finally get introduced.",
+    "summary": "Adds `gpt-4o-transcribe` as an alias of `openai/gpt-transcribe` on `/v1/audio/transcriptions`, with a test to keep the OpenAI model name supported.",
+    "impact": "OpenAI clients using `gpt-4o-transcribe` get a transcription instead of a 400 “Invalid model or alias” response; `whisper-1` and `gpt-transcribe` remain unchanged.",
+    "keywords": [
+      "audio",
+      "transcription",
+      "GPT Transcribe",
+      "OpenAI compatibility",
+      "model alias"
+    ],
+    "visual_concept": "Depict two differently labeled audio cassettes, `gpt-4o-transcribe` and `GPT Transcribe`, leading to the same friendly transcription terminal. Polli, wearing tiny headphones, connects the paths beside a small garden of code-plants.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny headphones and connects two audio cassettes labeled `gpt-4o-transcribe` and `GPT Transcribe` to one glowing transcription terminal, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, prominent lime green (#ecf874), warm cream and dark purple (#110518) details, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16530.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny headphones and connects two audio cassettes labeled `gpt-4o-transcribe` and `GPT Transcribe` to one glowing transcription terminal, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, prominent lime green (#ecf874), warm cream and dark purple (#110518) details, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-05T17:44:09.968004+00:00"
+}

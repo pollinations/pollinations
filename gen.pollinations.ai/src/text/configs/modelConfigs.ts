@@ -355,6 +355,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "inclusionai/ling-3.1-flash",
         "novita",
     ),
+    "nex-agi/nex-n2.5-pro": createPinnedOpenRouterConfig(
+        "nex-agi/nex-n2.5-pro",
+        "nex-agi/fp8",
+    ),
+    "nex-agi/nex-n2.5-mini": createPinnedOpenRouterConfig(
+        "nex-agi/nex-n2.5-mini",
+        "nex-agi/bf16",
+    ),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>
         createVercelAIGatewayModelConfig({
             model: "inclusionai/ling-3.1-flash",

@@ -905,6 +905,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
     },
     {
+        name: "nex-agi/nex-n2.5-pro",
+        config: portkeyConfig["nex-agi/nex-n2.5-pro"],
+    },
+    {
+        name: "nex-agi/nex-n2.5-mini",
+        config: portkeyConfig["nex-agi/nex-n2.5-mini"],
+    },
+    {
         name: "inclusionai/ling-3.1-flash:vercel:novita",
         config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
     },

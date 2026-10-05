@@ -417,6 +417,20 @@ export const CHAT_PARAMETERS = {
         "seed",
         ...OPENROUTER_REASONING,
     ],
+    // OpenRouter Nex AGI bf16 tag for Nex-N2.5-Mini (verified 2026-10-06):
+    // structured_outputs, logprobs, top_k and reasoning_effort advertised; the
+    // endpoint exposes no tools or tool_choice, so tool calling is not enabled.
+    openRouterNexMini: [
+        "max_tokens",
+        "stream",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
     openRouterGlmFlashx: [
         "max_tokens",

@@ -26,6 +26,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Lykon: "lykon",
     Meituan: "meituan",
     Meta: "meta",
+    "Nex AGI": "nex-agi",
     Microsoft: "microsoft",
     MiniMax: "minimax",
     Mistral: "mistral",

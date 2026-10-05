@@ -371,6 +371,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "tencent/hy3",
         "phala",
     ),
+    "nex-agi/nex-n2.5-mini": createPinnedOpenRouterConfig(
+        "nex-agi/nex-n2.5-mini",
+        "nex-agi/bf16",
+    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking

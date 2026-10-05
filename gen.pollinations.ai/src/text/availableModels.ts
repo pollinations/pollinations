@@ -917,6 +917,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["hy3-openrouter-phala"],
     },
     {
+        name: "nex-agi/nex-n2.5-mini",
+        config: portkeyConfig["nex-agi/nex-n2.5-mini"],
+    },
+    {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
         transform: fireworksThinkingWithoutCacheControl,

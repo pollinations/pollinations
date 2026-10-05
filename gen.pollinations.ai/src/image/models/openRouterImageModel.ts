@@ -766,11 +766,15 @@ export async function callOpenRouterFlux3API(
         prompt,
         n: 1,
         resolution: safeParams.resolution === "2k" ? "2K" : "1K",
-        aspect_ratio: closestRatioLogSpace(
-            safeParams.width,
-            safeParams.height,
-            FLUX3_ASPECT_RATIOS,
-        ),
+        aspect_ratio:
+            safeParams.aspectRatio === "adaptive"
+                ? "auto"
+                : (safeParams.aspectRatio ??
+                  closestRatioLogSpace(
+                      safeParams.width,
+                      safeParams.height,
+                      FLUX3_ASPECT_RATIOS,
+                  )),
         provider: {
             only: ["black-forest-labs"],
             allow_fallbacks: false,
@@ -791,7 +795,11 @@ export async function callOpenRouterFlux3API(
     }
 
     const providerCost = data.usage?.cost;
-    if (typeof providerCost !== "number" || !(providerCost > 0)) {
+    if (
+        typeof providerCost !== "number" ||
+        !Number.isFinite(providerCost) ||
+        providerCost <= 0
+    ) {
         invalidOpenRouterImageUsage(data.usage);
     }
 

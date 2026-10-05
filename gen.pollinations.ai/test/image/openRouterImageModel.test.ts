@@ -622,6 +622,22 @@ describe("OpenRouter FLUX.3 Image", () => {
         });
     });
 
+    it.each([
+        "9:16",
+        "adaptive",
+    ] as const)("honors explicit %s framing over square dimensions", async (aspectRatio) => {
+        setEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockFlux3Fetch(requests);
+        await callOpenRouterFlux3API("test prompt", {
+            ...flux3Params,
+            aspectRatio,
+        });
+        expect(requests[0].aspect_ratio).toBe(
+            aspectRatio === "adaptive" ? "auto" : "9:16",
+        );
+    });
+
     it("defaults to 1K and bills OpenRouter's reported cost", async () => {
         setEnv();
         const requests: Record<string, unknown>[] = [];
@@ -642,7 +658,13 @@ describe("OpenRouter FLUX.3 Image", () => {
 
     it("rejects a response without a positive reported cost", async () => {
         setEnv();
-        for (const usage of [undefined, { cost: 0 }, { cost: null }]) {
+        for (const usage of [
+            undefined,
+            { cost: 0 },
+            { cost: null },
+            { cost: -1 },
+            { cost: Number.POSITIVE_INFINITY },
+        ]) {
             vi.restoreAllMocks();
             mockFlux3Fetch([], {
                 data: [{ b64_json: PNG.toString("base64") }],

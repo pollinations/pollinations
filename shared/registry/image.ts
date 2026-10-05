@@ -5,6 +5,7 @@ import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
+const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
@@ -129,17 +130,28 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-10-02").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter BFL endpoint with its 50% launch discount through
-        // 2026-10-08 (list $0.048 at 1K, $0.10 at 2K), verified 2026-10-02: a
-        // 1K image billed $0.024. Includes the 5.5% credit fee. Billing uses
-        // the cost OpenRouter reports per request, so it follows the list
-        // price when the discount ends; raise these rates then.
+        // https://bfl.ai/pricing: 50% launch discount ends Oct 8 at 15:00 UTC.
+        // Read rates at request time so warm workers also quote the cutover.
+        // Settlement always uses OpenRouter's reported cost plus its 5.5% fee.
         cost: {
-            completionImageTokens: 0.024 * 1.055, // per 1K image
+            get completionImageTokens() {
+                return (
+                    (Date.now() < FLUX3_LAUNCH_DISCOUNT_END ? 0.024 : 0.048) *
+                    1.055
+                );
+            },
         },
         ...defineCostVariants(
             {
-                "2k": { completionImageTokens: 0.05 * 1.055 },
+                "2k": {
+                    get completionImageTokens() {
+                        return (
+                            (Date.now() < FLUX3_LAUNCH_DISCOUNT_END
+                                ? 0.05
+                                : 0.1) * 1.055
+                        );
+                    },
+                },
             },
             matchResolution("2k"),
             {

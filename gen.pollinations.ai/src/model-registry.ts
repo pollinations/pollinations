@@ -219,11 +219,22 @@ function buildRegistry(
               ? // /v1/messages runs as a chat request.
                 [...entry.supportedEndpoints, "/v1/messages"]
               : entry.supportedEndpoints;
-        return {
+        const linkedEntry = {
             ...entry,
             supportedEndpoints,
             info: { ...entry.info, supported_endpoints: supportedEndpoints },
         };
+        // Official definitions are the source of truth. In particular, dated
+        // prices must not stay frozen in a warm worker's catalog snapshot.
+        if (!entry.communityEndpoint) {
+            Object.defineProperty(linkedEntry, "info", {
+                get: () => ({
+                    ...modelInfoFromDefinition(entry.id, entry.definition),
+                    supported_endpoints: supportedEndpoints,
+                }),
+            });
+        }
+        return linkedEntry;
     });
     // Build lookup keys before presentation sorting so duplicate aliases keep
     // their declaration-order, first-wins resolution behavior.

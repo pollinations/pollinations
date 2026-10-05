@@ -247,7 +247,7 @@ export async function prepareImageEditRequest(
         image: imageUrls.map((image_url) => ({ image_url })),
     };
     // Replay the JSON edits contract even when the caller uploaded multipart files.
-    // Leave random seed selection to execution so retries without a seed still join.
+    // Preserve an omitted seed in the cache identity; execution defaults it to 42.
     const identity = normalizedJsonBody(JSON.stringify(body));
     c.set("generationRequestBody", identity);
     c.set("generationCacheBody", identity);

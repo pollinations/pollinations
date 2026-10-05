@@ -54,7 +54,7 @@ function mockCatalogHealth(
             );
             if (
                 url.pathname === "/v0/pipes/model_catalog_health.json" ||
-                url.pathname === "/v0/pipes/model_route_health.json"
+                url.pathname === "/v0/pipes/model_health_24h.json"
             ) {
                 return Response.json(
                     {

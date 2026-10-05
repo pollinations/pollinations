@@ -26,12 +26,6 @@ function serviceAliasTestCases(
     );
 }
 
-test("The default audio model works without paid balance", () => {
-    expect(getRegistryModelDefinition(DEFAULT_AUDIO_MODEL).paidOnly).not.toBe(
-        true,
-    );
-});
-
 function requiredCostRate(model: ModelName, field: UsageType): number {
     const rate = getCostDefinition(model)?.[field];
 
@@ -149,6 +143,12 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     const price = calculatePrice(model, usage);
 
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
+});
+
+test("The default audio model works without paid balance", () => {
+    expect(getRegistryModelDefinition(DEFAULT_AUDIO_MODEL).paidOnly).not.toBe(
+        true,
+    );
 });
 
 test("GPT-5.5 is available without paid-only gating", () => {

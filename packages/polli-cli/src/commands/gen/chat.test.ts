@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -221,5 +221,47 @@ describe("polli gen chat session lifecycle", () => {
         expect(transcript).toContain("AI: hi");
         expect(transcript).not.toContain("/exit");
         rmSync(path, { force: true });
+    });
+});
+
+describe("polli gen chat transcript errors", () => {
+    it("allows retry after a failed /save and reports failed autosave on close", async () => {
+        prepare(
+            async () =>
+                new Response(STREAM_OK, {
+                    headers: { "Content-Type": "text/event-stream" },
+                }),
+        );
+        const dir = mkdtempSync(join(tmpdir(), "polli-chat-save-"));
+        try {
+            const line = await startSession();
+            await line("hello");
+            await line(`/save ${dir}`);
+
+            expect(process.stderr.write).toHaveBeenCalledWith(
+                expect.stringContaining("EISDIR"),
+            );
+            expect(h.state.closed).toBe(false);
+            expect(h.state.prompts).toBe(3);
+            expect(process.exitCode).toBeUndefined();
+
+            const path = join(dir, "chat.txt");
+            await line(`/save ${path}`);
+            expect(readFileSync(path, "utf-8")).toBe("You: hello\n\nAI: hi");
+            await line("/exit");
+            expect(process.exitCode).toBe(0);
+
+            const autosave = await startSession(["--save", dir]);
+            await autosave("hello");
+            vi.mocked(process.stderr.write).mockClear();
+            h.fakeRl.close();
+            expect(process.stderr.write).toHaveBeenCalledWith(
+                expect.stringContaining("EISDIR"),
+            );
+            expect(process.exitCode).toBe(1);
+            expect(h.state.promptsAfterClose).toBe(0);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 });

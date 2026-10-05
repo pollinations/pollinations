@@ -147,7 +147,18 @@ export function createChatCommand() {
                             `${m.role === "user" ? "You" : "AI"}: ${m.content}`,
                     )
                     .join("\n\n");
-                writeFileSync(path, transcript, "utf-8");
+                try {
+                    writeFileSync(path, transcript, "utf-8");
+                } catch (err) {
+                    printError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to save transcript",
+                    );
+                    // Once readline closes, a failed autosave cannot be retried.
+                    if (closed) process.exitCode = 1;
+                    return;
+                }
                 if (!isJson) {
                     process.stderr.write(chalk.green(`Saved to ${path}\n`));
                 }

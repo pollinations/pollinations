@@ -104,11 +104,13 @@ export function tokensIn(r: UsageRecord): number {
     );
 }
 
-/** Client-side daily filters: key ids and/or model ids. */
+/** Client-side daily filters: key ids, model ids, and/or date range. */
 export function filterDailyRows(
     rows: DailyUsageRecord[],
     keyIds: string[],
     models: string[],
+    from?: string,
+    to?: string,
 ): DailyUsageRecord[] {
     let out = rows;
     if (keyIds.length > 0) {
@@ -116,6 +118,38 @@ export function filterDailyRows(
     }
     if (models.length > 0) {
         out = out.filter((r) => models.includes(r.model));
+    }
+    if (from) {
+        out = out.filter((r) => r.date >= from);
+    }
+    if (to) {
+        out = out.filter((r) => r.date <= to);
+    }
+    return out;
+}
+
+/** Client-side history filters: key ids, model ids, and/or date range. */
+export function filterHistoryRows(
+    rows: UsageRecord[],
+    keyIds: string[],
+    models: string[],
+    from?: string,
+    to?: string,
+): UsageRecord[] {
+    let out = rows;
+    if (keyIds.length > 0) {
+        out = out.filter((r) => keyIds.includes(r.api_key_id ?? ""));
+    }
+    if (models.length > 0) {
+        out = out.filter((r) => models.includes(r.model));
+    }
+    if (from || to) {
+        out = out.filter((r) => {
+            const ts = r.timestamp.slice(0, 10);
+            if (from && ts < from) return false;
+            if (to && ts > to) return false;
+            return true;
+        });
     }
     return out;
 }
@@ -133,6 +167,12 @@ const collect = (value: string, previous: string[]) => previous.concat(value);
 
 const looksLikeSecret = (value: string) =>
     value.startsWith("sk_") || value.startsWith("pk_");
+
+const isValidDate = (date: string): boolean => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    const d = new Date(date);
+    return !isNaN(d.getTime());
+};
 
 export interface UsageKeyArgs {
     /** `--key` before the subcommand: the global auth override. */
@@ -193,10 +233,12 @@ export const usageCommand = new Command("usage")
     )
     .option("--days <n>", "Rolling window in days")
     .option("--csv", "Print the raw CSV export")
+    .option("--from <date>", "Filter from date (YYYY-MM-DD)")
+    .option("--to <date>", "Filter to date (YYYY-MM-DD)")
     .addHelpText(
         "after",
         chalk.dim(
-            '\nKey filter:\n  --key <name-or-id>   Filter by API key name or id (repeatable, resolves\n                       names via /account/keys). Placed after "usage" it filters;\n                       before "usage" it stays the global auth override.',
+            '\nKey filter:\n  --key <name-or-id>   Filter by API key name or id (repeatable, resolves\n                       names via /account/keys). Placed after "usage" it filters;\n                       before "usage" it stays the global auth override.\n\nDate filters:\n  --from <date>        Filter from date (YYYY-MM-DD)\n  --to <date>          Filter to date (YYYY-MM-DD)',
         ),
     )
     .action(async (opts) => {
@@ -209,6 +251,20 @@ export const usageCommand = new Command("usage")
 
         const models: string[] = opts.model;
 
+        // Validate date filters
+        if (opts.from && !isValidDate(opts.from)) {
+            printError(
+                `Invalid --from date "${opts.from}". Use YYYY-MM-DD format.`,
+            );
+            throw new ExitSignal(1);
+        }
+        if (opts.to && !isValidDate(opts.to)) {
+            printError(
+                `Invalid --to date "${opts.to}". Use YYYY-MM-DD format.`,
+            );
+            throw new ExitSignal(1);
+        }
+
         // Filters only apply to the two views; error instead of silently
         // printing the balance.
         if (
@@ -217,10 +273,12 @@ export const usageCommand = new Command("usage")
             (filterKeys.length > 0 ||
                 models.length > 0 ||
                 opts.days !== undefined ||
-                opts.csv)
+                opts.csv ||
+                opts.from !== undefined ||
+                opts.to !== undefined)
         ) {
             printError(
-                "--key, --model, --days and --csv require --history or --daily",
+                "--key, --model, --days, --csv, --from and --to require --history or --daily",
             );
             throw new ExitSignal(1);
         }
@@ -304,7 +362,13 @@ export const usageCommand = new Command("usage")
                 const data = await gen<DailyUsageResponse>(path, {
                     apiKey: key,
                 });
-                const rows = filterDailyRows(data.usage, keyIds, models);
+                const rows = filterDailyRows(
+                    data.usage,
+                    keyIds,
+                    models,
+                    opts.from,
+                    opts.to,
+                );
                 printTable(
                     rows.map((r) => ({
                         date: r.date,
@@ -331,8 +395,15 @@ export const usageCommand = new Command("usage")
                 return;
             }
             const data = await gen<UsageResponse>(path, { apiKey: key });
+            const filtered = filterHistoryRows(
+                data.usage,
+                keyIds,
+                models,
+                opts.from,
+                opts.to,
+            );
             printTable(
-                data.usage.map((r) => ({
+                filtered.map((r) => ({
                     time: r.timestamp,
                     type: r.type,
                     model: r.model,

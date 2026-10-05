@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     filterDailyRows,
+    filterHistoryRows,
     isKeyId,
     resolveKeyIds,
     splitKeyArgs,
@@ -161,6 +162,116 @@ describe("filterDailyRows", () => {
     it("drops rows with a null api_key_id when key filters are set", () => {
         const withNull = [{ ...rows[0], api_key_id: null }];
         expect(filterDailyRows(withNull, ["id_kimi"], [])).toHaveLength(0);
+    });
+
+    it("filters by --from date", () => {
+        const out = filterDailyRows(rows, [], [], "2026-09-16");
+        expect(out).toHaveLength(2);
+        expect(out.every((r) => r.date >= "2026-09-16")).toBe(true);
+    });
+
+    it("filters by --to date", () => {
+        const out = filterDailyRows(rows, [], [], undefined, "2026-09-15");
+        expect(out).toHaveLength(1);
+        expect(out[0].date).toBe("2026-09-15");
+    });
+
+    it("filters by date range (--from and --to)", () => {
+        const out = filterDailyRows(rows, [], [], "2026-09-15", "2026-09-15");
+        expect(out).toHaveLength(1);
+        expect(out[0].date).toBe("2026-09-15");
+    });
+
+    it("combines date range with key and model filters", () => {
+        const out = filterDailyRows(
+            rows,
+            ["id_kimi3"],
+            ["openai"],
+            "2026-09-15",
+            "2026-09-16",
+        );
+        expect(out).toHaveLength(1);
+        expect(out[0].api_key_id).toBe("id_kimi3");
+        expect(out[0].model).toBe("openai");
+    });
+});
+
+describe("filterHistoryRows", () => {
+    const rows = [
+        {
+            timestamp: "2026-09-16T10:00:00Z",
+            type: "image",
+            model: "openai",
+            api_key: "kimi",
+            api_key_id: "id_kimi",
+            cost_usd: 0.1,
+            meter_source: "tier",
+        },
+        {
+            timestamp: "2026-09-15T10:00:00Z",
+            type: "image",
+            model: "muse",
+            api_key: "kimi3",
+            api_key_id: "id_kimi3",
+            cost_usd: 0.2,
+            meter_source: "tier",
+        },
+        {
+            timestamp: "2026-09-14T10:00:00Z",
+            type: "text",
+            model: "openai",
+            api_key: "kimi3",
+            api_key_id: "id_kimi3",
+            cost_usd: 0.3,
+            meter_source: "pack",
+        },
+    ];
+
+    it("returns all rows without filters", () => {
+        expect(filterHistoryRows(rows, [], [])).toHaveLength(3);
+    });
+
+    it("filters by key id", () => {
+        const out = filterHistoryRows(rows, ["id_kimi3"], []);
+        expect(out).toHaveLength(2);
+        expect(out.every((r) => r.api_key_id === "id_kimi3")).toBe(true);
+    });
+
+    it("filters by model", () => {
+        const out = filterHistoryRows(rows, [], ["openai"]);
+        expect(out).toHaveLength(2);
+    });
+
+    it("filters by --from date", () => {
+        const out = filterHistoryRows(rows, [], [], "2026-09-15");
+        expect(out).toHaveLength(2);
+        expect(out.every((r) => r.timestamp.slice(0, 10) >= "2026-09-15")).toBe(
+            true,
+        );
+    });
+
+    it("filters by --to date", () => {
+        const out = filterHistoryRows(rows, [], [], undefined, "2026-09-14");
+        expect(out).toHaveLength(1);
+        expect(out[0].timestamp.slice(0, 10)).toBe("2026-09-14");
+    });
+
+    it("filters by date range", () => {
+        const out = filterHistoryRows(rows, [], [], "2026-09-14", "2026-09-15");
+        expect(out).toHaveLength(2);
+    });
+
+    it("combines all filters", () => {
+        const out = filterHistoryRows(
+            rows,
+            ["id_kimi3"],
+            ["openai"],
+            "2026-09-14",
+            "2026-09-16",
+        );
+        expect(out).toHaveLength(1);
+        expect(out[0].api_key_id).toBe("id_kimi3");
+        expect(out[0].model).toBe("openai");
     });
 });
 

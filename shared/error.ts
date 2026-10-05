@@ -457,7 +457,7 @@ export function getDefaultErrorMessage(status: number): string {
     const messages: Record<number, string> = {
         400: "Something was wrong with the input data, check the details for more info.",
         401: "Authentication required. Please provide an API key via Authorization header (Bearer token) or ?key= query parameter.",
-        402: "Insufficient pollen balance or API key budget exhausted.",
+        402: "Insufficient credit or API key budget exhausted.",
         403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",

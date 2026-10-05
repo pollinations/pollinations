@@ -902,7 +902,7 @@ All endpoints return errors in this envelope:
 | \`400\` | \`image_too_large\` | A supplied image exceeds the per-image size cap, or the request exceeds the per-request image size or count cap. |
 | \`400\` | \`unsupported_image_media_type\` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
-| \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
+| \`402\` | \`PAYMENT_REQUIRED\` | Insufficient credit or API key budget exhausted. |
 | \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |
 | \`404\` | \`NOT_FOUND\` | Resource not found. |
 | \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |

@@ -7,7 +7,7 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 | Endpoint | Description |
 |----------|-------------|
 | `GET /account/profile` | GitHub username, image, and community model access |
-| `GET /account/balance` | Current pollen balance |
+| `GET /account/balance` | Current credit balance in US dollars |
 | `GET /account/quests` | Read-only quest status |
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
@@ -22,12 +22,14 @@ Returns user profile. `githubUsername`, `image`, and `communityEndpointsAllowed`
 
 ### GET /account/balance
 
+Amounts are US dollars. Some API field names still say pollen (for example `pollenBudget`); their values are dollars.
+
 `balance` is the amount visible to this caller and is kept stable for existing clients:
 
 - Budgeted API keys always get the key's remaining budget in `balance` (no extra scope).
-- Sessions and unbudgeted keys get the account total (Quest Pollen + paid) in `balance`. That path requires `account:usage` for API keys.
+- Sessions and unbudgeted keys get the account total (quest credit + paid credit) in `balance`. That path requires `account:usage` for API keys.
 
-When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see Quest Pollen vs paid Pollen. Budgeted keys without `account:usage` do **not** receive `accountBalance` — that would leak the owner's wallet.
+When the caller can view account usage (dashboard session or `account:usage`), the response also includes `accountBalance: { total, tier, paid }` so clients can see quest credit vs paid credit. Budgeted keys without `account:usage` do **not** receive `accountBalance` — that would leak the owner's balance.
 
 ### GET /account/key/usage
 
@@ -51,7 +53,7 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/agents
 
-Create and manage managed agents and their callable `community/owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
+Create and manage managed agents and their callable `community/owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's credit.
 
 - **Prompt agent**: instructions, a base model, and optional MCP servers.
 - **Code agent**: a public GitHub repository with `agent.ts` at its root. Pollinations deploys the current default-branch revision; the repository name becomes the model ID and title. The bundled Vercel AI SDK (`ai`, `@ai-sdk/openai-compatible`) is importable; other dependencies are not installed. The callback receives `model(id)`, `mcp.tools(server)`, `respond(config)`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)`.
@@ -68,6 +70,6 @@ See [Publish an Agent](/docs#tag/publish-an-agent) for dashboard, CLI, and API e
 
 Community text, image, video, speech-to-text, and text-to-speech model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers and endpoint agents declare one `api` (`chat_completions` or `responses`) and its exact `url`. Responses listings support both public text APIs through Gen; Chat Completions listings support Chat Completions only. Managed prompt agents use the local Responses runtime and require no endpoint URL. The text endpoint test checks JSON and streaming usage for the selected API; `/models` discovery is optional.
 
-Other model families retain `baseUrl`. Image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`; speech providers expose `/v1/audio/speech` and must return binary audio, which is billed by input character count. Video providers enter an exact endpoint URL that accepts `prompt`, optional `duration`, and optional `image` and `reference_*` URL arrays. Omitted duration uses the provider's default. Return completed MP4 media as `data[].b64_json` or `data[].url`, plus `usage.duration` in generated seconds. Billing uses reported duration, falling back to requested duration when usage is missing; at least one is required. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
+Other model families retain `baseUrl`. Image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`; speech providers expose `/v1/audio/speech` and must return binary audio, which is billed by input character count. Video providers enter an exact endpoint URL that accepts `prompt`, optional `duration`, and optional `image` and `reference_*` URL arrays. Omitted duration uses the provider's default. Return completed MP4 media as `data[].b64_json` or `data[].url`, plus `usage.duration` in generated seconds. Billing uses reported duration, falling back to requested duration when usage is missing; at least one is required. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed price in US dollars is charged once per successful generated image.
 
 Public publishing requires `communityEndpointsAllowed: true`; [request account-level publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) with the allowlist form. Inspecting and testing an upstream endpoint is open to every account, limited to one probe every 30 seconds. The form does not register individual models. API keys require `account:keys`. The dashboard, Account API, and `polli my-models` support text, image, video, transcription, and speech registration. See [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup, publishing, pricing, fallbacks, and health monitoring.

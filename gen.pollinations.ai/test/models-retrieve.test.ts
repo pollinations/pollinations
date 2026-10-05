@@ -221,7 +221,7 @@ test("show all does not bypass key permissions or paid access", async ({
     ).toBe(false);
 });
 
-test("community reliability is discovery-only and show all preserves manual hiding and privacy", async () => {
+test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });
     const { key: ownerKey } = await createTestApiKey({ userId: ownerUserId });
@@ -259,6 +259,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
     const id = `community/${owner}/public`;
     const passingId = `community/${owner}/passing`;
     const privateId = `community/${owner}/private`;
+    const legacyHiddenId = `community/${owner}/hidden`;
     mockCatalogHealth([
         {
             model: id,
@@ -286,6 +287,9 @@ test("community reliability is discovery-only and show all preserves manual hidi
     const normalModels = (await normal.json()) as { name: string }[];
     expect(normalModels.some((model) => model.name === id)).toBe(false);
     expect(normalModels.some((model) => model.name === passingId)).toBe(true);
+    expect(normalModels.some((model) => model.name === legacyHiddenId)).toBe(
+        true,
+    );
     const ownerList = await fetchWorker("/models?source=community", {
         headers: { Authorization: `Bearer ${ownerKey}` },
     });
@@ -302,7 +306,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
             .filter((model) => model.name.startsWith(`community/${owner}/`))
             .map((model) => model.name)
             .sort(),
-    ).toEqual([passingId, id].sort());
+    ).toEqual([passingId, id, legacyHiddenId].sort());
     expect(
         (await fetchWorker(`/v1/models/${encodeURIComponent(id)}`)).status,
     ).toBe(200);

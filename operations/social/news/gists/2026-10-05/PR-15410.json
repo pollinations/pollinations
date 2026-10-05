@@ -1,0 +1,33 @@
+{
+  "pr_number": 15410,
+  "title": "feat(sdk): add typed decision call for Jev",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/15410",
+  "merged_at": "2026-10-05T17:08:26Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\nAdds a typed `decision({ state, questions, model? })` call to `@pollinations/sdk` for the existing `POST /alpha/decisions` endpoint.\n\n- Forwards the request without changing the API's model selection or question semantics.\n- Exposes the response types and a top-level helper.\n- Documents a short example and tests request forwarding, including object-valued state.\n\nThe CLI command, model aliases, builders, and positional overloads from the initial proposal were removed to keep this a thin SDK addition.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Jev gets a typed path",
+    "blurb": "Jev’s decision endpoint gets a small SDK doorway: pass in state and questions, get typed responses back. No extra machinery hiding in the flowerpot.",
+    "summary": "Added a typed `decision({ state, questions, model? })` call, response types, and a top-level helper to `@pollinations/sdk` for the existing `POST /alpha/decisions` endpoint, preserving its model selection and question semantics.",
+    "impact": "Developers can call Jev decisions through the SDK with typed responses and object-valued state, without assembling the endpoint request themselves.",
+    "keywords": [
+      "SDK",
+      "Jev",
+      "decisions",
+      "TypeScript",
+      "API"
+    ],
+    "visual_concept": "Depict Jev as a friendly decision-making terminal, not a new mascot or model. Polli hands it a card showing state and questions; tidy typed response cards emerge beside a small code-plant, emphasizing the SDK as a thin path to the existing endpoint.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny programmer glasses and offers a state-and-questions card to a friendly retro terminal labeled 'JEV'; neatly outlined response cards emerge beside a code-plant in a bold lime green (#ecf874) pot. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and mint surroundings with dark purple (#110518) outlines, chunky sprites, and a gentle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-15410.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny programmer glasses and offers a state-and-questions card to a friendly retro terminal labeled 'JEV'; neatly outlined response cards emerge beside a code-plant in a bold lime green (#ecf874) pot. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and mint surroundings with dark purple (#110518) outlines, chunky sprites, and a gentle CRT glow."
+  },
+  "generated_at": "2026-10-05T17:11:21.097292+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 16516,
+  "title": "fix: accept ISO before cursor on usage endpoints",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16516",
+  "merged_at": "2026-10-05T14:54:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix: paging past the first page of `/account/usage` and `/account/key/usage` failed with a 500 when the `before` cursor was ISO 8601 (e.g. `2026-10-04T12:40:48.000Z`). The value went straight to the `activity_usage_transactions` pipe, whose `DateTime(before)` rejects ISO.\n- The query schema now converts ISO cursors (with `Z` or an offset) to Tinybird's `YYYY-MM-DD HH:MM:SS` using the existing `toTinybirdDateTime` helper. Cursors already in the returned row format pass through unchanged. `timestamp` is a second-precision `DateTime`, so dropping milliseconds is exact.\n- Unparseable cursors now get a 400 instead of a Tinybird 500.\n- Extends the cursor test in `account-usage.test.ts`: an ISO cursor must reach the pipe in Tinybird format, and an invalid one returns 400.\n- Prod evidence (2026-10-05): ~110 failed pipe calls/hour, `Cannot convert string '2026-10-04T12:40:48.000Z' to type DateTime`; only `before` was ISO.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01EiESgQiwYbspATwyFa9EJt",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The cursor learns to tell time",
+    "blurb": "Usage history keeps its place. ISO timestamps get translated before the next page is fetched, and malformed cursors receive a useful 400 instead of a server error.",
+    "summary": "The `/account/usage` and `/account/key/usage` endpoints convert ISO 8601 `before` cursors to Tinybird's `YYYY-MM-DD HH:MM:SS` format, preserve cursors already in that format, and return 400 for invalid values.",
+    "impact": "Paging beyond the first usage page works with ISO cursors, while invalid cursors produce a clear 400 response rather than a 500.",
+    "keywords": [
+      "usage",
+      "pagination",
+      "cursor",
+      "ISO 8601",
+      "Tinybird",
+      "account API"
+    ],
+    "visual_concept": "Depict account usage as a stack of dated pages beside a retro terminal. Polli, wearing tiny librarian glasses, translates an ISO-stamped bookmark into a simpler date stamp so the Monitor Robot can turn to the next page; a small code-plant ties the scene to the garden.",
+    "image_prompt": "In a cozy pixel art reading nook, Polli helps a cheerful CRT-headed robot turn to the next page of an account usage ledger, changing an ISO-stamped bookmark into a neat date stamp beside a little code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small-to-medium beside the robot, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream surroundings, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16516.jpg",
+    "prompt": "In a cozy pixel art reading nook, Polli helps a cheerful CRT-headed robot turn to the next page of an account usage ledger, changing an ISO-stamped bookmark into a neat date stamp beside a little code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small-to-medium beside the robot, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream surroundings, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-05T14:56:19.705509+00:00"
+}

@@ -14,6 +14,7 @@ on:
 permissions:
   contents: read
   actions: read
+  issues: write
 
 concurrency:
   group: model-manager-pilot
@@ -125,6 +126,28 @@ jobs:
           retention-days: 30
           overwrite: true
 
+      - name: Publish public assessment
+        if: success() && contains(fromJSON('["saved", "saved_with_source_gaps", "already_recorded"]'), steps.launch.outputs.status)
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const {readFile} = await import('node:fs/promises');
+            const {dayKey, reportIssue} = await import(`${process.env.GITHUB_WORKSPACE}/operations/model-manager/analyze.mjs`);
+            const data = `${process.env.RUNNER_TEMP}/model-manager-data`;
+            const report = JSON.parse(await readFile(`${data}/report.json`, 'utf8'));
+            const proof = JSON.parse(await readFile(`${data}/verification.json`, 'utf8'));
+            if (!['saved', 'saved_with_source_gaps'].includes(proof.status) || dayKey(report.at) !== dayKey(new Date())) {
+              throw new Error('Public assessment requires successful evidence from today.');
+            }
+            const issue = {...context.repo, issue_number: 16517};
+            const marker = `<!-- model-manager:${report.at} -->`;
+            const comments = await github.paginate(github.rest.issues.listComments, {...issue, per_page: 100});
+            if (comments.some(comment => comment.body?.includes(marker))) {
+              core.info('This assessment is already published.');
+              return;
+            }
+            await github.rest.issues.createComment({...issue, body: `${marker}\n${reportIssue(report)}`});
+
       - name: Summarize run
         if: always()
         env:
@@ -136,4 +159,4 @@ jobs:
           else
             echo 'No new report was produced in this run.' >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo 'Private evidence and checkpoints are in the encrypted model-manager-state artifact. No model changes or external notifications are enabled.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Public assessments: https://github.com/pollinations/pollinations/issues/16517. Execution evidence and checkpoints remain encrypted. No model changes are enabled.' >> "$GITHUB_STEP_SUMMARY"

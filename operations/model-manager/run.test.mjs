@@ -7,6 +7,7 @@ import {
     historySnapshot,
     reportDigest,
     reportHtml,
+    reportIssue,
     runRates,
     textAssessmentCost,
     trendReasons,
@@ -330,7 +331,7 @@ test("Compact history preserves trend and revision decisions without catalog or 
     assert.equal(compact.sources[0].observations[0].inputSchema, undefined);
 });
 
-test("Daily digest retains research evidence but excludes private assessment and metadata", () => {
+test("Public issue includes escaped assessment while excluding private metadata and diagnostics", () => {
     const report = {
         at: "2026-10-05",
         account: "private@example.com",
@@ -344,10 +345,13 @@ test("Daily digest retains research evidence but excludes private assessment and
                 label: "catalog-11",
                 status: "unavailable",
                 privateValue: "private-detail",
+                error: "private-diagnostic",
             },
         ],
         assessment: {
-            text: "INTERNAL_ASSESSMENT_TEXT </pre><script>evil()</script>",
+            status: "complete",
+            text: "ASSESSMENT_TEXT </pre><script>evil()</script>",
+            usage: { privateValue: "private-usage" },
         },
         findings: Array.from({ length: 7 }, (_, index) => ({
             id: `lead-${index}`,
@@ -368,8 +372,20 @@ test("Daily digest retains research evidence but excludes private assessment and
     assert.ok(!digest.includes("lead-6"));
     assert.ok(!digest.includes("private@example.com"));
     assert.ok(!digest.includes("private-detail"));
-    assert.ok(!digest.includes("INTERNAL_ASSESSMENT_TEXT"));
-    assert.ok(reportHtml(report).includes("INTERNAL_ASSESSMENT_TEXT"));
+    assert.ok(!digest.includes("ASSESSMENT_TEXT"));
+    const issue = reportIssue(report);
+    assert.ok(issue.includes("ASSESSMENT_TEXT"));
+    assert.match(issue, /Agent assessment · complete/);
+    assert.match(issue, /&lt;\/pre&gt;&lt;script&gt;/);
+    for (const value of [
+        "private@example.com",
+        "private-detail",
+        "private-diagnostic",
+        "private-usage",
+        "<script>",
+    ])
+        assert.ok(!issue.includes(value));
+    assert.ok(reportHtml(report).includes("ASSESSMENT_TEXT"));
     assert.ok(!digest.includes("<script>"));
     assert.ok(!digest.includes('href="javascript:'));
     assert.match(digest, /&lt;img/);

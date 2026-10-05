@@ -29,12 +29,12 @@ import {
 import { apiClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { LoadError, PageLoading } from "../layout/dashboard-loading.tsx";
+import type { ApiModelInfo } from "../models/model-catalog.ts";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
-import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
 import {
     type AgentFormState,
     type CommunityEndpoint,
@@ -55,6 +55,7 @@ type CommunityEndpointsProps = {
     canPublish: boolean;
     // Public community models offered as fallback targets in the dialog.
     fallbackOptions: FallbackModelOption[];
+    healthByModelId: Record<string, ApiModelInfo["health"]> | null;
 };
 
 const PUBLISHER_ACCESS_REQUEST_URL =
@@ -120,6 +121,7 @@ export function CommunityEndpoints({
     onChange,
     canPublish,
     fallbackOptions,
+    healthByModelId,
 }: CommunityEndpointsProps) {
     const [endpoints, setEndpoints] = useState<CommunityEndpoint[]>([]);
     const [agents, setAgents] = useState<ManagedAgent[]>([]);
@@ -143,8 +145,6 @@ export function CommunityEndpoints({
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
-    const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
-    const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
     const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
@@ -344,39 +344,6 @@ export function CommunityEndpoints({
         setError(null);
     }
 
-    async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
-        setTogglingId(endpoint.id);
-        setError(null);
-        try {
-            const response = await apiClient.account["my-models"][
-                ":id"
-            ].update.$post({
-                param: { id: endpoint.id },
-                json: { hidden: !endpoint.hidden },
-            });
-            if (!response.ok) throw new Error(await readError(response));
-            const updated = (await response.json()) as CommunityEndpoint;
-            setEndpoints((current) =>
-                current.map((item) =>
-                    item.id === updated.id ? updated : item,
-                ),
-            );
-            await onChange?.();
-        } catch (thrown) {
-            setError(
-                resourceActionError(
-                    "update",
-                    endpoint.type === "proxy"
-                        ? "the model’s visibility"
-                        : "the agent’s visibility",
-                    thrown,
-                ),
-            );
-        } finally {
-            setTogglingId(null);
-        }
-    }
-
     const publisherAccessRequestLink = (
         <InlineLink href={PUBLISHER_ACCESS_REQUEST_URL}>
             publisher access request
@@ -419,8 +386,8 @@ export function CommunityEndpoints({
                 key={endpoint.id}
                 endpoint={endpoint}
                 agent={agent}
-                isToggling={togglingId === endpoint.id}
-                onToggle={() => setToggling(endpoint)}
+                health={healthByModelId?.[endpoint.modelId]}
+                healthUnavailable={healthByModelId === null}
                 onEdit={
                     agent
                         ? () =>
@@ -674,15 +641,6 @@ export function CommunityEndpoints({
                 onCancel={() => setDeletingAgent(null)}
             />
 
-            <CommunityEndpointToggleConfirmation
-                endpoint={toggling}
-                onConfirm={() => {
-                    if (!toggling) return;
-                    void handleToggle(toggling);
-                    setToggling(null);
-                }}
-                onCancel={() => setToggling(null)}
-            />
             <AgentDialog
                 open={agentCreateOpen}
                 onOpenChange={setAgentCreateOpen}

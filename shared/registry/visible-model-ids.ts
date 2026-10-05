@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import {
@@ -91,12 +91,7 @@ export async function getVisibleModelIdsForUser(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
-        .where(
-            and(
-                isNull(schema.communityEndpoint.hiddenAt),
-                isNotNull(schema.user.githubUsername),
-            ),
-        );
+        .where(isNotNull(schema.user.githubUsername));
 
     for (const model of communityModels) {
         if (

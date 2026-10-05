@@ -33,38 +33,7 @@ export function assessmentRequest(input, model) {
     };
 }
 
-export async function storeAssessment(base, token, at, text) {
-    if (!token) throw new Error("Computer storage requires an authorized key");
-    const response = await fetch(`${base}/mcp/computer`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "content-type": "application/json",
-            Accept: "application/json, text/event-stream",
-        },
-        body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "tools/call",
-            params: {
-                name: "bash",
-                arguments: {
-                    command: `mkdir -p /workspace/model-manager && cat > /workspace/model-manager/assessment-${dayKey(at)}.json`,
-                    cwd: "/workspace",
-                    stdin: JSON.stringify({ at, mode: "report_only", text }),
-                },
-            },
-        }),
-        signal: AbortSignal.timeout(30000),
-    });
-    if (!response.ok)
-        throw new Error(`Computer storage HTTP ${response.status}`);
-    const body = await response.json();
-    if (body.error || !body.result || body.result.isError)
-        throw new Error("Computer storage failed");
-}
-
-export function pendingFindings(pending, findings, at) {
+export function selectFindings(findings) {
     const priority = [
         "retirement_review",
         "pricing_review",
@@ -73,20 +42,23 @@ export function pendingFindings(pending, findings, at) {
         "investigate",
         "lifecycle_lead",
     ];
+    const fresh = findings.filter((f) => f.newFinding);
+    // Reserve two slots for discovery so catalog maintenance cannot starve it.
+    const discoveries = fresh
+        .filter((f) => f.kind === "investigate")
+        .slice(0, 2);
     return [
-        ...new Map(
-            [
-                ...pending,
-                ...findings
-                    .filter((f) => f.newFinding)
-                    .map((f) => ({ ...f, observedAt: at })),
-            ].map((f) => [f.fingerprint, f]),
-        ).values(),
-    ].sort((a, b) => priority.indexOf(a.kind) - priority.indexOf(b.kind));
+        ...discoveries,
+        ...fresh
+            .filter((f) => !discoveries.includes(f))
+            .sort(
+                (a, b) => priority.indexOf(a.kind) - priority.indexOf(b.kind),
+            ),
+    ].slice(0, 5);
 }
 
 export function researchEvidence(report) {
-    const findings = report.findings.filter((f) => f.newFinding).slice(0, 5);
+    const findings = selectFindings(report.findings);
     const categories = new Set(
         findings.flatMap((f) => {
             const own = report.registry.find((m) => m.name === f.id)?.public
@@ -156,19 +128,16 @@ export function researchEvidence(report) {
     };
 }
 
-export function settleAssessment(pending, report, notified) {
-    if (report.assessment.status !== "complete") return { pending, notified };
-    const completed = new Set(
-        report.assessmentInput.findings.map((f) => f.fingerprint),
-    );
+export function settleAssessment(report, notified) {
+    if (report?.assessment.status !== "complete") return notified;
     return {
-        pending: pending.filter((f) => !completed.has(f.fingerprint)),
-        notified: {
-            ...notified,
-            ...Object.fromEntries(
-                [...completed].map((fingerprint) => [fingerprint, report.at]),
-            ),
-        },
+        ...notified,
+        ...Object.fromEntries(
+            report.assessmentInput.findings.map((f) => [
+                f.fingerprint,
+                report.at,
+            ]),
+        ),
     };
 }
 
@@ -442,23 +411,52 @@ export function analyze(snapshot, history, notified = {}) {
                     verification: "deadline_unknown",
                 });
             if (source.source === "openrouter" && existing) {
-                const cost = snapshot.registry.find(
+                const configured = snapshot.registry.find(
                     (m) => m.name === existing.name,
-                )?.cost;
-                const rates = {
+                );
+                // Catalog minima are not the rates of our pinned OpenRouter route.
+                // Variant pricing needs a workload, which this pilot does not have.
+                if (
+                    !configured?.provider ||
+                    configured.provider === "openrouter" ||
+                    Object.keys(configured.costVariants ?? {}).length
+                )
+                    continue;
+                const advertised = {
                     promptTextTokens: model.pricing?.prompt,
                     completionTextTokens: model.pricing?.completion,
                 };
-                const cheaper = Object.entries(rates).filter(
-                    ([key, rate]) => rate != null && cost?.[key] > Number(rate),
+                const units = Object.keys(advertised);
+                if (
+                    !units.every(
+                        (key) =>
+                            advertised[key] != null &&
+                            advertised[key] !== "" &&
+                            Number.isFinite(Number(advertised[key])) &&
+                            Number(advertised[key]) >= 0 &&
+                            Number.isFinite(configured.cost?.[key]),
+                    )
+                )
+                    continue;
+                // Same standard credit-purchase fee used by our registry.
+                // https://openrouter.ai/pricing (minimum fees/account terms still need verification).
+                const rates = Object.fromEntries(
+                    units.map((key) => [key, Number(advertised[key]) * 1.055]),
                 );
-                if (cheaper.length)
+                if (
+                    units.every((key) => rates[key] <= configured.cost[key]) &&
+                    units.some((key) => rates[key] < configured.cost[key])
+                )
                     findings.push({
                         kind: "sourcing_lead",
                         source: source.source,
                         id: existing.name,
                         url: model.url,
-                        reason: "OpenRouter headline rate below checkout cost for one or more token units",
+                        reason: "OpenRouter headline text rates plus 5.5% credit fee are no higher on either unit and lower on at least one; exact endpoint equivalence remains unverified",
+                        currentProvider: configured.provider,
+                        checkoutRates: Object.fromEntries(
+                            units.map((key) => [key, configured.cost[key]]),
+                        ),
                         upstreamRates: rates,
                         verification:
                             "unverified_provider_pin_fees_credits_capabilities_and_workload",
@@ -493,6 +491,8 @@ export function analyze(snapshot, history, notified = {}) {
                     finding.version,
                     finding.retirementDate,
                     finding.upstreamRates,
+                    finding.checkoutRates,
+                    finding.currentProvider,
                     finding.changed,
                     finding.checkoutPricing,
                     finding.deployedPricing,
@@ -535,8 +535,9 @@ const safeLink = (value) => {
 // Dynamic text stays inside escaped HTML blocks so it cannot inject Markdown or HTML.
 export function reportIssue(report) {
     const fresh = report.findings.filter((finding) => finding.newFinding);
-    const leads = fresh
-        .slice(0, 5)
+    const selected =
+        report.assessmentInput?.findings ?? selectFindings(report.findings);
+    const leads = selected
         .map(
             (finding) =>
                 `<li><a href="${safeLink(finding.url)}">${escapeHtml(finding.id)}</a> · ${escapeHtml(finding.kind.replaceAll("_", " "))}<p>${escapeHtml(finding.reason ?? finding.reasons?.join("; "))}</p></li>`,
@@ -554,5 +555,5 @@ export function reportIssue(report) {
                 `<li>${escapeHtml(gap.source)} · ${escapeHtml(gap.label ?? "query")} · ${escapeHtml(gap.status)}</li>`,
         )
         .join("");
-    return `## Model manager · report-only\n\n<p>${escapeHtml(report.at)} · New leads: ${fresh.length} · Already recorded: ${report.findings.length - fresh.length} · Coverage gaps: ${report.gaps.length} · Pending after this run: ${report.pendingCount ?? 0}.</p>\n\n### Next investigations (up to five)\n\n<ul>${leads || "<li>No new leads.</li>"}</ul>\n\n### Source coverage\n\n<ul>${coverage}${gaps}</ul>\n\nDiscovery evidence only. Capabilities, exact provider routes, billing correctness and retirement notices still need verification.\n\n### Agent assessment · ${escapeHtml(report.assessment?.status ?? "not_requested")}\n\n<pre>${escapeHtml(report.assessment?.text ?? "No new leads to assess.")}</pre>\n`;
+    return `## Model manager · report-only\n\n<p>${escapeHtml(report.at)} · New leads: ${fresh.length} · Already recorded: ${report.findings.length - fresh.length} · Coverage gaps: ${report.gaps.length} · Selected: ${selected.length} · Unselected: ${fresh.length - selected.length} (reconsidered only if current evidence qualifies again; no backlog).</p>\n\n### Next investigations (up to five)\n\n<ul>${leads || "<li>No new leads.</li>"}</ul>\n\n### Source coverage\n\n<ul>${coverage}${gaps}</ul>\n\nDiscovery evidence only. Capabilities, exact provider routes, billing correctness and retirement notices still need verification.\n\n### Agent assessment · ${escapeHtml(report.assessment?.status ?? "not_requested")}\n\n<pre>${escapeHtml(report.assessment?.text ?? "No new leads to assess.")}</pre>\n`;
 }

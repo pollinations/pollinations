@@ -18,7 +18,6 @@ on:
 permissions:
   contents: read
   actions: read
-  issues: write
 
 concurrency:
   group: model-manager-pilot
@@ -29,6 +28,8 @@ jobs:
     if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main' && inputs.verify_stack != true
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      publish: ${{ steps.report.outputs.ready }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -130,27 +131,34 @@ jobs:
           retention-days: 30
           overwrite: true
 
-      - name: Publish public assessment
+      - name: Prepare readable assessment
+        id: report
         if: success() && contains(fromJSON('["saved", "saved_with_source_gaps", "already_recorded"]'), steps.launch.outputs.status)
-        uses: actions/github-script@v8
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile, writeFile, mkdir} from 'node:fs/promises';
+          import {dayKey, reportIssue} from './operations/model-manager/analyze.mjs';
+          const data = `${process.env.RUNNER_TEMP}/model-manager-data`;
+          const report = JSON.parse(await readFile(`${data}/report.json`, 'utf8'));
+          const proof = JSON.parse(await readFile(`${data}/verification.json`, 'utf8'));
+          if (!['saved', 'saved_with_source_gaps'].includes(proof.status) || dayKey(report.at) !== dayKey(new Date())) {
+            throw new Error('Public assessment requires successful evidence from today.');
+          }
+          const output = `${process.env.RUNNER_TEMP}/model-manager-public`;
+          await mkdir(output, {recursive: true});
+          await writeFile(`${output}/report.md`, `<!-- model-manager:${report.at} -->\n${reportIssue(report)}`);
+          await writeFile(process.env.GITHUB_OUTPUT, 'ready=true\n', {flag: 'a'});
+          NODE
+
+      - name: Preserve readable assessment for publication retries
+        if: steps.report.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const {readFile} = await import('node:fs/promises');
-            const {dayKey, reportIssue} = await import(`${process.env.GITHUB_WORKSPACE}/operations/model-manager/analyze.mjs`);
-            const data = `${process.env.RUNNER_TEMP}/model-manager-data`;
-            const report = JSON.parse(await readFile(`${data}/report.json`, 'utf8'));
-            const proof = JSON.parse(await readFile(`${data}/verification.json`, 'utf8'));
-            if (!['saved', 'saved_with_source_gaps'].includes(proof.status) || dayKey(report.at) !== dayKey(new Date())) {
-              throw new Error('Public assessment requires successful evidence from today.');
-            }
-            const issue = {...context.repo, issue_number: 16517};
-            const marker = `<!-- model-manager:${report.at} -->`;
-            const comments = await github.paginate(github.rest.issues.listComments, {...issue, per_page: 100});
-            if (comments.some(comment => comment.body?.includes(marker))) {
-              core.info('This assessment is already published.');
-              return;
-            }
-            await github.rest.issues.createComment({...issue, body: `${marker}\n${reportIssue(report)}`});
+          name: model-manager-report
+          path: ${{ runner.temp }}/model-manager-public/report.md
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
 
       - name: Summarize run
         if: always()
@@ -164,6 +172,35 @@ jobs:
             echo 'No new report was produced in this run.' >> "$GITHUB_STEP_SUMMARY"
           fi
           echo 'Public assessments: https://github.com/pollinations/pollinations/issues/16517. Execution evidence and checkpoints remain encrypted. No model changes are enabled.' >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: scan
+    if: needs.scan.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: model-manager-report
+          path: ${{ runner.temp }}/model-manager-public
+      - name: Publish public assessment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const {readFile} = await import('node:fs/promises');
+            const body = await readFile(`${process.env.RUNNER_TEMP}/model-manager-public/report.md`, 'utf8');
+            const marker = body.split('\n', 1)[0];
+            if (!/^<!-- model-manager:[0-9T:.Z-]+ -->$/.test(marker)) throw new Error('Invalid report marker');
+            const issue = {...context.repo, issue_number: 16517};
+            const comments = await github.paginate(github.rest.issues.listComments, {...issue, per_page: 100});
+            if (comments.some(comment => comment.body?.startsWith(marker))) {
+              core.info('This assessment is already published.');
+              return;
+            }
+            await github.rest.issues.createComment({...issue, body});
 
   verify-stack:
     if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.verify_stack == true

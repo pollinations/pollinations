@@ -29,6 +29,66 @@ test("VM bundle runs without a checkout or installed dependencies", async () => 
     }
 });
 
+test("A saved paid response settles and renders again without credentials or inference", async () => {
+    const { code } = await sourceBundle();
+    const data = await mkdtemp(join(tmpdir(), "model-manager-receipt-test-"));
+    const report = {
+        at: "2026-10-01T06:00:00Z",
+        findings: [
+            {
+                id: "lab/model",
+                kind: "investigate",
+                newFinding: true,
+                fingerprint: "selected",
+            },
+        ],
+        sources: [],
+        gaps: [],
+        assessment: {
+            status: "complete",
+            text: "Saved paid response",
+            responseId: "receipt",
+        },
+        assessmentInput: {
+            findings: [
+                {
+                    id: "lab/model",
+                    kind: "investigate",
+                    fingerprint: "selected",
+                },
+            ],
+        },
+    };
+    try {
+        await writeFile(join(data, "run.mjs"), code);
+        await writeFile(join(data, "report.json"), JSON.stringify(report));
+        // Missing suppression state represents an interrupted write after paid inference.
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const result = spawnSync(
+                process.execPath,
+                [join(data, "run.mjs"), "--out", data, "--assess-only"],
+                { encoding: "utf8", env: { PATH: "" } },
+            );
+            assert.equal(result.status, 0, result.stderr);
+            assert.deepEqual(
+                JSON.parse(await readFile(join(data, "notified.json"), "utf8")),
+                { selected: report.at },
+            );
+            assert.match(
+                await readFile(join(data, "report.md"), "utf8"),
+                /Saved paid response/,
+            );
+            assert.equal(
+                JSON.parse(await readFile(join(data, "report.json"), "utf8"))
+                    .assessment.responseId,
+                "receipt",
+            );
+        }
+    } finally {
+        await rm(data, { recursive: true, force: true });
+    }
+});
+
 test("Pilot stops after 14 Berlin calendar days, including the DST change", () => {
     const pilot = { startedDay: "2026-10-20", days: [], spentPollen: 0 };
     assert.equal(
@@ -89,13 +149,13 @@ test("State retains the 14 pilot snapshots and omits credential files and locks"
         await writeFile(join(directory, "run.lock"), "lock");
         await writeFile(join(directory, "report.md"), "Previous run summary");
         const files = await stateFiles(directory);
-        assert.equal(Object.keys(files).length, 16);
+        assert.equal(Object.keys(files).length, 15);
         assert.equal(files["snapshot-2026-01-01.json"], undefined);
         assert.equal(files["prod.vars.json"], undefined);
         assert.equal(files["run.lock"], undefined);
         assert.equal(files["report.md"], undefined);
         assert.equal(files["notified.json"], "{}");
-        assert.equal(files["pending.json"], '[{"fingerprint":"unselected"}]');
+        assert.equal(files["pending.json"], undefined);
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

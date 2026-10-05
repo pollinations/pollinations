@@ -112,7 +112,6 @@ async function exportReport() {
         "report.json",
         "report.md",
         "notified.json",
-        "pending.json",
         `snapshot-${dayKey(report.at)}.json`,
     ])
         await save(
@@ -345,8 +344,7 @@ try {
             for (const [name, content] of Object.entries(history))
                 if (
                     name.startsWith("snapshot-") ||
-                    ["notified.json", "pending.json"].includes(name) ||
-                    (resume && name === "report.json")
+                    ["notified.json", "report.json"].includes(name)
                 )
                     await sandbox.files.write(
                         `${REMOTE}/data/${name}`,
@@ -369,13 +367,17 @@ try {
                 await exportReport(); // Preserve successful providers before inference.
             }
             proof.resumedAssessment = !!resume;
-            await command(
-                "assessment",
-                "node run.mjs --out /home/user/model-manager/data --assess-only",
-                { ...options, timeoutMs: 240_000 },
-                [0, 2],
-            );
-            const report = await exportReport();
+            let report;
+            try {
+                await command(
+                    "assessment",
+                    "node run.mjs --out /home/user/model-manager/data --assess-only",
+                    { ...options, timeoutMs: 180_000 },
+                    [0, 2],
+                );
+            } finally {
+                report = await exportReport();
+            }
             proof.coverageGaps = report.gaps.length;
             proof.findings = report.findings.length;
             proof.assessment = report.assessment.status;

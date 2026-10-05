@@ -3,7 +3,6 @@ import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { COMPUTER_TOOL_CALL_PRICE } from "../../shared/registry/mcp.ts";
 import { modelInfoFromDefinition } from "../../shared/registry/model-info.ts";
 import {
     getModels,
@@ -15,11 +14,9 @@ import {
     assessmentRequest,
     dayKey,
     historySnapshot,
-    pendingFindings,
     reportIssue,
     researchEvidence,
     settleAssessment,
-    storeAssessment,
     textAssessmentCost,
 } from "./analyze.mjs";
 import {
@@ -106,7 +103,7 @@ async function assessment(report: {
                 status: "blocked_budget",
                 reason: "Selected assessment model lacks a bounded plain-text rate sheet",
             };
-        if (maximumCost + COMPUTER_TOOL_CALL_PRICE > 0.1)
+        if (maximumCost > 0.1)
             return {
                 status: "blocked_budget",
                 reason: "Inference upper bound exceeds the prototype's 0.1 Pollen assessment cap",
@@ -141,7 +138,7 @@ async function assessment(report: {
             model: MODEL,
             text,
             usage: body.usage,
-            estimatedUpperBoundPollen: maximumCost + COMPUTER_TOOL_CALL_PRICE,
+            estimatedUpperBoundPollen: maximumCost,
             responseId: body.id,
             chargedPrice: response.headers.get("x-usage-price"),
         };
@@ -153,17 +150,15 @@ async function assessment(report: {
     }
 }
 
-async function persistReport(out, report, pending, notified) {
-    const settled = settleAssessment(pending, report, notified);
-    report.pendingCount = settled.pending.length;
+async function persistReport(out, report, notified) {
+    const settled = settleAssessment(report, notified);
     // Save the completed response first; an interrupted local write can be
     // settled again without repeating inference.
     await save(join(out, "report.json"), JSON.stringify(report, null, 2));
-    await save(join(out, "pending.json"), JSON.stringify(settled.pending));
-    await save(join(out, "notified.json"), JSON.stringify(settled.notified));
+    await save(join(out, "notified.json"), JSON.stringify(settled));
     await save(join(out, "report.md"), reportIssue(report));
     console.log(
-        `Saved ${report.findings.length} research findings; ${report.pendingCount} pending`,
+        `Saved ${report.findings.length} research findings; ${report.assessmentInput.findings.length} selected`,
     );
     if (report.gaps.length) process.exitCode = 2;
 }
@@ -171,48 +166,10 @@ async function persistReport(out, report, pending, notified) {
 async function assessReport(report, out) {
     if (["complete", "not_needed"].includes(report.assessment.status)) return;
     report.gaps = report.gaps.filter((gap) => gap.source !== "assessment");
-    if (report.assessment.status !== "storage_pending") {
-        report.assessment = await assessment(report);
-        if (report.assessment.status === "complete") {
-            report.assessment.status = "storage_pending";
-            // Preserve paid inference before a separate Computer write.
-            await save(join(out, "report.json"), JSON.stringify(report));
-        }
-    }
-    if (report.assessment.status === "storage_pending") {
-        try {
-            if (
-                !token ||
-                JSON.parse(
-                    (
-                        await request(`${BASE}/account/profile`, {
-                            Authorization: `Bearer ${token}`,
-                        })
-                    ).text,
-                ).email !== ACCOUNT
-            )
-                throw new Error("Wrong storage account");
-            await storeAssessment(
-                BASE,
-                token,
-                report.at,
-                report.assessment.text,
-            );
-            report.assessment.status = "complete";
-            delete report.assessment.reason;
-        } catch {
-            report.assessment.reason =
-                "Computer storage failed; retry reuses the saved inference";
-        }
-    }
-    if (
-        [
-            "failed",
-            "storage_pending",
-            "blocked_access",
-            "blocked_budget",
-        ].includes(report.assessment.status)
-    )
+    report.assessment = await assessment(report);
+    // Save paid output before suppression/rendering so an interrupted write can recover.
+    await save(join(out, "report.json"), JSON.stringify(report));
+    if (!["complete", "not_needed"].includes(report.assessment.status))
         report.gaps.push({ source: "assessment", ...report.assessment });
 }
 
@@ -227,14 +184,17 @@ async function main() {
             return fallback;
         }
     }
-    const notified = await readState("notified.json", {});
-    const pending = await readState("pending.json", []);
+    const previousReport = await readState("report.json", null);
+    const notified = settleAssessment(
+        previousReport,
+        await readState("notified.json", {}),
+    );
     if (values["assess-only"]) {
-        const report = await readState("report.json", null);
+        const report = previousReport;
         if (!report?.assessmentInput)
             throw new Error("No saved research batch to assess");
         await assessReport(report, out);
-        await persistReport(out, report, pending, notified);
+        await persistReport(out, report, notified);
         return;
     }
     const history = [];
@@ -329,14 +289,9 @@ async function main() {
         sources,
     };
     const findings = analyze(snapshot, previousDays, notified);
-    const waiting = pendingFindings(pending, findings, at);
-    const waitingIds = new Set(waiting.map((f) => f.fingerprint));
     const report = {
         ...snapshot,
-        findings: [
-            ...waiting,
-            ...findings.filter((f) => !waitingIds.has(f.fingerprint)),
-        ],
+        findings,
         gaps,
         mode: "report_only",
         assessment: { status: "not_requested" },
@@ -347,7 +302,7 @@ async function main() {
         join(out, `snapshot-${dayKey(at)}.json`),
         JSON.stringify(historySnapshot(snapshot)),
     );
-    await persistReport(out, report, waiting, notified);
+    await persistReport(out, report, notified);
 }
 
 main().catch((error) => {

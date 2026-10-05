@@ -8,12 +8,11 @@ import {
     comparePublicPricing,
     dayKey,
     historySnapshot,
-    pendingFindings,
     reportIssue,
     researchEvidence,
     runRates,
+    selectFindings,
     settleAssessment,
-    storeAssessment,
     textAssessmentCost,
     trendReasons,
 } from "./analyze.mjs";
@@ -25,7 +24,7 @@ const day = (at, model) => ({
 });
 const trend = (rank, task = null) => ({ kind: "trending", rank, task });
 
-test("Failed batches remain pending; successful batches settle only their five selected leads", () => {
+test("Only selected successful leads are suppressed; each day uses current evidence", () => {
     const at = "2026-10-05T06:00:00Z";
     const snapshot = {
         at,
@@ -36,44 +35,119 @@ test("Failed batches remain pending; successful batches settle only their five s
                 source: "huggingface",
                 observations: Array.from({ length: 7 }, (_, i) => ({
                     id: `lab/${i}`,
+                    version: "old",
                     task: "text-generation",
                     signals: [trend(1)],
                 })),
             },
         ],
     };
-    const findings = analyze(snapshot, [], {});
-    const pending = pendingFindings([], findings, at);
     const report = {
         ...snapshot,
-        revision: "test",
-        findings: pending,
+        findings: analyze(snapshot, []),
         gaps: [],
         assessment: { status: "failed" },
     };
     report.assessmentInput = researchEvidence(report);
-    const original = JSON.stringify(report.assessmentInput);
-    assert.equal(report.assessmentInput.findings.length, 5);
-    assert.deepEqual(settleAssessment(pending, report, {}), {
-        pending,
-        notified: {},
-    });
-    report.assessment.status = "storage_pending";
-    assert.deepEqual(settleAssessment(pending, report, {}), {
-        pending,
-        notified: {},
-    });
+    assert.deepEqual(settleAssessment(report, {}), {});
     report.assessment.status = "complete";
-    const settled = settleAssessment(pending, report, {});
-    assert.equal(settled.pending.length, 2);
-    assert.equal(Object.keys(settled.notified).length, 5);
+    const notified = settleAssessment(report, {});
+    assert.equal(Object.keys(notified).length, 5);
+    assert.equal(selectFindings(analyze(snapshot, [], notified)).length, 2);
     const tomorrow = { ...snapshot, at: "2026-10-06T06:00:00Z", sources: [] };
-    assert.equal(analyze(tomorrow, [snapshot], settled.notified).length, 0);
     assert.deepEqual(
-        pendingFindings(settled.pending, [], tomorrow.at),
-        settled.pending,
+        selectFindings(analyze(tomorrow, [snapshot], notified)),
+        [],
     );
-    assert.equal(JSON.stringify(report.assessmentInput), original);
+    tomorrow.sources = [
+        {
+            source: "huggingface",
+            observations: [
+                { ...snapshot.sources[0].observations[0], version: "new" },
+            ],
+        },
+    ];
+    const selected = selectFindings(analyze(tomorrow, [snapshot], notified));
+    assert.equal(selected.length, 1);
+    assert.equal(selected[0].version, "new");
+});
+
+test("Discovery keeps two slots even when maintenance leads fill the report", () => {
+    const findings = [
+        ...Array.from({ length: 30 }, (_, i) => ({
+            id: `retire-${i}`,
+            kind: "retirement_review",
+            newFinding: true,
+        })),
+        ...Array.from({ length: 7 }, (_, i) => ({
+            id: `discover-${i}`,
+            kind: "investigate",
+            newFinding: i !== 0,
+        })),
+    ];
+    const selected = selectFindings(findings);
+    assert.equal(selected.length, 5);
+    assert.deepEqual(
+        selected.map((f) => f.id),
+        ["discover-1", "discover-2", "retire-0", "retire-1", "retire-2"],
+    );
+    assert.equal(selectFindings(findings.slice(0, 30)).length, 5);
+    assert.equal(selectFindings(findings.slice(30)).length, 5);
+});
+
+test("Sourcing excludes existing routes, fee-only savings, mixed rates and unknown prices", () => {
+    const snapshot = {
+        at: "2026-10-05T06:00:00Z",
+        liveCatalog: [],
+        registry: [
+            {
+                name: "lab/model",
+                provider: "direct",
+                cost: { promptTextTokens: 2.11, completionTextTokens: 4.22 },
+                public: { pricing: {} },
+            },
+        ],
+        sources: [
+            {
+                source: "openrouter",
+                observations: [
+                    {
+                        id: "lab/model",
+                        signals: [],
+                        pricing: { prompt: "2", completion: "4" },
+                    },
+                ],
+            },
+        ],
+    };
+    const model = snapshot.registry[0];
+    const upstream = snapshot.sources[0].observations[0];
+    const leads = (notified = {}) =>
+        analyze(snapshot, [], notified).filter(
+            (f) => f.kind === "sourcing_lead",
+        );
+    assert.equal(leads().length, 0); // Fee normalization removes the apparent discount.
+    upstream.pricing.prompt = "1";
+    upstream.pricing.completion = "5";
+    assert.equal(leads().length, 0); // A cheaper input cannot hide dearer output.
+    upstream.pricing.completion = "3";
+    assert.equal(leads().length, 1);
+    assert.equal(leads()[0].upstreamRates.completionTextTokens, 3 * 1.055);
+    const first = leads()[0];
+    const notified = { [first.fingerprint]: snapshot.at };
+    assert.equal(leads(notified)[0].newFinding, false);
+    model.cost.completionTextTokens = 5;
+    assert.equal(leads(notified)[0].newFinding, true); // Changed checkout cost is fresh evidence.
+    model.provider = "openrouter";
+    assert.equal(leads().length, 0); // Headline minima cannot verify a pinned route.
+    model.provider = "direct";
+    model.costVariants = { long: { promptTextTokens: 3 } };
+    assert.equal(leads().length, 0);
+    delete model.costVariants;
+    for (const price of [undefined, null, "", "unknown", "-1"]) {
+        upstream.pricing.prompt = price;
+        assert.equal(leads().length, 0);
+    }
 });
 
 test("Research evidence supplies only a bounded relevant checkout inventory", () => {
@@ -187,49 +261,6 @@ test("Prompt-agent runner bounds evidence and requests no caller instructions or
         }),
     ])
         assert.throws(() => assessmentRequest(invalid, "private-agent"));
-});
-
-test("Computer transport rejects a failed write and accepts an explicit successful retry", async () => {
-    const received = [];
-    const server = createServer(async (req, res) => {
-        let data = "";
-        for await (const chunk of req) data += chunk;
-        received.push(JSON.parse(data));
-        res.setHeader("content-type", "application/json");
-        res.end(
-            JSON.stringify({
-                jsonrpc: "2.0",
-                id: 1,
-                result: { isError: received.length === 1, content: [] },
-            }),
-        );
-    });
-    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-    const base = `http://127.0.0.1:${server.address().port}`;
-    try {
-        await assert.rejects(
-            storeAssessment(
-                base,
-                "test-only",
-                "2026-10-05T06:00:00Z",
-                "Exact saved assessment",
-            ),
-        );
-        await storeAssessment(
-            base,
-            "test-only",
-            "2026-10-05T06:00:00Z",
-            "Exact saved assessment",
-        );
-        assert.deepEqual(received[0], received[1]);
-        assert.equal(
-            JSON.parse(received[1].params.arguments.stdin).text,
-            "Exact saved assessment",
-        );
-    } finally {
-        server.closeAllConnections();
-        await new Promise((resolve) => server.close(resolve));
-    }
 });
 
 test("Assessment reservation includes cache writes and rejects unbounded rates", () => {
@@ -363,27 +394,6 @@ test("Checkout/live price drift is a review finding, not proof of a billing defe
     );
 });
 
-test("Repeat suppression persists but material model revisions reopen research", () => {
-    const snapshot = {
-        at: "2026-10-05T06:00:00Z",
-        registry: [],
-        liveCatalog: [],
-        sources: [
-            {
-                source: "huggingface",
-                observations: [
-                    { id: "lab/model", version: "a", signals: [trend(1)] },
-                ],
-            },
-        ],
-    };
-    const first = analyze(snapshot, []);
-    const notified = { [first[0].fingerprint]: snapshot.at };
-    assert.equal(analyze(snapshot, [], notified)[0].newFinding, false);
-    snapshot.sources[0].observations[0].version = "b";
-    assert.equal(analyze(snapshot, [], notified)[0].newFinding, true);
-});
-
 test("Existing model revisions and changed price values reopen review", () => {
     const snapshot = {
         at: "2026-10-05T06:00:00Z",
@@ -439,26 +449,6 @@ test("Existing model revisions and changed price values reopen review", () => {
 test("Berlin day keys respect the daylight-saving boundary", () => {
     assert.equal(dayKey("2026-10-24T22:30:00Z"), "2026-10-25");
     assert.equal(dayKey("2026-10-25T22:30:00Z"), "2026-10-25");
-});
-
-test("Reports escape source markup and reject executable URLs", () => {
-    const html = reportIssue({
-        at: "now",
-        sources: [],
-        findings: [
-            {
-                id: "<script>evil()</script>",
-                kind: "investigate",
-                url: "javascript:evil()",
-                reason: "<img onerror=evil()>",
-                newFinding: true,
-            },
-        ],
-        gaps: [],
-    });
-    assert.ok(!html.includes("<script>evil()"));
-    assert.ok(!html.includes('href="javascript:'));
-    assert.ok(html.includes("&lt;img"));
 });
 
 test("Partial or missing source days do not rediscover known identities or hide revisions", () => {
@@ -567,7 +557,7 @@ test("Public issue includes escaped assessment while excluding private metadata 
             usage: { privateValue: "private-usage" },
         },
         findings: Array.from({ length: 7 }, (_, index) => ({
-            id: `lead-${index}`,
+            id: index === 1 ? "<script>source()</script>" : `lead-${index}`,
             kind: "investigate",
             newFinding: index !== 0,
             reason: "<img onerror=evil()>",

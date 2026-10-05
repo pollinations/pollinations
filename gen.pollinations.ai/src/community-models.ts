@@ -35,7 +35,7 @@ export type CommunityModelEnv = Pick<CloudflareBindings, "DB" | "KV">;
 // the full-table query on its own 60s expiry was most of the D1 load. Bump
 // the version when the entry shape changes, or Workers mid-deploy serve each
 // other's entries.
-const COMMUNITY_CATALOG_CACHE_KEY = "community-catalog:v1";
+const COMMUNITY_CATALOG_CACHE_KEY = "community-catalog:v2";
 const COMMUNITY_CATALOG_CACHE_TTL_SECONDS = 60;
 
 export async function getCommunityModelRegistryEntries(
@@ -86,8 +86,6 @@ async function queryCommunityModelRegistryEntries(
             pendingVisibility: schema.communityEndpoint.pendingVisibility,
             pendingAt: schema.communityEndpoint.pendingAt,
             visibility: schema.communityEndpoint.visibility,
-            hiddenAt: schema.communityEndpoint.hiddenAt,
-            hiddenReason: schema.communityEndpoint.hiddenReason,
             createdAt: schema.communityEndpoint.createdAt,
         })
         .from(schema.communityEndpoint)
@@ -138,8 +136,6 @@ async function queryCommunityModelRegistryEntries(
             upstreamModel: row.upstreamModel,
             requiredSafetyFeatures: row.requiredSafetyFeatures,
             visibility: effectiveVisibility,
-            hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
-            hiddenReason: row.hiddenReason,
         };
         // An agent charges nothing of its own and fans out to nothing: the
         // caller pays for whatever it consumes downstream. All agent kinds
@@ -231,10 +227,20 @@ async function queryCommunityModelRegistryEntries(
                 };
             }
         }
+        // The stored public configuration survives Private, but private calls
+        // are free and do not follow the public fallback chain.
+        const runtimeEndpoint =
+            effectiveVisibility === "private"
+                ? {
+                      ...communityEndpoint,
+                      paidOnly: false,
+                      fallbacks: [],
+                      ...communityEndpointPrices({}),
+                  }
+                : communityEndpoint;
         const definition = communityModelDefinition({
-            ...communityEndpoint,
+            ...runtimeEndpoint,
             addedDate: row.createdAt.getTime(),
-            hidden: communityEndpoint.hiddenAt !== null,
         });
         const info = modelInfoFromDefinition(modelId, definition, {
             community: true,
@@ -265,7 +271,7 @@ async function queryCommunityModelRegistryEntries(
                 aliases: definition.aliases,
                 info,
                 definition,
-                communityEndpoint,
+                communityEndpoint: runtimeEndpoint,
                 agentConfig,
             },
         ];

@@ -1524,8 +1524,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1716,8 +1714,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2026,8 +2022,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2390,8 +2384,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2578,8 +2570,6 @@ describe("community endpoint helpers", () => {
             paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
-            hiddenAt: null,
-            hiddenReason: null,
             bearerTokenCiphertext: await encryptSecret(
                 "sk_saved_token",
                 secret,
@@ -2643,8 +2633,6 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 paidOnly: false,
                 perUserRpm: null,
-                hiddenAt: null,
-                hiddenReason: null,
                 fallbacks: [],
                 ...communityEndpointPrices({}),
                 ...overrides,
@@ -5058,7 +5046,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "excludes a hidden community model from public model catalogs",
+    "ignores legacy hide metadata for public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
@@ -5107,11 +5095,11 @@ fixtureTest(
         for (const models of [textModels, allModels]) {
             expect(
                 models.find((model) => model.name === modelId),
-            ).toBeUndefined();
+            ).toBeDefined();
         }
         expect(
             openaiModels.data.find((model) => model.id === modelId),
-        ).toBeUndefined();
+        ).toBeDefined();
     },
 );
 
@@ -5453,7 +5441,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes canonical and aliased calls to a hidden community model with a canonical-only key",
+    "routes canonical and aliased calls despite legacy hide metadata",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -5977,8 +5965,8 @@ fixtureTest(
             url: "https://gen.pollinations.ai/v1/chat/completions",
             upstreamModel: "openai",
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.00001,
@@ -6252,7 +6240,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
-            completionImagePrice: 0,
+            completionImagePrice: 0.03,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0,
@@ -6722,7 +6710,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "video",
-            completionVideoPrice: 0,
+            completionVideoPrice: 0.08,
         });
         await maturePendingCommunityEndpoint(registered.id);
 
@@ -7102,7 +7090,7 @@ fixtureTest(
             inputModalities: ["audio"],
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "whisper-1",
-            promptAudioPrice: 0,
+            promptAudioPrice: 0.0000445,
             pending: {
                 visibility: "public",
                 promptAudioPrice: 0.0000445,
@@ -7599,9 +7587,6 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
@@ -7633,15 +7618,6 @@ fixtureTest(
             unknown
         >;
         expect(typeof secondCreated.id).toBe("string");
-        await db
-            .update(communityEndpointTable)
-            .set({
-                hiddenAt: new Date(),
-                hiddenReason: "was failing",
-                hiddenBy: "monitor",
-            })
-            .where(eq(communityEndpointTable.id, createdId));
-
         const updateResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7677,8 +7653,6 @@ fixtureTest(
                 promptTextPrice: 0.00001,
                 completionTextPrice: 0.00002,
             },
-            hidden: true,
-            hiddenReason: "was failing",
         });
         const elapsedDelayAt = new Date(
             Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
@@ -7687,32 +7661,10 @@ fixtureTest(
             .update(communityEndpointTable)
             .set({
                 pendingAt: elapsedDelayAt,
-                hiddenAt: elapsedDelayAt,
             })
             .where(eq(communityEndpointTable.id, createdId));
 
-        const relistResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ hidden: false }),
-                },
-            ),
-        );
-        expect(relistResponse.status).toBe(200);
-        await expect(relistResponse.json()).resolves.toMatchObject({
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
-        });
-
-        const hideResponse = await fetchEnterApi(
+        const hiddenUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -7726,11 +7678,7 @@ fixtureTest(
                 },
             ),
         );
-        expect(hideResponse.status).toBe(200);
-        await expect(hideResponse.json()).resolves.toMatchObject({
-            hidden: true,
-            hiddenReason: "Hidden by owner",
-        });
+        expect(hiddenUpdateResponse.status).toBe(400);
         await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
@@ -7823,9 +7771,7 @@ fixtureTest(
             expect.any(String),
         );
 
-        // Making the model private clears all owner-set prices, and with them
-        // the paid-only choice: a free listing that still demanded paid balance
-        // would only gate the owner out of their own model.
+        // Going private keeps the queued settings for later republication.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7845,13 +7791,24 @@ fixtureTest(
         expect(privatizeResponse.status).toBe(200);
         await expect(privatizeResponse.json()).resolves.toMatchObject({
             visibility: "private",
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
+        });
+        await resetGenerationModelRegistryCache(env);
+        const privateEntry = (await getCommunityModelRegistryEntries(env)).find(
+            (entry) => entry.id === created.modelId,
+        );
+        expect(privateEntry?.communityEndpoint).toMatchObject({
+            visibility: "private",
             paidOnly: false,
+            fallbacks: [],
             promptTextPrice: 0,
             completionTextPrice: 0,
         });
 
-        // Republishing remains free, but becomes visible after the notice
-        // period rather than immediately.
+        // Republishing retains the configured price and paid-only choice,
+        // but becomes visible after the notice period rather than immediately.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7871,8 +7828,9 @@ fixtureTest(
         expect(republishResponse.status).toBe(200);
         await expect(republishResponse.json()).resolves.toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
             pending: { visibility: "public" },
         });
 
@@ -7882,9 +7840,6 @@ fixtureTest(
                 visibility: "public",
                 pendingVisibility: null,
                 pendingAt: null,
-                hiddenAt: null,
-                hiddenReason: null,
-                hiddenBy: null,
             })
             .where(eq(communityEndpointTable.id, createdId));
         await db
@@ -9047,11 +9002,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         ),
         enterEnv,
     );
-    expect(hideResponse.status).toBe(200);
-    await expect(hideResponse.json()).resolves.toMatchObject({
-        hidden: true,
-        description: stored.description,
-    });
+    expect(hideResponse.status).toBe(400);
     const noOpResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -9072,9 +9023,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         description: stored.description,
         payload: stored.payload,
         requiredSafetyFeatures: ["violence"],
-        hiddenAt: expect.any(Date),
-        hiddenReason: "Hidden by owner",
-        hiddenBy: "owner",
     });
     expect(deploymentFetch).toHaveBeenCalledTimes(4);
 
@@ -9387,15 +9335,13 @@ fixtureTest("validates community fallback targets on write", async () => {
         `${primaryName}-other-disabled`,
         communityModelId(otherOwnerGithubUsername, targetNames.otherDisabled),
     );
-    expect(otherDisabledTarget.status).toBe(400);
-    expect(await otherDisabledTarget.text()).toContain("does not exist");
+    expect(otherDisabledTarget.status).toBe(200);
 
     const disabledTarget = await createWithFallback(
         `${primaryName}-disabled`,
         communityModelId(ownerGithubUsername, targetNames.disabled),
     );
-    expect(disabledTarget.status).toBe(400);
-    expect(await disabledTarget.text()).toContain("must be listed");
+    expect(disabledTarget.status).toBe(200);
 
     const delegatingTarget = await createWithFallback(
         `${primaryName}-delegating`,
@@ -9470,12 +9416,14 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(eligible).toContain(
         communityModelId(ownerGithubUsername, targetNames.priv),
     );
+    expect(eligible).toContain(
+        communityModelId(ownerGithubUsername, targetNames.disabled),
+    );
     // Never itself, and never a target the write path would reject.
     expect(eligible).not.toContain(created.modelId);
     for (const rejected of [
         targetNames.image,
         targetNames.pricey,
-        targetNames.disabled,
         targetNames.delegating,
     ]) {
         expect(eligible).not.toContain(
@@ -9652,7 +9600,9 @@ fixtureTest(
             registry.resolve(model)?.fallbackEntries?.map((e) => e.id);
 
         expect(fallbackIds(id("valid-primary"))).toEqual([id("valid-target")]);
-        expect(fallbackIds(id("disabled-primary"))).toBeUndefined();
+        expect(fallbackIds(id("disabled-primary"))).toEqual([
+            id("disabled-target"),
+        ]);
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();

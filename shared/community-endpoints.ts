@@ -843,8 +843,6 @@ type CommunityEndpointRuntimeBase = {
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbacks: string[];
-    hiddenAt: number | null;
-    hiddenReason: string | null;
 } & CommunityEndpointPrices;
 
 /** A third-party server, reached with its registered upstream bearer secret. */

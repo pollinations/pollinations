@@ -1,0 +1,34 @@
+{
+  "pr_number": 16507,
+  "title": "fix: default audio requests to OpenAI TTS instead of paid-only ElevenLabs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16507",
+  "merged_at": "2026-10-05T16:54:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix: requests with no `model` on `/audio/{text}` and `/v1/audio/speech` now use `openai/tts-1` (Azure, works on Quest Pollen) instead of paid-only `elevenlabs/eleven-v3`.\n- Adds a test that keeps the default audio model off `paidOnly`.\n- With-timestamps, voice changer, isolator and transcription keep their own route defaults.\n\n| No `model` sent | Before | After |\n|---|---|---|\n| Model | ElevenLabs v3 | OpenAI TTS |\n| Quest Pollen only | 402 | Works |\n| Price | $100 / 1M chars | $15 / 1M chars |\n| Default voice `alloy` | Mapped to Rachel | Native |\n\nEvidence (30 days, prod): `/audio/{text}` traffic resolving to eleven-v3 (default or explicit) was 2,990 requests from 343 users, 50% OK. Paid-balance 402s on eleven-v3 hit ~4,700 requests.\n\nTradeoff: paid users who relied on the default now get OpenAI TTS voices instead of ElevenLabs v3. ElevenLabs-only voice names without a `model` now return a 400. Follows the cheap-default rule: an unqualified request should not land on the expensive tier.\n\nMerge after #16506 or independently; no conflict.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01M1RaZKWKKZTr4qgYQtMRro\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A voice for every wallet",
+    "blurb": "Leave the model unspecified and the audio routes pick OpenAI TTS. Quest Pollen gets a voice, and `alloy` gets to sound like `alloy`.",
+    "summary": "Requests without a model on `/audio/{text}` and `/v1/audio/speech` default to Azure-hosted `openai/tts-1` instead of paid-only `elevenlabs/eleven-v3`, while other audio routes keep their own defaults.",
+    "impact": "Quest Pollen can cover default speech requests instead of receiving a 402; the default costs $15 rather than $100 per million characters and uses the native `alloy` voice.",
+    "keywords": [
+      "audio",
+      "text-to-speech",
+      "OpenAI TTS",
+      "Quest Pollen",
+      "default model",
+      "alloy"
+    ],
+    "visual_concept": "At a cozy audio workbench, Polli chooses a simple microphone labeled OpenAI TTS while gentle sound waves grow into flowers. Her tiny headphones connect the scene to speech; a lime-green Pollen token shows that Quest Pollen can cover the default request.",
+    "image_prompt": "In a cozy pixel art garden workshop, Polli wears tiny headphones and taps a retro microphone labeled 'OpenAI TTS' as soft sound waves bloom into flowers beside a glowing lime green (#ecf874) Pollen token. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never dominant, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and an emotionally warm atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16507.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli wears tiny headphones and taps a retro microphone labeled 'OpenAI TTS' as soft sound waves bloom into flowers beside a glowing lime green (#ecf874) Pollen token. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never dominant, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and an emotionally warm atmosphere."
+  },
+  "generated_at": "2026-10-05T16:56:06.394763+00:00"
+}

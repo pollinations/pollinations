@@ -32,7 +32,7 @@ export async function checkBalance(
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
-    const isPaidOnly = model.definition.paidOnly ?? false;
+    const isPaidOnly = model.definition.paidOnly;
     const estimatedCost = withByopMarkup(
         getEstimatedPrice(
             await getModelStats(env.KV, log),

@@ -221,6 +221,48 @@ test("show all does not bypass key permissions or paid access", async ({
     ).toBe(false);
 });
 
+test("every catalog entry states paid_only as a boolean", async () => {
+    const owner = `paid-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({ githubUsername: owner });
+    // Payloads stored before paid-only support have no paidOnly key.
+    await drizzle(env.DB)
+        .insert(communityEndpoint)
+        .values({
+            id: crypto.randomUUID(),
+            ownerUserId,
+            name: "legacy",
+            title: "legacy",
+            type: "proxy",
+            baseUrl: "https://provider.example/v1/chat/completions",
+            upstreamModel: "test",
+            visibility: "public",
+            payload: JSON.stringify({
+                bearerTokenCiphertext:
+                    "test-placeholder-not-used-for-generation",
+                api: "chat_completions",
+                modality: "text",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                perUserRpm: null,
+                fallbacks: [],
+                prices: {},
+            }),
+        });
+    await resetGenerationModelRegistryCache(env);
+
+    const response = await fetchWorker("/models?reliability=all");
+    const models = (await response.json()) as ModelInfo[];
+
+    expect(models.some((model) => !model.community)).toBe(true);
+    for (const model of models) {
+        expect(typeof model.paid_only, model.name).toBe("boolean");
+    }
+    expect(
+        models.find((model) => model.name === `community/${owner}/legacy`)
+            ?.paid_only,
+    ).toBe(false);
+});
+
 test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });

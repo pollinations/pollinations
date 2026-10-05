@@ -904,7 +904,7 @@ export type CommunityModelDefinitionInput = {
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
-    paidOnly?: boolean;
+    paidOnly: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -1094,7 +1094,7 @@ export function communityModelDefinition(
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
             : {}),
-        paidOnly: endpoint.paidOnly ?? false,
+        paidOnly: endpoint.paidOnly,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a

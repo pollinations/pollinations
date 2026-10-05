@@ -153,7 +153,7 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
 test("GPT-5.5 is available without paid-only gating", () => {
     const definition = getRegistryModelDefinition("openai/gpt-5.5");
 
-    expect(definition.paidOnly).toBeUndefined();
+    expect(definition.paidOnly).toBe(false);
 });
 
 test("Azure models use the approved public-price multipliers", () => {
@@ -188,10 +188,7 @@ test("GPT-5.6 models remain available without paid-only gating", () => {
         "openai/gpt-5.6-terra",
         "openai/gpt-5.6-luna",
     ] as const) {
-        expect(
-            getRegistryModelDefinition(model).paidOnly,
-            model,
-        ).toBeUndefined();
+        expect(getRegistryModelDefinition(model).paidOnly, model).toBe(false);
     }
 });
 
@@ -240,8 +237,8 @@ test("DeepSeek V4 models are billed at their route's multiplier", () => {
         "deepseek/deepseek-v4-pro": "openrouter",
     } as const;
     const expectedPaidOnly = {
-        "deepseek/deepseek-v4-flash": undefined,
-        "deepseek/deepseek-v4.1-flash": undefined,
+        "deepseek/deepseek-v4-flash": false,
+        "deepseek/deepseek-v4.1-flash": false,
         "deepseek/deepseek-v4-pro": true,
     } as const;
     const expectedMultipliers = {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 16520,
+  "title": "feat: retire manual community-model hiding",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16520",
+  "merged_at": "2026-10-05T16:07:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the manual hide/unhide toggle and API; owners use Private instead.\n- Shows reliability-filtered Public models and their recent success rate in My Models.\n- Keeps saved prices, Paid Pollen setting, and fallbacks through Private, while Private calls remain free.\n- Migrates manually hidden rows to Private without losing queued configuration or historical hide metadata. Monitor-hidden rows stay Public under the reliability rule.\n- Updates monitor instructions and tests. Apply D1 migration 0067 before deploying Gen/Enter to production.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One less switch to tend",
+    "blurb": "Community models get a simpler choice: Public or Private. My Models also makes it easier to see how reliably Public models are running.",
+    "summary": "Community models replace manual hide/unhide controls and their API with Private; My Models shows reliability-filtered Public models and recent success rates, while previously hidden models move to Private with their saved prices, Paid Pollen settings, fallbacks, and hide history preserved.",
+    "impact": "Owners can use Private instead of a separate hide toggle without losing queued configuration; Private calls remain free, and Public listings follow the reliability rule.",
+    "keywords": [
+      "community models",
+      "Private",
+      "Public",
+      "reliability",
+      "My Models",
+      "Paid Pollen"
+    ],
+    "visual_concept": "Depict a cozy model garden with distinct Public and Private flower pots rather than a hide switch. Polli tends the Private pot while a small CRT robot reads a recent success-rate display beside the Public pot; preserved configuration appears as neatly stacked seed packets.",
+    "image_prompt": "In a cozy pixel-art model garden, Polli in a tiny gardener's hat tends a lime green (#ecf874) Private flower pot while a friendly CRT robot checks a simple success-rate display beside a Public pot and neatly stacked seed packets. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, with consistent rounded proportions, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients over warm cream, warm lighting, retro gaming vibes like Stardew Valley, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16520.jpg",
+    "prompt": "In a cozy pixel-art model garden, Polli in a tiny gardener's hat tends a lime green (#ecf874) Private flower pot while a friendly CRT robot checks a simple success-rate display beside a Public pot and neatly stacked seed packets. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, with consistent rounded proportions, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients over warm cream, warm lighting, retro gaming vibes like Stardew Valley, emotionally warm."
+  },
+  "generated_at": "2026-10-05T16:08:40.659705+00:00"
+}

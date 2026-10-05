@@ -786,19 +786,18 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-coder-30b-a3b-instruct": {
-        supportedParameters: CHAT_PARAMETERS.ovhQwenCoder,
+        supportedParameters: CHAT_PARAMETERS.bedrockQwenCoder,
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
-        provider: "ovhcloud",
+        provider: "aws",
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        // OVHcloud AI Endpoints catalog model_eol_date.
-        retirementDate: new Date("2026-10-01").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OVHcloud USD list price for Qwen3-Coder-30B-A3B-Instruct.
-            promptTextTokens: perMillion(0.07),
-            completionTextTokens: perMillion(0.26),
+            // AWS Bedrock on-demand standard tier, us-east-1.
+            promptTextTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.6),
         },
         title: "Qwen3 Coder 30B",
         description:

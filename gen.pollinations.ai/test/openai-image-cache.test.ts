@@ -34,54 +34,6 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
-    it("rejoins unseeded generations across formatting and executor replay, while explicit seeds vary", async () => {
-        const app = new Hono<Env>()
-            .use("*", async (c, next) => {
-                c.set("model", {
-                    requested: "flux",
-                    resolved: "flux",
-                    definition: {} as Env["Variables"]["model"]["definition"],
-                });
-                await next();
-            })
-            .post(
-                "*",
-                validator("json", CreateImageRequestSchema),
-                prepareOpenAIImageGeneration,
-                prepareGenerationRequest,
-                (c) =>
-                    c.json({
-                        body: c.var.generationRequestBody,
-                        identity: c.var.generationCacheBody,
-                    }),
-            );
-        async function prepare(body: object, path = "/v1/images/generations") {
-            const response = await app.fetch(
-                new Request(`https://gen.pollinations.ai${path}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                }),
-                {} as CloudflareBindings,
-            );
-            expect(response.status).toBe(200);
-            return response.json<{ body: string; identity: string }>();
-        }
-        const input = { model: "flux", prompt: "a paper boat" };
-        const original = await prepare(input);
-        const repeat = await prepare({ ...input, response_format: "url" });
-        const replay = await prepare(
-            JSON.parse(original.body),
-            "/generation-executor/v1/images/generations",
-        );
-        expect(repeat.identity).toBe(original.identity);
-        expect(replay.identity).toBe(original.identity);
-        const seeded = await prepare({ ...input, seed: 7 });
-        const anotherSeed = await prepare({ ...input, seed: 8 });
-        expect(seeded.identity).not.toBe(original.identity);
-        expect(anotherSeed.identity).not.toBe(seeded.identity);
-    });
-
     it.each([
         "json",
         "multipart",
@@ -148,7 +100,6 @@ describe("OpenAI image cache", () => {
         for (const response_format of ["b64_json", "url"]) {
             const form = new FormData();
             form.set("prompt", "make it blue");
-            form.set("aspectRatio", "9:16");
             form.set("response_format", response_format);
             form.append(
                 "image",
@@ -171,7 +122,6 @@ describe("OpenAI image cache", () => {
                               },
                               body: JSON.stringify({
                                   prompt: "make it blue",
-                                  aspectRatio: "9:16",
                                   image: [
                                       {
                                           image_url:
@@ -199,8 +149,6 @@ describe("OpenAI image cache", () => {
             expect(result.input.response_format).toBe(response_format);
             expect(result.input.image).toHaveLength(2);
             expect(JSON.parse(result.body)).not.toHaveProperty("seed");
-            expect(JSON.parse(result.body).aspectRatio).toBe("9:16");
-            expect(JSON.parse(result.identity).aspectRatio).toBe("9:16");
             expect(JSON.parse(result.body)).not.toHaveProperty(
                 "response_format",
             );

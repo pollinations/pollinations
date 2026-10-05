@@ -263,7 +263,7 @@ export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
-    code_agent: CodeAgentUpdateSchema.extend({}),
+    code_agent: CodeAgentUpdateSchema,
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 

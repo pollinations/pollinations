@@ -7772,6 +7772,7 @@ fixtureTest(
         );
 
         // Going private keeps the queued settings for later republication.
+        // Private calls are free but still try their (free) fallbacks.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7784,6 +7785,7 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         visibility: "private",
+                        fallbacks: [secondCreated.modelId],
                     }),
                 },
             ),
@@ -7794,6 +7796,7 @@ fixtureTest(
             paidOnly: true,
             promptTextPrice: 0.00003,
             completionTextPrice: 0.00002,
+            fallbacks: [secondCreated.modelId],
         });
         await resetGenerationModelRegistryCache(env);
         const privateEntry = (await getCommunityModelRegistryEntries(env)).find(
@@ -7802,7 +7805,7 @@ fixtureTest(
         expect(privateEntry?.communityEndpoint).toMatchObject({
             visibility: "private",
             paidOnly: false,
-            fallbacks: [],
+            fallbacks: [secondCreated.modelId],
             promptTextPrice: 0,
             completionTextPrice: 0,
         });

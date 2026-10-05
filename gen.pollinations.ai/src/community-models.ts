@@ -228,13 +228,13 @@ async function queryCommunityModelRegistryEntries(
             }
         }
         // The stored public configuration survives Private, but private calls
-        // are free and do not follow the public fallback chain.
+        // are free. Fallback linking compares prices, so a private model only
+        // reaches free targets.
         const runtimeEndpoint =
             effectiveVisibility === "private"
                 ? {
                       ...communityEndpoint,
                       paidOnly: false,
-                      fallbacks: [],
                       ...communityEndpointPrices({}),
                   }
                 : communityEndpoint;

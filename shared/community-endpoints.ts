@@ -904,7 +904,6 @@ export type CommunityModelDefinitionInput = {
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
-    hidden?: boolean;
     paidOnly?: boolean;
 } & CommunityEndpointPrices;
 
@@ -1092,7 +1091,6 @@ export function communityModelDefinition(
               }
             : {}),
         requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
-        hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
             : {}),

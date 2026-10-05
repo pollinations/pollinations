@@ -356,6 +356,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         tags: [
             { name: entry.info.category },
             ...(entry.info.community ? [{ name: "community" }] : []),
+            ...(entry.info.agent ? [{ name: "agent" }] : []),
         ],
         title: entry.info.title,
         description: entry.info.description,

@@ -745,7 +745,7 @@ export const OpenAIModelSchema = z
         tags: z
             .array(z.object({ name: z.string() }))
             .describe(
-                "Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models.",
+                "Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents.",
             ),
         title: z.string(),
         description: z.string().optional(),

@@ -8612,6 +8612,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             tools?: boolean;
             reasoning?: boolean;
             context_length?: number;
+            tags?: { name: string }[];
             supported_endpoints?: string[];
         }[];
     };
@@ -8647,6 +8648,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(openaiBaseModel).toBeDefined();
     expect(openaiAgentModel).toMatchObject({
         agent: true,
+        tags: [{ name: "text" }, { name: "community" }, { name: "agent" }],
         base_model: promptAgent.baseModel,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,

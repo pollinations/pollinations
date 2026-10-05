@@ -1,12 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { CommandExitError, Sandbox } from "e2b";
 import { dayKey } from "./analyze.mjs";
 import { sourceBundle } from "./bundle.mjs";
-import { pilotDecision, stateFiles } from "./state.mjs";
+import { pilotDecision, RESERVATION, stateFiles } from "./state.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -14,7 +14,6 @@ const BASE = "https://gen.pollinations.ai";
 const REMOTE = "/home/user/model-manager";
 const FIELD = "POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER";
 const TEMPLATE = "u1yrkaokyjzef8qchho5"; // Verified codex: 2 vCPU, 2 GiB; no automatic key creation.
-const RESERVATION = 0.1222; // 600s at full list compute price (0.0222) + 0.1 inference.
 const { values } = parseArgs({
     options: {
         out: { type: "string", default: join(HERE, "data") },
@@ -102,6 +101,7 @@ async function command(stage, commandText, options = {}, acceptable = [0]) {
 
 try {
     await mkdir(out, { recursive: true, mode: 0o700 });
+    await rm(join(out, "report.md"), { force: true });
     try {
         pilot = JSON.parse(await readFile(join(out, "pilot.json"), "utf8"));
     } catch (error) {
@@ -285,8 +285,15 @@ try {
             process.exitCode = 1;
         }
     }
+    if (process.exitCode === 1) proof.status = "failed";
     proof.finishedAt = new Date().toISOString();
     if (pilot) await save("pilot.json", JSON.stringify(pilot));
     if (!skipped)
         await save("verification.json", JSON.stringify(proof, null, 2));
+    if (process.env.GITHUB_OUTPUT)
+        await writeFile(
+            process.env.GITHUB_OUTPUT,
+            `status=${proof.status}\ncheckpoint=${!skipped}\n`,
+            { flag: "a" },
+        );
 }

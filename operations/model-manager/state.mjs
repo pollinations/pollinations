@@ -7,8 +7,9 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { dayKey } from "./analyze.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+export const RESERVATION = 0.1222; // Ten minutes of VM compute + 0.1 Pollen assessment.
 const STATE_FILE =
-    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|notified\.json|pilot\.json|report\.(json|html|md)|verification\.json)$/;
+    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|notified\.json|pilot\.json|report\.(json|html)|verification\.json)$/;
 
 export function pilotDecision(pilot, at = new Date().toISOString()) {
     const today = dayKey(at);
@@ -20,7 +21,7 @@ export function pilotDecision(pilot, at = new Date().toISOString()) {
             throw new Error("Invalid pilot start date");
         if (days >= 14) return "observation_window_finished";
     }
-    if (Number(pilot?.spentPollen ?? 0) + 0.1222 > 2)
+    if (Number(pilot?.spentPollen ?? 0) + RESERVATION > 2)
         return "pilot_budget_exhausted";
     return "run";
 }

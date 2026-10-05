@@ -263,7 +263,14 @@ test("Partial or missing source days do not rediscover known identities or hide 
         { ...snapshot, at: "2026-10-03T06:00:00Z" },
         {
             at: "2026-10-04T06:00:00Z",
-            sources: [{ source: "fal", status: "partial", observations: [] }],
+            sources: [
+                {
+                    source: "fal",
+                    status: "partial",
+                    observations: [],
+                    queries: [],
+                },
+            ],
         },
     ];
     assert.deepEqual(analyze(snapshot, history), []);
@@ -323,12 +330,14 @@ test("Compact history preserves trend and revision decisions without catalog or 
     assert.equal(compact.sources[0].observations[0].inputSchema, undefined);
 });
 
-test("Daily digest limits new leads, exposes gaps and excludes private metadata", () => {
+test("Daily digest retains research evidence but excludes private assessment and metadata", () => {
     const report = {
         at: "2026-10-05",
         account: "private@example.com",
         keyBudgetBefore: 5,
-        sources: [{ source: "fal", status: "partial", observations: [] }],
+        sources: [
+            { source: "fal", status: "partial", observations: [], queries: [] },
+        ],
         gaps: [
             {
                 source: "fal",
@@ -337,7 +346,9 @@ test("Daily digest limits new leads, exposes gaps and excludes private metadata"
                 privateValue: "private-detail",
             },
         ],
-        assessment: { text: "</pre><script>evil()</script>" },
+        assessment: {
+            text: "INTERNAL_ASSESSMENT_TEXT </pre><script>evil()</script>",
+        },
         findings: Array.from({ length: 7 }, (_, index) => ({
             id: `lead-${index}`,
             kind: "investigate",
@@ -357,6 +368,8 @@ test("Daily digest limits new leads, exposes gaps and excludes private metadata"
     assert.ok(!digest.includes("lead-6"));
     assert.ok(!digest.includes("private@example.com"));
     assert.ok(!digest.includes("private-detail"));
+    assert.ok(!digest.includes("INTERNAL_ASSESSMENT_TEXT"));
+    assert.ok(reportHtml(report).includes("INTERNAL_ASSESSMENT_TEXT"));
     assert.ok(!digest.includes("<script>"));
     assert.ok(!digest.includes('href="javascript:'));
     assert.match(digest, /&lt;img/);

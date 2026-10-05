@@ -18,7 +18,6 @@ export async function sourceBundle() {
         platform: "node",
         format: "esm",
         target: "node20",
-        nodePaths: [join(HERE, "node_modules")],
         write: false,
     });
     const code = result.outputFiles[0].text;

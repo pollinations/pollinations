@@ -6,7 +6,7 @@ Internal Pollinations operations agent. Runs through Pollinations’ existing sa
 
 The report-only pilot collects Hugging Face, Replicate, OpenRouter and fal observations, compares checkout/deployed public prices, and produces research leads. It does not add/update models, verify provider bills or capabilities, independently confirm retirement notices, open PRs, deploy, or send Discord/email messages. Model health, support and infrastructure monitoring belong to other workflows.
 
-The daily GitHub Actions summary shows up to five new leads, an optional bounded agent assessment, and source gaps. The full JSON/HTML report retains collected evidence. Names, advertised rates and provider metadata are discovery evidence; they do not establish exact-route equivalence, tested capabilities or billing correctness.
+The daily GitHub Actions summary shows up to five new leads and source gaps. The full JSON/HTML report and agent assessment stay in the SOPS-encrypted artifact, readable with an authorized decryption identity. Names, advertised rates and provider metadata are discovery evidence; they do not establish exact-route equivalence, tested capabilities or billing correctness.
 
 Priority: retirement reviews, price discrepancies, configured-model version changes, sourcing leads, discovery, then unmatched lifecycle leads. Unchanged findings are suppressed for 30 days; changed revisions, prices or deadlines reopen them. No new leads means no assessment call. Missing/partial sources are visible and do not fail unrelated collection.
 
@@ -41,7 +41,7 @@ Known pilot gaps: weekly HF download backstop, Replicate task top-10 persistence
 
 [The workflow](../../.github/workflows/models-manager-pilot.yml) runs only in the upstream repository on `main`, with read-only GitHub permissions and one concurrency group. It uses one daily 06:00 UTC schedule (08:00 Berlin in summer, 07:00 in winter); dispatch can be delayed. Manual runs share the same state. A recorded Berlin day starts no VM or inference call.
 
-The trusted host builds one Node-compatible ESM executable from the runner and existing registry/pricing helpers. `launch.mjs` uploads that executable and compact history to a pinned Pollinations VM through `https://gen.pollinations.ai/alpha/e2b`. The VM uses its existing Node runtime: no monorepo install, downloaded runtime, source archive or daily test suite. Tests run in PR CI.
+The trusted host installs the root lockfile dependencies for registry/build code and the separate E2B launcher package, then builds one Node-compatible ESM executable from the runner and existing registry/pricing helpers. `launch.mjs` uploads that executable and compact history to a pinned Pollinations VM through `https://gen.pollinations.ai/alpha/e2b`. The VM uses its existing Node runtime: no monorepo install, downloaded runtime, source archive or daily test suite. Tests run in PR CI.
 
 The VM has a ten-minute kill-on-timeout lease. The launcher verifies its template/resources and ownership, exports results, and kills it in `finally`; signals cancel SDK work and trigger cleanup. It does not extend leases or automatically retry paid calls. A detected existing pilot VM blocks a second paid run.
 
@@ -55,7 +55,7 @@ Credential sources:
 
 The dedicated account key is named `pollinations-key-agent-model-manager`, permits profile/usage/machines, excludes key management, and restricts inference to `openai/gpt-6-luna`. Its existing 5-Pollen cap and 4 November 2026 expiry are unchanged. Future agents use `pollinations-key-agent-<role>` and `POLLINATIONS_API_KEY_AGENT_<ROLE>`; provision them only when needed with separate scoped approval. No runtime Keychain dependency or duplicated provider credentials.
 
-Retain the 14 pilot snapshots with only observation time, source/query status, identities, revisions, run counts and trend signals. Current reports retain full collected metadata; historical catalogs, schemas and descriptions are not copied. Keep suppression state, pilot accounting and redacted execution proof. SOPS-encrypt reports/checkpoints into one artifact retained for 30 days. Public summaries include research evidence, never account metadata or private logs.
+Retain the 14 pilot snapshots with only observation time, source/query status, identities, revisions, run counts and trend signals. Current reports retain full collected metadata; historical catalogs, schemas and descriptions are not copied. Keep suppression state, pilot accounting and redacted execution proof. SOPS-encrypt reports/checkpoints into one artifact retained for 30 days. Public summaries contain deterministic findings and coverage. Generated assessment text, account metadata and logs stay encrypted. Summary Markdown is rebuilt for each run, never restored; skipped/failed runs show their current status instead of old results.
 
 Restore only this workflow’s trusted `main` artifacts, including an earlier attempt of a rerun. Missing, deleted or expired evidence must not silently restart a paid pilot. Restored filenames are allowlisted, existing files are not overwritten, and collected source content is never executed. Artifacts provide durable evidence; an evictable cache is insufficient.
 
@@ -64,7 +64,7 @@ Restore only this workflow’s trusted `main` artifacts, including an earlier at
 1. Merge the reviewed PR to `main` after validation.
 2. Dispatch **Models / Report-only manager pilot** with `initialize: true` once. This is a separate activation decision; preparing the PR does not start the pilot.
 3. Verify hosted SOPS decryption, artifact restoration and VM cleanup on the first Actions run. Local/VM tests cannot establish that cloud credentials work.
-4. Review collected leads, missing coverage, duplicate suppression and actual spend after the 14-day observation window. Do not automatically enable model changes.
+4. Review collected leads, missing coverage, duplicate suppression and actual spend after the 14-day observation window, or when the budget stops the pilot. Disable the workflow schedule in GitHub at review. Stopped/skipped launches do not upload artifacts or refresh retention. Do not automatically enable model changes.
 
 Inspect downloaded evidence with an existing authorized SOPS identity:
 

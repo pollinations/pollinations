@@ -263,24 +263,16 @@ async function main() {
         liveCatalog,
         sources,
     };
+    const priority = [
+        "retirement_review",
+        "pricing_review",
+        "model_review",
+        "sourcing_lead",
+        "investigate",
+        "lifecycle_lead",
+    ];
     const findings = analyze(snapshot, previousDays, notified).sort(
-        (a, b) =>
-            [
-                "retirement_review",
-                "pricing_review",
-                "model_review",
-                "sourcing_lead",
-                "investigate",
-                "lifecycle_lead",
-            ].indexOf(a.kind) -
-            [
-                "retirement_review",
-                "pricing_review",
-                "model_review",
-                "sourcing_lead",
-                "investigate",
-                "lifecycle_lead",
-            ].indexOf(b.kind),
+        (a, b) => priority.indexOf(a.kind) - priority.indexOf(b.kind),
     );
     const report = {
         ...snapshot,
@@ -291,14 +283,6 @@ async function main() {
             ? `Pollinations VM ${process.env.MODEL_MANAGER_SANDBOX_ID}`
             : "local",
         assessment: values.assess ? null : { status: "not_requested" },
-        unimplementedCoverage: [
-            "Coding-harness integration and model-change E2E in a Pollinations VM",
-            "Official provider lifecycle notice re-verification",
-            "Exact-route account/billing reconciliation",
-            "Capability and authenticated generation E2E",
-            "Replicate task-specific top-10 persistence",
-            "Weekly HF download backstop",
-        ],
     };
     if (values.assess) report.assessment = await assessment(report);
     if (

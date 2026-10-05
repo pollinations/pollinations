@@ -97,7 +97,9 @@ jobs:
 
       - name: Install launcher
         if: steps.previous.outputs.ready == 'true'
-        run: npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
 
       - name: Run in Pollinations VM
         id: launch
@@ -107,14 +109,14 @@ jobs:
         run: node operations/model-manager/launch.mjs --out "$RUNNER_TEMP/model-manager-data"
 
       - name: Encrypt reports and checkpoints
-        if: always() && steps.launch.outcome != 'skipped' && steps.previous.outputs.ready == 'true'
+        if: always() && steps.launch.outputs.checkpoint == 'true'
         run: >-
           node operations/model-manager/state.mjs seal
           --data "$RUNNER_TEMP/model-manager-data"
           --file "$RUNNER_TEMP/model-manager-export/state.vars.json"
 
       - name: Preserve encrypted state
-        if: always() && steps.launch.outcome != 'skipped' && steps.previous.outputs.ready == 'true'
+        if: always() && steps.launch.outputs.checkpoint == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: model-manager-state
@@ -125,10 +127,13 @@ jobs:
 
       - name: Summarize run
         if: always()
+        env:
+          RUN_STATUS: ${{ steps.launch.outputs.status || 'No launch result; see workflow status' }}
         run: |
+          printf 'Model manager run: %s\n\n' "$RUN_STATUS" >> "$GITHUB_STEP_SUMMARY"
           if [ -f "$RUNNER_TEMP/model-manager-data/report.md" ]; then
             cat "$RUNNER_TEMP/model-manager-data/report.md" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo 'No report produced. Check the run status; the pilot requires explicit initialization.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No new report was produced in this run.' >> "$GITHUB_STEP_SUMMARY"
           fi
           echo 'Private evidence and checkpoints are in the encrypted model-manager-state artifact. No model changes or external notifications are enabled.' >> "$GITHUB_STEP_SUMMARY"

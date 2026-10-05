@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { dayKey } from "./analyze.mjs";
 import { sourceBundle } from "./bundle.mjs";
 import { pilotDecision, stateFiles } from "./state.mjs";
 
@@ -69,13 +70,90 @@ test("State retains the 14 pilot snapshots and omits credential files and locks"
             "fake credential fixture",
         );
         await writeFile(join(directory, "run.lock"), "lock");
+        await writeFile(join(directory, "report.md"), "Previous run summary");
         const files = await stateFiles(directory);
         assert.equal(Object.keys(files).length, 15);
         assert.equal(files["snapshot-2026-01-01.json"], undefined);
         assert.equal(files["prod.vars.json"], undefined);
         assert.equal(files["run.lock"], undefined);
+        assert.equal(files["report.md"], undefined);
         assert.equal(files["notified.json"], "{}");
     } finally {
         await rm(directory, { recursive: true, force: true });
+    }
+});
+
+test("Skipped and failed launches remove stale summaries and emit current workflow status", async () => {
+    const today = dayKey(new Date().toISOString());
+    for (const [status, pilot] of [
+        [
+            "already_recorded",
+            { startedDay: today, days: [today], spentPollen: 0 },
+        ],
+        [
+            "observation_window_finished",
+            { startedDay: "2000-01-01", days: [], spentPollen: 0 },
+        ],
+        [
+            "pilot_budget_exhausted",
+            { startedDay: today, days: [], spentPollen: 1.9 },
+        ],
+        ["failed", "malformed JSON"],
+    ]) {
+        const data = await mkdtemp(
+            join(tmpdir(), "model-manager-launch-test-"),
+        );
+        try {
+            await writeFile(
+                join(data, "pilot.json"),
+                typeof pilot === "string" ? pilot : JSON.stringify(pilot),
+            );
+            await writeFile(join(data, "report.md"), "Previous run summary");
+            await writeFile(
+                join(data, "verification.json"),
+                "Prior successful evidence",
+            );
+            const output = join(data, "outputs");
+            const result = spawnSync(
+                process.execPath,
+                [
+                    new URL("launch.mjs", import.meta.url).pathname,
+                    "--out",
+                    data,
+                ],
+                {
+                    encoding: "utf8",
+                    env: { ...process.env, GITHUB_OUTPUT: output },
+                },
+            );
+            assert.equal(
+                result.status,
+                status === "failed" ? 1 : 0,
+                result.stderr,
+            );
+            assert.equal(
+                await readFile(output, "utf8"),
+                `status=${status}\ncheckpoint=${status === "failed"}\n`,
+            );
+            await assert.rejects(readFile(join(data, "report.md")), {
+                code: "ENOENT",
+            });
+            if (status !== "failed") {
+                assert.match(result.stdout, /no VM or inference call/);
+                assert.equal(
+                    await readFile(join(data, "verification.json"), "utf8"),
+                    "Prior successful evidence",
+                );
+            } else {
+                assert.equal(
+                    JSON.parse(
+                        await readFile(join(data, "verification.json"), "utf8"),
+                    ).status,
+                    "failed",
+                );
+            }
+        } finally {
+            await rm(data, { recursive: true, force: true });
+        }
     }
 });

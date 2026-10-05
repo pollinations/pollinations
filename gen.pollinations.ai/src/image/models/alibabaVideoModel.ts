@@ -72,7 +72,7 @@ export async function callAlibabaVideo(
                           : references,
                   },
                   parameters: {
-                      resolution: (params.resolution ?? "480p").toUpperCase(),
+                      resolution: params.resolution?.toUpperCase(),
                       ratio: frames.length ? "adaptive" : ratio,
                       duration,
                       audio: params.audio,

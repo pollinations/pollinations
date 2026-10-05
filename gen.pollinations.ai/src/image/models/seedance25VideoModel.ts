@@ -62,19 +62,12 @@ export async function callSeedance25API(
         });
     }
 
-    const resolution = safeParams.resolution ?? "480p";
-    if (resolution !== "480p" && resolution !== "720p") {
-        throw UpstreamError.fromProvider(400, {
-            message: "Seedance 2.5 supports 480p or 720p resolution",
-        });
-    }
-
     const images = safeParams.image ?? [];
 
     const input: Seedance25Input = {
         prompt,
         duration: DURATION,
-        resolution,
+        resolution: safeParams.resolution as Seedance25Input["resolution"],
         aspect_ratio: resolveAspectRatio(safeParams),
         generate_audio: safeParams.audio,
     };

@@ -125,7 +125,7 @@ describe("Wan 3.0 Prime via Fal", () => {
     });
 
     it.each([
-        [undefined, "480p", false, [], "16:9", TEXT_ENDPOINT],
+        ["480p", "480p", false, [], "16:9", TEXT_ENDPOINT],
         ["720p", "720p", true, [], "9:16", TEXT_ENDPOINT],
         [
             "1080p",

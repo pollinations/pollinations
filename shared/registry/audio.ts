@@ -489,7 +489,8 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "openai/gpt-transcribe": {
-        aliases: ["gpt-transcribe"],
+        // gpt-4o-transcribe is the name OpenAI clients send by default.
+        aliases: ["gpt-transcribe", "gpt-4o-transcribe"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",

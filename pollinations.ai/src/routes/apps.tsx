@@ -23,6 +23,7 @@ import {
     compareAppUsage,
     type DirectoryApp,
     isPollen,
+    newestFirst,
     platformsOf,
     useAppDirectory,
     useWeeklyApps,
@@ -59,9 +60,6 @@ const SORT_ICONS = {
     fresh: ClockIcon,
     buzz: TrendUpIcon,
 } satisfies Record<AppSort, typeof ClockIcon>;
-
-const newestFirst = (a: DirectoryApp, b: DirectoryApp) =>
-    (b.approved_date || "").localeCompare(a.approved_date || "");
 
 /** Every ranking falls back to freshness, then name for a stable final order. */
 function compareApps(sort: AppSort) {

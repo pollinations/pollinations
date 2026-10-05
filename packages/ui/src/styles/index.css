@@ -62,13 +62,17 @@
     --polli-dialog-gutter: 1.5rem;
 }
 
-/* On phones a full-screen modal fills the screen in its own block colour with
-   a 20px gutter; its top-level cards run edge to edge like page sections.
-   Nested cards and compact dialogs are untouched. */
-@media (width < 40rem) {
+/* Phone dialogs keep their rounded outline and a small vertical gap, while
+   their top-level cards run edge to edge with a 20px content gutter.
+   Nested cards keep their own spacing. */
+@media (width < 30rem) {
+    .polli-dialog-mobile-positioner {
+        padding: 0.5rem 0;
+    }
+
     .polli-dialog-mobile-page {
         --polli-dialog-gutter: 1.25rem;
-        border-radius: 0;
+        max-width: none;
     }
 
     .polli-dialog-mobile-page

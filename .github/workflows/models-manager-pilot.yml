@@ -185,7 +185,7 @@ jobs:
         id: verify
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-        run: node operations/model-manager/verify-stack.mjs --out "$RUNNER_TEMP/model-manager-stack"
+        run: node operations/model-manager/launch.mjs --verify-stack --out "$RUNNER_TEMP/model-manager-stack"
       - name: Encrypt verification evidence
         if: always() && steps.verify.outputs.checkpoint == 'true'
         run: node operations/model-manager/state.mjs seal --data "$RUNNER_TEMP/model-manager-stack" --file "$RUNNER_TEMP/model-manager-export/state.vars.json"

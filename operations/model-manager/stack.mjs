@@ -244,8 +244,9 @@ try {
     );
     const id = first.response.headers.get("x-request-id");
     assert.ok(id);
-    // Verify the actual staging billing record, not a replacement ingestion server.
-    const query = `SELECT count() AS count, sum(total_price) AS price FROM generation_event_v2 WHERE (request_id = '${id.replaceAll("'", "''")}' OR parent_request_id = '${id.replaceAll("'", "''")}') AND is_billed_usage = true AND is_final = true FORMAT JSON`;
+    // Prompt agents also emit a zero-price parent event. Count charges, while
+    // reconciling the price of every final billed event against the wallet.
+    const query = `SELECT countIf(total_price > 0) AS count, sum(total_price) AS price FROM generation_event_v2 WHERE (request_id = '${id.replaceAll("'", "''")}' OR parent_request_id = '${id.replaceAll("'", "''")}') AND is_billed_usage = true AND is_final = true FORMAT JSON`;
     let rows;
     for (let i = 0; i < 15; i++) {
         const response = await fetch(
@@ -269,7 +270,7 @@ try {
     assert.equal(
         rows?.[0]?.count,
         1,
-        "Exactly one billed staging event required",
+        "Exactly one charged staging event required",
     );
     assert.ok(
         Math.abs(rows[0].price - (before - after)) < 0.00001,

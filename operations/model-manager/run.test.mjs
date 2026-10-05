@@ -9,8 +9,6 @@ import {
     dayKey,
     historySnapshot,
     pendingFindings,
-    reportDigest,
-    reportHtml,
     reportIssue,
     researchEvidence,
     runRates,
@@ -444,12 +442,13 @@ test("Berlin day keys respect the daylight-saving boundary", () => {
 });
 
 test("Reports escape source markup and reject executable URLs", () => {
-    const html = reportHtml({
+    const html = reportIssue({
         at: "now",
         sources: [],
         findings: [
             {
                 id: "<script>evil()</script>",
+                kind: "investigate",
                 url: "javascript:evil()",
                 reason: "<img onerror=evil()>",
                 newFinding: true,
@@ -575,19 +574,17 @@ test("Public issue includes escaped assessment while excluding private metadata 
             url: "javascript:evil()",
         })),
     };
-    const digest = reportDigest(report);
+    const issue = reportIssue(report);
     assert.match(
-        digest,
+        issue,
         /New leads: 6 · Already recorded: 1 · Coverage gaps: 1/,
     );
-    assert.match(digest, /catalog-11/);
-    assert.ok(!digest.includes("lead-0"));
-    assert.ok(digest.includes("lead-5"));
-    assert.ok(!digest.includes("lead-6"));
-    assert.ok(!digest.includes("private@example.com"));
-    assert.ok(!digest.includes("private-detail"));
-    assert.ok(!digest.includes("ASSESSMENT_TEXT"));
-    const issue = reportIssue(report);
+    assert.match(issue, /catalog-11/);
+    assert.ok(!issue.includes("lead-0"));
+    assert.ok(issue.includes("lead-5"));
+    assert.ok(!issue.includes("lead-6"));
+    assert.ok(!issue.includes("private@example.com"));
+    assert.ok(!issue.includes("private-detail"));
     assert.ok(issue.includes("ASSESSMENT_TEXT"));
     assert.match(issue, /Agent assessment · complete/);
     assert.match(issue, /&lt;\/pre&gt;&lt;script&gt;/);
@@ -599,10 +596,9 @@ test("Public issue includes escaped assessment while excluding private metadata 
         "<script>",
     ])
         assert.ok(!issue.includes(value));
-    assert.ok(reportHtml(report).includes("ASSESSMENT_TEXT"));
-    assert.ok(!digest.includes("<script>"));
-    assert.ok(!digest.includes('href="javascript:'));
-    assert.match(digest, /&lt;img/);
+    assert.ok(!issue.includes("<script>"));
+    assert.ok(!issue.includes('href="javascript:'));
+    assert.match(issue, /&lt;img/);
 });
 
 test("A missing Replicate collection day does not repeat the editorial seed", () => {

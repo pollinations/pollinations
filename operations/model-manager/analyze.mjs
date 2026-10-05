@@ -531,19 +531,9 @@ const safeLink = (value) => {
     }
 };
 
-export function reportHtml(report) {
-    const table = report.findings
-        .map(
-            (f) =>
-                `<tr><td>${f.newFinding ? "new" : "already recorded"}</td><td>${escapeHtml(f.kind)}</td><td><a href="${safeLink(f.url)}">${escapeHtml(f.id)}</a></td><td>${escapeHtml(f.reason ?? f.reasons.join("; "))}</td><td>${escapeHtml(f.verification)}</td></tr>`,
-        )
-        .join("");
-    return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Model manager report</title><style>body{font:15px system-ui;max-width:1200px;margin:40px auto;padding:0 24px;color:#162130;background:#fafbf9}h1{font-size:28px}table{width:100%;border-collapse:collapse;background:white}th,td{text-align:left;padding:12px;border-bottom:1px solid #ddd;vertical-align:top}th{background:#edf2ed}a{color:#215944}pre{white-space:pre-wrap}small{color:#566}li{margin:8px 0}</style><h1>Model catalog manager · report-only prototype</h1><p>${escapeHtml(report.at)} · Account: ${escapeHtml(report.account)} · Repository: ${escapeHtml(report.revision)}</p><p>${report.findings.filter((f) => f.newFinding).length} new of ${report.findings.length} research findings. These are leads, not approved model changes or verified billing defects.</p><ul>${report.sources.map((s) => `<li>${escapeHtml(s.source)}: <b>${escapeHtml(s.status)}</b> · ${s.observations.length} identities · ${s.queries.filter((q) => q.status !== "complete").length} incomplete queries</li>`).join("")}</ul><h2>Research queue</h2><table><thead><tr><th>Observation</th><th>Action</th><th>Model</th><th>Evidence / reason</th><th>Verification status</th></tr></thead><tbody>${table}</tbody></table><h2>Capability and billing coverage</h2><p>Execution: ${escapeHtml(report.execution ?? "local")}</p><p>This discovery run performs no model integration probes or catalog changes. The optional assessment is a separate inference call. Prices and capability metadata are observations; exact-route probes, invoice/usage reconciliation and authenticated local E2E remain required.</p><h2>Access and source gaps</h2><pre>${escapeHtml(JSON.stringify(report.gaps, null, 2))}</pre><h2>Agent assessment · ${escapeHtml(report.assessment?.status ?? "not_requested")}</h2><pre>${escapeHtml(report.assessment?.text ?? "Assessment not run")}</pre><small>Usage and spend evidence: ${escapeHtml(JSON.stringify(report.assessment?.usage ?? null))}. State and source snapshots are stored beside this report.</small></html>`;
-}
-
-// Public digest excludes account metadata, raw responses and logs.
+// Public report excludes account metadata, raw responses and logs.
 // Dynamic text stays inside escaped HTML blocks so it cannot inject Markdown or HTML.
-export function reportDigest(report) {
+export function reportIssue(report) {
     const fresh = report.findings.filter((finding) => finding.newFinding);
     const leads = fresh
         .slice(0, 5)
@@ -564,9 +554,5 @@ export function reportDigest(report) {
                 `<li>${escapeHtml(gap.source)} · ${escapeHtml(gap.label ?? "query")} · ${escapeHtml(gap.status)}</li>`,
         )
         .join("");
-    return `## Model manager · report-only\n\n<p>${escapeHtml(report.at)} · New leads: ${fresh.length} · Already recorded: ${report.findings.length - fresh.length} · Coverage gaps: ${report.gaps.length} · Pending after this run: ${report.pendingCount ?? 0}.</p>\n\n### Next investigations (up to five)\n\n<ul>${leads || "<li>No new leads.</li>"}</ul>\n\n### Source coverage\n\n<ul>${coverage}${gaps}</ul>\n\nDiscovery evidence only. Capabilities, exact provider routes, billing correctness and retirement notices still need verification.\n`;
-}
-
-export function reportIssue(report) {
-    return `${reportDigest(report)}\n### Agent assessment · ${escapeHtml(report.assessment?.status ?? "not_requested")}\n\n<pre>${escapeHtml(report.assessment?.text ?? "No new leads to assess.")}</pre>\n`;
+    return `## Model manager · report-only\n\n<p>${escapeHtml(report.at)} · New leads: ${fresh.length} · Already recorded: ${report.findings.length - fresh.length} · Coverage gaps: ${report.gaps.length} · Pending after this run: ${report.pendingCount ?? 0}.</p>\n\n### Next investigations (up to five)\n\n<ul>${leads || "<li>No new leads.</li>"}</ul>\n\n### Source coverage\n\n<ul>${coverage}${gaps}</ul>\n\nDiscovery evidence only. Capabilities, exact provider routes, billing correctness and retirement notices still need verification.\n\n### Agent assessment · ${escapeHtml(report.assessment?.status ?? "not_requested")}\n\n<pre>${escapeHtml(report.assessment?.text ?? "No new leads to assess.")}</pre>\n`;
 }

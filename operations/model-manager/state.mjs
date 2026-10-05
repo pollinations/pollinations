@@ -9,7 +9,7 @@ import { dayKey } from "./analyze.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const RESERVATION = 0.1222; // Ten minutes of VM compute + 0.1 Pollen assessment.
 const STATE_FILE =
-    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|pending\.json|notified\.json|pilot\.json|report\.(json|html)|verification\.json)$/;
+    /^(snapshot-\d{4}-\d{2}-\d{2}\.json|pending\.json|notified\.json|pilot\.json|report\.json|verification\.json)$/;
 
 export function recordCompletion(pilot, report) {
     if (!["complete", "not_needed"].includes(report.assessment.status))

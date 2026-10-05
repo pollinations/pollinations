@@ -4,10 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { COMPUTER_TOOL_CALL_PRICE } from "../../shared/registry/mcp.ts";
-import {
-    type ModelInfo,
-    modelInfoFromDefinition,
-} from "../../shared/registry/model-info.ts";
+import { modelInfoFromDefinition } from "../../shared/registry/model-info.ts";
 import {
     getModels,
     getRegistryModelDefinition,
@@ -19,8 +16,7 @@ import {
     dayKey,
     historySnapshot,
     pendingFindings,
-    reportDigest,
-    reportHtml,
+    reportIssue,
     researchEvidence,
     settleAssessment,
     storeAssessment,
@@ -38,40 +34,22 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ACCOUNT = "pollinationsagent@gmail.com";
 const BASE = "https://gen.pollinations.ai";
+const MODEL = "community/pollinations-ai/model-manager-agent";
+const token = process.env.POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER;
 
 const { values } = parseArgs({
     options: {
         out: { type: "string", default: join(HERE, "data") },
-        secrets: { type: "string" },
-        assess: { type: "boolean", default: false },
         "assess-only": { type: "boolean", default: false },
-        model: {
-            type: "string",
-            default: "community/pollinations-ai/model-manager-agent",
-        },
         help: { type: "boolean", default: false },
     },
 });
 
 if (values.help) {
     console.log(
-        `Report-only model manager. Options: [--out /absolute/path] [--secrets /absolute/encrypted.json] [--assess | --assess-only] [--model public-id]\n\nPublic collection needs no Pollinations key. --assess collects and assesses; --assess-only resumes the saved batch without collection. Both read POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER from the environment or supplied SOPS file, verify the agent account, and make one bounded inference call only when leads are pending. Provider read-only access uses existing REPLICATE_API_TOKEN from the same sources. Cloud launchers inject only the required runtime environment variables into the VM. No keys are created or changed.\nExit 2 means a report was saved with incomplete source coverage.`,
+        "Report-only model manager: [--out /absolute/path] [--assess-only]. The launcher injects runtime credentials; SOPS stays on the host. Collection saves evidence; --assess-only processes that saved batch. Exit 2 means incomplete coverage.",
     );
     process.exit(0);
-}
-
-function credential(name: string): string | undefined {
-    if (process.env[name]) return process.env[name];
-    if (!values.secrets) return undefined;
-    try {
-        return execFileSync(
-            "sops",
-            ["--decrypt", "--extract", `["${name}"]`, resolve(values.secrets)],
-            { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-        ).trim();
-    } catch {
-        return undefined;
-    }
 }
 
 async function save(path: string, data: string) {
@@ -81,20 +59,15 @@ async function save(path: string, data: string) {
 }
 
 async function assessment(report: {
-    at: string;
-    revision: string;
-    liveCatalog: ModelInfo[];
     findings: ReturnType<typeof analyze>;
-    gaps: unknown[];
     assessmentInput: ReturnType<typeof researchEvidence>;
 }) {
     if (!report.findings.some((finding) => finding.newFinding))
         return { status: "not_needed", reason: "No new leads to assess" };
-    const token = credential("POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER");
     if (!token)
         return {
             status: "blocked_access",
-            reason: "POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER required from runtime environment or SOPS",
+            reason: "POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER required in the runtime environment",
         };
     try {
         const [profileResponse, catalogResponse] = await Promise.all([
@@ -112,9 +85,7 @@ async function assessment(report: {
                 status: "blocked_access",
                 reason: "Credential does not belong to the selected agent account",
             };
-        const hosted = catalog.find(
-            (m) => m.name === values.model || m.aliases?.includes(values.model),
-        );
+        const hosted = catalog.find((m) => m.name === MODEL);
         if (!hosted?.agent || !hosted.base_model)
             return {
                 status: "blocked_access",
@@ -146,7 +117,7 @@ async function assessment(report: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(assessmentRequest(evidence, values.model)),
+            body: JSON.stringify(assessmentRequest(evidence, MODEL)),
             signal: AbortSignal.timeout(120_000),
         });
         if (!response.ok)
@@ -167,7 +138,7 @@ async function assessment(report: {
             };
         return {
             status: "complete",
-            model: values.model,
+            model: MODEL,
             text,
             usage: body.usage,
             estimatedUpperBoundPollen: maximumCost + COMPUTER_TOOL_CALL_PRICE,
@@ -190,8 +161,7 @@ async function persistReport(out, report, pending, notified) {
     await save(join(out, "report.json"), JSON.stringify(report, null, 2));
     await save(join(out, "pending.json"), JSON.stringify(settled.pending));
     await save(join(out, "notified.json"), JSON.stringify(settled.notified));
-    await save(join(out, "report.html"), reportHtml(report));
-    await save(join(out, "report.md"), reportDigest(report));
+    await save(join(out, "report.md"), reportIssue(report));
     console.log(
         `Saved ${report.findings.length} research findings; ${report.pendingCount} pending`,
     );
@@ -211,9 +181,6 @@ async function assessReport(report, out) {
     }
     if (report.assessment.status === "storage_pending") {
         try {
-            const token = credential(
-                "POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER",
-            );
             if (
                 !token ||
                 JSON.parse(
@@ -300,7 +267,7 @@ async function main() {
         huggingFace(categories, previousDays.at(-1)?.at),
         openRouter(),
         fal(),
-        replicate(credential("REPLICATE_API_TOKEN"), previousDays),
+        replicate(process.env.REPLICATE_API_TOKEN, previousDays),
     ]);
     for (const [index, result] of [hf, or, fa, re].entries()) {
         const source =
@@ -331,7 +298,6 @@ async function main() {
             .map((q) => ({ source: s.source, ...q })),
     );
     try {
-        const token = credential("POLLINATIONS_API_KEY_AGENT_MODEL_MANAGER");
         liveCatalog = rows(
             JSON.parse(
                 (
@@ -357,7 +323,6 @@ async function main() {
         }).trim();
     const snapshot = {
         at,
-        account: ACCOUNT,
         revision,
         registry,
         liveCatalog,
@@ -374,9 +339,6 @@ async function main() {
         ],
         gaps,
         mode: "report_only",
-        execution: process.env.MODEL_MANAGER_SANDBOX_ID
-            ? `Pollinations VM ${process.env.MODEL_MANAGER_SANDBOX_ID}`
-            : "local",
         assessment: { status: "not_requested" },
         assessmentInput: null,
     };
@@ -386,10 +348,6 @@ async function main() {
         JSON.stringify(historySnapshot(snapshot)),
     );
     await persistReport(out, report, waiting, notified);
-    if (values.assess) {
-        await assessReport(report, out);
-        await persistReport(out, report, waiting, notified);
-    }
 }
 
 main().catch((error) => {

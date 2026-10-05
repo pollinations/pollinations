@@ -221,14 +221,14 @@ export const Models: FC = () => {
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(() => {
-        const statusQuery = {
+        const healthQuery = {
             terms: [],
-            filters: parsedQuery.filters.filter(({ key }) => key === "status"),
+            filters: parsedQuery.filters.filter(({ key }) => key === "health"),
         };
         return allModels.filter(
             (model) =>
                 !model.agent &&
-                matchesModelQuery(model, statusQuery) &&
+                matchesModelQuery(model, healthQuery) &&
                 (explicitModelSource === undefined ||
                     Boolean(model.community) ===
                         (explicitModelSource === "community")),

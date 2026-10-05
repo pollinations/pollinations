@@ -5,14 +5,14 @@ import type { ModelPrice } from "./types.ts";
 
 export type ModelAccess = "paid" | "quest" | "free";
 export type ModelSource = "official" | "community";
-export type ModelStatus = "all" | "healthy" | "reliable";
+export type ModelHealthFilter = "healthy" | "reliable";
 
 export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
     | { key: "source"; value: ModelSource }
-    | { key: "status"; value: ModelStatus }
+    | { key: "health"; value: ModelHealthFilter }
     | {
-          key: "publisher" | "id" | "type" | "capability";
+          key: "publisher" | "id" | "category" | "capability";
           value: string;
       };
 export type ModelQueryFilterKey = ModelQueryFilter["key"];
@@ -35,14 +35,14 @@ export type ModelQueryDraftFilter = {
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
 const SOURCE_VALUES: readonly ModelSource[] = ["official", "community"];
-const STATUS_VALUES: readonly ModelStatus[] = ["all", "reliable", "healthy"];
+const HEALTH_VALUES: readonly ModelHealthFilter[] = ["healthy", "reliable"];
 export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
-    "status",
+    "health",
     "publisher",
     "id",
-    "type",
+    "category",
     "capability",
 ] as const;
 
@@ -51,6 +51,9 @@ const isModelAccess = (value: string): value is ModelAccess =>
 
 const isModelSource = (value: string): value is ModelSource =>
     SOURCE_VALUES.includes(value as ModelSource);
+
+const isModelHealthFilter = (value: string): value is ModelHealthFilter =>
+    HEALTH_VALUES.includes(value as ModelHealthFilter);
 
 function parseModelQueryFilter(
     token: string,
@@ -68,15 +71,11 @@ function parseModelQueryFilter(
             return isModelAccess(value) ? { key, value } : undefined;
         case "source":
             return isModelSource(value) ? { key, value } : undefined;
-        case "status":
-            return value === "all" ||
-                value === "healthy" ||
-                value === "reliable"
-                ? { key, value }
-                : undefined;
+        case "health":
+            return isModelHealthFilter(value) ? { key, value } : undefined;
         case "publisher":
         case "id":
-        case "type":
+        case "category":
         case "capability":
             return { key, value };
         default:
@@ -119,20 +118,14 @@ export function getExplicitModelQuerySource(
 
 /** Make default catalog filters visible and editable in the search bar. */
 export function ensureModelQueryDefaults(query: string): string {
-    const normalizedQuery = query.trim();
-    const keys = normalizedQuery
-        .toLowerCase()
+    // URLs saved before the health filter carry the old `status:all` default.
+    const tokens = query
         .split(/\s+/)
-        .filter((token) => token.includes(":"))
-        .map((token) => token.split(":")[0]);
-    return [
-        ...["source:official", "status:all"].filter(
-            (token) => !keys.includes(token.split(":")[0]),
-        ),
-        normalizedQuery,
-    ]
-        .filter(Boolean)
-        .join(" ");
+        .filter((token) => token && token.toLowerCase() !== "status:all");
+    const hasSource = tokens.some((token) =>
+        token.toLowerCase().startsWith("source:"),
+    );
+    return [...(hasSource ? [] : ["source:official"]), ...tokens].join(" ");
 }
 
 export function getModelQueryFilterTokens(
@@ -233,6 +226,10 @@ function getSearchableCapabilities(model: ModelPrice): string[] {
     );
 }
 
+// Agents are listed as their own category, like the catalog tabs.
+const getModelCategory = (model: ModelPrice): string =>
+    model.agent ? "agent" : model.type;
+
 function getModelPublisher(model: ModelPrice): string | null {
     if (model.community) {
         const owner = parseCommunityModelId(model.name)?.ownerGithubUsername;
@@ -247,20 +244,18 @@ function getFilterValues(key: string, models: ModelPrice[]): string[] {
             return [...ACCESS_VALUES];
         case "source":
             return [...SOURCE_VALUES];
-        case "status":
-            return [...STATUS_VALUES];
+        case "health":
+            return [...HEALTH_VALUES];
         case "publisher":
             return models
                 .map(getModelPublisher)
                 .filter((value): value is string => Boolean(value));
         case "id":
             return models.map((model) => model.name.toLowerCase());
-        case "type":
-            return models.map((model) => (model.agent ? "agent" : model.type));
+        case "category":
+            return models.map(getModelCategory);
         case "capability":
-            return models
-                .flatMap(getSearchableCapabilities)
-                .map((value) => value.replaceAll("_", "-"));
+            return models.flatMap(getSearchableCapabilities);
         default:
             return [];
     }
@@ -304,8 +299,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return getModelAccess(model) === filter.value;
         case "source":
             return Boolean(model.community) === (filter.value === "community");
-        case "status":
-            if (filter.value === "all") return true;
+        case "health":
             if (filter.value === "reliable" && model.community && !model.agent)
                 return isModelReliable(model.health?.success_rate);
             return model.health?.status === "healthy";
@@ -320,8 +314,8 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
                 ) ??
                     false)
             );
-        case "type":
-            return (model.agent ? "agent" : model.type) === filter.value;
+        case "category":
+            return getModelCategory(model) === filter.value;
         case "capability":
             return getSearchableCapabilities(model).includes(
                 normalizeCapability(filter.value),

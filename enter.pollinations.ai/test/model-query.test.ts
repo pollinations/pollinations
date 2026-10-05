@@ -56,7 +56,7 @@ describe("parseModelQuery", () => {
     it("separates case-insensitive filters from text terms", () => {
         expect(
             parseModelQuery(
-                "Fast ACCESS:paid SOURCE:community publisher:Alice id:Alice/Coder type:text capability:tool-calling",
+                "Fast ACCESS:paid SOURCE:community publisher:Alice id:Alice/Coder category:text capability:tool_calling",
             ),
         ).toEqual({
             terms: ["fast"],
@@ -65,8 +65,8 @@ describe("parseModelQuery", () => {
                 { key: "source", value: "community" },
                 { key: "publisher", value: "alice" },
                 { key: "id", value: "alice/coder" },
-                { key: "type", value: "text" },
-                { key: "capability", value: "tool-calling" },
+                { key: "category", value: "text" },
+                { key: "capability", value: "tool_calling" },
             ],
         });
     });
@@ -89,22 +89,29 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official models of every status without replacing explicit or unfinished filters", () => {
-        expect(ensureModelQueryDefaults("")).toBe("source:official status:all");
+    it("preselects official models without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe("source:official");
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:all capability:reasoning",
+            "source:official capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:all source:community",
+            "source:community",
         );
-        expect(ensureModelQueryDefaults("status:reliable")).toBe(
-            "source:official status:reliable",
+        expect(ensureModelQueryDefaults("health:reliable")).toBe(
+            "source:official health:reliable",
         );
-        expect(ensureModelQueryDefaults("source: status:")).toBe(
-            "source: status:",
+        expect(ensureModelQueryDefaults("source: health:")).toBe(
+            "source: health:",
         );
-        expect(ensureModelQueryDefaults("SOURCE:community status:all")).toBe(
-            "SOURCE:community status:all",
+        expect(ensureModelQueryDefaults("SOURCE:community")).toBe(
+            "SOURCE:community",
+        );
+        // Older page versions wrote this default into every search URL.
+        expect(ensureModelQueryDefaults("source:official status:all")).toBe(
+            "source:official",
+        );
+        expect(ensureModelQueryDefaults("STATUS:all flux")).toBe(
+            "source:official flux",
         );
     });
 });
@@ -120,20 +127,20 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             },
         });
         const visible = successRate == null || successRate > 80;
-        expect(matches(candidate, "source:community status:reliable")).toBe(
+        expect(matches(candidate, "source:community health:reliable")).toBe(
             visible,
         );
-        expect(matches(candidate, "status:reliable")).toBe(visible);
-        expect(matches(candidate, "status:all")).toBe(true);
+        expect(matches(candidate, "health:reliable")).toBe(visible);
+        expect(matches(candidate, "source:community")).toBe(true);
     }
     const official = model({
         health: { status: "down", requests: 50, success_rate: 0 },
     });
-    expect(matches(official, "status:reliable")).toBe(false);
+    expect(matches(official, "health:reliable")).toBe(false);
     expect(
         matches(
             { ...official, community: true, agent: true },
-            "status:reliable",
+            "health:reliable",
         ),
     ).toBe(false);
     // Official models without recent traffic stay listed by default (#15377).
@@ -147,11 +154,11 @@ it("filters only community models at the API cutoff, keeps unknown and permits s
             ensureModelQueryDefaults(""),
         ),
     ).toBe(true);
-    expect(matches(model(), "status:healthy")).toBe(false);
-    expect(getModelQuerySuggestions("status:", [])).toEqual([
-        "status:all ",
-        "status:healthy ",
-        "status:reliable ",
+    expect(matches(model(), "health:healthy")).toBe(false);
+    expect(matches(model(), "health:all")).toBe(false);
+    expect(getModelQuerySuggestions("health:", [])).toEqual([
+        "health:healthy ",
+        "health:reliable ",
     ]);
 });
 
@@ -317,12 +324,12 @@ describe("matchesModelQuery", () => {
         expect(matches(candidate, "id:quick-coder")).toBe(false);
     });
 
-    it("uses the displayed agent category for type filters", () => {
+    it("uses the displayed agent category for category filters", () => {
         const agent = model({ agent: true, type: "text" });
 
-        expect(matches(agent, "type:agent")).toBe(true);
-        expect(matches(agent, "type:text")).toBe(false);
-        expect(matches(model({ type: "image" }), "type:image")).toBe(true);
+        expect(matches(agent, "category:agent")).toBe(true);
+        expect(matches(agent, "category:text")).toBe(false);
+        expect(matches(model({ type: "image" }), "category:image")).toBe(true);
     });
 
     it("matches raw and displayed capabilities with hyphen aliases", () => {
@@ -331,6 +338,7 @@ describe("matchesModelQuery", () => {
             capabilities: ["tool_calling", "pollinations_models"],
         });
 
+        expect(matches(candidate, "capability:tool_calling")).toBe(true);
         expect(matches(candidate, "capability:tool-calling")).toBe(true);
         expect(matches(candidate, "capability:pollinations-models")).toBe(true);
         expect(matches(candidate, "capability:agent")).toBe(true);
@@ -348,7 +356,7 @@ describe("matchesModelQuery", () => {
         expect(
             matches(
                 candidate,
-                "quick publisher:alice type:text capability:reasoning access:quest",
+                "quick publisher:alice category:text capability:reasoning access:quest",
             ),
         ).toBe(true);
         expect(
@@ -378,11 +386,11 @@ describe("getModelQuerySuggestions", () => {
         expect(getModelQuerySuggestions("", models)).toEqual([
             "access:",
             "capability:",
+            "category:",
+            "health:",
             "id:",
             "publisher:",
             "source:",
-            "status:",
-            "type:",
         ]);
         expect(getModelQuerySuggestions("access:", models)).toEqual([
             "access:free ",
@@ -403,12 +411,12 @@ describe("getModelQuerySuggestions", () => {
 
     it("completes only the current token", () => {
         expect(getModelQuerySuggestions("fast capability:t", models)).toEqual([
-            "fast capability:tool-calling ",
+            "fast capability:tool_calling ",
         ]);
-        expect(getModelQuerySuggestions("type:", models)).toEqual([
-            "type:agent ",
-            "type:image ",
-            "type:text ",
+        expect(getModelQuerySuggestions("category:", models)).toEqual([
+            "category:agent ",
+            "category:image ",
+            "category:text ",
         ]);
     });
 

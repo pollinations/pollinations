@@ -18,6 +18,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, expect } from "vitest";
 import worker from "../../src/index.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../../src/middleware/text-balance-notice.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
 const DECISIONS_HOST = "openrouter.ai";
@@ -264,7 +265,7 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
     mocks,
 }) => {
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1, packBalance: 0 },
+        user: { tierBalance: 0, packBalance: 1 },
     });
     const { response, wait } = await post("/alpha/decisions", key, {
         model: "liquid/d1",
@@ -293,8 +294,52 @@ test("routes Liquid D1 under its own id and bills input tokens", async ({
         isBilledUsage: true,
     });
     expect(event.totalCost).toBeCloseTo((452 * 0.04 * 1.055) / 1_000_000, 12);
-    const { tierBalance } = await getUserBalance(drizzle(env.DB), userId);
-    expect(tierBalance).toBeCloseTo(1 - (452 * 0.04 * 1.055) / 1_000_000, 7);
+    const { tierBalance, packBalance } = await getUserBalance(
+        drizzle(env.DB),
+        userId,
+    );
+    expect(tierBalance).toBe(0);
+    expect(packBalance).toBeCloseTo(1 - (452 * 0.04 * 1.055) / 1_000_000, 7);
+});
+
+test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
+    apiKey,
+    mocks,
+}) => {
+    const payload = {
+        state: "Fictional weather: heavy rain tomorrow.",
+        questions: { rain: { type: "noul", instructions: "Will it rain?" } },
+    };
+    for (const [path, body] of [
+        ["/alpha/decisions", { model: "liquid/d1", ...payload }],
+        [
+            "/v1/chat/completions",
+            {
+                model: "liquid/d1",
+                messages: [{ role: "user", content: JSON.stringify(payload) }],
+            },
+        ],
+    ] as const) {
+        const { response, wait } = await post(path, apiKey, body);
+        const showsNotice =
+            path === "/v1/chat/completions" && TEXT_BALANCE_NOTICE_ENABLED;
+        expect(response.status).toBe(showsNotice ? 200 : 402);
+        if (showsNotice) {
+            const notice = (await response.json()) as {
+                choices: { message: { content: string } }[];
+                usage: { total_tokens: number };
+            };
+            expect(notice.choices[0].message.content).toContain(
+                "This model needs paid Pollen",
+            );
+            expect(notice.usage.total_tokens).toBe(0);
+            expect(response.headers.get("cache-control")).toBe(
+                "private, no-store",
+            );
+        }
+        await wait();
+    }
+    expect(mocks.decisions.state.requests).toHaveLength(0);
 });
 
 test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {

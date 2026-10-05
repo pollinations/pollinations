@@ -1570,9 +1570,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
-        // Like Jev, Quest Pollen must reach it; $0.04/M in with free output
-        // bounds what a free-tier account can spend.
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             // OpenRouter list price plus its 5.5% credit fee, as every
             // OpenRouter route records.

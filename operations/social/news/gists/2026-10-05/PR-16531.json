@@ -1,0 +1,34 @@
+{
+  "pr_number": 16531,
+  "title": "fix: move code agent sync into the repository row",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16531",
+  "merged_at": "2026-10-05T17:23:45Z",
+  "labels": [],
+  "pr_body_excerpt": "The edit dialog for code agents had \"Sync from GitHub\" alone in its own panel, away from the repository it acts on, and the repository label drifted below its input because it was centred against the \"Fork an example\" link too.\n\n- Moves Sync next to the locked repository input; while editing, the line under it shows the deployed commit (`Synced to <sha>` after a sync) instead of the fork link\n- Sync is an outlined button and shows a spinner instead of swapping its label, since it redeploys immediately rather than on Save\n- The sync handler returns the new commit from the existing sync response\n- Adds a `note` slot to `ModelFormRow` so lines under a control no longer pull the label off-centre; \"Fork an example\" now sits left-aligned under the input at its own width\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Sync found its repository",
+    "blurb": "The Sync button moves in beside the repository it actually syncs. A little commit SHA under the input confirms where the code agent landed.",
+    "summary": "The code-agent edit dialog moves Sync from its own panel beside the locked repository input, shows the deployed commit as “Synced to <sha>” after an immediate redeploy, and adds a ModelFormRow note slot to keep labels aligned.",
+    "impact": "People editing code agents get the sync action and deployed commit together, with a spinner during sync and no need to press Save to redeploy.",
+    "keywords": [
+      "code agents",
+      "GitHub sync",
+      "repository",
+      "deployed commit",
+      "edit dialog",
+      "UI"
+    ],
+    "visual_concept": "A cozy code-garden workbench represents the code-agent edit dialog: a repository input and Sync button sit side by side, with a short commit SHA beneath them. Polli, wearing a tiny tool belt, points to the commit marker; neatly aligned labels and a code-plant reinforce the tidier layout.",
+    "image_prompt": "In a cozy pixel art garden workbench, Polli points from a repository field to its adjacent pixel-font “SYNC” button and a short commit SHA beneath it, while a code-plant grows beside the terminal against a prominent lime green (#ecf874), mint-to-peach background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium within the scene, and shares the frame with the workbench in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16531.jpg",
+    "prompt": "In a cozy pixel art garden workbench, Polli points from a repository field to its adjacent pixel-font “SYNC” button and a short commit SHA beneath it, while a code-plant grows beside the terminal against a prominent lime green (#ecf874), mint-to-peach background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium within the scene, and shares the frame with the workbench in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-05T17:25:04.250944+00:00"
+}

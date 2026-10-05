@@ -1,0 +1,34 @@
+{
+  "pr_number": 16510,
+  "title": "fix: one name per audio parameter",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16510",
+  "merged_at": "2026-10-05T17:30:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- `duration` is the length parameter for all audio models, and `seconds` stays accepted as an alias\n- Music, Lyria clip and Stable Audio models declare their durations in the registry, and `/audio/models` publishes them as `min_duration`/`max_duration`/`allowed_durations`; one check replaces the Lyria clip check\n- Voice changer and voice isolator take the upload as `file`, like transcription and stem separation; `audio` still works\n- Sound effects keep clamping `duration` to 0.5–30 s, as before\n\n| Request | Before | After |\n|---|---|---|\n| Stable Audio, `duration: 350` | 400 (duration max 300) | 350 s |\n| Music v2, `duration: 2` | sent upstream | 400 listing 3-300 |\n| Lyria clip, `duration: 20` | 400 | 400, shared message |\n| Voice changer upload | `audio` only | `file` or `audio` |\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01M1RaZKWKKZTr4qgYQtMRro",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Audio gets one clock",
+    "blurb": "The audio API settles on `duration`, while `seconds` still answers to its old name. Uploads get a shared `file` parameter too; aliases remain welcome.",
+    "summary": "Audio models use `duration` with `seconds` as an alias, publish their duration limits through `/audio/models`, and accept `file` uploads for voice changing and isolation while retaining `audio` as an alias.",
+    "impact": "Stable Audio accepts a 350-second request, Music v2 rejects durations below its listed 3–300-second range, and voice changer and isolator accept the same `file` field as transcription.",
+    "keywords": [
+      "audio",
+      "duration",
+      "model registry",
+      "voice changer",
+      "voice isolator",
+      "API"
+    ],
+    "visual_concept": "Depict the audio API as a cozy mixing desk with a prominent duration dial, a small seconds alias tag, and a file upload slot. Polli wears tiny headphones and adjusts the dial while a friendly CRT robot holds an /audio/models card showing duration ranges; code-plants grow beside the desk.",
+    "image_prompt": "In a cozy pixel-art garden studio, Polli wears tiny headphones and adjusts a lime green (#ecf874) audio dial labeled 'duration' while a chunky CRT robot holds a small '/audio/models' card beside a 'file' upload slot and flowering code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and lavender surround the prominent lime green (#ecf874), with dark purple (#110518) outlines and a soft CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16510.jpg",
+    "prompt": "In a cozy pixel-art garden studio, Polli wears tiny headphones and adjusts a lime green (#ecf874) audio dial labeled 'duration' while a chunky CRT robot holds a small '/audio/models' card beside a 'file' upload slot and flowering code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream and lavender surround the prominent lime green (#ecf874), with dark purple (#110518) outlines and a soft CRT glow."
+  },
+  "generated_at": "2026-10-05T17:31:17.892391+00:00"
+}

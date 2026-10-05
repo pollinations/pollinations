@@ -1,0 +1,34 @@
+{
+  "pr_number": 16429,
+  "title": "fix: count streamed chat session tokens",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16429",
+  "merged_at": "2026-10-05T04:00:42Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16428\n\n- Counts provider-reported usage events in streamed chat sessions using the existing `streamSSE` callback.\n- Corrects `/exit` totals: two replies reporting 7 tokens each now show 14 instead of 0.\n- Adds one regression to the existing chat tests. No request or model-selection changes.\n- Verified: all 284 CLI tests, build and scoped Biome; native Commander/readline totals 7/14/0. Also applies cleanly with the separate default-banner fix.\n\nStrict TypeScript diagnostics remain identical to the 36 existing baseline errors. Local tests used the already installed dependency cache.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The tokens add up",
+    "blurb": "Polli CLI keeps count while streamed chat replies arrive. Two seven-token replies make fourteen at /exit, as arithmetic intended.",
+    "summary": "Polli CLI counts provider-reported usage events during streamed chat sessions, correcting /exit totals from 0 to 14 for two replies reporting 7 tokens each.",
+    "impact": "People using streamed chat get an accurate session token total at /exit, with no change to requests or model selection.",
+    "keywords": [
+      "polli-cli",
+      "chat",
+      "streaming",
+      "tokens",
+      "usage",
+      "exit"
+    ],
+    "visual_concept": "Show Polli checking a cozy retro terminal where two streamed chat replies, each marked 7, feed into a session counter marked 14. A small code-plant grows beside the terminal; the scene makes the corrected arithmetic immediately readable.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears tiny accountant glasses and points to a glowing retro terminal showing two chat bubbles labeled '7' and an '/exit' total of '14', while a code-plant curls around its base. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, a prominent lime green (#ecf874) glow against warm cream and lavender, warm lighting, retro gaming vibes; nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16429.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny accountant glasses and points to a glowing retro terminal showing two chat bubbles labeled '7' and an '/exit' total of '14', while a code-plant curls around its base. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, a prominent lime green (#ecf874) glow against warm cream and lavender, warm lighting, retro gaming vibes; nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-05T04:02:03.330563+00:00"
+}

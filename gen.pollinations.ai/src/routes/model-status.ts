@@ -32,7 +32,7 @@ export function fetchCatalogHealthRows(): Promise<ModelHealthRow[]> {
 // Official models and agents retain their existing 24-hour health display.
 export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
     const url = new URL(MODEL_ROUTE_HEALTH_URL);
-    url.searchParams.set("minutes", "1440");
+    url.pathname = "/v0/pipes/model_health_24h.json";
     return fetchHealthRows(url);
 }
 

@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import { communityEndpoint } from "@shared/db/better-auth.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -54,7 +55,7 @@ function mockCatalogHealth(
             );
             if (
                 url.pathname === "/v0/pipes/model_catalog_health.json" ||
-                url.pathname === "/v0/pipes/model_route_health.json"
+                url.pathname === "/v0/pipes/model_health_24h.json"
             ) {
                 return Response.json(
                     {
@@ -307,6 +308,60 @@ test("community reliability is discovery-only and show all preserves manual hidi
     ).toBe(200);
     const registry = await getGenerationModelRegistry(env);
     expect(registry.resolve(id)?.visible).toBe(true);
+});
+
+test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async () => {
+    type CatalogPrice = Pick<ModelInfo, "pricing" | "pricing_variants"> & {
+        name?: string;
+        id?: string;
+    };
+    const model = "black-forest-labs/flux-3-image";
+    const cutoff = Date.parse("2026-10-08T15:00:00Z");
+    const now = vi.spyOn(Date, "now").mockReturnValue(cutoff - 1);
+    const registry = await getGenerationModelRegistry(env);
+    for (const [time, rate, twoK] of [
+        [cutoff - 1, 0.024, 0.05],
+        [cutoff, 0.024, 0.05],
+        [cutoff + 60_000, 0.048, 0.1],
+    ]) {
+        now.mockReturnValue(time);
+        const currentRegistry = await getGenerationModelRegistry(env);
+        if (time < cutoff + 60_000) {
+            expect(currentRegistry).toBe(registry);
+        } else {
+            expect(currentRegistry).not.toBe(registry);
+        }
+        for (const path of [
+            "/models",
+            "/image/models",
+            "/v1/models",
+            `/v1/models/${encodeURIComponent(model)}`,
+        ]) {
+            const response = await fetchWorker(path);
+            expect(response.status).toBe(200);
+            const body = await response.json<
+                CatalogPrice[] | CatalogPrice | { data: CatalogPrice[] }
+            >();
+            const info = Array.isArray(body)
+                ? body.find((info) => info.name === model)
+                : "data" in body
+                  ? body.data.find((info) => info.id === model)
+                  : body;
+            expect(Number(info?.pricing.completionImageTokens)).toBeCloseTo(
+                rate * 1.055,
+                10,
+            );
+            if (Array.isArray(body)) {
+                expect(
+                    Number(
+                        info?.pricing_variants?.find(
+                            (variant) => variant.name === "2k",
+                        )?.pricing.completionImageTokens,
+                    ),
+                ).toBeCloseTo(twoK * 1.055, 10);
+            }
+        }
+    }
 });
 
 test("retrieves a model by canonical ID", async () => {

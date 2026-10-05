@@ -632,6 +632,8 @@ const IMAGE_BASE_SERVICES = {
             ],
         ),
         resolutions: ["720p", "1080p"],
+        // Omitted size/audio used to give portrait video with billed audio.
+        cacheVersion: "2026-09-30-landscape-audio-opt-in",
         title: "Veo 3.1 Fast",
         description: "Fast video with optional audio at 720p or 1080p",
         inputModalities: ["text", "image"],

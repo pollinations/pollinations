@@ -1190,13 +1190,13 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        // Some providers read the format from the file extension, so a File
-        // keeps its own name. Node 18 has no global File to check against.
-        const filename =
-            "name" in blob && typeof blob.name === "string" && blob.name
-                ? blob.name
-                : "audio.mp3";
-        formData.append("file", blob, filename);
+        // Some providers read the format from the extension, so a File keeps
+        // its own name.
+        formData.append(
+            "file",
+            blob,
+            (blob as Partial<File>).name || "audio.mp3",
+        );
         if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);

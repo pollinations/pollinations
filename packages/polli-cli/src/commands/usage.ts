@@ -191,7 +191,7 @@ export const usageCommand = new Command("usage")
         collect,
         [] as string[],
     )
-    .option("--days <n>", "Rolling window in days")
+    .option("--days <n>", "Rolling window in days (--daily defaults to 7)")
     .option("--csv", "Print the raw CSV export")
     .addHelpText(
         "after",
@@ -283,7 +283,10 @@ export const usageCommand = new Command("usage")
         }
 
         const params = new URLSearchParams();
-        if (opts.days !== undefined) params.set("days", opts.days);
+        // The daily endpoint's 90-day default times out on heavy accounts
+        // (#16560), so --daily asks for a week unless --days is given.
+        const days = opts.days ?? (opts.daily ? "7" : undefined);
+        if (days !== undefined) params.set("days", days);
 
         try {
             if (opts.daily) {

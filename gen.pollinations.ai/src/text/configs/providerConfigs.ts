@@ -143,6 +143,17 @@ export function createOpenRouterModelConfig(
     };
 }
 
+export function createNovitaModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+        authKey: textEnvironmentValue("NOVITA_API_KEY"),
+        ...overrides,
+    };
+}
+
 export function createAlibabaModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

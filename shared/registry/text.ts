@@ -2184,19 +2184,18 @@ const TEXT_BASE_SERVICES = {
     "inclusionai/ling-3.1-flash": {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
-        paidOnly: false,
-        priceMultiplier: 1,
+        paidOnly: true,
+        priceMultiplier: 5,
         cost: {
-            // Free on OpenRouter's Novita endpoint at launch (verified
-            // 2026-10-02: usage.cost 0 on prompt, reasoning and tool calls).
-            // Set real rates once OpenRouter publishes them.
-            promptTextTokens: perMillion(0),
-            promptCachedTokens: perMillion(0),
-            completionTextTokens: perMillion(0),
+            // Planned post-promotion rates; keep this PR held until the
+            // cutover date and exact-route pricing are confirmed.
+            promptTextTokens: perMillion(0.06),
+            promptCachedTokens: perMillion(0.012),
+            completionTextTokens: perMillion(0.18),
         },
         title: "Ling 3.1 Flash",
         description:

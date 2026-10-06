@@ -911,10 +911,34 @@ const models: ModelDefinition[] = [
     {
         name: "inclusionai/ling-3.1-flash",
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
+        transform: (messages, options) => {
+            const { reasoning_effort, ...rest } = options;
+            const { reasoning } = options;
+            const control = reasoning as
+                | { enabled?: boolean; effort?: string; exclude?: boolean }
+                | undefined;
+            const effort = control?.effort ?? reasoning_effort;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    enable_thinking:
+                        control?.enabled ??
+                        (effort === undefined ? undefined : effort !== "none"),
+                    // Keep reasoning separate from answer content; the shared client
+                    // enforces the caller's visibility controls.
+                    separate_reasoning: true,
+                },
+            };
+        },
     },
     {
         name: "inclusionai/ling-3.1-flash:vercel:novita",
         config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash:openrouter:novita",
+        config: portkeyConfig["inclusionai/ling-3.1-flash:openrouter:novita"],
     },
     {
         name: "inclusionai/ling-3.0-flash-vl",

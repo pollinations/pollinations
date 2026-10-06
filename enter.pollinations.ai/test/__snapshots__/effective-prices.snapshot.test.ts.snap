@@ -980,6 +980,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000001055,
     },
   },
+  "google/gemini-2.5-flash-lite:search:vercel": {
+    "cost": {
+      "completionTextTokens": 0.0000004,
+      "promptAudioTokens": 0.0000001,
+      "promptCacheWriteTokens": 0.0000001,
+      "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
+      "promptVideoTokens": 0.0000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000004,
+      "promptAudioTokens": 0.0000001,
+      "promptCacheWriteTokens": 0.0000001,
+      "promptCachedTokens": 0.00000001,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
+      "promptVideoTokens": 0.0000001,
+    },
+  },
   "google/gemini-3-flash-preview": {
     "cost": {
       "completionTextTokens": 0.000003,
@@ -2986,6 +3006,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "qwen/qwen3-embedding-8b": {
+    "cost": {
+      "promptTextTokens": 0.00000001,
+    },
+    "price": {
+      "promptTextTokens": 0.00000001,
+    },
+  },
+  "qwen/qwen3-embedding-8b:fireworks": {
     "cost": {
       "promptTextTokens": 0.0000001,
     },

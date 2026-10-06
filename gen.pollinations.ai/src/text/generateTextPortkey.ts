@@ -16,6 +16,7 @@ import type {
     TransformResult,
 } from "./types.js";
 import { resolveModelConfig } from "./utils/modelResolver.js";
+import { callVercelSearch } from "./vercelSearch.ts";
 
 export const log = debug("pollinations:portkey");
 
@@ -107,6 +108,9 @@ export async function generateTextPortkey(
 
     // This internal transport belongs only to the Responses adapter.
     delete state.options.responsesFetcher;
+
+    if (modelDef?.useVercelSearchFormatting)
+        return callVercelSearch(state.messages, state.options, requestConfig);
 
     const completion = await genericOpenAIClient(
         state.messages,

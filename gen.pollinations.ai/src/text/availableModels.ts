@@ -791,6 +791,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "moonshotai/kimi-k3:deepinfra",
+        config: portkeyConfig["moonshotai/Kimi-K3"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
         name: "poolside/laguna-s-2.1",
         config: portkeyConfig["poolside/laguna-s-2.1"],
         transform: createReasoningEffortTransform("toggle"),

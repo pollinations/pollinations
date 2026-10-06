@@ -309,6 +309,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/moonshotai/Kimi-K3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(2.85),
+                promptCachedTokens: perMillion(0.285),
+                completionTextTokens: perMillion(14.25),
+            },
+        },
+    },
     "meta/llama-3.3-70b-instruct": {
         "meta/llama-3.3-70b-instruct:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfra,

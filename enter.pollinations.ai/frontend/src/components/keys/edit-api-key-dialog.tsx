@@ -55,16 +55,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     );
 
     const expiryDays = apiKey.expiresAt
-        ? Math.ceil(
-              (new Date(apiKey.expiresAt).getTime() - Date.now()) /
-                  (1000 * 60 * 60 * 24),
-          )
+        ? (new Date(apiKey.expiresAt).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24)
         : null;
 
     const keyPermissions = useKeyPermissions({
         allowedModels: apiKey.permissions?.models ?? null,
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
+        questPollenOnly: apiKey.questPollenOnly ?? false,
         expiryDays,
     });
 

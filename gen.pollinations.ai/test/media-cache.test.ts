@@ -132,6 +132,21 @@ describe("media cache", () => {
             ),
         );
     });
+    it("separates cache entries when a model's cache version changes", async () => {
+        const url = new URL(
+            "https://gen.pollinations.ai/video/a%20paper%20boat?model=veo",
+        );
+        const unversioned = await generateCacheKey(url);
+        expect(await generateCacheKey(url, undefined, [], undefined)).toBe(
+            unversioned,
+        );
+        const versioned = await generateCacheKey(url, undefined, [], "v2");
+        expect(versioned).not.toBe(unversioned);
+        expect(await generateCacheKey(url, undefined, [], "v3")).not.toBe(
+            versioned,
+        );
+    });
+
     it("coordinates audio cache misses like other finite media", async () => {
         let coordinated = false;
         const app = new Hono<TestEnv>()

@@ -1,5 +1,73 @@
-import { describe, expect, it } from "vitest";
-import { modelBody } from "./my-models.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { setKeyOverride } from "../lib/config.js";
+import { setOutputMode } from "../lib/output.js";
+import { modelBody, myModelsCommand } from "./my-models.js";
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    setKeyOverride(undefined);
+    setOutputMode("human");
+});
+
+const queued = {
+    effectiveAt: "2026-10-06T12:00:00.000Z",
+    visibility: "public",
+    paidOnly: false,
+    imagePricing: "request",
+    completionTextPrice: 0,
+    promptTextPrice: 0.000001,
+};
+
+async function runList(pending: unknown) {
+    setKeyOverride("sk_test");
+    const stdout = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
+    const stderr = vi
+        .spyOn(process.stderr, "write")
+        .mockImplementation(() => true);
+    const model = {
+        id: "model-id",
+        modelId: "user/example",
+        type: "proxy",
+        visibility: "private",
+        paidOnly: false,
+        imagePricing: "request",
+        completionTextPrice: 0.000002,
+        promptTextPrice: 0.000001,
+        pending,
+    };
+    vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => Response.json({ data: [model] })),
+    );
+    await myModelsCommand.parseAsync(["list"], { from: "user" });
+    const text = (spy: typeof stdout) =>
+        spy.mock.calls.map(([chunk]) => String(chunk)).join("");
+    return { stdout: text(stdout), stderr: text(stderr) };
+}
+
+describe("my-models pending changes", () => {
+    it("shows queued visibility and price changes with their effective time", async () => {
+        const { stdout, stderr } = await runList(queued);
+        expect(stdout).toContain("private");
+        expect(stderr).toContain(
+            "Changes queued for user/example, effective 2026-10-06T12:00:00.000Z: visibility private → public, completionTextPrice 0.000002 → 0",
+        );
+    });
+
+    it("prints no notice without a pending change", async () => {
+        const { stderr } = await runList(null);
+        expect(stderr).not.toContain("Changes queued");
+    });
+
+    it("keeps the raw pending object in JSON output", async () => {
+        setOutputMode("json");
+        const { stdout } = await runList(queued);
+        expect(JSON.parse(stdout)[0].pending).toEqual(queued);
+    });
+});
 
 describe("modelBody", () => {
     it("builds image model registration fields supported by the API", () => {

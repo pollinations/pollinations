@@ -4,6 +4,7 @@ import { gen, requireKey } from "../lib/api.js";
 import {
     fail,
     getOutputMode,
+    printInfo,
     printResult,
     printSuccess,
     printTable,
@@ -43,6 +44,13 @@ const PRICE_OPTION_KEYS = [
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
 
+const PENDING_KEYS = [
+    "visibility",
+    "paidOnly",
+    "imagePricing",
+    ...PRICE_OPTION_KEYS,
+] as const;
+
 interface MyModelBase {
     id: string;
     modelId: string;
@@ -54,6 +62,8 @@ interface MyModelBase {
     baseUrl?: string;
     upstreamModel?: string;
     visibility: "private" | "public";
+    // Queued visibility/pricing that only applies at effectiveAt.
+    pending: { effectiveAt: string; [key: string]: unknown } | null;
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
@@ -288,6 +298,17 @@ function printModels(models: MyModel[]) {
             "description",
         ],
     );
+    // Below the table so last-column truncation cannot hide it.
+    for (const model of models) {
+        const pending = model.pending;
+        if (!pending) continue;
+        const changes = PENDING_KEYS.filter(
+            (key) => pending[key] !== undefined && pending[key] !== model[key],
+        ).map((key) => `${key} ${model[key] ?? "-"} → ${pending[key]}`);
+        printInfo(
+            `Changes queued for ${model.modelId}, effective ${pending.effectiveAt}${changes.length > 0 ? `: ${changes.join(", ")}` : ""}`,
+        );
+    }
 }
 
 const list = new Command("list")

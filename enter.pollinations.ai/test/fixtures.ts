@@ -68,6 +68,7 @@ export const createApiKeyViaApi = async (
         type?: "secret" | "publishable";
         allowedModels?: string[];
         accountPermissions?: string[];
+        questPollenOnly?: boolean;
     },
 ) => {
     const response = await SELF.fetch(

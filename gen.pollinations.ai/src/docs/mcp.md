@@ -106,11 +106,11 @@ with another endpoint from the table to use FFmpeg or Exa Search.
 The Pollinations server exposes the main Pollinations API as agent-friendly
 tools. Agents can discover live models, delegate text requests, generate and
 edit media, create embeddings and 3D assets, transcribe audio, and inspect
-model health and account balance.
+model health, usage, earnings, quests, and API keys.
 
 | Tool | Purpose |
 | --- | --- |
-| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
+| `listModels` | Search and list live models, aliases, capabilities, voices, endpoints, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
@@ -120,6 +120,12 @@ model health and account balance.
 | `generate3D` | Generate a GLB 3D model |
 | `createEmbeddings` | Create text or multimodal embeddings |
 | `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+| `getUsage` | List recent requests or a daily usage summary; requires `account:usage` permission |
+| `getEarnings` | Show developer earnings from BYOP apps and community models; requires `account:usage` permission |
+| `listQuests` | List quests with reward and claim state; requires `account:usage` permission |
+| `listKeys` | List API keys; requires `account:keys` permission |
+| `createKey` | Create a secret or publishable app key; requires `account:keys` permission |
+| `revokeKey` | Revoke an API key by id; requires `account:keys` permission |
 
 Use `listModels` before choosing a model or voice. The registry is live, so
 clients should not rely on a hardcoded model list.
@@ -188,7 +194,9 @@ private data. [Browse it](https://memory.pollinations.ai).
 
 Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
-selected model's listed rate.
+selected model's listed rate. A `tools/call` on a server with its own rate
+needs a positive Pollen balance and returns 402 otherwise; `initialize` and
+`tools/list` stay free.
 
 An MCP server can only use models and account features allowed by the caller's
 key and cannot spend beyond that key's budget. Configure both in

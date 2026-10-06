@@ -154,6 +154,11 @@ const CreateSpeechRequestSchema = z
                 "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
+        speed: z.number().min(0.25).max(4).optional().meta({
+            description:
+                "Speech speed, 0.25-4 (openai/tts-1 and openai/tts-1-hd only; other models accept only 1).",
+            example: 1.25,
+        }),
     })
     .meta({ $id: "CreateSpeechRequest" });
 
@@ -2215,6 +2220,7 @@ async function parseSpeechRequest(
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
             instructions:
                 (formData.get("instructions") as string | null) || undefined,
+            speed: parseOptionalNumber(formData.get("speed"), "speed"),
             loop: parseOptionalBoolean(formData.get("loop"), "loop"),
             prompt_influence: parseOptionalNumber(
                 formData.get("prompt_influence"),
@@ -2864,9 +2870,10 @@ export async function generateAzureSpeech(opts: {
     text: string;
     voice: string;
     responseFormat: string;
+    speed?: number;
     apiKey: string;
 }): Promise<Response> {
-    const { modelName, text, voice, responseFormat, apiKey } = opts;
+    const { modelName, text, voice, responseFormat, speed, apiKey } = opts;
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Azure speech service is not configured",
@@ -2889,6 +2896,7 @@ export async function generateAzureSpeech(opts: {
                 input: text,
                 voice,
                 response_format: responseFormat,
+                speed,
             }),
         }),
         endpoint,
@@ -3315,6 +3323,7 @@ async function dispatchAudioGeneration(
         compositionPlan?: unknown;
         referenceAudio?: File;
         instructions?: string;
+        speed?: number;
         loop?: boolean;
         promptInfluence?: number;
         apiKey: string;
@@ -3341,6 +3350,7 @@ async function dispatchAudioGeneration(
         compositionPlan,
         referenceAudio,
         instructions,
+        speed,
         loop,
         promptInfluence,
         apiKey,
@@ -3519,6 +3529,7 @@ async function dispatchAudioGeneration(
                     text,
                     voice,
                     responseFormat,
+                    speed,
                     apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                 }),
             );
@@ -3633,9 +3644,23 @@ async function generateAudioFromSpeechRequest(
         reference_audio,
         seed,
         instructions,
+        speed,
         loop,
         prompt_influence,
     } = request;
+
+    // Speed 1 is every model's normal output, so clients that always send the
+    // OpenAI default keep working on other models.
+    if (
+        speed !== undefined &&
+        speed !== 1 &&
+        !["openai/tts-1", "openai/tts-1-hd"].includes(c.var.model.resolved)
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "The speed parameter is only supported by openai/tts-1 and openai/tts-1-hd",
+        });
+    }
 
     requireElevenMusicOptions(c.var.model.resolved, {
         referenceAudio: reference_audio,
@@ -3686,6 +3711,7 @@ async function generateAudioFromSpeechRequest(
             compositionPlan: composition_plan,
             referenceAudio,
             instructions,
+            speed,
             loop,
             promptInfluence: prompt_influence,
             apiKey: c.env.ELEVENLABS_API_KEY,

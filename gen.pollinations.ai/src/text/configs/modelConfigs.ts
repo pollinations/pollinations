@@ -640,10 +640,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "google-vertex/global",
     ),
-    "gemini-fast-openrouter-vertex-eu": createPinnedOpenRouterGeminiConfig(
+    "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "google-ai-studio",
     ),
+    "google/gemini-2.5-flash-lite:search": () => ({
+        ...createPinnedOpenRouterGeminiConfig(
+            "gemini-2.5-flash-lite",
+            "google-ai-studio",
+        )(),
+        responsesEndpoint: undefined,
+    }),
     "gemini-flash-lite-3.5-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
             "gemini-3.5-flash-lite",
@@ -661,6 +668,26 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.3-flashx",
         "z-ai/fp8",
     ),
+    "glm-5.3-flash-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "z-ai/glm-5.3-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: [
+                        "together",
+                        "baseten/fp8",
+                        "modal/nvfp4",
+                        "crusoe/fp4",
+                        "friendli",
+                        "digitalocean",
+                        "parasail/fp4",
+                        "venice",
+                    ],
+                    allow_fallbacks: true,
+                },
+            },
+        }),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
         "friendli",
@@ -834,10 +861,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-pro-preview",
         "global",
     ),
-    "google/gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "global",
-    ),
+    "google/gemini-2.5-flash-lite": () =>
+        createVercelAIGatewayModelConfig({
+            model: "google/gemini-2.5-flash-lite",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["google"] } },
+            },
+        }),
     "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",
@@ -852,10 +884,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // Dedicated Gemini Search services use the same direct Vertex adapter.
-    "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "global",
-    ),
     "vertex/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",

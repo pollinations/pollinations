@@ -602,13 +602,11 @@ export const TEXT_FALLBACKS = {
         },
     },
     "google/gemini-2.5-flash-lite": {
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu": {
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
             supportedParameters: CHAT_PARAMETERS.gemini25,
             provider: "openrouter",
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
-            // OpenRouter expiration_date.
-            retirementDate: new Date("2026-10-20").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.1) * 1.055,
                 promptCachedTokens: perMillion(0.01) * 1.055,
@@ -709,6 +707,20 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(1.26) * 1.055,
                 promptCachedTokens: perMillion(0.234) * 1.055,
                 completionTextTokens: perMillion(3.96) * 1.055,
+            },
+        },
+    },
+    "z-ai/glm-5.3-flash": {
+        "z-ai/glm-5.3-flash:openrouter": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGlm53,
+            provider: "openrouter",
+            contextLength: 1048575,
+            cost: {
+                // Same-priced OpenRouter routes, including its 5.5% credit fee.
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.03) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.5) * 1.055,
             },
         },
     },

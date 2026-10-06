@@ -8,6 +8,7 @@ on:
       - 'enter.pollinations.ai/**'
       - 'gen.pollinations.ai/**'
       - 'media.pollinations.ai/**'
+      - 'operations/model-resolver/**'
       - 'shared/**'
       - 'packages/sdk/**'
       - 'packages/ui/**'
@@ -26,6 +27,7 @@ on:
           - enter
           - gen
           - media
+          - model-management
         default: all
 
 concurrency:
@@ -43,6 +45,7 @@ jobs:
       enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
+      model_management: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'model-management') || steps.filter.outputs.model_management == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
     steps:
       - name: Checkout code
@@ -88,6 +91,9 @@ jobs:
               - 'shared/**'
               - 'enter.pollinations.ai/drizzle/**'
               - '.github/workflows/deploy-cloudflare-production.yml'
+            model_management:
+              - 'operations/model-resolver/**'
+              - '.github/workflows/deploy-cloudflare-production.yml'
 
       - name: Detect changed MCP applications
         id: mcp-apps
@@ -101,6 +107,55 @@ jobs:
           MCP_APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ name }) => name.endsWith("-mcp"))))' "$APPS")
           echo "MCP applications: $MCP_APPS"
           echo "apps=$MCP_APPS" >> "$GITHUB_OUTPUT"
+
+  deploy-model-management:
+    needs: changes
+    if: github.ref == 'refs/heads/production' && needs.changes.outputs.model_management == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.10.0'
+      - name: Install model-management dependencies
+        run: npm ci --prefix operations/model-resolver --workspaces=false --ignore-scripts --no-audit --no-fund
+      - name: Test and bundle model-management worker
+        run: |
+          npm test --prefix operations/model-resolver --workspaces=false
+          npm run check:worker --prefix operations/model-resolver --workspaces=false
+      # Runtime credentials are provisioned separately after scoped approval.
+      # A code deployment preserves existing secrets and leaves ENABLED=false.
+      - name: Ensure private research evidence bucket
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: |
+          set -euo pipefail
+          endpoint="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets"
+          buckets="$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$endpoint")"
+          jq -e '.success == true' <<< "$buckets" > /dev/null
+          if ! jq -e '.result.buckets | any(.name == "pollinations-model-management-evidence")' <<< "$buckets" > /dev/null; then
+            curl -fsS -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' \
+              --data '{"name":"pollinations-model-management-evidence"}' "$endpoint" | jq -e '.success == true' > /dev/null
+          fi
+      - name: Deploy model-management worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npm run deploy:production --prefix operations/model-resolver --workspaces=false
+      - name: Verify active model-management Durable Object binding
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: |
+          set -euo pipefail
+          wrangler=./operations/model-resolver/node_modules/.bin/wrangler
+          config=operations/model-resolver/wrangler.jsonc
+          version_id="$($wrangler deployments list --config "$config" --json | jq -r 'max_by(.created_on).versions[] | select(.percentage == 100) | .version_id')"
+          test -n "$version_id"
+          $wrangler versions view "$version_id" --config "$config" --json \
+            | jq -e '.resources.bindings | any(.name == "MODEL_TASKS" and .type == "durable_object_namespace") and any(.name == "RESEARCH_EVIDENCE" and .type == "r2_bucket")'
 
   # Gen's suite runs BEFORE the migration, not inside deploy-gen after it. Two
   # reasons. It keeps a red gen test from letting a schema change reach

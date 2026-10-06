@@ -4,8 +4,9 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
-const runner = new URL("verify-stack.mjs", import.meta.url).pathname;
+const runner = fileURLToPath(new URL("verify-stack.mjs", import.meta.url));
 
 test("Manual validation explains its scope without credentials", () => {
     const result = spawnSync(process.execPath, [runner, "--help"], {

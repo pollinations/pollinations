@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - 'operations/model-resolver/**'
+      - 'operations/model-manager/**'
+      - 'operations/model-pricing/**'
       - '.github/workflows/models-resolver-checks.yml'
   push:
     branches: [main]
     paths:
       - 'operations/model-resolver/**'
+      - 'operations/model-manager/**'
+      - 'operations/model-pricing/**'
       - '.github/workflows/models-resolver-checks.yml'
 
 permissions:
@@ -17,7 +21,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
         with:
@@ -27,3 +31,6 @@ jobs:
           node-version: '24.10.0'
       - run: npm ci --prefix operations/model-resolver --workspaces=false --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix operations/model-resolver --workspaces=false
+      - run: npm run check:worker --prefix operations/model-resolver --workspaces=false
+        env:
+          WRANGLER_SEND_METRICS: 'false'

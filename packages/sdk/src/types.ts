@@ -1219,8 +1219,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     width?: number;
     /** Image height in pixels */
     height?: number;
-    /** Number of images to generate (default: 1) */
-    n?: number;
     /** Response format (default: server decides — usually b64_json) */
     responseFormat?: "url" | "b64_json";
     /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */

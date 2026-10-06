@@ -11,7 +11,9 @@ it("translates different text independently when concurrent lists reuse item IDs
         vi.fn(async (_url: string, init: RequestInit) => {
             const prompt = JSON.parse(String(init.body)).messages[0]
                 .content as string;
-            const text = prompt.includes('"text": "Goodbye"') ? "Adiós" : "Hola";
+            const text = prompt.includes('"text": "Goodbye"')
+                ? "Adiós"
+                : "Hola";
             return Response.json({
                 choices: [
                     {

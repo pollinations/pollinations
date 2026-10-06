@@ -605,6 +605,26 @@ describe("Pollinations server-owned defaults", () => {
         const request = fetchMock.mock.calls[0][1] as RequestInit;
         expect((request.body as FormData).has("model")).toBe(false);
     });
+
+    // Azure's gpt-transcribe rejects a WAV upload named audio.mp3.
+    it("keeps an uploaded file's name for transcription", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(makeResponse({ text: "hello" }));
+
+        await client.transcribe(
+            new File([new Uint8Array(8)], "clip.wav", { type: "audio/wav" }),
+        );
+        await client.transcribe(new ArrayBuffer(8));
+
+        const files = fetchMock.mock.calls.map(
+            ([, request]) =>
+                ((request as RequestInit).body as FormData).get("file") as File,
+        );
+        expect(files.map((file) => file.name)).toEqual([
+            "clip.wav",
+            "audio.mp3",
+        ]);
+    });
 });
 
 describe("Pollinations seed handling", () => {

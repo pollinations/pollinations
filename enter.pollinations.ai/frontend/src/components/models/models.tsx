@@ -269,10 +269,8 @@ export const Models: FC = () => {
             ? options.map((option) =>
                   getModelQueryDraftSuggestionValue(
                       option,
-                      getModelQueryVisibleSearch(search, filterTokens, {
-                          ...draftFilter,
-                          value: "",
-                      }),
+                      visibleSearch,
+                      draftFilter.value,
                   ),
               )
             : options;
@@ -280,8 +278,6 @@ export const Models: FC = () => {
         activeTabModels,
         draftFilter,
         explicitModelSource,
-        filterTokens,
-        search,
         supportedFilterKeys,
         visibleSearch,
     ]);

@@ -104,12 +104,8 @@ export function useModelQuerySearch({
         ? suggestions.map((option) =>
               getModelQueryDraftSuggestionValue(
                   option,
-                  value !== undefined
-                      ? ""
-                      : getModelQueryVisibleSearch(search, tokens, {
-                            ...draft,
-                            value: "",
-                        }),
+                  visibleSearch,
+                  draft.value,
               ),
           )
         : pickable

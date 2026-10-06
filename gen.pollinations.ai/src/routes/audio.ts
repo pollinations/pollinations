@@ -2467,9 +2467,8 @@ export function parseGeminiSpeechResponse(
     // Google bills the public usage totals. raw_prompt_token and invocation
     // counters include internal tokens; adding them would double-count usage.
     // https://discuss.ai.google.dev/t/182722/2
-    // Since October 2026 the input totals also list the voice's internal audio
-    // prompt (~201 tokens). The price list charges text input only, and
-    // OpenRouter's AI Studio route bills only the text tokens.
+    // Input totals also count the voice's built-in audio prompt; only text
+    // input is billed, as on Google's price list.
     const { usage, steps } = parsed.data;
     if (
         usage.input_tokens_by_modality.reduce(

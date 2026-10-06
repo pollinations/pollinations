@@ -1,0 +1,34 @@
+{
+  "pr_number": 16573,
+  "title": "fix: polli usage --daily asks for 7 days by default",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16573",
+  "merged_at": "2026-10-06T10:51:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- `polli usage --daily` now asks for the last 7 days instead of the endpoint's 90-day default. `--days N` still sets any window.\n- Why: on heavy accounts the 90-day query times out in Tinybird (20 s limit) and the CLI shows a 500. Seven days takes about 6 s on a test account with ~570k requests a day.\n- Bumps polli-cli to 0.1.29.\n\nAddresses #16560. The endpoint itself stays slow for very heavy accounts: read-time dedup over ~28M rows takes 15–20 s. Duplicates are real (8.8M rows in January), so the pipe fix is a separate change.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Aj15m1tbSVxFnVTaHpqi3X\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seven days, fewer timeouts",
+    "blurb": "Polli’s daily usage view takes a shorter stroll through the calendar. The 90-day hike is still available with `--days N`.",
+    "summary": "polli-cli 0.1.29 changes `polli usage --daily` to request seven days instead of the endpoint’s 90-day default, avoiding a Tinybird timeout on heavy accounts while preserving `--days N` for custom windows.",
+    "impact": "Heavy accounts get a more reliable daily usage report by default; the seven-day query took about six seconds on a test account with roughly 570,000 requests per day.",
+    "keywords": [
+      "polli-cli",
+      "usage",
+      "daily",
+      "Tinybird",
+      "timeout",
+      "reporting"
+    ],
+    "visual_concept": "Depict polli-cli as a small retro terminal showing a seven-day calendar beside a neatly rolled-up 90-day scroll. Polli, wearing a tiny wristwatch, points to the shorter calendar; code-plants and flowers keep the scene warm rather than making it look like an outage alert.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro terminal displays seven marked calendar squares while Polli points at them with a tiny wristwatch, beside a rolled-up longer calendar and flowering code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions and strictly pixel art styling, against a prominent soft lime green (#ecf874) and pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16573.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro terminal displays seven marked calendar squares while Polli points at them with a tiny wristwatch, beside a rolled-up longer calendar and flowering code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions and strictly pixel art styling, against a prominent soft lime green (#ecf874) and pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-06T10:52:03.150487+00:00"
+}

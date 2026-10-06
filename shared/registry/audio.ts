@@ -199,9 +199,8 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // https://elevenlabs.io/pricing/api — current launch rate.
-            // Update explicitly when the provider changes its rate.
-            completionAudioTokens: 0.022 / 1000,
+            // https://elevenlabs.io/pricing/api — regular rate after the launch offer.
+            completionAudioTokens: 0.08 / 1000,
         },
         title: "ElevenLabs v4",
         description:
@@ -224,9 +223,8 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // https://elevenlabs.io/pricing/api — current launch rate.
-            // Update explicitly when the provider changes its rate.
-            completionAudioTokens: 0.011 / 1000,
+            // https://elevenlabs.io/pricing/api — regular rate after the launch offer.
+            completionAudioTokens: 0.04 / 1000,
         },
         title: "ElevenLabs v4 Turbo",
         description:

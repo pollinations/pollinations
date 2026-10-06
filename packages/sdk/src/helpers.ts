@@ -39,6 +39,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
     DeviceAuthorization,
     EmbeddingInput,
     EmbeddingsOptions,
@@ -448,6 +450,17 @@ export async function upload(
     options?: UploadOptions,
 ): Promise<UploadResponse> {
     return getClient().upload(data, options);
+}
+
+// ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/**
+ * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+ */
+export function decision(options: DecisionOptions): Promise<DecisionResponse> {
+    return getClient().decision(options);
 }
 
 // ============================================================================

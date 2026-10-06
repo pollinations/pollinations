@@ -28,6 +28,7 @@ function buildRuntime(
         inputModalities: ["text"] as ModelInputModality[],
         baseUrl: "https://example.com/v1",
         upstreamModel: "upstream-model",
+        paidOnly: false,
         bearerTokenCiphertext: "ciphertext",
         visibility: "public" as CommunityEndpointVisibility,
         delegatesGeneration: false,

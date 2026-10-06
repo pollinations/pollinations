@@ -117,7 +117,8 @@ function cleanValue<T extends string>(
 }
 
 export function validateAppSearch(search: Record<string, unknown>): AppSearch {
-    const q = typeof search.q === "string" ? search.q.trim() : "";
+    // The URL also controls the input; preserve whitespace while typing.
+    const q = typeof search.q === "string" ? search.q : "";
     const pollen =
         search.pollen === true || search.pollen === "true"
             ? true

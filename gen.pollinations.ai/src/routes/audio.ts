@@ -393,11 +393,12 @@ export async function generateElevenLabsSpeech(opts: {
 }): Promise<Response> {
     const { modelName, text, voice, responseFormat, apiKey, log } = opts;
     const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
+    const isV4 = ["eleven_v4", "eleven_v4_turbo"].includes(modelId);
     // v4 bills Unicode characters. Its character-cost header contains rounded
     // credits, not exact billable characters; verified against usage analytics.
-    const characters = modelId === "eleven_v4" ? [...text].length : text.length;
+    const characters = isV4 ? [...text].length : text.length;
 
-    if (modelId === "eleven_v4" && responseFormat === "flac") {
+    if (isV4 && responseFormat === "flac") {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
                 "This speech model supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
@@ -439,10 +440,9 @@ export async function generateElevenLabsSpeech(opts: {
     const elevenLabsBody = {
         text,
         model_id: modelId,
-        voice_settings:
-            modelName === "elevenlabs/eleven-v4"
-                ? { stability: 0.5, similarity_boost: 0.75 }
-                : ELEVENLABS_TTS_VOICE_SETTINGS,
+        voice_settings: isV4
+            ? { stability: 0.5, similarity_boost: 0.75 }
+            : ELEVENLABS_TTS_VOICE_SETTINGS,
         ...(opts.seed === undefined ? {} : { seed: opts.seed }),
     };
 
@@ -478,9 +478,10 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
 }): Promise<Response> {
     const { modelName, text, voice, responseFormat, seed, apiKey, log } = opts;
     const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
+    const isV4 = ["eleven_v4", "eleven_v4_turbo"].includes(modelId);
     // v4 bills Unicode characters. Its character-cost header contains rounded
     // credits, not exact billable characters; verified against usage analytics.
-    const characters = modelId === "eleven_v4" ? [...text].length : text.length;
+    const characters = isV4 ? [...text].length : text.length;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -505,10 +506,9 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
     const body = {
         text,
         model_id: modelId,
-        voice_settings:
-            modelName === "elevenlabs/eleven-v4"
-                ? { stability: 0.5, similarity_boost: 0.75 }
-                : ELEVENLABS_TTS_VOICE_SETTINGS,
+        voice_settings: isV4
+            ? { stability: 0.5, similarity_boost: 0.75 }
+            : ELEVENLABS_TTS_VOICE_SETTINGS,
         ...(seed === undefined ? {} : { seed }),
     };
 

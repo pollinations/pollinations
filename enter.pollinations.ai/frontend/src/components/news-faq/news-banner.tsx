@@ -1,6 +1,6 @@
 import { Chip, Eyebrow, InlineLink, Section, Surface } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { type FC, Fragment, type ReactNode, useEffect, useState } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
@@ -152,8 +152,6 @@ export const Announcements: FC = () => {
     const changes = MODEL_CHANGES.filter(
         ({ date, until = date }) => until >= today,
     );
-    // A line marks today: before the first upcoming change, after any past ones.
-    const firstUpcoming = changes.findIndex(({ date }) => date >= today);
     if (launches.length === 0 && changes.length === 0) return null;
     return (
         <Section title="Announcements">
@@ -175,40 +173,35 @@ export const Announcements: FC = () => {
                 )}
                 {changes.length > 0 && (
                     <AnnouncementGroup title="Model changes">
-                        {changes.map(({ date, name, action, change }, i) => (
-                            <Fragment key={name}>
-                                {i > 0 && i === firstUpcoming && (
-                                    <li>
-                                        <hr className="border-theme-text-soft/40" />
-                                    </li>
-                                )}
-                                <li
-                                    className={
-                                        date < today ? `${ROW} opacity-60` : ROW
-                                    }
+                        {changes.map(({ date, name, action, change }) => (
+                            <li
+                                key={name}
+                                // Past changes are dimmed.
+                                className={
+                                    date < today ? `${ROW} opacity-60` : ROW
+                                }
+                            >
+                                <time
+                                    dateTime={date}
+                                    className="whitespace-nowrap text-theme-text-muted"
                                 >
-                                    <time
-                                        dateTime={date}
-                                        className="whitespace-nowrap text-theme-text-muted"
+                                    {formatNewsDate(date)}
+                                </time>
+                                <span className="border-l border-theme-text-strong/15 pl-2">
+                                    <Chip
+                                        size="sm"
+                                        intent={ACTION_INTENT[action]}
                                     >
-                                        {formatNewsDate(date)}
-                                    </time>
-                                    <span className="border-l border-theme-text-strong/15 pl-2">
-                                        <Chip
-                                            size="sm"
-                                            intent={ACTION_INTENT[action]}
-                                        >
-                                            {action}
-                                        </Chip>
-                                    </span>
-                                    <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
-                                        {name}
-                                    </strong>
-                                    <Markdown className={DESCRIPTION}>
-                                        {change}
-                                    </Markdown>
-                                </li>
-                            </Fragment>
+                                        {action}
+                                    </Chip>
+                                </span>
+                                <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
+                                    {name}
+                                </strong>
+                                <Markdown className={DESCRIPTION}>
+                                    {change}
+                                </Markdown>
+                            </li>
                         ))}
                     </AnnouncementGroup>
                 )}

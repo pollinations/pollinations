@@ -36,6 +36,7 @@ function registryEntry(
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
+        paidOnly: false,
         addedDate: 0,
         title: id,
     };

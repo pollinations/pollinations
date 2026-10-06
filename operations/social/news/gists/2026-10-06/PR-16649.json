@@ -1,0 +1,34 @@
+{
+  "pr_number": 16649,
+  "title": "fix: add DeepInfra fallback for Kimi K3",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16649",
+  "merged_at": "2026-10-06T23:38:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes upstream rate-limit failures with hidden `moonshotai/kimi-k3:deepinfra`, using the shared fallback mechanism and exact upstream `moonshotai/Kimi-K3` at `https://api.deepinfra.com/v1/openai`.\n- Keeps Fireworks primary, canonical `moonshotai/kimi-k3`, alias `kimi-k3`, multiplier 1, Quest access (`paidOnly: false`), external hardware, 1M context, vision and tools. Caller prices remain $3/$0.30/$15 per million input/cached/output tokens; [DeepInfra costs](https://deepinfra.com/moonshotai/Kimi-K3/api) are $2.85/$0.285/$14.25. Novita needs cache-write accounting corrections.\n- Omits null optional `name`/`tool_calls` response fields so clients can reuse assistant messages directly. Adds response-reuse and fallback-billing regressions.\n- Verifies direct calls, production-primary smoke and forced-fallback local E2E: native/chat endpoints, aliases, Quest-only access, streaming usage, reasoning, tools/raw-message reuse, JSON/schema, 1/2/10 images, prompt/output caches, errors, hidden catalogs and 10 concurrent requests. Default-effort coding completed in 31 seconds.\n- Passes 145 focused Gen tests, the Enter price snapshot, Gen typecheck and Biome. Staging telemetry records 34 once-billed DeepInfra successes and 34 unbilled primary failures (30 forced 429s, four network failures). All 23 non-overlapping wallet checks match the public quote; no missing conversion warnings.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Kimi gets a second route",
+    "blurb": "When Fireworks rate-limits Kimi K3, a hidden DeepInfra route gives the request somewhere else to go. The detour keeps the same model and caller pricing.",
+    "summary": "Kimi K3 keeps Fireworks as its primary provider and gains a hidden DeepInfra fallback for upstream failures, with once-only billing and null optional response fields omitted so clients can reuse assistant messages.",
+    "impact": "Calls to moonshotai/kimi-k3 or its kimi-k3 alias can fall back to DeepInfra on a primary-provider failure while retaining the $3/$0.30/$15 per-million-token input/cached/output prices.",
+    "keywords": [
+      "Kimi K3",
+      "DeepInfra",
+      "Fireworks",
+      "fallback",
+      "billing",
+      "response reuse"
+    ],
+    "visual_concept": "Depict Kimi K3 as a small retro terminal in a garden, with a primary Fireworks path and a sheltered DeepInfra path converging on it. Polli, wearing a tiny route-planner hat, gently guides the monitor robot carrying a chat message along the alternate path; a single Pollen token beside the terminal represents once-only billing.",
+    "image_prompt": "In a cozy pixel garden, a Fireworks path and a sheltered DeepInfra path lead to a Kimi K3 terminal; a cute chunky CRT-headed robot carries a chat message while Polli, wearing a tiny route-planner hat, warmly points out the alternate route beside one Pollen token. Polli is a small-to-medium cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded translucent light-blue wings; strictly pixel art, with prominent lime green (#ecf874), dark purple (#110518) outlines, flowers, soft pastel gradients, and warm lighting — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16649.jpg",
+    "prompt": "In a cozy pixel garden, a Fireworks path and a sheltered DeepInfra path lead to a Kimi K3 terminal; a cute chunky CRT-headed robot carries a chat message while Polli, wearing a tiny route-planner hat, warmly points out the alternate route beside one Pollen token. Polli is a small-to-medium cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded translucent light-blue wings; strictly pixel art, with prominent lime green (#ecf874), dark purple (#110518) outlines, flowers, soft pastel gradients, and warm lighting — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T23:40:08.258787+00:00"
+}

@@ -70,6 +70,7 @@ const HOST_VENDORS: Record<string, string> = {
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
     "api.mistral.ai": "mistral",
+    "api.novita.ai": "novita",
     "api.perplexity.ai": "perplexity",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",

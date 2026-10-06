@@ -24,6 +24,12 @@ A terminal app for using Pollinations without writing any code. Type a prompt, g
 
 **Who it's for:** people comfortable in a terminal — humans testing things quickly, and AI agents driving workflows.
 
+### [llm-pollinations/](./llm-pollinations) — plugin for Simon Willison's `llm`
+
+A native provider that loads Pollinations text models into the [`llm`](https://llm.datasette.io/) CLI and Python library as `pollinations/<model-id>`.
+
+**Who it's for:** developers already using `llm` who want Pollinations as another provider.
+
 ### [n8n/](./n8n) — n8n tunnel setup
 
 A small set of helper scripts for exposing a self-hosted [n8n](https://n8n.io) automation instance through a Cloudflare tunnel. Not a Pollinations library — it's infrastructure used by the team to run automation workflows that talk to Pollinations.
@@ -34,6 +40,7 @@ A small set of helper scripts for exposing a self-hosted [n8n](https://n8n.io) a
 
 - **SDK** and **CLI** are two different doorways into the same Pollinations API — one for code, one for terminals.
 - **MCP** is a third doorway, designed for AI assistants rather than people.
+- **llm-pollinations** connects the same API to Simon Willison's `llm` ecosystem.
 - **n8n** is operational tooling, not something end users install.
 
 If you're new and just want to try Pollinations, the fastest paths are the [CLI](./polli-cli) (no code) or the [SDK](./sdk) (a few lines of code).

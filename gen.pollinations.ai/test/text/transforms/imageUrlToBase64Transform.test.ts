@@ -1,8 +1,12 @@
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createBedrockNativeConfig } from "../../../src/text/configs/providerConfigs.js";
 import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrlToBase64Transform.js";
+import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 const transform = imageUrlToBase64Transform;
-const bedrockOptions = { modelConfig: { provider: "bedrock" } };
+const bedrockOptions = { modelConfig: createBedrockNativeConfig() };
+const vertexOptions = { modelConfig: { provider: "vertex-ai" } };
 
 /** PNG signature — enough for the media type to be read off the bytes. */
 const PNG_BYTES = new Uint8Array([
@@ -26,6 +30,35 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("uses the declared flag rather than the provider name", async () => {
+        const input = imageMessage(["not-a-url"]);
+        const result = await transform(input, {
+            modelConfig: { provider: "bedrock" },
+        });
+        expect(result.messages).toBe(input);
+        await expect(
+            transform(input, {
+                modelConfig: {
+                    provider: "custom-provider",
+                    requiresBase64ImageUrls: true,
+                },
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
+    it("leaves remote image URLs unchanged for Vertex", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        const input = imageMessage(["https://example.com/image.png"]);
+
+        const result = await transform(input, vertexOptions);
+
+        expect(result.messages).toBe(input);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("rejects malformed image URLs before they reach the provider", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -133,6 +166,42 @@ describe("imageUrlToBase64Transform", () => {
             status: 400,
             errorCode: "image_too_large",
         });
+    });
+
+    it.each([
+        "moonshotai/kimi-k2.6",
+        "moonshotai/kimi-k2.6:azure:sweden",
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+    ] as const)("converts as many image URLs as %s advertises, and no more", async (model) => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
+        const { options } = resolveModelConfig([], { model });
+        const limit = getRegistryModelDefinition(model).maxReferenceImages;
+        if (!limit) throw new Error(`${model} declares no image limit`);
+        const urls = (count: number) =>
+            imageMessage(
+                Array.from(
+                    { length: count },
+                    (_, index) => `https://example.com/${index}.png`,
+                ),
+            );
+
+        const result = await transform(urls(limit), options);
+        const content = result.messages[0].content as {
+            image_url: { url: string };
+        }[];
+        expect(content).toHaveLength(limit);
+        for (const part of content) {
+            expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
+        }
+
+        await expect(transform(urls(limit + 1), options)).rejects.toMatchObject(
+            { status: 400, errorCode: "image_too_large" },
+        );
     });
 
     it.each([

@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { OpTransactionRow } from "../types";
-import {
-    categoryLabel,
-    cloudCategory,
-    forecastCategory,
-    runwayLineItem,
-    transactionCategory,
-} from "./categories";
+import { categoryLabel, cloudCategory, forecastCategory } from "./categories";
+import { runwayLineItem, transactionCategory } from "./providerRegistry";
 
 const transaction = (
     vendor: string,
@@ -126,6 +121,20 @@ describe("canonical categories", () => {
         expect(categoryLabel("balance_sheet")).toBe("Cash adjustments");
     });
 
+    it("classifies creator payouts as Revenue Share settlements", () => {
+        expect(
+            transactionCategory(
+                transaction(
+                    "llm7.io",
+                    "creator_payout",
+                    "Community model creator payout",
+                    -100,
+                ),
+            ),
+        ).toBe("revenue_share");
+        expect(categoryLabel("revenue_share")).toBe("Revenue Share");
+    });
+
     it("folds office merchants into stable runway line items", () => {
         expect(runwayLineItem("office", "gaswerksiedlung")).toBe(
             "Rent & utilities",
@@ -149,6 +158,36 @@ describe("canonical categories", () => {
     it("names admin runway lines by purpose instead of counterparty", () => {
         expect(runwayLineItem("admin", "enty")).toBe("Accounting & filings");
         expect(runwayLineItem("admin", "estonia")).toBe("Taxes");
+    });
+
+    it("resolves bank vendor spellings through the registry aliases", () => {
+        expect(transactionCategory(transaction("Bedrock", "cloud"))).toBe(
+            "compute",
+        );
+        expect(transactionCategory(transaction("vast", "cloud"))).toBe(
+            "compute",
+        );
+    });
+
+    it("trusts a canonical supplied category only for unreviewed vendors", () => {
+        // roblox is registered without a reviewed category: the supplied
+        // canonical category survives, a legacy bucket does not.
+        expect(
+            transactionCategory(transaction("roblox", "revenue", "DevEx", 50)),
+        ).toBe("revenue");
+        expect(transactionCategory(transaction("roblox", "saas"))).toBe(
+            "uncategorized",
+        );
+        // A reviewed vendor ignores the supplied bucket entirely.
+        expect(transactionCategory(transaction("notion", "cloud"))).toBe(
+            "operations",
+        );
+        expect(
+            transactionCategory(transaction("never-seen-vendor", "office")),
+        ).toBe("office");
+        expect(
+            transactionCategory(transaction("never-seen-vendor", "saas")),
+        ).toBe("uncategorized");
     });
 
     it("keeps grants and investments out of operating revenue", () => {

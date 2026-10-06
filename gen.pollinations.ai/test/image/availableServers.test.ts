@@ -126,6 +126,67 @@ describe("fetchFromWeightedServer", () => {
         expect(warnLog).toHaveBeenCalledOnce();
     });
 
+    it.each([
+        "error code: 1033\n",
+        '<h1><span data-translate="error">Error</span> <span>1033</span></h1>',
+    ])("retries a disconnected Cloudflare tunnel: %s", async (body) => {
+        await registerServer("https://w1", "sana");
+        await registerServer("https://w2", "sana");
+        vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(new Response(body, { status: 530 }))
+            .mockResolvedValueOnce(new Response("image", { status: 200 }));
+        const options = { method: "POST", body: "request-body" };
+
+        const response = await fetchFromWeightedServer("sana", options);
+
+        expect(response.status).toBe(200);
+        expect(fetchMock.mock.calls).toEqual([
+            ["https://w1/generate", options],
+            ["https://w2/generate", options],
+        ]);
+    });
+
+    it.each([
+        [530, "error code: 1034"],
+        [530, "error code: 10330"],
+        [530, "Generation failed for seed 1033"],
+        [502, "error code: 1033"],
+    ])("does not retry an unconfirmed tunnel failure: %s %s", async (status, body) => {
+        await registerServer("https://w1", "sana");
+        await registerServer("https://w2", "sana");
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(new Response(body, { status }));
+
+        await expect(
+            fetchFromWeightedServer("sana", { method: "POST" }),
+        ).rejects.toMatchObject({ status, responseBody: body });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("tries each disconnected tunnel once and preserves the last error", async () => {
+        await registerServer("https://w1", "sana");
+        await registerServer("https://w2", "sana");
+        vi.spyOn(console, "warn").mockImplementation(() => undefined);
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(
+                new Response("error code: 1033", { status: 530 }),
+            );
+
+        await expect(
+            fetchFromWeightedServer("sana", { method: "POST" }),
+        ).rejects.toMatchObject({
+            status: 530,
+            requestUrl: new URL("https://w2/generate"),
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
     it("tries every worker once before returning a terminal 503", async () => {
         await registerServer("https://w1", "flux");
         await registerServer("https://w2", "flux");
@@ -145,7 +206,7 @@ describe("fetchFromWeightedServer", () => {
             fetchFromWeightedServer("flux", { method: "POST" }),
         ).rejects.toMatchObject({
             status: 503,
-            upstreamUrl: "https://w2/generate",
+            requestUrl: new URL("https://w2/generate"),
         });
         expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
         expect(errorLog).toHaveBeenCalledOnce();

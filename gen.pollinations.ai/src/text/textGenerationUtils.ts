@@ -38,18 +38,9 @@ export function prepareMessages(messages: unknown): ChatMessage[] {
         const message = raw as ChatMessage;
         const role = message.role || "user";
         const hasToolContext = Boolean(message.tool_calls) || role === "tool";
-        const emptyUserContent =
-            role === "user" &&
-            (!message.content ||
-                (typeof message.content === "string" &&
-                    message.content.trim() === "") ||
-                (Array.isArray(message.content) &&
-                    message.content.length === 0));
-        const content = emptyUserContent
-            ? "Please provide a response."
-            : hasToolContext
-              ? (message.content ?? null)
-              : message.content || "";
+        const content = hasToolContext
+            ? (message.content ?? null)
+            : (message.content ?? "");
         const name = normalizeMessageName(message.name, role);
         const {
             name: _name,
@@ -67,10 +58,6 @@ export function prepareMessages(messages: unknown): ChatMessage[] {
     });
 }
 
-function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(max, value));
-}
-
 export function normalizeOptions(
     options: Record<string, unknown> = {},
     defaults: Record<string, unknown> = {},
@@ -79,25 +66,6 @@ export function normalizeOptions(
         Record<string, unknown>;
 
     normalized.stream = Boolean(normalized.stream);
-    if (normalized.temperature != null) {
-        normalized.temperature = clamp(normalized.temperature, 0, 3);
-    }
-    if (normalized.top_p != null) {
-        normalized.top_p = clamp(normalized.top_p, 0, 1);
-    }
-    if (normalized.presence_penalty != null) {
-        normalized.presence_penalty = clamp(normalized.presence_penalty, -2, 2);
-    }
-    if (normalized.frequency_penalty != null) {
-        normalized.frequency_penalty = clamp(
-            normalized.frequency_penalty,
-            -2,
-            2,
-        );
-    }
-    if (typeof normalized.seed === "number") {
-        normalized.seed = Math.floor(normalized.seed);
-    }
     if (normalized.jsonMode) {
         normalized.response_format ??= { type: "json_object" };
         delete normalized.jsonMode;

@@ -21,9 +21,18 @@ const keyIsValid = async (key: string) => {
  * Key the harness will call gen with: the one already in its config if still
  * valid, otherwise a child key named after the harness, minted from the polli
  * login (logging in first if needed).
+ *
+ * `accountPermissions` are forwarded to the key creation endpoint. Harness
+ * integrations that surface usage or balance (like the Pollinations OpenCode
+ * plugin) need `usage` on the dedicated key, or their quota reads fail.
  */
 export const resolveHarnessKey = async (
-    harness: { id: string; label: string; existingKey: string | null },
+    harness: {
+        id: string;
+        label: string;
+        existingKey: string | null;
+        accountPermissions?: string[];
+    },
     options: { browser?: boolean },
 ): Promise<string> => {
     const existing = harness.existingKey;
@@ -41,7 +50,13 @@ export const resolveHarnessKey = async (
     const created = await gen<{ key: string }>("/account/keys", {
         method: "POST",
         apiKey: accountKey,
-        body: { name, type: "secret" },
+        body: {
+            name,
+            type: "secret",
+            ...(harness.accountPermissions
+                ? { accountPermissions: harness.accountPermissions }
+                : {}),
+        },
     });
     printSuccess(`Created API key "${name}" for ${harness.label}.`);
     return created.key;

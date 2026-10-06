@@ -18,7 +18,7 @@ const REFERENCE_MEDIA = {
 };
 
 const baseParams: ImageParams = {
-    model: "seedance-2.5",
+    model: "bytedance/seedance-2.5",
     width: 1024,
     height: 768,
     dimensionsExplicit: false,
@@ -28,7 +28,7 @@ const baseParams: ImageParams = {
     image: IMAGE_URLS,
     transparent: false,
     reasoning: "balanced",
-    audio: true,
+    audio: undefined, // Omitted by the caller: Seedance keeps its audio on.
     duration: 4,
     aspectRatio: "4:3",
 };
@@ -106,7 +106,7 @@ describe("Seedance 2.5 via Replicate", () => {
             mimeType: "video/mp4",
             durationSeconds: 4,
             trackingData: {
-                actualModel: "seedance-2.5",
+                actualModel: "bytedance/seedance-2.5",
                 usage: { completionVideoSeconds: 4 },
             },
         });

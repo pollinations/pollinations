@@ -30,11 +30,13 @@ type StripePaymentMethod = {
     object: "payment_method";
     type: "card";
     customer: string | null;
+    allow_redisplay?: "always" | "limited" | "unspecified";
     card: {
         brand: string;
         last4: string;
         exp_month: number;
         exp_year: number;
+        wallet?: { type: string } | null;
     };
     billing_details?: {
         name?: string | null;
@@ -55,7 +57,13 @@ type StripeCheckoutSession = {
     object: "checkout.session";
     mode: string;
     customer: string | null;
-    url: string;
+    url: string | null;
+    status?: "open" | "complete" | "expired";
+    client_secret?: string | null;
+    ui_mode?: string;
+    metadata?: Record<string, string>;
+    payment_status?: "paid" | "unpaid";
+    payment_intent?: string | null;
 };
 
 type StripePortalSession = {
@@ -144,6 +152,7 @@ type StripePaymentIntent = {
     amount?: number;
     currency?: string;
     metadata?: Record<string, string>;
+    payment_method?: string | null;
     payment_method_types?: string[];
     receipt_email?: string | null;
     latest_charge?: unknown;
@@ -166,7 +175,16 @@ export type MockStripeState = {
     invoiceItems: StripeInvoiceLineItem[];
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
+    taxIds: Record<string, unknown>[];
+    fraudCharges: Record<string, unknown>[];
+    // Charges retrievable by id but outside the listed scan window.
+    archivedCharges: Record<string, unknown>[];
+    fraudDisputes: Record<string, unknown>[];
+    fraudWarnings: Record<string, unknown>[];
+    failFraudWarnings: boolean;
+    failCustomerUpdates: boolean;
     requests: StripeRequest[];
+    onCheckoutSessionCreated: (() => Promise<void>) | null;
     customerCreateByIdempotencyKey: Record<string, string>;
     /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
@@ -191,7 +209,58 @@ export type MockStripeState = {
 export function createMockStripe(): MockAPI<MockStripeState> {
     const state: MockStripeState = createInitialState();
 
+    function fraudPage(c: Context, rows: Record<string, unknown>[]) {
+        recordRequest(c, state);
+        const cursor = c.req.query("starting_after");
+        const start = cursor
+            ? rows.findIndex((row) => row.id === cursor) + 1
+            : 0;
+        const limit = Number(c.req.query("limit") ?? 100);
+        const data = rows.slice(start, start + limit);
+        return c.json({
+            object: "list",
+            data,
+            has_more: start + limit < rows.length,
+            url: c.req.path,
+        });
+    }
     const stripeAPI = new Hono()
+        .get("/v1/account", (c) =>
+            c.json({ id: "acct_1SrY3q7rcjS3l7tr", object: "account" }),
+        )
+        .get("/v1/charges", (c) => fraudPage(c, state.fraudCharges))
+        .get("/v1/charges/:id", (c) => {
+            const id = c.req.param("id");
+            const charge = [
+                ...state.fraudCharges,
+                ...state.archivedCharges,
+            ].find((entry) => entry.id === id);
+            return charge
+                ? c.json(charge)
+                : c.json(
+                      {
+                          error: {
+                              type: "invalid_request_error",
+                              message: "No such charge",
+                          },
+                      },
+                      404,
+                  );
+        })
+        .get("/v1/disputes", (c) => fraudPage(c, state.fraudDisputes))
+        .get("/v1/radar/early_fraud_warnings", (c) =>
+            state.failFraudWarnings
+                ? c.json(
+                      {
+                          error: {
+                              type: "invalid_request_error",
+                              message: "Unavailable",
+                          },
+                      },
+                      403,
+                  )
+                : fraudPage(c, state.fraudWarnings),
+        )
         .post("/v1/customers", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
@@ -231,9 +300,47 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             if (!customer) return stripeNotFound(c);
             return c.json(customer);
         })
+        .get("/v1/customers/:id/tax_ids", (c) => {
+            recordRequest(c, state);
+            return c.json({
+                object: "list",
+                url: `/v1/customers/${c.req.param("id")}/tax_ids`,
+                has_more: false,
+                data: state.taxIds.filter(
+                    (taxId) => taxId.customer === c.req.param("id"),
+                ),
+            });
+        })
+        .get("/v1/customers/:id/payment_methods", (c) => {
+            recordRequest(c, state);
+            const allowRedisplay = c.req.query("allow_redisplay");
+            const data = state.paymentMethods.filter(
+                (method) =>
+                    method.customer === c.req.param("id") &&
+                    (!allowRedisplay ||
+                        method.allow_redisplay === allowRedisplay),
+            );
+            return c.json({
+                object: "list",
+                url: `/v1/customers/${c.req.param("id")}/payment_methods`,
+                has_more: false,
+                data,
+            });
+        })
         .post("/v1/customers/:id", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
+            if (state.failCustomerUpdates) {
+                return c.json(
+                    {
+                        error: {
+                            type: "api_error",
+                            message: "Stripe unavailable",
+                        },
+                    },
+                    500,
+                );
+            }
             const customer = findCustomer(state, c.req.param("id"));
             if (!customer) return stripeNotFound(c);
 
@@ -258,14 +365,77 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .post("/v1/checkout/sessions", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
+            const id = `cs_mock_${state.checkoutSessions.length + 1}`;
+            const uiMode = form.get("ui_mode") ?? "hosted";
+            const embedded = uiMode !== "hosted";
             const session: StripeCheckoutSession = {
-                id: `cs_mock_${state.checkoutSessions.length + 1}`,
+                id,
                 object: "checkout.session",
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
-                url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                url: embedded
+                    ? null
+                    : `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                client_secret: embedded ? `${id}_secret_mock` : null,
+                ui_mode: uiMode,
+                status: "open",
+                payment_status: "unpaid",
+                metadata: Object.fromEntries(
+                    [...form.entries()]
+                        .filter(([key]) => /^metadata\[[^\]]+\]$/.test(key))
+                        .map(([key, value]) => [key.slice(9, -1), value]),
+                ),
             };
             state.checkoutSessions.push(session);
+            await state.onCheckoutSessionCreated?.();
+            return c.json(session);
+        })
+        .get("/v1/checkout/sessions", (c) => {
+            recordRequest(c, state);
+            const customer = c.req.query("customer");
+            const status = c.req.query("status");
+            const data = state.checkoutSessions.filter(
+                (session) =>
+                    (!customer || session.customer === customer) &&
+                    (!status || session.status === status),
+            );
+            return c.json({
+                object: "list",
+                url: "/v1/checkout/sessions",
+                has_more: false,
+                data,
+            });
+        })
+        .get("/v1/checkout/sessions/:id", (c) => {
+            recordRequest(c, state);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
+            const expandPaymentIntent = [
+                ...new URL(c.req.url).searchParams,
+            ].some(
+                ([key, value]) =>
+                    key.startsWith("expand") && value === "payment_intent",
+            );
+            return c.json({
+                ...session,
+                payment_intent:
+                    expandPaymentIntent && session.payment_intent
+                        ? (state.paymentIntents.find(
+                              (item) => item.id === session.payment_intent,
+                          ) ?? session.payment_intent)
+                        : (session.payment_intent ?? null),
+            });
+        })
+        .post("/v1/checkout/sessions/:id/expire", (c) => {
+            recordRequest(c, state);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
+            session.status = "expired";
+            session.url = null;
             return c.json(session);
         })
         .post("/v1/billing_portal/sessions", async (c) => {
@@ -554,7 +724,15 @@ function createInitialState(): MockStripeState {
         invoiceItems: [],
         invoicePayments: [],
         paymentIntents: [],
+        taxIds: [],
+        fraudCharges: [],
+        archivedCharges: [],
+        fraudDisputes: [],
+        fraudWarnings: [],
+        failFraudWarnings: false,
+        failCustomerUpdates: false,
         requests: [],
+        onCheckoutSessionCreated: null,
         customerCreateByIdempotencyKey: {},
         payBehavior: {},
     };
@@ -734,6 +912,7 @@ function stripeNotFound(c: Context) {
         {
             error: {
                 type: "invalid_request_error",
+                code: "resource_missing",
                 message: "No such object",
             },
         },

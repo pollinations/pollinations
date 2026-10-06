@@ -31,6 +31,7 @@ export type CreateTestApiKeyOptions = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
+    questPollenOnly?: boolean;
     metadata?: CallerMetadata;
 };
 
@@ -74,8 +75,8 @@ export async function createTestApiKey(opts: CreateTestApiKeyOptions = {}) {
         allowedModels: opts.allowedModels,
         pollenBudget: type === "publishable" ? 0 : testPollenBudget,
         accountPermissions: opts.accountPermissions,
+        questPollenOnly: opts.questPollenOnly,
         metadata: opts.metadata,
-        allowAccountKeysPermission: true,
         defaultCreatedVia: "test",
     });
 

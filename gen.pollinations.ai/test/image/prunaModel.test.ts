@@ -72,7 +72,7 @@ function mockPrunaFetch(
 }
 
 const baseParams: ImageParams = {
-    model: "p-image",
+    model: "prunaai/p-image",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -122,7 +122,7 @@ describe("prunaModel - p-image", () => {
         expect(input.width).toBe(1024);
         expect(input.height).toBe(1024);
         expect(input.seed).toBe(42);
-        expect(result.trackingData?.actualModel).toBe("p-image");
+        expect(result.trackingData?.actualModel).toBe("prunaai/p-image");
     });
 });
 
@@ -134,20 +134,6 @@ describe("prunaModel - p-image-edit", () => {
             callPrunaImageEditAPI("make it green", {
                 ...baseParams,
                 image: [],
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
-
-    it("rejects more than five input images (400)", async () => {
-        mockPrunaFetch([]);
-
-        await expect(
-            callPrunaImageEditAPI("make it green", {
-                ...baseParams,
-                image: Array.from(
-                    { length: 6 },
-                    (_, i) => `https://example.com/${i}.jpg`,
-                ),
             }),
         ).rejects.toMatchObject({ status: 400 });
     });
@@ -170,7 +156,7 @@ describe("prunaModel - p-image-edit", () => {
         const images = input.images as string[];
         expect(images).toHaveLength(1);
         expect(images[0]).toBe("https://example.com/apple.jpg");
-        expect(result.trackingData?.actualModel).toBe("p-image-edit");
+        expect(result.trackingData?.actualModel).toBe("prunaai/p-image-edit");
     });
 });
 
@@ -203,7 +189,7 @@ describe("prunaModel - p-video", () => {
         expect(input.image).toBeUndefined();
         expect(result.mimeType).toBe("video/mp4");
         expect(result.durationSeconds).toBe(5);
-        expect(result.trackingData?.actualModel).toBe("p-video");
+        expect(result.trackingData?.actualModel).toBe("prunaai/p-video");
         expect(result.trackingData?.usage?.completionVideoSeconds).toBe(5);
     });
 
@@ -225,7 +211,7 @@ describe("prunaModel - p-video", () => {
 
         const input = inputOf(requests[0]);
         expect(input.resolution).toBe("1080p");
-        expect(result.trackingData?.actualModel).toBe("p-video");
+        expect(result.trackingData?.actualModel).toBe("prunaai/p-video");
         expect(result.trackingData?.usage?.completionVideoSeconds).toBe(5);
     });
 

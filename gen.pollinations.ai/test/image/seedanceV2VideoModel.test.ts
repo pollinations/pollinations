@@ -16,7 +16,7 @@ const REFERENCE_MEDIA = {
 };
 
 const baseParams: ImageParams = {
-    model: "seedance-2.0-mini",
+    model: "bytedance/seedance-2.0-mini",
     width: 1024,
     height: 768,
     dimensionsExplicit: false,
@@ -26,7 +26,7 @@ const baseParams: ImageParams = {
     image: IMAGE_URLS,
     transparent: false,
     reasoning: "balanced",
-    audio: true,
+    audio: undefined, // Omitted by the caller: Seedance keeps its audio on.
     duration: 4,
     aspectRatio: "4:3",
 };
@@ -37,16 +37,16 @@ afterEach(() => {
 
 describe("Seedance 2.0 family via Replicate", () => {
     it.each([
-        ["seedance-2.0", undefined, "720p", 15, 15],
-        ["seedance-2.0-mini", undefined, "720p", 15, 10],
-        ["seedance-2.0-mini", "480p", "480p", 4, 4],
-        ["seedance-2.0-fast", undefined, "480p", 15, 5],
+        ["bytedance/seedance-2.0", undefined, "720p", 15, 15],
+        ["bytedance/seedance-2.0-mini", undefined, "720p", 15, 10],
+        ["bytedance/seedance-2.0-mini", "480p", "480p", 4, 4],
+        ["bytedance/seedance-2.0-fast", undefined, "480p", 15, 5],
     ] as const)("routes %s resolution %s as %s and caps duration %s at %s", async (model, resolution, expectedResolution, duration, expectedDuration) => {
         syncImageEnv(
             { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
             ["REPLICATE_API_TOKEN"],
         );
-        const upstreamModel = `bytedance/${model}`;
+        const upstreamModel = model;
         const predictionUrl = `https://api.replicate.com/v1/models/${upstreamModel}/predictions`;
         const inputs: Record<string, unknown>[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
@@ -113,15 +113,6 @@ describe("Seedance 2.0 family via Replicate", () => {
         });
     });
 
-    it("names the selected variant in aspect-ratio errors", async () => {
-        await expect(
-            callSeedanceV2API("a paper boat", {
-                ...baseParams,
-                aspectRatio: "9:21",
-            }),
-        ).rejects.toThrow("not supported by Seedance 2.0 Mini");
-    });
-
     it("forwards reference media URLs without downloading or logging them", async () => {
         syncImageEnv(
             { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
@@ -161,7 +152,7 @@ describe("Seedance 2.0 family via Replicate", () => {
 
         await callSeedanceV2API("reference-driven clip", {
             ...baseParams,
-            model: "seedance-2.0",
+            model: "bytedance/seedance-2.0",
             image: [],
             ...REFERENCE_MEDIA,
         });

@@ -1,7 +1,15 @@
 import { bytesToHex } from "@shared/client-ip.ts";
+import { parseListingPayload } from "@shared/community-endpoints.ts";
+import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
+import {
+    deployCodeAgent,
+    loadCodeAgentSource,
+} from "../services/code-agent.ts";
 import {
     exportD1TinybirdPage,
     isD1TinybirdDatasource,
@@ -82,6 +90,33 @@ export const adminRoutes = new Hono<Env>()
             next_cursor: result.nextCursor,
             done: result.done,
         });
+    })
+    // Each code agent runs a copy of the platform runtime frozen at upload
+    // time. The production deploy calls this after every enter deploy so all
+    // agents pick up the current runtime at their pinned owner commit.
+    .post("/code-agents/redeploy", async (c) => {
+        const rows = await drizzle(c.env.DB, { schema })
+            .select({
+                id: schema.communityEndpoint.id,
+                payload: schema.communityEndpoint.payload,
+            })
+            .from(schema.communityEndpoint)
+            .where(eq(schema.communityEndpoint.type, "code_agent"));
+        const failed: { id: string; error: string }[] = [];
+        for (const { id, payload } of rows) {
+            try {
+                const config = parseListingPayload("code_agent", payload);
+                if (!config) throw new Error("invalid configuration");
+                const source = await loadCodeAgentSource(
+                    config.repository,
+                    config.deployedCommitSha,
+                );
+                await deployCodeAgent(c.env, id, source);
+            } catch (error) {
+                failed.push({ id, error: (error as Error).message });
+            }
+        }
+        return c.json({ redeployed: rows.length - failed.length, failed });
     })
     .route("/status-notice", statusNoticeAdminRoutes)
     .route("/quest-grants", questGrantAdminRoutes);

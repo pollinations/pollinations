@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * ByteDance Seedream 4.0, 5.0 Lite, and 5.0 Pro image generation via Replicate.
  *
@@ -14,7 +15,6 @@
  * mode (only seedream 4.0 does).
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ImageParams } from "../params.ts";
@@ -23,7 +23,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedream-legacy:ops");
@@ -60,7 +60,7 @@ type SeedreamVariantKey = "seedream" | "seedream5" | "seedream5-pro";
 type SeedreamPresetInput = {
     prompt: string;
     size: Seedream4Size | Seedream5Size;
-    aspect_ratio: SeedreamAspectRatio;
+    aspect_ratio: string;
     image_input: string[];
     output_format?: "png" | "jpeg";
     sequential_image_generation: "disabled";
@@ -77,17 +77,11 @@ type SeedreamCustomInput = {
 };
 type SeedreamReplicateInput = SeedreamPresetInput | SeedreamCustomInput;
 
-// Verified against the live bytedance/seedream-4 schema.
-const SEEDREAM4_CUSTOM_MIN = 1024;
-const SEEDREAM4_CUSTOM_MAX = 4096;
-
 interface SeedreamVariantConfig {
     replicateModel: string;
     displayName: string;
     /** Tracking label persisted to billing — matches pre-migration tracking. */
     trackingLabel: string;
-    /** Cap on reference images accepted by the upstream model. */
-    maxReferenceImages: number;
     /** Pick the size bucket for a given longer-side pixel value. */
     resolveSize(longerSide: number): Seedream4Size | Seedream5Size;
     /** Whether the upstream accepts size:"custom" + width/height. Only 4.0. */
@@ -102,8 +96,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
     seedream: {
         replicateModel: "bytedance/seedream-4",
         displayName: "Seedream 4.0",
-        trackingLabel: "seedream",
-        maxReferenceImages: 10,
+        trackingLabel: "bytedance/seedream-4.0",
         resolveSize(longerSide) {
             if (longerSide > 2048) return "4K";
             if (longerSide > 1024) return "2K";
@@ -114,8 +107,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
     seedream5: {
         replicateModel: "bytedance/seedream-5-lite",
         displayName: "Seedream 5.0 Lite",
-        trackingLabel: "seedream5",
-        maxReferenceImages: 14,
+        trackingLabel: "bytedance/seedream-5.0-lite",
         // 5.0's size enum is ["2K", "3K"] only — no pixel dimensions, no custom.
         resolveSize(longerSide) {
             return longerSide > 2048 ? "3K" : "2K";
@@ -126,8 +118,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
     "seedream5-pro": {
         replicateModel: "bytedance/seedream-5-pro",
         displayName: "Seedream 5.0 Pro",
-        trackingLabel: "seedream5-pro",
-        maxReferenceImages: 10,
+        trackingLabel: "bytedance/seedream-5.0-pro",
         // Pro's Replicate schema supports ["1K", "2K"]. The registry has one
         // flat per-image price, so always request the 2K tier it prices.
         resolveSize() {
@@ -139,9 +130,8 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
 };
 
 /**
- * Map our ImageParams.aspectRatio (16:9, 4:3, 1:1, 3:4, 9:16, 21:9, 9:21,
- * adaptive) to Replicate's enum. "9:21" has no direct match — return 400 so
- * callers see the mismatch instead of silently rounding. "adaptive" maps to
+ * Map our ImageParams.aspectRatio to Replicate's enum. A requested ratio goes
+ * through as-is (Replicate rejects unsupported ones). "adaptive" maps to
  * "match_input_image" so users get what they intend when passing an image.
  *
  * When no aspectRatio is provided we fall back to width/height (via the OpenAI
@@ -151,8 +141,7 @@ const SEEDREAM_VARIANTS: Record<SeedreamVariantKey, SeedreamVariantConfig> = {
 function resolveAspectRatio(
     safeParams: ImageParams,
     hasImage: boolean,
-    displayName: string,
-): SeedreamAspectRatio {
+): string {
     const requested = safeParams.aspectRatio;
     if (!requested) {
         if (hasImage) return "match_input_image";
@@ -166,19 +155,7 @@ function resolveAspectRatio(
         return "1:1";
     }
     if (requested === "adaptive") return "match_input_image";
-    if (requested === "9:21") {
-        throw new HttpError(
-            `aspectRatio "9:21" is not supported by ${displayName}. Supported: ${SEEDREAM_ASPECT_RATIOS.join(", ")}.`,
-            400,
-        );
-    }
-    if ((SEEDREAM_ASPECT_RATIOS as readonly string[]).includes(requested)) {
-        return requested as SeedreamAspectRatio;
-    }
-    throw new HttpError(
-        `aspectRatio "${requested}" is not supported by ${displayName}. Supported: ${SEEDREAM_ASPECT_RATIOS.join(", ")}.`,
-        400,
-    );
+    return requested;
 }
 
 function buildPresetInput(
@@ -191,11 +168,7 @@ function buildPresetInput(
     return {
         prompt,
         size: variant.resolveSize(longerSide),
-        aspect_ratio: resolveAspectRatio(
-            safeParams,
-            imageInput.length > 0,
-            variant.displayName,
-        ),
+        aspect_ratio: resolveAspectRatio(safeParams, imageInput.length > 0),
         image_input: imageInput,
         // Only seedream5 variants carry output_format.
         ...(variant.outputFormat
@@ -210,20 +183,8 @@ function buildCustomInput(
     prompt: string,
     safeParams: ImageParams,
     imageInput: string[],
-    variant: SeedreamVariantConfig,
 ): SeedreamCustomInput {
     const { width, height } = safeParams;
-    if (
-        width < SEEDREAM4_CUSTOM_MIN ||
-        width > SEEDREAM4_CUSTOM_MAX ||
-        height < SEEDREAM4_CUSTOM_MIN ||
-        height > SEEDREAM4_CUSTOM_MAX
-    ) {
-        throw new HttpError(
-            `${variant.displayName} custom dimensions must be between ${SEEDREAM4_CUSTOM_MIN}-${SEEDREAM4_CUSTOM_MAX}px on each side (received ${width}×${height}).`,
-            400,
-        );
-    }
     return {
         prompt,
         size: "custom",
@@ -243,13 +204,6 @@ async function callSeedreamReplicateAPI(
     const variant = SEEDREAM_VARIANTS[variantKey];
 
     const images = safeParams.image ?? [];
-    if (images.length > variant.maxReferenceImages) {
-        throw new HttpError(
-            `${variant.displayName} supports at most ${variant.maxReferenceImages} reference images (received ${images.length}).`,
-            400,
-        );
-    }
-
     const imageInput =
         images.length > 0 ? await Promise.all(images.map(toDataUri)) : [];
 
@@ -262,7 +216,7 @@ async function callSeedreamReplicateAPI(
     // nearest preset.
     const input: SeedreamReplicateInput =
         variant.supportsCustom && safeParams.dimensionsExplicit
-            ? buildCustomInput(prompt, safeParams, imageInput, variant)
+            ? buildCustomInput(prompt, safeParams, imageInput)
             : buildPresetInput(prompt, safeParams, imageInput, variant);
 
     logOps(`${variant.displayName} input:`, {
@@ -290,14 +244,16 @@ async function callSeedreamReplicateAPI(
         });
     } catch (err) {
         logError(`${variant.displayName} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${variant.displayName} generation failed`,
         );
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(`${variant.displayName} returned no images`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${variant.displayName} returned no images`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrls[0], {
@@ -314,8 +270,6 @@ async function callSeedreamReplicateAPI(
         buffer: imageBuffer,
         // Seedream has built-in content filtering — preserve the existing
         // contract from the BytePlus path.
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: variant.trackingLabel,
             // Flat per-image pricing on Replicate; report 1 image token to

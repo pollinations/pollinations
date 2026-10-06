@@ -46,6 +46,7 @@ describe("POST /api/auth/delete-user", () => {
             id: "test-community-model",
             ownerUserId: user.id,
             name: "test-model",
+            title: "Test model",
             type: "endpoint_agent",
             baseUrl: "https://agent.example.com/v1",
             upstreamModel: "openai-fast",
@@ -78,6 +79,7 @@ describe("POST /api/auth/delete-user", () => {
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: `better-auth.session_token=${sessionToken}`,
+                    Origin: "http://localhost:3000",
                 },
                 body: JSON.stringify({}),
             },
@@ -221,6 +223,7 @@ describe("POST /api/auth/delete-user", () => {
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: `better-auth.session_token=${sessionToken}`,
+                    Origin: "http://localhost:3000",
                 },
                 body: JSON.stringify({}),
             },

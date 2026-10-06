@@ -1,4 +1,5 @@
 import * as accountSetup from "./groups/account-setup.ts";
+import * as agentUsage from "./groups/agent-usage.ts";
 import * as appGrowth from "./groups/app-growth.ts";
 import * as discordCommunity from "./groups/discord-community.ts";
 import * as githubContributions from "./groups/github-contributions.ts";
@@ -7,8 +8,14 @@ import * as identity from "./groups/identity.ts";
 import * as modelUsage from "./groups/model-usage.ts";
 import type { QuestCard, QuestEvaluationContext, QuestGroup } from "./types.ts";
 
+export const ACCOUNT_SETUP_QUEST_GROUP: QuestGroup = {
+    id: "account-setup",
+    ...accountSetup,
+};
+
 export const QUEST_GROUPS: QuestGroup[] = [
-    { id: "account-setup", ...accountSetup },
+    ACCOUNT_SETUP_QUEST_GROUP,
+    { id: "agent-usage", ...agentUsage },
     { id: "app-growth", ...appGrowth },
     { id: "discord-community", ...discordCommunity },
     { id: "model-usage", ...modelUsage },

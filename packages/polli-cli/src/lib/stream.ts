@@ -4,6 +4,11 @@
  */
 export async function* streamSSE(
     response: Response,
+    onEvent?: (event: {
+        model?: string;
+        usage?: { total_tokens?: number };
+        choices?: { finish_reason?: string | null }[];
+    }) => void,
 ): AsyncGenerator<string, void> {
     const reader = response.body?.getReader();
     if (!reader) throw new Error("No response body");
@@ -20,13 +25,18 @@ export async function* streamSSE(
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const data = line.slice(6).trim();
+            if (!line.startsWith("data:")) continue;
+            const data = line.slice(5).trim();
             if (data === "[DONE]") return;
 
             let parsed: {
                 error?: { message?: string };
-                choices?: { delta?: { content?: string } }[];
+                choices?: {
+                    delta?: { content?: string };
+                    finish_reason?: string | null;
+                }[];
+                model?: string;
+                usage?: { total_tokens?: number };
             };
             try {
                 parsed = JSON.parse(data);
@@ -38,6 +48,7 @@ export async function* streamSSE(
                     parsed.error.message ?? JSON.stringify(parsed.error),
                 );
             }
+            onEvent?.(parsed);
             const delta = parsed.choices?.[0]?.delta?.content;
             if (delta) yield delta;
         }

@@ -131,7 +131,10 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "restricted-child",
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: [
+                            "black-forest-labs/flux.1-schnell",
+                            "openai/gpt-5.4-nano",
+                        ],
                         pollenBudget: 50,
                         accountPermissions: ["profile", "usage"],
                     }),
@@ -141,35 +144,100 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             expect(data.permissions).toEqual({
-                models: ["flux", "openai"],
+                models: ["text", "image"],
                 account: ["profile", "usage"],
             });
             expect(data.pollenBudget).toBe(50);
         });
 
-        test("should strip 'keys' from child account permissions", async ({
+        test("should let a key with account:keys create a child that can create keys", async ({
             sessionToken,
         }) => {
-            const response = await SELF.fetch(
+            const parentKey = await createApiKeyViaApi(sessionToken, {
+                name: "machine-parent",
+                accountPermissions: ["keys"],
+            });
+
+            const createChild = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${parentKey.key}`,
+                    },
+                    body: JSON.stringify({
+                        name: "machine-child",
+                        accountPermissions: ["profile", "keys", "usage"],
+                    }),
+                },
+            );
+
+            expect(createChild.status).toBe(200);
+            const child = await createChild.json();
+            expect(child.permissions.account).toEqual([
+                "profile",
+                "keys",
+                "usage",
+            ]);
+            expect(child.metadata.createdByApiKeyId).toBe(parentKey.id);
+
+            // The child can mint its own key in turn.
+            const createGrandchild = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${child.key}`,
+                    },
+                    body: JSON.stringify({ name: "harness-grandchild" }),
+                },
+            );
+            expect(createGrandchild.status).toBe(200);
+            const grandchild = await createGrandchild.json();
+            expect(grandchild.metadata.createdByApiKeyId).toBe(child.id);
+            expect(grandchild.key.startsWith("sk_")).toBe(true);
+            expect(grandchild.permissions?.account ?? []).not.toContain("keys");
+        });
+
+        test("should keep keys created by a Quest Pollen only key Quest Pollen only", async ({
+            sessionToken,
+        }) => {
+            const parentKey = await createApiKeyViaApi(sessionToken, {
+                name: "quest-parent",
+                accountPermissions: ["keys"],
+                questPollenOnly: true,
+            });
+
+            const createChild = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${parentKey.key}`,
+                    },
+                    body: JSON.stringify({ name: "quest-child" }),
+                },
+            );
+            expect(createChild.status).toBe(200);
+            expect((await createChild.json()).questPollenOnly).toBe(true);
+
+            // The owner can lift the restriction from the dashboard.
+            const update = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${parentKey.id}/update`,
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
-                    body: JSON.stringify({
-                        name: "escalation-attempt",
-                        accountPermissions: ["profile", "keys", "usage"],
-                    }),
+                    body: JSON.stringify({ questPollenOnly: false }),
                 },
             );
-
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            // "keys" should be stripped
-            expect(data.permissions.account).toEqual(["profile", "usage"]);
-            expect(data.permissions.account).not.toContain("keys");
+            expect(update.status).toBe(200);
+            expect((await update.json()).questPollenOnly).toBe(false);
         });
 
         test("should create key via API key with account:keys permission", async ({
@@ -327,10 +395,30 @@ describe("Account Key Management API", () => {
             }
         });
 
-        test("should omit retired models from listed permissions", async ({
+        test("should reject API key without account:keys permission", async ({
+            apiKey,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        name: "should-fail",
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(403);
+        });
+
+        test("should create key via publishable API key with account:keys permission", async ({
             sessionToken,
         }) => {
-            const createResponse = await SELF.fetch(
+            const createPub = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
@@ -339,13 +427,60 @@ describe("Account Key Management API", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        name: "account-key-with-retired-model",
-                        allowedModels: ["flux", "retired-model"],
+                        name: "pub-with-keys-perm",
+                        type: "publishable",
                     }),
                 },
             );
-            expect(createResponse.status).toBe(200);
-            const created = await createResponse.json();
+            expect(createPub.status).toBe(200);
+            const createdPub = (await createPub.json()) as {
+                id: string;
+                key: string;
+            };
+            expect(createdPub.key.startsWith("pk_")).toBe(true);
+
+            // Set account:keys permission
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdPub.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        accountPermissions: ["keys"],
+                    }),
+                },
+            );
+            expect(updateResponse.status).toBe(200);
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${createdPub.key}`,
+                    },
+                    body: JSON.stringify({ name: "child-from-publishable" }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.key.startsWith("sk_")).toBe(true);
+            expect(data.name).toBe("child-from-publishable");
+            expect(data.permissions?.account ?? []).not.toContain("keys");
+        });
+    });
+
+    describe("GET /api/account/keys (list)", () => {
+        test("should list keys via session auth", async ({
+            sessionToken,
+            apiKey,
+        }) => {
+            expect(apiKey).toBeTruthy(); // ensure at least one key exists
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -357,11 +492,17 @@ describe("Account Key Management API", () => {
             );
 
             expect(response.status).toBe(200);
-            const body = await response.json();
-            const listed = body.data.find(
-                (key: { id: string }) => key.id === created.id,
-            );
-            expect(listed.permissions.models).toEqual(["flux"]);
+            const data = await response.json();
+            expect(data.data).toBeInstanceOf(Array);
+            expect(data.data.length).toBeGreaterThanOrEqual(1);
+
+            // Keys should not contain the full secret
+            for (const key of data.data) {
+                expect(key).toHaveProperty("id");
+                expect(key).toHaveProperty("name");
+                expect(key).toHaveProperty("start");
+                expect(key).not.toHaveProperty("key");
+            }
         });
 
         test("should reject API key without account:keys permission", async ({

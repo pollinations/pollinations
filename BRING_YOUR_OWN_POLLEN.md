@@ -70,7 +70,7 @@ https://enter.pollinations.ai/authorize
 
 With restrictions:
 ```text
-https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=flux,openai&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=black-forest-labs/flux.1-schnell,openai/gpt-5.4-nano&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
 | Param | What it does | Example |
@@ -82,7 +82,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Restrict to specific models | `flux,openai,gptimage` |
+| `models` | Restrict to specific models | `black-forest-labs/flux.1-schnell,openai/gpt-5.4-nano,openai/gpt-image-1-mini` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
@@ -142,12 +142,12 @@ Use the returned `access_token` as the API key:
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 
-See `apps/oauth-client-demo/` for a zero-dependency server-backed reference
-client and `apps/oauth-test/` for a browser-only reference.
+Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
+[existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 
@@ -182,7 +182,7 @@ const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 
@@ -190,21 +190,20 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 
 Same authorize screen, but the user opens a browser separately. Your CLI polls for the key.
 
-**Where this fits:**
-- **Discord / Telegram / WhatsApp bots** — bot DMs the code, user approves in browser, bot gets their key
-- **CLI tools** — `pollinations login` opens a browser, CLI waits for approval
-- **MCP servers** — AI agent requests access, user approves from their browser
-- **Raspberry Pi / IoT** — headless device displays a code, user approves on their phone
-- **VS Code extensions** — extension shows the code, user approves in browser
+Use this for CLIs, bots, extensions, and other apps that cannot show the authorization page themselves.
 
 ```bash
 # 1. request a device code (pass your app_key as client_id for attribution)
 curl -X POST https://enter.pollinations.ai/api/device/code \
   -H 'Content-Type: application/json' \
   -d '{"client_id": "pk_yourkey"}'
-# → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
+# → { "device_code": "...", "user_code": "ABCD-1234",
+#     "verification_uri": "https://enter.pollinations.ai/device",
+#     "verification_uri_complete": "https://enter.pollinations.ai/device?user_code=ABCD-1234",
+#     "expires_in": 1800, "interval": 5 }
 
-# 2. tell user: "go to enter.pollinations.ai/device and enter ABCD-1234"
+# 2. give the user verification_uri_complete to open directly,
+#    or show verification_uri and user_code
 
 # 3. poll for the key (every 5s)
 curl -X POST https://enter.pollinations.ai/api/device/token \

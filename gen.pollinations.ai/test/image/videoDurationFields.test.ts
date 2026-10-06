@@ -29,6 +29,11 @@ describe("video duration registry fields", () => {
         expect(def).toBeLessThanOrEqual(max);
     });
 
+    it.each(videoModelIds)("%s declares its output resolutions", (name) => {
+        const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
+        expect(info.resolutions?.length).toBeGreaterThan(0);
+    });
+
     it.each(nonVideoModelIds)("%s omits duration fields", (name) => {
         const info = modelInfoFromDefinition(name, IMAGE_SERVICES[name]);
         expect(info.min_duration).toBeUndefined();
@@ -37,20 +42,34 @@ describe("video duration registry fields", () => {
     });
 
     it("veo exposes allowed_durations", () => {
-        const info = modelInfoFromDefinition("veo", IMAGE_SERVICES.veo);
+        const info = modelInfoFromDefinition(
+            "google/veo-3.1-fast",
+            IMAGE_SERVICES["google/veo-3.1-fast"],
+        );
         expect(info.allowed_durations).toEqual([4, 6, 8]);
     });
 
     it("wan exposes allowed_durations", () => {
-        const info = modelInfoFromDefinition("wan", IMAGE_SERVICES.wan);
+        const info = modelInfoFromDefinition(
+            "alibaba/wan-2.6",
+            IMAGE_SERVICES["alibaba/wan-2.6"],
+        );
         expect(info.allowed_durations).toEqual([5, 10, 15]);
     });
 
-    it("nova-reel exposes duration_step", () => {
+    it("MiniMax H3 Max exposes allowed_durations", () => {
         const info = modelInfoFromDefinition(
-            "nova-reel",
-            IMAGE_SERVICES["nova-reel"],
+            "minimax/minimax-h3-max",
+            IMAGE_SERVICES["minimax/minimax-h3-max"],
         );
-        expect(info.duration_step).toBe(6);
+        expect(info.allowed_durations).toEqual([5, 10, 15]);
+    });
+
+    it("MiniMax H3 Max Turbo exposes allowed_durations", () => {
+        const info = modelInfoFromDefinition(
+            "minimax/minimax-h3-max-turbo",
+            IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
+        );
+        expect(info.allowed_durations).toEqual([5, 10, 15]);
     });
 });

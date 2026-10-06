@@ -2,6 +2,8 @@ import {
     Alert,
     Chip,
     cn,
+    DatabaseIcon,
+    Heading,
     TableBody,
     TableCell,
     TableDisclosureButton,
@@ -10,14 +12,19 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import {
+    type ComponentProps,
+    type ComponentType,
+    useMemo,
+    useState,
+} from "react";
 import {
     DataTable,
     GROUP_BORDER,
     TableScroller,
 } from "../components/DataTable";
 import { StatCards, type StatTone } from "../components/StatCards";
-import { categoryLabel } from "../lib/categories";
+import { categoryLabel, pnlSource } from "../lib/categories";
 import type { ForecastPaymentTiming } from "../lib/forecastTerms";
 import { fmtPeriod } from "../lib/format";
 import { monthName } from "../lib/months";
@@ -81,18 +88,7 @@ export function forecastMethodLabel(method: RunwayMatrixRow["forecastMethod"]) {
     if (method === "funded") return "FUNDED";
     if (method === "last") return "RUN RATE";
     if (method === "one_off") return "ONE-TIME";
-    return null;
-}
-
-export function forecastMethodHint(method: RunwayMatrixRow["forecastMethod"]) {
-    if (method === "fixed") return "Uses a fixed monthly amount.";
-    if (method === "funded") {
-        return "Covered by verified vendor credits or prepaid balance.";
-    }
-    if (method === "last") {
-        return "Uses the latest reviewed monthly run rate.";
-    }
-    if (method === "one_off") return "Included only in this month.";
+    if (method === "mixed") return "MIXED";
     return null;
 }
 
@@ -103,43 +99,43 @@ export function paymentTimingLabel(timing: ForecastPaymentTiming | null) {
     return null;
 }
 
-export function paymentTimingHint(timing: ForecastPaymentTiming | null) {
-    if (timing === "direct") {
-        return "Cash moves in the projected month.";
-    }
-    if (timing === "prepaid") {
-        return "The existing balance is consumed first; cash moves when a top-up is needed.";
-    }
-    if (timing === "postpaid") {
-        return "Usage is paid after the service period.";
-    }
-    return null;
-}
+const FORECAST_BADGE_INTENT: Record<
+    string,
+    NonNullable<ComponentProps<typeof Chip>["intent"]>
+> = {
+    FIXED: "free",
+    FUNDED: "news",
+    "RUN RATE": "free",
+    "ONE-TIME": "alpha",
+    MIXED: "neutral",
+    DIRECT: "news",
+    PREPAID: "alpha",
+    POSTPAID: "warning",
+};
 
-function ForecastBadge({ hint, label }: { hint: string; label: string }) {
+export function ForecastBadge({
+    label,
+    icon: Icon,
+}: {
+    label: string;
+    icon?: ComponentType<{ className?: string }>;
+}) {
     return (
-        <Tooltip triggerAs="span" content={hint}>
-            <Chip intent="neutral" size="sm">
-                {label}
-            </Chip>
-        </Tooltip>
+        <Chip intent={FORECAST_BADGE_INTENT[label] ?? "neutral"} size="sm">
+            {Icon ? <Icon className="h-3 w-3" /> : null}
+            {label}
+        </Chip>
     );
 }
 
 function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
     const methodLabel = forecastMethodLabel(row.forecastMethod);
-    const methodHint = forecastMethodHint(row.forecastMethod);
     const timingLabel = paymentTimingLabel(row.forecastPaymentTiming);
-    const timingHint = paymentTimingHint(row.forecastPaymentTiming);
     return (
         <span className="inline-flex items-center gap-1.5">
             <span>{row.vendor}</span>
-            {methodLabel && methodHint && (
-                <ForecastBadge label={methodLabel} hint={methodHint} />
-            )}
-            {timingLabel && timingHint && (
-                <ForecastBadge label={timingLabel} hint={timingHint} />
-            )}
+            {methodLabel && <ForecastBadge label={methodLabel} />}
+            {timingLabel && <ForecastBadge label={timingLabel} />}
         </span>
     );
 }
@@ -147,10 +143,18 @@ function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
 function ForecastValue({
     assumptions,
     value,
+    issue,
 }: {
     assumptions: RunwayAssumption[] | undefined;
     value: number;
+    issue?: string;
 }) {
+    if (issue)
+        return (
+            <Tooltip triggerAs="span" content={issue}>
+                <span>—</span>
+            </Tooltip>
+        );
     if (!assumptions?.length) return fmtRunwayTableValue(value);
     return (
         <Tooltip
@@ -171,6 +175,25 @@ function ForecastValue({
             </span>
         </Tooltip>
     );
+}
+
+function hasAmount(value: number | null | undefined): value is number {
+    return value != null && Math.abs(value) >= 0.005;
+}
+
+// Usage paid with provider credits sits beside the cash figure in gray
+// parentheses; a month funded only by credits shows just that figure.
+function CreditAmount({ value }: { value: number | null | undefined }) {
+    if (!hasAmount(value)) return null;
+    return (
+        <span className="ml-1 text-theme-text-muted">
+            ({fmtRunwayTableValue(value)})
+        </span>
+    );
+}
+
+function showCash(cash: number | null, credit: number | null | undefined) {
+    return hasAmount(cash) || !hasAmount(credit);
 }
 
 function monthColumnClass(column: RunwayColumn, first: boolean) {
@@ -195,7 +218,8 @@ function startsMonthGroup(columns: RunwayColumn[], index: number) {
 type RunwayGroup = {
     category: string;
     rows: RunwayMatrixRow[];
-    values: Record<string, number>;
+    values: Record<string, number | null>;
+    creditValues: Record<string, number>;
 };
 
 function groupRows(
@@ -204,14 +228,23 @@ function groupRows(
 ): RunwayGroup[] {
     const groups = new Map<string, RunwayGroup>();
     for (const row of rows) {
-        const group = groups.get(row.category) ?? {
+        const group: RunwayGroup = groups.get(row.category) ?? {
             category: row.category,
             rows: [],
             values: Object.fromEntries(columns.map((column) => [column.id, 0])),
+            creditValues: Object.fromEntries(
+                columns.map((column) => [column.id, 0]),
+            ),
         };
         group.rows.push(row);
         for (const column of columns) {
-            group.values[column.id] += row.values[column.id] ?? 0;
+            group.creditValues[column.id] += row.creditValues?.[column.id] ?? 0;
+            const previous = group.values[column.id];
+            group.values[column.id] =
+                previous == null ||
+                (column.kind === "forecast" && row.forecastIssue)
+                    ? null
+                    : previous + (row.values[column.id] ?? 0);
         }
         groups.set(row.category, group);
     }
@@ -222,10 +255,12 @@ function SummaryRow({
     label,
     columns,
     value,
+    credit,
 }: {
     label: string;
     columns: RunwayColumn[];
     value: (column: RunwayColumn) => number | null;
+    credit?: (column: RunwayColumn) => number | null;
 }) {
     return (
         <TableRow className="font-semibold">
@@ -245,7 +280,10 @@ function SummaryRow({
                         runwayValueClass(value(column)),
                     )}
                 >
-                    {fmtRunwayTableValue(value(column))}
+                    {showCash(value(column), credit?.(column))
+                        ? fmtRunwayTableValue(value(column))
+                        : null}
+                    <CreditAmount value={credit?.(column)} />
                 </TableCell>
             ))}
         </TableRow>
@@ -258,10 +296,16 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             buildRunway(
                 data.opTransactions ?? [],
                 new Date(),
-                data.opCloud ?? [],
+                data.vendorLedger ?? [],
                 data.privateConfig?.forecastRules,
+                data.stripeSales ?? [],
             ),
-        [data.opCloud, data.opTransactions, data.privateConfig?.forecastRules],
+        [
+            data.vendorLedger,
+            data.opTransactions,
+            data.privateConfig?.forecastRules,
+            data.stripeSales,
+        ],
     );
     const columns = useMemo(
         () => runway.columns.filter((column) => column.month.startsWith(year)),
@@ -280,7 +324,10 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
               (assumption) => assumption.month.slice(0, 7) === next.month,
           ).length
         : 0;
-    const nextChange = nextPlanFacts > 0 ? (next?.netUsd ?? null) : null;
+    const nextChange =
+        nextPlanFacts > 0 && next?.forecastComplete !== false
+            ? (next?.netUsd ?? null)
+            : null;
     const last = runway.columns.at(-1);
     const runwayTone: StatTone =
         runway.runwayMonths == null
@@ -339,7 +386,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                         value: fmtRunwayUsd(nextChange),
                         tone: valueTone(nextChange),
                         detail:
-                            nextPlanFacts > 0
+                            nextChange != null
                                 ? `${nextPlanFacts} forecast line${nextPlanFacts === 1 ? "" : "s"}`
                                 : "plan unavailable",
                     },
@@ -359,6 +406,31 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     },
                 ]}
             />
+            {data.userBalances?.[0] ? (
+                <section className="flex flex-col gap-2">
+                    <Heading as="h2" size="card">
+                        Unspent Pollen
+                    </Heading>
+                    <StatCards
+                        items={[
+                            {
+                                label: "Paid Pollen",
+                                value: fmtRunwayTableValue(
+                                    data.userBalances[0].paid_balance,
+                                ),
+                                detail: `${fmtRunwayTableValue(data.userBalances[0].paid_users)} users · full catalog`,
+                            },
+                            {
+                                label: "Quest Pollen",
+                                value: fmtRunwayTableValue(
+                                    data.userBalances[0].quest_balance,
+                                ),
+                                detail: `${fmtRunwayTableValue(data.userBalances[0].quest_users)} users · restricted catalog`,
+                            },
+                        ]}
+                    />
+                </section>
+            ) : null}
             <TableScroller>
                 <DataTable className="min-w-max">
                     <TableHead>
@@ -391,12 +463,21 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                         <SummaryRow
                             label="Expenses"
                             columns={columns}
-                            value={(column) => column.totalExpensesUsd}
+                            value={(column) =>
+                                column.forecastComplete === false
+                                    ? null
+                                    : column.totalExpensesUsd
+                            }
+                            credit={(column) => column.totalCreditUsd}
                         />
                         <SummaryRow
                             label="Cash change"
                             columns={columns}
-                            value={(column) => column.netUsd}
+                            value={(column) =>
+                                column.forecastComplete === false
+                                    ? null
+                                    : column.netUsd
+                            }
                         />
                         <SummaryRow
                             label="Cash balance"
@@ -442,6 +523,17 @@ function RunwayCategoryRows({
                     >
                         {categoryLabel(group.category)}
                     </TableDisclosureButton>
+                    {group.category !== "revenue" &&
+                        group.category !== "balance_sheet" && (
+                            <ForecastBadge
+                                icon={DatabaseIcon}
+                                label={
+                                    pnlSource(group.category) === "ledger"
+                                        ? "vendor"
+                                        : "bank"
+                                }
+                            />
+                        )}
                 </TableCell>
                 {columns.map((column, index) => (
                     <TableCell
@@ -456,7 +548,13 @@ function RunwayCategoryRows({
                             runwayValueClass(group.values[column.id]),
                         )}
                     >
-                        {fmtRunwayTableValue(group.values[column.id])}
+                        {showCash(
+                            group.values[column.id],
+                            group.creditValues[column.id],
+                        )
+                            ? fmtRunwayTableValue(group.values[column.id])
+                            : null}
+                        <CreditAmount value={group.creditValues[column.id]} />
                     </TableCell>
                 ))}
             </TableRow>
@@ -479,9 +577,22 @@ function RunwayCategoryRows({
                                     runwayValueClass(row.values[column.id]),
                                 )}
                             >
-                                <ForecastValue
-                                    assumptions={row.assumptions[column.id]}
-                                    value={row.values[column.id]}
+                                {showCash(
+                                    row.values[column.id],
+                                    row.creditValues?.[column.id],
+                                ) && (
+                                    <ForecastValue
+                                        assumptions={row.assumptions[column.id]}
+                                        value={row.values[column.id]}
+                                        issue={
+                                            column.kind === "forecast"
+                                                ? row.forecastIssue
+                                                : undefined
+                                        }
+                                    />
+                                )}
+                                <CreditAmount
+                                    value={row.creditValues?.[column.id]}
                                 />
                             </TableCell>
                         ))}

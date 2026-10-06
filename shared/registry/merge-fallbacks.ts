@@ -5,20 +5,18 @@ import type { ModelDefinition } from "./registry";
  * in for.
  *
  * Everything left out is inherited from that model, so the public identity a
- * caller sees — title, brand, modalities — can never drift from the model they
+ * caller sees — title, publisher, modalities — can never drift from the model they
  * asked for. `provider` is required because it is the one thing a route must
  * not inherit: it is what makes the route a route, and what the spend is
  * attributed to. The omitted fields are owned by the merge — a route is always
- * hidden, carries no aliases of its own, and never chains further.
+ * hidden and fallback-only, carries no aliases, and never chains further.
+ * `retirementDate` is not inherited either: a route can outlive the one it
+ * backs up, so it states its own date or has none.
  */
 export type FallbackDefinition = Partial<
     Omit<
         ModelDefinition,
-        | "aliases"
-        | "fallbacks"
-        | "fallbackOnStatusCodes"
-        | "hidden"
-        | "provider"
+        "aliases" | "fallbacks" | "fallbackOnly" | "hidden" | "provider"
     >
 > & { provider: string };
 
@@ -32,8 +30,10 @@ export type FallbackDefinition = Partial<
 export type FallbackMap = Record<string, Record<string, FallbackDefinition>>;
 
 /** The ids the merge adds to the catalog. */
-type RouteIds<TFallbacks extends FallbackMap> =
-    keyof TFallbacks[keyof TFallbacks] & string;
+type RouteIds<TFallbacks extends FallbackMap> = {
+    [ParentId in keyof TFallbacks]: keyof TFallbacks[ParentId];
+}[keyof TFallbacks] &
+    string;
 
 /**
  * The catalog as it comes out: routes added as models, and every parent
@@ -69,7 +69,9 @@ export function mergeFallbacks<
         const {
             aliases: _aliases,
             fallbacks: _fallbacks,
-            fallbackOnStatusCodes: _statusCodes,
+            fallbackOnly: _fallbackOnly,
+            hidden: _hidden,
+            retirementDate: _retirementDate,
             ...inherited
         } = parent;
         for (const [routeId, overrides] of Object.entries(routes)) {
@@ -78,6 +80,7 @@ export function mergeFallbacks<
                 ...overrides,
                 aliases: [],
                 hidden: true,
+                fallbackOnly: true,
             };
         }
     }

@@ -9,7 +9,10 @@ import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
-import { generateElevenLabsSpeechWithTimestamps } from "../src/routes/audio.ts";
+import {
+    generateElevenLabsSpeech,
+    generateElevenLabsSpeechWithTimestamps,
+} from "../src/routes/audio.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
@@ -19,11 +22,15 @@ const log = {
 
 async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
     const ctx = createExecutionContext();
-    return worker.fetch(
+    const response = await worker.fetch(
         new Request(input, init),
         withInlineGenerationCoordinator(env),
         ctx,
     );
+    return {
+        response,
+        wait: () => waitOnExecutionContext(ctx),
+    };
 }
 
 const providerResponse = {
@@ -51,7 +58,7 @@ describe("ElevenLabs timestamped TTS", () => {
             .mockResolvedValue(Response.json(providerResponse));
 
         const response = await generateElevenLabsSpeechWithTimestamps({
-            modelName: "elevenflash",
+            modelName: "elevenlabs/eleven-flash-v2.5",
             text: "Hi",
             voice: "nova",
             responseFormat: "wav",
@@ -78,6 +85,93 @@ describe("ElevenLabs timestamped TTS", () => {
         await expect(response.json()).resolves.toEqual(providerResponse);
     });
 
+    describe.each([
+        ["elevenlabs/eleven-v4", "eleven_v4"],
+        ["elevenlabs/eleven-v4-turbo", "eleven_v4_turbo"],
+    ] as const)("%s", (modelName, modelId) => {
+        it.each([
+            ["speech", generateElevenLabsSpeech],
+            ["timestamps", generateElevenLabsSpeechWithTimestamps],
+        ] as const)("%s counts Unicode and sends only supported settings", async (_name, generate) => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(Response.json(providerResponse));
+            const response = await generate({
+                modelName,
+                text: "Hi 😀",
+                voice: "nova",
+                responseFormat: "mp3",
+                seed: 42,
+                apiKey: "test-eleven-key",
+                log,
+            });
+            expect(
+                response.headers.get("x-usage-completion-audio-tokens"),
+            ).toBe("4");
+            const request = new Request(
+                fetchMock.mock.calls[0][0],
+                fetchMock.mock.calls[0][1],
+            );
+            await expect(request.json()).resolves.toEqual({
+                text: "Hi 😀",
+                model_id: modelId,
+                seed: 42,
+                voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+            });
+            await response.arrayBuffer();
+        });
+
+        it.each([
+            ["speech", generateElevenLabsSpeech],
+            ["timestamps", generateElevenLabsSpeechWithTimestamps],
+        ] as const)("%s classifies provider voice errors without masking missing routes", async (_name, generate) => {
+            const fetchMock = vi.spyOn(globalThis, "fetch");
+            for (const [code, status] of [
+                ["voice_not_found", 400],
+                ["not_found", 502],
+            ] as const) {
+                const body = JSON.stringify({
+                    detail: { status: code, message: "Not found" },
+                });
+                fetchMock.mockResolvedValue(
+                    new Response(body, {
+                        status: 404,
+                        headers: { "content-type": "application/json" },
+                    }),
+                );
+                await expect(
+                    generate({
+                        modelName,
+                        text: "Hi",
+                        voice: "x",
+                        responseFormat: "mp3",
+                        apiKey: "test-eleven-key",
+                        log,
+                    }),
+                ).rejects.toMatchObject({
+                    status,
+                    upstreamStatus: 404,
+                    responseBody: body,
+                });
+            }
+        });
+
+        it("rejects FLAC before calling the speech provider", async () => {
+            const fetchMock = vi.spyOn(globalThis, "fetch");
+            await expect(
+                generateElevenLabsSpeech({
+                    modelName,
+                    text: "Hi 😀",
+                    voice: "nova",
+                    responseFormat: "flac",
+                    apiKey: "test-eleven-key",
+                    log,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+    });
+
     it("rejects non-JSON provider responses", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(new Uint8Array([1, 2, 3]), {
@@ -87,7 +181,7 @@ describe("ElevenLabs timestamped TTS", () => {
 
         await expect(
             generateElevenLabsSpeechWithTimestamps({
-                modelName: "elevenlabs",
+                modelName: "elevenlabs/eleven-v3",
                 text: "Hi",
                 voice: "nova",
                 responseFormat: "mp3",
@@ -103,7 +197,7 @@ describe("ElevenLabs timestamped TTS", () => {
             .mockResolvedValue(Response.json(providerResponse));
 
         await generateElevenLabsSpeechWithTimestamps({
-            modelName: "elevenlabs",
+            modelName: "elevenlabs/eleven-v3",
             text: "Hi",
             voice: "custom/voice?output_format=pcm_44100",
             responseFormat: "mp3",
@@ -124,7 +218,7 @@ describe("ElevenLabs timestamped TTS", () => {
 workerTest(
     "rejects unsupported FLAC instead of returning PCM under the wrong format",
     async ({ paidApiKey }) => {
-        const response = await fetchGen(
+        const { response, wait } = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
             {
                 method: "POST",
@@ -133,33 +227,38 @@ workerTest(
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    model: "elevenlabs",
+                    model: "elevenlabs/eleven-v3",
                     input: "Do not call the provider.",
                     response_format: "flac",
                 }),
             },
         );
 
-        expect(response.status).toBe(400);
-        await expect(response.json()).resolves.toMatchObject({
-            error: {
-                message: expect.stringContaining(
-                    "supports mp3, opus, aac, wav, and pcm",
-                ),
-            },
-        });
+        try {
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: expect.stringContaining(
+                        "supports mp3, opus, aac, wav, and pcm",
+                    ),
+                },
+            });
+        } finally {
+            await wait();
+        }
     },
 );
 
 workerTest(
     "uses the shared fallback loop for audio",
     async ({ paidApiKey }) => {
-        const source = getRegistryModelDefinition("elevenlabs");
+        const source = getRegistryModelDefinition("elevenlabs/eleven-v3");
         const previousFallbacks = source.fallbacks;
         const fetchMock = vi.spyOn(globalThis, "fetch");
+        const ctx = createExecutionContext();
         try {
-            source.fallbacks = ["elevenflash"];
-            resetGenerationModelRegistryCache();
+            source.fallbacks = ["elevenlabs/eleven-flash-v2.5"];
+            await resetGenerationModelRegistryCache(env);
             const providerModels: string[] = [];
             fetchMock.mockImplementation(async (input, init) => {
                 const request = new Request(input, init);
@@ -182,7 +281,6 @@ workerTest(
                 return Response.json(providerResponse);
             });
 
-            const ctx = createExecutionContext();
             const response = await worker.fetch(
                 new Request(
                     "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
@@ -193,8 +291,9 @@ workerTest(
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
-                            model: "elevenlabs",
+                            model: "elevenlabs/eleven-v3",
                             input: "Fallback speech",
+                            voice: "nova",
                         }),
                     },
                 ),
@@ -209,28 +308,41 @@ workerTest(
             expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
                 "config.targets[1]",
             );
-            expect(response.headers.get("x-model-used")).toBe("elevenflash");
+            expect(response.headers.get("x-model-used")).toBe(
+                "elevenlabs/eleven-flash-v2.5",
+            );
+            expect(response.headers.get("x-pollinations-response-format")).toBe(
+                "audio-with-timestamps",
+            );
+            expect(response.headers.get("x-tts-voice")).toBe("nova");
             await response.arrayBuffer();
-            await waitOnExecutionContext(ctx);
             expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
         } finally {
-            fetchMock.mockRestore();
-            source.fallbacks = previousFallbacks;
-            resetGenerationModelRegistryCache();
+            try {
+                await waitOnExecutionContext(ctx);
+            } finally {
+                fetchMock.mockRestore();
+                source.fallbacks = previousFallbacks;
+                await resetGenerationModelRegistryCache(env);
+            }
         }
     },
 );
 
 for (const testCase of [
-    { model: "elevenlabs", format: "mp3", magic: "ID3" },
-    { model: "elevenflash", format: "wav", magic: "RIFF" },
-    { model: "eleven-multilingual-v2", format: "opus", magic: "OggS" },
+    { model: "elevenlabs/eleven-v3", format: "mp3", magic: "ID3" },
+    { model: "elevenlabs/eleven-flash-v2.5", format: "wav", magic: "RIFF" },
+    {
+        model: "elevenlabs/eleven-multilingual-v2",
+        format: "opus",
+        magic: "OggS",
+    },
 ] as const) {
     workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         `returns ${testCase.format} audio and alignment for ${testCase.model}`,
         async ({ paidApiKey }) => {
             const input = "Timed speech.";
-            const response = await fetchGen(
+            const { response, wait } = await fetchGen(
                 "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
                 {
                     method: "POST",
@@ -247,60 +359,64 @@ for (const testCase of [
                 },
             );
 
-            expect(response.status).toBe(200);
-            expect(response.headers.get("content-type")).toContain(
-                "application/json",
-            );
-            expect(
-                response.headers.get("x-usage-completion-audio-tokens"),
-            ).toBe(String(input.length));
-            expect(response.headers.get("x-pollinations-response-format")).toBe(
-                "audio-with-timestamps",
-            );
+            try {
+                expect(response.status).toBe(200);
+                expect(response.headers.get("content-type")).toContain(
+                    "application/json",
+                );
+                expect(
+                    response.headers.get("x-usage-completion-audio-tokens"),
+                ).toBe(String(input.length));
+                expect(
+                    response.headers.get("x-pollinations-response-format"),
+                ).toBe("audio-with-timestamps");
 
-            const body = (await response.json()) as typeof providerResponse;
-            expect(body.audio_base64.length).toBeGreaterThan(1000);
-            const audioBytes = Uint8Array.from(
-                atob(body.audio_base64),
-                (character) => character.charCodeAt(0),
-            );
-            expect(
-                String.fromCharCode(
-                    ...audioBytes.slice(0, testCase.magic.length),
-                ),
-            ).toBe(testCase.magic);
-            if (testCase.format === "wav") {
-                const view = new DataView(audioBytes.buffer);
-                expect(view.getUint32(4, true)).toBe(audioBytes.length - 8);
-                let offset = 12;
-                while (
-                    offset + 8 <= audioBytes.length &&
-                    String.fromCharCode(
-                        ...audioBytes.slice(offset, offset + 4),
-                    ) !== "data"
-                ) {
-                    const chunkSize = view.getUint32(offset + 4, true);
-                    offset += 8 + chunkSize + (chunkSize % 2);
-                }
+                const body = (await response.json()) as typeof providerResponse;
+                expect(body.audio_base64.length).toBeGreaterThan(1000);
+                const audioBytes = Uint8Array.from(
+                    atob(body.audio_base64),
+                    (character) => character.charCodeAt(0),
+                );
                 expect(
                     String.fromCharCode(
-                        ...audioBytes.slice(offset, offset + 4),
+                        ...audioBytes.slice(0, testCase.magic.length),
                     ),
-                ).toBe("data");
-                expect(view.getUint32(offset + 4, true)).toBe(
-                    audioBytes.length - offset - 8,
+                ).toBe(testCase.magic);
+                if (testCase.format === "wav") {
+                    const view = new DataView(audioBytes.buffer);
+                    expect(view.getUint32(4, true)).toBe(audioBytes.length - 8);
+                    let offset = 12;
+                    while (
+                        offset + 8 <= audioBytes.length &&
+                        String.fromCharCode(
+                            ...audioBytes.slice(offset, offset + 4),
+                        ) !== "data"
+                    ) {
+                        const chunkSize = view.getUint32(offset + 4, true);
+                        offset += 8 + chunkSize + (chunkSize % 2);
+                    }
+                    expect(
+                        String.fromCharCode(
+                            ...audioBytes.slice(offset, offset + 4),
+                        ),
+                    ).toBe("data");
+                    expect(view.getUint32(offset + 4, true)).toBe(
+                        audioBytes.length - offset - 8,
+                    );
+                }
+                expect(body.alignment.characters.length).toBeGreaterThan(0);
+                expect(
+                    body.alignment.character_start_times_seconds.length,
+                ).toBe(body.alignment.characters.length);
+                expect(body.alignment.character_end_times_seconds.length).toBe(
+                    body.alignment.characters.length,
                 );
+                expect(
+                    body.normalized_alignment.characters.length,
+                ).toBeGreaterThan(0);
+            } finally {
+                await wait();
             }
-            expect(body.alignment.characters.length).toBeGreaterThan(0);
-            expect(body.alignment.character_start_times_seconds.length).toBe(
-                body.alignment.characters.length,
-            );
-            expect(body.alignment.character_end_times_seconds.length).toBe(
-                body.alignment.characters.length,
-            );
-            expect(body.normalized_alignment.characters.length).toBeGreaterThan(
-                0,
-            );
         },
         30_000,
     );

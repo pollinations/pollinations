@@ -7,6 +7,9 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
+import { keyAllowsCategory } from "@shared/registry/model-permissions.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -16,6 +19,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
+        definition: Pick<ModelDefinition, "category">;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -44,6 +48,17 @@ export type AuthEnv = {
 const AUTHENTICATION_REQUIRED_MESSAGE =
     "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
 
+export function keyPermissionsLink(
+    apiKeyId: string,
+    environment?: string,
+): string {
+    const enterBase =
+        environment === "staging"
+            ? PUBLIC_URLS.enter.staging
+            : PUBLIC_URLS.enter.production;
+    return `${enterBase}/edit-key?id=${apiKeyId}`;
+}
+
 function installAuth(
     c: Context<AuthEnv>,
     authResult: {
@@ -67,11 +82,13 @@ function installAuth(
         const model = c.var.model;
         if (!model) return;
 
-        if (!apiKey?.permissions?.models) return;
+        if (!apiKey) return;
 
-        if (!apiKey.permissions.models.includes(model.resolved)) {
+        const { category } = model.definition;
+        if (!keyAllowsCategory(apiKey.permissions?.models, category)) {
+            const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
             throw new HTTPException(403, {
-                message: `Model '${model.requested}' is not allowed for this API key`,
+                message: `Model '${model.requested}' is not allowed for this API key, which does not allow ${category} models. Manage key permissions at ${link}`,
             });
         }
     }

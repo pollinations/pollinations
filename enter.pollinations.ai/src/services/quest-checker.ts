@@ -1,18 +1,20 @@
 import { getLogger } from "@logtape/logtape";
-import { recordRewards } from "@shared/billing/rewards.ts";
+import { claimReward, recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { QUEST_GROUPS } from "./quests/index.ts";
 import {
     type QuestEvaluation,
     type QuestEvaluationContext,
+    type QuestGroup,
     type QuestProgress,
     type QuestUser,
     toReward,
 } from "./quests/types.ts";
 
 const log = getLogger(["enter", "quest-checker"]);
+const AUTO_CLAIM_QUEST_ID = "first_api_key";
 
 type QuestEvaluationSourceResult = QuestEvaluation & {
     error?: string;
@@ -28,11 +30,12 @@ export type QuestCheckResult = {
 export async function checkQuestsForUser(
     env: CloudflareBindings,
     userId: string,
+    groups: QuestGroup[] = QUEST_GROUPS,
 ): Promise<QuestCheckResult> {
     const db = drizzle(env.DB, { schema });
     log.info("QUEST_CHECK_START: userId={userId} groups={groups}", {
         userId,
-        groups: QUEST_GROUPS.map((g) => g.id),
+        groups: groups.map((group) => group.id),
     });
 
     const user = await loadQuestUser(db, userId);
@@ -51,7 +54,7 @@ export async function checkQuestsForUser(
 
     const ctx: QuestEvaluationContext = { db, env };
     const sourceResults = await Promise.all(
-        QUEST_GROUPS.map((group) => evaluateGroup(ctx, group, user)),
+        groups.map((group) => evaluateGroup(ctx, group, user)),
     );
     const proposals = sourceResults.flatMap((entry) => entry.proposals);
     const rewardInputs = proposals.map((proposal) =>
@@ -72,6 +75,21 @@ export async function checkQuestsForUser(
     );
 
     const recorded = await recordRewards(ctx.db, rewardInputs);
+    if (proposals.some(({ quest }) => quest.id === AUTO_CLAIM_QUEST_ID)) {
+        const pending = await ctx.db
+            .select({ id: schema.rewards.id })
+            .from(schema.rewards)
+            .where(
+                and(
+                    eq(schema.rewards.userId, user.id),
+                    isNull(schema.rewards.claimedAt),
+                    eq(schema.rewards.questId, AUTO_CLAIM_QUEST_ID),
+                ),
+            );
+        for (const reward of pending) {
+            await claimReward(ctx.db, { rewardId: reward.id, userId: user.id });
+        }
+    }
 
     const result = {
         success: sourceResults.every((entry) => !entry.error),

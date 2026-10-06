@@ -4,8 +4,8 @@ import {
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchAndUploadMedia,
     fetchJsonWithAuth,
+    fetchMediaLink,
 } from "../utils/coreUtils.js";
 import { validateImageModel, validateVideoModel } from "../utils/models.js";
 
@@ -47,29 +47,15 @@ async function generateImage(params, context) {
     );
     const image = result.data?.[0];
     if (!image?.url) throw new Error("Image API returned no image URL");
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
-        image.url,
-        {},
-        context,
-    );
 
     return createMCPResponse([
         {
             type: "resource_link",
-            uri: mediaUrl,
+            uri: image.url,
             name: "Generated image",
-            mimeType: image.media_type || contentType,
+            mimeType: image.media_type,
         },
-        createTextContent(
-            {
-                ...result,
-                data: result.data.map(({ url: _url, ...entry }) => ({
-                    ...entry,
-                    url: mediaUrl,
-                })),
-            },
-            true,
-        ),
+        createTextContent(result, true),
     ]);
 }
 
@@ -114,9 +100,8 @@ async function generateVideo(params, context) {
         params,
         context,
     );
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
+    const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/video/${encodedPrompt}`, queryParams),
-        {},
         context,
     );
     return createMCPResponse([
@@ -124,7 +109,7 @@ async function generateVideo(params, context) {
             type: "resource_link",
             uri: mediaUrl,
             name: "Generated video",
-            mimeType: contentType || "video/mp4",
+            mimeType: contentType,
         },
         createTextContent(
             {

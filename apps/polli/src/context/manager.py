@@ -40,7 +40,7 @@ class SessionManager:
 
         self._sessions[thread_id] = session
 
-        logger.info(f"Created session for thread {thread_id} - topic: '{topic_summary}'")
+        logger.info(f"Created session for thread {thread_id}")
         return session
 
     def add_to_session(
@@ -75,7 +75,11 @@ class SessionManager:
         logger.info(f"LRU evicted {to_evict} oldest sessions (capacity: {self._max_sessions})")
 
     def cleanup_expired(self) -> int:
-        expired = [thread_id for thread_id, session in self._sessions.items() if session.is_expired(config.bot.session_timeout_seconds)]
+        expired = [
+            thread_id
+            for thread_id, session in self._sessions.items()
+            if session.is_expired(config.bot.session_timeout_seconds)
+        ]
         for thread_id in expired:
             self._cleanup_session(thread_id)
 

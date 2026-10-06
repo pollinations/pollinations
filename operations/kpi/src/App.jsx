@@ -9,28 +9,50 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
 import { useState } from "react";
+import { signIn, signOut, useDashboardSession } from "./auth";
+import { DailyComparisonChart } from "./components/DailyComparisonChart";
 import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
 import { LineChart } from "./components/LineChart";
+import { PollenSpendChart } from "./components/PollenSpendChart";
 import { RetentionTable } from "./components/RetentionTable";
 import { Trend } from "./components/Trend";
 import { SOURCE_LABELS, useKpiData } from "./hooks/useKpiData";
 import { calcChange, formatValue, weekLabel } from "./lib/format";
+import { OFFICIAL_APP_VIEWS } from "./lib/officialApps";
+import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "./lib/range";
 
 const EXPORT_COLUMNS = [
     ["week", "Week"],
     ["registrations", "Registrations"],
+    ["githubStarGrowth", "GitHub stars net growth"],
+    ["githubStars", "GitHub stars total"],
     ["activations", "Activations"],
     ["wau", "WAU"],
     ["wauAll", "WAU incl. rejected"],
     ["tokens", "Tokens"],
     ["revenue", "Revenue"],
+    ["pollenText", "Text Pollen spent (USD)"],
+    ["pollenImage", "Image Pollen spent (USD)"],
+    ["pollenVideo", "Video Pollen spent (USD)"],
+    ["pollenAudio", "Audio Pollen spent (USD)"],
+    ["pollenRealtime", "Realtime Pollen spent (USD)"],
+    ["pollenEmbedding", "Embedding Pollen spent (USD)"],
+    ["pollen3d", "3D Pollen spent (USD)"],
+    ["pollenCommunity", "Community Pollen spent (USD)"],
+    ["pollenOther", "Tools / other Pollen spent (USD)"],
     ["packPurchases", "Pack purchases"],
     ["communityUserPct", "Community models user %"],
     ["communityRequestPct", "Community models request %"],
     ["communityAvailability", "Community models availability %"],
+    ["agentRequests", "Observed agent runs"],
+    ["agentUsers", "Observed agent unique users"],
+    ["mcpCalls", "Recorded MCP calls"],
+    ["mcpUsers", "MCP unique users"],
+    ...OFFICIAL_APP_VIEWS.map(({ key, name }) => [key, name]),
 ];
 
 function exportCsv(weeklyData) {
@@ -61,48 +83,50 @@ function Tile({ label, value, format, current, previous }) {
     );
 }
 
-function LoadingScreen({ done, active }) {
+function AccountControls({ accountUser }) {
     return (
-        <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-16">
-            <Text as="p" tone="soft">
-                Loading KPIs from all data sources…
-            </Text>
-            <div className="flex flex-col gap-1.5">
-                {SOURCE_LABELS.map((label) => {
-                    const complete = done.includes(label);
-                    const running = !complete && active === label;
-                    return (
-                        <Text
-                            key={label}
-                            as="div"
-                            size="sm"
-                            tone={
-                                running ? "strong" : complete ? "base" : "muted"
-                            }
-                            className="flex items-center gap-2"
-                        >
-                            <span
-                                aria-hidden="true"
-                                className="w-4 text-center"
-                            >
-                                {complete ? "✓" : running ? "◍" : "·"}
-                            </span>
-                            {label}
-                        </Text>
-                    );
-                })}
-            </div>
-        </main>
+        <>
+            <ColorModeToggle />
+            {accountUser && (
+                <DashboardAccountMenu user={accountUser} onSignOut={signOut} />
+            )}
+        </>
     );
 }
 
 const EXPLORER_ID = "kpi-explorer";
 
 export default function App() {
+    const { user, isPending, error } = useDashboardSession();
+    if (isPending || error || !user)
+        return (
+            <DashboardSignIn
+                appName="KPI"
+                onSignIn={signIn}
+                isPending={isPending}
+                sessionError={error}
+            />
+        );
+    return <Dashboard accountUser={user} />;
+}
+
+function Dashboard({ accountUser }) {
     // Which unit each cycling row is showing, and which row the explorer plots.
     // Both live here so the chart follows the table.
     const [viewIndex, setViewIndex] = useState({});
     const [explored, setExplored] = useState("registrations:0");
+    const [weeks, setWeeks] = useState(() =>
+        weeksFromSearch(window.location.search),
+    );
+
+    const changeWeeks = (event) => {
+        const next = Number(event.target.value);
+        setWeeks(next);
+        const url = new URL(window.location.href);
+        if (next === DEFAULT_WEEKS) url.searchParams.delete("weeks");
+        else url.searchParams.set("weeks", String(next));
+        window.history.replaceState(null, "", url);
+    };
 
     const cycleView = (key) =>
         setViewIndex((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
@@ -122,29 +146,29 @@ export default function App() {
         weeklyData,
         fullWeeks,
         historyWeeks,
+        dailyComparison,
+        signupsSyncedAt,
         retentionData,
         github,
         currentWeek,
         previousWeek,
-    } = useKpiData();
+    } = useKpiData(weeks);
 
-    if (loading) return <LoadingScreen done={done} active={active} />;
-
-    const wapc = currentWeek?.packPurchases || 0;
+    const wapc = currentWeek?.packPurchases;
     const funnelStages = currentWeek
         ? [
-              { stage: "Signups", count: currentWeek.registrations || 0 },
+              { stage: "Signups", count: currentWeek.registrations },
               {
                   stage: "Activated",
-                  count: currentWeek.activations || 0,
+                  count: currentWeek.activations,
                   of: "Signups",
               },
               // WAU is not a subset of this week's signups, so it carries no
               // step rate — only Paying is measured against it.
-              { stage: "Active (WAU)", count: currentWeek.wau || 0 },
+              { stage: "Active (WAU)", count: currentWeek.wau },
               {
                   stage: "Paying",
-                  count: currentWeek.packPurchases || 0,
+                  count: currentWeek.packPurchases,
                   of: "Active (WAU)",
               },
           ]
@@ -153,34 +177,57 @@ export default function App() {
     return (
         <div className="min-h-screen bg-app-bg">
             <AppHeader
+                appName="KPI"
                 navLabel="KPI dashboard links"
                 autoHide
                 innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-between"
+                navClassName="polli:items-center"
             >
                 <Button
                     size="sm"
                     className="h-9 px-3 py-0"
                     onClick={() => exportCsv(weeklyData)}
+                    disabled={loading}
                 >
                     <span className="inline-flex items-center gap-1.5">
                         <DownloadIcon className="h-4 w-4" />
                         Export CSV
                     </span>
                 </Button>
-                <ColorModeToggle />
+                <AccountControls accountUser={accountUser} />
             </AppHeader>
 
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 md:py-7">
-                <div className="flex flex-col gap-1">
-                    <Heading as="h1" size="title">
-                        KPI Dashboard
-                    </Heading>
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <Text as="p" tone="base">
                         Weekly KPIs for pollinations.ai. Figures are the last
                         full week ({weekLabel(currentWeek?.week)}) against the
-                        one before it.
+                        one before it. Usage excludes legacy APIs, company
+                        operations and development tests.
                     </Text>
+                    <label className="flex items-center gap-2 text-sm text-theme-text-muted">
+                        Range
+                        <select
+                            aria-label="KPI time range"
+                            value={weeks}
+                            onChange={changeWeeks}
+                            className="rounded-lg bg-theme-bg-subtle px-2.5 py-1.5 font-medium text-theme-text-strong hover:bg-theme-bg-hover"
+                        >
+                            {WEEK_RANGES.map((range) => (
+                                <option key={range} value={range}>
+                                    {range} weeks
+                                </option>
+                            ))}
+                        </select>
+                    </label>
                 </div>
+
+                {loading && (
+                    <Text as="p" size="sm" tone="muted" role="status">
+                        Loading {active}… {done.length}/{SOURCE_LABELS.length}{" "}
+                        sources complete. Pending values appear as —.
+                    </Text>
+                )}
 
                 {missing.length > 0 && (
                     <Alert intent="warning" title="Incomplete data">
@@ -257,7 +304,11 @@ export default function App() {
                         previous={previousWeek?.revenue}
                     />
                     <Tile
-                        label="GitHub stars"
+                        label={
+                            github.capturedAt
+                                ? `GitHub stars · ${github.capturedAt.slice(0, 10)}`
+                                : "GitHub stars"
+                        }
                         value={github.stars}
                         format="compact"
                     />
@@ -269,6 +320,13 @@ export default function App() {
                     onCycle={cycleView}
                     onGraph={graphKpi}
                 />
+
+                <DailyComparisonChart
+                    data={dailyComparison}
+                    signupsSyncedAt={signupsSyncedAt}
+                />
+
+                <PollenSpendChart weeks={fullWeeks} />
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <LineChart
@@ -288,11 +346,13 @@ export default function App() {
                                 key: "tokens",
                                 label: "Tokens",
                                 format: "compact",
+                                axis: 0,
                             },
                             {
                                 key: "revenue",
                                 label: "Revenue",
                                 format: "currency",
+                                axis: 1,
                             },
                         ]}
                         dualAxis

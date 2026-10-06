@@ -12,7 +12,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
-import { uploadUnlistedMedia } from "../src/media-upload.ts";
+import { MediaUpload, uploadUnlistedMedia } from "../src/media-upload.ts";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -204,6 +204,158 @@ async function uploadViaForm(
 }
 
 describe("media.pollinations.ai", () => {
+    it.each([
+        "image/png",
+        "audio/mpeg",
+        "video/mp4",
+        "model/gltf-binary",
+        "image/svg+xml",
+    ])("stores generated %s once and serves its ID publicly", async (contentType) => {
+        const id = "a".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        expect(await storage.has(id)).toBe(false);
+        await storage.put(
+            id,
+            new Response(TINY_PNG, {
+                headers: {
+                    "Content-Type": contentType,
+                    "X-Model-Used": "test-model",
+                    "X-Usage-Completion-Audio-Tokens": "10",
+                    "Content-Security-Policy": "default-src 'none'; sandbox",
+                    "X-Custom-File-Metadata": "caller-selected",
+                },
+            }),
+        );
+        expect(await storage.has(id)).toBe(true);
+        const response = await SELF.fetch(
+            `https://media.pollinations.ai/${id}`,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe(contentType);
+        expect(response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        );
+        expect(response.headers.has("X-Media-URL")).toBe(false);
+        expect(response.headers.get("Access-Control-Expose-Headers")).toContain(
+            "Link",
+        );
+        expect(response.headers.get("cache-control")).toBe(
+            "public, max-age=31536000, immutable",
+        );
+        expect(response.headers.get("content-security-policy")).toBe(
+            "default-src 'none'; sandbox",
+        );
+        expect(response.headers.get("x-custom-file-metadata")).toBe(
+            "caller-selected",
+        );
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(TINY_PNG);
+        const cached = await storage.get(id);
+        expect(cached?.headers.get("x-model-used")).toBe("test-model");
+        expect(cached?.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "10",
+        );
+        await cached?.arrayBuffer();
+        const head = await SELF.fetch(`https://media.pollinations.ai/${id}`, {
+            method: "HEAD",
+        });
+        expect(head.headers.get("content-length")).toBe(
+            String(TINY_PNG.byteLength),
+        );
+        const metadata = await SELF.fetch(
+            `https://media.pollinations.ai/${id}/metadata`,
+        );
+        expect(await metadata.json()).toMatchObject({
+            id,
+            size: TINY_PNG.byteLength,
+            contentType,
+        });
+        expect((await env.MEDIA_BUCKET.list()).objects).toHaveLength(1);
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("does not regenerate a missing file, but a new generation may reuse its ID", async () => {
+        const id = "b".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        await storage.put(
+            id,
+            new Response("first", { headers: { "Content-Type": "image/png" } }),
+        );
+        await env.MEDIA_BUCKET.delete(id);
+        expect(await storage.has(id)).toBe(false);
+        expect(await storage.get(id)).toBeNull();
+        expect(
+            (await SELF.fetch(`https://media.pollinations.ai/${id}`)).status,
+        ).toBe(404);
+        await storage.put(
+            id,
+            new Response("second", {
+                headers: { "Content-Type": "image/png" },
+            }),
+        );
+        expect(
+            await (
+                await SELF.fetch(`https://media.pollinations.ai/${id}`)
+            ).text(),
+        ).toBe("second");
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("rejects empty generation files and invalid IDs without creating objects", async () => {
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        await expect(
+            storage.put(crypto.randomUUID(), new Response("bytes")),
+        ).rejects.toThrow("Invalid generation ID");
+        await expect(
+            storage.put("c".repeat(64), new Response("")),
+        ).rejects.toThrow("empty generated media");
+        expect((await env.MEDIA_BUCKET.list()).objects).toHaveLength(0);
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("does not save an interrupted generation stream", async () => {
+        const id = "f".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        const response = new Response(
+            new ReadableStream({
+                start(controller) {
+                    controller.error(new Error("Provider disconnected"));
+                },
+            }),
+        );
+        await expect(storage.put(id, response)).rejects.toThrow(
+            "Provider disconnected",
+        );
+        expect(await storage.has(id)).toBe(false);
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("HEAD reads metadata without refreshing an aged generated file", async () => {
+        const id = "e".repeat(64);
+        const bucket = createTestR2Bucket();
+        const mediaEnv = createMediaEnv(bucket);
+        const ctx = createExecutionContext();
+        await new MediaUpload(ctx, mediaEnv).put(id, new Response(TINY_PNG));
+        const response = await app.fetch(
+            new Request(`https://media.pollinations.ai/${id}`, {
+                method: "HEAD",
+            }),
+            mediaEnv,
+            ctx,
+        );
+        expect(response.headers.get("content-length")).toBe(
+            String(TINY_PNG.byteLength),
+        );
+        expect(response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        );
+        expect(await response.text()).toBe("");
+        await waitOnExecutionContext(ctx);
+        expect(bucket.putCount).toBe(1);
+    });
     beforeAll(async () => {
         await seedUsers();
     });
@@ -262,6 +414,29 @@ describe("media.pollinations.ai", () => {
             }),
         ).rejects.toThrow("Media exceeds 10 bytes");
         expect(bucket.putCount).toBe(0);
+    });
+
+    it("reuses a caller-provided internal ID without replacing its bytes", async () => {
+        const id = "d".repeat(64);
+        const storage = new MediaUpload(createExecutionContext(), env);
+        const input = {
+            id,
+            contentType: "image/png",
+            size: TINY_PNG.length,
+            keyType: "chat-input",
+        };
+        const first = await storage.upload(
+            new Blob([TINY_PNG]).stream(),
+            input,
+        );
+        const second = await storage.upload(
+            new Blob([new Uint8Array(TINY_PNG.length)]).stream(),
+            input,
+        );
+        expect(second.url).toBe(first.url);
+        const stored = await storage.get(id);
+        expect(stored).not.toBeNull();
+        expect(new Uint8Array(await stored?.arrayBuffer())).toEqual(TINY_PNG);
     });
 
     it("POST /upload without key returns 401", async () => {
@@ -334,6 +509,59 @@ describe("media.pollinations.ai", () => {
         expect(dup.id).not.toBe(upload.id);
     });
 
+    it("streams a raw upload and preserves its file metadata", async () => {
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: TINY_PNG,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "image/png",
+                    "Content-Length": String(TINY_PNG.length),
+                    "X-File-Name": "large-image.png",
+                },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.size).toBe(TINY_PNG.length);
+        expect(upload.contentType).toBe("image/png");
+
+        const getRes = await SELF.fetch(upload.url);
+        expect(getRes.headers.get("content-disposition")).toContain(
+            "large-image.png",
+        );
+        expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("rejects raw uploads without a known size or above the configured limit", async () => {
+        const bucket = createTestR2Bucket();
+        const mediaEnv = { ...createMediaEnv(bucket), MAX_FILE_SIZE: "3" };
+        for (const [length, status] of [
+            [undefined, 400],
+            ["4", 413],
+        ] as const) {
+            const ctx = createExecutionContext();
+            const res = await app.fetch(
+                new Request("https://media.pollinations.ai/upload", {
+                    method: "POST",
+                    body: new Uint8Array([1, 2, 3, 4]),
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": "application/octet-stream",
+                        ...(length && { "Content-Length": length }),
+                    },
+                }),
+                mediaEnv,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(res.status).toBe(status);
+        }
+        expect(bucket.putCount).toBe(0);
+    });
+
     it("uploads via base64 JSON", async () => {
         const base64 = btoa(String.fromCharCode(...TINY_PNG));
         const uploadRes = await SELF.fetch(
@@ -368,6 +596,231 @@ describe("media.pollinations.ai", () => {
         expect(body.length).toBe(TINY_PNG.length);
     });
 
+    it("scopes custom IDs by account, not API key or upload format", async () => {
+        const first = await uploadViaForm("pk_alice", {
+            extraFields: { id: "cover.png" },
+        });
+        expect(first.status).toBe(200);
+        const alice = first.body as UploadResponse;
+        expect(alice.id).toMatch(/^u_[a-f0-9]{64}_cover\.png$/);
+        expect(alice.id).not.toContain("user_alice");
+        const duplicate = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: "Bearer sk_alice",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    id: "cover.png",
+                    data: "AQID",
+                    contentType: "audio/mpeg",
+                }),
+            },
+        );
+        expect(duplicate.status).toBe(409);
+        const bob = await uploadViaForm("pk_bob", {
+            extraFields: { id: "cover.png" },
+        });
+        expect(bob.status).toBe(200);
+        expect((bob.body as UploadResponse).id).not.toBe(alice.id);
+        const retrieved = await SELF.fetch(alice.url);
+        expect(retrieved.headers.get("cache-control")).toBe("no-store");
+        expect(retrieved.headers.get("content-type")).toBe("image/png");
+        expect(new Uint8Array(await retrieved.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("accepts JSON custom IDs without letting them select another namespace", async () => {
+        const chosenId = "a".repeat(64);
+        const res = await SELF.fetch("https://media.pollinations.ai/upload", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer sk_alice",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id: chosenId, data: "AQID" }),
+        });
+        expect(res.status).toBe(200);
+        const uploaded = (await res.json()) as UploadResponse;
+        expect(uploaded.id).toMatch(new RegExp(`^u_[a-f0-9]{64}_${chosenId}$`));
+        expect(await env.MEDIA_BUCKET.head(chosenId)).toBeNull();
+        expect(
+            new Uint8Array(
+                await (await SELF.fetch(uploaded.url)).arrayBuffer(),
+            ),
+        ).toEqual(new Uint8Array([1, 2, 3]));
+    });
+
+    it("atomically rejects concurrent writes to the same custom ID", async () => {
+        const attempts = await Promise.all(
+            [1, 2, 3, 4].map((seed) =>
+                uploadViaForm("pk_alice", {
+                    bytes: variant(seed),
+                    extraFields: { id: "race" },
+                }),
+            ),
+        );
+        expect(attempts.map(({ status }) => status).sort()).toEqual([
+            200, 409, 409, 409,
+        ]);
+        const winner = attempts.findIndex(({ status }) => status === 200);
+        const uploaded = attempts[winner].body as UploadResponse;
+        expect(
+            new Uint8Array(
+                await (await SELF.fetch(uploaded.url)).arrayBuffer(),
+            ),
+        ).toEqual(variant(winner + 1));
+    });
+
+    it("rejects invalid custom IDs in both upload formats", async () => {
+        for (const id of [
+            "",
+            "../escape",
+            "a/b",
+            "a%2Fb",
+            "a?key=x",
+            "a b",
+            "a".repeat(129),
+        ]) {
+            expect(
+                (await uploadViaForm("pk_alice", { extraFields: { id } }))
+                    .status,
+            ).toBe(400);
+            const json = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Bearer pk_alice",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ id, data: "AQID" }),
+                },
+            );
+            expect(json.status).toBe(400);
+        }
+    });
+
+    it("requires account identity for custom IDs", async () => {
+        for (const key of ["pk_nouser", "sk_legacy"]) {
+            expect(
+                (await uploadViaForm(key, { extraFields: { id: "cover" } }))
+                    .status,
+            ).toBe(400);
+            expect((await uploadViaForm(key)).status).toBe(200);
+        }
+    });
+
+    it("allows an expired unlisted custom ID to be reused", async () => {
+        const first = await uploadViaForm("pk_alice", {
+            extraFields: { id: "expiring" },
+        });
+        const uploaded = first.body as UploadResponse;
+        await env.MEDIA_BUCKET.delete(uploaded.id);
+        const second = await uploadViaForm("pk_alice", {
+            bytes: variant(9),
+            extraFields: { id: "expiring" },
+        });
+        expect(second.status).toBe(200);
+        expect((second.body as UploadResponse).id).toBe(uploaded.id);
+        const retrieved = await SELF.fetch(uploaded.url);
+        expect(retrieved.headers.get("cache-control")).toBe("no-store");
+        expect(new Uint8Array(await retrieved.arrayBuffer())).toEqual(
+            variant(9),
+        );
+    });
+
+    it("reserves published custom IDs until their gallery entries are deleted", async () => {
+        const first = await uploadViaForm("pk_alice", {
+            tags: ["gallery"],
+            extraFields: { id: "published" },
+        });
+        expect(first.status).toBe(200);
+        const uploaded = first.body as UploadResponse;
+        await env.MEDIA_BUCKET.delete(uploaded.id);
+        const duplicate = await uploadViaForm("pk_alice", {
+            extraFields: { id: "published" },
+        });
+        expect(duplicate.status).toBe(409);
+        expect(await env.MEDIA_BUCKET.head(uploaded.id)).toBeNull();
+        const removed = await SELF.fetch(
+            `https://media.pollinations.ai/media/${uploaded.id}`,
+            {
+                method: "DELETE",
+                headers: { Authorization: "Bearer sk_alice" },
+            },
+        );
+        expect(removed.status).toBe(200);
+        expect(
+            (
+                await uploadViaForm("pk_alice", {
+                    tags: ["new-gallery"],
+                    extraFields: { id: "published" },
+                })
+            ).status,
+        ).toBe(200);
+    });
+
+    it("documents custom IDs in both Scalar upload schemas", async () => {
+        const response = await SELF.fetch(
+            "https://media.pollinations.ai/openapi.json",
+        );
+        const schema = await response.json();
+        for (const format of ["multipart/form-data", "application/json"]) {
+            const path = [
+                "paths",
+                "/upload",
+                "post",
+                "requestBody",
+                "content",
+                format,
+                "schema",
+            ];
+            expect(schema).toHaveProperty(
+                [...path, "properties", "id", "type"],
+                "string",
+            );
+            expect(schema).toHaveProperty(
+                [...path, "required"],
+                format === "multipart/form-data" ? ["file"] : ["data"],
+            );
+        }
+        expect(schema).toHaveProperty([
+            "paths",
+            "/upload",
+            "post",
+            "responses",
+            "409",
+        ]);
+    });
+
+    it("documents the stored-file Link header for GET and HEAD", async () => {
+        const response = await SELF.fetch(
+            "https://media.pollinations.ai/openapi.json",
+        );
+        const schema = await response.json();
+        for (const method of ["get", "head"]) {
+            expect(schema).toHaveProperty(
+                [
+                    "paths",
+                    "/{id}",
+                    method,
+                    "responses",
+                    "200",
+                    "headers",
+                    "Link",
+                ],
+                expect.objectContaining({
+                    schema: { type: "string" },
+                    example: expect.stringMatching(
+                        /^<https:\/\/media\.pollinations\.ai\/[^>]+>; rel="enclosure"$/,
+                    ),
+                }),
+            );
+        }
+    });
+
     it("validates the documented JSON upload shape", async () => {
         for (const body of [null, { data: "AAAA", tags: [42] }]) {
             const res = await SELF.fetch(
@@ -392,14 +845,11 @@ describe("media.pollinations.ai", () => {
         const res = await SELF.fetch("https://media.pollinations.ai/upload", {
             method: "POST",
             body: TINY_PNG,
-            headers: {
-                Authorization: `Bearer ${VALID_KEY}`,
-                "Content-Type": "image/png",
-            },
+            headers: { Authorization: `Bearer ${VALID_KEY}` },
         });
         expect(res.status).toBe(400);
         const body = (await res.json()) as { error: string };
-        expect(body.error).toContain("multipart/form-data");
+        expect(body.error).toContain("Unsupported content type");
     });
 
     it("applies the size limit to file bytes, not total request bytes", async () => {
@@ -433,6 +883,143 @@ describe("media.pollinations.ai", () => {
         expect(res.status).toBe(200);
         expect(((await res.json()) as UploadResponse).size).toBe(2);
     });
+
+    it("rejects oversized requests before reading their bodies", async () => {
+        for (const contentType of [
+            "multipart/form-data; boundary=test",
+            "application/json",
+        ]) {
+            const ctx = createExecutionContext();
+            const res = await app.fetch(
+                new Request("https://media.pollinations.ai/upload", {
+                    method: "POST",
+                    body: "invalid body",
+                    headers: {
+                        Authorization: `Bearer ${VALID_KEY}`,
+                        "Content-Type": contentType,
+                        "Content-Length": String(
+                            contentType.includes("multipart/form-data")
+                                ? 500 * 1024 * 1024
+                                : 200 * 1024 * 1024,
+                        ),
+                    },
+                }),
+                {
+                    ...createMediaEnv(),
+                    MAX_FILE_SIZE: String(400 * 1024 * 1024),
+                },
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(res.status).toBe(413);
+        }
+    });
+
+    it("streams a multipart file while preserving fields sent after it", async () => {
+        const size = 8 * 1024 * 1024 + 17;
+        const bytes = new Uint8Array(size);
+        bytes[0] = 37;
+        bytes[size - 1] = 91;
+        const id = `large-${crypto.randomUUID()}`;
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([bytes], "large.bin", {
+                type: "application/octet-stream",
+            }),
+        );
+        form.append("tags", "large-test");
+        form.append("id", id);
+
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(uploadRes.status, await uploadRes.clone().text()).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+        expect(upload.size).toBe(size);
+        expect(upload.tags).toEqual(["large-test"]);
+        expect(upload.id).toContain(id);
+
+        const stored = await env.MEDIA_BUCKET.get(upload.id);
+        expect(stored?.size).toBe(size);
+        expect(stored?.httpMetadata?.cacheControl).toBe("no-store");
+        const received = new Uint8Array(
+            (await stored?.arrayBuffer()) || new ArrayBuffer(),
+        );
+        expect(received[0]).toBe(37);
+        expect(received[size - 1]).toBe(91);
+
+        const galleryRes = await SELF.fetch(
+            "https://media.pollinations.ai/media?tag=large-test",
+        );
+        const gallery = (await galleryRes.json()) as MediaPageResponse;
+        expect(gallery.items.some((item) => item.id === upload.id)).toBe(true);
+
+        const retry = new FormData();
+        retry.append("file", new File([bytes], "large.bin"));
+        retry.append("id", id);
+        const retryRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: retry,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(retryRes.status).toBe(409);
+
+        const pending = await env.MEDIA_BUCKET.list({ prefix: "pending/" });
+        expect(pending.objects).toHaveLength(0);
+    }, 30_000);
+
+    it("preserves the default MIME type when FormData omits the file type", async () => {
+        const form = new FormData();
+        form.append("file", new File([TINY_PNG], "untyped.png"));
+        const response = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            },
+        );
+        expect(response.status).toBe(200);
+        expect(((await response.json()) as UploadResponse).contentType).toBe(
+            "application/octet-stream",
+        );
+    });
+
+    it("stops a multipart upload at the file-byte limit and clears staged parts", async () => {
+        const fileSize = 8 * 1024 * 1024 + 17;
+        const form = new FormData();
+        form.append(
+            "file",
+            new File([new Uint8Array(fileSize)], "too-large.bin"),
+        );
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: form,
+                headers: { Authorization: `Bearer ${VALID_KEY}` },
+            }),
+            {
+                ...createMediaEnv(env.MEDIA_BUCKET),
+                MAX_FILE_SIZE: String(fileSize - 1),
+            },
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(413);
+        expect(
+            (await env.MEDIA_BUCKET.list({ prefix: "pending/" })).objects,
+        ).toHaveLength(0);
+    }, 30_000);
 
     it("rejects empty files, invalid base64, and malformed JSON with 400", async () => {
         const emptyForm = new FormData();

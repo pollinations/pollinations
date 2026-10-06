@@ -1,6 +1,7 @@
 import {
     Alert,
-    Button,
+    BeakerIcon,
+    BotIcon,
     CardIcon,
     CheckIcon,
     Chip,
@@ -8,6 +9,7 @@ import {
     CopyButton,
     currentPeriod,
     ExternalLinkIcon,
+    GitHubIcon,
     GlobeIcon,
     IconButton,
     LockIcon,
@@ -18,12 +20,18 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { isModelReliable } from "@shared/model-health.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
+import { ResourceCardHeader } from "../resource-card-header.tsx";
 import {
     type CommunityEndpoint,
+    type ManagedAgent,
+    openWebUiTestableModelId,
     type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
@@ -31,36 +39,56 @@ import {
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
-    isToggling: boolean;
-    onToggle: () => void;
-    onEdit: () => void;
+    agent?: ManagedAgent;
+    health?: ModelInfo["health"];
+    healthUnavailable?: boolean;
+    onEdit?: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
-    isToggling,
-    onToggle,
+    agent,
+    health,
+    healthUnavailable,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
+    const filteredByReliability =
+        isPublic &&
+        endpoint.type === "proxy" &&
+        !isModelReliable(health?.success_rate);
+    const hasUpstreamEndpoint =
+        endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
+    const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
-        <Surface
-            className={`transition-colors hover:bg-surface-opaque/90 ${
-                endpoint.hidden ? "opacity-60" : ""
-            }`}
-        >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="min-w-0 basis-full truncate text-base font-semibold text-theme-text-strong sm:basis-auto">
-                            {endpoint.title}
-                        </h3>
+        <Surface className="transition-colors hover:bg-surface-opaque/90">
+            <ResourceCardHeader
+                icon={
+                    isAgent ? (
+                        <BotIcon className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                        <BeakerIcon className="h-4 w-4" aria-hidden="true" />
+                    )
+                }
+                title={
+                    testableModelId ? (
+                        <OpenWebUiLink
+                            modelId={testableModelId}
+                            title={endpoint.title}
+                        />
+                    ) : (
+                        endpoint.title
+                    )
+                }
+                description={endpoint.description}
+                badges={
+                    <>
                         <Chip intent={isPublic ? "news" : "neutral"} size="sm">
                             {isPublic ? (
                                 <GlobeIcon className="h-3 w-3" />
@@ -69,92 +97,121 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {isAgent && (
-                            <Chip intent="news" size="sm">
-                                Agent
+                        {filteredByReliability && (
+                            <Chip intent="danger" size="sm">
+                                Hidden from listings
                             </Chip>
                         )}
-                        {endpoint.pending && (
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                title={`Changes queued — effective ${new Date(
-                                    endpoint.pending.effectiveAt,
-                                ).toLocaleString()}`}
+                        <Link
+                            data-size="footer"
+                            data-tone="quiet"
+                            to="/activity"
+                            search={{
+                                usageGranularity: "day",
+                                usagePeriod: currentPeriod().period,
+                                usageBucket: undefined,
+                                usageAnchor: undefined,
+                                earningsGranularity: "day",
+                                earningsPeriod: currentPeriod().period,
+                                earningsBucket: undefined,
+                                earningsAnchor: undefined,
+                                earningsModels: [endpoint.modelId],
+                                usageMetric: undefined,
+                                usageKeys: undefined,
+                                usageModels: undefined,
+                                earningsMetric: undefined,
+                                earningsApps: undefined,
+                            }}
+                            className="polli-link"
+                        >
+                            Activity
+                        </Link>
+                    </>
+                }
+                actions={
+                    <>
+                        {onEdit && (
+                            <IconButton
+                                intent="info"
+                                title={isAgent ? "Edit agent" : "Edit model"}
+                                onClick={onEdit}
                             >
-                                Changes queued
-                            </Chip>
+                                <PencilIcon className="h-4 w-4" />
+                            </IconButton>
                         )}
-                    </div>
-                    {endpoint.description && (
-                        <p className="mt-1 text-sm text-theme-text-muted">
-                            {endpoint.description}
-                        </p>
-                    )}
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                        type="button"
-                        size="sm"
-                        intent={endpoint.hidden ? "info" : "danger"}
-                        disabled={isToggling}
-                        onClick={onToggle}
-                    >
-                        {isToggling
-                            ? "Saving…"
-                            : endpoint.hidden
-                              ? "Relist"
-                              : "Hide"}
-                    </Button>
-                    <IconButton
-                        intent="info"
-                        title={isAgent ? "Edit agent" : "Edit model"}
-                        tooltip={isAgent ? "Edit agent" : "Edit model"}
-                        tooltipAlign="center"
-                        onClick={onEdit}
-                    >
-                        <PencilIcon className="h-4 w-4" />
-                    </IconButton>
-                    <IconButton
-                        intent="danger"
-                        title="Delete model"
-                        tooltip="Delete model"
-                        tooltipAlign="center"
-                        onClick={onDelete}
-                    >
-                        <XIcon className="h-4 w-4" />
-                    </IconButton>
-                </div>
-            </div>
+                        <IconButton
+                            intent="danger"
+                            title={isAgent ? "Delete agent" : "Delete model"}
+                            onClick={onDelete}
+                        >
+                            <XIcon className="h-4 w-4" />
+                        </IconButton>
+                    </>
+                }
+            />
 
-            {endpoint.hidden && (
-                <Alert intent="danger" className="mt-3">
-                    <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Model hidden</span>
-                        <span className="text-sm">
-                            {endpoint.hiddenReason ??
-                                "Hidden due to repeated failures."}
-                        </span>
-                    </div>
+            <PendingChangeNotice endpoint={endpoint} />
+
+            {endpoint.type === "proxy" && !isPublic && (
+                <p className="mt-3 px-2 text-sm text-theme-text-muted">
+                    Private calls are free. Your prices, Paid Pollen setting,
+                    and fallbacks are saved for when you publish.
+                </p>
+            )}
+
+            {filteredByReliability && (
+                <Alert
+                    intent="danger"
+                    className="mt-3"
+                    title="Hidden from model lists"
+                >
+                    Recent success is {health?.success_rate?.toFixed(1)}% across{" "}
+                    {health?.requests} eligible requests (last 50 within seven
+                    days). The model still works by exact ID and can recover
+                    automatically as successful requests arrive.
                 </Alert>
             )}
 
-            <div className="mt-4 grid gap-2">
+            {isPublic && endpoint.type === "proxy" && healthUnavailable && (
+                <Alert
+                    intent="warning"
+                    className="mt-3"
+                    title="Listing status unavailable"
+                >
+                    Couldn’t check whether this model appears in public lists.
+                    Try again shortly.
+                </Alert>
+            )}
+
+            <div className="mt-5 grid gap-2 px-2">
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Model ID"
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {endpoint.type !== "prompt_agent" && (
+                {agent?.type === "code_agent" && (
+                    <CommunityDetailRow
+                        icon={<GitHubIcon className="h-3.5 w-3.5" />}
+                        label="Source"
+                        value={`${agent.repository}/agent.ts @ ${agent.deployedCommitSha.slice(0, 7)}`}
+                        copyLabel="Copy source"
+                    />
+                )}
+                {hasUpstreamEndpoint && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
-                        value={endpoint.baseUrl}
+                        value={
+                            endpoint.type === "endpoint_agent" ||
+                            endpoint.modality === "text"
+                                ? endpoint.url
+                                : endpoint.baseUrl
+                        }
                         copyLabel="Copy endpoint"
                     />
                 )}
-                {endpoint.type !== "prompt_agent" && (
+                {hasUpstreamEndpoint && (
                     <>
                         {endpoint.type === "proxy" && (
                             <CommunityDetailRow
@@ -163,11 +220,14 @@ export function CommunityEndpointCard({
                                 value={endpoint.modality}
                             />
                         )}
-                        <CommunityDetailRow
-                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                            label="Upstream model"
-                            value={endpoint.upstreamModel}
-                        />
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
                         {endpoint.perUserRpm !== null && (
                             <CommunityDetailRow
                                 icon={<TerminalIcon className="h-3.5 w-3.5" />}
@@ -186,24 +246,58 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-3">
-                <Link
-                    to="/activity"
-                    search={{
-                        ...currentPeriod(),
-                        earningsModels: [endpoint.modelId],
-                        usageMetric: undefined,
-                        usageKeys: undefined,
-                        usageModels: undefined,
-                        earningsMetric: undefined,
-                        earningsApps: undefined,
-                    }}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
-                >
-                    View activity
-                </Link>
-            </div>
         </Surface>
+    );
+}
+
+function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
+    const pending = endpoint.pending;
+    if (!pending) return null;
+
+    const visibility = pending.visibility ?? endpoint.visibility;
+    const pendingProxy =
+        endpoint.type === "proxy"
+            ? ({
+                  ...endpoint,
+                  ...pending,
+                  visibility,
+                  paidOnly: pending.paidOnly ?? endpoint.paidOnly,
+                  imagePricing: pending.imagePricing ?? endpoint.imagePricing,
+              } satisfies ProxyCommunityEndpoint)
+            : null;
+    const priceGroups = pendingProxy ? communityPriceGroups(pendingProxy) : [];
+
+    return (
+        <Alert intent="info" className="mt-3" title="Changes queued">
+            <div className="flex flex-col gap-1 text-sm">
+                <span>
+                    Effective {new Date(pending.effectiveAt).toLocaleString()}
+                </span>
+                <span>
+                    Visibility: {VISIBILITY_LABELS[visibility]}
+                    {pendingProxy &&
+                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                </span>
+                {pendingProxy && (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                        <span>Pricing:</span>
+                        {priceGroups.length > 0 ? (
+                            priceGroups.map((group) => (
+                                <span
+                                    key={group.key}
+                                    className="inline-flex items-center gap-1"
+                                >
+                                    {group.label}
+                                    <CommunityPriceBadges group={group} />
+                                </span>
+                            ))
+                        ) : (
+                            <span>Free</span>
+                        )}
+                    </span>
+                )}
+            </div>
+        </Alert>
     );
 }
 
@@ -305,7 +399,8 @@ function communityPriceGroups(
                 unit:
                     field.priceUnit === "million"
                         ? "token"
-                        : field.priceUnit === "second"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
                           ? "second"
                           : "request",
             },
@@ -335,5 +430,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
     if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
     return "text";
 }

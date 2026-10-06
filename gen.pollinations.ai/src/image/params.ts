@@ -56,6 +56,12 @@ const referenceUrl = z.string().superRefine((value, ctx) => {
 
 const referenceUrls = z.preprocess(parseReferenceUrls, z.array(referenceUrl));
 
+export const CommunityReferenceParamsSchema = z.object({
+    reference_images: referenceUrls.optional(),
+    reference_videos: referenceUrls.optional(),
+    reference_audios: referenceUrls.optional(),
+});
+
 function adjustImageSizeForModel(
     model: ImageModelName,
     width?: number,
@@ -111,8 +117,8 @@ export const ImageParamsSchema = z
             })
             .catch("balanced"),
         guidance_scale: z.coerce.number().optional().catch(undefined),
-        // Video-specific parameters - pass through to backend, let provider validate
-        duration: z.coerce.number().optional(),
+        // Shared public bound; individual providers can narrow it further below.
+        duration: z.coerce.number().int().min(1).max(120).optional(),
         fps: z.coerce.number().optional(),
         resolution: z
             .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
@@ -129,7 +135,8 @@ export const ImageParamsSchema = z
                 "adaptive",
             ])
             .optional(),
-        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Unset when omitted, so each model applies its own audio default.
+        audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {
@@ -145,7 +152,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "gpt-image-2" && data.transparent) {
+        if (data.model === "openai/gpt-image-2" && data.transparent) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["transparent"],
@@ -181,7 +188,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "minimax-h3") {
+        if (data.model === "minimax/minimax-h3") {
             if (data.duration !== undefined && data.duration !== 5) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -201,6 +208,40 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
                     message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+        }
+        if (
+            data.model === "minimax/minimax-h3-max" ||
+            data.model === "minimax/minimax-h3-max-turbo"
+        ) {
+            if (
+                data.duration !== undefined &&
+                ![5, 10, 15].includes(data.duration)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message: `${data.model} supports 5, 10, or 15 seconds.`,
+                });
+            }
+            if (
+                data.aspectRatio !== undefined &&
+                !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
+                    data.aspectRatio,
+                )
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message: `${data.model} supports 21:9, 16:9, 4:3, 1:1, 3:4, or 9:16.`,
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message: `${data.model} outputs video at 24 FPS.`,
                 });
             }
         }
@@ -226,7 +267,7 @@ export const ImageParamsSchema = z
             }
         }
         if (
-            data.model === "grok-imagine-image-2.0" &&
+            data.model === "x-ai/grok-imagine-image-2.0" &&
             !["low", "medium"].includes(data.quality)
         ) {
             ctx.addIssue({

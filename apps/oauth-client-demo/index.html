@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Pollinations OAuth demo</title>
+    </head>
+    <body>
+        <h1>Pollinations OAuth demo</h1>
+        <p id="status">Connect your Pollinations account to continue.</p>
+        <button id="connect">Connect Pollinations</button>
+        <button id="generate" hidden>Generate a greeting</button>
+        <pre id="output" hidden></pre>
+
+        <script type="module">
+            const CLIENT_ID = "pk_your_app_key";
+            const ENTER_URL = "https://enter.pollinations.ai";
+            const GEN_URL = "https://gen.pollinations.ai";
+            const redirectUri = `${location.origin}${location.pathname}`;
+
+            const status = document.querySelector("#status");
+            const connectButton = document.querySelector("#connect");
+            const generateButton = document.querySelector("#generate");
+            const output = document.querySelector("#output");
+            let accessToken = null;
+
+            function randomBase64Url() {
+                const bytes = crypto.getRandomValues(new Uint8Array(32));
+                return btoa(String.fromCharCode(...bytes))
+                    .replaceAll("+", "-")
+                    .replaceAll("/", "_")
+                    .replaceAll("=", "");
+            }
+
+            async function challengeFor(verifier) {
+                const digest = await crypto.subtle.digest(
+                    "SHA-256",
+                    new TextEncoder().encode(verifier),
+                );
+                return btoa(String.fromCharCode(...new Uint8Array(digest)))
+                    .replaceAll("+", "-")
+                    .replaceAll("/", "_")
+                    .replaceAll("=", "");
+            }
+
+            function showError(error) {
+                status.textContent =
+                    error instanceof Error ? error.message : String(error);
+            }
+
+            async function connect() {
+                if (CLIENT_ID === "pk_your_app_key") {
+                    throw new Error("Set CLIENT_ID in index.html first.");
+                }
+
+                const verifier = randomBase64Url();
+                const state = randomBase64Url();
+                sessionStorage.setItem("oauth_verifier", verifier);
+                sessionStorage.setItem("oauth_state", state);
+
+                const params = new URLSearchParams({
+                    response_type: "code",
+                    client_id: CLIENT_ID,
+                    redirect_uri: redirectUri,
+                    state,
+                    code_challenge: await challengeFor(verifier),
+                    code_challenge_method: "S256",
+                });
+                location.href = `${ENTER_URL}/authorize?${params}`;
+            }
+
+            async function handleCallback() {
+                const params = new URLSearchParams(location.search);
+                const code = params.get("code");
+                const oauthError = params.get("error");
+                if (!code && !oauthError) return;
+
+                const expectedState = sessionStorage.getItem("oauth_state");
+                if (!expectedState || params.get("state") !== expectedState) {
+                    throw new Error("OAuth state did not match.");
+                }
+
+                const verifier = sessionStorage.getItem("oauth_verifier");
+                sessionStorage.removeItem("oauth_state");
+                sessionStorage.removeItem("oauth_verifier");
+                history.replaceState({}, "", location.pathname);
+
+                if (oauthError) throw new Error(`Authorization: ${oauthError}`);
+                if (!verifier) throw new Error("Missing PKCE verifier.");
+
+                const response = await fetch(`${ENTER_URL}/api/oauth/token`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams({
+                        grant_type: "authorization_code",
+                        code,
+                        client_id: CLIENT_ID,
+                        redirect_uri: redirectUri,
+                        code_verifier: verifier,
+                    }),
+                });
+                const token = await response.json();
+                if (!response.ok) {
+                    throw new Error(
+                        token.error_description ??
+                            token.error ??
+                            "Token exchange failed.",
+                    );
+                }
+                accessToken = token.access_token;
+                status.textContent = "Connected.";
+                connectButton.hidden = true;
+                generateButton.hidden = false;
+            }
+
+            async function generate() {
+                const response = await fetch(
+                    `${GEN_URL}/v1/chat/completions`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "openai-fast",
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: "Say hello in one short sentence.",
+                                },
+                            ],
+                        }),
+                    },
+                );
+                const result = await response.json();
+                output.hidden = false;
+                output.textContent = response.ok
+                    ? result.choices[0].message.content
+                    : JSON.stringify(result, null, 2);
+            }
+
+            connectButton.addEventListener("click", () =>
+                connect().catch(showError),
+            );
+            generateButton.addEventListener("click", () =>
+                generate().catch(showError),
+            );
+            handleCallback().catch(showError);
+        </script>
+    </body>
+</html>

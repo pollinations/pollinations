@@ -1,5 +1,4 @@
 import type { TransformFn } from "../types.ts";
-import { addDefaultTools } from "./pipe.ts";
 
 export type GeminiToolName = "code_execution" | "google_search";
 
@@ -8,11 +7,6 @@ function toOpenAIFunctionFormat(name: GeminiToolName) {
         type: "function" as const,
         function: { name },
     };
-}
-
-/** Adds Gemini-native tools in the format expected by the Vertex adapter. */
-export function createGeminiToolsTransform(toolNames: GeminiToolName[]) {
-    return addDefaultTools(toolNames.map(toOpenAIFunctionFormat));
 }
 
 /** Converts the public Google Search tool shape for the Vertex adapter. */
@@ -38,7 +32,7 @@ export const adaptGoogleSearchToolForVertex: TransformFn = (
     },
 });
 
-function isGoogleSearchTool(tool: unknown): boolean {
+export function isGoogleSearchTool(tool: unknown): boolean {
     if (typeof tool !== "object" || tool === null || !("type" in tool)) {
         return false;
     }
@@ -79,22 +73,3 @@ export const adaptGoogleSearchToolForOpenRouter: TransformFn = (
               }),
     },
 });
-
-/** Gemini 2.5 rejects logit_bias when OpenRouter native search is enabled. */
-export const stripLogitBiasForNativeWebSearch: TransformFn = (
-    messages,
-    options,
-) => {
-    const usesNativeWebSearch = options.tools?.some(
-        (tool) =>
-            typeof tool === "object" &&
-            tool !== null &&
-            "type" in tool &&
-            tool.type === "openrouter:web_search",
-    );
-    if (!usesNativeWebSearch) return { messages, options };
-
-    const supportedOptions = { ...options };
-    delete supportedOptions.logit_bias;
-    return { messages, options: supportedOptions };
-};

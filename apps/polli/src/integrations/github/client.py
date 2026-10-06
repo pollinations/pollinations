@@ -90,25 +90,46 @@ class GitHubManager:
                 query_parts.append(f'label:"{label}"')
 
         query = " ".join(query_parts)
-        encoded_query = quote(query, safe="")
-        url = f"https://api.github.com/search/issues?q={encoded_query}&per_page={limit}&sort=updated&order=desc"
+        requested_limit = max(1, min(limit, 1000))
+        per_page = min(requested_limit, 100)
+        max_pages = min(10, (requested_limit + per_page - 1) // per_page)
+        collected: list[dict] = []
+        total_count = 0
+        truncated = False
 
         try:
             session = await self.get_session()
-            async with session.get(
-                url,
-                headers=await self._get_headers(),
-                timeout=aiohttp.ClientTimeout(total=15),
-            ) as response:
-                if response.status == 200:
+            for page in range(1, max_pages + 1):
+                url = (
+                    "https://api.github.com/search/issues?"
+                    f"q={quote(query, safe='')}&per_page={per_page}&page={page}&sort=updated&order=desc"
+                )
+                async with session.get(
+                    url,
+                    headers=await self._get_headers(),
+                    timeout=aiohttp.ClientTimeout(total=15),
+                ) as response:
+                    if response.status != 200:
+                        logger.warning("Search API returned HTTP %d", response.status)
+                        break
                     data = await response.json()
-                    return self._format_issue_list(data.get("items", []))
-                else:
-                    logger.warning(f"Search API error: {response.status}")
-        except Exception as e:
-            logger.warning(f"Issue search failed: {e}")
+                total_count = int(data.get("total_count", 0))
+                page_items = data.get("items", [])
+                collected.extend(page_items)
+                if len(collected) >= requested_limit:
+                    truncated = total_count > len(collected)
+                    break
+                if len(page_items) < per_page:
+                    break
+            else:
+                truncated = total_count > len(collected)
+        except Exception:
+            logger.exception("Issue search failed")
 
-        return []
+        formatted = self._format_issue_list(collected[:requested_limit])
+        if truncated:
+            logger.info("Issue search stopped at bounded result limit")
+        return formatted
 
     async def search_discord_issues(
         self,

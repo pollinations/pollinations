@@ -8,6 +8,8 @@ export function formatValue(value, format = "number") {
         return `${sign}$${Math.round(size).toLocaleString()}`;
     }
     if (format === "percent") return `${Math.round(value)}%`;
+    if (format === "percentPrecise") return `${value.toFixed(2)}%`;
+    if (format === "perThousand") return `${value.toFixed(1)} / 1K`;
     if (format === "compact") {
         if (Math.abs(value) >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
         if (Math.abs(value) >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
@@ -17,7 +19,12 @@ export function formatValue(value, format = "number") {
 }
 
 export function calcChange(current, previous) {
-    if (!previous || !current) return null;
+    if (
+        !Number.isFinite(previous) ||
+        !Number.isFinite(current) ||
+        previous === 0
+    )
+        return null;
     // Divide by the magnitude, not the signed value: a margin going from
     // -$0.63 to -$0.89 got worse, and dividing by a negative base would
     // report it as a rise.

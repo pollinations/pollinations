@@ -1,5 +1,7 @@
 import logging
+import re
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import aiohttp
 
@@ -14,6 +16,57 @@ logger = logging.getLogger(__name__)
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
 CACHE_TTL = 300
+GITHUB_LOGIN_RE = re.compile(r"^(?!.*--)[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
+GITHUB_QUALIFIER_RE = re.compile(
+    r'(?:^|(?<=[\s(]))(repo|is|state|author|base|label|milestone):("[^"]*"|[^\s()]+)', re.IGNORECASE
+)
+PR_INTENT_RE = re.compile(r"\bprs?\b|\bpull requests?\b|\bmerge(?:d)?\b", re.IGNORECASE)
+ISSUE_INTENT_RE = re.compile(r"\bissues?\b|\bspam\b|\bstale\b|\bbugs?\b|\breports?\b", re.IGNORECASE)
+
+
+def build_scoped_search_query(
+    native_query: str,
+    *,
+    repository: str,
+    kind: str,
+    state: str | None = None,
+    author: str | None = None,
+    base: str | None = None,
+) -> str | dict:
+    """Preserve native GitHub search syntax while pinning repository and item kind."""
+    qualifiers: dict[str, list[str]] = {}
+    for key, value in GITHUB_QUALIFIER_RE.findall(native_query):
+        qualifiers.setdefault(key.lower(), []).append(value.strip('"').lower())
+
+    repos = qualifiers.get("repo", [])
+    if repos and any(value != repository.lower() for value in repos):
+        return {"error": "query repo qualifier conflicts with the configured repository"}
+
+    kinds = set(qualifiers.get("is", []))
+    conflicting_kinds = {"issue"} if kind == "pr" else {"pr", "pull-request"}
+    if conflicting_kinds & kinds:
+        return {"error": f"query must target {kind}s, not the other item kind"}
+
+    state_values = {"open", "closed", "merged"} & (kinds | set(qualifiers.get("state", [])))
+    if state and state.lower() != "all" and state_values and state.lower() not in state_values:
+        return {"error": "query state qualifier conflicts with state filter"}
+    if author and qualifiers.get("author"):
+        return {"error": "query author qualifier conflicts with author filter"}
+    if base and qualifiers.get("base"):
+        return {"error": "query base qualifier conflicts with base filter"}
+
+    scoped_native_query = native_query.strip()
+    appended = [f"repo:{repository}", f"is:{kind}"]
+    if scoped_native_query:
+        appended.append(f"({scoped_native_query})")
+    if state and state.lower() != "all" and not state_values:
+        appended.append(f"is:{state.lower()}")
+    if author:
+        appended.append(f"author:{author}")
+    if base:
+        escaped_base = base.replace("\\", "\\\\").replace('"', '\\"')
+        appended.append(f'base:"{escaped_base}"')
+    return " ".join(part for part in appended if part)
 
 
 class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
@@ -92,20 +145,22 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
                 if response.status == 200:
                     data = await response.json()
                     if "errors" in data:
-                        error_msgs = [e.get("message", str(e)) for e in data["errors"]]
-                        logger.warning(f"GraphQL errors: {error_msgs}")
+                        error_msgs = [e.get("message", "GraphQL error") for e in data["errors"]]
+                        logger.warning("GraphQL response contained %d error(s)", len(error_msgs))
                         return {
                             "data": data.get("data"),
                             "error": "; ".join(error_msgs),
+                            "partial": data.get("data") is not None,
                         }
                     return {"data": data.get("data")}
-                else:
-                    error_text = await response.text()
-                    logger.error(f"GraphQL error {response.status}: {error_text[:200]}")
-                    return {"error": f"GitHub API error {response.status}: {error_text[:100]}"}
-        except Exception as e:
-            logger.error(f"GraphQL request failed: {e}")
-            return {"error": f"GitHub request failed: {str(e)}"}
+                logger.warning("GraphQL request returned HTTP %d", response.status)
+                return {"error": f"GitHub API error {response.status}"}
+        except aiohttp.ClientError:
+            logger.warning("GraphQL request failed due to an HTTP client error")
+            return {"error": "GitHub request failed"}
+        except Exception:
+            logger.exception("GraphQL request failed")
+            return {"error": "GitHub request failed"}
 
     async def get_issue_full(self, issue_number: int, comments_count: int = 5) -> dict | None:
         query = """
@@ -182,19 +237,35 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
 
         return self._format_issue_full(issue)
 
-    async def search_issues_full(self, keywords: str, state: str = "open", limit: int = 10) -> list[dict]:
-        state_filter = ""
-        if state == "open":
-            state_filter = "is:open"
-        elif state == "closed":
-            state_filter = "is:closed"
+    async def search_issues_full(
+        self, keywords: str, state: str | None = None, limit: int = 10, query: str | None = None, cursor: str | None = None
+    ) -> dict:
+        if query is not None and not query.strip():
+            return {"error": "query must not be blank"}
+        if cursor and query is None:
+            return {"error": "cursor requires query search mode"}
+        if query is not None:
+            search_query = build_scoped_search_query(
+                query,
+                repository=config.bot.default_repo,
+                kind="issue",
+                state=state,
+            )
+            if isinstance(search_query, dict):
+                return search_query
+        else:
+            state_filter = ""
+            if state == "open":
+                state_filter = "is:open"
+            elif state == "closed":
+                state_filter = "is:closed"
+            search_query = f"repo:{config.bot.default_repo} is:issue {state_filter} {keywords}"
 
-        search_query = f"repo:{config.bot.default_repo} is:issue {state_filter} {keywords}"
-
-        query = """
-        query SearchIssuesFull($query: String!, $limit: Int!) {
-            search(query: $query, type: ISSUE, first: $limit) {
+        graphql_query = """
+        query SearchIssuesFull($query: String!, $limit: Int!, $after: String) {
+            search(query: $query, type: ISSUE, first: $limit, after: $after) {
                 issueCount
+                pageInfo { hasNextPage endCursor }
                 nodes {
                     ... on Issue {
                         number
@@ -217,21 +288,27 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         }
         """
 
-        result = await self._execute(query, {"query": search_query, "limit": limit})
+        result = await self._execute(
+            graphql_query, {"query": search_query, "limit": min(max(limit, 1), 100), "after": cursor}
+        )
 
         if result.get("error"):
-            return [{"error": result["error"]}]
+            return {"error": result["error"], "partial": result.get("partial", False)}
 
         data = result.get("data")
         if not data or not data.get("search"):
-            return []
+            return {"items": [], "count": 0, "matched_total": 0, "truncated": False, "next_cursor": None}
 
-        issues = []
-        for node in data["search"].get("nodes", []):
-            if node:
-                issues.append(self._format_issue_list(node))
-
-        return issues
+        connection = data["search"]
+        issues = [self._format_issue_list(node) for node in connection.get("nodes", []) if node]
+        page_info = connection.get("pageInfo", {})
+        return {
+            "items": issues,
+            "count": len(issues),
+            "matched_total": connection.get("issueCount", 0),
+            "truncated": bool(page_info.get("hasNextPage")),
+            "next_cursor": page_info.get("endCursor") if page_info.get("hasNextPage") else None,
+        }
 
     async def get_issues_batch(self, issue_numbers: list[int], include_comments: bool = False) -> dict:
         if not issue_numbers:
@@ -346,12 +423,58 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         return [self._format_issue_list(node) for node in data["search"].get("nodes", []) if node]
 
     async def search_user_issues(self, discord_username: str, state: str = "open", limit: int = 10) -> list[dict]:
+        """Find issues whose canonical submitted Author field exactly matches the user."""
+        requested_limit = max(1, min(limit, 100))
+        state_filter = ""
         if state == "open":
-            pass
+            state_filter = "is:open"
         elif state == "closed":
-            pass
+            state_filter = "is:closed"
 
-        return await self.search_issues_full(keywords=f'"**Author:**" "{discord_username}"', state=state, limit=limit)
+        escaped_username = discord_username.replace("\\", "\\\\").replace('"', '\\"')
+        search_query = f"repo:{self.owner}/{self.repo} is:issue {state_filter} " f'"**Author:**" "{escaped_username}"'
+        query = """
+        query SearchUserIssues($query: String!, $limit: Int!, $after: String) {
+            search(query: $query, type: ISSUE, first: $limit, after: $after) {
+                pageInfo { hasNextPage endCursor }
+                nodes {
+                    ... on Issue {
+                        number title body state url createdAt author { login }
+                        labels(first: 5) { nodes { name } }
+                        comments { totalCount }
+                    }
+                }
+            }
+        }
+        """
+
+        canonical_author = f"**Author:** {discord_username}".casefold()
+        matches: list[dict] = []
+        cursor: str | None = None
+        for _ in range(10):
+            result = await self._execute(
+                query,
+                {"query": search_query, "limit": 100, "after": cursor},
+            )
+            if result.get("error"):
+                return [{"error": result["error"]}]
+
+            connection = result.get("data", {}).get("search") or {}
+            for node in connection.get("nodes", []):
+                if not node:
+                    continue
+                issue = self._format_issue_list(node)
+                if any(line.strip().casefold() == canonical_author for line in issue["body"].splitlines()):
+                    matches.append(issue)
+                    if len(matches) >= requested_limit:
+                        return matches
+
+            page_info = connection.get("pageInfo") or {}
+            cursor = page_info.get("endCursor")
+            if not page_info.get("hasNextPage") or not cursor:
+                break
+
+        return matches
 
     async def get_latest_issue_number(self) -> int | None:
         query = """
@@ -462,60 +585,91 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
                 if resp.status == 200:
                     data = await resp.json()
                     return {"data": data}
-                else:
-                    text = await resp.text()
-                    return {"error": f"GitHub API returned {resp.status}: {text[:200]}"}
-        except Exception as e:
-            return {"error": str(e)}
+                return {"error": f"GitHub API returned {resp.status}"}
+        except aiohttp.ClientError:
+            return {"error": "GitHub REST request failed"}
+        except Exception:
+            logger.exception("GitHub REST request failed")
+            return {"error": "GitHub REST request failed"}
 
     async def execute_custom_request(
         self,
         request: str,
         include_body: bool = False,
         limit: int = 50,
+        page: int = 1,
         graphql_query: str | None = None,
         rest_endpoint: str | None = None,
+        author: str | None = None,
         rest_url: str | None = None,
     ) -> dict:
-        if graphql_query:
-            # Block mutations — only allow queries
-            # Strip comments (# ...) before checking to prevent bypass
-            lines = [l for l in graphql_query.strip().splitlines() if not l.strip().startswith("#")]
-            stripped = "\n".join(lines).strip().lower()
-            if stripped.startswith("mutation") or not stripped:
-                return {"error": "Mutations not allowed. github_custom is read-only."}
+        if author and not GITHUB_LOGIN_RE.fullmatch(author):
+            return {"error": "author must be a valid GitHub login"}
 
+        if graphql_query:
+            lines = [line for line in graphql_query.strip().splitlines() if not line.strip().startswith("#")]
+            operation = "\n".join(lines).strip().lower()
+            if not operation or operation.startswith("mutation"):
+                return {"error": "Mutations not allowed. github_custom is read-only."}
             result = await self._execute(
                 graphql_query,
-                {"owner": self.owner, "repo": self.repo, "limit": min(limit, 100)},
+                {"owner": self.owner, "repo": self.repo, "limit": min(max(limit, 1), 100)},
             )
-            return {
+            response = {
                 "mode": "graphql",
-                "query": (graphql_query[:200] + "..." if len(graphql_query) > 200 else graphql_query),
-                "data": result.get("data", result),
+                "query": graphql_query[:200],
+                "data": result.get("data"),
             }
+            if result.get("error"):
+                response["error"] = result["error"]
+                response["partial"] = result.get("partial", False)
+            return response
+
+        if page < 1 or page > 10:
+            return {"error": "page must be between 1 and 10"}
 
         if rest_url:
-            # Full URL mode — must be api.github.com, GET only
+            # Full URL mode — must be api.github.com, GET only.
             if not rest_url.startswith("https://api.github.com/"):
                 return {"error": "rest_url must start with https://api.github.com/"}
-            result = await self._rest_get(rest_url)
-            return {"mode": "rest", "url": rest_url, **result}
+            parsed = urlsplit(rest_url)
+            url_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+            url_params.update({"per_page": str(min(max(limit, 1), 100)), "page": str(page)})
+            url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(url_params), parsed.fragment))
+            result = await self._rest_get(url)
+            return {
+                "mode": "rest",
+                "url": rest_url,
+                "page": page,
+                "per_page": min(max(limit, 1), 100),
+                "truncated": page == 10,
+                **result,
+            }
 
         if rest_endpoint:
-            # Repo-relative endpoint — no whitelist, any GET path allowed
             endpoint = rest_endpoint.strip("/")
-            url = f"https://api.github.com/repos/{self.owner}/{self.repo}/{endpoint}"
+            endpoint_url = f"https://api.github.com/repos/{self.owner}/{self.repo}/{endpoint}"
+            parsed = urlsplit(endpoint_url)
+            url_params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+            url_params.update({"per_page": str(min(max(limit, 1), 100)), "page": str(page)})
+            url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(url_params), parsed.fragment))
             result = await self._rest_get(url)
-            return {"mode": "rest", "endpoint": endpoint, **result}
+            return {
+                "mode": "rest",
+                "endpoint": endpoint,
+                "page": page,
+                "per_page": min(max(limit, 1), 100),
+                "truncated": page == 10,
+                **result,
+            }
 
         request_lower = request.lower()
         limit = min(limit, 100)
 
         results = {}
 
-        needs_issues = any(word in request_lower for word in ["issue", "spam", "stale", "bug", "report"])
-        needs_prs = any(word in request_lower for word in ["pr", "pull request", "merge"])
+        needs_prs = bool(PR_INTENT_RE.search(request_lower))
+        needs_issues = bool(ISSUE_INTENT_RE.search(request_lower))
         needs_commits = any(word in request_lower for word in ["commit", "contributor", "active", "activity"])
         needs_stats = any(word in request_lower for word in ["stat", "health", "overview", "summary"])
         needs_releases = "release" in request_lower
@@ -536,11 +690,43 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
             needs_issues = True
 
         if needs_issues:
-            issues_data = await self._fetch_all_issues(limit=limit, include_body=include_body)
+            if author:
+                search_query = f"repo:{self.owner}/{self.repo} is:issue author:{author}"
+                body_field = "body" if include_body else ""
+                query = f"""
+                query SearchIssuesByAuthor($query: String!, $limit: Int!) {{
+                    search(query: $query, type: ISSUE, first: $limit) {{
+                        issueCount
+                        pageInfo {{ hasNextPage }}
+                        nodes {{ ... on Issue {{ number title state url createdAt updatedAt author {{ login }} labels(first: 5) {{ nodes {{ name }} }} comments {{ totalCount }} {body_field} }} }}
+                    }}
+                }}
+                """
+                result = await self._execute(query, {"query": search_query, "limit": limit})
+                if result.get("error"):
+                    issues_data = {"error": result["error"], "partial": result.get("partial", False)}
+                else:
+                    connection = result.get("data", {}).get("search") or {}
+                    items = [self._format_issue_list(item) for item in connection.get("nodes", []) if item]
+                    if not include_body:
+                        for item in items:
+                            item.pop("body", None)
+                    issues_data = {
+                        "items": items,
+                        "matched_total": connection.get("issueCount", 0),
+                        "count": len(items),
+                        "truncated": bool(connection.get("pageInfo", {}).get("hasNextPage")),
+                        "author": author,
+                    }
+            else:
+                issues_data = await self._fetch_all_issues(limit=limit, include_body=include_body)
             results["issues"] = issues_data
 
         if needs_prs:
-            prs_data = await self._fetch_prs(limit=limit)
+            from .pull_requests import github_pr_manager
+
+            pr_state = "merged" if re.search(r"\bmerged\b", request_lower) else "closed" if re.search(r"\bclosed\b", request_lower) else "open" if re.search(r"\bopen\b", request_lower) else "all"
+            prs_data = await github_pr_manager.list_prs(limit=limit, state=pr_state, author=author)
             results["pull_requests"] = prs_data
 
         if needs_commits:
@@ -666,12 +852,15 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         }
 
         if include_projects:
-            projects_result = await self.list_projects(limit=10)
+            projects_result = await self.list_projects(limit=100)
             if not projects_result.get("error"):
                 overview["projects"] = [
                     {"number": p["number"], "title": p["title"], "url": p["url"]}
-                    for p in projects_result.get("projects", [])[:5]
+                    for p in projects_result.get("projects", [])
                 ]
+                overview["projects_truncated"] = projects_result.get("truncated", False)
+                if projects_result.get("next_cursor"):
+                    overview["projects_next_cursor"] = projects_result["next_cursor"]
 
         return overview
 
@@ -713,9 +902,12 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         }}
         """
 
+        if edit_index is not None and edit_index < 0:
+            return {"error": "edit_index must be zero or greater"}
+
         result = await self._execute(
             query,
-            {"owner": self.owner, "repo": self.repo, "number": number, "limit": limit},
+            {"owner": self.owner, "repo": self.repo, "number": number, "limit": min(limit, 100)},
         )
 
         if result.get("error"):
@@ -740,6 +932,9 @@ class GitHubGraphQL(ProjectsMixin, RepoOverviewMixin):
         body_edits = []
         edits_data = data.get("userContentEdits", {})
         nodes = edits_data.get("nodes", [])
+
+        if edit_index is not None and edit_index >= len(nodes):
+            return {"error": f"edit_index {edit_index} is outside the {len(nodes)} fetched edit(s)"}
 
         for i, edit in enumerate(nodes):
             if edit:

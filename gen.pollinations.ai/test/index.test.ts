@@ -12,15 +12,16 @@ import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const TRANSCRIPTION_MODEL_IDS = [
-    "whisper",
-    "gpt-transcribe",
-    "scribe",
-    "universal-2",
-    "universal-3.5-pro",
+    "openai/whisper-large-v3",
+    "openai/gpt-transcribe",
+    "elevenlabs/scribe-v2",
+    "assemblyai/universal-2",
+    "assemblyai/universal-3.5-pro",
 ] as const;
 
 afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
 });
 
 function envWithEnter(
@@ -114,6 +115,52 @@ describe("gen worker routing", () => {
             },
         });
         await waitOnExecutionContext(ctx);
+    });
+
+    it("accepts a 28 MiB inline-image chat body before authentication", async () => {
+        const body = JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/png;base64,${"A".repeat(28 * 1024 * 1024)}`,
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+        const response = await fetchWorker("/v1/chat/completions", env, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+        });
+
+        expect(response.status).toBe(401);
+    });
+
+    it("reports the 32 MiB limit for oversized chat bodies", async () => {
+        const body = JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [{ role: "user", content: "A".repeat(33 * 1024 * 1024) }],
+        });
+        const response = await fetchWorker("/v1/chat/completions", env, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": String(body.length),
+            },
+            body,
+        });
+
+        expect(response.status).toBe(413);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { message: "Request body exceeds the 32 MiB limit" },
+        });
     });
 
     it("serves root metadata for social previews", async () => {
@@ -213,6 +260,32 @@ describe("gen worker routing", () => {
         expect(response.status).toBe(200);
         expect(response.headers.get("Content-Type")).toBe("text/plain");
         await expect(response.text()).resolves.toContain("Disallow: /api/");
+    });
+
+    it("serves an agent index with reachable plain-text CLI and API guides", async () => {
+        const index = await fetchWorker("/llms.txt");
+        expect(index.status).toBe(200);
+        expect(index.headers.get("Content-Type")).toContain("text/plain");
+        expect(index.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await index.text();
+        expect(body).toContain("/docs/polli-skill.md");
+        expect(body).toContain("/docs/polli-tasks.md");
+        expect(body).toContain("/docs/llm.txt");
+        expect(body).toContain("/docs/llm.txt?section=cli");
+        expect(body).toContain("/docs/llm.txt?section=mcp");
+
+        for (const path of [
+            "/docs/polli-skill.md",
+            "/docs/polli-tasks.md",
+            "/docs/llm.txt",
+        ]) {
+            const response = await fetchWorker(path);
+            expect(response.status).toBe(200);
+            expect(response.headers.get("Content-Type")).toContain(
+                "text/plain",
+            );
+            expect(await response.text()).not.toContain("<html");
+        }
     });
 
     it("does not expose /api routes on gen", async () => {
@@ -330,7 +403,7 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists DreamShaper with its aliases and flat per-image pricing", async () => {
+    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -340,10 +413,10 @@ describe("gen worker routing", () => {
             pricing: Record<string, string>;
         }[];
         expect(
-            models.find((model) => model.name === "dreamshaper"),
+            models.find((model) => model.name === "lykon/dreamshaper-8-lcm"),
         ).toMatchObject({
-            name: "dreamshaper",
-            aliases: ["sana", "lykon/dreamshaper-8-lcm"],
+            name: "lykon/dreamshaper-8-lcm",
+            aliases: ["sana", "dreamshaper"],
             pricing: {
                 completionImageTokens: "0.0001",
                 currency: "pollen",
@@ -363,19 +436,21 @@ describe("gen worker routing", () => {
             pricing: Record<string, string>;
         }[];
         expect(
-            models.find((model) => model.name === "recraft-v4.1-vector"),
+            models.find(
+                (model) => model.name === "recraft/recraft-v4.1-vector",
+            ),
         ).toMatchObject({
-            name: "recraft-v4.1-vector",
+            name: "recraft/recraft-v4.1-vector",
             aliases: [
                 "recraft-vector",
                 "recraft-svg",
                 "recraft-v4.1-svg",
-                "recraft/recraft-v4.1-vector",
+                "recraft-v4.1-vector",
             ],
             input_modalities: ["text", "image"],
             output_modalities: ["image"],
             pricing: {
-                completionImageTokens: "0.08",
+                completionImageTokens: "0.0844",
                 currency: "pollen",
             },
         });
@@ -453,35 +528,17 @@ describe("gen worker routing", () => {
             pricing_adjustments?: unknown[];
         }[];
         expect(
-            models.find((model) => model.name === "perplexity-fast")
+            models.find((model) => model.name === "perplexity/sonar")
                 ?.pricing_adjustments,
-        ).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    label: "Search",
-                    price: "5",
-                    currency: "pollen",
-                    quantity: 1_000,
-                    unit: "requests",
-                    option: expect.objectContaining({
-                        value: "low",
-                        label: "Low search context",
-                        default: true,
-                    }),
-                }),
-                expect.objectContaining({
-                    label: "Search",
-                    price: "12",
-                    currency: "pollen",
-                    quantity: 1_000,
-                    unit: "requests",
-                    option: expect.objectContaining({
-                        value: "high",
-                        label: "High search context",
-                    }),
-                }),
-            ]),
-        );
+        ).toEqual([
+            expect.objectContaining({
+                label: "Search",
+                price: "2.5",
+                currency: "pollen",
+                quantity: 1_000,
+                unit: "searches",
+            }),
+        ]);
     });
 
     it("labels image pricing units without auth", async () => {
@@ -493,10 +550,12 @@ describe("gen worker routing", () => {
             flat_rate?: boolean;
         }[];
         expect(
-            models.find(({ name }) => name === "grok-imagine")?.flat_rate,
+            models.find(({ name }) => name === "x-ai/grok-imagine-image")
+                ?.flat_rate,
         ).toBe(true);
         expect(
-            models.find(({ name }) => name === "nanobanana-pro")?.flat_rate,
+            models.find(({ name }) => name === "google/gemini-3-pro-image")
+                ?.flat_rate,
         ).toBe(false);
     });
 
@@ -534,7 +593,7 @@ describe("gen worker routing", () => {
         }
     });
 
-    it("advertises audio input support for gemini-fast", async () => {
+    it("advertises audio input support for Gemini Flash Lite", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -543,7 +602,7 @@ describe("gen worker routing", () => {
             input_modalities?: string[];
         }[];
         const model = models.find(
-            (candidate) => candidate.name === "gemini-fast",
+            (candidate) => candidate.name === "google/gemini-2.5-flash-lite",
         );
 
         expect(model?.input_modalities).toEqual([
@@ -554,7 +613,7 @@ describe("gen worker routing", () => {
         ]);
     });
 
-    it("publishes one configurable Perplexity Sonar model", async () => {
+    it("publishes Sonar as the only Perplexity model", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -565,27 +624,18 @@ describe("gen worker routing", () => {
         }[];
 
         expect(
-            models.find((model) => model.name === "perplexity-fast"),
+            models.find((model) => model.name === "perplexity/sonar"),
         ).toMatchObject({
             title: "Perplexity Sonar Fast Search",
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });
+        // Sonar Pro and Reasoning Pro retired into aliases of Sonar.
         expect(
-            models.find((model) => model.name === "perplexity-high"),
-        ).toBeUndefined();
-        expect(
-            models.find((model) => model.name === "perplexity"),
-        ).toMatchObject({
-            description:
-                "Advanced web search that synthesizes multiple sources with citations",
-        });
-        expect(
-            models.find((model) => model.name === "perplexity-reasoning"),
-        ).toMatchObject({
-            description:
-                "Thinks step by step while searching the web; slower but more rigorous",
-        });
+            models
+                .filter((model) => model.name.startsWith("perplexity/"))
+                .map((model) => model.name),
+        ).toEqual(["perplexity/sonar"]);
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(
             false,
         );
@@ -675,59 +725,50 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it("reports the source timestamp and marks stale fallback data", async () => {
-        let now = 1_000;
-        vi.spyOn(Date, "now").mockImplementation(() => now);
+    it.each([
+        "all",
+        "regular",
+    ])("proxies %s traffic with a separate 60 second edge cache", async (traffic) => {
         const upstream = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(Response.json({ data: [{ model: "test" }] }))
-            .mockRejectedValueOnce(new Error("Tinybird unavailable"));
+            .mockResolvedValueOnce(
+                Response.json({ data: [{ model: "test" }] }),
+            );
 
-        const fresh = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(fresh.status).toBe(200);
-        expect(fresh.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
+        const response = await fetchWorker(
+            `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
         );
-        expect(fresh.headers.get("X-Model-Status-Stale")).toBeNull();
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=60",
+        );
+        expect(await response.json()).toEqual({
+            data: [{ model: "test" }],
+        });
 
-        now = 2_000;
-        const cached = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(cached.status).toBe(200);
-        expect(cached.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
-        );
-        expect(upstream).toHaveBeenCalledTimes(1);
-
-        now = 62_000;
-        const stale = await fetchWorker("/v1/models/status?minutes=9876");
-        expect(stale.status).toBe(200);
-        expect(stale.headers.get("X-Model-Status-Timestamp")).toBe(
-            "1970-01-01T00:00:01.000Z",
-        );
-        expect(stale.headers.get("X-Model-Status-Stale")).toBe("true");
-        expect(upstream).toHaveBeenCalledTimes(2);
+        const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
+        expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
+        expect(url.searchParams.get("minutes")).toBe("15");
+        expect(url.searchParams.get("traffic")).toBe(traffic);
+        expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
     });
 
-    it("evicts old entries when the in-memory cache reaches its bound", async () => {
-        const upstream = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (request) => {
-                const minutes = new URL(
-                    new Request(request).url,
-                ).searchParams.get("minutes");
-                return Response.json({ data: [{ model: `test-${minutes}` }] });
-            });
+    it("rejects unsupported traffic groups before contacting Tinybird", async () => {
+        const response = await fetchWorker("/models/status?traffic=invalid");
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            error: "traffic must be all or regular",
+        });
+    });
 
-        for (let minutes = 8_000; minutes <= 8_032; minutes++) {
-            const response = await fetchWorker(
-                `/v1/models/status?minutes=${minutes}`,
-            );
-            expect(response.status).toBe(200);
-        }
+    it("passes upstream errors through unchanged", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: "bad minutes" }, { status: 400 }),
+        );
 
-        const evicted = await fetchWorker("/v1/models/status?minutes=8000");
-        expect(evicted.status).toBe(200);
-        expect(upstream).toHaveBeenCalledTimes(34);
+        const response = await fetchWorker("/models/status?minutes=abc");
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: "bad minutes" });
     });
 });
 
@@ -804,7 +845,7 @@ fixtureTest(
             "nosniff",
         );
         expect(getResponse.headers.get("x-model-used")).toBe(
-            "recraft-v4.1-vector",
+            "recraft/recraft-v4.1-vector",
         );
         expect(getResponse.headers.get("x-usage-completion-image-tokens")).toBe(
             "1",
@@ -881,20 +922,17 @@ fixtureTest(
         expect(urlGeneration.data[0]?.media_type).toBe("image/svg+xml");
         await waitOnExecutionContext(urlContext);
 
-        const cachedContext = createExecutionContext();
-        const cachedResponse = await worker.fetch(
-            new Request(urlGeneration.data[0]?.url || ""),
-            bindings,
-            cachedContext,
+        const storedUrl = new URL(urlGeneration.data[0]?.url || "");
+        expect(storedUrl.origin).toBe("https://media.pollinations.ai");
+        const cachedResponse = await bindings.MEDIA.get(
+            storedUrl.pathname.slice(1),
         );
+        if (!cachedResponse) throw new Error("Generated SVG was not stored");
         expect(cachedResponse.status).toBe(200);
-        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
-        expect(cachedResponse.headers.get("x-cache-type")).toBeNull();
         expect(cachedResponse.headers.get("content-type")).toBe(
             "image/svg+xml",
         );
         expect(await cachedResponse.text()).toBe(svg);
-        await waitOnExecutionContext(cachedContext);
 
         const editContext = createExecutionContext();
         const editResponse = await worker.fetch(
@@ -947,6 +985,67 @@ fixtureTest(
                 },
             ],
         });
+
+        // A URL response must work on the first generation, including when a
+        // generic client supplies a stream flag this image endpoint ignores.
+        for (const endpoint of ["generations", "edits"]) {
+            for (const stream of [false, true]) {
+                const body = {
+                    model: "recraft-vector",
+                    prompt: `cold stored URL ${endpoint} ${stream}`,
+                    response_format: "url",
+                    seed: 910,
+                    stream,
+                    ...(endpoint === "edits" && {
+                        image: "https://example.com/source.svg",
+                    }),
+                };
+                const countBefore = requests.length;
+                let storedUrl: string | undefined;
+                for (const authorization of [
+                    `Bearer ${paidApiKey}`,
+                    undefined,
+                ]) {
+                    const ctx = createExecutionContext();
+                    const headers = new Headers({
+                        "Content-Type": "application/json",
+                    });
+                    if (authorization)
+                        headers.set("Authorization", authorization);
+                    const response = await worker.fetch(
+                        new Request(
+                            `https://staging.gen.pollinations.ai/v1/images/${endpoint}`,
+                            {
+                                method: "POST",
+                                headers,
+                                body: JSON.stringify(body),
+                            },
+                        ),
+                        bindings,
+                        ctx,
+                    );
+                    expect(response.status).toBe(200);
+                    const result = await response.json<{
+                        data: Array<{ url: string }>;
+                    }>();
+                    const url = result.data[0].url;
+                    expect(url).toMatch(
+                        /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
+                    );
+                    expect(response.headers.get("Link")).toBe(
+                        `<${url}>; rel="enclosure"`,
+                    );
+                    if (storedUrl) expect(url).toBe(storedUrl);
+                    storedUrl = url;
+                    const stored = await bindings.MEDIA.get(
+                        new URL(url).pathname.slice(1),
+                    );
+                    expect(await stored?.text()).toBe(svg);
+                    await waitOnExecutionContext(ctx);
+                }
+                expect(requests).toHaveLength(countBefore + 1);
+            }
+        }
     },
 );
 
@@ -1024,7 +1123,9 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
-        expect(response.headers.get("x-model-used")).toBe("qwen-tts-instruct");
+        expect(response.headers.get("x-model-used")).toBe(
+            "qwen/qwen3-tts-instruct-flash",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );
@@ -1103,7 +1204,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
-        expect(response.headers.get("x-model-used")).toBe("csm-1b");
+        expect(response.headers.get("x-model-used")).toBe("sesame/csm-1b");
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "9",
         );
@@ -1121,7 +1222,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "validates CSM input before calling DeepInfra",
+    "rejects CSM input over 200 characters before calling DeepInfra",
     async ({ paidApiKey }) => {
         const deepInfraEndpoint =
             "https://api.deepinfra.com/v1/openai/audio/speech";
@@ -1149,18 +1250,6 @@ fixtureTest(
                 voice: "conversational_a",
                 response_format: "mp3",
                 message: "Maximum is 200",
-            },
-            {
-                input: "Hello",
-                voice: "unknown_voice",
-                response_format: "mp3",
-                message: "Invalid voice for csm-1b",
-            },
-            {
-                input: "Hello",
-                voice: "conversational_a",
-                response_format: "aac",
-                message: "Unsupported response_format for csm-1b",
             },
         ];
 
@@ -1262,7 +1351,9 @@ fixtureTest(
 
         expect(postResponse.status).toBe(200);
         expect(postResponse.headers.get("content-type")).toBe("audio/wav");
-        expect(postResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(postResponse.headers.get("x-model-used")).toBe(
+            "hexgrad/kokoro-82m",
+        );
         expect(
             postResponse.headers.get("x-usage-completion-audio-tokens"),
         ).toBe("4");
@@ -1286,7 +1377,9 @@ fixtureTest(
         );
 
         expect(getResponse.status).toBe(200);
-        expect(getResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(getResponse.headers.get("x-model-used")).toBe(
+            "hexgrad/kokoro-82m",
+        );
         expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
         await getResponse.arrayBuffer();
         await waitOnExecutionContext(getContext);
@@ -1305,65 +1398,6 @@ fixtureTest(
                 response_format: "mp3",
             },
         ]);
-    },
-);
-
-fixtureTest(
-    "validates Kokoro voices and formats before calling DeepInfra",
-    async ({ paidApiKey }) => {
-        const deepInfraEndpoint =
-            "https://api.deepinfra.com/v1/openai/audio/speech";
-        const calls: string[] = [];
-
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                calls.push(request.url);
-                if (
-                    request.url.startsWith(
-                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
-                    ) ||
-                    request.url.startsWith("http://localhost:7181/")
-                ) {
-                    return Response.json({ data: [] });
-                }
-                throw new Error(`Unexpected fetch: ${request.url}`);
-            },
-        );
-
-        for (const testCase of [
-            { voice: "unknown_voice", response_format: "mp3" },
-            { voice: "af_bella", response_format: "aac" },
-        ]) {
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request(
-                    "https://staging.gen.pollinations.ai/v1/audio/speech",
-                    {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${paidApiKey}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            model: "kokoro",
-                            input: "Hello",
-                            ...testCase,
-                        }),
-                    },
-                ),
-                withInlineGenerationCoordinator({
-                    ...env,
-                    DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings),
-                ctx,
-            );
-
-            expect(response.status).toBe(400);
-            await waitOnExecutionContext(ctx);
-        }
-
-        expect(calls).not.toContain(deepInfraEndpoint);
     },
 );
 
@@ -1439,7 +1473,9 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
-        expect(response.headers.get("x-model-used")).toBe("lyria-3-clip");
+        expect(response.headers.get("x-model-used")).toBe(
+            "google/lyria-3-clip-preview",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
@@ -1485,7 +1521,7 @@ fixtureTest(
                     input: "slow ambient strings",
                     duration: 20,
                 },
-                message: "fixed 30-second clips",
+                message: "Unsupported duration for google/lyria-3-clip-preview",
             },
             {
                 body: {
@@ -1543,12 +1579,10 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
         input_modalities?: string[];
         output_modalities?: string[];
     }[];
-    const model = models.find((candidate) => candidate.name === "lyria-3-clip");
-    expect(model?.aliases).toEqual([
-        "lyria",
-        "lyria-3",
-        "google/lyria-3-clip-preview",
-    ]);
+    const model = models.find(
+        (candidate) => candidate.name === "google/lyria-3-clip-preview",
+    );
+    expect(model?.aliases).toEqual(["lyria", "lyria-3", "lyria-3-clip"]);
     expect(model?.input_modalities).toEqual(["text"]);
     expect(model?.output_modalities).toEqual(["audio"]);
 });
@@ -1912,11 +1946,14 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes stable-audio-3-medium requests through fal",
+    "routes stable-audio-3-medium requests through the fal queue",
     async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
         const calls: string[] = [];
         const falEndpoint =
-            "https://fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/text-to-audio";
+        const statusUrl = `${falEndpoint}/requests/sa3/status`;
+        const resultUrl = `${falEndpoint}/requests/sa3`;
         const falFileUrl = "https://v3.fal.media/files/test-stable-audio.mp3";
 
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -1939,6 +1976,18 @@ fixtureTest(
                     expect(body.num_inference_steps).toBe(6);
                     expect(body.seed).toBe(42);
 
+                    return Response.json({
+                        request_id: "sa3",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
                     return Response.json({
                         audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 42,
@@ -1965,7 +2014,7 @@ fixtureTest(
         );
 
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const pending = worker.fetch(
             new Request(
                 "https://staging.gen.pollinations.ai/audio/lofi%20rain%20loop?model=stable-audio-3-medium&seconds=12&steps=6&seed=42",
                 {
@@ -1978,11 +2027,15 @@ fixtureTest(
             } as unknown as CloudflareBindings),
             ctx,
         );
+        // The first status poll follows a five-second wait.
+        await vi.waitFor(() => expect(calls).toContain(falEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-medium",
+            "stability-ai/stable-audio-3-medium",
         );
         // text-to-audio bills 1 output audio unit ($0.0376 per generation).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -1995,6 +2048,7 @@ fixtureTest(
         await waitOnExecutionContext(ctx);
 
         expect(calls).toContain(falEndpoint);
+        expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
     },
 );
@@ -2002,9 +2056,12 @@ fixtureTest(
 fixtureTest(
     "routes stable-audio-3-medium reference_audio through fal audio-to-audio",
     async ({ paidApiKey }) => {
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
         const calls: string[] = [];
         const a2aEndpoint =
-            "https://fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+            "https://queue.fal.run/fal-ai/stable-audio-3/medium/audio-to-audio";
+        const statusUrl = `${a2aEndpoint}/requests/a2a/status`;
+        const resultUrl = `${a2aEndpoint}/requests/a2a`;
         const falFileUrl = "https://v3.fal.media/files/test-a2a.mp3";
         const referenceAudioUrl =
             "https://media.pollinations.ai/test-reference-audio";
@@ -2033,6 +2090,18 @@ fixtureTest(
                     sentAudioUrl = body.audio_url;
 
                     return Response.json({
+                        request_id: "a2a",
+                        status_url: statusUrl,
+                        response_url: resultUrl,
+                    });
+                }
+
+                if (request.url === statusUrl) {
+                    return Response.json({ status: "COMPLETED" });
+                }
+
+                if (request.url === resultUrl) {
+                    return Response.json({
                         audio: { url: falFileUrl, content_type: "audio/mpeg" },
                         seed: 1,
                     });
@@ -2058,7 +2127,7 @@ fixtureTest(
         );
 
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const pending = worker.fetch(
             new Request("https://staging.gen.pollinations.ai/v1/audio/speech", {
                 method: "POST",
                 headers: {
@@ -2077,10 +2146,13 @@ fixtureTest(
             } as unknown as CloudflareBindings),
             ctx,
         );
+        await vi.waitFor(() => expect(calls).toContain(a2aEndpoint));
+        await vi.advanceTimersByTimeAsync(5_000);
+        const response = await pending;
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-medium",
+            "stability-ai/stable-audio-3-medium",
         );
         // audio-to-audio bills 1 output unit + 1 input unit
         // ($0.0376 + $0.0041 = $0.0417 per generation).
@@ -2096,6 +2168,7 @@ fixtureTest(
 
         expect(calls).toContain(referenceAudioUrl);
         expect(calls).toContain(a2aEndpoint);
+        expect(calls).toContain(resultUrl);
         expect(calls).toContain(falFileUrl);
     },
 );
@@ -2109,7 +2182,7 @@ it("lists stable-audio-3-medium in audio models", async () => {
         input_modalities?: string[];
     }[];
     const model = models.find(
-        (candidate) => candidate.name === "stable-audio-3-medium",
+        (candidate) => candidate.name === "stability-ai/stable-audio-3-medium",
     );
     expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
@@ -2195,7 +2268,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-large",
+            "stability-ai/stable-audio-3",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
@@ -2300,7 +2373,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-large",
+            "stability-ai/stable-audio-3",
         );
         // a2a bills the same flat fee as text-to-audio ($0.26 = 1 unit).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -2329,7 +2402,7 @@ it("lists stable-audio-3-large in audio models", async () => {
         input_modalities?: string[];
     }[];
     const model = models.find(
-        (candidate) => candidate.name === "stable-audio-3-large",
+        (candidate) => candidate.name === "stability-ai/stable-audio-3",
     );
     expect(model?.aliases).toContain("stable-audio-3");
     expect(model?.input_modalities).toEqual(["text", "audio"]);
@@ -2451,7 +2524,7 @@ fixtureTest(
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 message:
-                    'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps.',
+                    'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps, /v1/responses, /v1/chat/completions.',
             },
         });
     },
@@ -2522,7 +2595,9 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("gpt-transcribe");
+        expect(response.headers.get("x-model-used")).toBe(
+            "openai/gpt-transcribe",
+        );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("4");
         await expect(response.json()).resolves.toEqual({
             text: "hello from Azure",

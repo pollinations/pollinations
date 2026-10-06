@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 import { sortModels } from "../frontend/src/components/models/model-sort.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
@@ -37,13 +38,6 @@ describe("model sorting", () => {
             "free-but-measured",
             "unknown",
         ]);
-        expect(sortModels(models, "oldest").map(({ name }) => name)).toEqual([
-            "free-but-measured",
-            "expensive",
-            "cheap",
-            "unknown",
-        ]);
-
         const tiedModels = [
             model("first", { addedDate: 10 }),
             model("second", { addedDate: 10 }),
@@ -51,6 +45,18 @@ describe("model sorting", () => {
         expect(
             sortModels(tiedModels, "newest").map(({ name }) => name),
         ).toEqual(["first", "second"]);
+    });
+
+    it("sorts by rolling user count with missing values last", () => {
+        const popularModels = [
+            model("unknown"),
+            model("small", { users7d: 3 }),
+            model("large", { users7d: 20 }),
+        ];
+
+        expect(
+            sortModels(popularModels, "popular").map(({ name }) => name),
+        ).toEqual(["large", "small", "unknown"]);
     });
 
     it("sorts free and observed generation costs", () => {
@@ -62,11 +68,11 @@ describe("model sorting", () => {
         ).toEqual(["free-but-measured", "expensive", "cheap", "unknown"]);
     });
 
-    it("sorts by display title or groups by brand and then title", () => {
+    it("sorts by display title or groups by publisher and then title", () => {
         const namedModels = [
-            model("zeta", { displayName: "Zulu", brand: "openai" }),
-            model("alpha", { displayName: "alpha", brand: "OpenAI" }),
-            model("beta", { displayName: "Beta", brand: "Anthropic" }),
+            model("zeta", { displayName: "Zulu", publisher: "openai" }),
+            model("alpha", { displayName: "alpha", publisher: "OpenAI" }),
+            model("beta", { displayName: "Beta", publisher: "Anthropic" }),
             model("orphan", { displayName: "Orphan" }),
         ];
 
@@ -77,10 +83,18 @@ describe("model sorting", () => {
             sortModels(namedModels, "title-desc").map(({ name }) => name),
         ).toEqual(["zeta", "orphan", "beta", "alpha"]);
         expect(
-            sortModels(namedModels, "brand").map(({ name }) => name),
+            sortModels(namedModels, "publisher").map(({ name }) => name),
         ).toEqual(["beta", "alpha", "zeta", "orphan"]);
         expect(
-            sortModels(namedModels, "brand-desc").map(({ name }) => name),
+            sortModels(namedModels, "publisher-desc").map(({ name }) => name),
         ).toEqual(["alpha", "zeta", "beta", "orphan"]);
+    });
+});
+
+describe("model sort search parameter", () => {
+    it("uses popularity by default while preserving explicit sorts", () => {
+        expect(validateModelSearch({}).sort).toBeUndefined();
+        expect(validateModelSearch({ sort: "popular" }).sort).toBeUndefined();
+        expect(validateModelSearch({ sort: "newest" }).sort).toBe("newest");
     });
 });

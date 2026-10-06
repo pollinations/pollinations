@@ -629,8 +629,7 @@ def run_full(repo_root: Path) -> bool:
     failed: list[str] = []
     with ThreadPoolExecutor(max_workers=EMBED_CONCURRENCY) as pool:
         futures = [
-            pool.submit(_embed_and_upsert_file, repo_root, str(file.relative_to(repo_root)), git_sha)
-            for file in files
+            pool.submit(_embed_and_upsert_file, repo_root, str(file.relative_to(repo_root)), git_sha) for file in files
         ]
         for processed, future in enumerate(as_completed(futures), 1):
             rel_path, vector_count, error = future.result()

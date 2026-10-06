@@ -1,0 +1,30 @@
+name: Report workflow failure as an issue
+description: >-
+  Opens an issue named after the failing workflow, or comments on the open one,
+  so a scheduled job that fails quietly is visible without anyone checking run
+  history. Close the issue once the workflow is green again.
+
+inputs:
+  token:
+    description: GitHub token with issues:write
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        TITLE: "Workflow failing: ${{ github.workflow }}"
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        BODY="Run failed: $RUN_URL (ref \`$GITHUB_REF_NAME\`, event \`$GITHUB_EVENT_NAME\`)."
+        EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+          --search "\"$TITLE\" in:title" --json number,title \
+          --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
+        if [ -n "$EXISTING" ]; then
+          gh issue comment "$EXISTING" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+        else
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" \
+            --body "$BODY"$'\n\n'"Opened automatically by the workflow's failure step. Close it once the workflow is green again."
+        fi

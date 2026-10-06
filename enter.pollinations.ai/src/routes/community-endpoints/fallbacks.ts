@@ -1,5 +1,4 @@
 import {
-    applyPendingProxyPricing,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -11,7 +10,7 @@ import {
     normalizeCommunityEndpointInputModalities,
     parseCommunityModelId,
     parseListingPayload,
-    pendingCommunityEndpointChangeIsReady,
+    resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
@@ -38,7 +37,7 @@ function missingTargetMessage(modelId: string): string {
     return `Fallback target ${modelId} does not exist`;
 }
 
-// Private or hidden rows owned by someone else must look identical to a
+// Private rows owned by someone else must look identical to a
 // missing row. Distinct validation errors would expose whether a model exists.
 function shouldConcealTarget(
     primary: FallbackPrimary,
@@ -46,12 +45,11 @@ function shouldConcealTarget(
 ): boolean {
     return (
         target.ownerUserId !== primary.ownerUserId &&
-        (effectiveCommunityEndpointVisibility(
+        effectiveCommunityEndpointVisibility(
             target.visibility,
             target.pendingVisibility,
             target.pendingAt,
-        ) === "private" ||
-            target.hiddenAt !== null)
+        ) === "private"
     );
 }
 
@@ -64,32 +62,20 @@ export function fallbackTargetRejection(
     if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
     if (shouldConcealTarget(primary, target))
         return missingTargetMessage(modelId);
-    if (target.hiddenAt !== null) {
-        return `Fallback target ${modelId} must be listed`;
-    }
     if (target.type !== "proxy") {
         return `Fallback target ${modelId} cannot delegate generation`;
-    }
-    if (
-        effectiveCommunityEndpointVisibility(
-            target.visibility,
-            target.pendingVisibility,
-            target.pendingAt,
-        ) === "private" &&
-        target.ownerUserId !== primary.ownerUserId
-    ) {
-        return `Fallback target ${modelId} must be public or owned by you`;
     }
     const currentPayload = parseListingPayload("proxy", target.payload);
     if (!currentPayload) {
         return `Fallback target ${modelId} has invalid configuration`;
     }
-    const pendingPayload = pendingCommunityEndpointChangeIsReady(
-        target.pendingAt,
-    )
-        ? parseListingPayload("proxy", target.pendingPayload)
-        : null;
-    const payload = applyPendingProxyPricing(currentPayload, pendingPayload);
+    const payload = resolveEffectiveProxyListing({
+        visibility: target.visibility,
+        payload: currentPayload,
+        pendingVisibility: target.pendingVisibility,
+        pendingPayload: parseListingPayload("proxy", target.pendingPayload),
+        pendingAt: target.pendingAt,
+    }).payload;
     if (payload.modality !== primary.modality) {
         return `Fallback target ${modelId} is a ${payload.modality} model, not ${primary.modality}`;
     }
@@ -137,7 +123,7 @@ async function resolveFallback(
     const parsed = parseCommunityModelId(requested);
     if (!parsed) {
         throw new HTTPException(400, {
-            message: `Fallback target ${requested} must be a community model id in the form <owner>/<name>`,
+            message: `Fallback target ${requested} must be a community model id in the form community/<owner>/<name>`,
         });
     }
     const modelId = communityModelId(

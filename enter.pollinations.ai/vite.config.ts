@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { codeAgentSdk } from "./scripts/code-agent-sdk.mjs";
 
 const frontendSrc = fileURLToPath(new URL("./frontend/src", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared", import.meta.url));
@@ -27,6 +28,8 @@ export default defineConfig(({ mode }) => ({
     root: "frontend",
     server: {
         port: 3000,
+        // Let Enter handle credentialed dashboard preflights instead of Vite.
+        cors: false,
         allowedHosts: [".trycloudflare.com"],
     },
     publicDir: "public",
@@ -45,6 +48,7 @@ export default defineConfig(({ mode }) => ({
         dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [
+        codeAgentSdk(),
         tanstackRouter({
             target: "react",
             autoCodeSplitting: true,
@@ -53,7 +57,14 @@ export default defineConfig(({ mode }) => ({
         }),
         react(),
         tailwindcss(),
-        cloudflare({ configPath: "../wrangler.toml" }),
+        cloudflare({
+            configPath: "../wrangler.toml",
+            persistState: {
+                path: fileURLToPath(
+                    new URL("./.wrangler/state", import.meta.url),
+                ),
+            },
+        }),
         {
             // Swap %PUBLIC_ORIGIN% in index.html for this build's asset origin.
             name: "enter-public-origin",

@@ -42,8 +42,8 @@ import {
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import {
-    checkBalance,
     releaseApiKeyBudgetReservation,
+    requireGenerationAccess,
     reserveApiKeyBudget,
 } from "@/utils/generation-access.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
@@ -56,25 +56,19 @@ type AzureRealtimeApiKey =
 // US 2 because Azure's Sweden Central control plane accepts the deployment but
 // its Realtime data plane currently rejects the exact model.
 const REALTIME_ROUTES = {
-    "gpt-realtime-2.1": {
+    "openai/gpt-realtime-2.1": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
         deployment: "gpt-realtime-2-1",
         apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },
-    "gpt-realtime-2.1-mini": {
+    "openai/gpt-realtime-2.1-mini": {
         endpoint:
             "https://myceli-prod-eastus2.openai.azure.com/openai/v1/realtime",
         deployment: "gpt-realtime-2-1-mini",
         apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     },
-    "gpt-realtime-2": {
-        endpoint:
-            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
-        deployment: "gpt-realtime-2",
-        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-    },
-    "gpt-live-transcribe": {
+    "openai/gpt-live-transcribe": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
         deployment: "test-gpt-live-transcribe",
@@ -105,6 +99,7 @@ type RealtimeBillingContext = {
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
+    questPollenOnly?: boolean;
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelRequested: string;
@@ -130,15 +125,6 @@ type RealtimeBillingContext = {
     deductionAttempted: boolean;
     rateLimitConsumed: boolean;
 };
-
-function requireAllowedModel(c: Context<Env>, model: string): void {
-    const allowedModels = c.var.auth.apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
-        throw new HTTPException(403, {
-            message: `Model '${model}' is not allowed for this API key`,
-        });
-    }
-}
 
 async function createSafetyIdentifier(
     userId: string,
@@ -391,7 +377,7 @@ function scribeSession(config: ScribeRealtimeConfig, sessionId: string) {
             input: {
                 format,
                 transcription: {
-                    model: "scribe-realtime",
+                    model: "elevenlabs/scribe-v2-realtime",
                     ...(config.prompt && { prompt: config.prompt }),
                     ...(languages.length && { languages }),
                 },
@@ -433,7 +419,7 @@ function parseScribeSessionUpdate(
             next.audioFormat = "pcm_24000";
         } else {
             return {
-                error: "scribe-realtime supports OpenAI PCM at 24000 Hz and PCMU audio.",
+                error: "elevenlabs/scribe-v2-realtime supports OpenAI PCM at 24000 Hz and PCMU audio.",
                 param: "session.audio.input.format",
             };
         }
@@ -478,7 +464,7 @@ function parseScribeSessionUpdate(
         const turnDetection = asRecord(input.turn_detection);
         if (turnDetection.type !== "server_vad") {
             return {
-                error: 'scribe-realtime supports null or "server_vad" turn detection.',
+                error: 'elevenlabs/scribe-v2-realtime supports null or "server_vad" turn detection.',
                 param: "session.audio.input.turn_detection.type",
             };
         }
@@ -648,8 +634,9 @@ function validateClientRealtimeEvent(
         ).transcription;
         const requestedModel = asRecord(transcription).model;
         return typeof requestedModel === "string" &&
+            requestedModel !== "openai/gpt-live-transcribe" &&
             requestedModel !== "gpt-live-transcribe"
-            ? "gpt-live-transcribe sessions cannot select another transcription model."
+            ? "openai/gpt-live-transcribe sessions cannot select another transcription model."
             : null;
     }
     const eventType = event.type;
@@ -702,14 +689,18 @@ function validateUpstreamRealtimeEvent(
 
 function rewriteLiveTranscriptionModel(
     data: unknown,
-    from: string,
+    from: string | readonly string[],
     to: string,
 ): unknown {
     const event = asRecord(parseEventData(data));
     const audioInput = asRecord(asRecord(asRecord(event.session).audio).input);
     const transcription = asRecord(audioInput.transcription);
     if (!Object.keys(transcription).length) return data;
-    if (transcription.model === undefined || transcription.model === from) {
+    const matches =
+        typeof from !== "string"
+            ? from.includes(transcription.model as string)
+            : transcription.model === from;
+    if (transcription.model === undefined || matches) {
         transcription.model = to;
         return JSON.stringify(event);
     }
@@ -858,6 +849,7 @@ async function settleRealtimeSession(
             apiKeyReservedAmount: tracking.apiKeyReservedAmount,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
+            questPollenOnly: tracking.questPollenOnly,
         });
         c.var.balance.apiKeyReservation = undefined;
     }
@@ -1016,7 +1008,7 @@ function proxyRealtimeWebSockets(
     const pair = new WebSocketPair();
     const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
     const allowTranscription =
-        tracking.resolvedModelRequested === "gpt-live-transcribe";
+        tracking.resolvedModelRequested === "openai/gpt-live-transcribe";
 
     downstream.binaryType = "arraybuffer";
     collectBillingEvents(c, upstream, tracking);
@@ -1029,8 +1021,8 @@ function proxyRealtimeWebSockets(
             ? (data) =>
                   rewriteLiveTranscriptionModel(
                       data,
-                      "gpt-live-transcribe",
-                      REALTIME_ROUTES["gpt-live-transcribe"].deployment,
+                      ["openai/gpt-live-transcribe", "gpt-live-transcribe"],
+                      REALTIME_ROUTES["openai/gpt-live-transcribe"].deployment,
                   )
             : undefined,
     );
@@ -1043,8 +1035,8 @@ function proxyRealtimeWebSockets(
             ? (data) =>
                   rewriteLiveTranscriptionModel(
                       data,
-                      REALTIME_ROUTES["gpt-live-transcribe"].deployment,
-                      "gpt-live-transcribe",
+                      REALTIME_ROUTES["openai/gpt-live-transcribe"].deployment,
+                      "openai/gpt-live-transcribe",
                   )
             : undefined,
     );
@@ -1399,6 +1391,7 @@ async function createRealtimeBillingContext(
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,
@@ -1424,16 +1417,10 @@ async function createRealtimeBillingContext(
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
-    const user = c.var.auth.requireUser();
-
-    const resolvedModel = c.var.model.resolved;
-    requireAllowedModel(c, resolvedModel);
-
-    // Same model-independent, estimated-price balance gate as every other
-    // generation route (tier or pack balance, paidOnly handled by the resolved
-    // model definition). checkBalance reads c.var.model.
-    await checkBalance(c.var, c.env);
-    return user.id;
+    // Same user, key model and estimated-price balance gates as every other
+    // generation route (paidOnly handled by the resolved model definition).
+    await requireGenerationAccess(c.var, c.env);
+    return c.var.auth.requireUser().id;
 }
 
 export async function handleRealtimeWebSocket(
@@ -1449,7 +1436,7 @@ export async function handleRealtimeWebSocket(
         communityEndpoint: c.var.model.communityEndpoint,
     });
     const tracking = await createRealtimeBillingContext(c);
-    if (c.var.model.resolved === "scribe-realtime") {
+    if (c.var.model.resolved === "elevenlabs/scribe-v2-realtime") {
         if (!c.env.ELEVENLABS_API_KEY) {
             throw new HTTPException(503, {
                 message: "ElevenLabs realtime provider is not configured.",

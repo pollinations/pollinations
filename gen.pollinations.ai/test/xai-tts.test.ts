@@ -63,7 +63,7 @@ describe("generateXaiSpeech", () => {
             }),
         });
         expect(response.headers.get("content-type")).toBe(contentTypes[format]);
-        expect(response.headers.get("x-model-used")).toBe("grok-tts");
+        expect(response.headers.get("x-model-used")).toBe("x-ai/grok-tts");
         expect(response.headers.get("x-tts-voice")).toBe(voice);
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "6",
@@ -89,20 +89,6 @@ describe("generateXaiSpeech", () => {
         expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
             voice_id: "eve",
         });
-    });
-
-    it.each([
-        ["voice", { voice: "unknown", responseFormat: "mp3" }],
-        ["format", { voice: "eve", responseFormat: "opus" }],
-    ])("rejects an unsupported %s", async (_field, params) => {
-        await expect(
-            generateXaiSpeech({
-                text: "Hello",
-                ...params,
-                apiKey: "test-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
     });
 
     it("rejects requests when xAI is not configured", async () => {

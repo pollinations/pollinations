@@ -2,6 +2,27 @@ import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 
 describe("CreateChatCompletionRequestSchema", () => {
+    it("preserves omission and explicit values for optional model parameters", () => {
+        const omitted = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+        });
+        expect(omitted).not.toHaveProperty("frequency_penalty");
+        expect(omitted).not.toHaveProperty("presence_penalty");
+        expect(omitted).not.toHaveProperty("logprobs");
+
+        const explicit = CreateChatCompletionRequestSchema.parse({
+            messages: [{ role: "user", content: "hello" }],
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            logprobs: false,
+        });
+        expect(explicit).toMatchObject({
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            logprobs: false,
+        });
+    });
+
     it("preserves message-level provider extensions", () => {
         const result = CreateChatCompletionRequestSchema.parse({
             model: "gemini-fast",
@@ -19,6 +40,39 @@ describe("CreateChatCompletionRequestSchema", () => {
         expect(result.messages[0]).toMatchObject({
             cache_control: { type: "ephemeral" },
             provider_option: "kept",
+        });
+    });
+
+    it("preserves explicit prompt-cache breakpoints on content parts", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            prompt_cache_key: "stable-prefix",
+            prompt_cache_options: { mode: "explicit", ttl: "30m" },
+            prompt_cache_retention: "24h",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "stable prefix",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                    ],
+                },
+            ],
+        });
+
+        expect(result.messages[0].content).toEqual([
+            {
+                type: "text",
+                text: "stable prefix",
+                prompt_cache_breakpoint: { mode: "explicit" },
+            },
+        ]);
+        expect(result).toMatchObject({
+            prompt_cache_key: "stable-prefix",
+            prompt_cache_options: { mode: "explicit", ttl: "30m" },
+            prompt_cache_retention: "24h",
         });
     });
 

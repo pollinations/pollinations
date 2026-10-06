@@ -6,11 +6,7 @@ import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import {
-    canonicalizeModelPermissionIds,
-    filterPermissionsToVisibleModels,
-    getVisibleModelIdsForUser,
-} from "@shared/registry/visible-model-ids.ts";
+import { toModelCategories } from "@shared/registry/model-permissions.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -19,8 +15,8 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-
-const SECONDS_PER_DAY = 24 * 60 * 60;
+import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 
 function setPrivateNoStoreHeaders(c: {
     header: (name: string, value: string) => void;
@@ -42,13 +38,7 @@ function buildUpdatedPermissions(
         return undefined;
     }
     const updated = { ...existing };
-    applyPermissionField(
-        updated,
-        "models",
-        Array.isArray(allowedModels)
-            ? canonicalizeModelPermissionIds(allowedModels)
-            : allowedModels,
-    );
+    applyPermissionField(updated, "models", allowedModels);
     applyPermissionField(updated, "account", accountPermissions);
     return updated;
 }
@@ -90,7 +80,7 @@ async function requireOwnedKey(
     const key = await db.query.apikey.findFirst({
         where: and(
             eq(schema.apikey.id, keyId),
-            eq(schema.apikey.userId, userId),
+            eq(schema.apikey.referenceId, userId),
         ),
     });
     if (!key) {
@@ -121,8 +111,8 @@ async function updateKeyMetadata(
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
  * Permissions format: { models?: string[], account?: string[] }
- * - models: ["flux", "openai"] = restrict to specific models
- * - account: ["profile", "usage", "keys"] = allow access to account endpoints
+ * - models: model categories (text, image, ...) = restrict to those categories
+ * - account: ["profile", "usage", "keys", "machines"] = allow access to account endpoints and hosted sandboxes
  */
 const UpdateApiKeySchema = z.object({
     name: z.string().optional().describe("Name for the API key"),
@@ -130,18 +120,26 @@ const UpdateApiKeySchema = z.object({
         .array(z.string())
         .nullable()
         .optional()
-        .describe("Model IDs this key can access. null = all models allowed"),
+        .describe(
+            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models allowed",
+        ),
     pollenBudget: z
         .number()
         .nullable()
         .optional()
         .describe("Pollen budget cap for this key. null = unlimited"),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
         .optional()
         .describe(
-            'Account permissions: ["profile", "usage", "keys"]. null = none',
+            'Account permissions: ["profile", "usage", "keys", "machines"]. null = none',
         ),
     expiresAt: z
         .string()
@@ -163,14 +161,22 @@ const CreateApiKeySchema = z.object({
         .number()
         .int()
         .positive()
-        .max(365 * SECONDS_PER_DAY)
+        .refine(
+            (seconds) =>
+                Number.isFinite(
+                    new Date(Date.now() + seconds * 1000).getTime(),
+                ),
+            "Expiry is outside the supported date range",
+        )
         .optional()
-        .describe("Expiry in seconds from now (max 365 days)"),
+        .describe("Expiry in seconds from now"),
     allowedModels: z
         .array(z.string())
         .nullable()
         .optional()
-        .describe("Model IDs this key can access. null = all models allowed"),
+        .describe(
+            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models allowed",
+        ),
     pollenBudget: z
         .number()
         .nullable()
@@ -178,12 +184,18 @@ const CreateApiKeySchema = z.object({
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
         ),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
         .optional()
         .describe(
-            'Account permissions: ["profile", "usage", "keys"]. null = none',
+            'Account permissions: ["profile", "usage", "keys", "machines"]. null = none',
         ),
     metadata: z.record(z.string(), z.unknown()).optional(),
 });
@@ -239,11 +251,21 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresIn: input.expiresIn,
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
+                questPollenOnly: input.questPollenOnly,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
-                allowAccountKeysPermission: true,
                 defaultCreatedVia: createdVia,
             });
+
+            c.executionCtx.waitUntil(
+                checkQuestsForUser(c.env, user.id, [
+                    ACCOUNT_SETUP_QUEST_GROUP,
+                ]).catch((error) =>
+                    c.get("log").warn("API key quest check failed: {error}", {
+                        error,
+                    }),
+                ),
+            );
 
             return c.json(created);
         },
@@ -266,35 +288,23 @@ export const apiKeysRoutes = new Hono<Env>()
             setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
-                where: eq(schema.apikey.userId, user.id),
+                where: eq(schema.apikey.referenceId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
-            const parsedPermissions = keys.map((key) =>
-                key.permissions ? parsePermissions(key.permissions) : null,
-            );
-            const hasModelRestrictions = parsedPermissions.some((permissions) =>
-                Array.isArray(permissions?.models),
-            );
-            const visibleModelIds = hasModelRestrictions
-                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
-                : null;
-
             return c.json({
-                data: keys.map((key, index) => ({
+                data: keys.map((key) => ({
                     id: key.id,
                     name: key.name,
                     start: key.start,
                     createdAt: key.createdAt,
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
-                    permissions: visibleModelIds
-                        ? filterPermissionsToVisibleModels(
-                              parsedPermissions[index],
-                              visibleModelIds,
-                          )
-                        : parsedPermissions[index],
+                    permissions: key.permissions
+                        ? parsePermissions(key.permissions)
+                        : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    questPollenOnly: key.questPollenOnly,
                     byopClientKeyId: key.byopClientKeyId,
                 })),
             });
@@ -320,6 +330,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name,
                 allowedModels,
                 pollenBudget,
+                questPollenOnly,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -340,7 +351,9 @@ export const apiKeysRoutes = new Hono<Env>()
 
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,
-                allowedModels,
+                Array.isArray(allowedModels)
+                    ? await toModelCategories(c.env.DB, allowedModels)
+                    : allowedModels,
                 sanitizedAccountPerms,
             );
 
@@ -354,10 +367,15 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            const d1Updates: Record<string, string | number | Date | null> = {};
+            const d1Updates: Record<
+                string,
+                string | number | boolean | Date | null
+            > = {};
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
+            if (questPollenOnly !== undefined)
+                d1Updates.questPollenOnly = questPollenOnly;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
@@ -370,26 +388,12 @@ export const apiKeysRoutes = new Hono<Env>()
             const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
-            const permissions = updated?.permissions
-                ? parsePermissions(updated.permissions)
-                : null;
-            const visibleModelIds = Array.isArray(permissions?.models)
-                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
-                : null;
-            const responsePermissions = visibleModelIds
-                ? JSON.stringify(
-                      filterPermissionsToVisibleModels(
-                          permissions,
-                          visibleModelIds,
-                      ),
-                  )
-                : updated?.permissions;
-
             return c.json({
                 id: updated?.id ?? id,
                 name: updated?.name,
-                permissions: responsePermissions,
+                permissions: updated?.permissions,
                 pollenBalance: updated?.pollenBalance ?? null,
+                questPollenOnly: updated?.questPollenOnly ?? false,
                 expiresAt: updated?.expiresAt ?? null,
             });
         },

@@ -1,27 +1,33 @@
 import {
-    CardIcon,
     Chip,
-    EarningsIcon,
     InlineLink,
-    SproutIcon,
-    StatCard,
-    Surface,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
 } from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import { downloadActivityCsv } from "./activity-csv";
 import {
+    ActivityEmptyState,
     ActivityFilter,
+    ActivityKeyFilter,
     CsvDownloadButton,
-    downloadFile,
+    clearActivitySelectionOnEscape,
+    PollenUsageBadges,
 } from "./activity-helpers";
+import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
+import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
-import { formatActivityPollen } from "./format-activity-pollen";
-import { MetricTabs } from "./metric-tabs";
-import type { Metric, UsagePeriodSelection } from "./types";
+import type { Metric } from "./types";
 import { useEarningsData } from "./use-earnings-data";
 
 type EarningsGraphProps = {
-    period: UsagePeriodSelection;
+    period: ActivityPeriod;
+    onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
     selectedAppKeyIds: string[];
     selectedModelIds: string[];
@@ -32,6 +38,7 @@ type EarningsGraphProps = {
 
 export const EarningsGraph: FC<EarningsGraphProps> = ({
     period,
+    onPeriodChange,
     metric,
     selectedAppKeyIds,
     selectedModelIds,
@@ -41,12 +48,16 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
 }) => {
     const {
         loading,
+        refreshing,
         error,
         fetchEarnings,
         usedApps,
         usedModels,
         chartData,
+        hasData,
+        hasPeriodData,
         stats,
+        exportRows,
     } = useEarningsData({
         period,
         metric,
@@ -63,43 +74,67 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         label: model.label,
     }));
 
-    const showEarningsBreakdown = stats.entityCount > 0;
-    const hasEarnings = stats.totalRequests > 0 || stats.totalPollen > 0;
-    const downloadDisabled = loading || !hasEarnings;
-    const downloadDisabledReason = loading
-        ? "Loading earnings data"
-        : "No earnings to download for this selected period";
+    const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
+    const downloadDisabled = loading || refreshing || exportRows.length === 0;
+    const downloadDisabledReason =
+        loading || refreshing
+            ? "Loading earnings data"
+            : "No earnings to download for this selected period";
 
     function downloadEarnings(): void {
         if (downloadDisabled) return;
 
-        const params = new URLSearchParams({
-            format: "csv",
-            granularity: period.granularity,
-            period: period.period,
-        });
-
-        downloadFile(`/api/account/earnings?${params.toString()}`);
+        downloadActivityCsv(
+            `earnings-${period.period}`,
+            [
+                "date",
+                "source",
+                "entity_id",
+                "entity_name",
+                "requests",
+                "paid_requests",
+                "tier_requests",
+                "baseline_price",
+                "pollen_earned",
+                "paid_earned",
+                "tier_earned",
+                "cost_usd",
+                "reward_rate",
+            ],
+            exportRows,
+        );
     }
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-                <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
-                    <EarningsIcon className="h-4 w-4 shrink-0" />
-                    Earnings
-                </div>
-                <CsvDownloadButton
-                    disabled={downloadDisabled}
-                    disabledReason={downloadDisabledReason}
-                    onClick={downloadEarnings}
-                />
-            </div>
-            <Surface className="flex flex-col gap-4">
-                <div className="flex flex-col gap-4">
-                    <div className="flex flex-col items-start gap-2">
-                        <ActivityFilter
+        // biome-ignore lint/a11y/noStaticElementInteractions: Handles Escape from keyboard-operable controls within this activity card.
+        <div
+            className="@container flex min-w-0 flex-col gap-4"
+            onKeyDown={(event) =>
+                clearActivitySelectionOnEscape(event, () =>
+                    onPeriodChange({ ...period, bucket: undefined }),
+                )
+            }
+        >
+            <ActivityToolbar
+                label="Earnings"
+                period={period}
+                onPeriodChange={onPeriodChange}
+                metric={metric}
+                onMetricChange={onMetricChange}
+                download={
+                    <CsvDownloadButton
+                        disabled={downloadDisabled}
+                        disabledReason={downloadDisabledReason}
+                        onClick={downloadEarnings}
+                    />
+                }
+            >
+                {hasPeriodData && (
+                    <>
+                        <ActivityKeyFilter
                             label="Apps"
+                            unnamedLabel="Unnamed app"
+                            missingLabel="Unavailable app"
                             options={appSelectOptions}
                             selected={selectedAppKeyIds}
                             onChange={onSelectedAppKeyIdsChange}
@@ -112,151 +147,148 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             onChange={onSelectedModelIdsChange}
                             emptyMessage="No model earnings in this period"
                         />
-                        <MetricTabs value={metric} onChange={onMetricChange} />
-                    </div>
+                    </>
+                )}
+            </ActivityToolbar>
 
-                    <div className="min-h-[180px]">
-                        {loading && (
-                            <div className="flex items-center justify-center h-[180px]">
-                                <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                                    Fetching earnings data...
-                                </p>
-                            </div>
-                        )}
-                        {error && !loading && (
-                            <div className="flex items-center justify-center h-[180px]">
-                                <div className="text-center">
-                                    <p className="text-sm text-intent-danger-text font-medium">
-                                        {error}
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => fetchEarnings()}
-                                        className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
+            <SectionContent loading={loading}>
+                {error && (
+                    <LoadError onRetry={() => fetchEarnings()}>
+                        {error}
+                    </LoadError>
+                )}
+                {(!error || hasData) &&
+                    (hasData ? (
+                        <Chart
+                            key={`${period.granularity}:${period.period}`}
+                            period={period}
+                            label="Earnings"
+                            onSelect={(point) =>
+                                onPeriodChange(
+                                    toggleActivityBucket(
+                                        period,
+                                        point.timestamp,
+                                    ),
+                                )
+                            }
+                            data={chartData}
+                            metric={metric}
+                        />
+                    ) : (
+                        <EarningsEmptyState />
+                    ))}
+            </SectionContent>
+
+            {!loading && hasData && (
+                <div className="min-w-0 max-w-full overflow-x-auto">
+                    <Table
+                        aria-label="Earnings by source"
+                        className="min-w-[440px] [&_tr:hover]:bg-transparent"
+                    >
+                        <TableHead>
+                            <TableRow>
+                                <TableHeaderCell
+                                    scope="col"
+                                    className="px-2 py-1 font-normal"
+                                >
+                                    Name
+                                </TableHeaderCell>
+                                <TableHeaderCell
+                                    scope="col"
+                                    className="px-2 py-1 font-normal"
+                                >
+                                    Source
+                                </TableHeaderCell>
+                                <TableHeaderCell
+                                    scope="col"
+                                    align="right"
+                                    className="px-2 py-1 font-normal"
+                                >
+                                    Share
+                                </TableHeaderCell>
+                                <TableHeaderCell
+                                    scope="col"
+                                    align="right"
+                                    className="px-2 py-1 font-normal"
+                                >
+                                    {metric === "pollen"
+                                        ? "Pollen"
+                                        : "Requests"}
+                                </TableHeaderCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody divider="neutral">
+                            {stats.entityBreakdowns.map((entity) => (
+                                <TableRow key={entity.id}>
+                                    <TableCell className="max-w-64 break-words text-xs">
+                                        {entity.label}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip size="sm" intent="neutral">
+                                            {entity.source === "byop_markup"
+                                                ? "App"
+                                                : "Model"}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        numeric
+                                        className="text-xs"
                                     >
-                                        Try again
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        {!loading &&
-                            !error &&
-                            (hasEarnings ? (
-                                <Chart
-                                    data={chartData}
-                                    metric={metric}
-                                    showModelBreakdown={showEarningsBreakdown}
-                                />
-                            ) : (
-                                <EarningsEmptyState />
+                                        {total > 0
+                                            ? (
+                                                  (entity[metric] / total) *
+                                                  100
+                                              ).toFixed(1)
+                                            : "0.0"}
+                                        %
+                                    </TableCell>
+                                    <TableCell
+                                        align="right"
+                                        numeric
+                                        className="text-xs"
+                                    >
+                                        <PollenUsageBadges
+                                            {...entity}
+                                            metric={metric}
+                                        />
+                                    </TableCell>
+                                </TableRow>
                             ))}
-                    </div>
-
-                    {hasEarnings && (
-                        <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
-                            <StatCard
-                                className="min-w-0"
-                                label="Pollen earned"
-                                value={formatActivityPollen(stats.totalPollen)}
-                                detail={
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <PaidChip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <CardIcon className="h-4 w-4" />
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.totalPaid,
-                                                )}
-                                            </span>
-                                        </PaidChip>
-                                        <TierChip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <SproutIcon className="h-4 w-4" />
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.totalTier,
-                                                )}
-                                            </span>
-                                        </TierChip>
-                                    </div>
-                                }
-                            />
-                            <StatCard
-                                className="min-w-0"
-                                label="Requests"
-                                value={stats.totalRequests.toLocaleString()}
-                                detail={
-                                    stats.entityCount > 0 ? (
-                                        <span className="text-theme-text-soft">
-                                            across {stats.entityCount} source
-                                            {stats.entityCount === 1 ? "" : "s"}
-                                        </span>
-                                    ) : null
-                                }
-                            />
-                            <StatCard
-                                className="min-w-0"
-                                label="Top earner"
-                                value={
-                                    <span className="text-xl leading-tight">
-                                        {stats.topEntity?.label || "None"}
-                                    </span>
-                                }
-                                detail={
-                                    stats.topEntity ? (
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span className="tabular-nums">
-                                                    {stats.topEntity.requests.toLocaleString()}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    {stats.topEntity
-                                                        .requests === 1
-                                                        ? "req"
-                                                        : "reqs"}
-                                                </span>
-                                            </Chip>
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
-                                                <span className="tabular-nums">
-                                                    {formatActivityPollen(
-                                                        stats.topEntity.pollen,
-                                                    )}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    pollen
-                                                </span>
-                                            </Chip>
-                                        </div>
-                                    ) : null
-                                }
-                            />
-                        </div>
-                    )}
+                        </TableBody>
+                        <tfoot className="border-t border-divider font-semibold">
+                            <TableRow>
+                                <TableHeaderCell scope="row" colSpan={3}>
+                                    Total
+                                </TableHeaderCell>
+                                <TableCell
+                                    align="right"
+                                    numeric
+                                    className="text-xs"
+                                >
+                                    <PollenUsageBadges
+                                        metric={metric}
+                                        paidPollen={stats.totalPaid}
+                                        tierPollen={stats.totalTier}
+                                        paidRequests={stats.paidRequests}
+                                        tierRequests={stats.tierRequests}
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        </tfoot>
+                    </Table>
                 </div>
-            </Surface>
+            )}
         </div>
     );
 };
 
 const EarningsEmptyState: FC = () => (
-    <p className="text-sm text-ink-600">
-        No earnings in this selected period. Once users start spending pollen
-        through your apps or community models, earnings will appear here.{" "}
-        <InlineLink href="/keys" showIcon={false}>
-            Create an App key
-        </InlineLink>
-        .
-    </p>
+    <ActivityEmptyState>
+        No earnings in this period. Once users spend Pollen through your apps or
+        community models, earnings will appear here.{" "}
+        <InlineLink href="/keys">Create an App key</InlineLink>.
+    </ActivityEmptyState>
 );
 
 export default EarningsGraph;

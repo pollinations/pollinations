@@ -254,4 +254,12 @@ describe("dsh harness", () => {
         expect(read(patchFile())).toBe(invalidPatch);
         expect(snapshotFiles()).toHaveLength(0);
     });
+
+    it("stops before configuration when npx is unavailable", async () => {
+        await expect(dsh.on(ctx, {})).rejects.toThrow(
+            "DeepSeek Harness requires npx",
+        );
+        expect(existsSync(join(home, ".dsh"))).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
 });

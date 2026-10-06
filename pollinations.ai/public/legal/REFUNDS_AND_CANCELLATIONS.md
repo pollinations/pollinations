@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-07-02**
+**Updated: 2026-10-05**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -49,9 +49,9 @@ This policy does not limit any non-waivable statutory rights for non-conforming 
 
 If we introduce paid subscriptions, cancellation stops future renewals. It does not refund prior periods, consumed usage, or already-provisioned Pollen unless required by law or expressly approved by us.
 
-## 6) Chargebacks
+## 6) Chargebacks & Payment Fraud
 
-If a chargeback or payment dispute is filed, we may suspend access while it is investigated. Pollen, credits, benefits, and developer earnings tied to the disputed order may be manually reviewed and reversed or adjusted after dispute notification.
+If a chargeback or payment dispute is filed, or we reasonably believe a payment was unauthorized or fraudulent, we may suspend access while it is investigated. Pollen, credits, benefits, and developer earnings tied to that payment may be manually reviewed and reversed or adjusted; where the Pollen has already been spent, reversal can leave a negative balance.
 
 ## 7) B2B Purchases
 
@@ -60,3 +60,5 @@ If you provide a valid VAT ID or purchase for business use, consumer withdrawal 
 ## 8) How to Request Review
 
 Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid. Business days are calculated in EET/EEST (Tallinn).
+
+Crypto payments follow the same refund policy. Approved crypto refunds are processed by Stripe and returned as stablecoins to the wallet used for the original payment.

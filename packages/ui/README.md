@@ -33,7 +33,7 @@ export function App() {
     return (
         <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
             <Surface>
-                <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
+                <AppUserMenu />
             </Surface>
         </PolliProvider>
     );
@@ -128,11 +128,39 @@ mask; add a platform by adding a line.
 Wallet colors and utilities are bundled into the main stylesheet
 (`@pollinations/ui/styles.css`) — no separate import needed.
 
+## Dialog layout
+
+`Dialog` keeps rounded corners at every width. Below 480px it spans the phone
+width with an 8px vertical gap; larger viewports have a 16px outer inset and use
+the `size` width limit. Height follows the content, capped by the available
+viewport. Confirmations and completed results follow the same phone-width rule.
+
+Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter` for
+consistent spacing and actions. The frame uses Enter's themed panel color;
+inner cards use the neutral `Surface` default. `AuthModal` uses the same frame
+for standalone pages. Content such as document previews can request a height,
+which remains capped by the shared frame.
+
+Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
+completed results use the centered `Dialog`. Both inherit the same viewport sizing.
+
+Actions that write server data use a bordered button (`intent="commit"`).
+Navigation and export actions, including device Continue and Copy and close,
+use the default filled style. Sign-in uses `intent="brand"`; destructive
+confirmations use `intent="danger"`. Cancel/Decline/Close actions use the muted,
+borderless `intent="neutral"` style.
+Saved-card checkout preserves its dedicated footer: full-width Confirm with
+Cancel and the alternative payment-method link on the line below.
+
 ## What's exported
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and
   compositions. These can be used without Pollinations auth.
-- `@pollinations/ui/auth` exports SDK-free auth modal pieces:
+- `@pollinations/ui/auth` exports `PollinationsSignInButton` (official brand
+  asset, outlined amber styling, accessible provider label) and `DashboardSignIn`
+  (the shared satellite-app sign-in page). Apps supply the sign-in action; these
+  components do not issue credentials or choose an authentication method.
+- `@pollinations/ui/auth` also exports SDK-free auth modal pieces:
   `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
   `ErrorBanner`.
 - `@pollinations/ui/auth/sdk` exports identity/session components that read
@@ -153,6 +181,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.
+- `@pollinations/ui/markdown` exports `Markdown` and `Prose`, kept off the
+  root entry so react-markdown only loads where documents render.
 - `@pollinations/ui/brand/*` exports the canonical brand kit — `mark`,
   `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
   plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
@@ -162,11 +192,14 @@ Wallet colors and utilities are bundled into the main stylesheet
   `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
   `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
-  `CopyButton`, `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`,
-  `LinkCard`, `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`,
-  `PeriodPicker`, `Prose`, `Section`, `StatCard`.
+  `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
+  `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
+  `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
+  `StatCard`.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
+  `EditableCombobox.startContent` renders content inside a wrapping input shell
+  and replaces the standalone chevron trigger.
 - **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
   `getPeriodBucketKeys`, `periodBucketKeyToDate`.
 
@@ -182,8 +215,8 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
   such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/wallet`, `@pollinations/ui/gen`,
-  `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
-  layers.
+  `@pollinations/ui/markdown`, `@pollinations/ui/app-user-menu/sdk`) are
+  built directly from those source layers.
 
 ## Theming
 

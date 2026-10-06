@@ -30,6 +30,7 @@ import {
     ModelSelector,
 } from "@pollinations/ui/gen";
 import { useEffect, useMemo, useState } from "react";
+import { findModelById } from "./model-selection";
 
 type ViteImportMeta = ImportMeta & {
     env?: {
@@ -325,16 +326,15 @@ export function Playground({
     const [error, setError] = useState<string | null>(null);
 
     const currentModel = useMemo(
-        () => catalog.models.find((model) => modelId(model) === selectedModel),
+        () => findModelById(catalog.models, selectedModel),
         [catalog.models, selectedModel],
     );
 
     useEffect(() => {
         if (catalog.models.length === 0) return;
-        if (catalog.models.some((model) => modelId(model) === selectedModel))
-            return;
+        if (findModelById(catalog.models, selectedModel)) return;
         const nextModel =
-            catalog.models.find((model) => modelId(model) === "flux") ??
+            findModelById(catalog.models, "flux") ??
             catalog.models.find((model) => model.category === "image") ??
             catalog.models[0];
         if (nextModel) {
@@ -585,7 +585,11 @@ export function Playground({
                             <ModelSelector
                                 models={catalog.models}
                                 category={activeCategory}
-                                value={selectedModel}
+                                value={
+                                    currentModel
+                                        ? modelId(currentModel)
+                                        : selectedModel
+                                }
                                 isLoading={isLoading || !isHydrated}
                                 onChange={setSelectedModel}
                             />

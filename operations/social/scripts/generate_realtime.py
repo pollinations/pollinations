@@ -133,6 +133,7 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
 Author: {pr_data.get('user', {}).get('login', 'unknown')}
 Labels: {', '.join(labels) if labels else 'none'}
 Branch: {pr_data.get('head', {}).get('ref', 'unknown')} → {pr_data.get('base', {}).get('ref', 'main')}
+Deploy status: merged to {pr_data.get('base', {}).get('ref', 'main')}; ships to users with the next production release (not live yet)
 
 Description:
 {body[:2000] if body else 'No description provided.'}
@@ -142,7 +143,8 @@ Changed files:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.2
+        temperature=0.2,
+        response_format={"type": "json_object"},
     )
     return parse_json_response(response) if response else None
 

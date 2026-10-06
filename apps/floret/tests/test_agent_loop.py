@@ -48,6 +48,19 @@ def _stub_env(monkeypatch):
     monkeypatch.setattr(agent_mod, "build_system_prompt", lambda: "SYSTEM")
 
 
+async def test_brain_receives_floret_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    from floret.knowledge import build_system_prompt
+
+    brain = _FakeBrain([_assistant("Hello!")])
+    monkeypatch.setattr(agent_mod, "_client", lambda: brain)
+    monkeypatch.setattr(agent_mod, "build_system_prompt", build_system_prompt)
+
+    await agent_mod.run_agent([{"role": "user", "content": "hey"}])
+
+    assert brain.calls[0][0]["role"] == "system"
+    assert brain.calls[0][0]["content"].startswith("You are Floret,")
+
+
 async def test_two_parallel_tool_calls_both_execute(monkeypatch):
     """A single assistant turn with two tool_calls must run BOTH, not just the first."""
     seen: list[dict] = []
@@ -249,7 +262,7 @@ async def test_unpublished_workspace_file_in_final_answer_triggers_nudge(monkeyp
     nudges = [
         m
         for m in second_call_msgs
-        if m["role"] == "system" and "upload_media" in m["content"]
+        if m["role"] == "system" and "assets publish" in m["content"]
     ]
     assert nudges, "expected publish nudge to be injected"
 

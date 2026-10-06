@@ -25,9 +25,9 @@ describe("prepareMessages", () => {
         expect(message.provider_option).toBe("kept");
     });
 
-    it.each(["", "   ", []])("repairs empty user content %j", (content) => {
+    it.each(["", "   ", []])("preserves empty user content %j", (content) => {
         expect(prepareMessages([{ role: "user", content }])).toEqual([
-            { role: "user", content: "Please provide a response." },
+            { role: "user", content },
         ]);
     });
 
@@ -63,7 +63,7 @@ describe("prepareMessages", () => {
 });
 
 describe("normalizeOptions", () => {
-    it("retains compatibility defaults and bounds", () => {
+    it("preserves numeric options while retaining compatibility defaults", () => {
         expect(
             normalizeOptions({
                 temperature: 4,
@@ -75,11 +75,11 @@ describe("normalizeOptions", () => {
             }),
         ).toEqual({
             stream: false,
-            temperature: 3,
-            top_p: 0,
-            presence_penalty: 2,
-            frequency_penalty: -2,
-            seed: 4,
+            temperature: 4,
+            top_p: -1,
+            presence_penalty: 3,
+            frequency_penalty: -3,
+            seed: 4.9,
             response_format: { type: "json_object" },
         });
     });

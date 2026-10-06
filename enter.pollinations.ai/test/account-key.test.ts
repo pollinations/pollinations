@@ -40,6 +40,9 @@ test(
         expect(response.status).toBe(200);
 
         const data = await response.json();
+        expect(typeof data.id).toBe("string");
+        expect(data.id.length).toBeGreaterThan(0);
+        expect(data.id).not.toBe(apiKey);
         expect(data.valid).toBe(true);
         expect(data.type).toBe("secret");
         expect(data.name).toBeTruthy();
@@ -54,11 +57,15 @@ test(
 test(
     "GET /api/account/key - accepts an agent run token",
     { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
+    async ({ sessionToken, mocks }) => {
         await mocks.enable("tinybird");
+        const { key } = await createApiKeyViaApi(sessionToken, {
+            name: "agent-parent",
+            accountPermissions: ["usage"],
+        });
         const parent = await authenticateApiKeyRequest({
             request: new Request("http://localhost", {
-                headers: { Authorization: `Bearer ${apiKey}` },
+                headers: { Authorization: `Bearer ${key}` },
             }),
             env,
         });
@@ -81,8 +88,8 @@ test(
             userId: parent?.user?.id,
             byopApp: null,
         });
-        // A run token never carries account scope, only generation access.
-        expect(data.permissions.account).toBeNull();
+        // A run token carries the parent key's account permissions.
+        expect(data.permissions.account).toEqual(["usage"]);
     },
 );
 
@@ -121,29 +128,7 @@ test(
 
         const data = await response.json();
         expect(data.permissions).toBeDefined();
-        expect(data.permissions.models).toEqual(["openai-fast", "flux"]);
-    },
-);
-
-test(
-    "GET /api/account/key - omits retired models from permissions",
-    { timeout: 30000 },
-    async ({ sessionToken, mocks }) => {
-        await mocks.enable("tinybird");
-        const created = await createApiKeyViaApi(sessionToken, {
-            name: "current-key-with-retired-model",
-            allowedModels: ["openai-fast", "retired-model"],
-        });
-
-        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
-            headers: {
-                Authorization: `Bearer ${created.key}`,
-            },
-        });
-
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect(data.permissions.models).toEqual(["openai-fast"]);
+        expect(data.permissions.models).toEqual(["text", "image"]);
     },
 );
 

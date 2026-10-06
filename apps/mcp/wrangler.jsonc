@@ -2,7 +2,7 @@
   "name": "pollinations-mcp",
   "main": "worker.js",
   "compatibility_date": "2026-08-14",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "routes": [
     {
       "pattern": "mcp.myceli.ai",
@@ -15,5 +15,14 @@
       "custom_domain": true
     }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "pollinations-mcp-staging",
+      "workers_dev": false,
+      "routes": [],
+      "vars": { "POLLINATIONS_BASE_URL": "https://staging.gen.pollinations.ai" },
+      "observability": { "enabled": true }
+    }
+  }
 }

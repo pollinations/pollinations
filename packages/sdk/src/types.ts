@@ -43,6 +43,8 @@ export interface ImageGenerateOptions extends RequestOptions {
     width?: number;
     /** Image height in pixels (default: 1024) */
     height?: number;
+    /** Model-specific output resolution tier (for example, "1k" or "2k") */
+    resolution?: string;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
     /** Enable safety content filters (default: false) */
@@ -93,6 +95,8 @@ export interface VideoGenerateOptions extends RequestOptions {
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
+    /** Model-specific output resolution tier (for example, "720p" or "1080p") */
+    resolution?: string;
     /** Seed for reproducible generation */
     seed?: number;
     /** Enable audio generation where supported by the selected video model */
@@ -254,10 +258,28 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
+/** Capabilities that router models can delegate to downstream models. */
+export const CHAT_ROUTING_CAPABILITIES = [
+    "text",
+    "web_search",
+    "image_generation",
+    "image_editing",
+    "video",
+    "audio",
+] as const;
+
+/** Capability names accepted by router-model routing preferences. */
+export type ChatRoutingCapability = (typeof CHAT_ROUTING_CAPABILITIES)[number];
+
+/** Optional downstream-model overrides for router models. */
+export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
+
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (server default: 'openai') */
     model?: TextModel;
+    /** Per-capability downstream model overrides for router models. */
+    routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
     /** Top P sampling 0-1 (default: 1) */
@@ -398,8 +420,14 @@ export interface ChatStreamChunk {
     choices: Array<{
         index: number;
         delta: {
-            role?: "assistant";
-            content?: string;
+            role?: Exclude<MessageRole, "function">;
+            content?: string | null;
+            /** Deprecated OpenAI function-call delta. */
+            function_call?: {
+                name?: string;
+                arguments?: string;
+            };
+            refusal?: string | null;
             tool_calls?: Array<{
                 index: number;
                 id?: string;
@@ -415,9 +443,13 @@ export interface ChatStreamChunk {
             | "length"
             | "tool_calls"
             | "content_filter"
+            | "function_call"
             | null;
+        logprobs?: ChatChoice["logprobs"];
     }>;
-    usage?: CompletionUsage;
+    usage?: CompletionUsage | null;
+    service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
+    system_fingerprint?: string;
 }
 
 // ============================================================================
@@ -443,6 +475,20 @@ export interface AudioGenerateOptions extends RequestOptions {
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
+}
+
+/** Options for POST /v1/audio/speech */
+export interface AudioSpeechOptions extends AudioGenerateOptions {
+    /** Public audio URL for models that support reference audio */
+    referenceAudio?: string;
+}
+
+/** File-based voice conversion or speech isolation. */
+export interface AudioTransformOptions extends RequestOptions {
+    operation: "voice-changer" | "voice-isolator";
+    model?: AudioModel;
+    /** Target voice for voice-changer. */
+    voice?: AudioVoice;
 }
 
 /** Response from dedicated audio endpoints (binary audio data) */
@@ -517,6 +563,78 @@ export interface TranscriptionVerboseResponse extends TranscriptionResponse {
 }
 
 // ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Embedding model (use getModels() to fetch available models) */
+export type EmbeddingModel = string;
+
+/** A multimodal content part accepted by embedding models */
+export type EmbeddingContentPart =
+    | TextContentPart
+    | ImageContentPart
+    | { type: "input_audio"; input_audio: { data: string; format: string } }
+    | VideoContentPart;
+
+/**
+ * Input for embeddings: a text, a batch of texts, or multimodal content
+ * parts (text, image_url, input_audio, video_url).
+ */
+export type EmbeddingInput =
+    | string
+    | string[]
+    | EmbeddingContentPart
+    | EmbeddingContentPart[];
+
+/** Gemini text-specific task hint */
+export type EmbeddingTaskType =
+    | "SEMANTIC_SIMILARITY"
+    | "CLASSIFICATION"
+    | "CLUSTERING"
+    | "RETRIEVAL_DOCUMENT"
+    | "RETRIEVAL_QUERY"
+    | "CODE_RETRIEVAL_QUERY"
+    | "QUESTION_ANSWERING"
+    | "FACT_VERIFICATION";
+
+/** Options for embeddings (POST /v1/embeddings) */
+export interface EmbeddingsOptions extends RequestOptions {
+    /** Embedding model to use; uses the server default when omitted */
+    model?: EmbeddingModel;
+    /** Output embedding dimensions, 128-4096 (model-specific limits apply) */
+    dimensions?: number;
+    /** Output encoding for the embedding vector (default: 'float') */
+    encodingFormat?: "float" | "base64";
+    /** Gemini text-specific task hint */
+    taskType?: EmbeddingTaskType;
+    /** Cohere-specific input role: 'document' when indexing, 'query' when searching */
+    inputType?: "query" | "document";
+}
+
+/** A single embedding result */
+export interface Embedding {
+    object: "embedding";
+    /** Float vector, or base64 Float32 (little-endian) when encodingFormat='base64' */
+    embedding: number[] | string;
+    /** Index of the embedding in the list */
+    index: number;
+}
+
+/** Token usage for an embeddings request */
+export interface EmbeddingUsage {
+    prompt_tokens: number;
+    total_tokens: number;
+}
+
+/** Embeddings response (OpenAI-compatible) */
+export interface EmbeddingsResponse {
+    object: "list";
+    data: Embedding[];
+    model: string;
+    usage: EmbeddingUsage;
+}
+
+// ============================================================================
 // Media Upload
 // ============================================================================
 
@@ -542,6 +660,107 @@ export interface UploadResponse {
     size: number;
     /** Tags the upload was published with; present only when tagged */
     tags?: string[];
+}
+
+// ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/**
+ * State, instructions, and criteria accept a string, object, or array.
+ */
+export type DecisionContent = string | Record<string, unknown> | unknown[];
+
+/** A choice question between named options */
+export interface ChoiceQuestion {
+    type: "choice";
+    /** What to decide */
+    instructions: DecisionContent;
+    /** Selectable options mapped to what each one means (or null) */
+    criteria: Record<string, DecisionContent | null>;
+}
+
+/** A score question on an ordered scale */
+export interface ScoreQuestion {
+    type: "score";
+    /** What to rate */
+    instructions: DecisionContent;
+    /** Ordered rungs from lowest to highest (at least 2 levels) */
+    criteria: DecisionContent[];
+}
+
+/** A yes/no proposition question evaluating probability (0 to 1) */
+export interface NoulQuestion {
+    type: "noul";
+    /** The yes/no proposition to evaluate */
+    instructions: DecisionContent;
+    /** Optional descriptions of what true and false mean */
+    criteria?: {
+        true?: DecisionContent;
+        false?: DecisionContent;
+    };
+}
+
+/** A typed decision question: choice, score, or noul */
+export type DecisionQuestion = ChoiceQuestion | ScoreQuestion | NoulQuestion;
+
+/** Answer for a choice question */
+export interface ChoiceAnswer {
+    type: "choice";
+    /** The selected criteria key */
+    choice: string;
+    /** Probability assigned to each option */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a score question */
+export interface ScoreAnswer {
+    type: "score";
+    /** Position on the criteria scale (can be fractional) */
+    score: number;
+    /** Maps each scale index back to its criteria entry */
+    legend: Record<string, unknown>;
+    /** Probability assigned to each scale index */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a noul question */
+export interface NoulAnswer {
+    type: "noul";
+    /** Probability that the proposition is true, 0 to 1 */
+    noul: number;
+}
+
+/** Typed answer matching the question type */
+export type DecisionAnswer = ChoiceAnswer | ScoreAnswer | NoulAnswer;
+
+/** Token usage for a decision request */
+export interface DecisionUsage {
+    input_tokens: number;
+    output_tokens: number;
+}
+
+/** Options for requesting a decision (POST /alpha/decisions) */
+export interface DecisionOptions extends RequestOptions {
+    /** Decision model to use (default: 'typesafe/jev-1.13') */
+    model?: string;
+    /** The facts/context to decide on */
+    state: DecisionContent;
+    /** Questions to answer about the state, keyed by custom names */
+    questions: Record<string, DecisionQuestion>;
+}
+
+/** Response from the decisions endpoint */
+export interface DecisionResponse {
+    id: string;
+    model: string;
+    provider: string;
+    answers: Record<string, DecisionAnswer>;
+    usage: DecisionUsage;
 }
 
 // ============================================================================
@@ -743,6 +962,8 @@ export type EarningsOptions = Pick<
 
 /** API key validation response */
 export interface KeyInfo {
+    /** Opaque key ID for the owner-only editor; never the API key value. */
+    id: string;
     valid: boolean;
     type: string;
     name?: string | null;
@@ -753,6 +974,7 @@ export interface KeyInfo {
         account?: string[] | null;
     };
     pollenBudget?: number | null;
+    questPollenOnly?: boolean;
     rateLimitEnabled?: boolean;
 }
 
@@ -773,6 +995,7 @@ export interface AccountKey {
     } | null;
     metadata: Record<string, unknown> | null;
     pollenBalance: number | null;
+    questPollenOnly?: boolean;
     enabled: boolean;
 }
 
@@ -787,7 +1010,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to specific model IDs */
+    /** Restrict to model categories (text, image, ...); a model ID allows its whole category */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;
@@ -795,9 +1018,11 @@ export interface CreateKeyOptions {
      * Account permissions to grant (e.g. `["profile", "usage"]`).
      * Without this, scoped keys cannot read account state beyond their
      * own key metadata, budget, and per-key usage.
-     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
+    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    questPollenOnly?: boolean;
     /**
      * Allowed OAuth redirect URIs for publishable app keys. Required when
      * creating a `publishable` key that drives the `/authorize` BYOP flow.
@@ -829,6 +1054,7 @@ export interface CreatedKey {
         account?: string[];
     } | null;
     pollenBudget: number | null;
+    questPollenOnly?: boolean;
 }
 
 // ============================================================================
@@ -843,6 +1069,7 @@ export const MODEL_CATEGORIES = [
     "video",
     "text",
     "audio",
+    "3d",
     "embedding",
     "realtime",
 ] as const;
@@ -850,11 +1077,26 @@ export const MODEL_CATEGORIES = [
 /** Model category */
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
+/** Inputs accepted by a model */
+export type ModelInputModality = "text" | "image" | "audio" | "video";
+
+/** Outputs produced by a model */
+export type ModelOutputModality =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "3d";
+
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 /** Per-model agentic/text capabilities */
@@ -874,15 +1116,17 @@ export interface ModelInfo {
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
     title?: string;
     category?: ModelCategory;
-    brand?: string;
+    /** Human-readable model publisher, not the inference provider. Replaces brand. */
+    publisher?: string;
     description?: string;
     aliases?: string[];
     community?: boolean;
     agent?: boolean;
     base_model?: string;
-    input_modalities?: string[];
-    output_modalities?: string[];
+    input_modalities?: ModelInputModality[];
+    output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
+    resolutions?: string[];
     min_duration?: number;
     max_duration?: number;
     default_duration?: number;
@@ -902,7 +1146,8 @@ export interface ModelInfo {
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    paid_only?: boolean;
+    /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
+    paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }
 

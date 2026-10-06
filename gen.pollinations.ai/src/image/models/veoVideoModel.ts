@@ -1,13 +1,16 @@
-import { HttpError } from "@shared/http-error.ts";
-import type { Usage } from "@shared/registry/registry.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
-import { calculateVideoResolution } from "../utils/videoResolution.ts";
+import { downloadUserImage, toDataUri } from "../utils/imageDownload.ts";
+import {
+    runReplicatePrediction,
+    toReplicateUpstreamError,
+} from "../utils/replicateClient.ts";
+import type { TrackingData } from "../utils/trackingHeaders.ts";
 
 // Logger
 const logOps = debug("pollinations:veo:ops");
@@ -28,8 +31,21 @@ async function processImageForVeo(
         const errorMessage =
             error instanceof Error ? error.message : String(error);
         logError(`Error processing ${label}:`, errorMessage);
-        throw new HttpError(`Failed to process ${label}: ${errorMessage}`, 400);
+        throw UpstreamError.fromProvider(400, {
+            message: `Failed to process ${label}: ${errorMessage}`,
+        });
     }
+}
+
+// Explicit aspectRatio wins; otherwise only caller-set dimensions pick the
+// orientation, with square dimensions and omitted dimensions defaulting wide.
+function veoAspectRatio(params: ImageParams): "16:9" | "9:16" {
+    if (params.aspectRatio === "16:9" || params.aspectRatio === "9:16") {
+        return params.aspectRatio;
+    }
+    return params.dimensionsExplicit && params.height > params.width
+        ? "9:16"
+        : "16:9";
 }
 
 // Veo API constants
@@ -43,10 +59,7 @@ export interface VideoGenerationResult {
     buffer: Buffer;
     mimeType: string;
     durationSeconds: number;
-    trackingData: {
-        actualModel: string;
-        usage: Usage & { totalTokenCount?: number };
-    };
+    trackingData: TrackingData & { actualModel: string };
 }
 
 interface VeoOperationResponse {
@@ -81,10 +94,9 @@ const generateVeoVideo = async (
     const PROJECT_ID = getImageEnv("GOOGLE_PROJECT_ID");
 
     if (!PROJECT_ID) {
-        throw new HttpError(
-            "GOOGLE_PROJECT_ID environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "GOOGLE_PROJECT_ID environment variable is required",
+        });
     }
 
     logOps("Calling Veo API with prompt:", prompt);
@@ -92,19 +104,16 @@ const generateVeoVideo = async (
     // Get access token
     const accessToken = await googleCloudAuth.getAccessToken();
     if (!accessToken) {
-        throw new HttpError("Failed to get Google Cloud access token", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "Failed to get Google Cloud access token",
+        });
     }
 
     // Determine video parameters - pass through to Veo API, let it validate
     const durationSeconds = safeParams.duration || 4;
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
-
-    const { aspectRatio } = calculateVideoResolution({
-        width: safeParams.width,
-        height: safeParams.height,
-        aspectRatio: safeParams.aspectRatio,
-    });
+    const aspectRatio = veoAspectRatio(safeParams);
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -198,12 +207,10 @@ const generateVeoVideo = async (
     logOps("Generate response:", JSON.stringify(generateData, null, 2));
 
     if (!generateData.name) {
-        throw new HttpError(
-            "Veo API did not return operation name",
-            500,
-            undefined,
-            generateEndpoint,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "Veo API did not return operation name",
+            requestUrl: new URL(generateEndpoint),
+        });
     }
 
     // Step 2: Poll for completion using fetchPredictOperation
@@ -215,7 +222,7 @@ const generateVeoVideo = async (
         mimeType: "video/mp4",
         durationSeconds: durationSeconds,
         trackingData: {
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: {
                 completionVideoSeconds: durationSeconds,
                 ...(generateAudio
@@ -236,6 +243,54 @@ export const callVeoAPI = (
         prompt,
         safeParams,
     );
+
+/** Same Veo family through Replicate, using its shared prediction client. */
+export async function callVeoReplicateAPI(
+    prompt: string,
+    params: ImageParams,
+): Promise<VideoGenerationResult> {
+    const generateAudio = params.audio === true;
+    try {
+        const { output, videoOutputDurationSeconds } =
+            await runReplicatePrediction<Record<string, unknown>, string>({
+                model: "google/veo-3.1-fast",
+                input: {
+                    prompt,
+                    duration: params.duration ?? 4,
+                    resolution: params.resolution ?? "720p",
+                    aspect_ratio: veoAspectRatio(params),
+                    generate_audio: generateAudio,
+                    ...(params.image[0]
+                        ? { image: await toDataUri(params.image[0]) }
+                        : {}),
+                    ...(params.image[1]
+                        ? { last_frame: await toDataUri(params.image[1]) }
+                        : {}),
+                },
+            });
+        const response = await fetchUpstream(output, {
+            errorLabel: "Failed to download Veo video",
+        });
+        const durationSeconds =
+            videoOutputDurationSeconds ?? params.duration ?? 4;
+        return {
+            buffer: Buffer.from(await response.arrayBuffer()),
+            mimeType: "video/mp4",
+            durationSeconds,
+            trackingData: {
+                actualModel: params.model,
+                usage: {
+                    completionVideoSeconds: durationSeconds,
+                    ...(generateAudio
+                        ? { completionAudioSeconds: durationSeconds }
+                        : {}),
+                },
+            },
+        };
+    } catch (error) {
+        throw toReplicateUpstreamError(error, "Veo generation failed");
+    }
+}
 
 /**
  * Poll Veo operation until completion using fetchPredictOperation
@@ -298,12 +353,10 @@ async function pollVeoOperation(
                 const isClientError =
                     errorCode === 400 || errorCode === 3 || errorCode === 9;
 
-                throw new HttpError(
-                    `Video generation failed: ${pollData.error.message}`,
-                    isClientError ? 400 : 500,
-                    undefined,
-                    pollUrl,
-                );
+                throw UpstreamError.fromProvider(isClientError ? 400 : 500, {
+                    message: `Video generation failed: ${pollData.error.message}`,
+                    requestUrl: new URL(pollUrl),
+                });
             }
 
             // Check for videos
@@ -329,21 +382,18 @@ async function pollVeoOperation(
                 if (video.gcsUri) {
                     // If we get a GCS URI instead of base64, throw error
                     // (This shouldn't happen with the current API but just in case)
-                    throw new HttpError(
-                        "Video returned as GCS URI which is not supported",
-                        500,
-                        undefined,
-                        pollUrl,
-                    );
+                    throw UpstreamError.fromProvider(500, {
+                        message:
+                            "Video returned as GCS URI which is not supported",
+                        requestUrl: new URL(pollUrl),
+                    });
                 }
             }
 
-            throw new HttpError(
-                "No video data in response",
-                500,
-                undefined,
-                pollUrl,
-            );
+            throw UpstreamError.fromProvider(500, {
+                message: "No video data in response",
+                requestUrl: new URL(pollUrl),
+            });
         }
 
         // Not done yet, wait and try again
@@ -351,10 +401,8 @@ async function pollVeoOperation(
         delayMs = Math.min(delayMs * 1.2, 30000); // Exponential backoff, cap at 30s
     }
 
-    throw new HttpError(
-        "Video generation timed out after 3 minutes",
-        504,
-        undefined,
-        pollUrl,
-    );
+    throw UpstreamError.fromProvider(504, {
+        message: "Video generation timed out after 3 minutes",
+        requestUrl: new URL(pollUrl),
+    });
 }

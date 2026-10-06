@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     setImagesBinding,
@@ -31,12 +31,15 @@ describe("transformImage", () => {
             (caught) => caught,
         );
 
-        expect(error).toBeInstanceOf(HttpError);
+        expect(error).toBeInstanceOf(UpstreamError);
         expect(error).toMatchObject({
             status: 502,
             message: "Cloudflare Images output failed: Network connection lost",
-            details: { service: "cloudflare-images", stage: "output" },
-            upstreamUrl: "https://images.cloudflare.com/binding",
+            responseBody: JSON.stringify({
+                service: "cloudflare-images",
+                stage: "output",
+            }),
+            requestUrl: new URL("https://images.cloudflare.com/binding"),
         });
     });
 
@@ -61,11 +64,11 @@ describe("transformImage", () => {
             status: 502,
             message:
                 "Cloudflare Images body read failed: Network connection lost",
-            details: {
+            responseBody: JSON.stringify({
                 service: "cloudflare-images",
                 stage: "body read",
-            },
-            upstreamUrl: "https://images.cloudflare.com/binding",
+            }),
+            requestUrl: new URL("https://images.cloudflare.com/binding"),
         });
     });
 });

@@ -2,9 +2,10 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
-import { canonicalizeModelPermissionIds } from "../registry/visible-model-ids.ts";
+import { toModelCategories } from "../registry/model-permissions.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import { isUserBanned } from "./ban.ts";
 import {
     isAllowedRedirectUrl,
     redirectUriMatchesAllowlist,
@@ -31,10 +32,12 @@ type CreateApiKeyForUserInput = {
     expiresIn?: number;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    questPollenOnly?: boolean;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
-    allowAccountKeysPermission: boolean;
     defaultCreatedVia: string;
+    createdByApiKeyId?: string;
+    originAppKeyId?: string;
 };
 
 type CreateApiKeyAuthClient = {
@@ -162,6 +165,10 @@ async function validateClientRedirectBinding(
     if (!clientKey || clientKey.prefix !== "pk") {
         rejectInvalidClientId();
     }
+    const owner = await db.query.user.findFirst({
+        where: eq(schema.user.id, clientKey.referenceId),
+    });
+    if (!owner || isUserBanned(owner)) rejectInvalidClientId();
     const attribution = {
         clientId: clientKey.id,
     };
@@ -213,10 +220,12 @@ export async function createApiKeyForUser({
     expiresIn,
     allowedModels,
     pollenBudget,
+    questPollenOnly = false,
     accountPermissions,
     metadata,
-    allowAccountKeysPermission,
     defaultCreatedVia,
+    createdByApiKeyId,
+    originAppKeyId,
 }: CreateApiKeyForUserInput) {
     const db = drizzle(dbBinding, { schema });
     const attribution = await validateClientRedirectBinding(
@@ -239,15 +248,12 @@ export async function createApiKeyForUser({
         }
     }
 
-    const sanitizedAccountPerms =
-        sanitizeAuthorizeAccountPermissions(accountPermissions) ?? null;
-    const safeAccountPerms = allowAccountKeysPermission
-        ? sanitizedAccountPerms
-        : (sanitizedAccountPerms?.filter((p) => p !== "keys") ?? null);
+    const safeAccountPerms =
+        sanitizeAuthorizeAccountPermissions(accountPermissions);
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {
-        permissions.models = canonicalizeModelPermissionIds(allowedModels);
+        permissions.models = await toModelCategories(dbBinding, allowedModels);
     }
     if (safeAccountPerms && safeAccountPerms.length > 0) {
         permissions.account = safeAccountPerms;
@@ -258,6 +264,8 @@ export async function createApiKeyForUser({
         ...callerMetadata,
         keyType: type,
         createdVia: defaultCreatedVia,
+        ...(createdByApiKeyId && { createdByApiKeyId }),
+        ...(originAppKeyId && { originAppKeyId }),
     };
 
     const created = await authClient.api.createApiKey({
@@ -289,6 +297,7 @@ export async function createApiKeyForUser({
     if (effectivePollenBudget != null) {
         d1Updates.pollenBalance = effectivePollenBudget;
     }
+    if (questPollenOnly) d1Updates.questPollenOnly = true;
     if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
@@ -309,6 +318,7 @@ export async function createApiKeyForUser({
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: effectivePollenBudget ?? null,
+        questPollenOnly,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,

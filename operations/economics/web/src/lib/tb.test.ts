@@ -5,6 +5,7 @@ import {
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
+    TbError,
     validatePipeRows,
 } from "./tb";
 
@@ -35,6 +36,25 @@ describe("Tinybird pipe contracts", () => {
 });
 
 describe("loadAll", () => {
+    it("loads only the sources a view needs and does not invent absent datasets", async () => {
+        const fetch = vi.fn(() =>
+            Promise.resolve(
+                Response.json({ data: FIXTURES.economics_bank_ledger_api }),
+            ),
+        );
+        vi.stubGlobal("fetch", fetch);
+        const controller = new AbortController();
+        const result = await loadAll(["opTransactions"], controller.signal);
+        expect(fetch).toHaveBeenCalledExactlyOnceWith(
+            "/api/economics/pipes/economics_bank_ledger_api",
+            { credentials: "same-origin", signal: controller.signal },
+        );
+        expect(result.opTransactions).toHaveLength(
+            FIXTURES.economics_bank_ledger_api.length,
+        );
+        expect(result.revenueShare).toBeUndefined();
+        expect(result.privateConfig).toBeUndefined();
+    });
     it("requires and parses the authenticated private configuration", async () => {
         vi.stubGlobal(
             "fetch",
@@ -48,7 +68,14 @@ describe("loadAll", () => {
 
         const result = await loadAll();
 
+        for (const rows of [result.vendorLedger, result.opPollen]) {
+            expect(rows?.some((row) => row.vendor === "vast")).toBe(true);
+            expect(rows?.some((row) => row.vendor === "vast.ai")).toBe(false);
+        }
         expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
+        expect(result.userBalances).toEqual(
+            FIXTURES.economics_user_balances_api,
+        );
     });
 
     it("fails closed when the private configuration is absent", async () => {
@@ -73,11 +100,59 @@ describe("loadAll", () => {
             "economics_private_config_api: expected one row, received 0",
         );
     });
+
+    it("preserves dashboard authentication status", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() =>
+                Promise.resolve(
+                    Response.json({ error: "Unauthorized" }, { status: 401 }),
+                ),
+            ),
+        );
+
+        const error = await loadAll().catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(TbError);
+        expect((error as TbError).status).toBe(401);
+    });
+
+    it("fails closed when the D1 user snapshot is empty", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const pipe = decodeURIComponent(
+                    String(input).split("/").at(-1) ?? "",
+                );
+                return Promise.resolve(
+                    Response.json({
+                        data:
+                            pipe === "economics_user_balances_api"
+                                ? [
+                                      {
+                                          users: 0,
+                                          paid_users: 0,
+                                          quest_users: 0,
+                                          paid_balance: 0,
+                                          quest_balance: 0,
+                                          synced_at: "1970-01-01 00:00:00",
+                                      },
+                                  ]
+                                : FIXTURES[pipe],
+                    }),
+                );
+            }),
+        );
+
+        await expect(loadAll()).rejects.toThrow(
+            "economics_user_balances_api: expected one populated D1 snapshot row",
+        );
+    });
 });
 
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {
-        expect(canonicalVendor("vast")).toBe("vast.ai");
+        expect(canonicalVendor("vast.ai")).toBe("vast");
     });
 
     it("joins Bedrock usage to AWS billing", () => {
@@ -87,7 +162,7 @@ describe("canonicalVendor", () => {
 
     it("joins account-specific aliases to their provider", () => {
         expect(canonicalVendor("azure-2")).toBe("azure");
-        expect(canonicalVendor("vastai")).toBe("vast.ai");
+        expect(canonicalVendor("vastai")).toBe("vast");
     });
 
     it("leaves canonical vendors unchanged", () => {
@@ -117,19 +192,40 @@ describe("canonicalPollenRows", () => {
         ...overrides,
     });
 
-    it("aggregates aliases after canonicalization", () => {
+    it.each([
+        ["aws", "bedrock"],
+        ["vast", "vast.ai"],
+    ])("aggregates %s and historical %s usage together", (canonical, historical) => {
         const [row] = canonicalPollenRows([
-            pollen("aws"),
-            pollen("bedrock", { cost_paid: 10, requests_paid: 20 }),
+            pollen(canonical),
+            pollen(historical, { cost_paid: 10, requests_paid: 20 }),
         ]);
 
         expect(row).toMatchObject({
-            vendor: "aws",
+            vendor: canonical,
             cost_paid: 11,
             cost_quests: 4,
             requests_paid: 25,
             requests_quests: 12,
         });
+    });
+
+    it("re-attributes reviewed Pollen rows to the vendor whose bill carried them", () => {
+        // gptimage was tagged azure-2 (Pointflyer) through April 2026 while its
+        // gpt-image-1-mini deployments were billed on our own subscription.
+        const rows = canonicalPollenRows([
+            pollen("pointsflyer", { month: "2026-02", model: "gptimage" }),
+            pollen("pointsflyer", { month: "2026-02", model: "openai" }),
+            pollen("pointsflyer", { month: "2026-05", model: "gptimage" }),
+        ]);
+
+        expect(
+            rows.map((row) => `${row.month}|${row.vendor}|${row.model}`),
+        ).toEqual([
+            "2026-05|pointsflyer|gptimage",
+            "2026-02|azure|gptimage",
+            "2026-02|pointsflyer|openai",
+        ]);
     });
 
     it("removes rows with no values or requests", () => {

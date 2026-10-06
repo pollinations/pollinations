@@ -41,7 +41,9 @@ export {
     configure,
     conversation,
     createKey,
+    decision,
     editImage,
+    embeddings,
     generateAudio,
     generateImage,
     generateText,
@@ -88,6 +90,8 @@ export type {
     // Audio
     AudioModel,
     AudioResponse,
+    AudioSpeechOptions,
+    AudioTransformOptions,
     AudioVoice,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -95,18 +99,36 @@ export type {
     ChatChoice,
     ChatOptions,
     ChatResponse,
+    ChatRouting,
+    ChatRoutingCapability,
     ChatStreamChunk,
+    ChoiceAnswer,
+    ChoiceQuestion,
     CompletionUsage,
     CreatedKey,
     CreateKeyOptions,
     DailyUsageRecord,
     DailyUsageResponse,
+    DecisionAnswer,
+    DecisionContent,
+    DecisionOptions,
+    DecisionQuestion,
+    DecisionResponse,
+    DecisionUsage,
     DeveloperEarningsResponse,
     DeveloperEarningsRow,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
     EarningsOptions,
+    Embedding,
+    EmbeddingContentPart,
+    EmbeddingInput,
+    EmbeddingModel,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
+    EmbeddingTaskType,
+    EmbeddingUsage,
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
@@ -128,12 +150,18 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
+    ModelInputModality,
+    ModelOutputModality,
+    NoulAnswer,
+    NoulQuestion,
     // Config
     PollinationsConfig,
     // Errors
     PollinationsErrorDetails,
     RequestOptions,
     ResponseFormat,
+    ScoreAnswer,
+    ScoreQuestion,
     TextContentPart,
     TextGenerateOptions,
     // Text
@@ -151,6 +179,7 @@ export type {
     UsageRecord,
     UsageResponse,
     UserInfo,
+    VideoCapability,
     VideoContentPart,
     VideoGenerateOptions,
     // Video
@@ -158,5 +187,5 @@ export type {
     VideoResponse,
 } from "./types.js";
 
-// Export the error class
-export { PollinationsError } from "./types.js";
+// Export runtime constants and the error class
+export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";

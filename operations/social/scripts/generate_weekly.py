@@ -42,11 +42,12 @@ from common import (
     commit_files_to_branch,
     GISTS_BRANCH,
     IMAGE_SIZE,
+    NEWS_REL_DIR,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
 
-WEEKLY_REL_DIR = "operations/social/news/weekly"
+WEEKLY_REL_DIR = f"{NEWS_REL_DIR}/weekly"
 
 def _weekly_image_context() -> str:
     """Load weekly image identity from weekly.md (everything after '## Weekly Image Identity')."""
@@ -200,40 +201,47 @@ def generate_twitter_post(digest: Dict, token: str) -> Optional[Dict]:
         temperature=0.8, extra_context=_weekly_image_context())
 
 def generate_linkedin_post(digest: Dict, token: str) -> Optional[Dict]:
-    post = generate_platform_post(
-        "linkedin",
-        digest,
-        token,
-        (
-            "Create a LinkedIn post about this week's development work. "
-            f"The final assembled post including hashtags MUST be {LINKEDIN_MAX_CHARS} characters or fewer "
-            "because Buffer rejects anything longer."
-        ),
-        extra_context=_weekly_image_context(),
+    instruction = (
+        "Create a LinkedIn post about this week's development work. "
+        f"The final assembled post including hashtags MUST be {LINKEDIN_MAX_CHARS} characters or fewer "
+        "because Buffer rejects anything longer."
     )
-    if not post:
-        return None
-
-    missing_fields = [field for field in ("hook", "body", "closing") if not post.get(field)]
-    if missing_fields:
-        print(f"  FATAL: Weekly LinkedIn post is missing required fields: {', '.join(missing_fields)}")
-        return None
-
-    full_post = build_linkedin_post_text(post)
-    if not full_post:
-        print("  FATAL: Weekly LinkedIn post text is empty")
-        return None
-
-    char_count = len(full_post)
-    post["full_post"] = full_post
-    post["char_count"] = char_count
-    if char_count > LINKEDIN_MAX_CHARS:
-        print(
-            f"  FATAL: Weekly LinkedIn post is {char_count} chars, exceeds Buffer limit of {LINKEDIN_MAX_CHARS}"
+    for attempt in range(2):
+        post = generate_platform_post(
+            "linkedin", digest, token, instruction,
+            extra_context=_weekly_image_context(),
         )
-        return None
+        if not post:
+            return None
 
-    return post
+        missing_fields = [field for field in ("hook", "body", "closing") if not post.get(field)]
+        if missing_fields:
+            print(f"  FATAL: Weekly LinkedIn post is missing required fields: {', '.join(missing_fields)}")
+            return None
+
+        full_post = build_linkedin_post_text(post)
+        if not full_post:
+            print("  FATAL: Weekly LinkedIn post text is empty")
+            return None
+
+        char_count = len(full_post)
+        post["full_post"] = full_post
+        post["char_count"] = char_count
+        if char_count <= LINKEDIN_MAX_CHARS:
+            return post
+
+        if attempt == 0:
+            print(f"  Weekly LinkedIn post is {char_count} chars; retrying with a shorter draft")
+            instruction += (
+                f"\n\nThe previous draft below was {char_count} characters, "
+                f"exceeding the limit by {char_count - LINKEDIN_MAX_CHARS}. "
+                "Rewrite it more concisely, preserving the facts, required fields, "
+                "and image prompt. Leave room for separators and hashtags.\n"
+                + json.dumps(post)
+            )
+
+    print(f"  FATAL: Weekly LinkedIn post is still {char_count} chars after retry, exceeds limit of {LINKEDIN_MAX_CHARS}")
+    return None
 
 def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
     return generate_platform_post("instagram", digest, token,

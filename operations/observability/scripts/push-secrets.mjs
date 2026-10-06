@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const REQUIRED_SECRET_NAMES = [
+    "POLLINATIONS_AUTH_SESSION_SECRET",
     "GF_ADMIN_PASSWORD",
     "TINYBIRD_READ_TOKEN",
     "TINYBIRD_LEGACY_READ_TOKEN",

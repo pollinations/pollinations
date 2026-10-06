@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pollinations-composio-mcp",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "main": "entrypoint.js",
+  "workers_dev": false,
+  "compatibility_date": "2026-08-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "pollinations-composio-mcp-staging",
+      "workers_dev": false,
+      "observability": { "enabled": true }
+    }
+  }
+}

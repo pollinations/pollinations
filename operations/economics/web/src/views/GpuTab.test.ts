@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import {
     gpuResourceRows,
     gpuResourceSummary,
@@ -10,11 +10,11 @@ import {
 
 const baseData: Data = {
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
 };
 
-function cloud(overrides: Partial<OpCloudRow>): OpCloudRow {
+function cloud(overrides: Partial<VendorLedgerRow>): VendorLedgerRow {
     return {
         entry_id: "cloud-test",
         source: "api",
@@ -62,9 +62,9 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "gpu",
                         resource_id: "42",
                         resource_name: "Vast.ai instance 42 · gpu",
@@ -74,7 +74,7 @@ describe("gpuResourceRows", () => {
                         paid: -100,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "storage",
                         resource_id: "42",
                         resource_name: "Vast.ai instance 42 · storage",
@@ -84,7 +84,7 @@ describe("gpuResourceRows", () => {
                         paid: -10,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "network",
                         resource_id: "42",
                         resource_name: "Vast.ai instance 42 · download",
@@ -101,7 +101,7 @@ describe("gpuResourceRows", () => {
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
             kind: "gpu",
-            vendor: "vast.ai",
+            vendor: "vast",
             resourceId: "42",
             resourceName: "#42",
             gpuHours: 10,
@@ -117,9 +117,9 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "gpu",
                         resource_id: "42",
                         resource_sku: "gpu-hours",
@@ -128,7 +128,7 @@ describe("gpuResourceRows", () => {
                         paid: -100,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         entry_id: "orphan-storage",
                         resource_id: "old-1",
                         resource_sku: "storage-hours",
@@ -143,7 +143,7 @@ describe("gpuResourceRows", () => {
 
         expect(rows).toHaveLength(2);
         expect(rows.find((row) => row.kind === "overhead")).toMatchObject({
-            vendor: "vast.ai",
+            vendor: "vast",
             resourceName: "Overhead & adjustments",
             storageHours: 2,
             paidCostUsd: 3,
@@ -161,7 +161,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         entry_id: "runpod-storage",
                         resource_id: "_storage",
@@ -194,7 +194,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "runpod",
                         resource_id: "pod-1",
@@ -221,7 +221,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({ paid: -100 }),
                     cloud({
                         entry_id: "refund",
@@ -260,11 +260,14 @@ describe("gpuResourceRows", () => {
             paid: 5,
         });
 
-        for (const opCloud of [
+        for (const vendorLedger of [
             [usage, adjustment],
             [adjustment, usage],
         ]) {
-            const rows = gpuResourceRows({ ...baseData, opCloud }, "2026-06");
+            const rows = gpuResourceRows(
+                { ...baseData, vendorLedger },
+                "2026-06",
+            );
             expect(rows).toHaveLength(1);
             expect(rows[0]).toMatchObject({
                 kind: "gpu",
@@ -280,7 +283,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "runpod",
                         resource_id: "runpod-zimage",
@@ -289,7 +292,7 @@ describe("gpuWorkloadRows", () => {
                         credit: -10,
                     }),
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         resource_id: "vast-zimage",
                         resource_sku: "gpu-hours",
                         resource_count: 24,
@@ -307,7 +310,7 @@ describe("gpuWorkloadRows", () => {
                         model_paid: 0,
                     }),
                     pollen({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         model: "zimage",
                         price_paid: 120,
                         price_quests: 30,
@@ -323,7 +326,7 @@ describe("gpuWorkloadRows", () => {
         expect(rows[0]).toMatchObject({
             kind: "workload",
             workload: "zimage",
-            vendors: "runpod, vast.ai",
+            vendors: "runpod, vast",
             gpuCount: 2,
             paidUsd: 200,
             questUsd: 50,
@@ -344,7 +347,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "lambda",
                         resource_id: "shared-gpu",
@@ -388,9 +391,9 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
-                        vendor: "vast.ai",
+                        vendor: "vast",
                         resource_id: "failed-start",
                         resource_sku: "gpu-hours",
                         resource_count: 0.5,
@@ -421,7 +424,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [cloud({ paid: -50, credit: -100 })],
+                vendorLedger: [cloud({ paid: -50, credit: -100 })],
                 opPollen: [pollen({})],
             },
             "2026-06",
@@ -446,7 +449,7 @@ describe("gpuWorkloadSummary", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [cloud({ paid: -50, credit: -100 })],
+                vendorLedger: [cloud({ paid: -50, credit: -100 })],
                 opPollen: [pollen({})],
             },
             "2026-06",

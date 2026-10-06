@@ -1,15 +1,18 @@
+import { EMBEDDING_FALLBACKS } from "./embeddings-fallbacks";
+import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
 export type EmbeddingServiceId = keyof typeof EMBEDDING_SERVICES;
 
-export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "openai-3-small";
+export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId =
+    "openai/text-embedding-3-small";
 
-export const EMBEDDING_SERVICES = {
-    "gemini-2": {
-        aliases: ["embedding", "google/gemini-embedding-2"],
+const EMBEDDING_BASE_SERVICES = {
+    "google/gemini-embedding-2": {
+        aliases: ["embedding", "gemini-2"],
         provider: "google",
-        brand: "Google",
+        publisher: "Google",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
@@ -27,13 +30,15 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-small": {
-        aliases: ["embedding-small", "openai/text-embedding-3-small"],
+    "openai/text-embedding-3-small": {
+        aliases: ["embedding-small", "openai-3-small"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
+        retirementDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.02),
         },
@@ -44,13 +49,15 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-large": {
-        aliases: ["embedding-large", "openai/text-embedding-3-large"],
+    "openai/text-embedding-3-large": {
+        aliases: ["embedding-large", "openai-3-large"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
+        retirementDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.13),
         },
@@ -61,13 +68,19 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "cohere-embed-v4": {
-        aliases: ["embed-v-4-0", "cohere-embed-v-4-0", "cohere/embed-v4.0"],
+    "cohere/embed-v4.0": {
+        aliases: [
+            "embed-v-4-0",
+            "cohere-embed-v-4-0",
+            "cohere-embed-v4",
+            "embed-v4.0",
+        ],
         provider: "azure",
-        brand: "Cohere",
+        publisher: "Cohere",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         // Azure Cohere retail rates (Global).
         cost: {
             promptTextTokens: perMillion(0.12),
@@ -80,22 +93,28 @@ export const EMBEDDING_SERVICES = {
         outputModalities: ["embedding"],
         contextLength: 128000,
     },
-    "qwen3-embedding-8b": {
-        aliases: ["qwen3-embedding", "qwen/qwen3-embedding-8b"],
-        provider: "fireworks",
-        brand: "Qwen",
+    "qwen/qwen3-embedding-8b": {
+        aliases: ["qwen3-embedding", "qwen3-embedding-8b"],
+        provider: "deepinfra",
+        publisher: "Qwen",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
+        paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1),
+            promptTextTokens: perMillion(0.01),
         },
         title: "Qwen3 Embedding 8B",
         description:
             "Multilingual text vectors. 4096 dimensions, 40,960-token context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
-        // Match the effective context advertised by the Fireworks deployment.
+        // Verified on the live DeepInfra route; its catalog still lists 32K.
         contextLength: 40960,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const EMBEDDING_SERVICES = mergeFallbacks(
+    EMBEDDING_BASE_SERVICES,
+    EMBEDDING_FALLBACKS,
+);

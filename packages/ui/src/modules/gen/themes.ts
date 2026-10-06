@@ -33,3 +33,7 @@ export const modalityColorVar = (key: ModalityKey): string =>
 /** CSS var for a modality's faint chip background. */
 export const modalityBgVar = (key: ModalityKey): string =>
     `var(--polli-color-modality-${key}-bg)`;
+
+/** A modality's text color, mixed toward the strong text so it stays readable on its background. */
+export const modalityTextColor = (key: ModalityKey): string =>
+    `color-mix(in oklab, ${modalityColorVar(key)} 72%, var(--polli-color-text-strong))`;

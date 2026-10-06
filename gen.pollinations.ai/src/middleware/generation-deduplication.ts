@@ -1,7 +1,8 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
-import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
+import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import type {
     AuthVariables,
     GenerationAuthSnapshot,
@@ -13,17 +14,7 @@ import type {
     GenerationCacheStorage,
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
-
-const EXECUTOR_HEADERS = new Set([
-    "accept",
-    "cf-connecting-ip",
-    "content-type",
-    "referer",
-    "user-agent",
-    "x-forwarded-host",
-    "x-original-client-ip",
-    SAFETY_HEADER_NAME.toLowerCase(),
-]);
+import type { ModelVariables } from "@/middleware/model.ts";
 
 export type GenerationErrorSnapshot = {
     httpStatus: number;
@@ -39,6 +30,9 @@ export type GenerationCacheIdentity = {
 export type GenerationRequestSnapshot = {
     url: string;
     method: string;
+    /** Public route when execution uses an adapted native request. */
+    originalPath?: string;
+    originalModel?: string;
     headers: [string, string][];
     body?: Uint8Array;
 };
@@ -65,7 +59,7 @@ type DeduplicationEnv = {
                 streamRequested?: boolean;
                 detachedExecutionTracked?: boolean;
             };
-        };
+        } & Partial<ModelVariables>;
 };
 
 function createAuthSnapshot(
@@ -84,28 +78,6 @@ function createAuthSnapshot(
     };
 }
 
-function sanitizeUrl(rawUrl: string): string {
-    const url = new URL(rawUrl);
-    for (const key of [...url.searchParams.keys()]) {
-        if (key.toLowerCase() === "key") url.searchParams.delete(key);
-    }
-    return url.toString();
-}
-
-function sanitizeJsonBody(body: string): string {
-    try {
-        const parsed = JSON.parse(body);
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-            for (const key of Object.keys(parsed)) {
-                if (key.toLowerCase() === "key") delete parsed[key];
-            }
-        }
-        return JSON.stringify(parsed);
-    } catch {
-        return body;
-    }
-}
-
 async function createJob(
     c: Context<DeduplicationEnv>,
     adapter: GenerationCacheAdapter,
@@ -116,35 +88,35 @@ async function createJob(
         throw new Error("Generation balance snapshot is missing");
     }
 
+    const method = c.var.generationRequestMethod ?? c.req.method;
     let body: Uint8Array | undefined;
-    if (c.req.method !== "GET" && c.req.method !== "HEAD") {
+    if (method !== "GET" && method !== "HEAD") {
         const captured = c.var.generationRequestBody;
         body =
             captured instanceof Uint8Array
                 ? captured
-                : new TextEncoder().encode(
-                      sanitizeJsonBody(captured ?? (await c.req.text())),
-                  );
+                : typeof captured === "string"
+                  ? new TextEncoder().encode(captured)
+                  : new Uint8Array(await c.req.arrayBuffer());
     }
 
-    const headers = [...c.req.raw.headers.entries()].filter(([name]) =>
-        EXECUTOR_HEADERS.has(name.toLowerCase()),
-    );
+    // This replays our own request internally; provider clients build their
+    // outgoing headers separately. Keep new request options without an allowlist.
+    const headers = new Headers(c.req.raw.headers);
     if (c.var.generationRequestContentType) {
-        const contentType = c.var.generationRequestContentType;
-        const existing = headers.findIndex(
-            ([name]) => name.toLowerCase() === "content-type",
-        );
-        if (existing === -1) headers.push(["content-type", contentType]);
-        else headers[existing] = [headers[existing][0], contentType];
+        headers.set("content-type", c.var.generationRequestContentType);
     }
 
     return {
         cache: { storage: adapter.storage, key },
         request: {
-            url: sanitizeUrl(c.req.url),
-            method: c.req.method,
-            headers,
+            url: c.var.generationRequestUrl?.href ?? c.req.url,
+            method,
+            ...(c.var.generationRequestUrl && {
+                originalPath: getRoutePath(c),
+                originalModel: c.var.model?.requested,
+            }),
+            headers: [...headers.entries()],
             ...(body !== undefined && { body }),
         },
         auth: createAuthSnapshot(c.var.auth),
@@ -154,7 +126,8 @@ async function createJob(
     };
 }
 
-function failedResponse(error: GenerationErrorSnapshot): Response {
+/** Replays an error response already handled by the detached executor. */
+function replayFailedResponse(error: GenerationErrorSnapshot): Response {
     const status =
         error.httpStatus >= 400 && error.httpStatus <= 599
             ? error.httpStatus
@@ -179,8 +152,8 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             c.get("log").error(
                 "Generation cache identity or coordinator binding is missing",
             );
-            return new Response("Generation coordination is unavailable", {
-                status: 503,
+            throw new HTTPException(503, {
+                message: "Generation coordination is unavailable",
             });
         }
 
@@ -190,7 +163,8 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const job = await createJob(c, cache.adapter, cache.key);
-        let outcome: GenerationOutcome;
+        let outcome: GenerationOutcome | undefined;
+        let coordinationError: HTTPException | undefined;
         try {
             outcome = (await stub.startAndWait(job)) as GenerationOutcome;
         } catch (error) {
@@ -202,21 +176,24 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             c.get("log").error(
                 "Generation coordination failed before completion: {errorMessage}",
                 {
-                    errorMessage: rpcError.message ?? String(error),
-                    durableObjectReset: rpcError.durableObjectReset,
-                    overloaded: rpcError.overloaded,
-                    retryable: rpcError.retryable,
+                    errorMessage: rpcError?.message ?? String(error),
+                    durableObjectReset: rpcError?.durableObjectReset,
+                    overloaded: rpcError?.overloaded,
+                    retryable: rpcError?.retryable,
                 },
             );
-            return new Response("Generation coordination is unavailable", {
-                status: 503,
+            coordinationError = new HTTPException(503, {
+                message: "Generation coordination is unavailable",
+                cause: error,
             });
         }
-        if (outcome.status === "failed") {
+        if (outcome?.status === "failed") {
             if (c.var.track) c.var.track.detachedExecutionTracked = true;
-            return failedResponse(outcome.error);
+            return replayFailedResponse(outcome.error);
         }
 
+        // An RPC failure may happen after the result was saved. Read once;
+        // never restart the coordinator or execute another generation here.
         let response: Response | null;
         try {
             response = await cache.adapter.get(
@@ -228,14 +205,21 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 "Error reading completed generation from cache: {error}",
                 { error },
             );
-            return new Response("Generation cache is temporarily unavailable", {
-                status: 503,
-            });
+            throw (
+                coordinationError ??
+                new HTTPException(503, {
+                    message: "Generation cache is temporarily unavailable",
+                    cause: error,
+                })
+            );
         }
         if (!response) {
-            return new Response(
-                "Generation completed without a durable cache entry",
-                { status: 503 },
+            throw (
+                coordinationError ??
+                new HTTPException(503, {
+                    message:
+                        "Generation completed without a durable cache entry",
+                })
             );
         }
         c.header("X-Cache", "HIT");

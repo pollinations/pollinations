@@ -1,10 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    effectiveCommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { getVisibleModelIdsForUser } from "@shared/registry/visible-model-ids.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -36,7 +35,7 @@ async function postModel(
     return response.json<Record<string, unknown>>();
 }
 
-async function advancePendingPast12Hours(id: string): Promise<void> {
+async function advancePendingPastDelay(id: string): Promise<void> {
     await drizzle(env.DB)
         .update(schema.communityEndpoint)
         .set({
@@ -51,12 +50,16 @@ async function publishPendingModel(
     sessionToken: string,
     id: string,
 ): Promise<Record<string, unknown>> {
-    await advancePendingPast12Hours(id);
+    await advancePendingPastDelay(id);
     return postModel(sessionToken, `/${id}/update`, {});
 }
 
-describe("community endpoint 12-hour price-change delay", () => {
-    test("first public model creation is queued for 12 hours", async ({
+describe("community endpoint 3-hour price-change delay", () => {
+    test("uses a 3-hour delay", () => {
+        expect(COMMUNITY_ENDPOINT_CHANGE_DELAY_MS).toBe(3 * 60 * 60 * 1000);
+    });
+
+    test("first public model creation is queued for 3 hours", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -64,26 +67,33 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "first-price-model",
             title: "First price model",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             promptTextPrice: 0.000002,
         });
 
         expect(created).toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
+            promptTextPrice: 0.000002,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.000002,
             },
         });
 
-        await advancePendingPast12Hours(created.id as string);
-        const visibleModels = await getVisibleModelIdsForUser(
-            env.DB,
-            "another-user",
-        );
-        expect(visibleModels).toContain(created.modelId);
+        await advancePendingPastDelay(created.id as string);
+        const [queued] = await drizzle(env.DB)
+            .select()
+            .from(schema.communityEndpoint)
+            .where(eq(schema.communityEndpoint.id, created.id as string));
+        expect(
+            effectiveCommunityEndpointVisibility(
+                queued.visibility,
+                queued.pendingVisibility,
+                queued.pendingAt,
+            ),
+        ).toBe("public");
 
         const published = await postModel(
             sessionToken,
@@ -105,7 +115,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "recreated-model",
             title: "Recreated model",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             promptTextPrice: 0.000002,
         };
@@ -126,7 +137,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         const recreated = await postModel(sessionToken, "", input);
         expect(recreated).toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
+            promptTextPrice: 0.000002,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.000002,
@@ -134,7 +145,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         });
     });
 
-    test("price change on a public model is queued for 12 hours", async ({
+    test("price change on a public model is queued for 3 hours", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -142,7 +153,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "queued-price-model",
             title: "Queued price model",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             promptTextPrice: 0.000001,
         });
@@ -173,7 +185,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "effective-price-model",
             title: "Effective price model",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             promptTextPrice: 0.000001,
         });
@@ -183,7 +196,7 @@ describe("community endpoint 12-hour price-change delay", () => {
             promptTextPrice: 0.000003,
         });
 
-        await advancePendingPast12Hours(created.id as string);
+        await advancePendingPastDelay(created.id as string);
 
         // Read the model list; the effective price should now reflect the pending change.
         const listResponse = await SELF.fetch(endpointUrl, {
@@ -208,7 +221,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "paid-only-model",
             title: "PaidOnly model",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             paidOnly: false,
         });
@@ -226,7 +240,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         );
     });
 
-    test("private-to-public transition is queued for 12 hours", async ({
+    test("private-to-public transition is queued for 3 hours", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -234,7 +248,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "visibility-pending-model",
             title: "Visibility pending model",
             visibility: "private",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
         });
 
@@ -260,7 +275,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "visibility-fires-model",
             title: "Visibility fires model",
             visibility: "private",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
         });
 
@@ -268,7 +284,7 @@ describe("community endpoint 12-hour price-change delay", () => {
             visibility: "public",
         });
 
-        await advancePendingPast12Hours(created.id as string);
+        await advancePendingPastDelay(created.id as string);
 
         const listResponse = await SELF.fetch(endpointUrl, {
             headers: { Cookie: `better-auth.session_token=${sessionToken}` },
@@ -284,17 +300,150 @@ describe("community endpoint 12-hour price-change delay", () => {
         });
     });
 
-    test("public-to-private is immediate and clears any pending price change", async ({
+    test("only explicit private agent updates cancel queued publication", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
+        const agentsUrl = "http://localhost:3000/api/account/agents";
+        const headers = {
+            "Content-Type": "application/json",
+            Cookie: `better-auth.session_token=${sessionToken}`,
+        };
+        const config = {
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        };
+        const createdResponse = await SELF.fetch(agentsUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                ...config,
+                name: "cancel-prompt-publication",
+                title: "Prompt agent",
+            }),
+        });
+        expect(createdResponse.status).toBe(200);
+        const { id } = await createdResponse.json<{ id: string }>();
+        const queued = await postModel(sessionToken, `/${id}/update`, {
+            visibility: "public",
+        });
+        expect(queued).toMatchObject({
+            visibility: "private",
+            pending: { visibility: "public" },
+        });
+        const db = drizzle(env.DB, { schema });
+        const before = await db.query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, id),
+        });
+
+        const editedResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ ...config, title: "Renamed prompt agent" }),
+        });
+        expect(editedResponse.status).toBe(200);
+        await editedResponse.text();
+        const edited = await db.query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, id),
+        });
+        expect(edited?.pendingVisibility).toBe("public");
+        expect(edited?.pendingAt).toEqual(before?.pendingAt);
+
+        const privateResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ ...config, visibility: "private" }),
+        });
+        expect(privateResponse.status).toBe(200);
+        expect(await privateResponse.json()).toMatchObject({
+            visibility: "private",
+        });
+        const cancelled = await db.query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, id),
+        });
+        if (!cancelled) throw new Error("Agent not found");
+        expect(cancelled).toMatchObject({
+            visibility: "private",
+            pendingVisibility: null,
+            pendingAt: null,
+        });
+        expect(
+            effectiveCommunityEndpointVisibility(
+                cancelled.visibility,
+                cancelled.pendingVisibility,
+                cancelled.pendingAt,
+                Date.now() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS + 1000,
+            ),
+        ).toBe("private");
+    });
+
+    test("prompt agent updates keep fields that are left out", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const agentsUrl = "http://localhost:3000/api/account/agents";
+        const headers = {
+            "Content-Type": "application/json",
+            Cookie: `better-auth.session_token=${sessionToken}`,
+        };
+        const createdResponse = await SELF.fetch(agentsUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                systemPrompt: "Answer briefly.",
+                baseModel: "openai",
+                mcpServers: ["pollinations"],
+                name: "partial-update-agent",
+                title: "Prompt agent",
+            }),
+        });
+        expect(createdResponse.status).toBe(200);
+        const { id } = await createdResponse.json<{ id: string }>();
+
+        const promptResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ systemPrompt: "Answer in detail." }),
+        });
+        expect(promptResponse.status).toBe(200);
+        await promptResponse.text();
+        const titleResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ title: "Renamed" }),
+        });
+        expect(titleResponse.status).toBe(200);
+        expect(await titleResponse.json()).toMatchObject({
+            name: "partial-update-agent",
+            title: "Renamed",
+            systemPrompt: "Answer in detail.",
+            baseModel: "openai",
+            mcpServers: ["pollinations"],
+        });
+    });
+
+    test("public-to-private is immediate and preserves public settings", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const target = await postModel(sessionToken, "", {
+            name: "private-fallback-target",
+            title: "Private fallback target",
+            visibility: "private",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "tok",
+        });
         const created = await postModel(sessionToken, "", {
             name: "private-immediate-model",
             title: "Private immediate model",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             promptTextPrice: 0.000002,
+            paidOnly: true,
+            fallbacks: [target.modelId],
         });
         await publishPendingModel(sessionToken, created.id as string);
 
@@ -303,7 +452,7 @@ describe("community endpoint 12-hour price-change delay", () => {
             promptTextPrice: 0.000005,
         });
 
-        // Go private — immediate, clears pending.
+        // Going private adopts the queued price and clears the delay.
         const privateModel = await postModel(
             sessionToken,
             `/${created.id as string}/update`,
@@ -313,10 +462,10 @@ describe("community endpoint 12-hour price-change delay", () => {
         expect(privateModel).toMatchObject({
             visibility: "private",
             pending: null,
+            promptTextPrice: 0.000005,
+            paidOnly: true,
+            fallbacks: [target.modelId],
         });
-        for (const { key } of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-            expect(privateModel[key]).toBe(0);
-        }
 
         const db = drizzle(env.DB, { schema });
         const row = await db.query.communityEndpoint.findFirst({
@@ -324,6 +473,29 @@ describe("community endpoint 12-hour price-change delay", () => {
         });
         expect(row?.pendingPayload).toBeNull();
         expect(row?.pendingAt).toBeNull();
+    });
+
+    test("manual hiding is no longer accepted", async ({ sessionToken }) => {
+        await approveCommunityModels();
+        const created = await postModel(sessionToken, "", {
+            name: "relisted-model",
+            title: "Relisted model",
+            visibility: "public",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "tok",
+        });
+        const id = created.id as string;
+        await publishPendingModel(sessionToken, id);
+        const response = await SELF.fetch(`${endpointUrl}/${id}/update`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ hidden: false }),
+        });
+        expect(response.status).toBe(400);
     });
 
     test("price change during pending publication restarts the delay", async ({
@@ -334,7 +506,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "dual-pending-model",
             title: "Dual pending model",
             visibility: "private",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
         });
 
@@ -383,7 +556,8 @@ describe("community endpoint 12-hour price-change delay", () => {
             name: "non-price-update-model",
             title: "Non price update model",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             promptTextPrice: 0.000001,
         });
@@ -400,17 +574,34 @@ describe("community endpoint 12-hour price-change delay", () => {
         const updated = await postModel(
             sessionToken,
             `/${created.id as string}/update`,
-            { title: "Renamed model", perUserRpm: 5 },
+            {
+                title: "Renamed model",
+                perUserRpm: 5,
+                api: "responses",
+                url: "https://text.example.com/custom/infer?version=1",
+            },
         );
 
         expect(updated).toMatchObject({
             title: "Renamed model",
             perUserRpm: 5,
             promptTextPrice: 0.000001,
+            api: "responses",
+            url: "https://text.example.com/custom/infer?version=1",
         });
         expect(updated.pending).toMatchObject({
             effectiveAt,
             promptTextPrice: 0.000003,
+        });
+        const published = await publishPendingModel(
+            sessionToken,
+            created.id as string,
+        );
+        expect(published).toMatchObject({
+            api: "responses",
+            url: "https://text.example.com/custom/infer?version=1",
+            promptTextPrice: 0.000003,
+            pending: null,
         });
     });
 
@@ -421,7 +612,8 @@ describe("community endpoint 12-hour price-change delay", () => {
         const created = await postModel(sessionToken, "/endpoint-agents", {
             name: "pending-endpoint-agent",
             title: "Pending endpoint agent",
-            baseUrl: "https://agent.example.com/v1",
+            api: "chat_completions",
+            url: "https://agent.example.com/v1/chat/completions",
             visibility: "public",
         });
 

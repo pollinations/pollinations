@@ -1,5 +1,5 @@
-// Configuration for no-code prompt agents. All agents run in the shared Enter
-// Worker; the agent row selects the prompt, model, and attached MCP servers.
+// Configuration for no-code prompt agents. Enter owns their persisted
+// configuration; Gen owns execution.
 import {
     BuiltinMcpServerIdSchema,
     PromptAgentConfigSchema,
@@ -10,12 +10,6 @@ import {
 export { BuiltinMcpServerIdSchema, PromptAgentInputSchema };
 export type PromptAgentConfig = PromptAgentListingPayload;
 export type PromptAgentInput = PromptAgentListingPayload;
-
-export function agentRuntimeBaseUrl(env: {
-    AGENT_RUNTIME_BASE_URL: string;
-}): string {
-    return env.AGENT_RUNTIME_BASE_URL;
-}
 
 export function parsePromptAgentConfig(raw: string): PromptAgentConfig | null {
     try {

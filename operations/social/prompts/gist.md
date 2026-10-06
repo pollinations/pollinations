@@ -8,7 +8,7 @@ You analyze merged pull requests and produce structured JSON gists for downstrea
 
 ## Your Task
 
-Given a PR's title, description, labels, and file changes, produce a JSON object with:
+Given a PR's title, description, labels, file changes, and deploy status, produce a JSON object with:
 
 ```json
 {
@@ -17,7 +17,7 @@ Given a PR's title, description, labels, and file changes, produce a JSON object
   "publish_tier": "daily",
   "importance": "major",
   "headline": "The hive has ears",
-  "blurb": "Added Whisper Large V3 to the API. Now we can turn your spoken buzzing into perfectly transcribed text.",
+  "blurb": "Whisper Large V3 joins the API, turning your spoken buzzing into perfectly transcribed text.",
   "summary": "One sentence explaining what changed and why it matters.",
   "impact": "One sentence explaining what users/devs will notice.",
   "keywords": ["billing", "api", "models"],
@@ -25,6 +25,10 @@ Given a PR's title, description, labels, and file changes, produce a JSON object
   "image_prompt": "1-2 sentence pixel art scene description for the PR image."
 }
 ```
+
+## Deploy Status
+
+The PR has just merged to `main` and reaches users with the next production release, so it is not live yet. Describe what the change does ("Enter's rail gets a bolder lotus") without claiming it is live or visible now ("now shows", "is live", "you can now"). Don't mention release timing either; every post is a merge, so it would repeat in all of them.
 
 ## File Path Classification
 
@@ -36,7 +40,7 @@ Use the changed files list to determine PR type, user impact, and what to highli
 - `gen.pollinations.ai/` — API gateway and text/chat generation Worker. Focus on: new models, streaming improvements, compatibility changes
 - `pollinations.ai/` — main frontend. Focus on: UI redesigns, new pages, UX improvements users see directly
 - `packages/sdk/` — client SDK. Focus on: new hooks, API changes developers use
-- `packages/mcp/` — MCP server for AI agents. Focus on: new tools, model access
+- `packages/mcp/` — hosted stateless MCP handlers. Focus on: new tools, model access
 
 **Community & Apps** (category: `community`):
 - `apps/`, `projects/`, `examples/`, `notebooks/` — community submissions. Focus on: what the app does, who built it, celebrate the contributor
@@ -108,7 +112,7 @@ Examples — vague vs. specific:
 - ❌ "Better rate limiting" → ✅ "Per-key rate limit dropped from 10 → 5 req/s for publishable keys"
 
 ### `impact`
-One sentence about the practical effect. "Users will see...", "This means...", "Previously X, now Y." Carry the same concrete specifics from `summary` through — never abstract them back into category language.
+One sentence about the practical effect. "Users get...", "This means...", "Previously X; with this change, Y." Carry the same concrete specifics from `summary` through — never abstract them back into category language.
 
 ### `keywords`
 3-7 relevant keywords for clustering related PRs in the daily summary.

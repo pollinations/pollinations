@@ -2,11 +2,14 @@
  * InferencePort 3D generation client.
  *
  * POST /v1/3d/generations submits an async job. The client polls
- * GET /v1/3d/jobs/{job_id} until data[0].model_glb_b64_bytes is ready.
+ * GET /v1/3d/jobs/{job_id} until data[0].model_glb_b64_bytes or
+ * data[0].model_ply_b64_bytes is ready.
  *
- * Confirmed model value (per provider docs): "trellis2".
- * Confirmed output fields: data[0].model_glb_b64_bytes (live API test).
- * Confirmed pricing: $0.24/$0.29/$0.35 for resolution low/medium/high.
+ * Confirmed model values: "trellis2", "asset-harvester".
+ * Confirmed output fields:
+ *   - trellis2: data[0].model_glb_b64_bytes
+ *   - asset-harvester: data[0].model_ply_b64_bytes, data[0].orbit_video_b64_bytes
+ * Confirmed pricing: $0.24/$0.29/$0.35 for trellis2 low/medium/high.
  */
 
 import { sleep } from "../../image/util.ts";
@@ -21,6 +24,7 @@ export class InferenceportError extends Error {
     constructor(
         message: string,
         readonly status?: number,
+        readonly responseBody?: string,
     ) {
         super(message);
         this.name = "InferenceportError";
@@ -31,6 +35,7 @@ export class InferenceportError extends Error {
 interface InferenceportJobData {
     model_glb_b64_bytes?: string;
     model_ply_b64_bytes?: string;
+    orbit_video_b64_bytes?: string;
 }
 
 interface InferenceportSubmitResponse {
@@ -53,6 +58,7 @@ interface RunOptions {
 export interface InferenceportResult {
     glbBase64?: string;
     plyBase64?: string;
+    orbitVideoBase64?: string;
 }
 
 function requireInferenceportToken(): string {
@@ -113,6 +119,7 @@ export async function runInferenceport(
             return {
                 glbBase64: output.model_glb_b64_bytes,
                 plyBase64: output.model_ply_b64_bytes,
+                orbitVideoBase64: output.orbit_video_b64_bytes,
             };
         }
         if (job.status === "failed") {
@@ -163,11 +170,19 @@ async function inferenceportFetch<T>(
         );
     }
 
+    // A failed status check does not mean the generation failed. Never resubmit.
+    if (method === "GET" && response.status >= 500) {
+        await response.body?.cancel();
+        await sleep(Math.min(POLL_INTERVAL_MS, remainingTime(deadline)));
+        return inferenceportFetch<T>(token, method, path, deadline);
+    }
+
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
         throw new InferenceportError(
-            `InferencePort ${method} ${url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
+            `InferencePort ${method} ${url} failed (HTTP ${response.status}): ${text}`,
             classifyInferenceportHttpStatus(response.status),
+            text,
         );
     }
     return (await response.json()) as T;

@@ -1,19 +1,20 @@
 import {
     AccountIcon,
+    AccountMenu,
     BookIcon,
+    BrandMark,
     BugIcon,
     CheckIcon,
-    ChevronIcon,
     Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
     cn,
     DiscordIcon,
-    Dropdown,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
+    LoadingStatus,
     McpIcon,
     MenuIcon,
     NavItem,
@@ -24,23 +25,34 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
     CSSProperties,
+    Dispatch,
     FC,
     PropsWithChildren,
     ReactNode,
     RefObject,
+    SetStateAction,
 } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import { apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import {
+    QUEST_STATUS_UPDATED_EVENT,
+    questNavLabel,
+} from "../quests/quest-nav-status.ts";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
     type DashboardPath,
 } from "./dashboard-theme.ts";
+
+/** Counts what the page still waits for; the shell shows one status while > 0. */
+export const PendingCount = createContext<Dispatch<SetStateAction<number>>>(
+    () => {},
+);
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -51,19 +63,15 @@ type DashboardNavItem = {
     icon: ComponentType<{ className?: string }>;
 };
 
-const brandWordmarkMask: CSSProperties = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
-
 type DashboardShellProps = PropsWithChildren<{
     navItems?: readonly DashboardNavItem[];
-    githubUsername?: string;
+    accountName?: string;
     githubAvatarUrl?: string;
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     showFooterLinks?: boolean;
+    showQuestStatus?: boolean;
 }>;
 
 type BrandLink = {
@@ -141,15 +149,17 @@ const accountMenuLinks: readonly AccountMenuLink[] = [
 
 export const DashboardShell: FC<DashboardShellProps> = ({
     navItems = DASHBOARD_NAV_ITEMS,
-    githubUsername,
+    accountName,
     githubAvatarUrl,
     onSignOut,
     accountArea,
     walletArea,
     showFooterLinks = true,
+    showQuestStatus = false,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -162,6 +172,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         location.pathname === "/account"
             ? "Account"
             : (activeNavItem?.label ?? "Dashboard");
+    const questStatus = useQuestNavStatus(showQuestStatus);
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -256,8 +267,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "MCP Server",
-            href: `${genDocsUrl()}#tag/mcp-server`,
+            label: "MCP Servers",
+            href: `${genDocsUrl()}#tag/mcp-servers`,
             icon: (
                 <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -266,9 +277,9 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     const effectiveAccountArea =
         accountArea ??
-        (githubUsername && onSignOut ? (
+        (accountName && onSignOut ? (
             <AccountMenuButton
-                username={githubUsername}
+                username={accountName}
                 avatarUrl={githubAvatarUrl ?? ""}
                 onSignOut={onSignOut}
                 onNavigate={closeDrawer}
@@ -299,78 +310,138 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            questStatus={questStatus}
             showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
     );
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-            <div className="hidden lg:block">{rail}</div>
-            <div
-                ref={drawerRef}
-                className={cn(
-                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
-                    isDrawerOpen
-                        ? "pointer-events-auto visible delay-0"
-                        : "pointer-events-none invisible delay-[420ms]",
-                )}
-                aria-hidden={!isDrawerOpen}
-                inert={!isDrawerOpen}
-            >
-                <button
-                    type="button"
-                    className={cn(
-                        "absolute inset-0 bg-black/40 transition-opacity ease-out",
-                        "duration-[420ms]",
-                        isDrawerOpen ? "opacity-100" : "opacity-0",
-                    )}
-                    onClick={closeDrawer}
-                    aria-label="Close navigation"
-                />
+        <PendingCount.Provider value={setPendingCount}>
+            <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
+                <div className="hidden lg:block">{rail}</div>
                 <div
+                    ref={drawerRef}
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
-                        "duration-[420ms]",
-                        isDrawerOpen ? "translate-x-0" : "-translate-x-full",
+                        "fixed inset-0 z-40 transition-[visibility] lg:hidden",
+                        isDrawerOpen
+                            ? "pointer-events-auto visible delay-0"
+                            : "pointer-events-none invisible delay-[420ms]",
                     )}
+                    aria-hidden={!isDrawerOpen}
+                    inert={!isDrawerOpen}
                 >
-                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <BrandMark size="drawer" />
-                            <button
-                                type="button"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-                                onClick={closeDrawer}
-                                aria-label="Close navigation"
-                            >
-                                <XIcon className="h-5 w-5" />
-                            </button>
+                    <button
+                        type="button"
+                        className={cn(
+                            "absolute inset-0 bg-black/40 transition-opacity ease-out",
+                            "duration-[420ms]",
+                            isDrawerOpen ? "opacity-100" : "opacity-0",
+                        )}
+                        onClick={closeDrawer}
+                        aria-label="Close navigation"
+                    />
+                    <div
+                        className={cn(
+                            "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                            "duration-[420ms]",
+                            isDrawerOpen
+                                ? "translate-x-0"
+                                : "-translate-x-full",
+                        )}
+                    >
+                        <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <DashboardBrand size="drawer" />
+                                <button
+                                    type="button"
+                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                                    onClick={closeDrawer}
+                                    aria-label="Close navigation"
+                                >
+                                    <XIcon className="h-5 w-5" />
+                                </button>
+                            </div>
+                            <BrandLinks links={brandLinks} />
                         </div>
-                        <BrandLinks links={brandLinks} />
-                    </div>
-                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                        {rail}
+                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                            {rail}
+                        </div>
                     </div>
                 </div>
+                <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
+                    <MobileMenuButton
+                        buttonRef={menuButtonRef}
+                        onOpen={() => setIsDrawerOpen(true)}
+                    />
+                    {/* One status for everything the page waits for, floating at
+                    the bottom centre of the content column. */}
+                    {pendingCount > 0 && (
+                        <div className="fixed bottom-6 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:left-[calc(50%+7.5rem)] lg:h-8 lg:px-3">
+                            <LoadingStatus>Loading…</LoadingStatus>
+                        </div>
+                    )}
+                    <ScrollArea
+                        ref={mainScrollRef}
+                        className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
+                    >
+                        <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                            {children}
+                        </main>
+                    </ScrollArea>
+                </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
-                <MobileMenuButton
-                    buttonRef={menuButtonRef}
-                    onOpen={() => setIsDrawerOpen(true)}
-                />
-                <ScrollArea
-                    ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
-                >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
-                        {children}
-                    </main>
-                </ScrollArea>
-            </div>
-        </div>
+        </PendingCount.Provider>
     );
 };
+
+function useQuestNavStatus(enabled: boolean): string | null {
+    const [label, setLabel] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!enabled) {
+            setLabel(null);
+            return;
+        }
+
+        let cancelled = false;
+        let requestId = 0;
+        const refresh = async () => {
+            const currentRequest = ++requestId;
+            try {
+                const [catalogResponse, rewardsResponse] = await Promise.all([
+                    apiClient.quests.catalog.$get(),
+                    apiClient.quests.rewards.$get(),
+                ]);
+                if (!catalogResponse.ok || !rewardsResponse.ok) {
+                    throw new Error("Quest status unavailable");
+                }
+                const [catalog, rewards] = await Promise.all([
+                    catalogResponse.json(),
+                    rewardsResponse.json(),
+                ]);
+                if (!cancelled && currentRequest === requestId) {
+                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
+                }
+            } catch {
+                if (!cancelled && currentRequest === requestId) setLabel(null);
+            }
+        };
+        const handleUpdate = () => void refresh();
+
+        void refresh();
+        window.addEventListener(QUEST_STATUS_UPDATED_EVENT, handleUpdate);
+        return () => {
+            cancelled = true;
+            window.removeEventListener(
+                QUEST_STATUS_UPDATED_EVENT,
+                handleUpdate,
+            );
+        };
+    }, [enabled]);
+
+    return label;
+}
 
 function useDashboardShellBodyClass(): void {
     useEffect(() => {
@@ -390,6 +461,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    questStatus: string | null;
     showFooterLinks: boolean;
     onNavigate: () => void;
 };
@@ -401,16 +473,17 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    questStatus,
     showFooterLinks,
     onNavigate,
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
         aria-label="Dashboard navigation"
     >
         <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
-            <BrandMark size="desktop" />
+            <DashboardBrand size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
         <ScrollArea
@@ -434,13 +507,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" || item.id === "quests") && (
+                        {(item.id === "my-models" ||
+                            (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                {item.id === "quests" ? "3 new!" : "New!"}
+                                {item.id === "quests" ? questStatus : "New!"}
                             </Chip>
                         )}
                     </NavItem>
@@ -451,10 +525,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
-            <DashboardFooter
-                links={showFooterLinks ? footerLinks : []}
-                note="© 2026 Myceli.AI"
-            />
+            <DashboardFooter links={showFooterLinks ? footerLinks : []} />
         </div>
     </aside>
 );
@@ -466,7 +537,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
+        className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >
@@ -474,7 +545,7 @@ const MobileMenuButton: FC<{
     </button>
 );
 
-const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
+const DashboardBrand: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
@@ -483,13 +554,9 @@ const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
         aria-label="Pollinations"
     >
         <span className="sr-only">Pollinations</span>
-        <span
-            aria-hidden="true"
-            className={cn(
-                "block shrink-0 bg-current",
-                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
-            )}
-            style={brandWordmarkMask}
+        <BrandMark
+            variant="lockup"
+            className={size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]"}
         />
     </a>
 );
@@ -574,11 +641,10 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
 
 const DashboardFooter: FC<{
     links: readonly FooterLink[];
-    note?: ReactNode;
-}> = ({ links, note }) => (
-    <>
+}> = ({ links }) => (
+    <div className="flex items-end justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
         {links.length > 0 && (
-            <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
+            <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
                 {links.map((link) => (
                     <a
                         key={link.href}
@@ -592,14 +658,11 @@ const DashboardFooter: FC<{
                 ))}
             </div>
         )}
-        <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
-            <span>{note}</span>
-            {/* accent on the toggle's active icon, over the neutral rail */}
-            <span data-theme="accent">
-                <ColorModeToggle />
-            </span>
-        </div>
-    </>
+        {/* accent on the toggle's active icon, over the neutral rail */}
+        <span data-theme="accent" className="ml-auto shrink-0">
+            <ColorModeToggle />
+        </span>
+    </div>
 );
 
 type AccountMenuButtonProps = {
@@ -619,33 +682,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     links = [],
     className,
 }) => (
-    <Dropdown
-        align="end"
-        className="w-[var(--reference-width)] min-w-0 p-1"
-        trigger={(open) => (
-            <button
-                type="button"
-                data-theme="accent"
-                className={cn(
-                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
-                    className,
-                )}
-            >
-                <img
-                    src={avatarUrl}
-                    alt={`${username} avatar`}
-                    className="h-8 shrink-0 rounded-full"
-                />
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
-                    {username}
-                </span>
-                <ChevronIcon
-                    expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-strong transition-transform duration-200 ease-out"
-                />
-            </button>
-        )}
-    >
+    <AccountMenu name={username} avatarUrl={avatarUrl} className={className}>
         {(close) => (
             <>
                 {links.map((link) => (
@@ -684,7 +721,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 </button>
             </>
         )}
-    </Dropdown>
+    </AccountMenu>
 );
 
 const AccountMenuLinkRow: FC<AccountMenuLink> = ({

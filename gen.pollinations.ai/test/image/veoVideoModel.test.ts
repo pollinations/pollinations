@@ -1,6 +1,16 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    calculateUsageBilling,
+    getVisibleImageModels,
+} from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { type FallbackAttempt, withModelFallback } from "../../src/fallback.ts";
+import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
-import { callVeoAPI } from "../../src/image/models/veoVideoModel.ts";
+import {
+    callVeoAPI,
+    callVeoReplicateAPI,
+} from "../../src/image/models/veoVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
@@ -9,7 +19,7 @@ const LAST_FRAME_URL = "https://image.example.com/last.png";
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 const baseParams: ImageParams = {
-    model: "veo",
+    model: "google/veo-3.1-fast",
     width: 1280,
     height: 720,
     dimensionsExplicit: true,
@@ -72,6 +82,142 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+describe("Veo request defaults", () => {
+    // What the gateway passes when the caller sets no size, ratio or audio.
+    const gatewayDefaults: ImageParams = {
+        ...baseParams,
+        width: 1024,
+        height: 1024,
+        dimensionsExplicit: false,
+        audio: undefined,
+    };
+
+    function mockReplicateFetch(inputs: Record<string, unknown>[]) {
+        syncImageEnv(
+            { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN"],
+        );
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            if (
+                String(url) ===
+                "https://api.replicate.com/v1/models/google/veo-3.1-fast/predictions"
+            ) {
+                inputs.push(JSON.parse(init?.body as string).input);
+                return Response.json({
+                    id: "veo-defaults-test",
+                    status: "succeeded",
+                    output: "https://video.example.com/veo.mp4",
+                    metrics: { video_output_duration_seconds: 4 },
+                });
+            }
+            return new Response("video", {
+                headers: { "Content-Type": "video/mp4" },
+            });
+        });
+    }
+
+    it("generates landscape video without audio on Vertex", async () => {
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockVeoFetch(requests);
+
+        const result = await callVeoAPI("a paper boat", gatewayDefaults);
+
+        expect(requests[0].parameters).toMatchObject({
+            aspectRatio: "16:9",
+            generateAudio: false,
+        });
+        expect(result.trackingData.usage).toEqual({
+            completionVideoSeconds: 4,
+        });
+    });
+
+    it("generates landscape video without audio on Replicate", async () => {
+        const inputs: Record<string, unknown>[] = [];
+        mockReplicateFetch(inputs);
+
+        const result = await callVeoReplicateAPI("a paper boat", {
+            ...gatewayDefaults,
+            model: "google/veo-3.1-fast:replicate",
+        });
+
+        expect(inputs[0]).toMatchObject({
+            aspect_ratio: "16:9",
+            generate_audio: false,
+        });
+        expect(result.trackingData.usage).toEqual({
+            completionVideoSeconds: 4,
+        });
+    });
+
+    it("honors aspectRatio when the caller sets no dimensions", async () => {
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockVeoFetch(requests);
+        await callVeoAPI("a paper boat", {
+            ...gatewayDefaults,
+            aspectRatio: "9:16",
+        });
+
+        const inputs: Record<string, unknown>[] = [];
+        mockReplicateFetch(inputs);
+        await callVeoReplicateAPI("a paper boat", {
+            ...gatewayDefaults,
+            model: "google/veo-3.1-fast:replicate",
+            aspectRatio: "9:16",
+        });
+
+        expect(requests[0].parameters).toMatchObject({ aspectRatio: "9:16" });
+        expect(inputs[0]).toMatchObject({ aspect_ratio: "9:16" });
+    });
+
+    it("derives the ratio from explicit dimensions", async () => {
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockVeoFetch(requests);
+
+        await callVeoAPI("a paper boat", {
+            ...gatewayDefaults,
+            width: 720,
+            height: 1280,
+            dimensionsExplicit: true,
+        });
+
+        expect(requests[0].parameters).toMatchObject({ aspectRatio: "9:16" });
+    });
+
+    it.each([
+        [720, 1280, "16:9", "16:9"],
+        [1280, 720, "9:16", "9:16"],
+        [1024, 1024, "16:9", "16:9"],
+        [1024, 1024, undefined, "16:9"],
+    ] as const)("resolves %ix%i with aspectRatio=%s to %s on both routes", async (width, height, aspectRatio, expected) => {
+        const params: ImageParams = {
+            ...gatewayDefaults,
+            width,
+            height,
+            dimensionsExplicit: true,
+            aspectRatio,
+        };
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockVeoFetch(requests);
+        await callVeoAPI("a paper boat", params);
+
+        const inputs: Record<string, unknown>[] = [];
+        mockReplicateFetch(inputs);
+        await callVeoReplicateAPI("a paper boat", {
+            ...params,
+            model: "google/veo-3.1-fast:replicate",
+        });
+
+        expect(requests[0].parameters).toMatchObject({
+            aspectRatio: expected,
+        });
+        expect(inputs[0]).toMatchObject({ aspect_ratio: expected });
+    });
+});
+
 describe("veoVideoModel resolution selection", () => {
     it("defaults veo to 720p and omits audio usage when disabled", async () => {
         setGoogleEnv();
@@ -91,7 +237,7 @@ describe("veoVideoModel resolution selection", () => {
             generateAudio: false,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: { completionVideoSeconds: 4 },
         });
     });
@@ -114,7 +260,7 @@ describe("veoVideoModel resolution selection", () => {
             generateAudio: true,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: {
                 completionVideoSeconds: 4,
                 completionAudioSeconds: 4,
@@ -148,5 +294,148 @@ describe("veoVideoModel resolution selection", () => {
                 },
             ],
         });
+    });
+});
+
+describe("Veo Replicate fallback", () => {
+    it("stays internal and preserves the public contract", () => {
+        expect(IMAGE_SERVICES["google/veo-3.1-fast"].fallbacks).toEqual([
+            "google/veo-3.1-fast:replicate",
+        ]);
+        expect(IMAGE_SERVICES["google/veo-3.1-fast:replicate"]).toMatchObject({
+            provider: "replicate",
+            aliases: [],
+            hidden: true,
+            fallbackOnly: true,
+            paidOnly: true,
+            priceMultiplier: 1,
+            videoCapabilities:
+                IMAGE_SERVICES["google/veo-3.1-fast"].videoCapabilities,
+            allowedDurations: [4, 6, 8],
+            maxReferenceImages: 2,
+        });
+        expect(getVisibleImageModels()).not.toContain(
+            "google/veo-3.1-fast:replicate",
+        );
+    });
+
+    it.each([
+        [undefined, undefined, 0, 0.4, 0.32],
+        ["720p", true, 1, 0.6, 0.4],
+        ["1080p", false, 0, 0.4, 0.4],
+        ["1080p", true, 2, 0.6, 0.48],
+    ] as const)("routes and bills resolution %s / audio %s / %s frames", async (resolution, audio, frames, cost, price) => {
+        syncImageEnv(
+            {
+                REPLICATE_API_TOKEN: "replicate-test-key",
+                GOOGLE_PROJECT_ID: "test-project",
+            } as CloudflareBindings,
+            ["REPLICATE_API_TOKEN", "GOOGLE_PROJECT_ID"],
+        );
+        vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
+            "test-token",
+        );
+        const inputs: Record<string, unknown>[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            const href = String(url);
+            if (href.endsWith(":predictLongRunning")) {
+                return Response.json(
+                    { error: { message: "Forced primary outage" } },
+                    { status: 503 },
+                );
+            }
+            if (href === FIRST_FRAME_URL || href === LAST_FRAME_URL) {
+                return new Response(PNG_BYTES, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+            if (
+                href ===
+                "https://api.replicate.com/v1/models/google/veo-3.1-fast/predictions"
+            ) {
+                inputs.push(JSON.parse(init?.body as string).input);
+                return Response.json({
+                    id: "veo-fallback-test",
+                    status: "succeeded",
+                    output: "https://video.example.com/veo.mp4",
+                    metrics: { video_output_duration_seconds: 4 },
+                });
+            }
+            return new Response("video", {
+                headers: { "Content-Type": "video/mp4" },
+            });
+        });
+        const params = {
+            ...baseParams,
+            model: "google/veo-3.1-fast:replicate" as const,
+            resolution,
+            audio: audio ?? false,
+            duration: undefined,
+            image: [FIRST_FRAME_URL, LAST_FRAME_URL].slice(0, frames),
+        };
+        const attempts: FallbackAttempt[] = [];
+        const { result, index } = await withModelFallback(
+            [
+                "google/veo-3.1-fast",
+                ...IMAGE_SERVICES["google/veo-3.1-fast"].fallbacks,
+            ].map((id) => ({
+                id,
+                definition: IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES],
+            })),
+            ({ id }) =>
+                createAndReturnVideo("a paper boat", {
+                    ...params,
+                    model: id as
+                        | "google/veo-3.1-fast"
+                        | "google/veo-3.1-fast:replicate",
+                }),
+            attempts,
+        );
+        expect(index).toBe(1);
+        expect(
+            attempts.map(({ candidate, settled }) => [candidate.id, settled]),
+        ).toEqual([
+            ["google/veo-3.1-fast", false],
+            ["google/veo-3.1-fast:replicate", true],
+        ]);
+        expect(inputs).toEqual([
+            {
+                prompt: "a paper boat",
+                duration: 4,
+                resolution: resolution ?? "720p",
+                aspect_ratio: "16:9",
+                generate_audio: audio === true,
+                ...(frames >= 1
+                    ? {
+                          image: expect.stringMatching(
+                              /^data:image\/png;base64,/,
+                          ),
+                      }
+                    : {}),
+                ...(frames === 2
+                    ? {
+                          last_frame: expect.stringMatching(
+                              /^data:image\/png;base64,/,
+                          ),
+                      }
+                    : {}),
+            },
+        ]);
+        expect(result.trackingData).toEqual({
+            actualModel: "google/veo-3.1-fast:replicate",
+            usage: {
+                completionVideoSeconds: 4,
+                ...(audio ? { completionAudioSeconds: 4 } : {}),
+            },
+        });
+        const billing = calculateUsageBilling({
+            model: "google/veo-3.1-fast",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["google/veo-3.1-fast:replicate"],
+            quotedBy: IMAGE_SERVICES["google/veo-3.1-fast"],
+            input: { resolution },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(cost);
+        expect(billing.price.totalPrice).toBeCloseTo(price);
     });
 });

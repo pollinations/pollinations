@@ -1,14 +1,30 @@
+import {
+    Alert,
+    AudioIcon,
+    Button,
+    ClipboardIcon,
+    ContentHeader,
+    CopyButton,
+    ExternalLinkButton,
+    Eyebrow,
+    FieldStack,
+    ImageIcon,
+    Input,
+    LinkCard,
+    LockIcon,
+    RobotIcon,
+    Surface,
+    TabButton,
+    Text,
+    Tooltip,
+    VideoIcon,
+} from "@pollinations/ui";
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../../api.config";
 import { PLAY_PAGE, PLAY_PAGE_NO_TRANSLATE } from "../../../copy/content/play";
 import { LINKS } from "../../../copy/content/socialLinks";
 import type { Model } from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
-import { CopyIcon } from "../../assets/CopyIcon";
-import { ExternalLinkIcon } from "../../assets/ExternalLinkIcon";
-import { Button } from "../ui/button";
-import { Divider } from "../ui/divider";
-import { Body, Heading, Label } from "../ui/typography";
 
 interface PlayGeneratorProps {
     selectedModel: string;
@@ -18,7 +34,14 @@ interface PlayGeneratorProps {
     onLoginRequired: () => void;
 }
 
-/** Renders a color-coded GET API URL: base/{type}/{prompt}?params&key=YOUR_API_KEY */
+const CATEGORY_ICON = {
+    text: RobotIcon,
+    image: ImageIcon,
+    video: VideoIcon,
+    audio: AudioIcon,
+} as const;
+
+/** Renders a highlighted GET API URL: base/{type}/{prompt}?params&key=YOUR_API_KEY */
 function ColoredUrl({
     base,
     type,
@@ -38,28 +61,28 @@ function ColoredUrl({
 }) {
     const encodedPrompt = encodeURIComponent(prompt || placeholder);
     return (
-        <span className="font-mono text-sm break-all">
-            <span className="text-subtle">
+        <span className="break-all font-mono text-sm text-theme-text-strong">
+            <span className="text-theme-text-muted">
                 {base}/{type}/
             </span>
-            <span className="text-dark font-bold">{encodedPrompt}</span>
+            <span className="font-bold">{encodedPrompt}</span>
             {Object.keys(params).length > 0 && (
                 <>
-                    <span className="text-subtle">?</span>
+                    <span className="text-theme-text-muted">?</span>
                     {Object.entries(params).map(([k, v], i) => (
                         <span key={k}>
-                            {i > 0 && <span className="text-subtle">&</span>}
-                            <span className="text-dark">{k}</span>
-                            <span className="text-subtle">=</span>
-                            <span className="text-dark">{v}</span>
+                            {i > 0 && (
+                                <span className="text-theme-text-muted">&</span>
+                            )}
+                            <span>{k}</span>
+                            <span className="text-theme-text-muted">=</span>
+                            <span>{v}</span>
                         </span>
                     ))}
-                    <span className="text-subtle">&</span>
-                    <span className="text-dark">{apiKeyParam}</span>
-                    <span className="text-subtle">=</span>
-                    <span className="text-dark font-bold">
-                        {apiKeyPlaceholder}
-                    </span>
+                    <span className="text-theme-text-muted">&</span>
+                    <span>{apiKeyParam}</span>
+                    <span className="text-theme-text-muted">=</span>
+                    <span className="font-bold">{apiKeyPlaceholder}</span>
                 </>
             )}
         </span>
@@ -99,9 +122,7 @@ export function PlayGenerator({
     >(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [urlCopied, setUrlCopied] = useState(false);
     const [agentPrompt, setAgentPrompt] = useState("");
-    const [agentPromptCopied, setAgentPromptCopied] = useState(false);
 
     // Fetch agent prompt for copy button
     useEffect(() => {
@@ -139,6 +160,11 @@ export function PlayGenerator({
         false;
     const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
+    // Keep uploads for switching back, but only send them to models that take images.
+    const effectiveImageUrls = useMemo(
+        () => (supportsImageInput ? imageUrls : []),
+        [supportsImageInput, imageUrls],
+    );
     const availableVoices = currentModelData?.voices || [];
 
     const [selectedVoice, setSelectedVoice] = useState<string>(
@@ -164,17 +190,21 @@ export function PlayGenerator({
             width: width.toString(),
             height: height.toString(),
             seed: seed.toString(),
-            ...(imageUrls.length > 0 ? { image: imageUrls.join("|") } : {}),
+            ...(effectiveImageUrls.length > 0
+                ? { image: effectiveImageUrls.join("|") }
+                : {}),
         }),
-        [selectedModel, width, height, seed, imageUrls],
+        [selectedModel, width, height, seed, effectiveImageUrls],
     );
 
     const textParams = useMemo(
         () => ({
             model: selectedModel,
-            ...(imageUrls.length > 0 ? { image: imageUrls.join("|") } : {}),
+            ...(effectiveImageUrls.length > 0
+                ? { image: effectiveImageUrls.join("|") }
+                : {}),
         }),
-        [selectedModel, imageUrls],
+        [selectedModel, effectiveImageUrls],
     );
 
     const audioParams = useMemo(
@@ -363,10 +393,10 @@ export function PlayGenerator({
             await runGeneration(
                 () => {
                     const content =
-                        imageUrls.length > 0
+                        effectiveImageUrls.length > 0
                             ? [
                                   { type: "text", text: prompt },
-                                  ...imageUrls.map((url: string) => ({
+                                  ...effectiveImageUrls.map((url: string) => ({
                                       type: "image_url",
                                       image_url: { url },
                                   })),
@@ -387,9 +417,11 @@ export function PlayGenerator({
                 },
                 async (response) => {
                     const data = await response.json();
-                    const text =
-                        data.choices?.[0]?.message?.content || copy.noResponse;
-                    setResult(text);
+                    const content = data.choices?.[0]?.message?.content;
+                    const text = Array.isArray(content)
+                        ? content.find((part) => part.type === "text")?.text
+                        : content;
+                    setResult(text || copy.noResponse);
                     setResultType("text");
                     setIsLoading(false);
                 },
@@ -398,33 +430,47 @@ export function PlayGenerator({
         }
     };
 
+    const generateType = isVideoModel
+        ? "video"
+        : isAudioModel
+          ? "audio"
+          : isImageModel
+            ? "image"
+            : "text";
+    const GenerateIcon = !apiKey ? LockIcon : CATEGORY_ICON[generateType];
+    const generateLabel = isLoading
+        ? copy.generatingText
+        : !apiKey
+          ? copy.loginToGenerateButton
+          : isVideoModel
+            ? copy.generateVideoButton
+            : isAudioModel
+              ? copy.generateAudioButton
+              : isImageModel
+                ? copy.generateImageButton
+                : copy.generateTextButton;
+
     return (
         <>
             {/* Reference Images */}
             {supportsImageInput && (
-                <div className="mb-6">
-                    <div className="flex items-baseline gap-2 mb-2">
-                        <Label as="span" spacing="none" display="inline">
-                            {copy.referenceImagesLabel}
-                        </Label>
-                        <Body
-                            as="span"
-                            size="xs"
-                            spacing="none"
-                            className="text-subtle"
-                        >
+                <FieldStack
+                    label={copy.referenceImagesLabel}
+                    action={
+                        <Text as="span" size="xs" tone="muted">
                             {imageUrls.length}
                             {copy.referenceImagesCount}
-                        </Body>
-                    </div>
+                        </Text>
+                    }
+                >
                     {imageUrls.length > 0 && (
-                        <div className="flex gap-2 mb-2 flex-wrap">
+                        <div className="flex flex-wrap gap-2">
                             {imageUrls.map((url, index) => (
                                 <div key={url} className="relative">
                                     <img
                                         src={url}
                                         alt={`${copy.imageAltReferencePrefix} ${index + 1}`}
-                                        className="w-16 h-16 object-cover rounded-input border-2 border-dark"
+                                        className="h-16 w-16 rounded-lg bg-theme-bg-subtle object-cover"
                                     />
                                     <button
                                         type="button"
@@ -435,7 +481,7 @@ export function PlayGenerator({
                                                 ),
                                             )
                                         }
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-tan border border-border rounded-full flex items-center justify-center text-dark hover:bg-white transition-colors"
+                                        className="-top-1.5 -right-1.5 absolute flex h-5 w-5 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong transition-colors hover:bg-theme-bg-subtle"
                                     >
                                         ×
                                     </button>
@@ -444,7 +490,7 @@ export function PlayGenerator({
                         </div>
                     )}
                     <label
-                        className={`flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-border-subtle rounded-input font-body text-sm cursor-pointer transition-colors ${isUploading ? "bg-white/60 text-subtle" : "bg-white hover:bg-cream text-muted hover:text-dark"} ${imageUrls.length >= 4 ? "opacity-50 pointer-events-none" : ""}`}
+                        className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-theme-border border-dashed bg-surface-white p-3 font-body text-sm transition-colors ${isUploading ? "text-theme-text-muted" : "text-theme-text-base hover:bg-theme-bg-subtle hover:text-theme-text-strong"} ${imageUrls.length >= 4 ? "pointer-events-none opacity-50" : ""}`}
                         onDragOver={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -471,170 +517,106 @@ export function PlayGenerator({
                             ? copy.uploadingLabel
                             : copy.uploadImageLabel}
                     </label>
-                </div>
+                </FieldStack>
             )}
 
             {/* Image Parameters */}
             {isImageModel && (
-                <div className="mb-6">
-                    <div
-                        className="grid gap-3 items-end"
-                        style={{
-                            gridTemplateColumns:
-                                "repeat(auto-fit, minmax(120px, 1fr))",
-                        }}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-end gap-3">
+                    <FieldStack label={copy.widthLabel}>
+                        <Input
+                            id="image-width"
+                            name="image-width"
+                            type="number"
+                            value={width}
+                            onChange={(e) => setWidth(Number(e.target.value))}
+                        />
+                    </FieldStack>
+                    <FieldStack label={copy.heightLabel}>
+                        <Input
+                            id="image-height"
+                            name="image-height"
+                            type="number"
+                            value={height}
+                            onChange={(e) => setHeight(Number(e.target.value))}
+                        />
+                    </FieldStack>
+                    <FieldStack
+                        label={
+                            <Tooltip
+                                triggerAs="span"
+                                content={copy.seedTooltip}
+                            >
+                                {copy.seedLabel}
+                            </Tooltip>
+                        }
                     >
-                        <div>
-                            <Label>{copy.widthLabel}</Label>
-                            <input
-                                id="image-width"
-                                name="image-width"
-                                type="number"
-                                value={width}
-                                onChange={(e) =>
-                                    setWidth(Number(e.target.value))
-                                }
-                                className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors rounded-input"
-                            />
-                        </div>
-                        <div>
-                            <Label>{copy.heightLabel}</Label>
-                            <input
-                                id="image-height"
-                                name="image-height"
-                                type="number"
-                                value={height}
-                                onChange={(e) =>
-                                    setHeight(Number(e.target.value))
-                                }
-                                className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors rounded-input"
-                            />
-                        </div>
-                        <div>
-                            <div className="relative group/seed inline-block mb-2">
-                                <Label
-                                    as="span"
-                                    spacing="none"
-                                    display="inline"
-                                    className="cursor-help"
-                                >
-                                    {copy.seedLabel}
-                                </Label>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/seed:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    {copy.seedTooltip}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
-                                </div>
-                            </div>
-                            <input
-                                id="image-seed"
-                                name="image-seed"
-                                type="number"
-                                value={seed}
-                                onChange={(e) =>
-                                    setSeed(Number(e.target.value))
-                                }
-                                placeholder={copy.seedPlaceholder}
-                                className="w-full p-3 bg-white text-dark font-body focus:outline-none focus:bg-white hover:bg-white transition-colors placeholder:text-subtle rounded-input"
-                            />
-                        </div>
-                    </div>
+                        <Input
+                            id="image-seed"
+                            name="image-seed"
+                            type="number"
+                            value={seed}
+                            onChange={(e) => setSeed(Number(e.target.value))}
+                            placeholder={copy.seedPlaceholder}
+                        />
+                    </FieldStack>
                 </div>
             )}
 
             {/* Voice Selector */}
             {availableVoices.length > 0 && (
-                <div className="mb-6">
-                    <Label as="div" spacing="comfortable">
-                        {copy.voiceLabel}
-                    </Label>
+                <FieldStack label={copy.voiceLabel}>
                     <div className="flex flex-wrap gap-2">
                         {availableVoices.map((voice) => (
-                            <Button
+                            <TabButton
                                 key={voice}
-                                type="button"
+                                active={selectedVoice === voice}
+                                size="sm"
                                 onClick={() => setSelectedVoice(voice)}
-                                variant="model"
-                                size={null}
-                                data-active={selectedVoice === voice}
-                                data-type="audio"
-                                className="border-2 border-indicator-audio"
                             >
                                 {voice}
-                            </Button>
+                            </TabButton>
                         ))}
                     </div>
-                </div>
+                </FieldStack>
             )}
 
             {/* Generate Button */}
-            <div className="relative group/generate inline-block mb-6">
-                <Button
-                    type="button"
-                    onClick={apiKey ? handleGenerate : onLoginRequired}
-                    disabled={!!apiKey && !prompt && !isLoading}
-                    variant="generate"
-                    size={null}
-                    className={
-                        isLoading
-                            ? "animate-pulse-subtle pointer-events-none cursor-wait"
-                            : ""
-                    }
-                    data-type={
-                        isVideoModel
-                            ? "video"
-                            : isAudioModel
-                              ? "audio"
-                              : isImageModel
-                                ? "image"
-                                : "text"
-                    }
+            {apiKey && !prompt && !isLoading ? (
+                <Tooltip
+                    triggerAs="span"
+                    align="center"
+                    content={copy.enterPromptFirst}
+                    className="self-end"
                 >
-                    {isLoading ? (
-                        <span className="flex items-center gap-2">
-                            <span className="flex gap-1">
-                                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
-                            </span>
-                            {copy.generatingText}
-                        </span>
-                    ) : !apiKey ? (
-                        copy.loginToGenerateButton
-                    ) : isVideoModel ? (
-                        copy.generateVideoButton
-                    ) : isAudioModel ? (
-                        copy.generateAudioButton
-                    ) : isImageModel ? (
-                        copy.generateImageButton
-                    ) : (
-                        copy.generateTextButton
-                    )}
+                    <Button size="lg" disabled>
+                        <GenerateIcon className="mr-2 h-4 w-4" />
+                        {generateLabel}
+                    </Button>
+                </Tooltip>
+            ) : (
+                <Button
+                    size="lg"
+                    disabled={isLoading}
+                    onClick={apiKey ? handleGenerate : onLoginRequired}
+                    className="self-end"
+                >
+                    <GenerateIcon className="mr-2 h-4 w-4" />
+                    {generateLabel}
                 </Button>
-                {apiKey && !prompt && !isLoading && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-white text-dark text-xs rounded-input shadow-lg border border-border opacity-0 group-hover/generate:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                        {copy.enterPromptFirst}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-input-background" />
-                    </div>
-                )}
-            </div>
+            )}
 
             {/* Error Display */}
-            {error && (
-                <div className="mb-6 p-4 bg-cream border border-dark rounded-input">
-                    <Body size="sm" spacing="none">
-                        {error}
-                    </Body>
-                </div>
-            )}
+            {error && <Alert intent="danger">{error}</Alert>}
 
             {/* Result Display */}
             {result && !error && resultType && (
-                <div className={resultType === "text" ? "bg-white p-6" : ""}>
+                <div className="rounded-xl bg-surface-white p-3 text-theme-text-strong">
                     {resultType === "image" && (
                         <img
                             src={result}
                             alt={copy.imageAltGenerated}
-                            className="w-full h-auto"
+                            className="h-auto w-full rounded-lg"
                             onLoad={() => setIsLoading(false)}
                         />
                     )}
@@ -645,7 +627,7 @@ export function PlayGenerator({
                             autoPlay
                             loop
                             muted
-                            className="w-full h-auto"
+                            className="h-auto w-full rounded-lg"
                             onLoadedData={() => setIsLoading(false)}
                         >
                             <track kind="captions" />
@@ -656,258 +638,203 @@ export function PlayGenerator({
                             src={result}
                             controls
                             autoPlay
-                            className="w-full"
+                            className="polli-playground-audio w-full"
                             onLoadedData={() => setIsLoading(false)}
                         >
                             <track kind="captions" />
                         </audio>
                     )}
                     {resultType === "text" && (
-                        <Body spacing="none" className="whitespace-pre-wrap">
+                        <Text
+                            as="p"
+                            size="sm"
+                            className="m-0 whitespace-pre-wrap break-words p-1"
+                        >
                             {result}
-                        </Body>
+                        </Text>
                     )}
                 </div>
             )}
 
             {/* ── Integrate Section ── */}
-            <Divider spacing="tight" />
+            <section className="mt-6 flex flex-col gap-5 sm:mt-12">
+                <ContentHeader
+                    eyebrow={null}
+                    title={copy.integrateTitle}
+                    subtitle={copy.integrateIntro}
+                />
 
-            <Heading variant="section" spacing="default">
-                {copy.integrateTitle}
-            </Heading>
-
-            <Body size="sm" spacing="default" className="text-muted">
-                {copy.integrateIntro}
-            </Body>
-
-            {/* Live API URL */}
-            <div className="mb-6">
-                <div className="relative">
-                    <div className="bg-white p-3 pr-16 rounded-input overflow-x-auto">
-                        {isImageModel ? (
-                            <ColoredUrl
-                                base={API_BASE}
-                                type="image"
-                                prompt={prompt}
-                                placeholder={copy.urlPlaceholderPrompt}
-                                params={imageParams}
-                                apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
-                                apiKeyParam={copy.urlApiKeyParam}
-                            />
-                        ) : isAudioModel ? (
-                            <ColoredUrl
-                                base={API_BASE}
-                                type="audio"
-                                prompt={prompt}
-                                placeholder={copy.urlPlaceholderText}
-                                params={audioParams}
-                                apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
-                                apiKeyParam={copy.urlApiKeyParam}
-                            />
-                        ) : (
-                            <ColoredUrl
-                                base={API_BASE}
-                                type="text"
-                                prompt={prompt}
-                                placeholder={copy.urlPlaceholderPrompt}
-                                params={textParams}
-                                apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
-                                apiKeyParam={copy.urlApiKeyParam}
-                            />
-                        )}
-                    </div>
-                    <button
-                        type="button"
-                        className="absolute top-2 right-2 p-2.5 bg-white hover:bg-white rounded-input transition-colors border border-tan"
-                        onClick={() => {
-                            navigator.clipboard.writeText(copyableUrl);
-                            setUrlCopied(true);
-                            setTimeout(() => setUrlCopied(false), 2000);
-                        }}
-                        title={copy.copyButton}
-                    >
-                        {urlCopied ? (
-                            <span className="font-body text-xs font-bold text-dark uppercase tracking-wider px-1">
-                                {copy.copiedLabel}
-                            </span>
-                        ) : (
-                            <CopyIcon className="w-5 h-5 text-muted" />
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-2 mb-6">
-                <Button
-                    as="a"
-                    href={LINKS.enterKeys}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="primary"
-                    size="sm"
-                    className="bg-[rgb(var(--primary-strong))] text-dark hover:bg-[rgb(var(--primary-strong)/0.8)] hover:text-dark"
-                >
-                    {copy.getKeyButton}
-                    <ExternalLinkIcon className="w-3 h-3" />
-                </Button>
-                <Button
-                    as="a"
-                    href={LINKS.enterApiDocs}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="secondary"
-                    size="sm"
-                    className="bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
-                >
-                    {copy.fullApiDocsButton}
-                    <ExternalLinkIcon className="w-3 h-3 text-dark" />
-                </Button>
-                <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="relative bg-secondary-strong text-dark hover:bg-secondary-strong/80 hover:text-dark"
-                    onClick={() => {
-                        navigator.clipboard.writeText(agentPrompt);
-                        setAgentPromptCopied(true);
-                        setTimeout(() => setAgentPromptCopied(false), 2000);
-                    }}
-                >
-                    {copy.agentPromptButton}
-                    <CopyIcon className="w-3 h-3" />
-                    {agentPromptCopied && (
-                        <span className="absolute -top-5 left-0 font-body text-xs font-bold text-dark uppercase tracking-wider">
-                            {copy.copiedLabel}
-                        </span>
+                {/* Live API URL */}
+                <div className="relative overflow-x-auto rounded-xl bg-surface-white p-3 pr-16">
+                    {isImageModel ? (
+                        <ColoredUrl
+                            base={API_BASE}
+                            type="image"
+                            prompt={prompt}
+                            placeholder={copy.urlPlaceholderPrompt}
+                            params={imageParams}
+                            apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
+                            apiKeyParam={copy.urlApiKeyParam}
+                        />
+                    ) : isAudioModel ? (
+                        <ColoredUrl
+                            base={API_BASE}
+                            type="audio"
+                            prompt={prompt}
+                            placeholder={copy.urlPlaceholderText}
+                            params={audioParams}
+                            apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
+                            apiKeyParam={copy.urlApiKeyParam}
+                        />
+                    ) : (
+                        <ColoredUrl
+                            base={API_BASE}
+                            type="text"
+                            prompt={prompt}
+                            placeholder={copy.urlPlaceholderPrompt}
+                            params={textParams}
+                            apiKeyPlaceholder={copy.urlApiKeyPlaceholder}
+                            apiKeyParam={copy.urlApiKeyParam}
+                        />
                     )}
-                </Button>
-            </div>
-
-            {/* Authentication */}
-            <Heading
-                variant="subsection"
-                as="h3"
-                spacing="default"
-                className="text-lg"
-            >
-                {copy.authTitle}
-            </Heading>
-
-            <Body size="sm" spacing="default" className="text-muted">
-                {copy.authIntro}
-            </Body>
-
-            {/* Key type cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                <div className="bg-primary-light p-4 rounded-sub-card">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="font-mono text-lg font-black text-dark">
-                            sk_
-                        </span>
-                        <Label as="span" spacing="none" display="inline">
-                            {copy.secretLabel}
-                        </Label>
-                    </div>
-                    <ul className="list-none p-0 m-0 space-y-1">
-                        <li>
-                            <Body
-                                as="span"
-                                size="xs"
-                                spacing="none"
-                                className="text-dark font-bold"
-                            >
-                                {copy.secretFeature1}
-                            </Body>
-                        </li>
-                        <li>
-                            <Body
-                                as="span"
-                                size="xs"
-                                spacing="none"
-                                className="text-dark font-bold"
-                            >
-                                {copy.secretFeature2}
-                            </Body>
-                        </li>
-                    </ul>
-                    <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
-                        <Body
-                            size="xs"
-                            spacing="none"
-                            className="text-dark font-bold"
-                        >
-                            {copy.secretWarning}
-                        </Body>
-                    </div>
+                    <CopyButton
+                        value={copyableUrl}
+                        tooltip={null}
+                        title={copy.copyButton}
+                        className="absolute top-2 right-2 flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 text-theme-text-muted transition-colors hover:bg-theme-bg-subtle hover:text-theme-text-strong"
+                    >
+                        {(copied) =>
+                            copied ? (
+                                <span className="font-bold text-theme-text-strong text-xs">
+                                    {copy.copiedLabel}
+                                </span>
+                            ) : (
+                                <ClipboardIcon className="h-5 w-5" />
+                            )
+                        }
+                    </CopyButton>
                 </div>
 
-                <div className="bg-secondary-light p-4 rounded-sub-card">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="font-mono text-lg font-black text-dark">
-                            pk_
-                        </span>
-                        <Label as="span" spacing="none" display="inline">
-                            {copy.appKeyLabel}
-                        </Label>
-                    </div>
-                    <ul className="list-none p-0 m-0 space-y-1">
-                        <li>
-                            <Body
-                                as="span"
-                                size="xs"
-                                spacing="none"
-                                className="text-dark font-bold"
-                            >
-                                {copy.appKeyFeature1}
-                            </Body>
-                        </li>
-                        <li>
-                            <Body
-                                as="span"
-                                size="xs"
-                                spacing="none"
-                                className="text-dark font-bold"
-                            >
-                                {copy.appKeyFeature2}
-                            </Body>
-                        </li>
-                    </ul>
-                    <div className="mt-3 px-2 py-1 bg-accent-strong/30 rounded-sm">
-                        <Body
-                            size="xs"
-                            spacing="none"
-                            className="text-dark font-bold"
-                        >
-                            {copy.appKeyNote}
-                        </Body>
-                    </div>
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2">
+                    <ExternalLinkButton
+                        href={LINKS.enterKeys}
+                        size="md"
+                        intent="brand"
+                    >
+                        {copy.getKeyButton}
+                    </ExternalLinkButton>
+                    <ExternalLinkButton
+                        href={LINKS.enterApiDocs}
+                        size="md"
+                        intent="neutral"
+                    >
+                        {copy.fullApiDocsButton}
+                    </ExternalLinkButton>
+                    <CopyButton
+                        value={agentPrompt}
+                        tooltip={null}
+                        variant="button"
+                        intent="neutral"
+                        className="gap-2"
+                    >
+                        {(copied) => (
+                            <>
+                                {copied
+                                    ? copy.copiedLabel
+                                    : copy.agentPromptButton}
+                                <ClipboardIcon className="h-4 w-4" />
+                            </>
+                        )}
+                    </CopyButton>
                 </div>
-            </div>
 
-            {/* BYOP highlight */}
-            <a
-                href={LINKS.byopDocs}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-6 bg-tertiary-light border-2 border-dark border-r-4 border-b-4 rounded-sub-card hover:brightness-95 transition-colors"
-            >
-                <div className="flex items-center gap-4">
-                    <span className="text-4xl">🔌</span>
-                    <div className="flex-1 min-w-0">
-                        <span className="font-headline text-sm font-black text-dark block">
+                {/* Authentication */}
+                <h3 className="font-body font-semibold text-theme-text-strong text-xl">
+                    {copy.authTitle}
+                </h3>
+
+                <Text size="sm" tone="muted">
+                    {copy.authIntro}
+                </Text>
+
+                {/* Key type cards */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {(
+                        [
+                            {
+                                prefix: "sk_",
+                                label: copy.secretLabel,
+                                features: [
+                                    copy.secretFeature1,
+                                    copy.secretFeature2,
+                                ],
+                                note: copy.secretWarning,
+                            },
+                            {
+                                prefix: "pk_",
+                                label: copy.appKeyLabel,
+                                features: [
+                                    copy.appKeyFeature1,
+                                    copy.appKeyFeature2,
+                                ],
+                                note: copy.appKeyNote,
+                            },
+                        ] as const
+                    ).map((key) => (
+                        <Surface
+                            key={key.prefix}
+                            variant="card"
+                            className="flex flex-col gap-3 p-5"
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold font-mono text-lg text-theme-text-strong">
+                                    {key.prefix}
+                                </span>
+                                <Eyebrow>{key.label}</Eyebrow>
+                            </div>
+                            <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                                {key.features.map((feature) => (
+                                    <li key={feature}>
+                                        <Text
+                                            as="span"
+                                            size="sm"
+                                            tone="strong"
+                                            weight="semibold"
+                                        >
+                                            {feature}
+                                        </Text>
+                                    </li>
+                                ))}
+                            </ul>
+                            <Text
+                                size="xs"
+                                className="rounded-lg bg-theme-bg-subtle px-3 py-2"
+                            >
+                                {key.note}
+                            </Text>
+                        </Surface>
+                    ))}
+                </div>
+
+                {/* BYOP highlight */}
+                <LinkCard
+                    href={LINKS.byopDocs}
+                    surfaceClassName="flex-row items-center gap-4 rounded-2xl"
+                >
+                    <span aria-hidden="true" className="text-4xl">
+                        🔌
+                    </span>
+                    <span className="flex min-w-0 flex-col gap-1">
+                        <span className="font-semibold text-base text-theme-text-strong">
                             {copy.byopLabel}
                         </span>
-                        <span className="font-body text-base text-muted block mt-1">
+                        <Text as="span" size="sm" tone="muted">
                             {copy.byopDescription}
-                        </span>
-                    </div>
-                    <span className="font-headline text-sm font-black text-dark shrink-0">
-                        &rarr;
+                        </Text>
                     </span>
-                </div>
-            </a>
+                </LinkCard>
+            </section>
         </>
     );
 }

@@ -1,5 +1,7 @@
-import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
+import { createParser } from "eventsource-parser";
+import { apiErrorStatus } from "./errors.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
@@ -15,17 +17,9 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-function isClientInputError(details: unknown): boolean {
-    const serialized =
-        typeof details === "string" ? details : JSON.stringify(details);
-    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
-        serialized,
-    );
-}
-
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
-function withUpstreamRequestUrl(
+export function withUpstreamRequestUrl(
     completion: ChatCompletion,
     requestUrl: URL,
 ): ChatCompletion {
@@ -70,6 +64,60 @@ function ensureOpenAISseDone(
     );
 }
 
+function removeReasoning(completion: Pick<ChatCompletion, "choices">): void {
+    for (const choice of completion.choices ?? []) {
+        for (const message of [choice.message, choice.delta]) {
+            if (!message) continue;
+            delete message.reasoning;
+            delete message.reasoning_content;
+            delete message.reasoning_details;
+        }
+    }
+}
+
+function hideStreamReasoning(
+    source: ReadableStream<Uint8Array>,
+): ReadableStream<Uint8Array> {
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let parser: ReturnType<typeof createParser>;
+    return source.pipeThrough(
+        new TransformStream({
+            start(controller) {
+                parser = createParser({
+                    onEvent(event) {
+                        let data = event.data;
+                        if (data.trim() !== "[DONE]") {
+                            const completion = JSON.parse(
+                                data,
+                            ) as ChatCompletion;
+                            removeReasoning(completion);
+                            data = JSON.stringify(completion);
+                        }
+                        const fields: string[] = [];
+                        if (event.event !== undefined)
+                            fields.push(`event: ${event.event}`);
+                        if (event.id !== undefined)
+                            fields.push(`id: ${event.id}`);
+                        for (const line of data.split("\n"))
+                            fields.push(`data: ${line}`);
+                        controller.enqueue(
+                            encoder.encode(`${fields.join("\n")}\n\n`),
+                        );
+                    },
+                });
+            },
+            transform(chunk) {
+                parser.feed(decoder.decode(chunk, { stream: true }));
+            },
+            flush() {
+                parser.feed(`${decoder.decode()}\n\n`);
+                parser.reset({ consume: true });
+            },
+        }),
+    );
+}
+
 function extractErrorMessage(details: unknown): string | null {
     if (typeof details === "string") return details.trim() || null;
     if (!details || typeof details !== "object") return null;
@@ -86,8 +134,44 @@ function extractErrorMessage(details: unknown): string | null {
     return typeof message === "string" && message.trim() ? message : null;
 }
 
+/**
+ * Some OpenAI-compatible gateways return an upstream rate limit inside an
+ * otherwise successful completion. Normalize explicit rate limits and input/
+ * policy rejections; other finish errors (e.g. malformed tool output) stay unchanged.
+ */
+function responseBodyError(
+    completion: ChatCompletion,
+): ChatCompletion["error"] {
+    if (completion.error) return completion.error;
+
+    for (const choice of completion.choices ?? []) {
+        if (choice.finish_reason !== "error") continue;
+        const details = choice.error;
+        if (!details || typeof details !== "object") continue;
+        const embedded = details as { code?: unknown; status?: unknown };
+        if (
+            embedded.code !== 429 &&
+            embedded.status !== 429 &&
+            apiErrorStatus(details, 502) >= 500
+        )
+            continue;
+
+        return {
+            message: extractErrorMessage(details) ?? undefined,
+            status:
+                typeof embedded.status === "number"
+                    ? embedded.status
+                    : typeof embedded.code === "number"
+                      ? embedded.code
+                      : undefined,
+            details,
+        };
+    }
+}
+
 function createApiError(
     response: Response,
+    responseBody: string,
     details: unknown,
     modelName: string,
     requestUrl: URL,
@@ -97,11 +181,10 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = isClientInputError(details)
-        ? 400
-        : remapUpstreamStatus(response.status);
+    error.status = apiErrorStatus(details, response.status);
     error.upstreamStatus = response.status;
     error.details = details;
+    error.responseBody = responseBody;
     error.model = modelName;
     error.requestUrl = requestUrl;
     error.upstreamHeaders = collectUpstreamHeaders(response.headers);
@@ -137,6 +220,10 @@ export async function genericOpenAIClient(
     const { endpoint, additionalHeaders = {}, fetcher = fetch } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
+    const hideReasoning =
+        options.include_reasoning === false ||
+        (options.reasoning as { exclude?: boolean } | undefined)?.exclude ===
+            true;
     let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
@@ -157,6 +244,7 @@ export async function genericOpenAIClient(
 
         const preparedMessages = prepareMessages(messages);
         const {
+            key: _key,
             additionalHeaders: _additionalHeaders,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
@@ -198,6 +286,7 @@ export async function genericOpenAIClient(
         try {
             response = await fetcher(endpointUrl, {
                 method: "POST",
+                redirect: "manual",
                 headers,
                 body: JSON.stringify(requestBody),
             });
@@ -217,7 +306,13 @@ export async function genericOpenAIClient(
                 `[${requestId}] API error (${response.status}):`,
                 errorDetails,
             );
-            throw createApiError(response, errorDetails, modelName, requestUrl);
+            throw createApiError(
+                response,
+                errorText,
+                errorDetails,
+                modelName,
+                requestUrl,
+            );
         }
 
         if (options.stream) {
@@ -231,7 +326,11 @@ export async function genericOpenAIClient(
                     requestUrl,
                 );
             }
-            const streamToReturn = ensureOpenAISseDone(response.body);
+            const streamToReturn = ensureOpenAISseDone(
+                hideReasoning
+                    ? hideStreamReasoning(response.body)
+                    : response.body,
+            );
             return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,
@@ -253,29 +352,39 @@ export async function genericOpenAIClient(
         }
 
         let data: ChatCompletion;
+        let responseBody: string | undefined;
         try {
-            data = (await response.json()) as ChatCompletion;
+            responseBody = await response.text();
+            data = JSON.parse(responseBody) as ChatCompletion;
         } catch (thrown: unknown) {
-            throw withUpstreamContext(thrown, requestUrl);
+            const error = withUpstreamContext(thrown, requestUrl);
+            error.responseBody = responseBody;
+            error.upstreamStatus = response.status;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+            throw error;
         }
-        if (data.error) {
+        if (hideReasoning) removeReasoning(data);
+        const responseError = responseBodyError(data);
+        if (responseError) {
             const errorDetails =
-                typeof data.error === "string"
-                    ? { message: data.error }
-                    : data.error;
+                typeof responseError === "string"
+                    ? { message: responseError }
+                    : responseError;
             const error = new Error(
                 errorDetails.message || "Text generation failed",
             ) as ServiceError;
-            error.status = isClientInputError(errorDetails)
-                ? 400
-                : typeof errorDetails.status === "number"
-                  ? remapUpstreamStatus(errorDetails.status)
-                  : 502;
-            error.upstreamStatus =
+            const upstreamStatus =
                 typeof errorDetails.status === "number"
                     ? errorDetails.status
-                    : undefined;
-            error.details = errorDetails.details;
+                    : typeof errorDetails.code === "number" &&
+                        errorDetails.code >= 400 &&
+                        errorDetails.code <= 599
+                      ? errorDetails.code
+                      : undefined;
+            error.status = apiErrorStatus(errorDetails, upstreamStatus ?? 502);
+            error.upstreamStatus = upstreamStatus;
+            error.details = errorDetails.details ?? errorDetails;
+            error.responseBody = responseBody;
             error.model = modelName;
             error.requestUrl = requestUrl;
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);

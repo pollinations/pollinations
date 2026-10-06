@@ -48,8 +48,12 @@ export function getEstimatedPrice(
     definition?: ModelDefinition,
 ): number {
     if (!model) return 0;
+    // Retain pre-rename history until Tinybird has data under the canonical ID.
     const tinybird =
-        stats.data?.find((r) => r.model === model)?.avg_cost_usd || 0;
+        (
+            stats.data?.find((r) => r.model === model) ??
+            stats.data?.find((r) => definition?.aliases.includes(r.model))
+        )?.avg_cost_usd || 0;
     const defined = definition ? getDefinedRequestEstimate(definition) : null;
     if (
         defined != null &&

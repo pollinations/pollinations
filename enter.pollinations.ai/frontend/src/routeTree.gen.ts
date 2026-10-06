@@ -9,15 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TopUpRouteImport } from './routes/top-up'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ErrorRouteImport } from './routes/error'
+import { Route as EditKeyRouteImport } from './routes/edit-key'
 import { Route as DeviceRouteImport } from './routes/device'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSignInRouteImport } from './routes/app.sign-in'
+import { Route as DashboardSignInRouteImport } from './routes/_dashboard.sign-in'
 import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
@@ -27,14 +30,14 @@ import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
+const TopUpRoute = TopUpRouteImport.update({
+  id: '/top-up',
+  path: '/top-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInRoute = SignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RefundsRoute = RefundsRouteImport.update({
@@ -50,6 +53,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ErrorRoute = ErrorRouteImport.update({
   id: '/error',
   path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EditKeyRoute = EditKeyRouteImport.update({
+  id: '/edit-key',
+  path: '/edit-key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeviceRoute = DeviceRouteImport.update({
@@ -70,6 +78,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSignInRoute = AppSignInRouteImport.update({
+  id: '/app/sign-in',
+  path: '/app/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardSignInRoute = DashboardSignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardQuestsRoute = DashboardQuestsRouteImport.update({
   id: '/quests',
@@ -116,11 +134,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
-  '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
@@ -129,16 +148,19 @@ export interface FileRoutesByFullPath {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sign-in': typeof DashboardSignInRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
-  '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
@@ -147,6 +169,8 @@ export interface FileRoutesByTo {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sign-in': typeof DashboardSignInRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -154,11 +178,12 @@ export interface FileRoutesById {
   '/_dashboard': typeof DashboardRouteWithChildren
   '/authorize': typeof AuthorizeRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
-  '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
@@ -167,6 +192,8 @@ export interface FileRoutesById {
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
+  '/_dashboard/sign-in': typeof DashboardSignInRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -174,11 +201,12 @@ export interface FileRouteTypes {
     | '/'
     | '/authorize'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
-    | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/account'
     | '/activity'
     | '/keys'
@@ -187,16 +215,19 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sign-in'
+    | '/app/sign-in'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/authorize'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
-    | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/account'
     | '/activity'
     | '/keys'
@@ -205,17 +236,20 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sign-in'
+    | '/app/sign-in'
   id:
     | '__root__'
     | '/'
     | '/_dashboard'
     | '/authorize'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
-    | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/_dashboard/account'
     | '/_dashboard/activity'
     | '/_dashboard/keys'
@@ -224,6 +258,8 @@ export interface FileRouteTypes {
     | '/_dashboard/news'
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
+    | '/_dashboard/sign-in'
+    | '/app/sign-in'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -231,27 +267,29 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   AuthorizeRoute: typeof AuthorizeRoute
   DeviceRoute: typeof DeviceRoute
+  EditKeyRoute: typeof EditKeyRoute
   ErrorRoute: typeof ErrorRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
-  SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  TopUpRoute: typeof TopUpRoute
+  AppSignInRoute: typeof AppSignInRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/top-up': {
+      id: '/top-up'
+      path: '/top-up'
+      fullPath: '/top-up'
+      preLoaderRoute: typeof TopUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in': {
-      id: '/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refunds': {
@@ -273,6 +311,13 @@ declare module '@tanstack/react-router' {
       path: '/error'
       fullPath: '/error'
       preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/edit-key': {
+      id: '/edit-key'
+      path: '/edit-key'
+      fullPath: '/edit-key'
+      preLoaderRoute: typeof EditKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/device': {
@@ -302,6 +347,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/sign-in': {
+      id: '/app/sign-in'
+      path: '/app/sign-in'
+      fullPath: '/app/sign-in'
+      preLoaderRoute: typeof AppSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_dashboard/sign-in': {
+      id: '/_dashboard/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof DashboardSignInRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/_dashboard/quests': {
       id: '/_dashboard/quests'
@@ -371,6 +430,7 @@ interface DashboardRouteChildren {
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
   DashboardQuestsRoute: typeof DashboardQuestsRoute
+  DashboardSignInRoute: typeof DashboardSignInRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -382,6 +442,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,
   DashboardQuestsRoute: DashboardQuestsRoute,
+  DashboardSignInRoute: DashboardSignInRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -393,11 +454,13 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   AuthorizeRoute: AuthorizeRoute,
   DeviceRoute: DeviceRoute,
+  EditKeyRoute: EditKeyRoute,
   ErrorRoute: ErrorRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
-  SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  TopUpRoute: TopUpRoute,
+  AppSignInRoute: AppSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

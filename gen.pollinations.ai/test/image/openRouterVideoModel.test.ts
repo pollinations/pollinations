@@ -1,7 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import { afterEach, assert, describe, expect, it, vi } from "vitest";
+import { type FallbackAttempt, withModelFallback } from "../../src/fallback.ts";
+import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
+    callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
 } from "../../src/image/models/openRouterVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -13,7 +18,7 @@ const GROK_POLL_URL = "https://openrouter.ai/api/v1/videos/job-grok-test";
 const GROK_VIDEO_URL = "https://video.example.com/grok-output.mp4";
 
 const baseParams: ImageParams = {
-    model: "happyhorse-1.1",
+    model: "alibaba/happyhorse-1.1",
     width: 1280,
     height: 720,
     dimensionsExplicit: true,
@@ -34,7 +39,10 @@ function setOpenRouterEnv() {
     );
 }
 
-function mockHappyHorseSuccess(requests: Record<string, unknown>[]) {
+function mockHappyHorseSuccess(
+    requests: Record<string, unknown>[],
+    providerCost?: number,
+) {
     return vi
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
@@ -55,6 +63,9 @@ function mockHappyHorseSuccess(requests: Record<string, unknown>[]) {
                     polling_url: POLL_URL,
                     status: "completed",
                     unsigned_urls: [VIDEO_URL],
+                    ...(providerCost !== undefined && {
+                        usage: { cost: providerCost },
+                    }),
                 });
             }
             if (href === VIDEO_URL) {
@@ -72,6 +83,100 @@ afterEach(() => {
 });
 
 describe("openRouterVideoModel", () => {
+    it("sends HeyGen Video 1 at 480p by default and falls back to requested seconds when cost is absent", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests);
+
+        const result = await callHeyGenVideoAPI("a paper boat", {
+            ...baseParams,
+            model: "heygen/heygen-video-1",
+            duration: 7,
+        });
+
+        expect(requests[0]).toEqual({
+            model: "heygen/heygen-video-1",
+            prompt: "a paper boat",
+            resolution: "480p",
+            aspect_ratio: "16:9",
+            duration: 7,
+            seed: 42,
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "heygen/heygen-video-1",
+            usage: { completionVideoSeconds: 7 },
+        });
+    });
+
+    it("bills HeyGen from OpenRouter's reported cost", async () => {
+        setOpenRouterEnv();
+        mockHappyHorseSuccess([], 0.06);
+
+        const result = await callHeyGenVideoAPI("a paper boat", {
+            ...baseParams,
+            model: "heygen/heygen-video-1",
+            duration: 7,
+        });
+
+        expect(result.trackingData).toEqual({
+            actualModel: "heygen/heygen-video-1",
+            usage: { completionVideoSeconds: 7 },
+            providerBilling: { units: 0.06, unitCost: 1.055 },
+        });
+        const billing = calculateUsageBilling({
+            model: "heygen/heygen-video-1",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["heygen/heygen-video-1"],
+            input: {
+                resolution: "480p",
+                providerBilling: result.trackingData.providerBilling,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0633, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0633, 12);
+    });
+
+    it("maps HeyGen Video 1 resolution, portrait ratio and first frame", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockHappyHorseSuccess(requests);
+
+        await callHeyGenVideoAPI("animate this", {
+            ...baseParams,
+            model: "heygen/heygen-video-1",
+            width: 720,
+            height: 1280,
+            resolution: "768p",
+            image: ["https://example.com/start.png"],
+        });
+
+        expect(requests[0]).toMatchObject({
+            resolution: "768p",
+            aspect_ratio: "9:16",
+            frame_images: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/start.png" },
+                    frame_type: "first_frame",
+                },
+            ],
+        });
+    });
+
+    it("rejects a HeyGen Video 1 duration outside 5 to 15 seconds", async () => {
+        setOpenRouterEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callHeyGenVideoAPI("a paper boat", {
+                ...baseParams,
+                model: "heygen/heygen-video-1",
+                duration: 4,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("maps the HappyHorse image to a first-frame request", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
@@ -160,7 +265,7 @@ describe("openRouterVideoModel", () => {
         expect(pollAttempts).toBe(3);
         expect(downloadAuthorization).toBeNull();
         expect(result.trackingData).toEqual({
-            actualModel: "happyhorse-1.1",
+            actualModel: "alibaba/happyhorse-1.1",
             usage: { completionVideoSeconds: 5 },
         });
     });
@@ -267,22 +372,66 @@ function mockGrokFetch(requests: Record<string, unknown>[]) {
 }
 
 describe("OpenRouter Grok Video Pro", () => {
+    it("falls back from a Fal 503 to the same model on OpenRouter", async () => {
+        syncImageEnv(
+            {
+                FAL_KEY: "test-fal-key",
+                OPENROUTER_API_KEY: "openrouter-test-key",
+            } as CloudflareBindings,
+            ["FAL_KEY", "OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGrokFetch(requests).mockImplementationOnce(async (url) => {
+            expect(url).toBe(
+                "https://queue.fal.run/xai/grok-imagine-video/image-to-video",
+            );
+            return Response.json(
+                { error: "temporarily unavailable" },
+                { status: 503 },
+            );
+        });
+        const candidates = [
+            "x-ai/grok-imagine-video",
+            ...IMAGE_SERVICES["x-ai/grok-imagine-video"].fallbacks,
+        ].map((id) => ({
+            id: id as ImageParams["model"],
+            definition: IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES],
+        }));
+        const attempts: FallbackAttempt[] = [];
+        const { result, index, candidate } = await withModelFallback(
+            candidates,
+            ({ id }) =>
+                createAndReturnVideo("move", {
+                    ...baseParams,
+                    model: id,
+                    duration: 15,
+                    image: ["https://example.com/start.png"],
+                }),
+            attempts,
+        );
+        expect(index).toBe(1);
+        expect(candidate.definition.provider).toBe("openrouter");
+        expect(attempts.map(({ settled }) => settled)).toEqual([false, true]);
+        expect(result.trackingData).toEqual({
+            actualModel: "x-ai/grok-imagine-video:openrouter",
+            usage: { promptImageTokens: 1, completionVideoSeconds: 15 },
+        });
+        expect(requests[0].model).toBe("x-ai/grok-imagine-video");
+    });
+
     it("submits the exact 720p route and honors an explicit aspect ratio", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockGrokFetch(requests);
 
-        const result = await callOpenRouterGrokVideoAPI(
-            "a calm ocean at sunrise",
-            {
-                ...baseParams,
-                model: "grok-video-pro",
-                dimensionsExplicit: false,
-                width: 1024,
-                height: 1024,
-                aspectRatio: "16:9",
-            },
-        );
+        const result = await createAndReturnVideo("a calm ocean at sunrise", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video:openrouter",
+            dimensionsExplicit: false,
+            width: 1024,
+            height: 1024,
+            aspectRatio: "16:9",
+        });
 
         expect(requests).toEqual([
             {
@@ -298,7 +447,7 @@ describe("OpenRouter Grok Video Pro", () => {
             mimeType: "video/mp4",
             durationSeconds: 5,
             trackingData: {
-                actualModel: "grok-video-pro",
+                actualModel: "x-ai/grok-imagine-video:openrouter",
                 usage: { completionVideoSeconds: 5 },
             },
         });
@@ -317,7 +466,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "grok-imagine-video-1.5",
+                model: "x-ai/grok-imagine-video-1.5",
                 resolution,
             },
         );
@@ -326,12 +475,14 @@ describe("OpenRouter Grok Video Pro", () => {
             model: "x-ai/grok-imagine-video-1.5",
             resolution: expectedResolution,
         });
-        expect(result.trackingData?.actualModel).toBe("grok-imagine-video-1.5");
+        expect(result.trackingData?.actualModel).toBe(
+            "x-ai/grok-imagine-video-1.5",
+        );
     });
 
     it.each([
-        ["grok-video-pro", "x-ai/grok-imagine-video"],
-        ["grok-imagine-video-1.5", "x-ai/grok-imagine-video-1.5"],
+        ["x-ai/grok-imagine-video", "x-ai/grok-imagine-video"],
+        ["x-ai/grok-imagine-video-1.5", "x-ai/grok-imagine-video-1.5"],
     ] as const)("%s forwards one start frame", async (model, upstreamModel) => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
@@ -380,7 +531,7 @@ describe("OpenRouter Grok Video Pro", () => {
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "grok-video-pro",
+                model: "x-ai/grok-imagine-video",
                 duration: 99,
             },
         );
@@ -389,7 +540,43 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(result.durationSeconds).toBe(15);
     });
 
-    it("enforces a three-minute timeout", async () => {
+    it("accepts a base Grok fallback that completes after three minutes", async () => {
+        vi.useFakeTimers();
+        setOpenRouterEnv();
+        const startedAt = Date.now();
+        const requests: Record<string, unknown>[] = [];
+        const fetchMock = mockGrokFetch(requests);
+        const completedFetch = fetchMock.getMockImplementation();
+        assert(completedFetch);
+        fetchMock.mockImplementation(async (url, init) => {
+            if (
+                url.toString() === GROK_POLL_URL &&
+                Date.now() - startedAt < 195_000
+            ) {
+                return Response.json({ status: "pending" });
+            }
+            return completedFetch(url, init);
+        });
+
+        const resultPromise = createAndReturnVideo("animate this frame", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video:openrouter",
+            duration: 15,
+            image: ["https://example.com/start.png"],
+        });
+        await vi.advanceTimersByTimeAsync(195_000);
+        const result = await resultPromise;
+        expect(result.trackingData).toEqual({
+            actualModel: "x-ai/grok-imagine-video:openrouter",
+            usage: { promptImageTokens: 1, completionVideoSeconds: 15 },
+        });
+        expect(requests).toHaveLength(1);
+    });
+
+    it.each([
+        ["x-ai/grok-imagine-video:openrouter", 5],
+        ["x-ai/grok-imagine-video-1.5", 3],
+    ] as const)("enforces a %s timeout of %i minutes", async (model, minutes) => {
         vi.useFakeTimers();
         setOpenRouterEnv();
 
@@ -421,15 +608,15 @@ describe("OpenRouter Grok Video Pro", () => {
 
         const resultPromise = callOpenRouterGrokVideoAPI(
             "a calm ocean at sunrise",
-            { ...baseParams, model: "grok-video-pro" },
+            { ...baseParams, model },
         );
         const rejection = expect(resultPromise).rejects.toMatchObject({
             status: 504,
         });
 
-        await vi.advanceTimersByTimeAsync(3 * 60 * 1000);
+        await vi.advanceTimersByTimeAsync(minutes * 60 * 1000);
         await rejection;
-        expect(pollAttempts).toBe(6);
+        expect(pollAttempts).toBe(minutes * 2);
     });
 
     it.each([
@@ -441,7 +628,7 @@ describe("OpenRouter Grok Video Pro", () => {
         await expect(
             callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
                 ...baseParams,
-                model: "grok-video-pro",
+                model: "x-ai/grok-imagine-video",
                 duration,
             }),
         ).rejects.toMatchObject({ status: 400 });

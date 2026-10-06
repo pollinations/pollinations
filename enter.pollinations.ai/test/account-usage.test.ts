@@ -533,7 +533,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
 
     const jsonResponse = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(jsonResponse.status).toBe(200);
     const body = (await jsonResponse.json()) as {

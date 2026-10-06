@@ -9,6 +9,9 @@ import {
 
 export const NewsFaq: FC = () => (
     <>
+        <Section title="Announcements" framed>
+            <Announcements />
+        </Section>
         <Section
             title="What's new"
             framed
@@ -23,9 +26,6 @@ export const NewsFaq: FC = () => (
             }
         >
             <NewsBanner />
-        </Section>
-        <Section title="Important updates" framed>
-            <Announcements />
         </Section>
         <Section title="FAQ" id="faq">
             <FAQ showTitle={false} />

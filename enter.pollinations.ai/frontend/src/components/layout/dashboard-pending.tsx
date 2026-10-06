@@ -4,7 +4,7 @@ import { PageLoading } from "./dashboard-loading.tsx";
 import { DashboardShell } from "./dashboard-shell.tsx";
 
 const pageTitles: Record<string, readonly string[]> = {
-    "/news": ["Announcements", "News", "FAQ"],
+    "/news": ["Announcements", "What's new", "FAQ"],
     "/models": ["Models"],
     "/my-models": ["Agents", "Models"],
     "/keys": ["Secrets", "Apps"],

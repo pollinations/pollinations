@@ -1,0 +1,34 @@
+{
+  "pr_number": 16527,
+  "title": "fix: make paid_only a strict boolean in the model catalog",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16527",
+  "merged_at": "2026-10-06T09:58:37Z",
+  "labels": [],
+  "pr_body_excerpt": "`paid_only` had three states: `true`, `false`, and missing. 43 registry entries never set it (Z-Image Turbo, FLUX.1 Schnell, GPT Image 1 Mini, …), so `/models` dropped the field and clients had to guess. Gen already treated missing as `false`.\n\n- Makes `paidOnly: boolean` required on `ModelDefinition` and sets `paidOnly: false` on the 43 entries, so each new model must choose\n- Makes `paid_only` required in the catalog schema, so every `/models` entry sends a boolean\n- Drops the `?? false` fallbacks in gen's balance check and the community model builder; types `ModelInfo.paid_only` as `boolean` in the SDK\n- Adds migration 0070: sets `paidOnly: false` on the 125 production community listings saved before paid-only support, then requires the field in the stored payload schema (no default). Runs on the production promotion deploy, before the workers; tested on staging (4 rows)\n- Adds a `/models` test that every entry, including an old community payload without the key, has a boolean `paid_only`\n\nNo access changes: every model that was missing the flag was already treated as not paid-only. Partial-update inputs (community endpoint PATCH, pending changes) stay optional, since there a missing value means \"unchanged\".\n\n- Model-news bot treats a missing `paid_only` in old snapshots as `false`, so the first report after deploy doesn't list 43 models as changed\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Qv9n8zUKi85ULQDkKt9Use\n\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more mystery model flags",
+    "blurb": "Every model gets a definite answer to the paid-only question. The 43 models that left it blank were already treated as not paid-only; the catalog just makes that answer explicit.",
+    "summary": "Makes `paid_only` a required boolean in every `/models` entry, sets `false` on 43 registry models and 125 older community listings, and updates the SDK type without changing model access.",
+    "impact": "Clients can read `paid_only` as `true` or `false` for every model instead of guessing when the field is missing; community PATCH inputs remain optional so an omitted value still means unchanged.",
+    "keywords": [
+      "models",
+      "catalog",
+      "paid_only",
+      "SDK",
+      "community models",
+      "API"
+    ],
+    "visual_concept": "Depict the model catalog as a cozy garden of labeled code-plants, each with a clear true-or-false tile. Polli, wearing tiny librarian glasses, helps a CRT monitor robot sort the tiles; a small stack of older community listings joins the garden. The scene represents consistent metadata, not a change to which models people can use.",
+    "image_prompt": "In a cozy pixel art garden-library, a friendly CRT monitor robot sorts model cards bearing simple TRUE and FALSE tiles while Polli, wearing tiny librarian glasses, helps place an older stack of cards beside lime green (#ecf874) code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style with a soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and nostalgic warmth."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16527.jpg",
+    "prompt": "In a cozy pixel art garden-library, a friendly CRT monitor robot sorts model cards bearing simple TRUE and FALSE tiles while Polli, wearing tiny librarian glasses, helps place an older stack of cards beside lime green (#ecf874) code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style with a soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, and nostalgic warmth."
+  },
+  "generated_at": "2026-10-06T09:59:37.600247+00:00"
+}

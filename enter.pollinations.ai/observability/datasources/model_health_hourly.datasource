@@ -1,0 +1,18 @@
+DESCRIPTION >
+    Final 2xx and 5xx outcomes per requested model and hour, for catalog
+    health. `recent` keeps the hour's latest 50 such requests, newest first,
+    so the community feed merges a last-50 sample without scanning events.
+    Eight days covers the seven-day community window.
+
+SCHEMA >
+    `hour` DateTime,
+    `model` LowCardinality(String),
+    `event_type` LowCardinality(String),
+    `status_2xx` AggregateFunction(sum, UInt64),
+    `errors_5xx` AggregateFunction(sum, UInt64),
+    `recent` AggregateFunction(groupArraySorted(50), Tuple(Int64, String, UInt32))
+
+ENGINE AggregatingMergeTree
+ENGINE_PARTITION_KEY toYYYYMMDD(hour)
+ENGINE_SORTING_KEY model, event_type, hour
+ENGINE_TTL hour + toIntervalDay(8)

@@ -95,6 +95,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "jaredpalmer/kev-4b",
     }),
+    "liquid-d1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "liquid/d1",
+    }),
+    "liquid/d1:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "liquid/d1",
+        }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -339,6 +351,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "inclusionai/ling-3.1-flash": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.1-flash",
+        "novita",
+    ),
+    "inclusionai/ling-3.1-flash:vercel:novita": () =>
+        createVercelAIGatewayModelConfig({
+            model: "inclusionai/ling-3.1-flash",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        }),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

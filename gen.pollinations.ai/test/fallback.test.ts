@@ -63,10 +63,20 @@ function communityEntry(
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        id,
+        modelId: id,
+        name: id,
+        title: id,
+        description: null,
         type: "proxy",
         ownerUserId,
         visibility,
-        hiddenAt,
+        baseUrl: "https://example.com/v1/chat/completions",
+        api: "chat_completions",
+        upstreamModel: id,
+        bearerTokenCiphertext: "test",
+        inputModalities: ["text"],
+        perUserRpm: null,
         paidOnly,
         imagePricing: "request",
         fallbacks,
@@ -206,6 +216,7 @@ describe("registry fallback linking", () => {
 
         expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "owner/private",
+            "owner/disabled",
         ]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),

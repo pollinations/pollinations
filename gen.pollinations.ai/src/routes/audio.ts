@@ -1,5 +1,9 @@
 import type { Logger } from "@logtape/logtape";
-import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import {
+    collectUpstreamHeaders,
+    ensureUpstreamOk,
+    UpstreamError,
+} from "@shared/error.ts";
 import {
     AUDIO_VOICES,
     type AudioModelName,
@@ -364,6 +368,7 @@ async function buildElevenLabsAudioResponse(
 }
 
 const ELEVENLABS_TTS_MODEL_IDS = {
+    "elevenlabs/eleven-v4": "eleven_v4",
     "elevenlabs/eleven-v3": "eleven_v3",
     "elevenlabs/eleven-flash-v2.5": "eleven_flash_v2_5",
     "elevenlabs/eleven-multilingual-v2": "eleven_multilingual_v2",
@@ -375,6 +380,26 @@ const ELEVENLABS_TTS_VOICE_SETTINGS = {
     style: 0.0,
     use_speaker_boost: true,
 } as const;
+
+// An unknown caller-supplied voice is a client error, not a missing upstream route.
+async function ensureElevenLabsVoiceOk(response: Response, endpoint: string) {
+    if (response.status === 404) {
+        const body = await response
+            .clone()
+            .json<{ detail?: { status?: string; message?: string } }>()
+            .catch(() => null);
+        if (body?.detail?.status === "voice_not_found") {
+            throw new UpstreamError(400, {
+                message: body.detail.message,
+                upstreamStatus: response.status,
+                requestUrl: new URL(endpoint),
+                responseBody: await response.text(),
+                upstreamHeaders: collectUpstreamHeaders(response.headers),
+            });
+        }
+    }
+    return ensureUpstreamOk(response, endpoint);
+}
 
 type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
 
@@ -389,6 +414,17 @@ export async function generateElevenLabsSpeech(opts: {
 }): Promise<Response> {
     const { modelName, text, voice, responseFormat, apiKey, log } = opts;
     const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
+    const isV4 = ["eleven_v4", "eleven_v4_turbo"].includes(modelId);
+    // v4 bills Unicode characters. Its character-cost header contains rounded
+    // credits, not exact billable characters; verified against usage analytics.
+    const characters = isV4 ? [...text].length : text.length;
+
+    if (isV4 && responseFormat === "flac") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "This speech model supports mp3, opus, aac, wav, and pcm output; flac is not supported.",
+        });
+    }
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -403,7 +439,7 @@ export async function generateElevenLabsSpeech(opts: {
     log.info("TTS request: voice={voice}, format={format}, chars={chars}", {
         voice,
         format: responseFormat,
-        chars: text.length,
+        chars: characters,
     });
 
     const elevenLabsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
@@ -411,7 +447,9 @@ export async function generateElevenLabsSpeech(opts: {
     const elevenLabsBody = {
         text,
         model_id: modelId,
-        voice_settings: ELEVENLABS_TTS_VOICE_SETTINGS,
+        voice_settings: isV4
+            ? { stability: 0.5, similarity_boost: 0.75 }
+            : ELEVENLABS_TTS_VOICE_SETTINGS,
         ...(opts.seed === undefined ? {} : { seed: opts.seed }),
     };
 
@@ -424,14 +462,14 @@ export async function generateElevenLabsSpeech(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
+    const response = await ensureElevenLabsVoiceOk(rawResponse, elevenLabsUrl);
 
     const usageHeaders = {
-        ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
+        ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
         "x-tts-voice": voice,
     };
 
-    log.info("TTS success: {chars} characters", { chars: text.length });
+    log.info("TTS success: {chars} characters", { chars: characters });
 
     return buildElevenLabsAudioResponse(response, responseFormat, usageHeaders);
 }
@@ -447,6 +485,10 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
 }): Promise<Response> {
     const { modelName, text, voice, responseFormat, seed, apiKey, log } = opts;
     const modelId = ELEVENLABS_TTS_MODEL_IDS[modelName];
+    const isV4 = ["eleven_v4", "eleven_v4_turbo"].includes(modelId);
+    // v4 bills Unicode characters. Its character-cost header contains rounded
+    // credits, not exact billable characters; verified against usage analytics.
+    const characters = isV4 ? [...text].length : text.length;
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -461,7 +503,9 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
     const body = {
         text,
         model_id: modelId,
-        voice_settings: ELEVENLABS_TTS_VOICE_SETTINGS,
+        voice_settings: isV4
+            ? { stability: 0.5, similarity_boost: 0.75 }
+            : ELEVENLABS_TTS_VOICE_SETTINGS,
         ...(seed === undefined ? {} : { seed }),
     };
 
@@ -470,11 +514,11 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
         {
             voice,
             format: responseFormat,
-            chars: text.length,
+            chars: characters,
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -494,14 +538,14 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
     }
 
     log.info("Timestamped TTS success: {chars} characters", {
-        chars: text.length,
+        chars: characters,
     });
 
     return new Response(response.body, {
         status: 200,
         headers: {
             "Content-Type": contentType,
-            ...buildUsageHeaders(modelName, createAudioTokenUsage(text.length)),
+            ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
             "x-tts-voice": voice,
             "x-pollinations-response-format": "audio-with-timestamps",
         },
@@ -550,7 +594,7 @@ export async function generateElevenLabsDialogue(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -665,7 +709,7 @@ export async function changeVoiceWithElevenLabs(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -3342,6 +3386,7 @@ async function dispatchAudioGeneration(
     }
 
     switch (model) {
+        case "elevenlabs/eleven-v4":
         case "elevenlabs/eleven-v3":
         case "elevenlabs/eleven-flash-v2.5":
         case "elevenlabs/eleven-multilingual-v2":
@@ -3679,7 +3724,7 @@ export async function handleSpeechWithTimestamps(
     if (!(modelName in ELEVENLABS_TTS_MODEL_IDS)) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
             message:
-                "Timestamped speech supports elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, and elevenlabs/eleven-multilingual-v2.",
+                "Timestamped speech requires a model advertising /v1/audio/speech/with-timestamps in /audio/models.",
         });
     }
     if (response_format === "flac") {
@@ -4218,7 +4263,7 @@ export const audioRoutes = new Hono<Env>()
             tags: ["🔊 Audio"],
             summary: "Generate Speech with Timestamps",
             description:
-                "Generate base64-encoded speech with character-level timing for the original and normalized text. Supports `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2`.",
+                "Generate base64-encoded speech with character-level timing for the original and normalized text. See `/audio/models` for models advertising this endpoint.",
             requestBody: {
                 required: true,
                 content: {
@@ -4231,6 +4276,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "elevenlabs/eleven-v3",
                                     enum: [
+                                        "elevenlabs/eleven-v4",
                                         "elevenlabs/eleven-v3",
                                         "elevenlabs/eleven-flash-v2.5",
                                         "elevenlabs/eleven-multilingual-v2",

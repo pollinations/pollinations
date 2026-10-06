@@ -19,7 +19,7 @@ Two outputs:
 
 For each `{before, after}` pair, identify what actually changed:
 
-1. **Access change** — `paid_only` flipped `false→true` → 🔒 going paid-only. `true→false` → 🔓 going free.
+1. **Access change** — `paid_only` flipped `false→true` → 🔒 going paid-only. `true→false` → 🔓 Quest Pollen now accepted.
 2. **Price cut** — any numeric pricing token value decreased. Compute the primary token % drop:
    - Image/video: `completionImageTokens`
    - Text: `completionTextTokens`
@@ -63,7 +63,7 @@ Category emojis: 🎨 image · 🎬 video · 🧠 text · 🔊 audio · 🔢 emb
 - Model A
 - Model B
 
-### 🔓 Now free
+### 🔓 Quest Pollen now accepted
 - Model A
 
 ### ✨ Capability updates
@@ -91,7 +91,7 @@ A single section to prepend to `models.md`. No emojis. Dev-readable.
 - `model-name` (provider, category) — short capability note.
 
 ### Changed
-- `model-name` — specific delta (e.g. "price cut ~33%", "added vision input", "now paid-only", "price +20%").
+- `model-name` — specific delta (e.g. "price cut ~33%", "added vision input", "now paid-only", "Quest Pollen now accepted", "price +20%").
 
 ### Removed
 - `model-name` (was: category)
@@ -103,7 +103,7 @@ Order within Changed: access changes first, then pricing, then capability. Skip 
 
 - `date` — report date (YYYY-MM-DD).
 - `previous_date` — prior snapshot date or `null`.
-- `diff` — `{added, removed, changed}` keyed by category (`text`, `image`, `audio`, `embeddings`).
+- `diff` — `{added, removed, changed}` keyed by category (`text`, `image`, `video`, `audio`, `embeddings`, `3d`, `realtime`).
   - `added[cat]`: full model objects that are new.
   - `removed[cat]`: full model objects that were removed.
   - `changed[cat]`: `[{before: {...}, after: {...}}]` pairs — compare them to find what changed.

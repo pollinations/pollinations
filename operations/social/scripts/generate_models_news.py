@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Weekly model-changes report generator.
+"""Daily model announcements and weekly Discord report generator.
 
 Snapshots public Pollinations model endpoints, diffs against the previous
 snapshot stored on the `news` branch, and writes:
@@ -9,14 +9,18 @@ snapshot stored on the `news` branch, and writes:
 - operations/social/news/models/YYYY-MM-DD/discord.json (AI-formatted Discord post)
 - operations/social/news/models/models.md (cumulative changelog, AI-prepended section)
 
-If the diff is empty, the script exits silently with code 0 — no commit, no
-post. The publish step keys off the existence of discord.json on the news
-branch.
+DAILY_ONLY=1 atomically commits the daily snapshot, diff and a versioned
+model-announcements JSON comment in models.md (official models only).
+The comment contains observed changes from seven calendar days including
+today and declared changes/retirements through the next 30 days. Weekly
+Discord summaries remain human-readable and use the last published receipt
+as their baseline. Daily mode never formats or posts a Discord message.
 
 Required env vars (matches existing operations/social/* conventions):
 - GITHUB_TOKEN: token with contents:write for the news branch
-- POLLINATIONS_TOKEN: bearer token for gen.pollinations.ai
+- POLLINATIONS_TOKEN: bearer token for gen.pollinations.ai (weekly mode only)
 - GITHUB_REPOSITORY: owner/repo (auto-set in Actions)
+- MODEL_RETIREMENTS_PATH: JSON exported by model_retirements.ts
 
 Optional:
 - TARGET_DATE: YYYY-MM-DD override (default: today UTC)
@@ -28,9 +32,10 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import requests
@@ -51,7 +56,15 @@ from common import (
     parse_json_response,
 )
 
-CATEGORIES: tuple[str, ...] = ("text", "image", "video", "audio", "embeddings")
+CATEGORIES: tuple[str, ...] = (
+    "text",
+    "image",
+    "video",
+    "audio",
+    "embeddings",
+    "3d",
+    "realtime",
+)
 GEN_BASE = "https://gen.pollinations.ai"
 MODELS_DIR = MODELS_NEWS_DIR
 MODELS_MD_PATH = f"{MODELS_DIR}/models.md"
@@ -270,31 +283,6 @@ def load_models_md(github_token: str, owner: str, repo: str) -> str:
     return base64.b64decode(resp.json()["content"]).decode()
 
 
-# Fields ignored when comparing models.
-# description: prose edits with no capability change.
-# added_date: static timestamp, never changes for existing models.
-# name / id: identity key fields used for lookup — excluded from value comparison
-#   so that snapshots migrating from 'id' to 'name' don't flood the diff.
-_DIFF_IGNORED_FIELDS: frozenset[str] = frozenset(
-    {"description", "added_date", "name", "id"}
-)
-
-
-def _normalize_for_diff(model: dict[str, Any]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for k, v in model.items():
-        if k in _DIFF_IGNORED_FIELDS:
-            continue
-        # Sort lists so reordering aliases/modalities/capabilities doesn't
-        # trigger false "changed" entries.
-        result[k] = sorted(str(x) for x in v) if isinstance(v, list) else v
-    # Snapshots taken before the catalog always sent paid_only omit it for
-    # models that were never paid-only; missing meant false. Remove once the
-    # stored snapshot has been taken from a catalog that always sends it.
-    result.setdefault("paid_only", False)
-    return result
-
-
 def _migrate_old_snapshot(
     snapshot: dict[str, list[dict[str, Any]]],
 ) -> dict[str, list[dict[str, Any]]]:
@@ -360,7 +348,7 @@ def diff_models(
         for name, model in curr_by_name.items():
             if name not in prev_by_name:
                 added[cat].append(model)
-            elif _normalize_for_diff(prev_by_name[name]) != _normalize_for_diff(model):
+            elif announcement_changes(prev_by_name[name], model):
                 changed[cat].append({"before": prev_by_name[name], "after": model})
 
         for name, model in prev_by_name.items():
@@ -446,6 +434,228 @@ def discord_payload(
     }
 
 
+# This machine-readable block lives in the existing Markdown changelog.
+# Values come directly from the public catalog, never from the AI summary.
+FEED_PATTERN = re.compile(r"<!-- model-announcements (.*?) -->", re.DOTALL)
+ANNOUNCEMENT_FIELDS = (
+    "paid_only",
+    "pricing",
+    "pricing_units",
+    "pricing_variants",
+    "pricing_adjustments",
+    "input_modalities",
+    "output_modalities",
+    "capabilities",
+    "supported_parameters",
+    "supported_endpoints",
+    "supports_structured_output",
+    "context_length",
+    "max_completion_tokens",
+    "max_reference_images",
+    "max_reference_videos",
+    "resolutions",
+    "video_capabilities",
+    "min_duration",
+    "max_duration",
+    "allowed_durations",
+    "voices",
+    "required_safety",
+    "per_user_rpm",
+)
+
+
+def announcement_values(model: dict[str, Any]) -> dict[str, Any]:
+    values = {key: model[key] for key in ANNOUNCEMENT_FIELDS if key in model}
+    values.setdefault("paid_only", False)
+    return values
+
+
+def announcement_changes(before: dict[str, Any], after: dict[str, Any]) -> dict:
+    before, after = announcement_values(before), announcement_values(after)
+    changes = {}
+    for key in ANNOUNCEMENT_FIELDS:
+        old, new = before.get(key), after.get(key)
+        # Catalog ordering carries no user-visible meaning.
+        if isinstance(old, list) and isinstance(new, list):
+            if sorted(json.dumps(v, sort_keys=True) for v in old) == sorted(
+                json.dumps(v, sort_keys=True) for v in new
+            ):
+                continue
+        if old != new:
+            changes[key] = {"before": old, "after": new}
+    return changes
+
+
+def official_model(model: dict[str, Any]) -> bool:
+    return bool(_model_key(model)) and not (
+        model.get("community") or str(_model_key(model)).startswith("community/")
+    )
+
+
+def update_announcements(
+    existing_md: str, diff: Diff, current: dict, retirements: list[dict], date_str: str
+) -> str:
+    today = datetime.strptime(date_str, "%Y-%m-%d").date()
+    # Seven calendar days including today; future notices cover the next 30.
+    start = (today - timedelta(days=6)).isoformat()
+    end = (today + timedelta(days=30)).isoformat()
+    match = FEED_PATTERN.search(existing_md)
+    prior = json.loads(match.group(1)) if match else {"events": []}
+    # Replacing today's entries makes retries idempotent. Future events are
+    # rebuilt from current declarations, so cancelled notices disappear.
+    events = [
+        event
+        for event in prior["events"]
+        if start <= event["date"] < date_str and not event.get("scheduled")
+    ]
+    for category in CATEGORIES:
+        for action, models in (
+            ("New", diff.added[category]),
+            ("Removed", diff.removed[category]),
+            ("Updated", diff.changed[category]),
+        ):
+            for entry in models:
+                model = entry["after"] if action == "Updated" else entry
+                if not official_model(model):
+                    continue
+                event = {
+                    "date": date_str,
+                    "model": _model_key(model),
+                    "title": model.get("title") or _model_key(model),
+                    "category": model["category"],
+                    "action": action,
+                }
+                if action == "Updated":
+                    event["changes"] = announcement_changes(entry["before"], model)
+                    if not event["changes"]:
+                        continue
+                    if "pricing" in event["changes"]:
+                        event["pricing_units"] = model.get("pricing_units", {})
+                else:
+                    event[
+                        "after" if action == "New" else "before"
+                    ] = announcement_values(model)
+                events.append(event)
+    for models in current.values():
+        for model in models:
+            pending = model.get("pending_change")
+            if not official_model(model) or not pending:
+                continue
+            date = pending["effective_at"][:10]
+            changes = announcement_changes(model, {**model, **pending})
+            if date_str <= date <= end and changes:
+                events.append(
+                    {
+                        "date": date,
+                        "model": _model_key(model),
+                        "title": model.get("title") or _model_key(model),
+                        "category": model["category"],
+                        "action": "Updating",
+                        "scheduled": True,
+                        "changes": changes,
+                    }
+                )
+    for retirement in retirements:
+        if date_str <= retirement["date"] <= end:
+            events.append({**retirement, "action": "Retiring", "scheduled": True})
+    events.sort(key=lambda event: (event["date"], event["model"], event["action"]))
+    feed = {
+        "version": 1,
+        "updated_at": date_str,
+        "past_days": 7,
+        "future_days": 30,
+        "events": events,
+    }
+    # Escape HTML delimiters inside data without altering decoded values.
+    encoded = json.dumps(feed, ensure_ascii=False, separators=(",", ":")).replace(
+        ">", "\\u003e"
+    )
+    block = f"<!-- model-announcements {encoded} -->"
+    if match:
+        return FEED_PATTERN.sub(lambda _: block, existing_md, count=1)
+    heading = "# Pollinations Model Changelog"
+    body = existing_md.removeprefix(heading).lstrip()
+    return f"{heading}\n\n{block}\n\n{body}"
+
+
+def daily_artifacts(
+    github_token: str, owner: str, repo: str, target_date: str, current: dict
+) -> dict[str, str]:
+    previous_date = find_previous_snapshot_date(github_token, owner, repo, target_date)
+    previous = (
+        _migrate_old_snapshot(
+            load_snapshot_from_news(github_token, owner, repo, previous_date)
+        )
+        if previous_date
+        else None
+    )
+    diff = diff_models(previous, current)
+    existing_md = load_models_md(github_token, owner, repo)
+    with open(os.environ["MODEL_RETIREMENTS_PATH"], encoding="utf-8") as file:
+        retirements = json.load(file)
+    return {
+        "models.md": update_announcements(
+            existing_md, diff, current, retirements, target_date
+        ),
+        "snapshot.json": json.dumps(current, indent=2, ensure_ascii=False),
+        "diff.json": json.dumps(diff.to_json(), indent=2, ensure_ascii=False),
+    }
+
+
+def collect_daily(
+    github_token: str, owner: str, repo: str, target_date: str, dry_run: bool
+) -> int:
+    from publish_models_news import commit_artifacts_atomically
+
+    artifacts = daily_artifacts(
+        github_token, owner, repo, target_date, fetch_all_snapshots()
+    )
+    if dry_run:
+        print(
+            f"Daily feed: {len(FEED_PATTERN.search(artifacts['models.md']).group(1))} bytes; no writes."
+        )
+        return 0
+    # No Discord artifact is produced by collection.
+    return (
+        0
+        if commit_artifacts_atomically(
+            github_token, owner, repo, target_date, artifacts
+        )
+        else 1
+    )
+
+
+def find_previous_report_date(
+    github_token: str, owner: str, repo: str, target_date: str
+) -> str | None:
+    # Daily snapshots must not advance the weekly Discord baseline. Use the
+    # last successfully published receipt, including after a failed week.
+    response = github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{MODELS_DIR}?ref={GISTS_BRANCH}",
+        headers=_github_headers(github_token),
+    )
+    if response.status_code == 404:
+        return None
+    if response.status_code != 200:
+        raise GithubProbeError(
+            f"Could not list model reports: HTTP {response.status_code}"
+        )
+    dates = sorted(
+        entry["name"]
+        for entry in response.json()
+        if entry.get("type") == "dir"
+        and re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["name"])
+        and entry["name"] < target_date
+    )
+    for date in reversed(dates):
+        if _path_exists_on_news(
+            github_token, owner, repo, f"{MODELS_DIR}/{date}/discord.json"
+        ):
+            return date
+    return None
+
+
 def main() -> int:
     target_date = os.environ.get("TARGET_DATE") or datetime.now(timezone.utc).strftime(
         "%Y-%m-%d"
@@ -453,9 +663,21 @@ def main() -> int:
     dry_run = bool(os.environ.get("DRY_RUN"))
 
     github_token = get_env("GITHUB_TOKEN", required=True)
-    pollinations_token = get_env("POLLINATIONS_TOKEN", required=True)
     repo_full = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
     owner, repo = repo_full.split("/", 1)
+    if os.environ.get("DAILY_ONLY"):
+        try:
+            return collect_daily(github_token, owner, repo, target_date, dry_run)
+        except (
+            requests.RequestException,
+            ValueError,
+            RuntimeError,
+            OSError,
+            KeyError,
+        ) as exc:
+            print(f"  Daily collection failed: {exc}", file=sys.stderr)
+            return 1
+    pollinations_token = get_env("POLLINATIONS_TOKEN", required=True)
     role_id = os.environ.get("DISCORD_MODELS_ROLE_ID")
     force_republish = bool(os.environ.get("FORCE_REPUBLISH"))
 
@@ -486,9 +708,13 @@ def main() -> int:
         return 1
 
     try:
-        previous_date = find_previous_snapshot_date(
+        previous_date = find_previous_report_date(
             github_token, owner, repo, target_date
         )
+        if previous_date is None:
+            previous_date = find_previous_snapshot_date(
+                github_token, owner, repo, target_date
+            )
         previous = (
             _migrate_old_snapshot(
                 load_snapshot_from_news(github_token, owner, repo, previous_date)
@@ -538,8 +764,9 @@ def main() -> int:
         report["discord_text"], target_date, previous_date, role_id
     )
     try:
-        existing_md = load_models_md(github_token, owner, repo)
-    except RuntimeError as exc:
+        artifacts = daily_artifacts(github_token, owner, repo, target_date, current)
+        existing_md = artifacts["models.md"]
+    except (RuntimeError, ValueError, OSError, KeyError) as exc:
         print(f"  {exc}", file=sys.stderr)
         return 1
     # Strip any existing top-level changelog heading so we don't accumulate
@@ -562,14 +789,12 @@ def main() -> int:
 
     # Nothing is committed to the news branch here. All four artifacts are
     # staged in the workspace; the publish step posts Discord and, only on
-    # success, commits them atomically in a single tree commit. A publish
-    # failure (or run cancellation) leaves the news branch untouched so the
-    # next run re-detects and re-announces the same changes.
+    # success, commits all four atomically. Daily collection also commits its
+    # three artifacts independently of Discord availability.
     contents: dict[str, str] = {
+        **artifacts,
         "discord.json": json.dumps(discord, indent=2, ensure_ascii=False),
-        "diff.json": json.dumps(diff.to_json(), indent=2, ensure_ascii=False),
         "models.md": new_md,
-        "snapshot.json": snapshot_json,
     }
     out_dir = models_news_staging_dir(target_date)
     for filename, body in contents.items():

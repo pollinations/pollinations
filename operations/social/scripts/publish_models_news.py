@@ -199,6 +199,8 @@ def _create_blobs(
     headers = _github_headers(github_token)
     items: list[dict[str, Any]] = []
     for filename, news_path in models_news_staged_files(date_str):
+        if filename not in artifacts:
+            continue
         content = artifacts[filename]
         blob_resp = github_api_request(
             "POST",
@@ -324,7 +326,7 @@ def commit_artifacts_atomically(
     date_str: str,
     artifacts: dict[str, str],
 ) -> bool:
-    """Commit all four artifacts to the news branch in a single tree commit.
+    """Commit supplied artifacts to the news branch in a single tree commit.
 
     All-or-nothing: GitHub either advances the ref to a commit containing
     every file, or fails before the ref moves. Other writers (daily/weekly

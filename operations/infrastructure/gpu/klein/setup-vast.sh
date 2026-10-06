@@ -120,7 +120,7 @@ if [ ! -s /root/.cloudflared_token ]; then
 fi
 
 screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:8000/health >/dev/null; do echo "Waiting for Klein health before joining the production tunnel" >> /root/cloudflared.log; sleep 3; done; while true; do cloudflared tunnel --no-autoupdate --protocol quic --metrics 127.0.0.1:20241 run --token-file /root/.cloudflared_token >> /root/cloudflared.log 2>&1; sleep 5; done'
-screen -dmS cloudflared-watchdog bash /root/watch-tunnel.sh 127.0.0.1:20241 /root/cloudflared.log
+screen -dmS cloudflared-watchdog bash /root/watch-tunnel.sh 127.0.0.1:20241 /root/cloudflared.log 2
 EOF
 chmod 700 /root/run-klein.sh /root/onstart.sh
 

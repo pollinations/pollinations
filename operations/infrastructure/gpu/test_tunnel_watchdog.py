@@ -1,5 +1,6 @@
 """Run with python3 -m unittest operations/infrastructure/gpu/test_tunnel_watchdog.py."""
 
+from concurrent.futures import ThreadPoolExecutor
 import http.server
 import shlex
 import subprocess
@@ -11,9 +12,18 @@ from pathlib import Path
 
 class TunnelWatchdogTest(unittest.TestCase):
     def test_restarts_only_its_connector_after_consecutive_unhealthy_checks(self):
+        # Check public tunnels and Klein concurrently to keep runtime near 60s.
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = [
+                executor.submit(self.check_recovery, 1, [0, 0, 1, 0, 0, None]),
+                executor.submit(self.check_recovery, 2, [0, 1, 2, 1, 0, None]),
+            ]
+            for result in results:
+                result.result()
+
+    def check_recovery(self, minimum, samples):
         # Exercise the actual shell loop, HTTP metrics and process signals.
         # A healthy sample must reset the count; missing metrics count as down.
-        samples = [0, 1, 4, 1, 0, None]
         checks = []
         fourth_check = threading.Event()
 
@@ -57,6 +67,7 @@ class TunnelWatchdogTest(unittest.TestCase):
                             str(Path(__file__).with_name("watch-tunnel.sh")),
                             address,
                             str(log),
+                            str(minimum),
                         ]
                     )
                 )

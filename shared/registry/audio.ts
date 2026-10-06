@@ -215,6 +215,31 @@ const AUDIO_BASE_SERVICES = {
             "/v1/audio/speech/with-timestamps",
         ],
     },
+    "elevenlabs/eleven-v4-turbo": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-10-06").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // https://elevenlabs.io/pricing/api — current launch rate.
+            // Update explicitly when the provider changes its rate.
+            completionAudioTokens: 0.011 / 1000,
+        },
+        title: "ElevenLabs v4 Turbo",
+        description:
+            "Low-latency expressive speech in 90+ languages with audio tags and character timestamps",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
+    },
     "elevenlabs/eleven-v3": {
         aliases: ["tts", "text-to-speech", "eleven", "elevenlabs"],
         provider: "elevenlabs",

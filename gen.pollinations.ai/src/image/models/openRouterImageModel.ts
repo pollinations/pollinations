@@ -914,24 +914,19 @@ export async function callOpenRouterGeminiImageAPI(
     };
 }
 
-function resolveRecraftAspectRatio(
-    safeParams: ImageParams,
-): (typeof RECRAFT_ASPECT_RATIOS)[number] | "auto" {
+// A requested ratio goes through as-is (Recraft rejects unsupported ones and
+// lists the accepted values); width/height snap to a ratio Recraft accepts.
+function resolveRecraftAspectRatio(safeParams: ImageParams): string {
     const requested = safeParams.aspectRatio;
-    if (!requested) {
-        return closestRatioLogSpace(
+    if (requested === "adaptive") return "auto";
+    return (
+        requested ??
+        closestRatioLogSpace(
             safeParams.width,
             safeParams.height,
             RECRAFT_ASPECT_RATIOS,
-        );
-    }
-    if (requested === "adaptive") return "auto";
-    if (!(RECRAFT_ASPECT_RATIOS as readonly string[]).includes(requested)) {
-        throw UpstreamError.fromProvider(400, {
-            message: `aspectRatio "${requested}" is not supported by ${safeParams.model}. Supported: auto, ${RECRAFT_ASPECT_RATIOS.join(", ")}.`,
-        });
-    }
-    return requested as (typeof RECRAFT_ASPECT_RATIOS)[number];
+        )
+    );
 }
 
 export async function callOpenRouterRecraftFlashAPI(

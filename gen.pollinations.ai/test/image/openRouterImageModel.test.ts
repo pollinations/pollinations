@@ -1522,19 +1522,6 @@ describe("OpenRouter Recraft Flash", () => {
         expect(requests[0].aspect_ratio).toBe(expected);
     });
 
-    it("rejects an unsupported aspectRatio before calling OpenRouter", async () => {
-        useOpenRouterKey();
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callOpenRouterRecraftFlashAPI("too wide", {
-                ...flashParams,
-                aspectRatio: "21:9",
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("maps a content-policy rejection to a 400", async () => {
         useOpenRouterKey();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

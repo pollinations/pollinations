@@ -243,19 +243,6 @@ describe("prunaModel - p-video", () => {
         expect(inputOf(requests[0]).aspect_ratio).toBe("9:16");
     });
 
-    it("rejects an aspect ratio p-video does not support (400)", async () => {
-        const requests: ProviderRequest[] = [];
-        mockPrunaFetch(requests);
-
-        await expect(
-            callPrunaVideoAPI("a paper boat", {
-                ...baseParams,
-                aspectRatio: "21:9",
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(requests).toHaveLength(0);
-    });
-
     it("uses the input image (data URI) for image-to-video", async () => {
         const requests: ProviderRequest[] = [];
         mockPrunaFetch(requests);

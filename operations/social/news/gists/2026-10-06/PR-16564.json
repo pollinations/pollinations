@@ -1,0 +1,36 @@
+{
+  "pr_number": 16564,
+  "title": "fix(sdk): keep an uploaded file's name when transcribing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16564",
+  "merged_at": "2026-10-06T09:49:18Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "- Fix `transcribe()` sending every upload as `audio.mp3`; a `File` now keeps its own name\n- `openai/gpt-transcribe` (Azure) reads the format from the extension, so WAV files from Play failed with \"Audio file might be corrupted or unsupported\". The other transcription models sniff the content and were unaffected\n- ArrayBuffers and nameless Blobs still go as `audio.mp3`\n- Releases SDK 5.1.0-alpha.11 (alpha.10 is already on npm)\n\nChecked: build, typecheck, Biome, 123 SDK tests (new test covers both naming cases). In Play, `openai/gpt-transcribe` now transcribes the same WAV it rejected before; a direct request with the real filename always worked.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Qv9n8zUKi85ULQDkKt9Use\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A WAV by its name",
+    "blurb": "The SDK stops introducing every audio upload as audio.mp3. WAV files get to keep their names, which matters to a transcription model that reads the extension.",
+    "summary": "SDK 5.1.0-alpha.11 makes transcribe() preserve a File's filename so Azure-backed openai/gpt-transcribe can identify WAV uploads by extension; nameless Blobs and ArrayBuffers still use audio.mp3.",
+    "impact": "WAV files from Play can pass through the SDK to openai/gpt-transcribe without the unsupported-audio error caused by the wrong filename.",
+    "keywords": [
+      "SDK",
+      "transcription",
+      "WAV",
+      "Azure",
+      "openai/gpt-transcribe",
+      "Play"
+    ],
+    "visual_concept": "Polli hands a clearly labeled WAV file to a friendly CRT monitor robot, whose screen shows a short transcript. The file label is the key visual: the SDK keeps it attached instead of replacing it with audio.mp3. Code-flowers grow around the terminal.",
+    "image_prompt": "In a cozy pixel art workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny headphones, and hands a pixel file labeled 'WAV' to a friendly CRT monitor robot displaying a short transcript beside blooming code-flowers. Strictly pixel art style, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent soft lime green (#ecf874) glow, warm cream background, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16564.jpg",
+    "prompt": "In a cozy pixel art workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny headphones, and hands a pixel file labeled 'WAV' to a friendly CRT monitor robot displaying a short transcript beside blooming code-flowers. Strictly pixel art style, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent soft lime green (#ecf874) glow, warm cream background, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-06T09:50:23.361410+00:00"
+}

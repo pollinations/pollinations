@@ -1,9 +1,37 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { transcribeAudio } from "../src/services/audioService.js";
+import { audioTools, transcribeAudio } from "../src/services/audioService.js";
 
 const SOURCE = "https://cdn.example.com/speech.mp3";
 const CONTEXT = { http: { authInfo: { token: "sk_test" } } };
+
+test("generateAudio forwards the emotion/style instruction to the API", async (t) => {
+    const generateAudio = audioTools.find(
+        ([name]) => name === "generateAudio",
+    )[3];
+    const originalFetch = globalThis.fetch;
+    let capturedUrl;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input) => {
+        capturedUrl = new URL(String(input));
+        return new Response(null, {
+            headers: {
+                "Content-Type": "audio/mpeg",
+                Link: '<https://media.pollinations.ai/abc.mp3>; rel="enclosure"',
+            },
+        });
+    };
+
+    await generateAudio(
+        { text: "hello", model: "gemini-tts", instruct: "speak warmly" },
+        CONTEXT,
+    );
+
+    assert.equal(capturedUrl.searchParams.get("instructions"), "speak warmly");
+    assert.equal(capturedUrl.searchParams.get("instruct"), null);
+});
 
 test("transcribes public audio through the Pollinations API", async (t) => {
     const originalFetch = globalThis.fetch;

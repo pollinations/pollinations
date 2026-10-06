@@ -1,0 +1,34 @@
+{
+  "pr_number": 16604,
+  "title": "fix: keep Ling free with direct Novita and two fallbacks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16604",
+  "merged_at": "2026-10-06T15:00:35Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps `inclusionai/ling-3.1-flash` free on all three routes: direct Novita → OpenRouter pinned to Novita → Vercel pinned to Novita. Same upstream ID throughout; aliases: none; multiplier: 1×; paid-only: no; Pollinations GPU: no; registry provider: `novita`.\n- Fixes native thinking controls and enforces reasoning visibility for JSON/SSE without changing provider-reported usage. Registers Novita for cost attribution; gateway routes remain hidden.\n- Validation: 277 focused Gen tests, 63 Enter pricing tests, 541 shared/provider checks, both typechecks and Biome pass. Live direct and forced Vercel checks verified tools, reasoning, streaming, permissions and cache reuse. Real staging Tinybird rows reconcile usage/attribution with zero cost, zero price and no wallet debit.\n- Live limitations: OpenRouter probes remain capacity-limited; some full-chain and Messages/native fallback probes exhaust capacity. All routes depend on Novita; alternate gateways do not add GPU capacity. Runtime credential rollout needs separate approval; no deployment performed.\n- Pricing stays in #16256. Current free pricing: [Novita](https://novita.ai/models/model-detail/inclusionai-ling-3.1-flash), [OpenRouter](https://openrouter.ai/inclusionai/ling-3.1-flash), [Vercel](https://vercel.com/ai-gateway/models/ling-3.1-flash-free).\n\nAddresses #16597.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Ling takes the garden path",
+    "blurb": "Ling 3.1 Flash keeps its free route through Novita, with two alternate gateways pointing to the same model. Its thinking controls and reasoning output get a tidy-up too.",
+    "summary": "Ling 3.1 Flash stays free at 1× with direct Novita as its primary route and OpenRouter and Vercel fallbacks pinned to the same Novita upstream; the fix also handles native thinking controls and preserves reasoning visibility in JSON and SSE.",
+    "impact": "Users get consistent free Ling routing and visible reasoning across JSON and streaming responses, while provider-reported usage stays unchanged; the fallback gateways do not add GPU capacity.",
+    "keywords": [
+      "Ling 3.1 Flash",
+      "Novita",
+      "free models",
+      "fallbacks",
+      "reasoning",
+      "streaming"
+    ],
+    "visual_concept": "Depict Ling as a glowing model terminal in a cozy garden, reached by three paths labeled Novita, OpenRouter, and Vercel that converge on one Novita flower pot. Polli tends the paths with a tiny gardener's hat; a small reasoning scroll beside the terminal represents visible thinking without suggesting three separate sources of capacity.",
+    "image_prompt": "In a cozy pixel garden, three little paths labeled Novita, OpenRouter, and Vercel converge on one glowing lime green (#ecf874) flower pot beside a terminal marked 'LING'; Polli, wearing a tiny gardener's hat, tends the paths and unrolls a small reasoning scroll. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, never realistic, amid chunky sprites, a warm cream and soft pastel gradient background, and gentle CRT glow — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16604.jpg",
+    "prompt": "In a cozy pixel garden, three little paths labeled Novita, OpenRouter, and Vercel converge on one glowing lime green (#ecf874) flower pot beside a terminal marked 'LING'; Polli, wearing a tiny gardener's hat, tends the paths and unrolls a small reasoning scroll. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, never realistic, amid chunky sprites, a warm cream and soft pastel gradient background, and gentle CRT glow — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T15:01:56.107880+00:00"
+}

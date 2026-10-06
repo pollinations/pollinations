@@ -10,8 +10,6 @@ const DYNAMIC_NEWS_COUNT = 6;
 
 interface Highlight {
     date?: string;
-    /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
-    dateLabel?: string;
     emoji: string;
     title: string;
     description: string;
@@ -46,57 +44,6 @@ const PINNED_NEWS: Highlight[] = [
             "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
             "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
             "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
-        ],
-    },
-    {
-        date: "2026-09-11",
-        dateLabel: "Alpha",
-        emoji: "🧑‍💻",
-        title: "Code agents: run your own agent.ts",
-        description:
-            "Point a code agent at a public GitHub repository and Pollinations deploys and runs it as a model.",
-        details: [
-            "Write one agent.ts using the bundled Vercel AI SDK, Pollinations models, and MCP tools.",
-            "Calls are billed to whoever uses the agent, never to you.",
-            "Fork an [example repository](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example), then add it from [My Models](/my-models). [Read the guide](https://gen.pollinations.ai/docs#tag/publish-an-agent).",
-        ],
-    },
-    {
-        date: "2026-09-11",
-        dateLabel: "Now live",
-        emoji: "🧩",
-        title: "Community model IDs get a clearer prefix",
-        description:
-            "Community models and agents are listed as community/username/model instead of username/model.",
-        details: [
-            "Both IDs keep working in generation requests. No changes to models, prices or providers.",
-            "Key permissions use the canonical IDs. Existing permissions were migrated automatically.",
-            "If your app matches saved IDs against the catalog, check aliases too.",
-        ],
-    },
-    {
-        date: "2026-08-15",
-        dateLabel: "Alpha",
-        emoji: "🤖",
-        title: "Build your own agents",
-        description:
-            "Create managed prompt agents and call them through the Pollinations API like any other model.",
-        details: [
-            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
-            "Create an agent from [My Models](/my-models).",
-        ],
-    },
-    {
-        date: "2026-06-30",
-        dateLabel: "Alpha",
-        emoji: "🧪",
-        title: "Community models alpha",
-        description:
-            "Community models are now available on Pollinations in alpha.",
-        details: [
-            "Try community-hosted models from the [Models tab](/models), with attractive pricing.",
-            "The catalog is early and will expand as more models are approved.",
-            "Want to deploy your own model? Access is allowlist-only for now; contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
         ],
     },
 ];
@@ -160,40 +107,12 @@ function formatNewsDate(date: string): string {
 export const Announcements: FC = () => {
     return (
         <div className="flex flex-col gap-3">
-            <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
             ))}
         </div>
     );
 };
-
-const CanonicalModelSlugAnnouncement: FC = () => (
-    <Surface
-        id="canonical-model-slugs"
-        variant="card"
-        className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
-    >
-        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-            API update
-        </div>
-        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
-            <span aria-hidden="true" className="shrink-0">
-                🧪
-            </span>
-            <span>Model IDs are now standardized</span>
-        </div>
-        <p className="mt-1 text-sm text-ink-700">
-            Model IDs now follow <code>publisher/model</code>—for example,{" "}
-            <code>flux</code> → <code>black-forest-labs/flux.1-schnell</code>.
-            The model catalog uses the new IDs. Existing IDs remain supported as
-            aliases in API requests.
-        </p>
-        <InlineLink href="/models" className="mt-3 block w-fit text-sm">
-            Browse models and their aliases
-        </InlineLink>
-    </Surface>
-);
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -220,10 +139,9 @@ export const NewsBanner: FC = () => {
 
 const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
     <Surface variant="card" className="min-w-0 leading-relaxed">
-        {(item.dateLabel || item.date) && (
+        {item.date && (
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                {item.dateLabel ??
-                    (item.date ? formatNewsDate(item.date) : null)}
+                {formatNewsDate(item.date)}
             </div>
         )}
         <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">

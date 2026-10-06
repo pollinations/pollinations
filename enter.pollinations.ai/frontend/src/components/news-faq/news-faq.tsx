@@ -9,11 +9,8 @@ import {
 
 export const NewsFaq: FC = () => (
     <>
-        <Section title="Announcements" framed>
-            <Announcements />
-        </Section>
         <Section
-            title="News"
+            title="What's new"
             framed
             action={
                 <InlineLink href={HIGHLIGHTS_GITHUB_URL} size="sm">
@@ -26,6 +23,9 @@ export const NewsFaq: FC = () => (
             }
         >
             <NewsBanner />
+        </Section>
+        <Section title="Important updates" framed>
+            <Announcements />
         </Section>
         <Section title="FAQ" id="faq">
             <FAQ showTitle={false} />

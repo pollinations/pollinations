@@ -53,6 +53,7 @@ const REQUIRED_SECRET_KEYS = [
 ];
 
 const OPTIONAL_SECRET_KEYS = [
+    "NOVITA_API_KEY",
     "AIRFORCE_API_KEY",
     "AI_GATEWAY_API_KEY",
     "ASSEMBLYAI_API_KEY",
@@ -126,7 +127,6 @@ try {
     execFileSync(
         process.execPath,
         [
-            // Match deploy scripts; the test pool's workspace-local CLI is older.
             fileURLToPath(
                 new URL(
                     "../../node_modules/wrangler/bin/wrangler.js",

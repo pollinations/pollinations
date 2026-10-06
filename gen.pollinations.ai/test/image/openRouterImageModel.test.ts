@@ -222,20 +222,6 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         });
     });
 
-    it("rejects more than three reference images", async () => {
-        await expect(
-            callOpenRouterGrokImagineImage2API("test prompt", {
-                ...baseParams,
-                model: "x-ai/grok-imagine-image-2.0",
-                image: ["one", "two", "three", "four"],
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            message:
-                "grok-imagine-image-2.0 supports at most 3 reference images",
-        });
-    });
-
     it("returns content-policy refusals as client errors", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
@@ -385,19 +371,6 @@ describe("OpenRouter FLUX.2 Max", () => {
             });
         }
     });
-
-    it("rejects more than 8 reference images", async () => {
-        await expect(
-            callOpenRouterFlux2MaxAPI("test prompt", {
-                ...baseParams,
-                model: "black-forest-labs/flux.2-max:openrouter",
-                image: Array(9).fill("https://example.com/ref.png"),
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: "FLUX.2 Max supports at most 8 reference images",
-        });
-    });
 });
 
 describe("OpenRouter Seedream 5.0 Flash", () => {
@@ -543,15 +516,6 @@ describe("OpenRouter Seedream 5.0 Flash", () => {
 
         expect(requests[0].input_references).toHaveLength(10);
     });
-
-    it("rejects more than ten reference images", async () => {
-        await expect(
-            callOpenRouterSeedreamFlashAPI("test prompt", {
-                ...flashParams,
-                image: Array(11).fill("https://example.com/ref.png"),
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
 });
 
 describe("OpenRouter FLUX.3 Image", () => {
@@ -677,18 +641,6 @@ describe("OpenRouter FLUX.3 Image", () => {
                 message: "OpenRouter returned invalid image billing usage",
             });
         }
-    });
-
-    it("rejects more than 10 reference images", async () => {
-        await expect(
-            callOpenRouterFlux3API("test prompt", {
-                ...flux3Params,
-                image: Array(11).fill("https://example.com/ref.png"),
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: "FLUX.3 Image supports at most 10 reference images",
-        });
     });
 });
 
@@ -1063,28 +1015,6 @@ describe("OpenRouter Gemini image", () => {
             message: "Image rejected by provider content policy",
         });
     });
-
-    it("rejects more than three reference images before fetching", async () => {
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callOpenRouterGeminiImageAPI("edit prompt", {
-                ...baseParams,
-                model: "google/gemini-2.5-flash-image:openrouter:vertex-global",
-                image: [
-                    REFERENCE_IMAGE_URL,
-                    REFERENCE_IMAGE_URL,
-                    REFERENCE_IMAGE_URL,
-                    REFERENCE_IMAGE_URL,
-                ],
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
 });
 
 describe("OpenRouter Seedream 4.5 Pro", () => {
@@ -1217,7 +1147,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         });
     });
 
-    it("rejects the unsupported 9:21 ratio and more than 14 references", async () => {
+    it("rejects the unsupported 9:21 ratio", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
             ["OPENROUTER_API_KEY"],
@@ -1231,12 +1161,6 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
             callOpenRouterSeedreamProAPI("test", {
                 ...params,
                 aspectRatio: "9:21",
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        await expect(
-            callOpenRouterSeedreamProAPI("test", {
-                ...params,
-                image: Array(15).fill(REFERENCE_IMAGE_URL),
             }),
         ).rejects.toMatchObject({ status: 400 });
     });

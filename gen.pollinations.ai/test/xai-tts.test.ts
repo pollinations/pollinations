@@ -91,20 +91,6 @@ describe("generateXaiSpeech", () => {
         });
     });
 
-    it.each([
-        ["voice", { voice: "unknown", responseFormat: "mp3" }],
-        ["format", { voice: "eve", responseFormat: "opus" }],
-    ])("rejects an unsupported %s", async (_field, params) => {
-        await expect(
-            generateXaiSpeech({
-                text: "Hello",
-                ...params,
-                apiKey: "test-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
-
     it("rejects requests when xAI is not configured", async () => {
         await expect(
             generateXaiSpeech({

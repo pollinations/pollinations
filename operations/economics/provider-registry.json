@@ -1,5 +1,5 @@
 {
-  "version": 28,
+  "version": 29,
   "canonicalModelRenames": {
     "claude": "anthropic/claude-sonnet-4.6",
     "flux-2-pro": "black-forest-labs/flux.2-pro",
@@ -2161,6 +2161,17 @@
       "label": "Noumi",
       "category": "office",
       "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "novita",
+      "label": "Novita AI",
+      "category": "compute",
+      "meteringBasis": "direct",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,

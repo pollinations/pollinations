@@ -15,40 +15,62 @@ interface Highlight {
     description: string;
 }
 
-type UpcomingChange = {
-    /** UTC day the change takes effect; the row hides after this day. */
+const ACTION_INTENT = {
+    New: "new",
+    Updating: "info",
+    Retiring: "warning",
+} as const;
+
+type Announcement = {
+    /** UTC day the launch or change takes effect. */
     date: string;
-    model: string;
-    action: "Updating" | "Retiring";
+    /** Last UTC day the row shows; defaults to `date`. */
+    until?: string;
+    name: string;
+    action: keyof typeof ACTION_INTENT;
     change: string;
 };
 
 /**
- * Upcoming changes only. Shipped changes reach the news feed automatically,
- * so rows disappear on their own once their date has passed.
+ * New launches and upcoming changes. Rows hide on their own after `until`;
+ * everything that shipped also reaches the news feed automatically.
  */
-const UPCOMING_CHANGES: UpcomingChange[] = [
+const ANNOUNCEMENTS: Announcement[] = [
+    {
+        date: "2026-10-02",
+        until: "2026-10-16",
+        name: "Sandboxes",
+        action: "New",
+        change: "Create E2B-compatible sandboxes through the API or polli sandbox, then connect over SSH. [Docs](https://gen.pollinations.ai/docs#tag/sandboxes).",
+    },
+    {
+        date: "2026-10-06",
+        until: "2026-10-20",
+        name: "Pay with crypto",
+        action: "New",
+        change: "Buy Pollen packs with USDC. Pick a pack in [Pollen](/pollen), then choose Pay with Crypto.",
+    },
     {
         date: "2026-10-09",
-        model: "Qwen3 VL 235B Thinking + TTS Instruct Flash",
+        name: "Qwen3 VL 235B Thinking + TTS Instruct Flash",
         action: "Retiring",
         change: "Alibaba routes retire. Choose another vision or voice model.",
     },
     {
         date: "2026-10-13",
-        model: "Cohere Command A+",
+        name: "Cohere Command A+",
         action: "Retiring",
         change: "Azure route is due to retire. Replacement details to follow.",
     },
     {
         date: "2026-10-20",
-        model: "Gemini 2.5 Flash Lite + Search",
+        name: "Gemini 2.5 Flash Lite + Search",
         action: "Retiring",
         change: "Vertex AI routes retire. Update apps using these models or their aliases.",
     },
     {
         date: "2026-11-02",
-        model: "Grok Imagine Pro",
+        name: "Grok Imagine Pro",
         action: "Updating",
         change: "Redirects to Image 2.0. Output and pricing change.",
     },
@@ -108,13 +130,15 @@ function formatNewsDate(date: string): string {
     });
 }
 
-export const UpcomingChanges: FC = () => {
+export const Announcements: FC = () => {
     const today = new Date().toISOString().slice(0, 10);
-    const upcoming = UPCOMING_CHANGES.filter(({ date }) => date >= today);
-    if (upcoming.length === 0) return null;
+    const current = ANNOUNCEMENTS.filter(
+        ({ date, until = date }) => until >= today,
+    );
+    if (current.length === 0) return null;
     return (
         <Section
-            title="Upcoming changes"
+            title="Announcements"
             action={
                 <InlineLink href="/models" size="sm">
                     Browse models
@@ -122,9 +146,9 @@ export const UpcomingChanges: FC = () => {
             }
         >
             <ul className="flex flex-col gap-4 text-sm text-theme-text-base">
-                {upcoming.map(({ date, model, action, change }) => (
+                {current.map(({ date, name, action, change }) => (
                     <li
-                        key={model}
+                        key={name}
                         className="grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]"
                     >
                         <time
@@ -134,20 +158,15 @@ export const UpcomingChanges: FC = () => {
                             {formatNewsDate(date)}
                         </time>
                         <span className="border-l border-theme-text-strong/15 pl-2">
-                            <Chip
-                                size="sm"
-                                intent={
-                                    action === "Retiring" ? "warning" : "info"
-                                }
-                            >
+                            <Chip size="sm" intent={ACTION_INTENT[action]}>
                                 {action}
                             </Chip>
                         </span>
                         <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
-                            {model}
+                            {name}
                         </strong>
                         <p className="col-span-3 min-w-0 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
-                            {change}
+                            {renderWithLinks(change)}
                         </p>
                     </li>
                 ))}

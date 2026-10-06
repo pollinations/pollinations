@@ -2,14 +2,14 @@ import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
 import {
+    Announcements,
     HIGHLIGHTS_GITHUB_URL,
     NewsBanner,
-    UpcomingChanges,
 } from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
     <>
-        <UpcomingChanges />
+        <Announcements />
         <Section
             title="News"
             framed

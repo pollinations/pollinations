@@ -1,5 +1,9 @@
 import type { Logger } from "@logtape/logtape";
-import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import {
+    collectUpstreamHeaders,
+    ensureUpstreamOk,
+    UpstreamError,
+} from "@shared/error.ts";
 import {
     AUDIO_VOICES,
     type AudioModelName,
@@ -377,6 +381,26 @@ const ELEVENLABS_TTS_VOICE_SETTINGS = {
     use_speaker_boost: true,
 } as const;
 
+// An unknown caller-supplied voice is a client error, not a missing upstream route.
+async function ensureElevenLabsVoiceOk(response: Response, endpoint: string) {
+    if (response.status === 404) {
+        const body = await response
+            .clone()
+            .json<{ detail?: { status?: string; message?: string } }>()
+            .catch(() => null);
+        if (body?.detail?.status === "voice_not_found") {
+            throw new UpstreamError(400, {
+                message: body.detail.message,
+                upstreamStatus: response.status,
+                requestUrl: new URL(endpoint),
+                responseBody: await response.text(),
+                upstreamHeaders: collectUpstreamHeaders(response.headers),
+            });
+        }
+    }
+    return ensureUpstreamOk(response, endpoint);
+}
+
 type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
 
 export async function generateElevenLabsSpeech(opts: {
@@ -438,7 +462,7 @@ export async function generateElevenLabsSpeech(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
+    const response = await ensureElevenLabsVoiceOk(rawResponse, elevenLabsUrl);
 
     const usageHeaders = {
         ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
@@ -494,7 +518,7 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -570,7 +594,7 @@ export async function generateElevenLabsDialogue(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -685,7 +709,7 @@ export async function changeVoiceWithElevenLabs(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {

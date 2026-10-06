@@ -6,6 +6,7 @@ describe("Markdown", () => {
     test.each([
         ["[Clip](https://example.test/result.MP4?download=1#t=2)", "video"],
         ["[Voice](https://example.test/result.wav)", "audio"],
+        ["[Clip](https://example.mov/result.mov)", "video"],
         [
             "[Generated video](<https://media.pollinations.ai/opaque-id>)",
             "video",
@@ -25,11 +26,12 @@ describe("Markdown", () => {
         const html = renderToStaticMarkup(
             <Markdown>
                 {
-                    "[Docs](https://example.test/docs)\n\n`[Video](https://example.test/result.mp4)`\n\n[Generated video](javascript:alert)"
+                    "[Docs](https://example.test/docs)\n\n[Visit](https://example.mov)\n\n`[Video](https://example.test/result.mp4)`\n\n[Generated video](javascript:alert)"
                 }
             </Markdown>,
         );
         expect(html).toContain('href="https://example.test/docs"');
+        expect(html).toContain('href="https://example.mov"');
         expect(html).toContain("<code");
         expect(html).not.toContain("<video");
         expect(html).not.toContain("javascript:");

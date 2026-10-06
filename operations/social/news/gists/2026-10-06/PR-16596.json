@@ -1,0 +1,34 @@
+{
+  "pr_number": 16596,
+  "title": "fix: simplify app KPI views and start charts at zero",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16596",
+  "merged_at": "2026-10-06T13:44:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps All, CLI, Play / Website and Open WebUI as individual app views; smaller keys still count in the unchanged backend total.\n- Starts nonnegative KPI charts at zero, including weekly revenue/signups, Pollen spend and both axes of usage/revenue. Negative metrics retain their negative range and include zero.\n- Adds regression coverage for hidden app views, preserved totals and zero-based chart bounds.\n- Verified focused Node checks against real KPI/scale functions, Biome and diff checks. Full Vitest unavailable locally because dependencies are absent and shell DNS is failing; CI validation pending. No Tinybird changes or deployment needed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Charts find the floor",
+    "blurb": "The KPI dashboard keeps four app views in sight and gives nonnegative charts a proper zero. Smaller apps still count in the totals, even when they don't get their own tab.",
+    "summary": "The KPI dashboard keeps All, CLI, Play / Website, and Open WebUI as individual app views while preserving smaller keys in backend totals, and anchors nonnegative charts at zero without clipping negative metrics.",
+    "impact": "Dashboard viewers get simpler app comparisons and zero-based weekly revenue, signups, Pollen spend, and usage/revenue axes; negative values remain visible.",
+    "keywords": [
+      "KPI",
+      "dashboard",
+      "app views",
+      "chart scale",
+      "Pollen",
+      "regression tests"
+    ],
+    "visual_concept": "Depict the internal KPI dashboard as a cozy retro monitor with four app-view tabs, small counters feeding a shared total, and chart lines visibly anchored to zero. Polli wears tiny analyst glasses and checks the axes; a code-plant beside the monitor brings in the garden motif.",
+    "image_prompt": "In a cozy pixel art garden workspace, a retro KPI monitor shows four simple app tabs and gentle chart lines beginning at a clearly marked zero, while tiny counters feed a shared total and a code-plant grows beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny analyst glasses, and points warmly at the zero mark. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16596.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a retro KPI monitor shows four simple app tabs and gentle chart lines beginning at a clearly marked zero, while tiny counters feed a shared total and a code-plant grows beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny analyst glasses, and points warmly at the zero mark. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-06T13:46:13.402788+00:00"
+}

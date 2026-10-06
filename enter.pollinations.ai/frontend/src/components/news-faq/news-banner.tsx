@@ -1,6 +1,6 @@
-import { Chip, InlineLink, Section, Surface } from "@pollinations/ui";
+import { Chip, Eyebrow, InlineLink, Section, Surface } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { type FC, useEffect, useState } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
@@ -17,13 +17,20 @@ interface Highlight {
 }
 
 const ACTION_INTENT = {
-    New: "new",
     Updating: "info",
     Retiring: "warning",
 } as const;
 
-type Announcement = {
-    /** UTC day the launch or change takes effect. */
+type Launch = {
+    name: string;
+    /** Markdown. */
+    change: string;
+    /** Last UTC day the row shows. */
+    until: string;
+};
+
+type ModelChange = {
+    /** UTC day the change takes effect. */
     date: string;
     /** Last UTC day the row shows; defaults to `date`. */
     until?: string;
@@ -33,11 +40,25 @@ type Announcement = {
     change: string;
 };
 
-/**
- * New launches and upcoming changes. Rows hide on their own after `until`;
- * everything that shipped also reaches the news feed automatically.
- */
-const ANNOUNCEMENTS: Announcement[] = [
+// Rows hide on their own after `until`; everything that shipped also
+// reaches the news feed automatically.
+
+/** Features available now, shown while they are new. */
+const LAUNCHES: Launch[] = [
+    {
+        name: "Sandboxes",
+        change: "Create E2B-compatible sandboxes through the API or `polli sandbox`, then connect over SSH. [Docs](https://gen.pollinations.ai/docs#tag/sandboxes).",
+        until: "2026-10-16",
+    },
+    {
+        name: "Pay with crypto",
+        change: "Buy Pollen packs with **USDC**. Pick a pack in [Pollen](/pollen), then choose **Pay with Crypto**.",
+        until: "2026-10-20",
+    },
+];
+
+/** Recent and upcoming model changes, by the day they take effect. */
+const MODEL_CHANGES: ModelChange[] = [
     {
         date: "2026-10-01",
         until: "2026-10-15",
@@ -46,25 +67,11 @@ const ANNOUNCEMENTS: Announcement[] = [
         change: "Retired. Use **MAI Image 2.6 Flash**.",
     },
     {
-        date: "2026-10-02",
-        until: "2026-10-16",
-        name: "Sandboxes",
-        action: "New",
-        change: "Create E2B-compatible sandboxes through the API or `polli sandbox`, then connect over SSH. [Docs](https://gen.pollinations.ai/docs#tag/sandboxes).",
-    },
-    {
         date: "2026-10-05",
         until: "2026-10-19",
         name: "Qwen3 Coder 30B",
         action: "Updating",
         change: "Now on AWS Bedrock. **Paid Pollen only.**",
-    },
-    {
-        date: "2026-10-06",
-        until: "2026-10-20",
-        name: "Pay with crypto",
-        action: "New",
-        change: "Buy Pollen packs with **USDC**. Pick a pack in [Pollen](/pollen), then choose **Pay with Crypto**.",
     },
     {
         date: "2026-10-09",
@@ -122,12 +129,31 @@ function formatNewsDate(date: string): string {
     });
 }
 
+// Launch rows share the model-change grid so both groups' descriptions line up.
+const ROW =
+    "grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]";
+const DESCRIPTION =
+    "col-span-3 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2";
+
+const AnnouncementGroup: FC<{ title: string; children: ReactNode }> = ({
+    title,
+    children,
+}) => (
+    <div className="flex flex-col gap-3">
+        <Eyebrow as="h3">{title}</Eyebrow>
+        <ul className="flex flex-col gap-4 text-sm text-theme-text-base">
+            {children}
+        </ul>
+    </div>
+);
+
 export const Announcements: FC = () => {
     const today = new Date().toISOString().slice(0, 10);
-    const current = ANNOUNCEMENTS.filter(
+    const launches = LAUNCHES.filter(({ until }) => until >= today);
+    const changes = MODEL_CHANGES.filter(
         ({ date, until = date }) => until >= today,
     );
-    if (current.length === 0) return null;
+    if (launches.length === 0 && changes.length === 0) return null;
     return (
         <Section
             title="Announcements"
@@ -137,32 +163,45 @@ export const Announcements: FC = () => {
                 </InlineLink>
             }
         >
-            <ul className="flex flex-col gap-4 text-sm text-theme-text-base">
-                {current.map(({ date, name, action, change }) => (
-                    <li
-                        key={name}
-                        className="grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]"
-                    >
-                        <time
-                            dateTime={date}
-                            className="whitespace-nowrap text-theme-text-muted"
-                        >
-                            {formatNewsDate(date)}
-                        </time>
-                        <span className="border-l border-theme-text-strong/15 pl-2">
-                            <Chip size="sm" intent={ACTION_INTENT[action]}>
-                                {action}
-                            </Chip>
-                        </span>
-                        <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
-                            {name}
-                        </strong>
-                        <Markdown className="col-span-3 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
-                            {change}
-                        </Markdown>
-                    </li>
-                ))}
-            </ul>
+            {launches.length > 0 && (
+                <AnnouncementGroup title="New">
+                    {launches.map(({ name, change }) => (
+                        <li key={name} className={ROW}>
+                            <strong className="col-span-3 min-w-0 text-theme-text-strong">
+                                {name}
+                            </strong>
+                            <Markdown className={DESCRIPTION}>
+                                {change}
+                            </Markdown>
+                        </li>
+                    ))}
+                </AnnouncementGroup>
+            )}
+            {changes.length > 0 && (
+                <AnnouncementGroup title="Model changes">
+                    {changes.map(({ date, name, action, change }) => (
+                        <li key={name} className={ROW}>
+                            <time
+                                dateTime={date}
+                                className="whitespace-nowrap text-theme-text-muted"
+                            >
+                                {formatNewsDate(date)}
+                            </time>
+                            <span className="border-l border-theme-text-strong/15 pl-2">
+                                <Chip size="sm" intent={ACTION_INTENT[action]}>
+                                    {action}
+                                </Chip>
+                            </span>
+                            <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
+                                {name}
+                            </strong>
+                            <Markdown className={DESCRIPTION}>
+                                {change}
+                            </Markdown>
+                        </li>
+                    ))}
+                </AnnouncementGroup>
+            )}
         </Section>
     );
 };

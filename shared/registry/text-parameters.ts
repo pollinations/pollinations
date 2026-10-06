@@ -399,6 +399,21 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Mistral tag for Mistral Large 4 (2026-10-06): no reasoning
+    // controls; reasoning_effort is ignored.
+    openRouterMistralLarge4: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "stop",
+        ...PENALTIES,
+        "seed",
+        ...LOGPROBS,
+    ],
     // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
     openRouterLing: [
         "max_tokens",

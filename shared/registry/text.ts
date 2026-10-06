@@ -2901,6 +2901,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "mistralai/mistral-large-4": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMistralLarge4,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Mistral",
+        category: "text",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Mistral endpoint rates (2026-10-06, as billed:
+            // $0.68 / $0.07 cached / $2.09 per million), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.68) * 1.055,
+            promptCachedTokens: perMillion(0.07) * 1.055,
+            completionTextTokens: perMillion(2.09) * 1.055,
+        },
+        title: "Mistral Large 4",
+        description:
+            "Frontier multimodal model for reasoning, coding and agentic workloads with a 512K context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 524288,
+        isSpecialized: false,
+    },
     "mistralai/mistral-large-3": {
         supportedParameters: CHAT_PARAMETERS.azureOpenModels,
         aliases: ["mistral-large-3", "mistral-large"],

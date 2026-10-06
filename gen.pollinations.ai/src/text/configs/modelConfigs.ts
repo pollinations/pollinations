@@ -364,6 +364,10 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
+    "mistralai/mistral-large-4": createPinnedOpenRouterConfig(
+        "mistralai/mistral-large-4-0",
+        "mistral",
+    ),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

@@ -223,6 +223,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mistral Large 4 to Mistral on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-large-4",
+        });
+
+        expect(result.options.model).toBe("mistralai/mistral-large-4-0");
+        expect(result.options.provider).toEqual({
+            only: ["mistral"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",

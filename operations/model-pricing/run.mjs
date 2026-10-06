@@ -21,6 +21,7 @@ import {
     catalogFacts,
     catalogHeaders,
     matchCatalogModel,
+    sameOrigin,
 } from "./catalogs.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -143,7 +144,7 @@ async function collect(selected, replay) {
                             return source.data;
                         }
                         const response = await fetch(url, {
-                            headers: url.startsWith(`${ARM}/`)
+                            headers: sameOrigin(url, ARM)
                                 ? { Authorization: `Bearer ${token}` }
                                 : catalogHeaders(url),
                             signal: AbortSignal.timeout(30_000),
@@ -200,12 +201,7 @@ async function collect(selected, replay) {
             const source = sources.find((s) => s.url === url);
             items.push(...pageItems);
             url = data[nextKey];
-            if (
-                url &&
-                (page === 9 ||
-                    !URL.canParse(url) ||
-                    new URL(url).origin !== origin)
-            ) {
+            if (url && (page === 9 || !sameOrigin(url, origin))) {
                 source.status = "incomplete";
                 source.error =
                     "Pagination limit or unexpected next-page origin";
@@ -249,12 +245,7 @@ async function collect(selected, replay) {
             seen = new Set(),
             deadline = Date.now() + 90_000;
         while (url && seen.size < 10 && Date.now() < deadline) {
-            if (
-                seen.has(url) ||
-                !URL.canParse(url) ||
-                new URL(url).origin !== new URL(config.url).origin
-            )
-                break;
+            if (seen.has(url) || !sameOrigin(url, config.url)) break;
             seen.add(url);
             scan.evidence.push(url);
             const data = await get(url);
@@ -311,7 +302,9 @@ async function collect(selected, replay) {
         selected.some((m) => m.provider === p),
     )) {
         const evidence = sources.filter((s) =>
-            provider === "azure" ? s.url.startsWith(ARM) : s.url === catalogUrl,
+            provider === "azure"
+                ? sameOrigin(s.url, ARM)
+                : s.url === catalogUrl,
         );
         providerScans.push({
             provider,

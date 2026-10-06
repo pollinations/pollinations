@@ -96,11 +96,16 @@ export const CATALOGS = {
     },
 };
 
-export function catalogHeaders(url, env = process.env) {
-    const origin = new URL(url).origin;
-    const config = Object.values(CATALOGS).find(
-        (c) => new URL(c.url).origin === origin,
+export function sameOrigin(url, expected) {
+    return (
+        URL.canParse(url) &&
+        URL.canParse(expected) &&
+        new URL(url).origin === new URL(expected).origin
     );
+}
+
+export function catalogHeaders(url, env = process.env) {
+    const config = Object.values(CATALOGS).find((c) => sameOrigin(url, c.url));
     if (!config?.key || !env[config.key]) return {};
     return {
         [config.header ?? "Authorization"]:

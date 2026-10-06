@@ -16,7 +16,25 @@ import {
     catalogFacts,
     catalogHeaders,
     matchCatalogModel,
+    sameOrigin,
 } from "./catalogs.mjs";
+
+test("provider source matching requires the exact parsed origin", () => {
+    const origin = "https://management.azure.com";
+    assert.equal(sameOrigin(`${origin}/subscriptions/example`, origin), true);
+    assert.equal(
+        sameOrigin("https://management.azure.com:443/models", origin),
+        true,
+    );
+    for (const url of [
+        "https://example.com/models",
+        "http://management.azure.com/models",
+        "https://management.azure.com:8443/models",
+        "invalid",
+    ])
+        assert.equal(sameOrigin(url, origin), false);
+    assert.deepEqual(catalogHeaders("invalid", {}), {});
+});
 
 test("Azure prices match exact deployed SKU, unit, date and region; unknown is not free", () => {
     const meter = {

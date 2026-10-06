@@ -27,22 +27,48 @@ describe("x402 prepaid API keys", () => {
         );
     });
 
-    test("does not advertise payment terms before the seller is configured", async () => {
+    test("documents both purchase methods", async () => {
         const response = await SELF.fetch(
-            "http://localhost:3000/api/x402/keys/p2",
-            { method: "POST" },
+            "http://localhost:3000/api/docs/open-api/generate-schema",
         );
-        expect(response.status).toBe(503);
-        expect(response.headers.get("payment-required")).toBeNull();
+        expect(response.status).toBe(200);
+        const schema = (await response.json()) as {
+            paths: Record<string, Record<string, unknown>>;
+        };
+        const purchase = Object.entries(schema.paths).find(
+            ([path]) => path.includes("x402/keys") && path.includes("packKey"),
+        )?.[1];
+        if (!purchase) {
+            throw new Error(
+                `Missing x402 purchase route: ${Object.keys(schema.paths)
+                    .filter((path) => path.includes("x402"))
+                    .join(", ")}`,
+            );
+        }
+        expect(purchase).toHaveProperty("get");
+        expect(purchase).toHaveProperty("post");
+    });
+
+    test("does not advertise payment terms before the seller is configured", async () => {
+        for (const method of ["GET", "POST"]) {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/x402/keys/p2",
+                { method },
+            );
+            expect(response.status).toBe(503);
+            expect(response.headers.get("payment-required")).toBeNull();
+        }
     });
 
     test("rejects invalid purchase amounts", async () => {
-        for (const value of ["0", "10000.01", "1e2", "0.001"]) {
-            const response = await SELF.fetch(
-                `http://localhost:3000/api/x402/keys/${value}`,
-                { method: "POST" },
-            );
-            expect(response.status).toBe(404);
+        for (const method of ["GET", "POST"]) {
+            for (const value of ["0", "10000.01", "1e2", "0.001"]) {
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/x402/keys/${value}`,
+                    { method },
+                );
+                expect(response.status).toBe(404);
+            }
         }
     });
 
@@ -86,35 +112,39 @@ describe("x402 prepaid API keys", () => {
                 return originalFetch(input, init);
             },
         );
-        for (const [value, atomicAmount] of [
-            ["p2", "2000000"],
-            ["0.50", "500000"],
-        ]) {
-            const response = await x402KeysRoutes.request(
-                `http://localhost/${value}`,
-                { method: "POST" },
-                {
-                    ...env,
-                    X402_HOLDING_USER_ID: owner.user_id,
-                    WEFT_SELLER_API_KEY: "ax_test",
-                    WEFT_FACILITATOR_URL: "https://x402.staging.weft.network",
-                    WEFT_NETWORK: "eip155:84532",
-                    WEFT_PAY_TO: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
-                },
-            );
-            expect(response.status).toBe(402);
-            const terms = response.headers.get("payment-required");
-            if (!terms) throw new Error("Missing x402 payment terms");
-            const challenge = decodePaymentRequiredHeader(terms);
-            expect(challenge.x402Version).toBe(2);
-            expect(challenge.accepts).toContainEqual(
-                expect.objectContaining({
-                    scheme: "exact",
-                    network: "eip155:84532",
-                    amount: atomicAmount,
-                    payTo: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
-                }),
-            );
+        for (const method of ["GET", "POST"]) {
+            for (const [value, atomicAmount] of [
+                ["p2", "2000000"],
+                ["0.50", "500000"],
+            ]) {
+                const response = await x402KeysRoutes.request(
+                    `http://localhost/${value}`,
+                    { method },
+                    {
+                        ...env,
+                        X402_HOLDING_USER_ID: owner.user_id,
+                        WEFT_SELLER_API_KEY: "ax_test",
+                        WEFT_FACILITATOR_URL:
+                            "https://x402.staging.weft.network",
+                        WEFT_NETWORK: "eip155:84532",
+                        WEFT_PAY_TO:
+                            "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
+                    },
+                );
+                expect(response.status).toBe(402);
+                const terms = response.headers.get("payment-required");
+                if (!terms) throw new Error("Missing x402 payment terms");
+                const challenge = decodePaymentRequiredHeader(terms);
+                expect(challenge.x402Version).toBe(2);
+                expect(challenge.accepts).toContainEqual(
+                    expect.objectContaining({
+                        scheme: "exact",
+                        network: "eip155:84532",
+                        amount: atomicAmount,
+                        payTo: "0x3b0b371ae3cb08f272b87319684f6518b3b313a0",
+                    }),
+                );
+            }
         }
     });
 

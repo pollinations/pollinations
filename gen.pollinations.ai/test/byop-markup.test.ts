@@ -301,6 +301,51 @@ describe("BYOP markup", () => {
         );
     });
 
+    it("rejects a Quest Pollen only key when Quest Pollen can't cover the estimate", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", questPollenOnly: true },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 0.5,
+                    packBalance: 100,
+                }),
+            },
+            model: testModel(),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
+            { status: 402, errorCode: "QUEST_POLLEN_ONLY" },
+        );
+    });
+
+    it("rejects paid-only models for a Quest Pollen only key", async () => {
+        const vars = {
+            auth: {
+                user: { id: "preflight-payer" },
+                apiKey: { id: "sk-test", questPollenOnly: true },
+            },
+            balance: {
+                getBalance: async () => ({
+                    tierBalance: 100,
+                    packBalance: 100,
+                }),
+            },
+            model: testModel("meta/llama-4-maverick"),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        await expect(
+            checkBalance(vars, fakeStatsEnv(0.01, "meta/llama-4-maverick")),
+        ).rejects.toMatchObject({
+            status: 402,
+            errorCode: "QUEST_POLLEN_ONLY",
+        });
+    });
+
     it("uses positive balance as the fallback when model estimate is zero", async () => {
         const vars = {
             auth: {
@@ -607,6 +652,7 @@ describe("BYOP markup", () => {
             modelId: "vendouple/zimage",
             title: "Z-Image",
             description: null,
+            paidOnly: false,
             modality: "image",
             imagePricing: "request",
             ...communityEndpointPrices({ completionImagePrice: 0.01 }),
@@ -661,6 +707,7 @@ describe("BYOP markup", () => {
             modelId: "vendouple/zimage",
             title: "Z-Image",
             description: null,
+            paidOnly: false,
             modality: "image",
             imagePricing: "request",
             ...communityEndpointPrices({ completionImagePrice: 0.01 }),

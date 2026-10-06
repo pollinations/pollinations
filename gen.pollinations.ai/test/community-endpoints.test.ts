@@ -195,9 +195,8 @@ fixtureTest(
                 ),
             ).toBe(current);
         }
-        expect(await catalogIdsFor(oldKey.key)).not.toContain(newPolli);
-        const newKey = await createTestApiKey({ allowedModels: [newPolli] });
-        expect(await catalogIdsFor(newKey.key)).toContain(newPolli);
+        // Keys hold categories, so a text key keeps the agent under its new ID.
+        expect(await catalogIdsFor(oldKey.key)).toContain(newPolli);
     },
 );
 
@@ -333,6 +332,7 @@ function insertCommunityEndpoints(
                         outputModalities,
                     }
                   : {
+                        paidOnly: false,
                         bearerTokenCiphertext:
                             bearerTokenCiphertext ?? "test-ciphertext",
                         api,
@@ -739,6 +739,7 @@ describe("community endpoint helpers", () => {
             "proxy",
             JSON.stringify({
                 bearerTokenCiphertext: "ciphertext",
+                paidOnly: false,
                 modality: "image",
                 api,
                 imagePricing: "request",
@@ -769,6 +770,7 @@ describe("community endpoint helpers", () => {
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
             bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
             modality: "text",
             imagePricing: "request",
             inputModalities: ["text"],
@@ -788,6 +790,16 @@ describe("community endpoint helpers", () => {
                 }),
             ),
         ).toMatchObject({ api: "chat_completions" });
+        const { paidOnly: _, ...withoutPaidOnly } = textPayload;
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    ...withoutPaidOnly,
+                    api: "chat_completions",
+                }),
+            ),
+        ).toBeNull();
         expect(parseListingPayload("proxy", "not json")).toBeNull();
         expect(
             parseListingPayload("proxy", JSON.stringify({ prices: {} })),
@@ -826,6 +838,7 @@ describe("community endpoint helpers", () => {
             parseListingPayload(
                 "proxy",
                 JSON.stringify({
+                    paidOnly: false,
                     bearerTokenCiphertext: "ciphertext",
                     modality: "image",
                     imagePricing: "request",
@@ -984,6 +997,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/transcription",
             title: "Transcription",
             description: null,
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({}),
         });
@@ -1006,6 +1020,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/speech",
             title: "Speech",
             description: null,
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({}),
         });
@@ -1043,6 +1058,7 @@ describe("community endpoint helpers", () => {
             modelId: "community/voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -1064,6 +1080,7 @@ describe("community endpoint helpers", () => {
                 modelId: "voodoohop/openai",
                 title: "OpenAI",
                 description: null,
+                paidOnly: false,
                 ...prices,
             }).paidOnly,
         ).toBe(false);
@@ -1084,6 +1101,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({ promptTextPrice: 0.1 }),
         });
 
@@ -1099,6 +1117,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: null,
+            paidOnly: false,
             providerName: "Example AI",
             providerUrl: "https://example.com/",
             ...communityEndpointPrices({}),
@@ -1114,6 +1133,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Image",
             description: "Community image model",
+            paidOnly: false,
             modality: "image",
             ...communityEndpointPrices({
                 promptTextPrice: 0.2,
@@ -1152,6 +1172,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "GPT Image",
             description: "Token-priced image model",
+            paidOnly: false,
             modality: "image",
             imagePricing: "tokens",
             inputModalities: ["text", "image"],
@@ -1191,6 +1212,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Video",
             description: "Community video model",
+            paidOnly: false,
             modality: "video",
             inputModalities: ["text", "image", "audio", "video"],
             ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
@@ -1218,6 +1240,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Embedding",
             description: "Community embedding model",
+            paidOnly: false,
             modality: "embedding",
             ...communityEndpointPrices({
                 promptTextPrice: 0.00001,
@@ -1270,6 +1293,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -1284,6 +1308,7 @@ describe("community endpoint helpers", () => {
             modelId: "marcosfrgames08/glm-4.6v-flash",
             title: "GLM Vision",
             description: "Vision model",
+            paidOnly: false,
             inputModalities: ["image", "video"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -1299,6 +1324,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
                 contextLength: 128000,
@@ -1318,6 +1344,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
@@ -1336,6 +1363,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             inputModalities: ["text", "audio"],
             ...communityEndpointPrices({
@@ -1353,6 +1381,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Transcription",
             description: "Community transcription model",
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
         });
@@ -1403,6 +1432,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Speech",
             description: "Community speech model",
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({ completionAudioPrice: 0.00002 }),
         });
@@ -1524,8 +1554,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1716,8 +1744,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2026,8 +2052,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2390,8 +2414,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2578,8 +2600,6 @@ describe("community endpoint helpers", () => {
             paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
-            hiddenAt: null,
-            hiddenReason: null,
             bearerTokenCiphertext: await encryptSecret(
                 "sk_saved_token",
                 secret,
@@ -2643,8 +2663,6 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 paidOnly: false,
                 perUserRpm: null,
-                hiddenAt: null,
-                hiddenReason: null,
                 fallbacks: [],
                 ...communityEndpointPrices({}),
                 ...overrides,
@@ -5058,7 +5076,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "excludes a hidden community model from public model catalogs",
+    "ignores legacy hide metadata for public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
@@ -5107,11 +5125,11 @@ fixtureTest(
         for (const models of [textModels, allModels]) {
             expect(
                 models.find((model) => model.name === modelId),
-            ).toBeUndefined();
+            ).toBeDefined();
         }
         expect(
             openaiModels.data.find((model) => model.id === modelId),
-        ).toBeUndefined();
+        ).toBeDefined();
     },
 );
 
@@ -5453,7 +5471,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes canonical and aliased calls to a hidden community model with a canonical-only key",
+    "routes canonical and aliased calls despite legacy hide metadata",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -5977,8 +5995,8 @@ fixtureTest(
             url: "https://gen.pollinations.ai/v1/chat/completions",
             upstreamModel: "openai",
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.00001,
@@ -6252,7 +6270,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
-            completionImagePrice: 0,
+            completionImagePrice: 0.03,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0,
@@ -6722,7 +6740,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "video",
-            completionVideoPrice: 0,
+            completionVideoPrice: 0.08,
         });
         await maturePendingCommunityEndpoint(registered.id);
 
@@ -7102,7 +7120,7 @@ fixtureTest(
             inputModalities: ["audio"],
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "whisper-1",
-            promptAudioPrice: 0,
+            promptAudioPrice: 0.0000445,
             pending: {
                 visibility: "public",
                 promptAudioPrice: 0.0000445,
@@ -7599,9 +7617,6 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
@@ -7633,15 +7648,6 @@ fixtureTest(
             unknown
         >;
         expect(typeof secondCreated.id).toBe("string");
-        await db
-            .update(communityEndpointTable)
-            .set({
-                hiddenAt: new Date(),
-                hiddenReason: "was failing",
-                hiddenBy: "monitor",
-            })
-            .where(eq(communityEndpointTable.id, createdId));
-
         const updateResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7677,8 +7683,6 @@ fixtureTest(
                 promptTextPrice: 0.00001,
                 completionTextPrice: 0.00002,
             },
-            hidden: true,
-            hiddenReason: "was failing",
         });
         const elapsedDelayAt = new Date(
             Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
@@ -7687,32 +7691,10 @@ fixtureTest(
             .update(communityEndpointTable)
             .set({
                 pendingAt: elapsedDelayAt,
-                hiddenAt: elapsedDelayAt,
             })
             .where(eq(communityEndpointTable.id, createdId));
 
-        const relistResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ hidden: false }),
-                },
-            ),
-        );
-        expect(relistResponse.status).toBe(200);
-        await expect(relistResponse.json()).resolves.toMatchObject({
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
-        });
-
-        const hideResponse = await fetchEnterApi(
+        const hiddenUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -7726,11 +7708,7 @@ fixtureTest(
                 },
             ),
         );
-        expect(hideResponse.status).toBe(200);
-        await expect(hideResponse.json()).resolves.toMatchObject({
-            hidden: true,
-            hiddenReason: "Hidden by owner",
-        });
+        expect(hiddenUpdateResponse.status).toBe(400);
         await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
@@ -7823,9 +7801,8 @@ fixtureTest(
             expect.any(String),
         );
 
-        // Making the model private clears all owner-set prices, and with them
-        // the paid-only choice: a free listing that still demanded paid balance
-        // would only gate the owner out of their own model.
+        // Going private keeps the queued settings for later republication.
+        // Private calls are free but still try their (free) fallbacks.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7838,6 +7815,7 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         visibility: "private",
+                        fallbacks: [secondCreated.modelId],
                     }),
                 },
             ),
@@ -7845,13 +7823,25 @@ fixtureTest(
         expect(privatizeResponse.status).toBe(200);
         await expect(privatizeResponse.json()).resolves.toMatchObject({
             visibility: "private",
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
+            fallbacks: [secondCreated.modelId],
+        });
+        await resetGenerationModelRegistryCache(env);
+        const privateEntry = (await getCommunityModelRegistryEntries(env)).find(
+            (entry) => entry.id === created.modelId,
+        );
+        expect(privateEntry?.communityEndpoint).toMatchObject({
+            visibility: "private",
             paidOnly: false,
+            fallbacks: [secondCreated.modelId],
             promptTextPrice: 0,
             completionTextPrice: 0,
         });
 
-        // Republishing remains free, but becomes visible after the notice
-        // period rather than immediately.
+        // Republishing retains the configured price and paid-only choice,
+        // but becomes visible after the notice period rather than immediately.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7871,8 +7861,9 @@ fixtureTest(
         expect(republishResponse.status).toBe(200);
         await expect(republishResponse.json()).resolves.toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
             pending: { visibility: "public" },
         });
 
@@ -7882,9 +7873,6 @@ fixtureTest(
                 visibility: "public",
                 pendingVisibility: null,
                 pendingAt: null,
-                hiddenAt: null,
-                hiddenReason: null,
-                hiddenBy: null,
             })
             .where(eq(communityEndpointTable.id, createdId));
         await db
@@ -9047,11 +9035,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         ),
         enterEnv,
     );
-    expect(hideResponse.status).toBe(200);
-    await expect(hideResponse.json()).resolves.toMatchObject({
-        hidden: true,
-        description: stored.description,
-    });
+    expect(hideResponse.status).toBe(400);
     const noOpResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -9072,9 +9056,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         description: stored.description,
         payload: stored.payload,
         requiredSafetyFeatures: ["violence"],
-        hiddenAt: expect.any(Date),
-        hiddenReason: "Hidden by owner",
-        hiddenBy: "owner",
     });
     expect(deploymentFetch).toHaveBeenCalledTimes(4);
 
@@ -9387,15 +9368,13 @@ fixtureTest("validates community fallback targets on write", async () => {
         `${primaryName}-other-disabled`,
         communityModelId(otherOwnerGithubUsername, targetNames.otherDisabled),
     );
-    expect(otherDisabledTarget.status).toBe(400);
-    expect(await otherDisabledTarget.text()).toContain("does not exist");
+    expect(otherDisabledTarget.status).toBe(200);
 
     const disabledTarget = await createWithFallback(
         `${primaryName}-disabled`,
         communityModelId(ownerGithubUsername, targetNames.disabled),
     );
-    expect(disabledTarget.status).toBe(400);
-    expect(await disabledTarget.text()).toContain("must be listed");
+    expect(disabledTarget.status).toBe(200);
 
     const delegatingTarget = await createWithFallback(
         `${primaryName}-delegating`,
@@ -9470,12 +9449,14 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(eligible).toContain(
         communityModelId(ownerGithubUsername, targetNames.priv),
     );
+    expect(eligible).toContain(
+        communityModelId(ownerGithubUsername, targetNames.disabled),
+    );
     // Never itself, and never a target the write path would reject.
     expect(eligible).not.toContain(created.modelId);
     for (const rejected of [
         targetNames.image,
         targetNames.pricey,
-        targetNames.disabled,
         targetNames.delegating,
     ]) {
         expect(eligible).not.toContain(
@@ -9652,7 +9633,9 @@ fixtureTest(
             registry.resolve(model)?.fallbackEntries?.map((e) => e.id);
 
         expect(fallbackIds(id("valid-primary"))).toEqual([id("valid-target")]);
-        expect(fallbackIds(id("disabled-primary"))).toBeUndefined();
+        expect(fallbackIds(id("disabled-primary"))).toEqual([
+            id("disabled-target"),
+        ]);
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
@@ -10258,97 +10241,6 @@ fixtureTest(
         const moderationRefusal = await generate();
         expect(moderationRefusal.status).toBe(422);
         expect(upstreamHosts).toEqual([primaryHostname]);
-    },
-);
-
-fixtureTest(
-    "does not serve a fallback the API key is not allowed to use",
-    async () => {
-        const { primaryModelId, fallbackModelId, primaryHost } =
-            await createCommunityFallbackPair({
-                prefix: "scoped",
-            });
-
-        // Scoped to the primary only — calling the fallback directly is a 403.
-        const { key } = await createTestApiKey({
-            allowedModels: [primaryModelId],
-            user: { tierBalance: 100 },
-        });
-
-        const gatewayCalls: {
-            config: string | null;
-            provider: string | null;
-            url: string;
-        }[] = [];
-        const fetchMock = vi.fn(async (input, init) => {
-            const request = new Request(input, init);
-            if (isChatCompletionsRequest(request)) {
-                gatewayCalls.push({
-                    config: request.headers.get("x-portkey-config"),
-                    provider: request.headers.get("x-portkey-provider"),
-                    url: request.url,
-                });
-                return Response.json({
-                    id: "chatcmpl_primary",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                    usage: {
-                        prompt_tokens: 2,
-                        completion_tokens: 3,
-                        total_tokens: 5,
-                    },
-                });
-            }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
-            throw new Error(`Unexpected fetch: ${request.url}`);
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        const response = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: primaryModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-
-        expect(response.status).toBe(200);
-        expect(gatewayCalls).toHaveLength(1);
-        // No strategy/targets config: the request runs against the primary
-        // alone, so the key can never be served the model it cannot call.
-        expect(gatewayCalls[0].config).toBeNull();
-        expect(gatewayCalls[0].provider).toBeNull();
-        expect(gatewayCalls[0].url).toBe(
-            communityChatCompletionsUrl(primaryHost),
-        );
-
-        // The same key calling the fallback directly is refused.
-        const direct = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: fallbackModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-        expect(direct.status).toBe(403);
     },
 );
 

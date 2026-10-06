@@ -57,6 +57,19 @@ describe("Gemini Developer API speech", () => {
             completionAudioTokens: 76,
         });
     });
+    it("bills only text input when Google reports the voice's audio prompt", () => {
+        // Shape returned by Google since October 2026.
+        const data = speechResponse();
+        data.usage.total_input_tokens = 206;
+        data.usage.input_tokens_by_modality = [
+            { modality: "audio", tokens: 201 },
+            { modality: "text", tokens: 5 },
+        ];
+        expect(parseGeminiSpeechResponse(data, "pcm").usage).toEqual({
+            promptTextTokens: 5,
+            completionAudioTokens: 76,
+        });
+    });
     it("rejects missing usage", () => {
         const { usage: _, ...data } = speechResponse();
         expect(() => parseGeminiSpeechResponse(data, "pcm")).toThrow(

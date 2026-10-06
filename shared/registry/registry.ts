@@ -220,7 +220,9 @@ export type ModelDefinition = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    paidOnly?: boolean; // Models that require paid balance only
+    // True when callers may only spend Paid Pollen; false when Quest Pollen
+    // also works. Required on every model — there is no implicit default.
+    paidOnly: boolean;
     alpha?: boolean; // Experimental models with potential instability
     // Flat per-generation pricing (one fee per request, independent of output
     // size/length). Lets the pricing UI show a "/gen" badge instead of guessing
@@ -237,10 +239,10 @@ export type ModelDefinition = {
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
-    minDuration?: number; // Video-only: minimum accepted duration in seconds
-    maxDuration?: number; // Video-only: maximum accepted duration in seconds
+    minDuration?: number; // Video and audio: minimum accepted duration in seconds
+    maxDuration?: number; // Video and audio: maximum accepted duration in seconds
     defaultDuration?: number; // Video-only: duration when caller omits the param
-    allowedDurations?: number[]; // Video-only: explicit set of valid durations (overrides min/max range)
+    allowedDurations?: number[]; // Video and audio: explicit set of valid durations (overrides min/max range)
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos

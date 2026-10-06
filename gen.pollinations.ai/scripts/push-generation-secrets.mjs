@@ -47,6 +47,7 @@ const REQUIRED_SECRET_KEYS = [
     "PLN_GPU_TOKEN",
     "PORTKEY_GATEWAY_URL",
     "REPLICATE_API_TOKEN",
+    "STABILITY_API_KEY",
     "TINYBIRD_INGEST_TOKEN",
     "XAI_API_KEY",
 ];
@@ -125,7 +126,6 @@ try {
     execFileSync(
         process.execPath,
         [
-            // Match deploy scripts; the test pool's workspace-local CLI is older.
             fileURLToPath(
                 new URL(
                     "../../node_modules/wrangler/bin/wrangler.js",

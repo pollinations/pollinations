@@ -186,17 +186,12 @@ export const AUDIO_VOICES = [
     ...GEMINI_TTS_VOICES,
 ];
 
-export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
+// Requests without a model must work on Quest Pollen, so the default stays
+// on a model that is not paid-only.
+export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
     "elevenlabs/eleven-v3": {
-        aliases: [
-            "tts",
-            "text-to-speech",
-            "eleven",
-            "tts-1",
-            "tts-1-hd",
-            "elevenlabs",
-        ],
+        aliases: ["tts", "text-to-speech", "eleven", "elevenlabs"],
         provider: "elevenlabs",
         publisher: "ElevenLabs",
         category: "audio",
@@ -395,6 +390,8 @@ const AUDIO_BASE_SERVICES = {
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 3,
+        maxDuration: 300,
     },
     "elevenlabs/music-v2.5": {
         aliases: [],
@@ -415,6 +412,8 @@ const AUDIO_BASE_SERVICES = {
             "Richer, better prompt-following music from text or a reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 3,
+        maxDuration: 300,
     },
     "google/lyria-3.5": {
         aliases: [],
@@ -453,6 +452,7 @@ const AUDIO_BASE_SERVICES = {
             "30-second music with vocals, lyrics, or instrumental arrangements",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        allowedDurations: [30],
     },
     "elevenlabs/eleven-text-to-sound-v2": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
@@ -478,6 +478,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // OVHcloud USD list price: $0.163/hour.
             promptAudioSeconds: 0.163 / 3600,
@@ -489,7 +490,8 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "openai/gpt-transcribe": {
-        aliases: ["gpt-transcribe"],
+        // gpt-4o-transcribe is the name OpenAI clients send by default.
+        aliases: ["gpt-transcribe", "gpt-4o-transcribe"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -590,7 +592,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1": {
-        aliases: [],
+        aliases: ["tts-1"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -607,7 +609,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1-hd": {
-        aliases: [],
+        aliases: ["tts-1-hd"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -673,6 +675,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
@@ -726,6 +729,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
@@ -825,6 +829,8 @@ const AUDIO_BASE_SERVICES = {
         description: "Long-form stereo music and soundscapes in studio quality",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 1,
+        maxDuration: 380,
     },
     "stability-ai/stable-audio-3": {
         // Distinct from stable-audio-3-medium (fal): this is the larger
@@ -854,6 +860,8 @@ const AUDIO_BASE_SERVICES = {
             "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 1,
+        maxDuration: 380,
     },
     "fish-audio/s2.1-pro": {
         aliases: ["fish-audio-s2.1-pro"],

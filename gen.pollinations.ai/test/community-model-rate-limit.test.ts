@@ -51,6 +51,7 @@ describe("model rate limiting", () => {
             category: "text",
             cost: {},
             priceMultiplier: 1,
+            paidOnly: false,
             addedDate: 0,
             title: "Test",
         };

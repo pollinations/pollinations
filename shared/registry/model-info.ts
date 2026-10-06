@@ -174,7 +174,7 @@ export const ModelInfoSchema = z.object({
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
-    paid_only: z.boolean().optional(),
+    paid_only: z.boolean(),
     pending_change: z
         .object({
             effective_at: z.string().datetime(),

@@ -614,8 +614,8 @@ export class Pollinations {
             items.map((item) => this.resolveImageItem(item, options.signal)),
         );
 
-        // Unwrap when a single image was produced (most common case)
-        if (results.length === 1) {
+        // Unwrap only for a single-image request (the default)
+        if ((options.n ?? 1) === 1) {
             const [single] = results;
             if (single) return single;
         }

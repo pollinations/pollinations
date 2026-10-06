@@ -78,6 +78,8 @@ interface ModelDefinition {
     useResponsesApi?: boolean;
     /** Route typed decisions directly through TypeSafe System One. */
     useSystemOneApi?: boolean;
+    /** Search before formatting JSON on Gemini 2.5 through Vercel. */
+    useVercelSearchFormatting?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -634,6 +636,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "google/gemini-2.5-flash-lite:search:vercel",
+        useVercelSearchFormatting: true,
         config: portkeyConfig["google/gemini-2.5-flash-lite:search:vercel"],
         transform: pipe(
             sanitizeToolSchemas,
@@ -696,12 +699,17 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite:search"],
         transform: pipe(
             sanitizeToolSchemas,
-            addDefaultTools([
-                {
-                    type: "openrouter:web_search",
-                    parameters: { engine: "exa", max_results: 5 },
+            (messages, options) => ({
+                messages,
+                options: {
+                    ...options,
+                    plugins:
+                        options.tools?.length === 0 ||
+                        options.tool_choice === "none"
+                            ? []
+                            : [{ id: "web", engine: "exa", max_results: 5 }],
                 },
-            ]),
+            }),
             createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },

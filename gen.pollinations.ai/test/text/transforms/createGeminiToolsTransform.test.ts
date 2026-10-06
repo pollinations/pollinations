@@ -189,15 +189,34 @@ describe("OpenRouter Gemini Search routing", () => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
         const { options } = await transform([], { model });
-        expect(options.tools).toEqual([
-            {
-                type: "openrouter:web_search",
-                parameters: { engine: "exa", max_results: 5 },
-            },
+        expect(options.tools).toBeUndefined();
+        expect(options.plugins).toEqual([
+            { id: "web", engine: "exa", max_results: 5 },
         ]);
     });
 
-    it("preserves logit_bias on the direct Vertex route", async () => {
+    it.each([
+        { tools: [] },
+        { tool_choice: "none" },
+    ])("preserves explicit search opt-out %j", async (disabled) => {
+        const transform = findModelByName("gemini-search")?.transform;
+        if (!transform) throw new Error("search transform missing");
+        const result = await transform([], disabled);
+        expect(result.options.plugins).toEqual([]);
+    });
+    it.each([
+        "google/gemini-2.5-flash-lite:search",
+        "google/gemini-2.5-flash-lite:search:vercel",
+    ])("allows search with JSON on %s", (model) => {
+        expect(
+            textCapabilityError(
+                TEXT_SERVICES[model as keyof typeof TEXT_SERVICES],
+                { response_format: { type: "json_object" } },
+            ),
+        ).toBeUndefined();
+    });
+
+    it("preserves logit_bias on the OpenRouter route", async () => {
         const transform = findModelByName("gemini-search")?.transform;
         if (!transform) throw new Error("gemini-search transform missing");
 
@@ -258,23 +277,6 @@ describe("Flash Lite Vercel routing", () => {
             },
         ]);
         expect(supportsDirectResponses(model)).toBe(false);
-    });
-    it.each([
-        "google/gemini-2.5-flash-lite:search",
-        "google/gemini-2.5-flash-lite:search:vercel",
-    ] as const)("rejects unsupported search JSON output for %s", (model) => {
-        for (const type of ["json_object", "json_schema"]) {
-            expect(
-                textCapabilityError(TEXT_SERVICES[model], {
-                    response_format: { type },
-                }),
-            ).toContain("does not support structured output");
-        }
-        expect(
-            textCapabilityError(TEXT_SERVICES[model], {
-                response_format: { type: "text" },
-            }),
-        ).toBeUndefined();
     });
     it.each([
         "google/gemini-2.5-flash-lite",

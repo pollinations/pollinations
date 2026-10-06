@@ -1437,13 +1437,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite:search": {
-        supportedParameters: [
-            ...CHAT_PARAMETERS.gemini25.filter(
-                (parameter) => parameter !== "response_format",
-            ),
-            "reasoning_effort",
-        ],
-        supportsStructuredOutput: false,
+        supportedParameters: [...CHAT_PARAMETERS.gemini25, "reasoning_effort"],
         aliases: [
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",

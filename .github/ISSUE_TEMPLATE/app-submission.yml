@@ -9,12 +9,20 @@ body:
         ## Submit your app
 
         - **App:** working, with a clear purpose and visible use of Pollinations.
+
         - **Access:** a public app URL, repository, or both.
+
         - **Screenshot:** your app's real screen; see the upload requirements below.
+
         - **Credit:** add the badge or site link as described at the end of this form.
+
         - **Content:** no spam, scams, or deceptive behavior.
 
+        <br>
+
         Automated pre-review → maintainer review → community catalog.
+
+        <br>
 
   - type: input
     id: app-name
@@ -46,6 +54,13 @@ body:
       label: GitHub Repository URL
       description: Public source repository. Required when there is no App URL.
       placeholder: https://github.com/username/repository
+
+  - type: markdown
+    attributes:
+      value: |
+        <br>
+
+        ### Catalog listing
 
   - type: upload
     id: screenshot
@@ -101,6 +116,13 @@ body:
     validations:
       required: true
 
+  - type: markdown
+    attributes:
+      value: |
+        <br>
+
+        ### Optional details
+
   - type: input
     id: discord-contact
     attributes:
@@ -117,18 +139,25 @@ body:
   - type: markdown
     attributes:
       value: |
+        <br>
+
         ## Credit Pollinations
 
         [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/123ed07456106a4f752c0a22c584e8cadd2db6a8/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
 
         - **With a repository:** add the badge to your README.
+
         - **Without a repository:** show the badge or a visible [pollinations.ai](https://pollinations.ai) link on the app page.
+
+        <br>
 
         **README — copy this Markdown:**
 
         ```markdown
         [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
         ```
+
+        <br>
 
         **App page — copy this HTML:**
 

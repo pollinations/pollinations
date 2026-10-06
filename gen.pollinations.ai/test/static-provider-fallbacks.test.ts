@@ -95,9 +95,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "google-ai-studio",
     ],
     [
         "google/gemini-3.5-flash-lite:openrouter:vertex-global",
@@ -173,6 +173,38 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("lets OpenRouter recover GLM Flash across independent providers", () => {
+        const model = "z-ai/glm-5.3-flash";
+        const route = `${model}:openrouter`;
+        expect(TEXT_SERVICES[model].provider).toBe("fireworks");
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([route]);
+        expect(findModelByName(route)?.config()).toMatchObject({
+            provider: "openrouter",
+            model,
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: [
+                        "together",
+                        "baseten/fp8",
+                        "modal/nvfp4",
+                        "crusoe/fp4",
+                        "friendli",
+                        "digitalocean",
+                        "parasail/fp4",
+                        "venice",
+                    ],
+                    allow_fallbacks: true,
+                },
+            },
+        });
+        expect(TEXT_SERVICES[route].cost).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.03 / 1_000_000) * 1.055,
+            completionTextTokens: (0.5 / 1_000_000) * 1.055,
+        });
+    });
+
     it.each([
         "qwen/qwen3.7-flash",
         "qwen/qwen3.8-flash",

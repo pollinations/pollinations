@@ -7,17 +7,17 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     adaptGoogleSearchToolForVertex,
-    createGeminiToolsTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
+import { mediaToVercelFiles } from "./transforms/mediaToVercelFiles.ts";
 import {
     omitParameters,
     preferTemperature,
 } from "./transforms/parameterTransforms.js";
-import { pipe } from "./transforms/pipe.js";
+import { addDefaultTools, pipe } from "./transforms/pipe.js";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import type { TransformFn, TransformOptions } from "./types.js";
 
@@ -655,27 +655,30 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiThinkingTransform("v2.5"),
+            mediaToVercelFiles,
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
-        name: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
-        config: portkeyConfig["gemini-fast-openrouter-vertex-eu"],
+        name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
+        config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createGeminiThinkingTransform("v2.5"),
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
         name: "google/gemini-2.5-flash-lite:search",
-        config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
+        config: portkeyConfig["google/gemini-2.5-flash-lite:search"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v2.5"),
+            addDefaultTools([
+                {
+                    type: "openrouter:web_search",
+                    parameters: { engine: "exa", max_results: 5 },
+                },
+            ]),
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
@@ -876,6 +879,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["accounts/fireworks/models/glm-5p3-flash"],
         // Reasoning is mandatory; off requests keep the upstream default.
         transform: mandatoryReasoningWithoutCacheControl,
+    },
+    {
+        name: "z-ai/glm-5.3-flash:openrouter",
+        config: portkeyConfig["glm-5.3-flash-openrouter"],
+        transform: mandatoryReasoning,
     },
     {
         name: "z-ai/glm-5.3-flashx",

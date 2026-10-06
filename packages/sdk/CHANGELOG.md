@@ -4,6 +4,30 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.11] - 2026-10-06
+
+### Fixed
+- `transcribe()` keeps an uploaded `File`'s name instead of always sending
+  `audio.mp3`. Providers that read the format from the extension, such as
+  `openai/gpt-transcribe`, rejected WAV and other non-MP3 uploads.
+
+## [5.1.0-alpha.10] - 2026-10-06
+
+### Fixed
+- `authorizeDevice().poll()` errors keep the token endpoint's HTTP status
+  instead of always reporting 400.
+
+## [5.1.0-alpha.9] - 2026-10-06
+
+### Added
+- `questPollenOnly` on `createKey()` options and on `KeyInfo`, `AccountKey`
+  and `CreatedKey`: the key never spends paid Pollen, and requests stop when
+  Quest Pollen runs out.
+
+### Changed
+- `allowedModels` restricts a key to model categories (text, image, video,
+  audio, 3d, embedding, realtime). A model ID allows its whole category.
+
 ## [5.1.0-alpha.8] - 2026-10-04
 
 ### Added

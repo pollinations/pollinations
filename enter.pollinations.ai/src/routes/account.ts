@@ -203,6 +203,25 @@ function parsePermissions(
     }
 }
 
+// The JSON shape of a key in the list and update responses; never the hash.
+function formatKey(key: typeof apikeyTable.$inferSelect) {
+    return {
+        id: key.id,
+        name: key.name,
+        start: key.start,
+        prefix: key.prefix,
+        createdAt: key.createdAt,
+        expiresAt: key.expiresAt,
+        lastRequest: key.lastRequest,
+        permissions: parsePermissions(key.permissions),
+        metadata: parseMetadata(key.metadata),
+        pollenBalance: key.pollenBalance,
+        questPollenOnly: key.questPollenOnly,
+        enabled: key.enabled,
+        byopClientKeyId: key.byopClientKeyId,
+    };
+}
+
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
     if (val === null || val === undefined) return "";
@@ -1653,44 +1672,12 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "keys");
 
-            const db = drizzle(c.env.DB);
-            const keys = await db
-                .select({
-                    id: apikeyTable.id,
-                    name: apikeyTable.name,
-                    start: apikeyTable.start,
-                    prefix: apikeyTable.prefix,
-                    createdAt: apikeyTable.createdAt,
-                    expiresAt: apikeyTable.expiresAt,
-                    lastRequest: apikeyTable.lastRequest,
-                    permissions: apikeyTable.permissions,
-                    metadata: apikeyTable.metadata,
-                    pollenBalance: apikeyTable.pollenBalance,
-                    questPollenOnly: apikeyTable.questPollenOnly,
-                    enabled: apikeyTable.enabled,
-                    byopClientKeyId: apikeyTable.byopClientKeyId,
-                })
+            const keys = await drizzle(c.env.DB)
+                .select()
                 .from(apikeyTable)
                 .where(eq(apikeyTable.referenceId, user.id))
                 .all();
-
-            return c.json({
-                data: keys.map((key) => ({
-                    id: key.id,
-                    name: key.name,
-                    start: key.start,
-                    prefix: key.prefix,
-                    createdAt: key.createdAt,
-                    expiresAt: key.expiresAt,
-                    lastRequest: key.lastRequest,
-                    permissions: parsePermissions(key.permissions),
-                    metadata: parseMetadata(key.metadata),
-                    pollenBalance: key.pollenBalance,
-                    questPollenOnly: key.questPollenOnly,
-                    enabled: key.enabled,
-                    byopClientKeyId: key.byopClientKeyId,
-                })),
-            });
+            return c.json({ data: keys.map(formatKey) });
         },
     )
     .post(
@@ -1896,15 +1883,7 @@ export const accountRoutes = new Hono<Env>()
                 .where(eq(apikeyTable.id, id))
                 .returning();
 
-            return c.json({
-                id: updated.id,
-                name: updated.name,
-                permissions: storedPermissions,
-                metadata: parseMetadata(updated.metadata),
-                pollenBalance: updated.pollenBalance,
-                questPollenOnly: updated.questPollenOnly,
-                expiresAt: updated.expiresAt,
-            });
+            return c.json(formatKey(updated));
         },
     )
     .post(

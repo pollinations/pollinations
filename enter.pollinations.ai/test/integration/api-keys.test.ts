@@ -1221,10 +1221,7 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.permissions).toEqual({
-                models: [
-                    "black-forest-labs/flux.1-schnell",
-                    "google/gemini-3.1-flash-image",
-                ],
+                models: ["image"],
                 account: ["profile", "usage"],
             });
 

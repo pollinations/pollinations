@@ -1,4 +1,3 @@
-import { apiClient } from "@frontend/api.ts";
 import { AuthModal } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
@@ -6,12 +5,7 @@ import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
 import { useKeyPermissions } from "./key-permissions.tsx";
-import {
-    isAppKey,
-    isPublishableKey,
-    readRedirectUris,
-    shouldPostKeyMetadata,
-} from "./key-type.ts";
+import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -71,31 +65,14 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         setIsSubmitting(true);
         setError(null);
         try {
-            // Save metadata before onUpdate refreshes and waits for the key list.
-            const cleaned = cleanRedirectUris(redirectUris);
-            if (
-                shouldPostKeyMetadata(apiKey, {
-                    redirectUris: cleaned,
-                    earningsEnabled,
-                })
-            ) {
-                const metaRes = await apiClient.account.keys[":id"].$patch({
-                    param: { id: apiKey.id },
-                    json: { redirectUris: cleaned, earningsEnabled },
-                });
-                if (!metaRes.ok) {
-                    const err = await metaRes.json().catch(() => null);
-                    throw new Error(
-                        (err as { error?: { message?: string } })?.error
-                            ?.message || "Failed to save key metadata",
-                    );
-                }
-            }
-
             const { expiryDays, ...permissions } = keyPermissions.permissions;
             await onUpdate(apiKey.id, {
                 name,
                 ...permissions,
+                ...(isPublishable && {
+                    redirectUris: cleanRedirectUris(redirectUris),
+                    earningsEnabled,
+                }),
                 expiresAt: expiryDays
                     ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
                     : null,

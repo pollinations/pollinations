@@ -3740,6 +3740,42 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01055,
     },
   },
+  "x-ai/grok-imagine-video-1.5-lite": {
+    "cost": {
+      "completionVideoSeconds": 0.03,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.14,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.02,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.03,
+      "promptImageTokens": 0.01,
+    },
+  },
+  "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+    "cost": {
+      "completionVideoSeconds": 0.03165,
+      "promptImageTokens": 0.01055,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.1477,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.0211,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.03165,
+      "promptImageTokens": 0.01055,
+    },
+  },
   "x-ai/grok-imagine-video-1.5:fal": {
     "cost": {
       "completionVideoSeconds": 0.14,

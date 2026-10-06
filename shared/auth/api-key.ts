@@ -167,7 +167,7 @@ export function createApiKeyPlugin() {
 
 export function createApiKeyAuth(
     env: ApiKeyAuthBindings,
-    ctx?: ExecutionContext,
+    ctx?: Pick<ExecutionContext, "waitUntil">,
 ) {
     const db = drizzle(env.DB);
     return betterAuth({
@@ -221,7 +221,7 @@ export async function authenticateApiKeyRequest(opts: {
     request: Request;
     env: ApiKeyAuthBindings;
     client?: VerifyApiKeyClient;
-    ctx?: ExecutionContext;
+    ctx?: Pick<ExecutionContext, "waitUntil">;
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;

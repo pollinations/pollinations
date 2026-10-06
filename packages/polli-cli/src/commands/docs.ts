@@ -50,11 +50,25 @@ export const docsCommand = new Command("docs")
 
                 let content = doc;
                 if (endpoint) {
-                    const sections = doc.split(/^(?=#{1,6} )/m);
+                    const sections = [""];
+                    let inFence = false;
+                    for (const line of doc.split(/(?<=\n)/)) {
+                        if (line.startsWith("```")) inFence = !inFence;
+                        // Shell comments inside examples are not headings.
+                        if (!inFence && /^#{1,6} /.test(line)) {
+                            sections.push("");
+                        }
+                        sections[sections.length - 1] += line;
+                    }
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
-                    const matches = sections.filter((s) =>
+                    const headingMatches = sections.filter((s) =>
                         s.split("\n")[0].toLowerCase().includes(needle),
                     );
+                    const matches = headingMatches.length
+                        ? headingMatches
+                        : sections.filter((s) =>
+                              s.toLowerCase().includes(needle),
+                          );
 
                     if (matches.length === 0) {
                         printError(`No docs found matching "${endpoint}"`);

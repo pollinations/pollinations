@@ -779,8 +779,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Azure model catalog; the retirement schedule says 2026-10-16.
-        retirementDate: new Date("2026-10-13").getTime(),
+        // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
+        // 2026-10-13 and its retirement schedule 2026-10-16.
+        retirementDate: new Date("2026-10-09").getTime(),
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {

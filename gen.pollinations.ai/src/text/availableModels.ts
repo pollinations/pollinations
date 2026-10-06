@@ -633,6 +633,30 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-2.5-flash-lite:search:vercel",
+        config: portkeyConfig["google/gemini-2.5-flash-lite:search:vercel"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            mediaToVercelFiles,
+            addDefaultTools([
+                {
+                    type: "vercel:exa_search",
+                    config: { type: "instant", num_results: 5 },
+                },
+            ]),
+            (messages, options) => ({
+                messages,
+                options: {
+                    ...options,
+                    tool_choice: options.tools?.length
+                        ? (options.tool_choice ?? "required")
+                        : options.tool_choice,
+                },
+            }),
+            createGeminiThinkingTransform("v2.5", "gateway"),
+        ),
+    },
+    {
         name: "google/gemini-3.5-flash-lite",
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(

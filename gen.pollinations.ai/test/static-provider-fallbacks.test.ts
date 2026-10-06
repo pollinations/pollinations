@@ -458,7 +458,10 @@ describe("static provider fallbacks", () => {
 
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
-        const parent: ModelDefinition = TEXT_SERVICES[parentId];
+        const parent: ModelDefinition = {
+            ...TEXT_SERVICES[parentId],
+            fallbacks: undefined,
+        };
         const studioId = `${parentId}:openrouter:ai-studio`;
         const vertexId = `${parentId}:openrouter:vertex`;
         const services = mergeFallbacks(

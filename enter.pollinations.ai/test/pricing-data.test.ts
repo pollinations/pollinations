@@ -16,6 +16,7 @@ import {
     calculateBillingAdjustments,
     calculateCost,
     calculatePrice,
+    calculateUsageBilling,
     getCostDefinition,
     getModels,
     getPriceDefinition,
@@ -1009,6 +1010,65 @@ test("Perplexity bills each web search it reports", () => {
         expect(
             calculatePrice("perplexity/sonar", usage, output).totalPrice,
         ).toBeCloseTo(expected, 8);
+    }
+});
+
+test("search fallback bills Vercel counters once and retains the OpenRouter quote", () => {
+    const model = "google/gemini-2.5-flash-lite:search";
+    const metadata = { gateway: { gatewayToolCalls: { exa_search: 2 } } };
+    for (const output of [
+        { choices: [{ message: { provider_metadata: metadata } }] },
+        {
+            streamEvents: [
+                { choices: [{ delta: { provider_metadata: metadata } }] },
+                { choices: [{ delta: { provider_metadata: metadata } }] },
+                { usage: { prompt_tokens: 100 } },
+            ],
+        },
+    ]) {
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1_000_000,
+                completionTextTokens: 1_000_000,
+            },
+            servedBy: getRegistryModelDefinition(`${model}:vercel`),
+            quotedBy: getRegistryModelDefinition(model),
+            output,
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.514, 8);
+        expect(billed.price.totalPrice).toBeCloseTo(0.514 * 1.055, 8);
+        expect(billed.adjustments).toMatchObject([{ units: 2, cost: 0.014 }]);
+    }
+});
+
+test("search server-tool loops use provider charges when video counters differ", () => {
+    const model = "google/gemini-2.5-flash-lite:search";
+    const terminal = {
+        usage: {
+            cost: 0.00734651,
+            server_tool_use_details: { web_search_requests: 1 },
+        },
+    };
+    for (const serving of [model, `${model}:vercel`] as const) {
+        for (const output of [terminal, { streamEvents: [{}, terminal] }]) {
+            const billed = calculateUsageBilling({
+                model,
+                usage: {
+                    promptTextTokens: 2990,
+                    promptCachedTokens: 1951,
+                    completionTextTokens: 55,
+                },
+                servedBy: getRegistryModelDefinition(serving),
+                quotedBy: getRegistryModelDefinition(model),
+                output,
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(
+                0.00734651 * (serving === model ? 1.055 : 1),
+                10,
+            );
+            expect(billed.price.totalPrice).toBeCloseTo(0.00734651 * 1.055, 7);
+        }
     }
 });
 

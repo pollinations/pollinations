@@ -869,6 +869,8 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["google"] } },
             },
         }),
+    "google/gemini-2.5-flash-lite:search:vercel": () =>
+        portkeyConfig["google/gemini-2.5-flash-lite"](),
     "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",

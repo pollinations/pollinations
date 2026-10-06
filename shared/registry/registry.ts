@@ -141,6 +141,8 @@ export type BillingAdjustmentRule = BillingRateDefinition & {
 
 export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
+    /** Complete provider charge, including tools, when token details cannot reproduce it. */
+    resolveTotalCost?: (output: unknown) => number | undefined;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
@@ -482,9 +484,18 @@ function rateAgainst(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
+    const reportedCost = svc.billing?.resolveTotalCost?.(output);
+
     return {
-        cost,
-        price,
+        cost: reportedCost === undefined ? cost : { totalCost: reportedCost },
+        price:
+            reportedCost === undefined
+                ? price
+                : {
+                      totalPrice: roundPollenLedgerAmount(
+                          reportedCost * svc.priceMultiplier,
+                      ),
+                  },
         adjustments,
         priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
         costVariant,

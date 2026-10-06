@@ -235,6 +235,47 @@ describe("OpenRouter Gemini Search routing", () => {
 });
 
 describe("Flash Lite Vercel routing", () => {
+    it("keeps search on the Vercel fallback and requires an initial Exa call", async () => {
+        const model = "google/gemini-2.5-flash-lite:search:vercel";
+        const { options } = resolveModelConfig([], { model });
+        expect(options.providerOptions).toEqual({
+            gateway: { only: ["google"] },
+        });
+        expect(
+            TEXT_SERVICES["google/gemini-2.5-flash-lite:search"].fallbacks,
+        ).toEqual([model]);
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error("search fallback transform missing");
+        const result = await transform([], {});
+        expect(result.options.tool_choice).toBe("required");
+        const disabled = await transform([], { tools: [] });
+        expect(disabled.options.tools).toEqual([]);
+        expect(disabled.options.tool_choice).toBeUndefined();
+        expect(result.options.tools).toEqual([
+            {
+                type: "vercel:exa_search",
+                config: { type: "instant", num_results: 5 },
+            },
+        ]);
+        expect(supportsDirectResponses(model)).toBe(false);
+    });
+    it.each([
+        "google/gemini-2.5-flash-lite:search",
+        "google/gemini-2.5-flash-lite:search:vercel",
+    ] as const)("rejects unsupported search JSON output for %s", (model) => {
+        for (const type of ["json_object", "json_schema"]) {
+            expect(
+                textCapabilityError(TEXT_SERVICES[model], {
+                    response_format: { type },
+                }),
+            ).toContain("does not support structured output");
+        }
+        expect(
+            textCapabilityError(TEXT_SERVICES[model], {
+                response_format: { type: "text" },
+            }),
+        ).toBeUndefined();
+    });
     it.each([
         "google/gemini-2.5-flash-lite",
         "gemini-2.5-flash-lite",

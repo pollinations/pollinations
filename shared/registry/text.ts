@@ -7,6 +7,7 @@ import {
 import {
     GEMINI_3_SEARCH_BILLING,
     openRouterGeminiBilling,
+    reportedTextCost,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
@@ -1436,7 +1437,13 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite:search": {
-        supportedParameters: [...CHAT_PARAMETERS.gemini25, "reasoning_effort"],
+        supportedParameters: [
+            ...CHAT_PARAMETERS.gemini25.filter(
+                (parameter) => parameter !== "response_format",
+            ),
+            "reasoning_effort",
+        ],
+        supportsStructuredOutput: false,
         aliases: [
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",
@@ -1464,10 +1471,13 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 7 * 1.055,
-            storageCostPerMillionTokenHours: 1 * 1.055,
-        }),
+        billing: {
+            ...openRouterGeminiBilling({
+                searchCostPerThousandRequests: 7 * 1.055,
+                storageCostPerMillionTokenHours: 1 * 1.055,
+            }),
+            resolveTotalCost: reportedTextCost(1.055),
+        },
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",

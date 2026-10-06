@@ -283,7 +283,7 @@ export function PlayGenerator({
     };
 
     const handleGenerate = async () => {
-        if (isLoading || !currentModelData) return;
+        if (isLoading) return;
         if (!apiKey) {
             onLoginRequired();
             return;

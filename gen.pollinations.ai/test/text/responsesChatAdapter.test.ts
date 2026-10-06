@@ -64,6 +64,86 @@ async function streamEvents(completion: ChatCompletion) {
 }
 
 describe("Chat Completions over Responses", () => {
+    it("preserves tool-result cache boundaries for growing agent conversations", () => {
+        const response = chatToResponsesRequest(
+            [
+                {
+                    role: "tool",
+                    tool_call_id: "call_1",
+                    content: "Stable tool result",
+                    cache_control: { type: "ephemeral" },
+                },
+                {
+                    role: "tool",
+                    tool_call_id: "call_2",
+                    content: [
+                        {
+                            type: "text",
+                            text: "Shared prefix",
+                            cache_control: { type: "ephemeral" },
+                        },
+                        { type: "text", text: "Changing tail" },
+                    ],
+                },
+                { role: "tool", tool_call_id: "call_3", content: "Unmarked" },
+            ],
+            { model: "provider-model" },
+        );
+        expect(response.prompt_cache_options).toEqual({ mode: "implicit" });
+        expect(response.input).toEqual([
+            {
+                type: "function_call_output",
+                call_id: "call_1",
+                output: [
+                    {
+                        type: "input_text",
+                        text: "Stable tool result",
+                        prompt_cache_breakpoint: { mode: "explicit" },
+                    },
+                ],
+            },
+            {
+                type: "function_call_output",
+                call_id: "call_2",
+                output: [
+                    {
+                        type: "input_text",
+                        text: "Shared prefix",
+                        prompt_cache_breakpoint: { mode: "explicit" },
+                    },
+                    { type: "input_text", text: "Changing tail" },
+                ],
+            },
+            {
+                type: "function_call_output",
+                call_id: "call_3",
+                output: "Unmarked",
+            },
+        ]);
+        const native = [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text: "Static prefix",
+                        prompt_cache_breakpoint: { mode: "explicit" },
+                    },
+                ],
+            },
+        ];
+        expect(
+            chatToResponsesRequest(native, { model: "provider-model" })
+                .prompt_cache_options,
+        ).toEqual({ mode: "explicit" });
+        expect(
+            chatToResponsesRequest(native, {
+                model: "provider-model",
+                prompt_cache_options: { mode: "implicit" },
+            }).prompt_cache_options,
+        ).toEqual({ mode: "implicit" });
+    });
+
     it("maps OpenAI and legacy explicit cache breakpoints", () => {
         expect(
             chatToResponsesRequest(
@@ -93,7 +173,7 @@ describe("Chat Completions over Responses", () => {
                 { model: "provider-model" },
             ),
         ).toMatchObject({
-            prompt_cache_options: { mode: "explicit" },
+            prompt_cache_options: { mode: "implicit" },
             input: [
                 {
                     role: "system",

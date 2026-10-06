@@ -37,11 +37,25 @@ type Announcement = {
  */
 const ANNOUNCEMENTS: Announcement[] = [
     {
+        date: "2026-10-01",
+        until: "2026-10-15",
+        name: "MAI Image 2.5 Flash",
+        action: "Retiring",
+        change: "Retired. Use MAI Image 2.6 Flash.",
+    },
+    {
         date: "2026-10-02",
         until: "2026-10-16",
         name: "Sandboxes",
         action: "New",
         change: "Create E2B-compatible sandboxes through the API or polli sandbox, then connect over SSH. [Docs](https://gen.pollinations.ai/docs#tag/sandboxes).",
+    },
+    {
+        date: "2026-10-05",
+        until: "2026-10-19",
+        name: "Qwen3 Coder 30B",
+        action: "Updating",
+        change: "Now on AWS Bedrock. Paid Pollen only.",
     },
     {
         date: "2026-10-06",
@@ -71,8 +85,8 @@ const ANNOUNCEMENTS: Announcement[] = [
     {
         date: "2026-11-02",
         name: "Grok Imagine Pro",
-        action: "Updating",
-        change: "Redirects to Image 2.0. Output and pricing change.",
+        action: "Retiring",
+        change: "Retires. Use Grok Imagine Image 2.0.",
     },
 ];
 

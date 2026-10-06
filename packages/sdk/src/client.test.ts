@@ -1479,22 +1479,6 @@ describe("Pollinations simple text facade", () => {
     });
 });
 
-describe("Pollinations.imageGenerate", () => {
-    it("keeps the array return contract for a multi-image request with one result", async () => {
-        fetchMock.mockResolvedValueOnce(
-            makeResponse({
-                data: [{ b64_json: "AQ==", media_type: "image/png" }],
-            }),
-        );
-
-        const result = await newClient().imageGenerate("A cat", { n: 2 });
-
-        expect(result).toMatchObject([
-            { contentType: "image/png", buffer: new Uint8Array([1]).buffer },
-        ]);
-    });
-});
-
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();

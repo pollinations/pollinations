@@ -4,11 +4,11 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
-## [5.1.0-alpha.13] - 2026-10-06
+## [5.1.0-alpha.12] - 2026-10-06
 
-### Fixed
-- `imageGenerate()` preserves the array return for multi-image requests even
-  when the API returns only one image.
+### Removed
+- `imageGenerate()` no longer takes `n` and always returns one image. The API
+  generates one image per request and rejects `n` above 1.
 
 ## [5.1.0-alpha.11] - 2026-10-06
 

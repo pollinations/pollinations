@@ -65,7 +65,10 @@ export const printTable = (
     // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape stripping for width calculation
     const visibleLen = (s: string) => s.replace(/\u001b\[[0-9;]*m/g, "").length;
     const widths = cols.map((c, i) =>
-        Math.max(c.length, ...stringRows.map((r) => visibleLen(r[i]))),
+        stringRows.reduce(
+            (max, r) => Math.max(max, visibleLen(r[i])),
+            c.length,
+        ),
     );
 
     // When stdout is a TTY, truncate the last column so each row fits on one

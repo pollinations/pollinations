@@ -162,8 +162,6 @@ function createCommunityEndpoint(
         paidOnly: false,
         perUserRpm: null,
         fallbacks: [],
-        hiddenAt: null,
-        hiddenReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,

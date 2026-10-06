@@ -1,8 +1,63 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { brotliCompressSync } from "node:zlib";
 import { build } from "esbuild";
 import { Miniflare } from "miniflare";
+
+test("Cloudflare decodes and redacts compressed protected test inputs", async () => {
+    const vars = {
+        enter: { BETTER_AUTH_SECRET: "test-only" },
+        gen: { BETTER_AUTH_SECRET: "test-only" },
+    };
+    const packed = `br:${brotliCompressSync(Buffer.from(JSON.stringify(vars))).toString("base64")}`;
+    const bundle = await build({
+        stdin: {
+            contents: `import {validateTestVars,Workspace} from './sandbox.mjs';
+export default {fetch(request,env) {return Response.json({vars:validateTestVars(env.TEST_VARS_JSON),output:new Workspace(env,()=>{}).redact('output test-only')});}};`,
+            resolveDir: fileURLToPath(new URL(".", import.meta.url)),
+        },
+        bundle: true,
+        write: false,
+        format: "esm",
+        platform: "neutral",
+        mainFields: ["module", "main"],
+        external: ["node:*"],
+        logLevel: "silent",
+    });
+    const runtime = new Miniflare({
+        workers: [
+            {
+                config: {
+                    name: "test-input-probe",
+                    compatibilityDate: "2026-10-06",
+                    compatibilityFlags: ["nodejs_compat"],
+                    manifest: {
+                        mainModule: "probe.mjs",
+                        modules: {
+                            "probe.mjs": {
+                                type: "esm",
+                                contents: bundle.outputFiles[0].text,
+                            },
+                        },
+                    },
+                    env: { TEST_VARS_JSON: { type: "text", value: packed } },
+                },
+            },
+        ],
+    });
+    try {
+        assert.deepEqual(
+            await (await runtime.dispatchFetch("https://runner/test")).json(),
+            {
+                vars,
+                output: "output [redacted]",
+            },
+        );
+    } finally {
+        await runtime.dispose();
+    }
+});
 
 test("real Cloudflare DO alarm persists a blocked task before any unconfigured paid work", async () => {
     const bundle = await build({

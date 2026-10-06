@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+import { brotliDecompressSync } from "node:zlib";
 import { CommandExitError, RateLimitError, Sandbox } from "e2b";
 import { CATALOGS } from "../model-pricing/catalogs.mjs";
 import { API, hash, validateProviderContract } from "./pipeline.mjs";
@@ -7,6 +9,46 @@ const JOURNAL = "/home/user/model-management-journal";
 const quote = (text) => `'${String(text).replaceAll("'", "'\\''")}'`;
 const BOOTSTRAP =
     "sudo apt-get update -qq && sudo apt-get install -y -qq git curl ripgrep xz-utils && curl -fsSLO https://nodejs.org/dist/v24.10.0/node-v24.10.0-linux-x64.tar.xz && curl -fsSL https://nodejs.org/dist/v24.10.0/SHASUMS256.txt | grep ' node-v24.10.0-linux-x64.tar.xz$' | sha256sum -c - && mkdir -p /home/user/mm-node && tar -xJf node-v24.10.0-linux-x64.tar.xz -C /home/user/mm-node --strip-components=1";
+
+export function validateTestVars(value) {
+    if (typeof value !== "string" || !value)
+        throw new Error("Approved staging test variables are not configured");
+    let vars;
+    try {
+        if (Buffer.byteLength(value) > 5120) throw new Error();
+        vars = JSON.parse(
+            value.startsWith("br:")
+                ? brotliDecompressSync(Buffer.from(value.slice(3), "base64"), {
+                      maxOutputLength: 65536,
+                  }).toString("utf8")
+                : value,
+        );
+    } catch {
+        throw new Error("Invalid protected test variables");
+    }
+    if (!vars || Object.keys(vars).sort().join(",") !== "enter,gen")
+        throw new Error("Test variables require Enter and Gen scopes");
+    for (const fields of Object.values(vars)) {
+        if (
+            !fields ||
+            typeof fields !== "object" ||
+            Array.isArray(fields) ||
+            !fields.BETTER_AUTH_SECRET ||
+            Object.entries(fields).some(
+                ([key, field]) =>
+                    !/^[A-Z][A-Z0-9_]*$/.test(key) ||
+                    /^(GITHUB_|SOPS_|POLLINATIONS_|CLOUDFLARE_|SSH_|STRIPE_|PLN_|E2B_)/.test(
+                        key,
+                    ) ||
+                    typeof field !== "string" ||
+                    !field ||
+                    field.length > 5000,
+            )
+        )
+            throw new Error("Invalid protected test variables");
+    }
+    return vars;
+}
 
 // The journal lives in the VM, outside the editable checkout. mkdir is an atomic
 // execution claim; a lost transport response never starts the same command twice.
@@ -124,7 +166,7 @@ export class Workspace {
             )
                 result = result.replaceAll(value, "[redacted]");
         if (this.env.TEST_VARS_JSON) {
-            const vars = JSON.parse(this.env.TEST_VARS_JSON);
+            const vars = validateTestVars(this.env.TEST_VARS_JSON);
             for (const fields of Object.values(vars))
                 for (const value of Object.values(fields))
                     if (typeof value === "string" && value.length > 4)
@@ -295,6 +337,7 @@ export class Workspace {
         );
     }
     async prepare(state) {
+        const vars = validateTestVars(this.env.TEST_VARS_JSON);
         const result = await this.bootstrap(state, state.decision.baseSha);
         if (result.pending) return result;
         if (!state.providers) {
@@ -313,31 +356,7 @@ export class Workspace {
         }
         validateProviderContract(state.decision, state.providers);
         if (state.devVarsWritten) return result;
-        if (!this.env.TEST_VARS_JSON)
-            throw new Error(
-                "Approved staging test variables are not configured",
-            );
-        const vars = JSON.parse(this.env.TEST_VARS_JSON);
-        if (!vars || Object.keys(vars).sort().join(",") !== "enter,gen")
-            throw new Error("Test variables require Enter and Gen scopes");
         for (const fields of Object.values(vars)) {
-            if (
-                !fields ||
-                typeof fields !== "object" ||
-                Array.isArray(fields) ||
-                !fields.BETTER_AUTH_SECRET ||
-                Object.entries(fields).some(
-                    ([key, value]) =>
-                        !/^[A-Z][A-Z0-9_]*$/.test(key) ||
-                        /^(GITHUB_TOKEN|SOPS_AGE_KEY|POLLINATIONS_API_KEY|CLOUDFLARE_.*)$/.test(
-                            key,
-                        ) ||
-                        typeof value !== "string" ||
-                        !value ||
-                        value.length > 5000,
-                )
-            )
-                throw new Error("Invalid protected test variables");
             for (const [key, token] of Object.entries(fields))
                 if (/^TINYBIRD_.*TOKEN$/.test(key)) {
                     const response = await fetch(

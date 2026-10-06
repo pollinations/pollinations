@@ -29,6 +29,10 @@ on:
           - media
           - model-management
         default: all
+      add_model_management_secrets:
+        description: 'First-time addition of separately approved model-management runtime secrets'
+        type: boolean
+        default: false
 
 concurrency:
   group: pollinations-cloudflare-production
@@ -145,6 +149,39 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run deploy:production --prefix operations/model-resolver --workspaces=false
+      - name: Setup SOPS for approved model-management secret addition
+        if: github.event_name == 'workflow_dispatch' && inputs.add_model_management_secrets
+        uses: nhedger/setup-sops@v3
+      - name: Add approved model-management runtime secrets
+        if: github.event_name == 'workflow_dispatch' && inputs.add_model_management_secrets
+        working-directory: operations/model-resolver
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: |
+          set -euo pipefail
+          wrangler=./node_modules/.bin/wrangler
+          version_id="$($wrangler deployments list --config wrangler.jsonc --json | jq -r 'max_by(.created_on).versions[] | select(.percentage == 100) | .version_id')"
+          test -n "$version_id"
+          $wrangler versions view "$version_id" --config wrangler.jsonc --json | jq -e '.resources.bindings | any(.name == "ENABLED" and .type == "plain_text" and .text == "false")' > /dev/null
+          $wrangler secret list --config wrangler.jsonc | jq -e 'all(.[]; .name != "GITHUB_TOKEN" and .name != "POLLINATIONS_API_KEY" and .name != "TEST_VARS_JSON")' > /dev/null
+          sops decrypt secrets/prod.vars.json | node --input-type=module -e '
+            import { Agents } from "./pipeline.mjs";
+            import { validateTestVars } from "./sandbox.mjs";
+            let input = "";
+            for await (const chunk of process.stdin) input += chunk;
+            let vars;
+            try { vars = JSON.parse(input); } catch { throw new Error("Invalid approved runtime secret set"); }
+            if (Object.keys(vars).sort().join(",") !== "GITHUB_TOKEN,POLLINATIONS_API_KEY,TEST_VARS_JSON" || Object.values(vars).some(value => typeof value !== "string" || !value || Buffer.byteLength(value) > 5120)) throw new Error("Invalid approved runtime secret set");
+            validateTestVars(vars.TEST_VARS_JSON);
+            await new Agents(vars).preflight();
+            const response = await fetch("https://api.github.com/repos/pollinations/pollinations", {headers:{Authorization:`Bearer ${vars.GITHUB_TOKEN}`,"User-Agent":"Pollinations-Model-Management"},signal:AbortSignal.timeout(30000)});
+            if (!response.ok || !(await response.json()).permissions?.push) throw new Error("Repository write access required");
+          '
+          for name in GITHUB_TOKEN POLLINATIONS_API_KEY TEST_VARS_JSON; do
+            sops decrypt secrets/prod.vars.json | jq -er --arg name "$name" '.[$name]' | $wrangler secret put "$name" --config wrangler.jsonc
+          done
+          $wrangler secret list --config wrangler.jsonc | jq -e '[.[].name] | contains(["GITHUB_TOKEN","POLLINATIONS_API_KEY","TEST_VARS_JSON"])' > /dev/null
       - name: Verify active model-management Durable Object binding
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}

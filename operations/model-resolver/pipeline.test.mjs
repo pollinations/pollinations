@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { brotliCompressSync } from "node:zlib";
 import {
     Agents,
     checkedPath,
@@ -13,10 +14,63 @@ import {
     verifiedApprovals,
 } from "./pipeline.mjs";
 import { isPublicUrl } from "./public-url.mjs";
-import { Workspace } from "./sandbox.mjs";
+import { validateTestVars, Workspace } from "./sandbox.mjs";
 import { commitCandidate, createServices, publishDraft } from "./worker.mjs";
 
 const SHA = "a".repeat(40);
+test("protected test variables reject operator access before renting a VM", async () => {
+    const vars = {
+        enter: { BETTER_AUTH_SECRET: "test-only" },
+        gen: { BETTER_AUTH_SECRET: "test-only" },
+    };
+    assert.deepEqual(validateTestVars(JSON.stringify(vars)), vars);
+    const packed = `br:${brotliCompressSync(Buffer.from(JSON.stringify(vars))).toString("base64")}`;
+    assert.deepEqual(validateTestVars(packed), vars);
+    assert.equal(
+        new Workspace({ TEST_VARS_JSON: packed }, async () => {}).redact(
+            "output test-only",
+        ),
+        "output [redacted]",
+    );
+    assert.throws(() => validateTestVars("br:invalid"), /Invalid protected/);
+    assert.throws(
+        () => validateTestVars("x".repeat(5121)),
+        /Invalid protected/,
+    );
+    assert.throws(
+        () =>
+            validateTestVars(
+                `br:${brotliCompressSync(Buffer.alloc(65537)).toString("base64")}`,
+            ),
+        /Invalid protected/,
+    );
+    for (const name of [
+        "GITHUB_TOKEN",
+        "GITHUB_APP_PRIVATE_KEY",
+        "SOPS_AGE_KEY",
+        "CLOUDFLARE_API_TOKEN",
+        "POLLINATIONS_API_KEY",
+        "SSH_PRIVATE_KEY",
+        "STRIPE_SECRET_KEY",
+        "PLN_ENTER_TOKEN",
+        "E2B_API_KEY",
+    ])
+        assert.throws(
+            () =>
+                validateTestVars(
+                    JSON.stringify({
+                        ...vars,
+                        enter: { ...vars.enter, [name]: "test-only" },
+                    }),
+                ),
+            /Invalid protected/,
+        );
+    assert.throws(() => validateTestVars("invalid"), /Invalid protected/);
+    await assert.rejects(
+        new Workspace({}, async () => {}, {}).prepare({}),
+        /not configured/,
+    );
+});
 test("hosted agents reserve downstream prices and Polli pins one task inference model", async () => {
     const env = {
         POLLI_MODEL: "community/pollinations-ai/polli",

@@ -264,7 +264,6 @@ test("filters OpenRouter text models by paid balance", async ({
         "typesafe/jev-1.13",
         "jaredpalmer/kev-4b",
         "respan/span-01-lite",
-        "inclusionai/ling-3.1-flash",
     ]);
     const openRouterModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);

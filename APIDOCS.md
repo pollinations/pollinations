@@ -1492,7 +1492,7 @@ Owners can publish their own embedding backend as a community endpoint. A commun
 
 #### `GET` `/embeddings/models` — List Embedding Models
 
-Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1687,7 +1687,9 @@ Reasoning effort levels and forced-tool restrictions remain model-specific.
 
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 
-The old `owner/model` IDs remain generation aliases in each model's `aliases` array. Key creation and updates accept only canonical model IDs. Existing stored permissions are migrated with the rename.
+The old `owner/model` IDs remain generation aliases in each model's `aliases` array.
+
+API key model permissions are model categories: `text`, `image`, `video`, `audio`, `3d`, `embedding` and `realtime`. A key allows every model in its categories, including models added later. Key creation and updates also accept model IDs, and each ID allows its whole category.
 
 The `source=community` and `source=official` filters are equivalent source filters
 for discovery. Source, access, and status filters combine with AND semantics.
@@ -1696,7 +1698,7 @@ For registration, publishing, pricing, fallbacks, and health monitoring, see [Pu
 
 #### `GET` `/v1/models` — List Models (OpenAI-compatible)
 
-Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1865,7 +1867,7 @@ curl "https://gen.pollinations.ai/v1/models/:model" \
 
 #### `GET` `/models` — List Models
 
-Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1907,7 +1909,7 @@ curl "https://gen.pollinations.ai/models?reliability=reliable&source=official" \
 
 #### `GET` `/3d/models` — List 3D Models
 
-Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1949,7 +1951,7 @@ curl "https://gen.pollinations.ai/3d/models?reliability=reliable&source=official
 
 #### `GET` `/image/models` — List Image & Video Models
 
-Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1991,7 +1993,7 @@ curl "https://gen.pollinations.ai/image/models?reliability=reliable&source=offic
 
 #### `GET` `/video/models` — List Video Models
 
-Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -2033,7 +2035,7 @@ curl "https://gen.pollinations.ai/video/models?reliability=reliable&source=offic
 
 #### `GET` `/text/models` — List Text Models (Detailed)
 
-Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -2075,7 +2077,7 @@ curl "https://gen.pollinations.ai/text/models?reliability=reliable&source=offici
 
 #### `GET` `/audio/models` — List Audio Models
 
-Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance or the key only spends Quest Pollen. Each entry includes a `health` field (`status`, `success_rate`, `requests`) summarizing the last 50 eligible final requests within seven days for community proxies and the last 24 hours for other models, refreshed roughly every 60s. Public community proxy models at or below 80% success are omitted from lists; official models, agents, and models without observations remain listed. Use `?reliability=all` to bypass this reliability filter. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -3319,8 +3321,9 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `name` * | `string` | Name for the API key · length: `1…253` |
 | `type` | `"secret"` \| `"publishable"` | Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key. · default: `"secret"` |
 | `expiresIn` | `integer` | Expiry in seconds from now |
-| `allowedModels` | `string`[] \| `null` | Model IDs this key can access. null = all models |
+| `allowedModels` | `string`[] \| `null` | Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models |
 | `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
+| `questPollenOnly` | `boolean` | Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only |
 | `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
@@ -3378,9 +3381,10 @@ Returns information about the API key used in the request: validity, type (secre
 | `expiresAt` * | `any` | Expiry timestamp in ISO 8601 format, null if never expires |
 | `expiresIn` * | `any` | Seconds until expiry, null if never expires |
 | `permissions` * | `object` | API key permissions |
-| `permissions.models` * | `string`[] \| `null` | List of allowed model IDs, null = all models allowed |
+| `permissions.models` * | `string`[] \| `null` | Model categories this key can use (text, image, video, audio, 3d, embedding, realtime), null = all models allowed |
 | `permissions.account` * | `string`[] \| `null` | List of account permissions, null = no account access |
 | `pollenBudget` * | `any` | Remaining pollen budget for this key, null = unlimited (uses user balance) |
+| `questPollenOnly` * | `boolean` | Whether this key spends only Quest Pollen, never paid Pollen |
 | `rateLimitEnabled` * | `boolean` | Whether rate limiting is enabled for this key |
 | `userId` * | `any` | Stable id of the user that owns this key — server-attested. |
 | `byopApp` * | `object` \| `null` | BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys. |

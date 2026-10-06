@@ -1069,6 +1069,7 @@ describe("API Key Management", () => {
                 baseUrl: "https://owner.example.com/v1",
                 upstreamModel: "private-model",
                 payload: JSON.stringify({
+                    paidOnly: false,
                     bearerTokenCiphertext: "encrypted-token",
                     modality: "image",
                     imagePricing: "request",

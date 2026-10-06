@@ -27,10 +27,6 @@ on:
           - gen
           - media
         default: all
-      finalize_canonical_permissions:
-        description: 'Repeat canonical allowlist cleanup after both Enter and Gen deploy (use service=all)'
-        type: boolean
-        default: false
 
 concurrency:
   group: pollinations-cloudflare-production
@@ -48,7 +44,6 @@ jobs:
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
-      canonical_permissions: ${{ inputs.finalize_canonical_permissions || steps.filter.outputs.canonical_permissions == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -70,8 +65,6 @@ jobs:
           # top-level `on.push.paths` filters had.
           base: ${{ github.ref }}
           filters: |
-            canonical_permissions:
-              - 'enter.pollinations.ai/drizzle/0068_model-permission-categories.sql'
             enter:
               - 'enter.pollinations.ai/**'
               - 'shared/**'
@@ -82,9 +75,6 @@ jobs:
               - '.github/workflows/deploy-cloudflare-production.yml'
             gen:
               - 'gen.pollinations.ai/**'
-              # A permission migration must ship with Gen's matching reader
-              # and the post-deploy permission cleanup.
-              - 'enter.pollinations.ai/drizzle/0068_model-permission-categories.sql'
               - 'packages/mcp/**'
               - 'shared/**'
               - 'package.json'
@@ -278,8 +268,6 @@ jobs:
       # rollback. Deploying first guarantees latest == deployed so the secret
       # push can never hit that state. A brand-new secret is briefly missing in
       # the few seconds between deploy and push, which self-heals.
-      # Gen deploy scripts use the root lockfile-installed Wrangler: the test
-      # pool's older workspace CLI drops VPC keys from Vite's generated config.
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
@@ -305,33 +293,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run apply-lifecycle:production --workspace pollinations-gen
-
-  # Reruns the key permission migration once both workers are live, converting
-  # keys the old Enter wrote between the migrate job and its own deploy.
-  finalize-canonical-permissions:
-    needs: [changes, deploy-enter, deploy-gen]
-    if: >-
-      !cancelled() &&
-      needs.changes.outputs.canonical_permissions == 'true' &&
-      needs.deploy-enter.result == 'success' &&
-      needs.deploy-gen.result == 'success'
-    runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '24'
-      - name: Install dependencies
-        run: npm ci
-      - name: Finalize canonical model permissions
-        working-directory: enter.pollinations.ai
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
-        run: npx wrangler d1 execute DB --remote --env production --file drizzle/0068_model-permission-categories.sql
 
   deploy-media:
     needs: [changes, migrate]

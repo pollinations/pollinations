@@ -199,6 +199,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Ling 3.1 Flash to Novita on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.1-flash",
+        });
+
+        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
+        expect(result.options.provider).toEqual({
+            only: ["novita"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",
@@ -315,6 +327,42 @@ describe("resolveModelConfig", () => {
             only: ["Inception"],
             allow_fallbacks: false,
         });
+    });
+
+    it.each([
+        "qwen/qwen3-coder-30b-a3b-instruct",
+        "qwen3-coder",
+        "qwen3-coder-30b-a3b-instruct",
+        "qwen-coder",
+    ])("routes %s directly to Bedrock", (model) => {
+        const result = resolveModelConfig(messages, {
+            model,
+            stop: ["STOP"],
+            reasoning_effort: "high",
+        });
+
+        expect(result.options.model).toBe("qwen.qwen3-coder-30b-a3b-v1:0");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "bedrock",
+            "aws-region": "us-east-1",
+        });
+        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
+        expect(result.messages).toEqual(messages);
+    });
+
+    it("removes unsupported controls without injecting a coder prompt", async () => {
+        const definition = findModelByName("qwen-coder");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen-coder",
+            stop: ["STOP"],
+            reasoning_effort: "high",
+            temperature: 0.2,
+        });
+
+        expect(transformed?.messages).toEqual(messages);
+        expect(transformed?.options.stop).toBeUndefined();
+        expect(transformed?.options.reasoning_effort).toBeUndefined();
+        expect(transformed?.options.temperature).toBe(0.2);
     });
 
     it.each([

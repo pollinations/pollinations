@@ -38,7 +38,7 @@ Get your API key at: https://enter.pollinations.ai/keys
 
 Pollinations is a live multi-model gateway. Never decide that a requested model is unavailable based on prior knowledge.
 
-- When the user names a model or provider, or asks about availability, capabilities, aliases, voices, or pricing, call listModels with the relevant modality first.
+- When the user names a model or provider, or asks about availability, capabilities, aliases, voices, or pricing, call listModels with the relevant modality first, narrowing with query, capabilities, agent or limit instead of listing every model.
 - Match the request against both model names and aliases, then pass the canonical model name to the generation tool.
 - generateText can invoke any listed text model or agent. Use listModels with agent=true to discover agents. generateImage can invoke any listed image model.
 - transcribeAudio converts spoken audio from a public HTTPS URL into text.

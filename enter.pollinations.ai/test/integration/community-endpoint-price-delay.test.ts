@@ -1,11 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     effectiveCommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { getVisibleModelIdsForUser } from "@shared/registry/visible-model-ids.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -77,7 +75,7 @@ describe("community endpoint 3-hour price-change delay", () => {
 
         expect(created).toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
+            promptTextPrice: 0.000002,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.000002,
@@ -85,11 +83,17 @@ describe("community endpoint 3-hour price-change delay", () => {
         });
 
         await advancePendingPastDelay(created.id as string);
-        const visibleModels = await getVisibleModelIdsForUser(
-            env.DB,
-            "another-user",
-        );
-        expect(visibleModels).toContain(created.modelId);
+        const [queued] = await drizzle(env.DB)
+            .select()
+            .from(schema.communityEndpoint)
+            .where(eq(schema.communityEndpoint.id, created.id as string));
+        expect(
+            effectiveCommunityEndpointVisibility(
+                queued.visibility,
+                queued.pendingVisibility,
+                queued.pendingAt,
+            ),
+        ).toBe("public");
 
         const published = await postModel(
             sessionToken,
@@ -133,7 +137,7 @@ describe("community endpoint 3-hour price-change delay", () => {
         const recreated = await postModel(sessionToken, "", input);
         expect(recreated).toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
+            promptTextPrice: 0.000002,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.000002,
@@ -371,9 +375,6 @@ describe("community endpoint 3-hour price-change delay", () => {
                 Date.now() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS + 1000,
             ),
         ).toBe("private");
-        expect(
-            await getVisibleModelIdsForUser(env.DB, "another-user"),
-        ).not.toContain(queued.modelId);
     });
 
     test("prompt agent updates keep fields that are left out", async ({
@@ -421,10 +422,18 @@ describe("community endpoint 3-hour price-change delay", () => {
         });
     });
 
-    test("public-to-private is immediate and clears any pending price change", async ({
+    test("public-to-private is immediate and preserves public settings", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
+        const target = await postModel(sessionToken, "", {
+            name: "private-fallback-target",
+            title: "Private fallback target",
+            visibility: "private",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "tok",
+        });
         const created = await postModel(sessionToken, "", {
             name: "private-immediate-model",
             title: "Private immediate model",
@@ -433,6 +442,8 @@ describe("community endpoint 3-hour price-change delay", () => {
             url: "https://text.example.com/v1/chat/completions",
             bearerToken: "tok",
             promptTextPrice: 0.000002,
+            paidOnly: true,
+            fallbacks: [target.modelId],
         });
         await publishPendingModel(sessionToken, created.id as string);
 
@@ -441,7 +452,7 @@ describe("community endpoint 3-hour price-change delay", () => {
             promptTextPrice: 0.000005,
         });
 
-        // Go private — immediate, clears pending.
+        // Going private adopts the queued price and clears the delay.
         const privateModel = await postModel(
             sessionToken,
             `/${created.id as string}/update`,
@@ -451,10 +462,10 @@ describe("community endpoint 3-hour price-change delay", () => {
         expect(privateModel).toMatchObject({
             visibility: "private",
             pending: null,
+            promptTextPrice: 0.000005,
+            paidOnly: true,
+            fallbacks: [target.modelId],
         });
-        for (const { key } of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-            expect(privateModel[key]).toBe(0);
-        }
 
         const db = drizzle(env.DB, { schema });
         const row = await db.query.communityEndpoint.findFirst({
@@ -464,9 +475,7 @@ describe("community endpoint 3-hour price-change delay", () => {
         expect(row?.pendingAt).toBeNull();
     });
 
-    test("unhiding waits for the publication delay", async ({
-        sessionToken,
-    }) => {
+    test("manual hiding is no longer accepted", async ({ sessionToken }) => {
         await approveCommunityModels();
         const created = await postModel(sessionToken, "", {
             name: "relisted-model",
@@ -478,17 +487,7 @@ describe("community endpoint 3-hour price-change delay", () => {
         });
         const id = created.id as string;
         await publishPendingModel(sessionToken, id);
-        const db = drizzle(env.DB);
-        await db
-            .update(schema.communityEndpoint)
-            .set({
-                hiddenAt: new Date(),
-                hiddenReason: "Hidden by monitor",
-                hiddenBy: "monitor",
-            })
-            .where(eq(schema.communityEndpoint.id, id));
-
-        const early = await SELF.fetch(`${endpointUrl}/${id}/update`, {
+        const response = await SELF.fetch(`${endpointUrl}/${id}/update`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -496,23 +495,7 @@ describe("community endpoint 3-hour price-change delay", () => {
             },
             body: JSON.stringify({ hidden: false }),
         });
-        expect(early.status).toBe(400);
-        expect(await early.text()).toContain(
-            "can be relisted 3 hours after they were hidden",
-        );
-
-        await db
-            .update(schema.communityEndpoint)
-            .set({
-                hiddenAt: new Date(
-                    Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1000,
-                ),
-            })
-            .where(eq(schema.communityEndpoint.id, id));
-        const relisted = await postModel(sessionToken, `/${id}/update`, {
-            hidden: false,
-        });
-        expect(relisted).toMatchObject({ hidden: false, hiddenAt: null });
+        expect(response.status).toBe(400);
     });
 
     test("price change during pending publication restarts the delay", async ({

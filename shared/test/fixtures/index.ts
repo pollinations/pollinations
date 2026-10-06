@@ -4,10 +4,8 @@ import { createTestApiKey } from "./api-keys.ts";
 export const RESTRICTED_TEXT_TEST_MODEL = "openai/gpt-5-nano" as const;
 export const RESTRICTED_IMAGE_TEST_MODEL =
     "black-forest-labs/flux.1-schnell" as const;
-export const RESTRICTED_TEST_MODELS = [
-    RESTRICTED_TEXT_TEST_MODEL,
-    RESTRICTED_IMAGE_TEST_MODEL,
-] as const;
+/** The restricted fixture key's categories; audio, video and the rest are denied. */
+export const RESTRICTED_TEST_CATEGORIES = ["text", "image"] as const;
 
 type SharedFixtures = {
     apiKey: string;
@@ -46,7 +44,7 @@ export const test = base.extend<SharedFixtures>({
     restrictedApiKey: async ({}, use) => {
         const { key } = await createTestApiKey({
             name: "restricted-test-key",
-            allowedModels: [...RESTRICTED_TEST_MODELS],
+            allowedModels: [...RESTRICTED_TEST_CATEGORIES],
         });
         await use(key);
     },

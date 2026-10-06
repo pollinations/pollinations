@@ -191,7 +191,7 @@ export const usageCommand = new Command("usage")
         collect,
         [] as string[],
     )
-    .option("--days <n>", "Rolling window in days")
+    .option("--days <n>", "Rolling window in days (--daily defaults to 7)")
     .option("--csv", "Print the raw CSV export")
     .addHelpText(
         "after",
@@ -283,7 +283,10 @@ export const usageCommand = new Command("usage")
         }
 
         const params = new URLSearchParams();
-        if (opts.days !== undefined) params.set("days", opts.days);
+        // The daily endpoint's 90-day default times out on heavy accounts
+        // (#16560), so --daily asks for a week unless --days is given.
+        const days = opts.days ?? (opts.daily ? "7" : undefined);
+        if (days !== undefined) params.set("days", days);
 
         try {
             if (opts.daily) {
@@ -305,6 +308,11 @@ export const usageCommand = new Command("usage")
                     apiKey: key,
                 });
                 const rows = filterDailyRows(data.usage, keyIds, models);
+                // JSON keeps the API records: numeric cost_usd, no rounding.
+                if (getOutputMode() !== "human") {
+                    printResult(rows);
+                    return;
+                }
                 printTable(
                     rows.map((r) => ({
                         date: r.date,
@@ -331,6 +339,10 @@ export const usageCommand = new Command("usage")
                 return;
             }
             const data = await gen<UsageResponse>(path, { apiKey: key });
+            if (getOutputMode() !== "human") {
+                printResult(data.usage);
+                return;
+            }
             printTable(
                 data.usage.map((r) => ({
                     time: r.timestamp,

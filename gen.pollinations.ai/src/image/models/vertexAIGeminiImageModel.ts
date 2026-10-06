@@ -31,8 +31,6 @@ type VertexGeminiImageConfig = {
     generator: string;
     resolution: "none" | "tiered" | "1K";
     reasoning: boolean;
-    /** Vertex rejects temperature, topP and seed for this model. */
-    noSampling?: boolean;
 };
 
 const VERTEX_GEMINI_IMAGE_CONFIGS = {
@@ -53,13 +51,6 @@ const VERTEX_GEMINI_IMAGE_CONFIGS = {
         generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
         resolution: "1K",
         reasoning: true,
-    },
-    "google/gemini-nano-banana-2.1": {
-        model: "gemini-nano-banana-2.1",
-        generator: "Vertex AI Gemini Nano Banana 2.1",
-        resolution: "tiered",
-        reasoning: false,
-        noSampling: true,
     },
     "google/gemini-3-pro-image": {
         model: "gemini-3-pro-image",
@@ -254,7 +245,7 @@ export async function callVertexAIGeminiImageAPI(
     prompt: string,
     params: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const config: VertexGeminiImageConfig | undefined =
+    const config =
         VERTEX_GEMINI_IMAGE_CONFIGS[
             params.model as keyof typeof VERTEX_GEMINI_IMAGE_CONFIGS
         ];
@@ -305,11 +296,9 @@ export async function callVertexAIGeminiImageAPI(
         contents: [{ role: "user", parts }],
         generationConfig: {
             responseModalities: ["TEXT", "IMAGE"],
-            ...(!config.noSampling && {
-                temperature: 0.7,
-                topP: 0.9,
-                seed: params.seed,
-            }),
+            temperature: 0.7,
+            topP: 0.9,
+            seed: params.seed,
             imageConfig: {
                 aspectRatio: closestByRatio(
                     params.width,

@@ -1,0 +1,33 @@
+{
+  "pr_number": 16434,
+  "title": "fix: preserve fenced sections when filtering CLI docs",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16434",
+  "merged_at": "2026-10-06T12:18:39Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16433\n\n- Keeps Markdown sections intact across backtick/tilde fences, so shell comments do not become documentation headings.\n- Preserves heading matches and uses body matching as a fallback for routes such as `/v1/models` and `/v1/chat/completions`.\n- Adds one parameterized command regression. Existing `models` and `/image` output matches baseline byte for byte.\n- Verified: all 286 CLI tests, build and scoped Biome; native checks against the captured canonical reference and six fence controls.\n\nStrict TypeScript diagnostics remain identical to the 36 existing baseline errors. Local tests used the already installed dependency cache.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Keep the fences standing",
+    "blurb": "Polli CLI keeps fenced code where it belongs: inside the docs, not masquerading as headings. Route lookups can also find endpoints mentioned in a section’s body.",
+    "summary": "Fixed Polli CLI’s docs filtering to preserve sections across backtick and tilde fences and fall back to body matches for routes such as `/v1/models` and `/v1/chat/completions`, while keeping existing `models` and `/image` output unchanged.",
+    "impact": "CLI docs searches keep shell comments inside code fences and can find `/v1/models` and `/v1/chat/completions` when those routes appear in section bodies.",
+    "keywords": [
+      "Polli CLI",
+      "documentation",
+      "Markdown",
+      "code fences",
+      "route search"
+    ],
+    "visual_concept": "Show a cozy CLI terminal with a Markdown document: sturdy backtick and tilde fences contain shell comments, while route labels remain easy to find. Polli, wearing tiny librarian glasses, tends the fences beside a small code-plant.",
+    "image_prompt": "In a cozy pixel art reading nook, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing tiny librarian glasses as she tidies fenced code on a retro CLI screen beside a sprouting code-plant. The screen shows `/v1/models` and `/v1/chat/completions`; use a prominent lime green (#ecf874) glow, dark purple (#110518) text, soft pastel gradients and gentle CRT scanlines — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16434.jpg",
+    "prompt": "In a cozy pixel art reading nook, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing tiny librarian glasses as she tidies fenced code on a retro CLI screen beside a sprouting code-plant. The screen shows `/v1/models` and `/v1/chat/completions`; use a prominent lime green (#ecf874) glow, dark purple (#110518) text, soft pastel gradients and gentle CRT scanlines — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-06T12:19:45.530210+00:00"
+}

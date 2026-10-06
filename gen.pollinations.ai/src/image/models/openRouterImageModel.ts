@@ -104,10 +104,19 @@ type GeminiImageConfig = {
     upstreamModel: string;
     provider: string;
     generator: string;
-    resolution: "none" | "tiered" | "1K";
+    resolution: "none" | "tiered" | "tiered-2K" | "1K";
+    seed?: boolean;
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
+    "google/gemini-nano-banana-2.1": {
+        upstreamModel: "google/gemini-nano-banana-2.1",
+        provider: "google-ai-studio",
+        generator: "Google AI Studio Gemini Nano Banana 2.1",
+        resolution: "tiered-2K",
+        reasoning: false,
+        seed: false,
+    },
     "google/gemini-2.5-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
@@ -312,12 +321,18 @@ function resolveGeminiImageResolution(
         { name: "2K" as const, pixels: 1920 * 1080 },
         { name: "4K" as const, pixels: 3840 * 2160 },
     ];
-    return tiers.reduce((closest, tier) =>
+    const resolution = tiers.reduce((closest, tier) =>
         Math.abs(tier.pixels - totalPixels) <
         Math.abs(closest.pixels - totalPixels)
             ? tier
             : closest,
     ).name;
+    if (config.resolution === "tiered-2K" && resolution === "4K") {
+        throw UpstreamError.fromProvider(400, {
+            message: "Nano Banana 2.1 supports output up to 2K on this route",
+        });
+    }
+    return resolution;
 }
 
 function resolveGeminiReasoningEffort(
@@ -793,7 +808,7 @@ export async function callOpenRouterGeminiImageAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const config =
+    const config: GeminiImageConfig | undefined =
         GEMINI_IMAGE_CONFIGS[
             safeParams.model as keyof typeof GEMINI_IMAGE_CONFIGS
         ];
@@ -813,7 +828,7 @@ export async function callOpenRouterGeminiImageAPI(
             safeParams.height,
             GEMINI_ASPECT_RATIOS,
         ).label,
-        seed: safeParams.seed,
+        ...(config.seed !== false && { seed: safeParams.seed }),
         provider: {
             only: [config.provider],
             allow_fallbacks: false,

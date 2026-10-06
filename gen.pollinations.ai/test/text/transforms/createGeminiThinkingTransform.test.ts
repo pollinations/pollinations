@@ -50,10 +50,24 @@ describe("Gemini reasoning_effort model wiring", () => {
             reasoning_effort: "medium",
         });
 
-        expect(options.thinking).toEqual({
-            type: "enabled",
-            budget_tokens: 4096,
+        expect(options.reasoning).toEqual({
+            enabled: true,
+            max_tokens: 4096,
         });
+        expect(options.thinking).toBeUndefined();
+        expect(options.reasoning_effort).toBeUndefined();
+    });
+
+    it.each([
+        "gemini-fast",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
+        "gemini-search",
+    ])("disables gateway reasoning for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error(`${model} transform missing`);
+        const { options } = await transform([], { reasoning_effort: "none" });
+        expect(options.reasoning).toEqual({ enabled: false });
+        expect(options.thinking).toBeUndefined();
         expect(options.reasoning_effort).toBeUndefined();
     });
 

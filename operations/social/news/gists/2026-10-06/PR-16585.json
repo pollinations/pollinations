@@ -1,0 +1,34 @@
+{
+  "pr_number": 16585,
+  "title": "fix: read developer earnings from materialized events",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16585",
+  "merged_at": "2026-10-06T15:59:15Z",
+  "labels": [],
+  "pr_body_excerpt": "\\`developer_earnings_today\\` (behind \\`/balance/today\\`) scanned a full week of \\`generation_event_v2\\` on every call because the developer columns aren't in its sort key: 16.5M rows per call, ~77B rows and ~1,370 vCPU-seconds a day in prod.\n\n- Reads \\`activity_earnings_events\\` instead, which the existing BYOP and community-reward MVs already fill and which is sorted by \\`dev_user_id, timestamp\\` (same table the Activity earnings chart uses)\n- Keeps the old \\`markup_rate > 0\\` condition for BYOP rows via \\`reward_rate\\`, so results don't change\n- No schema change or backfill; endpoint name, params and response shape are unchanged\n\nChecked against prod data: identical \\`paid_week\\`/\\`tier_week\\` for all 48 developers with earnings in the last 7 days (167.5246 Pollen total both ways). Largest developer: 16.5M → 33k rows read, 0.36 s → 0.008 s.\n\n\\`deployment create --check\\` passes on staging. Tinybird still needs a manual deploy (staging, then prod) after merge.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A shorter path to Pollen",
+    "blurb": "The earnings lookup takes the garden path in the good sense: fewer rows to wander through, same Pollen totals at the end.",
+    "summary": "The /balance/today developer earnings query reads materialized activity_earnings_events instead of scanning generation_event_v2, cutting the largest developer lookup from 16.5M to 33k rows while preserving paid_week, tier_week, and the response shape.",
+    "impact": "Developer earnings lookups retain the same totals and API response; in the production-data check, the largest lookup fell from 0.36 to 0.008 seconds.",
+    "keywords": [
+      "developer earnings",
+      "Pollen",
+      "balance",
+      "Tinybird",
+      "materialized events",
+      "query performance"
+    ],
+    "visual_concept": "Depict developer earnings as Pollen gathered from a small, neatly tended row of event flowers rather than an enormous field of raw records. Polli, wearing a tiny accountant's visor, follows the shorter path to a retro balance terminal; a CRT robot checks that the totals match.",
+    "image_prompt": "In a cozy pixel garden, Polli follows a short lime green (#ecf874) path between tidy event flowers to a glowing retro balance terminal, while a chunky CRT monitor robot compares two matching Pollen totals. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny accountant's visor and stays small-to-medium within the scene, with a warm cream and pastel gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16585.jpg",
+    "prompt": "In a cozy pixel garden, Polli follows a short lime green (#ecf874) path between tidy event flowers to a glowing retro balance terminal, while a chunky CRT monitor robot compares two matching Pollen totals. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny accountant's visor and stays small-to-medium within the scene, with a warm cream and pastel gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T16:00:16.668941+00:00"
+}

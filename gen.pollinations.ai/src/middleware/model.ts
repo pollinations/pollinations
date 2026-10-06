@@ -229,19 +229,6 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // Fallback-only entries are provider implementations of the public
-        // model the caller selected, so they inherit that model's permission.
-        // Visible and community targets remain independently scoped: a key can
-        // never be served — or billed for — a model it could not call directly.
-        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        if (allowedModels && resolved.fallbackEntries) {
-            resolved.fallbackEntries = resolved.fallbackEntries.filter(
-                (entry) =>
-                    (entry.definition.fallbackOnly === true &&
-                        !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
-            );
-        }
         c.set("model", resolved);
         c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();

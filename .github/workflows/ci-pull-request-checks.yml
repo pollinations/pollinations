@@ -12,6 +12,34 @@ permissions:
 # request diff without fetching the full repository history.
 
 jobs:
+  gpu-tunnels:
+    name: Test GPU tunnel recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check for GPU or workflow changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- operations/infrastructure/gpu .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check GPU setup shell syntax
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          for script in operations/infrastructure/gpu/watch-tunnel.sh operations/infrastructure/gpu/*/setup-vast.sh; do
+            bash -n "$script" || exit
+          done
+
+      - name: Test tunnel watchdog thresholds and process isolation
+        if: steps.changes.outputs.changed == 'true'
+        run: python3 -m unittest operations/infrastructure/gpu/test_tunnel_watchdog.py
+
   lint:
     name: Lint and build
     runs-on: ubuntu-latest

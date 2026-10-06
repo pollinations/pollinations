@@ -174,8 +174,9 @@ const messageSchema = z.object({
         ),
     content: z
         .union([z.string(), z.array(z.any())])
+        .nullish()
         .describe(
-            "Message content. String for text, or array for multimodal (images, audio, video)",
+            "Message content. String for text, or array for multimodal (images, audio, video). May be null or omitted for assistant tool calls",
         ),
     name: z
         .string()

@@ -16,6 +16,10 @@ type Attribution = {
 type AppAttributionProps = {
     attribution: Attribution | null;
     redirectUrl: URL | null;
+    /** Defaults to the app icon; agents pass the bot icon. */
+    icon?: ReactNode;
+    /** Further lines inside the card, aligned with the text above. */
+    children?: ReactNode;
 };
 
 /**
@@ -27,6 +31,8 @@ type AppAttributionProps = {
 export function AppAttribution({
     attribution,
     redirectUrl,
+    icon = <AppIcon className="h-4 w-4" />,
+    children,
 }: AppAttributionProps) {
     // A redirect hostname identifies the destination, not the app. Keep it
     // even when lookup has not supplied an app name, and lead with it then.
@@ -43,7 +49,7 @@ export function AppAttribution({
     return (
         <Surface>
             <ul className="space-y-2">
-                <Line lead={<AppIcon className="h-4 w-4" />}>
+                <Line lead={icon}>
                     <Text
                         size="body"
                         tone="strong"
@@ -88,6 +94,7 @@ export function AppAttribution({
                     </li>
                 )}
             </ul>
+            {children && <div className="mt-2 pl-8">{children}</div>}
         </Surface>
     );
 }

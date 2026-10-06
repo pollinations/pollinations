@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { jwtVerify, SignJWT } from "jose";
 
 export const AGENT_RUN_TOKEN_PREFIX = "ag_";
@@ -16,6 +18,9 @@ export type AgentRunClaims = {
     // same id would be a value the agent gets to choose.
     parentRequestId: string;
     managedAgentId?: string;
+    // The community model id of the agent the token was minted for, so a
+    // refusal during the run can name the agent that asked.
+    agentModelId?: string;
     issuedAt: number;
     expiresAt: number;
 };
@@ -31,6 +36,7 @@ export async function signAgentRunToken(opts: {
     parentApiKeyId: string;
     parentRequestId: string;
     managedAgentId?: string;
+    agentModelId?: string;
     expiresIn?: number;
     now?: number;
 }): Promise<string> {
@@ -44,6 +50,7 @@ export async function signAgentRunToken(opts: {
         version: 1,
         parentRequestId: opts.parentRequestId,
         ...(opts.managedAgentId ? { managedAgentId: opts.managedAgentId } : {}),
+        ...(opts.agentModelId ? { agentModelId: opts.agentModelId } : {}),
     })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer(AGENT_RUN_TOKEN_ISSUER)
@@ -93,7 +100,9 @@ export async function verifyAgentRunToken(
         !payload.parentRequestId ||
         (payload.managedAgentId !== undefined &&
             (typeof payload.managedAgentId !== "string" ||
-                !payload.managedAgentId))
+                !payload.managedAgentId)) ||
+        (payload.agentModelId !== undefined &&
+            (typeof payload.agentModelId !== "string" || !payload.agentModelId))
     ) {
         throw new Error("Invalid agent run token claims");
     }
@@ -104,7 +113,43 @@ export async function verifyAgentRunToken(
         ...(typeof payload.managedAgentId === "string"
             ? { managedAgentId: payload.managedAgentId }
             : {}),
+        ...(typeof payload.agentModelId === "string"
+            ? { agentModelId: payload.agentModelId }
+            : {}),
         issuedAt: payload.iat,
         expiresAt: payload.exp,
     };
+}
+
+export type Grant = { category: string } | { permission: string };
+
+/**
+ * Signs that a run of this agent was refused this grant on this key. The grant
+ * link reaches the owner through the agent, so an unsigned name would let one
+ * agent pose as another. Binding the key and the grant stops a signed name
+ * from being moved onto a different request.
+ */
+export function signGrantAgent(opts: {
+    secret: string;
+    apiKeyId: string;
+    grant: Grant;
+    agent: string;
+}): string {
+    const entry =
+        "category" in opts.grant
+            ? `category:${opts.grant.category}`
+            : `permission:${opts.grant.permission}`;
+    return createHmac("sha256", `pollinations-grant-agent:v1\0${opts.secret}`)
+        .update([opts.apiKeyId, entry, opts.agent].join("\0"))
+        .digest("base64url");
+}
+
+export function verifyGrantAgent(
+    opts: Parameters<typeof signGrantAgent>[0] & { sig: string },
+): boolean {
+    const expected = Buffer.from(signGrantAgent(opts));
+    const actual = Buffer.from(opts.sig);
+    return (
+        expected.length === actual.length && timingSafeEqual(expected, actual)
+    );
 }

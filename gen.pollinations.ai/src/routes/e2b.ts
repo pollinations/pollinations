@@ -14,10 +14,11 @@ import { type Context, Hono, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { auth, keyPermissionsLink } from "@/middleware/auth.ts";
+import { auth } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
-import { requireFunds } from "@/utils/generation-access.ts";
+import { requireAccountFunds } from "@/utils/generation-access.ts";
+import { permissionRequired } from "@/utils/refusals.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -169,7 +170,7 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
             userId: c.var.auth.requireUser().id,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-            // requireFunds checked the key budget; nothing was reserved.
+            // requireAccountFunds checked the key budget; nothing was reserved.
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
@@ -240,7 +241,7 @@ async function extendLease(
             : now;
     const endAt = now + timeout * 1000;
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
+    if (bill.price > 0) await requireAccountFunds(c, bill.price);
     const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -315,9 +316,11 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     c.var.auth.requireUser();
     const apiKey = c.var.auth.apiKey;
     if (!apiKey?.permissions?.account?.includes("machines")) {
-        throw new HTTPException(403, {
-            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
-        });
+        throw permissionRequired(
+            c,
+            { permission: "machines" },
+            "API key does not have 'account:machines' permission.",
+        );
     }
     await next();
 }
@@ -341,7 +344,7 @@ export const e2bRoutes = new Hono<Env>()
             });
         }
         // An empty wallet cannot pay for any lease.
-        await requireFunds(c, 0, "sandbox lease");
+        await requireAccountFunds(c, 0);
         await requireCapacity(c);
 
         const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
@@ -375,7 +378,7 @@ export const e2bRoutes = new Hono<Env>()
                 (Date.parse(sandbox.endAt) - Date.parse(sandbox.startedAt)) /
                     1000,
             );
-            await requireFunds(c, bill.price, "sandbox lease");
+            await requireAccountFunds(c, bill.price);
         } catch (error) {
             // Never leave an unpaid sandbox running.
             await e2b(c, `/sandboxes/${created.sandboxID}`, {

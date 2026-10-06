@@ -29,7 +29,7 @@ import { auth } from "@/middleware/auth.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
-import { requireFunds } from "@/utils/generation-access.ts";
+import { requireAccountFunds } from "@/utils/generation-access.ts";
 
 function requestForMcp(
     request: Request,
@@ -199,7 +199,7 @@ export const mcpRoutes = new Hono<Env>()
             server.billing === "usage_receipt" &&
             message?.method === "tools/call"
         ) {
-            await requireFunds(c, 0, "tool call");
+            await requireAccountFunds(c, 0);
         }
         const binding = c.env[server.binding] as Fetcher;
 

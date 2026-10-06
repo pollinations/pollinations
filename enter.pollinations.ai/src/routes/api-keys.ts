@@ -1,12 +1,17 @@
+import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
 import {
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
-import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import {
+    CONSENT_PERMISSIONS,
+    sanitizeAuthorizeAccountPermissions,
+} from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { toModelCategories } from "@shared/registry/model-permissions.ts";
+import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -149,6 +154,18 @@ const UpdateApiKeySchema = z.object({
         .transform((val) => (val ? new Date(val) : val))
         .describe("Expiration date for the key. null = no expiry"),
 });
+
+// One model category or one account permission per approval.
+const GrantSchema = z.union([
+    z.object({ category: z.enum(MODEL_CATEGORIES) }),
+    z.object({ permission: z.enum(CONSENT_PERMISSIONS) }),
+]);
+
+// A grant link from an agent run names the agent, signed by gen.
+const GrantAgentSchema = z.intersection(
+    GrantSchema,
+    z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
+);
 
 const CreateApiKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
@@ -396,6 +413,82 @@ export const apiKeysRoutes = new Hono<Env>()
                 questPollenOnly: updated?.questPollenOnly ?? false,
                 expiresAt: updated?.expiresAt ?? null,
             });
+        },
+    )
+    .post(
+        "/:id/grant",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Add one model category or account permission to an owned API key.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("json", GrantSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const { id } = c.req.param();
+            const grant = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            const key = await requireOwnedKey(db, id, user.id);
+            const permissions = key.permissions
+                ? parsePermissions(key.permissions)
+                : null;
+
+            // Only the granted entry changes; budget, expiry and the rest stay.
+            let next: Record<string, string[]> | null = null;
+            if ("permission" in grant) {
+                const account = permissions?.account ?? [];
+                if (!account.includes(grant.permission)) {
+                    next = {
+                        ...permissions,
+                        account: [...account, grant.permission],
+                    };
+                }
+            } else {
+                // An absent model list already allows every category. Keep it.
+                const models = permissions?.models;
+                if (Array.isArray(models) && !models.includes(grant.category)) {
+                    next = {
+                        ...permissions,
+                        models: [...models, grant.category],
+                    };
+                }
+            }
+            if (next) {
+                await c.var.auth.client.api.updateApiKey({
+                    body: { keyId: id, userId: user.id, permissions: next },
+                });
+            }
+            return c.json({ granted: true });
+        },
+    )
+    .get(
+        "/:id/grant-agent",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Confirm which agent a grant link says asked for the grant.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", GrantAgentSchema),
+        async (c) => {
+            c.var.auth.requireUser();
+            const query = c.req.valid("query");
+            const grant =
+                "category" in query
+                    ? { category: query.category }
+                    : { permission: query.permission };
+            // The link reached the owner through the agent, so only gen's
+            // signature makes the name trustworthy. This reads nothing from
+            // the key, so it needs no ownership check.
+            const signed = verifyGrantAgent({
+                secret: c.env.BETTER_AUTH_SECRET,
+                apiKeyId: c.req.param("id"),
+                grant,
+                agent: query.agent,
+                sig: query.sig,
+            });
+            return c.json({ agent: signed ? query.agent : null });
         },
     )
     /**

@@ -2739,6 +2739,8 @@ describe("community endpoint helpers", () => {
             expect(await verifyAgentRunToken(token, secret)).toMatchObject({
                 parentApiKeyId: "parent-key-id",
                 parentRequestId: "parent-request-id",
+                // External agents get no managed scope but are still named.
+                agentModelId: endpoint.modelId,
             });
             const defaultContext = await contextFor(endpoint, "parent-key-id");
             expect(defaultContext.modelConfig?.model).toBe(

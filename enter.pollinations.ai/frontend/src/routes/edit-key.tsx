@@ -1,4 +1,3 @@
-import { KeyChip, Surface, Text } from "@pollinations/ui";
 import { AuthModalHeader, AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -12,6 +11,7 @@ import {
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
+import { KeySubject } from "../components/keys/key-subject.tsx";
 import {
     getKeyAccessContext,
     isAppKey,
@@ -99,18 +99,7 @@ function EditKeyPage() {
 
     // The heading follows the loaded key; unknown/loading states stay neutral.
     // The URL only carries the record id, so the card waits for the key row.
-    const subject = apiKey ? (
-        <Surface>
-            <Text size="sm" weight="semibold" tone="strong">
-                {apiKey.name ?? apiKey.id}
-            </Text>
-            {apiKey.start && (
-                <div className="mt-1.5">
-                    <KeyChip prefix={apiKey.start} />
-                </div>
-            )}
-        </Surface>
-    ) : undefined;
+    const subject = apiKey ? <KeySubject apiKey={apiKey} /> : undefined;
 
     if (isPending) return <AuthModalLoading title={title} subject={subject} />;
 

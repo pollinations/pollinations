@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import {
     communityModelId,
     legacyCommunityModelId,
@@ -1129,6 +1130,143 @@ describe("API Key Management", () => {
                 },
             );
             expect(response.status).toBe(401);
+        });
+    });
+
+    describe("POST /api/api-keys/:id/grant", () => {
+        test("adds only the approved model category to an existing key", async ({
+            sessionToken,
+        }) => {
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "limited-model-key",
+                allowedModels: ["image"],
+                accountPermissions: ["profile"],
+            });
+            const url = `http://localhost:3000/api/api-keys/${created.id}/grant`;
+            const body = JSON.stringify({ category: "text" });
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const budget = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({ pollenBudget: 5 }),
+                },
+            );
+            expect(budget.status).toBe(200);
+
+            const denied = await SELF.fetch(url, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${created.key}`,
+                    "Content-Type": "application/json",
+                },
+                body,
+            });
+            expect(denied.status).toBe(401);
+            const invalid = await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ category: "flux" }),
+            });
+            expect(invalid.status).toBe(400);
+
+            const approved = await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body,
+            });
+            expect(approved.status).toBe(200);
+            const again = await SELF.fetch(url, {
+                method: "POST",
+                headers,
+                body,
+            });
+            expect(again.status).toBe(200);
+
+            const db = drizzle(env.DB, { schema });
+            const key = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
+                models: ["image", "text"],
+                account: ["profile"],
+            });
+            expect(key?.pollenBalance).toBe(5);
+        });
+
+        test("adds only the approved account permission", async ({
+            sessionToken,
+        }) => {
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "limited-account-key",
+                allowedModels: ["image"],
+                accountPermissions: ["profile"],
+            });
+            const grant = (permission: string) =>
+                SELF.fetch(
+                    `http://localhost:3000/api/api-keys/${created.id}/grant`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({ permission }),
+                    },
+                );
+
+            expect((await grant("admin")).status).toBe(400);
+            expect((await grant("machines")).status).toBe(200);
+            expect((await grant("machines")).status).toBe(200);
+
+            const db = drizzle(env.DB, { schema });
+            const key = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
+                models: ["image"],
+                account: ["profile", "machines"],
+            });
+        });
+
+        test("names the asking agent only when gen signed it", async ({
+            sessionToken,
+        }) => {
+            const agent = "community/alice/research-buddy";
+            const sig = signGrantAgent({
+                secret: env.BETTER_AUTH_SECRET,
+                apiKeyId: "key-1",
+                grant: { permission: "machines" },
+                agent,
+            });
+            const named = async (keyId: string, asker: string) => {
+                const query = new URLSearchParams({
+                    permission: "machines",
+                    agent: asker,
+                    sig,
+                });
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/api-keys/${keyId}/grant-agent?${query}`,
+                    {
+                        headers: {
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                    },
+                );
+                expect(response.status).toBe(200);
+                return (await response.json<{ agent: string | null }>()).agent;
+            };
+
+            expect(await named("key-1", agent)).toBe(agent);
+            // A signed name cannot be relabelled or moved to another key.
+            expect(
+                await named("key-1", "community/pollinations/floret"),
+            ).toBeNull();
+            expect(await named("key-2", agent)).toBeNull();
         });
     });
 

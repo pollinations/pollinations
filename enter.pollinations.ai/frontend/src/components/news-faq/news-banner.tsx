@@ -1,5 +1,6 @@
 import { Chip, InlineLink, Section, Surface } from "@pollinations/ui";
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import { Markdown } from "@pollinations/ui/markdown";
+import { type FC, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
@@ -28,6 +29,7 @@ type Announcement = {
     until?: string;
     name: string;
     action: keyof typeof ACTION_INTENT;
+    /** Markdown. */
     change: string;
 };
 
@@ -41,28 +43,28 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-10-15",
         name: "MAI Image 2.5 Flash",
         action: "Retiring",
-        change: "Retired. Use MAI Image 2.6 Flash.",
+        change: "Retired. Use **MAI Image 2.6 Flash**.",
     },
     {
         date: "2026-10-02",
         until: "2026-10-16",
         name: "Sandboxes",
         action: "New",
-        change: "Create E2B-compatible sandboxes through the API or polli sandbox, then connect over SSH. [Docs](https://gen.pollinations.ai/docs#tag/sandboxes).",
+        change: "Create E2B-compatible sandboxes through the API or `polli sandbox`, then connect over SSH. [Docs](https://gen.pollinations.ai/docs#tag/sandboxes).",
     },
     {
         date: "2026-10-05",
         until: "2026-10-19",
         name: "Qwen3 Coder 30B",
         action: "Updating",
-        change: "Now on AWS Bedrock. Paid Pollen only.",
+        change: "Now on AWS Bedrock. **Paid Pollen only.**",
     },
     {
         date: "2026-10-06",
         until: "2026-10-20",
         name: "Pay with crypto",
         action: "New",
-        change: "Buy Pollen packs with USDC. Pick a pack in [Pollen](/pollen), then choose Pay with Crypto.",
+        change: "Buy Pollen packs with **USDC**. Pick a pack in [Pollen](/pollen), then choose **Pay with Crypto**.",
     },
     {
         date: "2026-10-09",
@@ -74,7 +76,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         date: "2026-10-09",
         name: "Cohere Command A+",
         action: "Retiring",
-        change: "Azure route is due to retire. Replacement details to follow.",
+        change: "Azure route is due to retire. _Replacement details to follow._",
     },
     {
         date: "2026-10-20",
@@ -86,33 +88,9 @@ const ANNOUNCEMENTS: Announcement[] = [
         date: "2026-11-02",
         name: "Grok Imagine Pro",
         action: "Retiring",
-        change: "Retires. Use Grok Imagine Image 2.0.",
+        change: "Retires. Use **Grok Imagine Image 2.0**.",
     },
 ];
-
-/** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */
-function renderWithLinks(text: string): ReactNode[] {
-    const parts: ReactNode[] = [];
-    const matches = [...text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
-    let lastIndex = 0;
-    for (const match of matches) {
-        const idx = match.index ?? 0;
-        const href = match[2];
-        if (idx > lastIndex) {
-            parts.push(text.slice(lastIndex, idx));
-        }
-        parts.push(
-            <InlineLink key={idx} href={href}>
-                {match[1]}
-            </InlineLink>,
-        );
-        lastIndex = idx + match[0].length;
-    }
-    if (lastIndex < text.length) {
-        parts.push(text.slice(lastIndex));
-    }
-    return parts;
-}
 
 function parseHighlights(md: string): Highlight[] {
     return md
@@ -179,9 +157,9 @@ export const Announcements: FC = () => {
                         <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
                             {name}
                         </strong>
-                        <p className="col-span-3 min-w-0 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
-                            {renderWithLinks(change)}
-                        </p>
+                        <Markdown className="col-span-3 sm:col-span-1 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
+                            {change}
+                        </Markdown>
                     </li>
                 ))}
             </ul>
@@ -230,6 +208,6 @@ const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
             )}
             <div className="min-w-0">{item.title}</div>
         </div>
-        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
+        <Markdown className="mt-1 text-ink-700">{item.description}</Markdown>
     </Surface>
 );

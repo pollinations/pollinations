@@ -103,6 +103,20 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 - For every addition or modification, run a fresh web search across provider catalogs and official documentation to discover viable fallback routes; do not rely only on repository integrations or remembered availability. Verify each serious candidate against its current official model page and pricing, then probe the exact route. Compare checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
 - Inspect provider-managed routing/fallback defaults and controls. Report identity, capability, pricing, residency, and observability tradeoffs.
 
+For direct Novita discovery, use the supported
+[model catalog](https://docs.novita.ai/api-reference/model-apis-llm-list-models)
+and [account quotas](https://docs.novita.ai/api-reference/quota-list) with an
+existing authorized key. The OpenAI-compatible base is
+`https://api.novita.ai/openai/v1`; probe the exact upstream model using
+[Chat Completions](https://docs.novita.ai/api-reference/model-apis-llm-create-chat-completion).
+Request `stream_options.include_usage` for streaming and prove terminal usage,
+cache/reasoning billing, capabilities and burst capacity through local Gen
+before routing traffic. Gateway availability does not prove direct access or
+independent capacity: OpenRouter/Vercel routes backed by Novita can share the
+same upstream pool. Keep direct provider attribution and charges distinct from
+gateway-billed traffic; use the Economics Novita connector guide for supported
+billing sources. Preserve the existing public contract and fallback mechanism.
+
 ### 3. Confirm the contract
 
 Present the mandatory row and obtain explicit confirmation before editing. If a capability or access change is intentional, state it plainly.

@@ -1,0 +1,35 @@
+{
+  "pr_number": 16601,
+  "title": "fix: restore JSON for Gemini search and add Vercel fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16601",
+  "merged_at": "2026-10-06T17:32:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores search + JSON/schema for `google/gemini-2.5-flash-lite:search`: OpenRouter AI Studio [Exa plugin](https://openrouter.ai/docs/guides/features/plugins/web-search) primary; hidden Vercel/Google fallback uses the same model. Preserves nine aliases, paid-only access and multiplier 1; no Pollinations GPU. Follow-up to #16593.\n- Search cost change: the plugin searches every uncached request unless disabled. [Exa](https://vercel.com/docs/ai-gateway/models-and-providers/web-search) costs $7/1K searches; listing price is $7.385/1K plus generation. Cache hits add no charges.\n- Billing change: opt-in reported totals include search and override token estimates; adjustment breakdowns remain informational. OpenRouter cost includes its 5.5% purchase fee. Vercel retains the listing's 5.5% uplift as margin. The plugin reports dollars but no search counter; primary search-count reporting remains unavailable.\n- Vercel JSON bills both generations and can perform multiple billed searches: preparation budget is max(max_tokens, 2048), while max_tokens limits the final answer. Empty search answers fail with 502 before formatting; a live empty-answer response confirmed this. Gateway metadata filtering is limited to Vercel-served responses; other streams pass through unchanged.\n- Passes 317 Gen tests, 65 pricing/snapshot tests, both typechecks and full live E2E: JSON/streaming, media, aliases, opt-out, permissions, ten concurrent requests/route, response/prompt caches, and 115 reconciled staging events with zero quarantine. Both routes use Exa. No deployments/secrets changed.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Search finds its braces",
+    "blurb": "Gemini search and JSON make up. Exa handles the searching, with a second route ready when the first needs help.",
+    "summary": "Restores JSON and schema responses for `google/gemini-2.5-flash-lite:search` using OpenRouter's Exa search plugin, with a hidden Vercel/Google fallback on the same model and billing that includes reported search costs.",
+    "impact": "Paid users get search with structured JSON or streaming responses across both routes; uncached requests search unless disabled, at a listed $7.385 per 1,000 searches plus generation, while cache hits add no search charge.",
+    "keywords": [
+      "Gemini",
+      "Exa",
+      "web search",
+      "JSON schema",
+      "Vercel",
+      "fallback",
+      "billing"
+    ],
+    "visual_concept": "Represent Gemini search with a magnifying glass finding a glowing pair of JSON braces among code-plants. Polli guides the result between two small retro terminals: an OpenRouter/Exa primary path and a Vercel/Google backup path. No project-specific mascot is indicated.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny detective glasses and points a magnifying glass at glowing JSON braces growing from a lime green (#ecf874) code-plant between two friendly retro terminals labeled 'Exa' and 'Vercel'; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium sized and sharing the frame, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a warm cream background, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16601.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny detective glasses and points a magnifying glass at glowing JSON braces growing from a lime green (#ecf874) code-plant between two friendly retro terminals labeled 'Exa' and 'Vercel'; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium sized and sharing the frame, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a warm cream background, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-06T17:33:48.137585+00:00"
+}

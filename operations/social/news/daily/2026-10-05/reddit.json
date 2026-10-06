@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-05",
+  "period_start": "2026-10-05",
+  "period_end": "2026-10-05",
+  "generated_at": "2026-10-06T06:31:33.817802+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-05/images/reddit.jpg"
+    }
+  ],
+  "title": "Image models, audio defaults, and catalog fixes landed",
+  "text": "36 PRs merged today. The parts most likely to affect callers:\n\nImage generation and editing gained [FLUX.3](https://github.com/pollinations/pollinations/pull/16245) and [Seedream 5.0 Flash](https://github.com/pollinations/pollinations/pull/16248). [Veo](https://github.com/pollinations/pollinations/pull/16023) now defaults to landscape and requests audio explicitly. We also tried changing OpenAI image seed and edit handling, then [reverted it](https://github.com/pollinations/pollinations/pull/16512): unseeded generations should stay fresh, while identical edits should remain cacheable. That distinction was worth keeping.\n\nAudio requests should be less surprising: [tts-1 aliases](https://github.com/pollinations/pollinations/pull/16506) and [default speech requests](https://github.com/pollinations/pollinations/pull/16507) now use OpenAI TTS; audio duration and upload parameters were aligned, and audio data URLs no longer get double-encoded.\n\nOn the model side, [Liquid D1](https://github.com/pollinations/pollinations/pull/16244) is available for decisions and chat, Qwen3 Coder 30B moved to Bedrock, and the Gen and MCP catalogs gained [search and filtering](https://github.com/pollinations/pollinations/pull/16246). CLI chat now counts streamed session tokens, handles transcript write failures, and shows the API default model in its banner. Usage pagination accepts ISO 8601 cursors, and dashboard sign-in is visible on mobile.\n\nThe [repo](https://github.com/pollinations/pollinations) and [API docs](https://github.com/pollinations/pollinations/blob/main/APIDOCS.md) are open. If a model route or default still behaves oddly, a request example is more useful than a screenshot of the model name."
+}

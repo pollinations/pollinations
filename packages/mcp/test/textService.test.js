@@ -21,6 +21,10 @@ test("generateText accepts assistant tool calls with null content for tool-use c
         { role: "tool", tool_call_id: "call_1", content: "Sunny" },
     ];
     const result = z.object(shape).safeParse({ messages });
-    assert.equal(result.success, true, "Tool-use continuation must be accepted");
+    assert.equal(
+        result.success,
+        true,
+        "Tool-use continuation must be accepted",
+    );
     assert.deepEqual(result.data.messages, messages);
 });

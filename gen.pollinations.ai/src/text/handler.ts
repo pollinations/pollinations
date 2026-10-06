@@ -196,12 +196,18 @@ function publicCompletionUsage(
     return publicUsage;
 }
 
-function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+function publicChatCompletion(
+    completion: ChatCompletion,
+    isVercel: boolean,
+): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
+    if (!isVercel && usage === completion.usage) return completion;
     const publicCompletion = {
         ...completion,
         usage,
-        choices: publicChatChoices(completion.choices),
+        choices: isVercel
+            ? publicChatChoices(completion.choices)
+            : completion.choices,
     };
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
@@ -390,6 +396,7 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
+        const isVercel = candidate.definition?.provider === "vercel";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -398,7 +405,9 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = publicChatStream(clientBody);
+            completion.responseStream = isVercel
+                ? publicChatStream(clientBody)
+                : clientBody;
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -408,7 +417,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion);
+        const publicCompletion = publicChatCompletion(completion, isVercel);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(

@@ -38,6 +38,11 @@ export function publicChatStream(
         new TransformStream({
             start(controller) {
                 parser = createParser({
+                    onRetry(milliseconds) {
+                        controller.enqueue(
+                            encoder.encode(`retry: ${milliseconds}\n\n`),
+                        );
+                    },
                     onComment(comment) {
                         controller.enqueue(encoder.encode(`: ${comment}\n\n`));
                     },

@@ -18,9 +18,7 @@ interface Highlight {
 
 const ACTION_INTENT = {
     Updating: "info",
-    Updated: "info",
     Retiring: "warning",
-    Retired: "warning",
 } as const;
 
 type Launch = {
@@ -59,20 +57,20 @@ const LAUNCHES: Launch[] = [
     },
 ];
 
-/** Model changes in date order; the page splits them into upcoming and recent. */
+/** Recent and upcoming model changes, by the day they take effect. */
 const MODEL_CHANGES: ModelChange[] = [
     {
         date: "2026-10-01",
         until: "2026-10-15",
         name: "MAI Image 2.5 Flash",
-        action: "Retired",
-        change: "Use **MAI Image 2.6 Flash**.",
+        action: "Retiring",
+        change: "Retired. Use **MAI Image 2.6 Flash**.",
     },
     {
         date: "2026-10-05",
         until: "2026-10-19",
         name: "Qwen3 Coder 30B",
-        action: "Updated",
+        action: "Updating",
         change: "Now on AWS Bedrock. **Paid Pollen only.**",
     },
     {
@@ -97,7 +95,7 @@ const MODEL_CHANGES: ModelChange[] = [
         date: "2026-11-02",
         name: "Grok Imagine Pro",
         action: "Retiring",
-        change: "Use **Grok Imagine Image 2.0**.",
+        change: "Retires. Use **Grok Imagine Image 2.0**.",
     },
 ];
 
@@ -131,7 +129,7 @@ function formatNewsDate(date: string): string {
     });
 }
 
-// Launch rows share the model-change grid so all descriptions line up.
+// Launch rows share the model-change grid so both groups' descriptions line up.
 const ROW =
     "grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]";
 const DESCRIPTION =
@@ -149,35 +147,12 @@ const AnnouncementGroup: FC<{ title: string; children: ReactNode }> = ({
     </div>
 );
 
-const ModelChangeRow: FC<ModelChange> = ({ date, name, action, change }) => (
-    <li className={ROW}>
-        <time
-            dateTime={date}
-            className="whitespace-nowrap text-theme-text-muted"
-        >
-            {formatNewsDate(date)}
-        </time>
-        <span className="border-l border-theme-text-strong/15 pl-2">
-            <Chip size="sm" intent={ACTION_INTENT[action]}>
-                {action}
-            </Chip>
-        </span>
-        <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
-            {name}
-        </strong>
-        <Markdown className={DESCRIPTION}>{change}</Markdown>
-    </li>
-);
-
 export const Announcements: FC = () => {
     const today = new Date().toISOString().slice(0, 10);
     const launches = LAUNCHES.filter(({ until }) => until >= today);
     const changes = MODEL_CHANGES.filter(
         ({ date, until = date }) => until >= today,
     );
-    const upcoming = changes.filter(({ date }) => date >= today);
-    // Newest first.
-    const recent = changes.filter(({ date }) => date < today).reverse();
     if (launches.length === 0 && changes.length === 0) return null;
     return (
         <Section
@@ -202,17 +177,28 @@ export const Announcements: FC = () => {
                     ))}
                 </AnnouncementGroup>
             )}
-            {upcoming.length > 0 && (
-                <AnnouncementGroup title="Upcoming model changes">
-                    {upcoming.map((item) => (
-                        <ModelChangeRow key={item.name} {...item} />
-                    ))}
-                </AnnouncementGroup>
-            )}
-            {recent.length > 0 && (
-                <AnnouncementGroup title="Recent model changes">
-                    {recent.map((item) => (
-                        <ModelChangeRow key={item.name} {...item} />
+            {changes.length > 0 && (
+                <AnnouncementGroup title="Model changes">
+                    {changes.map(({ date, name, action, change }) => (
+                        <li key={name} className={ROW}>
+                            <time
+                                dateTime={date}
+                                className="whitespace-nowrap text-theme-text-muted"
+                            >
+                                {formatNewsDate(date)}
+                            </time>
+                            <span className="border-l border-theme-text-strong/15 pl-2">
+                                <Chip size="sm" intent={ACTION_INTENT[action]}>
+                                    {action}
+                                </Chip>
+                            </span>
+                            <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
+                                {name}
+                            </strong>
+                            <Markdown className={DESCRIPTION}>
+                                {change}
+                            </Markdown>
+                        </li>
                     ))}
                 </AnnouncementGroup>
             )}

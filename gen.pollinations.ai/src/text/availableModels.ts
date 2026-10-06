@@ -279,12 +279,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
-        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
-        // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
-        transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.coding),
-            stripReasoning,
-        ),
+        config: portkeyConfig["qwen-coder-bedrock"],
+        // No default coding prompt: it makes Bedrock narrate before a tool
+        // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning
+        // mode, and Bedrock rejects stop with a ValidationException.
+        transform: pipe(stripReasoning, omitParameters("stop")),
     },
     {
         name: "qwen/qwen3-coder-next",
@@ -695,6 +694,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "liquid/d1",
+        config: portkeyConfig["liquid-d1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "liquid/d1:vercel",
+        config: portkeyConfig["liquid/d1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(
@@ -775,6 +784,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3-ultra",
+        config: portkeyConfig[
+            "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
+        ],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "nvidia/nemotron-3-ultra:deepinfra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: createReasoningEffortTransform("toggle"),
     },
@@ -883,6 +899,14 @@ const models: ModelDefinition[] = [
     {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash",
+        config: portkeyConfig["inclusionai/ling-3.1-flash"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash:vercel:novita",
+        config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
     },
     {
         name: "inclusionai/ling-3.0-flash-vl",

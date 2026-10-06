@@ -28,7 +28,7 @@ RUN curl -fsSL -o /usr/local/bin/websocat https://github.com/vi/websocat/release
 # its router runs as a systemd user service, and sandboxes have no systemd.
 RUN npx -y n 24 && rm -rf /usr/local/n \
     && npm install -g @pollinations/cli @anthropic-ai/claude-code \
-        @musistudio/claude-code-router opencode-ai openclaw \
+        opencode-ai openclaw \
     && npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 COPY polli-harnesses.sh /etc/profile.d/

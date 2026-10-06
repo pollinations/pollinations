@@ -25,6 +25,8 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    /** Charges never fall through to the owner's paid balance. */
+    questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
@@ -342,6 +344,7 @@ async function loadActiveApiKeyAuthResult(opts: {
             ),
             metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
             pollenBalance: row.apiKey.pollenBalance ?? null,
+            questPollenOnly: row.apiKey.questPollenOnly,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,

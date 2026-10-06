@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TopUpRouteImport } from './routes/top-up'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as GrantRouteImport } from './routes/grant'
@@ -22,6 +21,7 @@ import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSignInRouteImport } from './routes/app.sign-in'
+import { Route as DashboardSignInRouteImport } from './routes/_dashboard.sign-in'
 import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
@@ -39,11 +39,6 @@ const TopUpRoute = TopUpRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInRoute = SignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RefundsRoute = RefundsRouteImport.update({
@@ -95,6 +90,11 @@ const AppSignInRoute = AppSignInRouteImport.update({
   path: '/app/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardSignInRoute = DashboardSignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardQuestsRoute = DashboardQuestsRouteImport.update({
   id: '/quests',
   path: '/quests',
@@ -145,7 +145,6 @@ export interface FileRoutesByFullPath {
   '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
-  '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
   '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
@@ -156,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesByTo {
@@ -167,7 +167,6 @@ export interface FileRoutesByTo {
   '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
-  '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
   '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
@@ -178,6 +177,7 @@ export interface FileRoutesByTo {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesById {
@@ -191,7 +191,6 @@ export interface FileRoutesById {
   '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
-  '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
   '/top-up': typeof TopUpRoute
   '/_dashboard/account': typeof DashboardAccountRoute
@@ -202,6 +201,7 @@ export interface FileRoutesById {
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
+  '/_dashboard/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRouteTypes {
@@ -215,7 +215,6 @@ export interface FileRouteTypes {
     | '/grant'
     | '/privacy'
     | '/refunds'
-    | '/sign-in'
     | '/terms'
     | '/top-up'
     | '/account'
@@ -226,6 +225,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sign-in'
     | '/app/sign-in'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -237,7 +237,6 @@ export interface FileRouteTypes {
     | '/grant'
     | '/privacy'
     | '/refunds'
-    | '/sign-in'
     | '/terms'
     | '/top-up'
     | '/account'
@@ -248,6 +247,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sign-in'
     | '/app/sign-in'
   id:
     | '__root__'
@@ -260,7 +260,6 @@ export interface FileRouteTypes {
     | '/grant'
     | '/privacy'
     | '/refunds'
-    | '/sign-in'
     | '/terms'
     | '/top-up'
     | '/_dashboard/account'
@@ -271,6 +270,7 @@ export interface FileRouteTypes {
     | '/_dashboard/news'
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
+    | '/_dashboard/sign-in'
     | '/app/sign-in'
   fileRoutesById: FileRoutesById
 }
@@ -284,7 +284,6 @@ export interface RootRouteChildren {
   GrantRoute: typeof GrantRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
-  SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
   TopUpRoute: typeof TopUpRoute
   AppSignInRoute: typeof AppSignInRoute
@@ -304,13 +303,6 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in': {
-      id: '/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refunds': {
@@ -383,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/sign-in': {
+      id: '/_dashboard/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof DashboardSignInRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/quests': {
       id: '/_dashboard/quests'
       path: '/quests'
@@ -451,6 +450,7 @@ interface DashboardRouteChildren {
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
   DashboardQuestsRoute: typeof DashboardQuestsRoute
+  DashboardSignInRoute: typeof DashboardSignInRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -462,6 +462,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,
   DashboardQuestsRoute: DashboardQuestsRoute,
+  DashboardSignInRoute: DashboardSignInRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -478,7 +479,6 @@ const rootRouteChildren: RootRouteChildren = {
   GrantRoute: GrantRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
-  SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
   TopUpRoute: TopUpRoute,
   AppSignInRoute: AppSignInRoute,

@@ -9,6 +9,7 @@ import {
 } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
+import { parseCommunityModelId } from "@shared/community-endpoints.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -24,9 +25,12 @@ import {
     getCatalogDisplayName,
     getCatalogModelId,
 } from "../components/models/model-catalog.ts";
-import { getCommunityModelOwner } from "../components/models/model-categories.ts";
-import { useModelCategories } from "../components/models/use-model-categories.ts";
-import { useOwnCommunityModels } from "../components/models/use-own-community-models.ts";
+import {
+    CATEGORY_LABELS,
+    MODEL_CATEGORY_ORDER,
+} from "../components/models/model-categories.ts";
+import type { ModelCategory } from "../components/models/types.ts";
+import { useModelCatalog } from "../components/models/use-model-catalog.ts";
 import {
     parseAppUrl,
     preferredReturnUrl,
@@ -35,8 +39,8 @@ import {
 
 type GrantSearch = {
     id: string;
-    /** One model or one account permission the key was refused. */
-    model?: string;
+    /** One model category or one account permission the key was refused. */
+    category?: ModelCategory;
     permission?: (typeof CONSENT_PERMISSIONS)[number];
     /** The agent whose run was refused, with gen's signature over it. */
     agent?: string;
@@ -45,17 +49,14 @@ type GrantSearch = {
 };
 
 /**
- * Approve one model or account permission for an existing key, linked from
+ * Approve one model category or account permission for an existing key, linked from
  * the 403s and chat replies gen returns when a key lacks it.
  */
 export const Route = createFileRoute("/grant")({
     head: () => ({ meta: [{ title: "Allow access | pollinations.ai" }] }),
     validateSearch: (search: Record<string, unknown>): GrantSearch => ({
         id: typeof search.id === "string" ? search.id : "",
-        model:
-            typeof search.model === "string" && search.model
-                ? search.model
-                : undefined,
+        category: MODEL_CATEGORY_ORDER.find((c) => c === search.category),
         permission: CONSENT_PERMISSIONS.find((p) => p === search.permission),
         agent: typeof search.agent === "string" ? search.agent : undefined,
         sig: typeof search.sig === "string" ? search.sig : undefined,
@@ -65,7 +66,8 @@ export const Route = createFileRoute("/grant")({
 });
 
 function GrantPage() {
-    const { id, model, permission, agent, sig, redirect } = Route.useSearch();
+    const { id, category, permission, agent, sig, redirect } =
+        Route.useSearch();
     const navigate = useNavigate({ from: "/grant" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
@@ -78,12 +80,13 @@ function GrantPage() {
     const [error, setError] = useState<string | null>(null);
     // undefined while enter checks the link's agent signature.
     const [askingAgent, setAskingAgent] = useState<string | null>();
-    const { catalog } = useModelCategories(useOwnCommunityModels(!!userId));
+    const catalog = useModelCatalog();
     const grant = useMemo(
-        () => (model ? { model } : permission ? { permission } : undefined),
-        [model, permission],
+        () =>
+            category ? { category } : permission ? { permission } : undefined,
+        [category, permission],
     );
-    const title = model ? "Allow model access" : "Allow account access";
+    const title = category ? "Allow model access" : "Allow account access";
 
     useEffect(() => {
         const from = preferredReturnUrl(redirect);
@@ -162,7 +165,9 @@ function GrantPage() {
                         appName: agentListing
                             ? getCatalogDisplayName(agentListing, askingAgent)
                             : askingAgent,
-                        githubUsername: getCommunityModelOwner(askingAgent),
+                        githubUsername:
+                            parseCommunityModelId(askingAgent)
+                                ?.ownerGithubUsername,
                     }}
                     redirectUrl={null}
                 />
@@ -192,9 +197,9 @@ function GrantPage() {
         return <AuthModalLoading title={title} />;
     }
 
-    const alreadyAllowed = model
+    const alreadyAllowed = category
         ? !Array.isArray(key.permissions?.models) ||
-          key.permissions.models.includes(model)
+          key.permissions.models.includes(category)
         : Boolean(permission && key.permissions?.account?.includes(permission));
 
     if (outcome !== "pending" || alreadyAllowed) {
@@ -274,16 +279,17 @@ function GrantPage() {
                 <Text size="sm">Asks for</Text>
                 <div className="break-words">
                     <Text size="sm" weight="semibold" tone="strong">
-                        {model ??
-                            accountPermissions.find(
-                                ({ id }) => id === permission,
-                            )?.label}
+                        {category
+                            ? `${CATEGORY_LABELS[category]} models`
+                            : accountPermissions.find(
+                                  ({ id }) => id === permission,
+                              )?.label}
                     </Text>
                 </div>
             </Surface>
-            {model && (
+            {category && (
                 <Text size="sm">
-                    This model may spend Pollen when used. The key’s existing
+                    These models may spend Pollen when used. The key’s existing
                     spending limit still applies.
                 </Text>
             )}

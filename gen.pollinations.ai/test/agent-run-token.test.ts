@@ -39,6 +39,7 @@ function communityProbe(type: CommunityEndpointRuntime["type"] = "proxy") {
             c.set("model", {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
+                definition: { category: "text" },
                 communityEndpoint: {
                     id: "managed-agent-id",
                     modelId: "Itachi-1824/polli",
@@ -94,7 +95,7 @@ test("resolves to the parent key, without its account scope", async () => {
         pollenBalance: 42,
         // Model access is inherited; every other scope the parent may hold is
         // dropped, so the token cannot manage the owner's account.
-        permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
+        permissions: { models: ["text"] },
         agentRun: { parentApiKeyId: parent.id },
     });
 });
@@ -132,7 +133,7 @@ test("surfaces the parent request id", async () => {
 
 test("a refusal during an agent run names the agent in a signed grant link", async () => {
     const parent = await createTestApiKey({
-        allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+        allowedModels: ["image"],
         user: { tierBalance: 100 },
     });
     const agent = "community/alice/research-buddy";
@@ -158,7 +159,7 @@ test("a refusal during an agent run names the agent in a signed grant link", asy
     const signed = {
         secret: env.BETTER_AUTH_SECRET,
         apiKeyId: parent.id,
-        grant: { model: "Itachi-1824/polli" },
+        grant: { category: "text" },
         agent,
         sig: link.searchParams.get("sig") ?? "",
     };

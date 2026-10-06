@@ -463,7 +463,7 @@ it.each([
     const link = new URL("https://enter.pollinations.ai/grant");
     link.search = new URLSearchParams({
         id: caller.id,
-        model,
+        category: "text",
         ref: "agent_grant",
         redirect: "https://chat.example",
     }).toString();

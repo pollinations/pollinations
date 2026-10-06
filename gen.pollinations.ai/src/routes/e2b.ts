@@ -1,6 +1,5 @@
 import { extractApiKey } from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
-import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { handleError } from "@shared/error.ts";
@@ -18,7 +17,8 @@ import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
-import { permissionRequired, requireFunds } from "@/utils/refusals.ts";
+import { requireAccountFunds } from "@/utils/generation-access.ts";
+import { permissionRequired } from "@/utils/refusals.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -157,13 +157,6 @@ function lease(sandbox: SandboxDetail, seconds: number): Lease {
     };
 }
 
-function requireLeaseFunds(c: E2bContext, price: number) {
-    const userId = c.var.auth.requireUser().id;
-    return requireFunds(c, price, () =>
-        getFundedUserBalance(drizzle(c.env.DB), c.env.DB, userId),
-    );
-}
-
 async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
     let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
         null;
@@ -177,10 +170,11 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
             userId: c.var.auth.requireUser().id,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-            // requireLeaseFunds checked the key budget; nothing was reserved.
+            // requireAccountFunds checked the key budget; nothing was reserved.
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
+            questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
         c.var.log.error("Sandbox lease charge failed: {error}", {
@@ -247,7 +241,7 @@ async function extendLease(
             : now;
     const endAt = now + timeout * 1000;
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (bill.price > 0) await requireLeaseFunds(c, bill.price);
+    if (bill.price > 0) await requireAccountFunds(c, bill.price);
     const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -350,7 +344,7 @@ export const e2bRoutes = new Hono<Env>()
             });
         }
         // An empty wallet cannot pay for any lease.
-        await requireLeaseFunds(c, 0);
+        await requireAccountFunds(c, 0);
         await requireCapacity(c);
 
         const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
@@ -384,7 +378,7 @@ export const e2bRoutes = new Hono<Env>()
                 (Date.parse(sandbox.endAt) - Date.parse(sandbox.startedAt)) /
                     1000,
             );
-            await requireLeaseFunds(c, bill.price);
+            await requireAccountFunds(c, bill.price);
         } catch (error) {
             // Never leave an unpaid sandbox running.
             await e2b(c, `/sandboxes/${created.sandboxID}`, {

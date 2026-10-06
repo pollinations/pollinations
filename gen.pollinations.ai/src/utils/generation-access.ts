@@ -3,10 +3,13 @@ import {
     atomicAdjustApiKeyBalance,
     atomicReserveApiKeyBalance,
 } from "@shared/billing/deduction.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { withByopMarkup } from "@shared/billing/markup.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import type { Env } from "@/env.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -31,7 +34,7 @@ export async function checkBalance(
     const { auth, balance, model, log } = vars;
     if (!auth.user?.id) return;
 
-    const isPaidOnly = model.definition.paidOnly ?? false;
+    const isPaidOnly = model.definition.paidOnly;
     const estimatedCost = withByopMarkup(
         getEstimatedPrice(
             await getModelStats(env.KV, log),
@@ -55,6 +58,20 @@ export async function checkBalance(
     if (typeof auth.apiKey?.pollenBalance === "number") {
         balance.apiKeyBudgetEstimate = Math.max(0, estimatedCost);
     }
+}
+
+/**
+ * Wallet and key budget preflight for charges known before execution
+ * (sandbox leases) or only after it (MCP tool receipts, price 0).
+ */
+export async function requireAccountFunds(
+    c: Context<Env>,
+    price: number,
+): Promise<void> {
+    const userId = c.var.auth.requireUser().id;
+    await requireFunds(c, price, () =>
+        getFundedUserBalance(drizzle(c.env.DB), c.env.DB, userId),
+    );
 }
 
 export async function reserveApiKeyBudget(

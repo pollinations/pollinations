@@ -981,10 +981,7 @@ describe("API Key Management", () => {
             );
             expect(restrictedKey).toBeTruthy();
             expect(restrictedKey.permissions).toEqual({
-                models: [
-                    "openai/gpt-5-nano",
-                    "black-forest-labs/flux.1-schnell",
-                ],
+                models: ["text", "image"],
             });
         });
 
@@ -1007,19 +1004,18 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("rejects aliases and unknown IDs on key create and update without changing permissions", async ({
+        test("widens model IDs and aliases to categories and rejects unknown values without changing permissions", async ({
             sessionToken,
         }) => {
-            const canonical = "black-forest-labs/flux.1-schnell";
             const created = await createApiKeyViaApi(sessionToken, {
-                name: "canonical-only-permissions",
-                allowedModels: [canonical],
+                name: "category-permissions",
+                allowedModels: ["flux", "nanobanana2"],
             });
             const headers = {
                 "Content-Type": "application/json",
                 Cookie: `better-auth.session_token=${sessionToken}`,
             };
-            for (const model of ["flux", "nanobanana2", "retired-model"]) {
+            for (const model of ["retired-model", "community/nobody/missing"]) {
                 for (const path of [
                     "/api/api-keys",
                     `/api/api-keys/${created.id}/update`,
@@ -1038,7 +1034,7 @@ describe("API Key Management", () => {
                     );
                     expect(response.status).toBe(400);
                     expect(JSON.stringify(await response.json())).toContain(
-                        "not a canonical model ID",
+                        "is not a model category",
                     );
                 }
             }
@@ -1047,129 +1043,74 @@ describe("API Key Management", () => {
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                canonical,
+                "image",
             ]);
         });
 
-        test("should include only private community models owned by the user", async ({
+        test("widens community model IDs to their modality's category", async ({
             sessionToken,
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
-                name: "key-with-private-community-models",
+                name: "key-with-community-model",
             });
             const db = drizzle(env.DB, { schema });
             const key = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
-            expect(key?.configId).toBe("default");
-            expect(key?.referenceId).toBeTruthy();
             const ownerUserId = key?.referenceId as string;
-
             await db
                 .update(schema.user)
                 .set({ githubUsername: "model-owner" })
                 .where(eq(schema.user.id, ownerUserId));
-            await db.insert(schema.user).values({
-                id: "other-model-owner-id",
-                name: "Other Model Owner",
-                email: "other-model-owner@example.com",
-                githubUsername: "other-owner",
-                createdAt: new Date(),
-                updatedAt: new Date(),
+            await db.insert(schema.communityEndpoint).values({
+                id: "owner-private-image-model",
+                ownerUserId,
+                name: "private-model",
+                title: "Owner private image model",
+                baseUrl: "https://owner.example.com/v1",
+                upstreamModel: "private-model",
+                payload: JSON.stringify({
+                    paidOnly: false,
+                    bearerTokenCiphertext: "encrypted-token",
+                    modality: "image",
+                    imagePricing: "request",
+                    inputModalities: ["text"],
+                    perUserRpm: null,
+                    fallbacks: [],
+                    prices: {},
+                }),
+                visibility: "private",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
             });
-            await db.insert(schema.communityEndpoint).values([
-                {
-                    id: "owner-private-model",
-                    ownerUserId,
-                    name: "private-model",
-                    title: "Owner private model",
-                    baseUrl: "https://owner.example.com/v1",
-                    upstreamModel: "private-model",
-                    payload: JSON.stringify({
-                        bearerTokenCiphertext: "encrypted-token",
-                        modality: "text",
-                        imagePricing: "request",
-                        inputModalities: ["text"],
-                        perUserRpm: null,
-                        fallbacks: [],
-                        prices: {},
-                    }),
-                    visibility: "private",
-                    promptTextPrice: 0,
-                    completionTextPrice: 0,
-                },
-                {
-                    id: "other-private-model",
-                    ownerUserId: "other-model-owner-id",
-                    name: "private-model",
-                    title: "Other private model",
-                    baseUrl: "https://other.example.com/v1",
-                    upstreamModel: "private-model",
-                    payload: JSON.stringify({
-                        bearerTokenCiphertext: "encrypted-token",
-                        modality: "text",
-                        imagePricing: "request",
-                        inputModalities: ["text"],
-                        perUserRpm: null,
-                        fallbacks: [],
-                        prices: {},
-                    }),
-                    visibility: "private",
-                    promptTextPrice: 0,
-                    completionTextPrice: 0,
-                },
-            ]);
 
             const headers = {
                 "Content-Type": "application/json",
                 Cookie: `better-auth.session_token=${sessionToken}`,
             };
-            const update = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
-                {
-                    method: "POST",
-                    headers,
-                    body: JSON.stringify({
-                        allowedModels: [
-                            communityModelId("model-owner", "private-model"),
-                            communityModelId("other-owner", "private-model"),
-                        ],
-                    }),
-                },
-            );
-            expect(update.status).toBe(200);
-            const aliasUpdate = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
-                {
-                    method: "POST",
-                    headers,
-                    body: JSON.stringify({
-                        allowedModels: [
-                            legacyCommunityModelId(
-                                "model-owner",
-                                "private-model",
-                            ),
-                        ],
-                    }),
-                },
-            );
-            expect(aliasUpdate.status).toBe(400);
+            for (const model of [
+                communityModelId("model-owner", "private-model"),
+                legacyCommunityModelId("model-owner", "private-model"),
+            ]) {
+                const update = await SELF.fetch(
+                    `http://localhost:3000/api/api-keys/${created.id}/update`,
+                    {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({ allowedModels: [model] }),
+                    },
+                );
+                expect(update.status).toBe(200);
+            }
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
-                {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
+                { headers },
             );
-
             expect(response.status).toBe(200);
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((item) => item.id === created.id);
-            expect(listed?.permissions?.models).toEqual([
-                "community/model-owner/private-model",
-            ]);
+            expect(listed?.permissions?.models).toEqual(["image"]);
         });
 
         test("should require authentication", async () => {
@@ -1193,18 +1134,16 @@ describe("API Key Management", () => {
     });
 
     describe("POST /api/api-keys/:id/grant", () => {
-        test("adds only the approved model to an existing key", async ({
+        test("adds only the approved model category to an existing key", async ({
             sessionToken,
         }) => {
-            const firstModel = "black-forest-labs/flux.1-schnell";
-            const secondModel = "google/gemini-3.1-flash-image";
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "limited-model-key",
-                allowedModels: [firstModel],
+                allowedModels: ["image"],
                 accountPermissions: ["profile"],
             });
             const url = `http://localhost:3000/api/api-keys/${created.id}/grant`;
-            const body = JSON.stringify({ model: secondModel });
+            const body = JSON.stringify({ category: "text" });
             const headers = {
                 "Content-Type": "application/json",
                 Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1231,7 +1170,7 @@ describe("API Key Management", () => {
             const invalid = await SELF.fetch(url, {
                 method: "POST",
                 headers,
-                body: JSON.stringify({ model: "flux" }),
+                body: JSON.stringify({ category: "flux" }),
             });
             expect(invalid.status).toBe(400);
 
@@ -1253,7 +1192,7 @@ describe("API Key Management", () => {
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
-                models: [firstModel, secondModel],
+                models: ["image", "text"],
                 account: ["profile"],
             });
             expect(key?.pollenBalance).toBe(5);
@@ -1262,10 +1201,9 @@ describe("API Key Management", () => {
         test("adds only the approved account permission", async ({
             sessionToken,
         }) => {
-            const model = "black-forest-labs/flux.1-schnell";
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "limited-account-key",
-                allowedModels: [model],
+                allowedModels: ["image"],
                 accountPermissions: ["profile"],
             });
             const grant = (permission: string) =>
@@ -1290,7 +1228,7 @@ describe("API Key Management", () => {
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(key?.permissions ?? "{}")).toEqual({
-                models: [model],
+                models: ["image"],
                 account: ["profile", "machines"],
             });
         });
@@ -1416,10 +1354,7 @@ describe("API Key Management", () => {
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: [
-                    "black-forest-labs/flux.1-schnell",
-                    "google/gemini-3.1-flash-image",
-                ],
+                models: ["image"],
                 account: ["profile", "usage"],
             });
         });
@@ -1459,9 +1394,7 @@ describe("API Key Management", () => {
             const keyInfo = (await accountKeyResponse.json()) as {
                 permissions?: { models?: string[] };
             };
-            expect(keyInfo.permissions?.models).toEqual([
-                "black-forest-labs/flux.1-schnell",
-            ]);
+            expect(keyInfo.permissions?.models).toEqual(["image"]);
         });
 
         test("should reflect updated metadata immediately after update", async ({
@@ -1584,9 +1517,7 @@ describe("API Key Management", () => {
             await drizzle(env.DB)
                 .update(schema.apikey)
                 .set({
-                    permissions: JSON.stringify({
-                        models: ["flux", "retired-model"],
-                    }),
+                    permissions: JSON.stringify({ models: ["image"] }),
                 })
                 .where(eq(schema.apikey.id, keyId));
 
@@ -1608,9 +1539,7 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
-            expect(JSON.parse(result.permissions).models).toEqual([
-                "black-forest-labs/flux.1-schnell",
-            ]);
+            expect(JSON.parse(result.permissions).models).toEqual(["image"]);
 
             // Verify in list
             const listResponse = await SELF.fetch(
@@ -1849,9 +1778,7 @@ describe("API Key Management", () => {
 
             expect(finalKey.name).toBe("final-name");
             expect(finalKey.pollenBalance).toBe(25);
-            expect(finalKey.permissions.models).toEqual([
-                "openai/gpt-5.4-nano",
-            ]);
+            expect(finalKey.permissions.models).toEqual(["text"]);
             expect(finalKey.expiresAt).toBeTruthy();
         });
     });

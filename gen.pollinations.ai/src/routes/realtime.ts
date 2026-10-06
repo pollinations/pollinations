@@ -42,11 +42,10 @@ import {
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import {
-    checkBalance,
     releaseApiKeyBudgetReservation,
+    requireGenerationAccess,
     reserveApiKeyBudget,
 } from "@/utils/generation-access.ts";
-import { permissionRequired } from "@/utils/refusals.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 type AzureRealtimeApiKey =
@@ -100,6 +99,7 @@ type RealtimeBillingContext = {
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
+    questPollenOnly?: boolean;
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelRequested: string;
@@ -125,18 +125,6 @@ type RealtimeBillingContext = {
     deductionAttempted: boolean;
     rateLimitConsumed: boolean;
 };
-
-function requireAllowedModel(c: Context<Env>, model: string): void {
-    const apiKey = c.var.auth.apiKey;
-    const allowedModels = apiKey?.permissions?.models;
-    if (apiKey && allowedModels && !allowedModels.includes(model)) {
-        throw permissionRequired(
-            c,
-            { model },
-            `Model '${model}' is not allowed for this API key.`,
-        );
-    }
-}
 
 async function createSafetyIdentifier(
     userId: string,
@@ -861,6 +849,7 @@ async function settleRealtimeSession(
             apiKeyReservedAmount: tracking.apiKeyReservedAmount,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
+            questPollenOnly: tracking.questPollenOnly,
         });
         c.var.balance.apiKeyReservation = undefined;
     }
@@ -1402,6 +1391,7 @@ async function createRealtimeBillingContext(
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,
@@ -1427,16 +1417,10 @@ async function createRealtimeBillingContext(
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
-    const user = c.var.auth.requireUser();
-
-    const resolvedModel = c.var.model.resolved;
-    requireAllowedModel(c, resolvedModel);
-
-    // Same model-independent, estimated-price balance gate as every other
-    // generation route (tier or pack balance, paidOnly handled by the resolved
-    // model definition). checkBalance reads c.var.model.
-    await checkBalance(c.var, c.env);
-    return user.id;
+    // Same user, key model and estimated-price balance gates as every other
+    // generation route (paidOnly handled by the resolved model definition).
+    await requireGenerationAccess(c.var, c.env);
+    return c.var.auth.requireUser().id;
 }
 
 export async function handleRealtimeWebSocket(

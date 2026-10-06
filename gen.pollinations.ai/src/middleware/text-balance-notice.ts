@@ -40,6 +40,16 @@ function balanceNoticeMessage(
             `Topping up the wallet does not raise this limit. ${NOT_YOUR_ACCOUNT}`
         );
     }
+    if (error.errorCode === "QUEST_POLLEN_ONLY") {
+        const allowPaid = `[allow paid Pollen for this key](${error.fixUrl})`;
+        const remedy = error.paidOnly
+            ? `This model needs paid Pollen. Please ${allowPaid}, then try again.`
+            : `Please [complete a quest](${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })}) or ${allowPaid}, then try again.`;
+        return (
+            `The API key used for this request only spends Quest Pollen${error.paidOnly ? "" : ", and there isn't enough left"}. ` +
+            `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
+        );
+    }
     const topUp = `[top up](${error.fixUrl})`;
     const remedy = error.paidOnly
         ? `This model needs paid Pollen. Please ${topUp}, then try again.`

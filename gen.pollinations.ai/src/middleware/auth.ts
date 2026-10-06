@@ -7,7 +7,8 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
-import { canonicalizeModelPermissionIds } from "@shared/registry/visible-model-ids.ts";
+import { keyAllowsCategory } from "@shared/registry/model-permissions.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -18,6 +19,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
+        definition: Pick<ModelDefinition, "category">;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -56,20 +58,7 @@ function installAuth(
         agentRun?: AgentRunClaims;
     },
 ): void {
-    const { user, agentRun } = authResult;
-    // Normalize the request snapshot once for generation, catalogs, realtime
-    // and fallback filtering. Stored permissions are canonicalized on writes.
-    const apiKey = authResult.apiKey?.permissions?.models
-        ? {
-              ...authResult.apiKey,
-              permissions: {
-                  ...authResult.apiKey.permissions,
-                  models: canonicalizeModelPermissionIds(
-                      authResult.apiKey.permissions.models,
-                  ),
-              },
-          }
-        : authResult.apiKey;
+    const { user, apiKey, agentRun } = authResult;
 
     const requireUser = (): AuthUser => {
         if (!user) {
@@ -84,13 +73,14 @@ function installAuth(
         const model = c.var.model;
         if (!model) return;
 
-        if (!apiKey?.permissions?.models) return;
+        if (!apiKey) return;
 
-        if (!apiKey.permissions.models.includes(model.resolved)) {
+        const { category } = model.definition;
+        if (!keyAllowsCategory(apiKey.permissions?.models, category)) {
             throw permissionRequired(
                 c,
-                { model: model.resolved },
-                `Model '${model.requested}' is not allowed for this API key.`,
+                { category },
+                `Model '${model.requested}' is not allowed for this API key, which does not allow ${category} models.`,
             );
         }
     }

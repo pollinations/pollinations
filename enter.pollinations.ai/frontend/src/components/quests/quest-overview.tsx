@@ -983,35 +983,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 />
             )}
 
-            {bonusRewardCards.length > 0 && (
-                <Section
-                    title="Bonus rewards"
-                    action={
-                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                            {
-                                bonusRewardCards.filter(
-                                    (card) => card.status === "claimed",
-                                ).length
-                            }{" "}
-                            / {bonusRewardCards.length}
-                        </span>
-                    }
-                >
-                    <div className="flex flex-col gap-2">
-                        {bonusRewardCards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                icon={SparkleIcon}
-                                claiming={state.claimingRewardIds.includes(
-                                    card.rewardId ?? "",
-                                )}
-                                onClaim={handleClaimReward}
-                            />
-                        ))}
-                    </div>
-                </Section>
-            )}
             {CATEGORIES.map((category) => {
                 const cards = sections[category.key];
                 if (state.loading || cards.length === 0) return null;
@@ -1049,6 +1020,35 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     </Section>
                 );
             })}
+            {bonusRewardCards.length > 0 && (
+                <Section
+                    title="Bonus rewards"
+                    action={
+                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                            {
+                                bonusRewardCards.filter(
+                                    (card) => card.status === "claimed",
+                                ).length
+                            }{" "}
+                            / {bonusRewardCards.length}
+                        </span>
+                    }
+                >
+                    <div className="flex flex-col gap-2">
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={SparkleIcon}
+                                claiming={state.claimingRewardIds.includes(
+                                    card.rewardId ?? "",
+                                )}
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            )}
         </>
     );
 }

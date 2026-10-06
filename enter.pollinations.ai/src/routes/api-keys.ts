@@ -10,12 +10,8 @@ import {
 } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import {
-    canonicalizeModelPermissionIds,
-    filterPermissionsToVisibleModels,
-    getVisibleModelIdsForUser,
-    validateModelPermissionIds,
-} from "@shared/registry/visible-model-ids.ts";
+import { toModelCategories } from "@shared/registry/model-permissions.ts";
+import { MODEL_CATEGORIES } from "@shared/registry/registry.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -120,7 +116,7 @@ async function updateKeyMetadata(
  * Uses better-auth's server API which supports server-only fields like permissions.
  *
  * Permissions format: { models?: string[], account?: string[] }
- * - models: canonical IDs from /models = restrict to specific models
+ * - models: model categories (text, image, ...) = restrict to those categories
  * - account: ["profile", "usage", "keys", "machines"] = allow access to account endpoints and hosted sandboxes
  */
 const UpdateApiKeySchema = z.object({
@@ -130,13 +126,19 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Canonical model IDs from /models. null = all models allowed",
+            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models allowed",
         ),
     pollenBudget: z
         .number()
         .nullable()
         .optional()
         .describe("Pollen budget cap for this key. null = unlimited"),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -153,9 +155,9 @@ const UpdateApiKeySchema = z.object({
         .describe("Expiration date for the key. null = no expiry"),
 });
 
-// One model or one account permission per approval.
+// One model category or one account permission per approval.
 const GrantSchema = z.union([
-    z.object({ model: z.string().min(1) }),
+    z.object({ category: z.enum(MODEL_CATEGORIES) }),
     z.object({ permission: z.enum(CONSENT_PERMISSIONS) }),
 ]);
 
@@ -190,7 +192,7 @@ const CreateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Canonical model IDs from /models. null = all models allowed",
+            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models allowed",
         ),
     pollenBudget: z
         .number()
@@ -198,6 +200,12 @@ const CreateApiKeySchema = z.object({
         .optional()
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out",
         ),
     accountPermissions: z
         .array(z.string())
@@ -260,6 +268,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 expiresIn: input.expiresIn,
                 allowedModels: input.allowedModels,
                 pollenBudget: input.pollenBudget,
+                questPollenOnly: input.questPollenOnly,
                 accountPermissions: input.accountPermissions,
                 metadata: input.metadata,
                 defaultCreatedVia: createdVia,
@@ -299,32 +308,20 @@ export const apiKeysRoutes = new Hono<Env>()
                 where: eq(schema.apikey.referenceId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
-            const parsedPermissions = keys.map((key) =>
-                key.permissions ? parsePermissions(key.permissions) : null,
-            );
-            const hasModelRestrictions = parsedPermissions.some((permissions) =>
-                Array.isArray(permissions?.models),
-            );
-            const visibleModelIds = hasModelRestrictions
-                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
-                : null;
-
             return c.json({
-                data: keys.map((key, index) => ({
+                data: keys.map((key) => ({
                     id: key.id,
                     name: key.name,
                     start: key.start,
                     createdAt: key.createdAt,
                     lastRequest: key.lastRequest,
                     expiresAt: key.expiresAt,
-                    permissions: visibleModelIds
-                        ? filterPermissionsToVisibleModels(
-                              parsedPermissions[index],
-                              visibleModelIds,
-                          )
-                        : parsedPermissions[index],
+                    permissions: key.permissions
+                        ? parsePermissions(key.permissions)
+                        : null,
                     metadata: key.metadata ? parseMetadata(key.metadata) : null,
                     pollenBalance: key.pollenBalance,
+                    questPollenOnly: key.questPollenOnly,
                     byopClientKeyId: key.byopClientKeyId,
                 })),
             });
@@ -350,6 +347,7 @@ export const apiKeysRoutes = new Hono<Env>()
                 name,
                 allowedModels,
                 pollenBudget,
+                questPollenOnly,
                 accountPermissions,
                 expiresAt,
             } = c.req.valid("json");
@@ -371,7 +369,7 @@ export const apiKeysRoutes = new Hono<Env>()
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,
                 Array.isArray(allowedModels)
-                    ? await validateModelPermissionIds(c.env.DB, allowedModels)
+                    ? await toModelCategories(c.env.DB, allowedModels)
                     : allowedModels,
                 sanitizedAccountPerms,
             );
@@ -386,10 +384,15 @@ export const apiKeysRoutes = new Hono<Env>()
                 });
             }
 
-            const d1Updates: Record<string, string | number | Date | null> = {};
+            const d1Updates: Record<
+                string,
+                string | number | boolean | Date | null
+            > = {};
             if (name !== undefined) d1Updates.name = name;
             if (pollenBudget !== undefined)
                 d1Updates.pollenBalance = pollenBudget;
+            if (questPollenOnly !== undefined)
+                d1Updates.questPollenOnly = questPollenOnly;
             if (expiresAt !== undefined) d1Updates.expiresAt = expiresAt;
 
             if (Object.keys(d1Updates).length > 0) {
@@ -402,26 +405,12 @@ export const apiKeysRoutes = new Hono<Env>()
             const updated = await db.query.apikey.findFirst({
                 where: eq(schema.apikey.id, id),
             });
-            const permissions = updated?.permissions
-                ? parsePermissions(updated.permissions)
-                : null;
-            const visibleModelIds = Array.isArray(permissions?.models)
-                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
-                : null;
-            const responsePermissions = visibleModelIds
-                ? JSON.stringify(
-                      filterPermissionsToVisibleModels(
-                          permissions,
-                          visibleModelIds,
-                      ),
-                  )
-                : updated?.permissions;
-
             return c.json({
                 id: updated?.id ?? id,
                 name: updated?.name,
-                permissions: responsePermissions,
+                permissions: updated?.permissions,
                 pollenBalance: updated?.pollenBalance ?? null,
+                questPollenOnly: updated?.questPollenOnly ?? false,
                 expiresAt: updated?.expiresAt ?? null,
             });
         },
@@ -431,7 +420,7 @@ export const apiKeysRoutes = new Hono<Env>()
         describeRoute({
             tags: ["👤 Account"],
             description:
-                "Add one model or account permission to an owned API key.",
+                "Add one model category or account permission to an owned API key.",
             hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
         }),
         validator("json", GrantSchema),
@@ -456,27 +445,12 @@ export const apiKeysRoutes = new Hono<Env>()
                     };
                 }
             } else {
-                const [canonicalModel] = await validateModelPermissionIds(
-                    c.env.DB,
-                    [grant.model],
-                );
-                const visibleModels = await getVisibleModelIdsForUser(
-                    c.env.DB,
-                    user.id,
-                );
-                if (!visibleModels.has(canonicalModel)) {
-                    throw new HTTPException(404, {
-                        message: "Model not available",
-                    });
-                }
-                // An absent model list already allows every model. Keep it.
-                const models = Array.isArray(permissions?.models)
-                    ? canonicalizeModelPermissionIds(permissions.models)
-                    : null;
-                if (models && !models.includes(canonicalModel)) {
+                // An absent model list already allows every category. Keep it.
+                const models = permissions?.models;
+                if (Array.isArray(models) && !models.includes(grant.category)) {
                     next = {
                         ...permissions,
-                        models: [...models, canonicalModel],
+                        models: [...models, grant.category],
                     };
                 }
             }
@@ -501,8 +475,8 @@ export const apiKeysRoutes = new Hono<Env>()
             c.var.auth.requireUser();
             const query = c.req.valid("query");
             const grant =
-                "model" in query
-                    ? { model: query.model }
+                "category" in query
+                    ? { category: query.category }
                     : { permission: query.permission };
             // The link reached the owner through the agent, so only gen's
             // signature makes the name trustworthy. This reads nothing from

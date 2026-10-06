@@ -93,29 +93,48 @@ export async function requireFunds(
     loadBalance: () => Promise<UserBalance>,
     paidOnly = false,
 ): Promise<UserBalance> {
-    const budget = c.var.auth?.apiKey?.pollenBalance;
+    const apiKey = c.var.auth?.apiKey;
+    const charge = `This request costs ~${cost.toFixed(4)} pollen`;
+    const budget = apiKey?.pollenBalance;
     if (typeof budget === "number" && budget < Math.max(0, cost)) {
         throw keyBudgetExhausted(
             c,
-            `API key budget too low. This request costs ~${cost.toFixed(4)} pollen, but this key has ${Math.max(0, budget).toFixed(4)}.`,
+            `API key budget too low. ${charge}, but this key has ${Math.max(0, budget).toFixed(4)}.`,
         );
     }
     const balance = await loadBalance();
-    if (!canCoverEstimatedCharge(balance, cost, paidOnly)) {
-        const available = paidOnly
-            ? balance.packBalance
-            : Math.max(balance.tierBalance, balance.packBalance);
-        const fixUrl = fixLink(c, "/top-up", {
-            ref: "agent_low_balance_topup",
+    // A Quest Pollen only key can never draw on the paid balance.
+    const questPollenOnly = apiKey?.questPollenOnly ?? false;
+    const spendable = questPollenOnly
+        ? { ...balance, packBalance: 0 }
+        : balance;
+    if (canCoverEstimatedCharge(spendable, cost, paidOnly)) return balance;
+
+    if (questPollenOnly) {
+        const fixUrl = fixLink(c, "/edit-key", {
+            id: apiKey?.id,
+            ref: "agent_quest_pollen_only",
         });
+        const allowPaid = `allow paid Pollen for this key at ${fixUrl}`;
         throw new PaymentRequiredError(
-            "INSUFFICIENT_BALANCE",
-            `Insufficient balance. This request costs ~${cost.toFixed(4)} pollen, but your available ${paidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`,
+            "QUEST_POLLEN_ONLY",
+            paidOnly
+                ? `This model needs paid Pollen, but this API key only spends Quest Pollen. To use it, ${allowPaid}.`
+                : `Not enough Quest Pollen. ${charge}, but you have ${Math.max(0, balance.tierBalance).toFixed(4)} Quest Pollen, and this API key only spends Quest Pollen. Complete a quest at ${fixLink(c, "/quests", { ref: "agent_quest_pollen_only_quests" })} or ${allowPaid}.`,
             fixUrl,
             paidOnly,
         );
     }
-    return balance;
+    const available = paidOnly
+        ? balance.packBalance
+        : Math.max(balance.tierBalance, balance.packBalance);
+    const fixUrl = fixLink(c, "/top-up", { ref: "agent_low_balance_topup" });
+    throw new PaymentRequiredError(
+        "INSUFFICIENT_BALANCE",
+        `Insufficient balance. ${charge}, but your available ${paidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at ${fixUrl}.`,
+        fixUrl,
+        paidOnly,
+    );
 }
 
 export function keyBudgetExhausted(

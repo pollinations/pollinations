@@ -53,11 +53,11 @@ it.each([
             canPublish: false,
             onOpenChange: () => {},
             onSubmit: async () => {},
-            onSync: async () => {},
+            onSync: async () => "b".repeat(40),
         }),
     );
     const syncButton = html.match(
-        /<button\b[^>]*>Sync from GitHub<\/button>/,
+        /<button\b(?:(?!<\/button>).)*Sync<\/button>/,
     )?.[0];
     const configurationLabel =
         type === "code_agent" ? "GitHub repository" : "System prompt";
@@ -69,6 +69,10 @@ it.each([
     if (type === "code_agent") {
         expect(syncButton).toContain('type="button"');
         expect(syncButton).not.toContain("disabled");
+        expect(html).toContain(
+            `Deployed <code class="font-mono">aaaaaaa</code>`,
+        );
+        expect(html).not.toContain("Fork an example");
     } else {
         expect(syncButton).toBeUndefined();
     }

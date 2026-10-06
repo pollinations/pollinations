@@ -1,0 +1,34 @@
+{
+  "pr_number": 16581,
+  "title": "feat: add Eleven v4 speech",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16581",
+  "merged_at": "2026-10-06T13:04:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `elevenlabs/eleven-v4`: ElevenLabs `api.elevenlabs.io/v1/text-to-speech/{voice_id}`, upstream `eleven_v4`, no aliases, paid-only, 1× multiplier, no Pollinations GPU. Supports simple speech, OpenAI-compatible speech, and timestamps.\n- Uses one v4-family condition for Unicode counting, supported voice settings, and FLAC rejection. Adds CI regression tests for both speech handlers; the shared live suite also checks emoji usage and wallet deductions.\n- Uses the current [official launch rate](https://elevenlabs.io/pricing/api), $0.022/1K characters, with no automatic expiry. Provider rate changes require an explicit registry update; the advertised regular rate is $0.08/1K.\n- Keeps fallback **none**. Researched fal `elevenlabs/tts/eleven-v4`: direct probe passed, but fallback billing remains unverified. Shared account concurrency limit is 15; three concurrent cache misses passed.\n- Validation: 90 focused Gen tests, 479 Enter tests, Gen/Enter typechecks, 35 voices, five formats, all three endpoints, cache, and disconnect/rejoin. Provider analytics confirm 63 Unicode characters cost $0.001386; wallet and staging Tinybird agree. The 896-character rejoin produced one $0.019712 debit/event. Live tests run separately from credential-free CI. Turbo PR #16582 builds on this branch.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new voice in the garden",
+    "blurb": "Eleven v4 joins the speech garden, with timestamps for anyone who likes their words and audio to arrive together.",
+    "summary": "Adds the paid-only `elevenlabs/eleven-v4` text-to-speech model for simple speech, OpenAI-compatible speech, and timestamped output, at a registered rate of $0.022 per 1,000 Unicode characters.",
+    "impact": "Developers get three ways to request Eleven v4 speech, including word timing, with Unicode-based usage accounting and a 1× billing multiplier.",
+    "keywords": [
+      "ElevenLabs",
+      "eleven-v4",
+      "text-to-speech",
+      "audio",
+      "timestamps",
+      "billing"
+    ],
+    "visual_concept": "Polli helps a retro microphone turn text into a warm audio waveform, while a small CRT robot points to synchronized word markers. A lime-green code-plant and pixel flowers tie the speech feature to the pollinations garden; a tiny headphone accessory connects Polli to the sound.",
+    "image_prompt": "In a cozy pixel art garden studio, Polli wears tiny headphones and smiles at a retro microphone as a lime green (#ecf874) waveform blooms beside little timestamp markers; a friendly CRT monitor robot follows the words on its screen among pixel flowers and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, never realistic. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike; tiny pixel-font text reads 'ELEVEN V4', nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16581.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears tiny headphones and smiles at a retro microphone as a lime green (#ecf874) waveform blooms beside little timestamp markers; a friendly CRT monitor robot follows the words on its screen among pixel flowers and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, never realistic. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike; tiny pixel-font text reads 'ELEVEN V4', nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-06T13:05:06.476048+00:00"
+}

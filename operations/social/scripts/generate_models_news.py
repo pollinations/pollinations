@@ -11,8 +11,8 @@ snapshot stored on the `news` branch, and writes:
 
 DAILY_ONLY=1 atomically commits the daily snapshot, diff and a versioned
 model-announcements JSON comment in models.md (official models only).
-The comment contains observed changes from seven calendar days including
-today and declared changes/retirements through the next 30 days. Weekly
+The comment preserves observed change history and all currently declared
+upcoming changes/retirements. Display windows belong to the frontend. Weekly
 Discord summaries remain human-readable and use the last published receipt
 as their baseline. Daily mode never formats or posts a Discord message.
 
@@ -35,7 +35,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
@@ -495,10 +495,6 @@ def official_model(model: dict[str, Any]) -> bool:
 def update_announcements(
     existing_md: str, diff: Diff, current: dict, retirements: list[dict], date_str: str
 ) -> str:
-    today = datetime.strptime(date_str, "%Y-%m-%d").date()
-    # Seven calendar days including today; future notices cover the next 30.
-    start = (today - timedelta(days=6)).isoformat()
-    end = (today + timedelta(days=30)).isoformat()
     match = FEED_PATTERN.search(existing_md)
     prior = json.loads(match.group(1)) if match else {"events": []}
     # Replacing today's entries makes retries idempotent. Future events are
@@ -506,7 +502,7 @@ def update_announcements(
     events = [
         event
         for event in prior["events"]
-        if start <= event["date"] < date_str and not event.get("scheduled")
+        if event["date"] != date_str and not event.get("scheduled")
     ]
     for category in CATEGORIES:
         for action, models in (
@@ -543,7 +539,7 @@ def update_announcements(
                 continue
             date = pending["effective_at"][:10]
             changes = announcement_changes(model, {**model, **pending})
-            if date_str <= date <= end and changes:
+            if date_str <= date and changes:
                 events.append(
                     {
                         "date": date,
@@ -556,14 +552,12 @@ def update_announcements(
                     }
                 )
     for retirement in retirements:
-        if date_str <= retirement["date"] <= end:
+        if date_str <= retirement["date"]:
             events.append({**retirement, "action": "Retiring", "scheduled": True})
     events.sort(key=lambda event: (event["date"], event["model"], event["action"]))
     feed = {
         "version": 1,
         "updated_at": date_str,
-        "past_days": 7,
-        "future_days": 30,
         "events": events,
     }
     # Escape HTML delimiters inside data without altering decoded values.

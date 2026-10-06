@@ -59,7 +59,7 @@ class ModelAnnouncementsTest(unittest.TestCase):
             {"before": True, "after": False},
         )
 
-    def test_daily_retry_window_and_cancelled_schedule(self):
+    def test_daily_retry_preserves_history_and_refreshes_schedule(self):
         before, after = model(), model(paid_only=True)
         diff = diff_models(snapshot(before), snapshot(after))
         existing = "# Pollinations Model Changelog\n\n## Older report\nKeep me.\n"
@@ -68,6 +68,8 @@ class ModelAnnouncementsTest(unittest.TestCase):
             update_announcements(md, diff, snapshot(after), [], "2026-10-06"), md
         )
         self.assertIn("Keep me.", md)
+        self.assertNotIn("past_days", feed(md))
+        self.assertNotIn("future_days", feed(md))
         empty = diff_models(snapshot(after), snapshot(after))
         self.assertEqual(
             len(
@@ -78,10 +80,10 @@ class ModelAnnouncementsTest(unittest.TestCase):
             1,
         )
         self.assertEqual(
-            feed(update_announcements(md, empty, snapshot(after), [], "2026-10-13"))[
+            feed(update_announcements(md, empty, snapshot(after), [], "2027-01-01"))[
                 "events"
             ],
-            [],
+            feed(md)["events"],
         )
         planned = [
             dict(
@@ -101,7 +103,7 @@ class ModelAnnouncementsTest(unittest.TestCase):
         scheduled = update_announcements(
             existing, empty, snapshot(after), planned, "2026-10-06"
         )
-        self.assertEqual(len(feed(scheduled)["events"]), 2)
+        self.assertEqual(len(feed(scheduled)["events"]), 3)
         self.assertEqual(
             feed(
                 update_announcements(

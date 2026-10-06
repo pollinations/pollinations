@@ -694,6 +694,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "liquid/d1",
+        config: portkeyConfig["liquid-d1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "liquid/d1:vercel",
+        config: portkeyConfig["liquid/d1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(
@@ -889,6 +899,14 @@ const models: ModelDefinition[] = [
     {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash",
+        config: portkeyConfig["inclusionai/ling-3.1-flash"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash:vercel:novita",
+        config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
     },
     {
         name: "inclusionai/ling-3.0-flash-vl",

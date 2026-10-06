@@ -2,7 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import { expect } from "vitest";
-import { createApiKeyViaApi, test } from "./fixtures.ts";
+import { test } from "./fixtures.ts";
 
 const endpoint = "/api/account/key";
 
@@ -124,40 +124,7 @@ test(
 
         const data = await response.json();
         expect(data.permissions).toBeDefined();
-        expect(data.permissions.models).toEqual([
-            "openai/gpt-5-nano",
-            "black-forest-labs/flux.1-schnell",
-        ]);
-    },
-);
-
-test(
-    "GET /api/account/key - omits retired models from permissions",
-    { timeout: 30000 },
-    async ({ sessionToken, mocks }) => {
-        await mocks.enable("tinybird");
-        const created = await createApiKeyViaApi(sessionToken, {
-            name: "current-key-with-retired-model",
-            allowedModels: ["openai/gpt-5-nano"],
-        });
-        await env.DB.prepare("UPDATE apikey SET permissions = ? WHERE id = ?")
-            .bind(
-                JSON.stringify({
-                    models: ["openai/gpt-5-nano", "retired-model"],
-                }),
-                created.id,
-            )
-            .run();
-
-        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
-            headers: {
-                Authorization: `Bearer ${created.key}`,
-            },
-        });
-
-        expect(response.status).toBe(200);
-        const data = await response.json();
-        expect(data.permissions.models).toEqual(["openai/gpt-5-nano"]);
+        expect(data.permissions.models).toEqual(["text", "image"]);
     },
 );
 

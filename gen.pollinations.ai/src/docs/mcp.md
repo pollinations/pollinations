@@ -110,7 +110,7 @@ model health, usage, earnings, quests, and API keys.
 
 | Tool | Purpose |
 | --- | --- |
-| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
+| `listModels` | Search and list live models, aliases, capabilities, voices, endpoints, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
@@ -194,7 +194,9 @@ private data. [Browse it](https://memory.pollinations.ai).
 
 Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
-selected model's listed rate.
+selected model's listed rate. A `tools/call` on a server with its own rate
+needs a positive Pollen balance and returns 402 otherwise; `initialize` and
+`tools/list` stay free.
 
 An MCP server can only use models and account features allowed by the caller's
 key and cannot spend beyond that key's budget. Configure both in

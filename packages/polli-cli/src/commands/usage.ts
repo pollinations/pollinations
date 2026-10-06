@@ -305,6 +305,11 @@ export const usageCommand = new Command("usage")
                     apiKey: key,
                 });
                 const rows = filterDailyRows(data.usage, keyIds, models);
+                // JSON keeps the API records: numeric cost_usd, no rounding.
+                if (getOutputMode() !== "human") {
+                    printResult(rows);
+                    return;
+                }
                 printTable(
                     rows.map((r) => ({
                         date: r.date,
@@ -331,6 +336,10 @@ export const usageCommand = new Command("usage")
                 return;
             }
             const data = await gen<UsageResponse>(path, { apiKey: key });
+            if (getOutputMode() !== "human") {
+                printResult(data.usage);
+                return;
+            }
             printTable(
                 data.usage.map((r) => ({
                     time: r.timestamp,

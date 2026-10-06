@@ -1,6 +1,6 @@
 /**
- * Hook to fetch real-time model statistics from gen.pollinations.ai/models/stats
- * (Tinybird data cached server-side for an hour).
+ * Hook to fetch model usage statistics from gen.pollinations.ai/models/stats:
+ * an hourly Tinybird snapshot, cached server-side for an hour.
  */
 
 import { useEffect, useMemo, useState } from "react";

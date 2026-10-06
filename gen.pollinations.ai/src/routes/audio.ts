@@ -2423,7 +2423,7 @@ const GeminiSpeechResponseSchema = z.object({
         total_output_tokens: z.number().int().positive(),
         input_tokens_by_modality: z.array(
             z.object({
-                modality: z.literal("text"),
+                modality: z.enum(["text", "audio"]),
                 tokens: z.number().int().nonnegative(),
             }),
         ),
@@ -2467,6 +2467,8 @@ export function parseGeminiSpeechResponse(
     // Google bills the public usage totals. raw_prompt_token and invocation
     // counters include internal tokens; adding them would double-count usage.
     // https://discuss.ai.google.dev/t/182722/2
+    // Input totals also count the voice's built-in audio prompt; only text
+    // input is billed, as on Google's price list.
     const { usage, steps } = parsed.data;
     if (
         usage.input_tokens_by_modality.reduce(
@@ -2521,7 +2523,9 @@ export function parseGeminiSpeechResponse(
     return {
         bytes,
         usage: {
-            promptTextTokens: usage.total_input_tokens,
+            promptTextTokens: usage.input_tokens_by_modality
+                .filter((entry) => entry.modality === "text")
+                .reduce((sum, entry) => sum + entry.tokens, 0),
             completionAudioTokens: usage.total_output_tokens,
         },
     };

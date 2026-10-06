@@ -233,14 +233,14 @@ async function seedByopConnections(
     return userIds;
 }
 
-async function createUsageApiKey(sessionToken: string, name: string) {
+async function createUsageApiKey(accountToken: string, name: string) {
     const createResponse = await SELF.fetch(
         "http://localhost:3000/api/account/keys",
         {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ name }),
         },
@@ -257,7 +257,7 @@ async function createUsageApiKey(sessionToken: string, name: string) {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({
                 accountPermissions: ["usage"],
@@ -580,7 +580,7 @@ test("catalog hides assigned and closed GitHub quest issues", async ({
 
 test("account quests merge earned rewards into completed status", async ({
     mocks,
-    sessionToken,
+    accountToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     await mocks.enable("github", "tinybird");
@@ -593,7 +593,7 @@ test("account quests merge earned rewards into completed status", async ({
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({
                 name: "quest-status-key",
@@ -649,7 +649,7 @@ test("account quests merge earned rewards into completed status", async ({
         reward: null,
     });
 
-    const usageKey = await createUsageApiKey(sessionToken, "quest-usage-key");
+    const usageKey = await createUsageApiKey(accountToken, "quest-usage-key");
     const usageResponse = await SELF.fetch(
         "http://localhost:3000/api/account/quests",
         {
@@ -674,7 +674,7 @@ test("account quests merge earned rewards into completed status", async ({
 test("quest check records product rewards and claim endpoint credits one", async ({
     apiKey: _apiKey,
     mocks,
-    sessionToken,
+    accountToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
@@ -704,7 +704,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         {
             method: "POST",
             headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
         },
     );
@@ -733,7 +733,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         "http://localhost:3000/api/account/quests/rewards",
         {
             headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
         },
     );
@@ -779,7 +779,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         {
             method: "POST",
             headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
         },
     );
@@ -1032,7 +1032,7 @@ test("top-up 100 quest sums multiple Stripe checkout rows", async ({
 test("POST /account/quests/check throttles a user to once per minute", async ({
     apiKey: _apiKey,
     mocks,
-    sessionToken,
+    accountToken,
 }) => {
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
@@ -1042,7 +1042,7 @@ test("POST /account/quests/check throttles a user to once per minute", async ({
         "http://localhost:3000/api/account/quests/check",
         {
             method: "POST",
-            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            headers: { Authorization: `Bearer ${accountToken}` },
         },
     );
     expect(first.status).toBe(200);
@@ -1051,7 +1051,7 @@ test("POST /account/quests/check throttles a user to once per minute", async ({
         "http://localhost:3000/api/account/quests/check",
         {
             method: "POST",
-            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            headers: { Authorization: `Bearer ${accountToken}` },
         },
     );
     expect(second.status).toBe(429);
@@ -2337,7 +2337,7 @@ test("Honey Census quest pays 5 Pollen only once the survey author has bought mo
 });
 
 test("account quest history includes pending and claimed GitHub quest rewards", async ({
-    sessionToken,
+    accountToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
@@ -2362,7 +2362,7 @@ test("account quest history includes pending and claimed GitHub quest rewards", 
         "http://localhost:3000/api/account/quests/rewards",
         {
             headers: {
-                cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
         },
     );
@@ -2417,10 +2417,10 @@ test("account quest history requires account usage permission for API keys", asy
 });
 
 test("account quest history accepts account usage permission", async ({
-    sessionToken,
+    accountToken,
 }) => {
     const usageKey = await createUsageApiKey(
-        sessionToken,
+        accountToken,
         "quest-rewards-usage-key",
     );
     const response = await SELF.fetch(

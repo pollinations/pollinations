@@ -1,5 +1,9 @@
 import type { Logger } from "@logtape/logtape";
 import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
+import {
     type ApiKeyType,
     createApiKeyForUser,
     validateRedirectUriFormat,
@@ -39,10 +43,6 @@ import {
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
-import {
-    hasAccountPermission,
-    requireAccountPermission,
-} from "./account-permissions.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 
@@ -950,11 +950,12 @@ const usageResponseSchema = z.object({
 });
 
 /**
- * Account routes - profile, balance and usage endpoints.
- * Supports both session cookies and API keys with permission checks.
+ * Account routes - profile, balance and usage endpoints, served publicly as
+ * gen.pollinations.ai/account. Bearer-only: apps use API keys with permission
+ * checks; the dashboard uses a session token minted from its cookie.
  */
 export const accountRoutes = new Hono<Env>()
-    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     // Account responses are per-user and must never be cached by browsers or
     // intermediary proxies. Applied once here so nested routes (agents,
     // my-models, keys, ...) inherit it without repeating it per handler.

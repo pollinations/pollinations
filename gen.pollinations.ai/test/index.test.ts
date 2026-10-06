@@ -770,6 +770,24 @@ describe("model status", () => {
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({ error: "bad minutes" });
     });
+
+    it("serves the 7-day model usage stats the dashboard prices models with", async () => {
+        await env.KV.delete("model-stats-v3");
+        const stats = { data: [{ model: "test", avg_cost_usd: 0.001 }] };
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json(stats));
+
+        const response = await fetchWorker("/models/stats");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=300",
+        );
+        expect(await response.json()).toEqual(stats);
+        expect(String(upstream.mock.calls[0]?.[0])).toContain(
+            "/v0/pipes/public_model_stats.json",
+        );
+    });
 });
 
 fixtureTest(

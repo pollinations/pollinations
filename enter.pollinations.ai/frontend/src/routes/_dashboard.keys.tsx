@@ -6,7 +6,7 @@ import {
     useRouter,
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 import { readError } from "../components/community-endpoints/types.ts";
 import {
     type ApiKey,
@@ -86,7 +86,7 @@ function KeysPage() {
     }
 
     async function handleDeleteApiKey(id: string): Promise<void> {
-        const response = await apiClient.account.keys[":id"].$delete({
+        const response = await accountClient.keys[":id"].$delete({
             param: { id },
         });
         if (!response.ok) throw new Error(await readError(response));

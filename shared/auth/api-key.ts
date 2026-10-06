@@ -14,6 +14,7 @@ import {
 import { parseMetadata } from "./api-key-metadata.ts";
 import { isUserBanned } from "./ban.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
+import { SESSION_TOKEN_PREFIX, verifySessionToken } from "./session-token.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
@@ -37,7 +38,8 @@ export interface AuthenticatedApiKey {
 
 export interface ApiKeyAuthResult {
     user?: AuthUser;
-    apiKey: AuthenticatedApiKey;
+    /** Absent for a session token: the account owner, with no key restrictions. */
+    apiKey?: AuthenticatedApiKey;
     rawApiKey: string;
     agentRun?: AgentRunClaims;
 }
@@ -200,10 +202,13 @@ export function extractApiKey(request: Request): string | null {
     if (headerKey) return headerKey;
 
     // Query keys end up in access logs, referrers and browser history. Their
-    // owner can rotate them; an agent run token is handed to a third party
-    // mid-run and cannot be, so it is Bearer-only.
+    // owner can rotate them; agent run and session tokens cannot be revoked,
+    // so they are Bearer-only.
     const queryKey = new URL(request.url).searchParams.get("key");
-    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ? null : queryKey;
+    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ||
+        queryKey?.startsWith(SESSION_TOKEN_PREFIX)
+        ? null
+        : queryKey;
 }
 
 export function assertNotBanned(user: {
@@ -228,6 +233,9 @@ export async function authenticateApiKeyRequest(opts: {
 
     if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
         return authenticateAgentRunToken(rawApiKey, opts.env);
+    }
+    if (rawApiKey.startsWith(SESSION_TOKEN_PREFIX)) {
+        return authenticateSessionToken(rawApiKey, opts.env);
     }
 
     const client: VerifyApiKeyClient =
@@ -284,6 +292,31 @@ async function authenticateAgentRunToken(
     };
 }
 
+async function authenticateSessionToken(
+    rawToken: string,
+    env: ApiKeyAuthBindings,
+): Promise<ApiKeyAuthResult | null> {
+    if (!env.BETTER_AUTH_SECRET) return null;
+
+    let userId: string;
+    try {
+        userId = await verifySessionToken(rawToken, env.BETTER_AUTH_SECRET);
+    } catch {
+        return null;
+    }
+
+    const user = await drizzle(env.DB)
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, userId))
+        .get();
+    if (!user) return null;
+
+    assertNotBanned(user);
+    assertStagingAccess(env, user);
+    return { user, rawApiKey: rawToken };
+}
+
 /**
  * Loads an active API key by ID after another credential has authenticated it.
  * This deliberately does not accept the parent key's raw value so delegated
@@ -293,7 +326,7 @@ async function loadActiveApiKeyAuthResult(opts: {
     apiKeyId: string;
     rawApiKey: string;
     env: ApiKeyAuthBindings;
-}): Promise<ApiKeyAuthResult | null> {
+}): Promise<(ApiKeyAuthResult & { apiKey: AuthenticatedApiKey }) | null> {
     const db = drizzle(opts.env.DB, { schema });
     const byopClientKey = alias(schema.apikey, "byop_client_key");
     const byopOwner = alias(schema.user, "byop_owner");

@@ -6,7 +6,7 @@ import {
     useRouter,
 } from "@tanstack/react-router";
 import { Suspense, useDeferredValue, useState } from "react";
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_dashboard")({
     loader: ({ context }) => {
         const user = context.user;
         const apiKeys = user
-            ? apiClient.account.keys
+            ? accountClient.keys
                   .$get()
                   .then(async (r) =>
                       r.ok ? ((await r.json()).data as ApiKey[]) : null,
@@ -69,7 +69,7 @@ export const Route = createFileRoute("/_dashboard")({
             ? fetchAccountBalance().catch(() => null)
             : Promise.resolve(null);
         const profile = user
-            ? apiClient.account.profile
+            ? accountClient.profile
                   .$get()
                   .then((r) => (r.ok ? r.json() : null))
                   .catch(() => null)
@@ -77,7 +77,7 @@ export const Route = createFileRoute("/_dashboard")({
         // Developer earnings over the last 7 days, split by which balance
         // the spending users paid from.
         const earnings = user
-            ? apiClient.account.earnings
+            ? accountClient.earnings
                   .$get({ query: { days: "7" } })
                   .then(async (r) => {
                       if (!r.ok) return null;

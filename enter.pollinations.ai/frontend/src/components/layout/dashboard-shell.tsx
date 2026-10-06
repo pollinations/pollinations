@@ -37,7 +37,7 @@ import type {
     SetStateAction,
 } from "react";
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import {
     QUEST_STATUS_UPDATED_EVENT,
@@ -411,7 +411,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
             try {
                 const [catalogResponse, rewardsResponse] = await Promise.all([
                     apiClient.quests.catalog.$get(),
-                    apiClient.account.quests.rewards.$get(),
+                    accountClient.quests.rewards.$get(),
                 ]);
                 if (!catalogResponse.ok || !rewardsResponse.ok) {
                     throw new Error("Quest status unavailable");

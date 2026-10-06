@@ -1,4 +1,5 @@
 import type { ModelHealthRow } from "@shared/model-health.ts";
+import { getModelStats } from "@shared/utils/model-stats.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
@@ -39,69 +40,91 @@ export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
 // Exists only for the shared edge cache: Tinybird runs the query on every
 // call, so browsers in one colo share one query per minute instead of each
 // paying for a 24-hour scan.
-export const modelStatusRoutes = new Hono<Env>().get(
-    "/models/status",
-    describeRoute({
-        tags: ["📊 Monitor"],
-        summary: "Model Health Status",
-        description: [
-            "Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.",
-            "",
-            "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
-            "",
-            "Cached for 60 seconds per window and traffic scope.",
-        ].join("\n"),
-        parameters: [
-            {
-                name: "traffic",
-                in: "query",
-                required: false,
-                description:
-                    "Traffic population: all requests (default), or regular usage excluding legacy APIs and Pollinations-internal traffic.",
-                schema: {
-                    type: "string",
-                    enum: ["all", "regular"],
-                    default: "all",
+export const modelStatusRoutes = new Hono<Env>()
+    .get(
+        "/models/status",
+        describeRoute({
+            tags: ["📊 Monitor"],
+            summary: "Model Health Status",
+            description: [
+                "Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.",
+                "",
+                "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
+                "",
+                "Cached for 60 seconds per window and traffic scope.",
+            ].join("\n"),
+            parameters: [
+                {
+                    name: "traffic",
+                    in: "query",
+                    required: false,
+                    description:
+                        "Traffic population: all requests (default), or regular usage excluding legacy APIs and Pollinations-internal traffic.",
+                    schema: {
+                        type: "string",
+                        enum: ["all", "regular"],
+                        default: "all",
+                    },
+                },
+                {
+                    name: "minutes",
+                    in: "query",
+                    required: false,
+                    description:
+                        "Rolling window in minutes (default 60, maximum 10080).",
+                    schema: {
+                        type: "integer",
+                        minimum: 1,
+                        maximum: 10080,
+                        default: 60,
+                    },
+                },
+            ],
+            responses: {
+                200: {
+                    description:
+                        "Raw Tinybird pipe response; upstream errors pass through with their status.",
                 },
             },
-            {
-                name: "minutes",
-                in: "query",
-                required: false,
-                description:
-                    "Rolling window in minutes (default 60, maximum 10080).",
-                schema: {
-                    type: "integer",
-                    minimum: 1,
-                    maximum: 10080,
-                    default: 60,
+        }),
+        async (c) => {
+            const url = new URL(MODEL_ROUTE_HEALTH_URL);
+            const traffic = c.req.query("traffic") ?? "all";
+            if (traffic !== "all" && traffic !== "regular")
+                return c.json({ error: "traffic must be all or regular" }, 400);
+            url.searchParams.set("traffic", traffic);
+            const minutes = c.req.query("minutes");
+            if (minutes !== undefined) url.searchParams.set("minutes", minutes);
+            const upstream = await fetch(url, {
+                cf: { cacheTtl: 60, cacheEverything: true },
+            });
+            return new Response(upstream.body, {
+                status: upstream.status,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "public, max-age=60",
                 },
-            },
-        ],
-        responses: {
-            200: {
-                description:
-                    "Raw Tinybird pipe response; upstream errors pass through with their status.",
-            },
+            });
         },
-    }),
-    async (c) => {
-        const url = new URL(MODEL_ROUTE_HEALTH_URL);
-        const traffic = c.req.query("traffic") ?? "all";
-        if (traffic !== "all" && traffic !== "regular")
-            return c.json({ error: "traffic must be all or regular" }, 400);
-        url.searchParams.set("traffic", traffic);
-        const minutes = c.req.query("minutes");
-        if (minutes !== undefined) url.searchParams.set("minutes", minutes);
-        const upstream = await fetch(url, {
-            cf: { cacheTtl: 60, cacheEverything: true },
-        });
-        return new Response(upstream.body, {
-            status: upstream.status,
-            headers: {
-                "Content-Type": "application/json",
-                "Cache-Control": "public, max-age=60",
+    )
+    .get(
+        "/models/stats",
+        describeRoute({
+            tags: ["📊 Monitor"],
+            summary: "Model Usage Stats",
+            description: [
+                "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",
+                "",
+                "`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.",
+                "",
+                "Refreshed hourly.",
+            ].join("\n"),
+            responses: {
+                200: { description: "Raw Tinybird pipe rows" },
             },
-        });
-    },
-);
+        }),
+        async (c) => {
+            c.header("Cache-Control", "public, max-age=300");
+            return c.json(await getModelStats(c.env.KV, c.var.log));
+        },
+    );

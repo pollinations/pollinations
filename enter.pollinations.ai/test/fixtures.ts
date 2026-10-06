@@ -41,6 +41,8 @@ type Fixtures = {
     mocks: ReturnType<typeof createFetchMock<Mocks>>;
     auth: ReturnType<typeof createAuthClientInstance>;
     sessionToken: string;
+    /** Dashboard session token for the account API, minted from the session cookie */
+    accountToken: string;
     apiKey: string;
     /** API key for a user with pack balance (can use paidOnly models) */
     paidApiKey: string;
@@ -62,7 +64,7 @@ type SignupData = {
  * (same flow as production) and returns the created key record.
  */
 export const createApiKeyViaApi = async (
-    sessionToken: string,
+    accountToken: string,
     options: {
         name: string;
         type?: "secret" | "publishable";
@@ -77,7 +79,7 @@ export const createApiKeyViaApi = async (
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify(options),
         },
@@ -86,6 +88,21 @@ export const createApiKeyViaApi = async (
         throw new Error(`Failed to create API key: ${await response.text()}`);
     }
     return (await response.json()) as { id: string; key: string };
+};
+
+/** Mints the dashboard's short-lived account API token from a session cookie. */
+export const mintAccountToken = async (sessionToken: string) => {
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/session-token",
+        {
+            method: "POST",
+            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        },
+    );
+    if (!response.ok) {
+        throw new Error(`Failed to mint session token: ${response.status}`);
+    }
+    return ((await response.json()) as { token: string }).token;
 };
 
 export const test = base.extend<Fixtures>({
@@ -164,8 +181,11 @@ export const test = base.extend<Fixtures>({
         mocks.clear();
         await use(sessionToken);
     },
-    apiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    accountToken: async ({ sessionToken }, use) => {
+        await use(await mintAccountToken(sessionToken));
+    },
+    apiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "test-api-key",
         });
         await use(created.key);
@@ -174,18 +194,18 @@ export const test = base.extend<Fixtures>({
      * API key for a user with pack balance, enabling paidOnly model access.
      * Grants 100 pollen pack balance via direct DB update.
      */
-    paidApiKey: async ({ sessionToken }, use) => {
+    paidApiKey: async ({ accountToken }, use) => {
         // Each test has an isolated DB with exactly one user — update all users
         const db = drizzle(env.DB);
         await db.update(userTable).set({ packBalance: 100 });
 
-        const created = await createApiKeyViaApi(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "paid-test-api-key",
         });
         await use(created.key);
     },
-    pubApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    pubApiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "test-api-key",
             type: "publishable",
         });
@@ -197,8 +217,8 @@ export const test = base.extend<Fixtures>({
      * Creates an API key restricted to only ["openai/gpt-5-nano", "black-forest-labs/flux.1-schnell"] models.
      * Uses PATCH /api/account/keys/:id to set permissions.
      */
-    restrictedApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    restrictedApiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "restricted-test-key",
         });
 
@@ -209,7 +229,7 @@ export const test = base.extend<Fixtures>({
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     allowedModels: [
@@ -231,8 +251,8 @@ export const test = base.extend<Fixtures>({
      * Creates an API key with zero pollen budget (exhausted).
      * Uses PATCH /api/account/keys/:id to set pollenBudget to 0.
      */
-    exhaustedBudgetApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    exhaustedBudgetApiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "exhausted-budget-key",
         });
 
@@ -243,7 +263,7 @@ export const test = base.extend<Fixtures>({
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     pollenBudget: 0,
@@ -262,8 +282,8 @@ export const test = base.extend<Fixtures>({
      * Creates an API key with 100 pollen budget for testing decrement.
      * Returns both key and id so tests can verify balance changes.
      */
-    budgetedApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    budgetedApiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "budgeted-test-key",
         });
 
@@ -274,7 +294,7 @@ export const test = base.extend<Fixtures>({
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     pollenBudget: 100,

@@ -32,7 +32,7 @@ async function sessionUserId(sessionToken: string): Promise<string> {
 }
 
 async function createKey(
-    sessionToken: string,
+    accountToken: string,
     options: {
         name: string;
         pollenBudget?: number | null;
@@ -45,7 +45,7 @@ async function createKey(
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify(options),
         },
@@ -66,13 +66,14 @@ describe("GET /api/account/balance", () => {
     test("session sees account total in balance plus accountBalance breakdown", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
         await setAccountBalances(userId);
 
         const res = await getBalance({
-            Cookie: `better-auth.session_token=${sessionToken}`,
+            Authorization: `Bearer ${accountToken}`,
         });
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({
@@ -84,12 +85,13 @@ describe("GET /api/account/balance", () => {
     test("budgeted key without account:usage sees only the key budget", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
         await setAccountBalances(userId);
 
-        const created = await createKey(sessionToken, {
+        const created = await createKey(accountToken, {
             name: "budget-only",
             pollenBudget: 7,
         });
@@ -105,10 +107,11 @@ describe("GET /api/account/balance", () => {
     test("budgeted key with account:usage keeps key budget and adds accountBalance", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        const created = await createKey(sessionToken, {
+        const created = await createKey(accountToken, {
             name: "budget-and-usage",
             pollenBudget: 7,
             accountPermissions: ["usage"],
@@ -128,10 +131,11 @@ describe("GET /api/account/balance", () => {
     test("unbudgeted key with account:usage sees the account total", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        const created = await createKey(sessionToken, {
+        const created = await createKey(accountToken, {
             name: "usage-only",
             accountPermissions: ["usage"],
         });
@@ -148,11 +152,11 @@ describe("GET /api/account/balance", () => {
     });
 
     test("unbudgeted key without account:usage is 403", async ({
-        sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
-        const created = await createApiKeyViaApi(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "no-scope-no-budget",
         });
         const res = await getBalance({
@@ -164,12 +168,13 @@ describe("GET /api/account/balance", () => {
     test("publishable key with a zero budget does not leak accountBalance", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
         await setAccountBalances(userId);
 
-        const created = await createApiKeyViaApi(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "raw-pk",
             type: "publishable",
         });
@@ -187,6 +192,7 @@ describe("GET /api/account/balance", () => {
     test("an overdrawn pack balance does not eat the reported total", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
@@ -197,7 +203,7 @@ describe("GET /api/account/balance", () => {
             .where(eq(userTable.id, userId));
 
         const res = await getBalance({
-            Cookie: `better-auth.session_token=${sessionToken}`,
+            Authorization: `Bearer ${accountToken}`,
         });
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({

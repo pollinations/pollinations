@@ -227,7 +227,10 @@ describe("usage command output", () => {
         process.argv = originalArgv;
     });
 
+    let urls: string[] = [];
+
     async function run(args: string[], mode: "human" | "json" = "json") {
+        urls = [];
         process.argv = ["node", "polli", "--key", "sk_test", "usage", ...args];
         setOutputMode(mode);
         const writes: string[] = [];
@@ -237,6 +240,7 @@ describe("usage command output", () => {
         });
         vi.spyOn(process.stderr, "write").mockImplementation(() => true);
         vi.stubGlobal("fetch", async (url: string) => {
+            urls.push(url);
             if (url.includes("format=csv")) return new Response("a,b\n1,2\n");
             if (url.includes("/account/usage/daily"))
                 return Response.json({ usage: dailyRows, count: 2 });
@@ -255,6 +259,13 @@ describe("usage command output", () => {
     it("prints filtered daily records with numeric cost in JSON mode", async () => {
         const out = await run(["--daily", "--model", "openai"]);
         expect(JSON.parse(out)).toEqual([daily]);
+    });
+
+    it("asks for a week of daily usage unless --days is given", async () => {
+        await run(["--daily"]);
+        expect(urls[0]).toContain("/account/usage/daily?days=7");
+        await run(["--daily", "--days", "30"]);
+        expect(urls[0]).toContain("/account/usage/daily?days=30");
     });
 
     it("keeps the rounded human table and raw CSV/balance output", async () => {

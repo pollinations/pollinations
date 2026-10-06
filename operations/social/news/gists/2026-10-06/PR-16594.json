@@ -1,0 +1,34 @@
+{
+  "pr_number": 16594,
+  "title": "fix: add OpenRouter fallback for GLM 5.3 Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16594",
+  "merged_at": "2026-10-06T14:07:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a hidden shared fallback for `z-ai/glm-5.3-flash` when Fireworks is throttled or fails. Fireworks remains primary (`accounts/fireworks/models/glm-5p3-flash`).\n- Routes OpenRouter `z-ai/glm-5.3-flash` across Together, Baseten, Modal, Crusoe, Friendli, DigitalOcean, Parasail, and Venice with provider failover enabled. Excludes Fireworks and Z.ai: Z.ai ignored the JSON schema in a live probe.\n- Preserves the public ID, no aliases, multiplier 1, Quest access (`paidOnly: false`), and existing user quote. These are provider APIs, not Pollinations GPUs. Records fallback costs at $0.15 input / $0.03 cached / $0.50 output per million tokens plus the 5.5% OpenRouter credit fee; Pollinations absorbs the difference. [Exact endpoint pricing](https://openrouter.ai/api/v1/models/z-ai/glm-5.3-flash/endpoints).\n- Validation: 155 Worker tests, typecheck, Biome; live forced fallback through Chat Completions, native text, Messages, and Responses. Covers streaming, tools, vision, JSON schema, small output limits, default reasoning, output-cache HIT, and a four-request burst. A 940,016-token direct prompt passed. Staging Tinybird usage/cost/attribution matches the response and one wallet debit.\n- Provider prompt-cache probes reported zero cached tokens. Production rollout remains pending.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A second path for GLM",
+    "blurb": "GLM 5.3 Flash gets a backup route when Fireworks needs a breather. Same model name, less dependence on one provider having a good day.",
+    "summary": "Added a hidden OpenRouter fallback for z-ai/glm-5.3-flash when its primary Fireworks provider is throttled or fails, with failover across eight providers while preserving the public model ID and Quest access.",
+    "impact": "Requests for z-ai/glm-5.3-flash can continue through the same model ID when Fireworks is unavailable, including requests that use streaming, tools, vision, or JSON schema.",
+    "keywords": [
+      "GLM 5.3 Flash",
+      "OpenRouter",
+      "Fireworks",
+      "provider fallback",
+      "text API",
+      "reliability"
+    ],
+    "visual_concept": "In a cozy code garden, Polli tends a GLM 5.3 Flash flower connected to a primary Fireworks path and a branching OpenRouter backup path. A small JSON schema page beside the flower hints that structured output matters on either route.",
+    "image_prompt": "In a cozy pixel art code garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Wearing a tiny gardener's tool belt, she gently guides a glowing GLM flower from one winding path to another beside a little JSON page; soft lime green (#ecf874) fills the garden, with mint-to-peach pastel gradients, dark purple (#110518) outlines, chunky retro sprites, and a warm CRT glow — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16594.jpg",
+    "prompt": "In a cozy pixel art code garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Wearing a tiny gardener's tool belt, she gently guides a glowing GLM flower from one winding path to another beside a little JSON page; soft lime green (#ecf874) fills the garden, with mint-to-peach pastel gradients, dark purple (#110518) outlines, chunky retro sprites, and a warm CRT glow — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T14:08:35.481000+00:00"
+}

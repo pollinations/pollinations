@@ -1,0 +1,33 @@
+{
+  "pr_number": 16571,
+  "title": "chore: remove the one-time canonical permission finalize job",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16571",
+  "merged_at": "2026-10-06T10:35:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the `finalize-canonical-permissions` job, its `finalize_canonical_permissions` dispatch input and the 0068 path filters from the production deploy workflow.\n- Removes `operations/deployment/canonical-permissions.test.cjs`.\n- 0068 is applied in production, and the job already ran after both workers deployed (run 37446518163, #16567). The migration file stays.\n- The `CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED` repo variable is already deleted.\n\nFollow-up to #16462.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01EiESgQiwYbspATwyFa9EJt",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One less deploy detour",
+    "blurb": "The one-time canonical-permissions job did its job. The deploy workflow gets a little less to carry.",
+    "summary": "Removed the completed canonical-permissions finalization job, its dispatch input, 0068 path filters, and associated test from the production deploy workflow; migration 0068 remains in place.",
+    "impact": "Production deploys no longer include a one-time finalization step that already ran after both workers deployed.",
+    "keywords": [
+      "deployment",
+      "Cloudflare",
+      "canonical permissions",
+      "migration 0068",
+      "workflow cleanup"
+    ],
+    "visual_concept": "Polli tidies a cozy garden-shed deployment desk, filing away a completed one-time job card while a small plant labeled 0068 stays rooted in its pot. A CRT monitor robot holds the finished checklist.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli files a completed deploy job card beside a potted code-plant labeled '0068', while a friendly chunky CRT monitor robot holds a checked-off list; lime green (#ecf874) glows prominently across the desk against a soft pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium beside the robot, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16571.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli files a completed deploy job card beside a potted code-plant labeled '0068', while a friendly chunky CRT monitor robot holds a checked-off list; lime green (#ecf874) glows prominently across the desk against a soft pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium beside the robot, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-06T10:36:20.700554+00:00"
+}

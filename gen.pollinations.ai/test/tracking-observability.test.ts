@@ -2740,6 +2740,7 @@ describe("tracking observability", () => {
             {
                 id: crypto.randomUUID(),
                 modelId: `${publisher}/test-model`,
+                paidOnly: false,
                 bearerTokenCiphertext: await encryptSecret(
                     "test-upstream-key",
                     env.BETTER_AUTH_SECRET,
@@ -2762,6 +2763,7 @@ describe("tracking observability", () => {
                 inputModalities: ["text"],
                 perUserRpm: null,
                 fallbacks: [],
+                paidOnly: false,
                 bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
                 prices: communityEndpointPrices(endpoint),
             }),

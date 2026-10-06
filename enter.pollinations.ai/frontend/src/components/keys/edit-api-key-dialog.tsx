@@ -63,6 +63,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         allowedModels: apiKey.permissions?.models ?? null,
         pollenBudget: apiKey.pollenBalance ?? null,
         accountPermissions: apiKey.permissions?.account ?? null,
+        questPollenOnly: apiKey.questPollenOnly ?? false,
         expiryDays,
     });
 

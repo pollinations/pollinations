@@ -4,13 +4,11 @@ import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
     getVisibleTextModels,
-    resolveModelName,
 } from "@shared/registry/registry.ts";
-import { filterPermissionsToVisibleModels } from "@shared/registry/visible-model-ids.ts";
 import {
     createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
-    RESTRICTED_TEST_MODELS,
+    RESTRICTED_TEST_CATEGORIES,
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
@@ -75,289 +73,49 @@ test("catalog metadata exposes publisher rather than author or brand", async () 
     }
 });
 
-test("permission readback canonicalizes aliases without exposing hidden or unknown entries", () => {
-    const stored = {
-        models: ["openai", "openai/gpt-5.4-nano", "owner/custom", "unknown"],
-        account: ["profile"],
-    };
-    expect(
-        filterPermissionsToVisibleModels(
-            stored,
-            new Set(["openai/gpt-5.4-nano", "owner/custom"]),
-        ),
-    ).toEqual({
-        models: ["openai/gpt-5.4-nano", "owner/custom"],
-        account: ["profile"],
+test("model IDs and aliases widen to their categories when a key is saved", async () => {
+    const { id } = await createTestApiKey({
+        allowedModels: ["nanobanana2", RESTRICTED_TEXT_TEST_MODEL, "audio"],
     });
-    expect(stored.models).toContain("unknown");
-    expect(
-        filterPermissionsToVisibleModels(
-            { models: [] },
-            new Set(["openai/gpt-5.4-nano"]),
-        ),
-    ).toEqual({ models: [] });
-});
-
-test("legacy stored allowlists still filter catalogs after canonical promotion", async () => {
-    const { key, id } = await createTestApiKey({
-        allowedModels: ["google/gemini-3.1-flash-image"],
-        user: { packBalance: 100 },
-    });
-    // Simulate an old Enter writer after the one-time migration has run.
-    await drizzle(env.DB)
-        .update(apikey)
-        .set({ permissions: JSON.stringify({ models: ["nanobanana2"] }) })
-        .where(eq(apikey.id, id));
-    const headers = { Authorization: `Bearer ${key}` };
-    const catalog = await fetchWorker("/image/models", { headers });
-    expect(catalog.status).toBe(200);
-    expect(
-        ((await catalog.json()) as { name: string }[]).map(
-            (model) => model.name,
-        ),
-    ).toEqual(["google/gemini-3.1-flash-image"]);
-    const denied = await fetchWorker("/text/test?model=openai", { headers });
-    expect(denied.status).toBe(403);
-    const stored = await drizzle(env.DB)
+    const [stored] = await drizzle(env.DB)
         .select({ permissions: apikey.permissions })
         .from(apikey)
         .where(eq(apikey.id, id));
-    expect(JSON.parse(stored[0].permissions ?? "null")).toEqual({
-        models: ["nanobanana2"],
+    expect(JSON.parse(stored.permissions ?? "null")).toEqual({
+        models: ["text", "image", "audio"],
     });
+    await expect(
+        createTestApiKey({ allowedModels: ["not-a-model"] }),
+    ).rejects.toThrow("is not a model category");
 });
 
-test("stored MAI Image 2.5 permissions allow the 2.6 Flash catalog entry", async () => {
-    const currentModel = "microsoft/mai-image-2.6-flash";
-    const oldModel = "microsoft/mai-image-2.5-flash";
-    const { key, id } = await createTestApiKey({
-        allowedModels: [currentModel],
-        user: { packBalance: 100 },
-    });
-    await drizzle(env.DB)
-        .update(apikey)
-        .set({ permissions: JSON.stringify({ models: [oldModel] }) })
-        .where(eq(apikey.id, id));
-
-    const response = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${key}` },
-    });
-    expect(response.status).toBe(200);
-    const models = (await response.json()) as {
-        name: string;
-        aliases: string[];
-    }[];
-    expect(models).toEqual([
-        expect.objectContaining({ name: currentModel, aliases: [oldModel] }),
-    ]);
-    expect(resolveModelName(oldModel)).toBe(currentModel);
-
+test("a category allows every model in it and nothing else", async () => {
     const app = new Hono<AuthEnv>();
     app.use(
         "*",
         authFromSnapshot({
             user: { id: "permission-test", tier: "seed" },
-            apiKey: { id, permissions: { models: [oldModel] } },
+            apiKey: { id: "test", permissions: { models: ["image"] } },
         }),
     );
-    app.get("/check", (c) => {
-        c.set("model", { requested: oldModel, resolved: currentModel });
-        c.var.auth.requireModelAccess();
-        return c.json(c.var.auth.apiKey?.permissions);
-    });
-    const allowed = await app.request("/check");
-    expect(allowed.status).toBe(200);
-    expect(await allowed.json()).toEqual({ models: [currentModel] });
-});
-
-test("restored auth snapshots normalize aliases once without expanding model or account scope", async () => {
-    const snapshot = {
-        user: { id: "permission-test", tier: "seed" },
-        apiKey: {
-            id: "test",
-            permissions: {
-                models: ["openai", "openai/gpt-5.4-nano", "owner/custom"],
-                account: ["profile"],
-            },
-        },
-    };
-    const app = new Hono<AuthEnv>();
-    app.use("*", authFromSnapshot(snapshot));
-    app.get("/:model", (c) => {
+    app.get("/:category/:model", (c) => {
         const model = c.req.param("model");
         c.set("model", {
             requested: model,
             resolved: model,
-        });
-        c.var.auth.requireModelAccess();
-        return c.json(c.var.auth.apiKey?.permissions);
-    });
-    for (const model of ["openai/gpt-5.4-nano", "owner/custom"]) {
-        const response = await app.request(`/${encodeURIComponent(model)}`);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            models: ["openai/gpt-5.4-nano", "owner/custom"],
-            account: ["profile"],
-        });
-    }
-    const forbidden = await app.request("/other%2Fcustom");
-    expect(forbidden.status).toBe(403);
-    expect(await forbidden.text()).toBe(
-        "Model 'other/custom' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
-    );
-    expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
-        403,
-    );
-    expect(snapshot.apiKey.permissions.models).toEqual([
-        "openai",
-        "openai/gpt-5.4-nano",
-        "owner/custom",
-    ]);
-});
-
-test("permission readback resolves future names against the current registry", () => {
-    const stored = {
-        models: ["openai-fast", "openai/gpt-5-nano", "owner/custom", "unknown"],
-        account: ["profile"],
-    };
-    const canonical = resolveModelName("openai-fast");
-    expect(
-        filterPermissionsToVisibleModels(
-            stored,
-            new Set([canonical, "owner/custom"]),
-        ),
-    ).toEqual({ models: [canonical, "owner/custom"], account: ["profile"] });
-    expect(stored.models).toEqual([
-        "openai-fast",
-        "openai/gpt-5-nano",
-        "owner/custom",
-        "unknown",
-    ]);
-    expect(
-        filterPermissionsToVisibleModels({ models: [] }, new Set([canonical])),
-    ).toEqual({ models: [] });
-    expect(
-        filterPermissionsToVisibleModels(null, new Set([canonical])),
-    ).toBeNull();
-});
-
-test("future-name stored allowlists filter catalogs without rewriting the database", async () => {
-    const { key, id } = await createTestApiKey({
-        allowedModels: ["black-forest-labs/flux.1-schnell"],
-        user: { packBalance: 100 },
-    });
-    const permissions = { models: ["black-forest-labs/flux.1-schnell"] };
-    // Simulate the rename migration reaching D1 before old workers are replaced.
-    await drizzle(env.DB)
-        .update(apikey)
-        .set({ permissions: JSON.stringify(permissions) })
-        .where(eq(apikey.id, id));
-    const headers = { Authorization: `Bearer ${key}` };
-    const catalog = await fetchWorker("/image/models", { headers });
-    expect(catalog.status).toBe(200);
-    expect(
-        ((await catalog.json()) as { name: string }[]).map(
-            (model) => model.name,
-        ),
-    ).toEqual([resolveModelName("flux")]);
-    expect(
-        (await fetchWorker("/text/test?model=openai", { headers })).status,
-    ).toBe(403);
-    const stored = await drizzle(env.DB)
-        .select({ permissions: apikey.permissions })
-        .from(apikey)
-        .where(eq(apikey.id, id));
-    expect(JSON.parse(stored[0].permissions ?? "null")).toEqual(permissions);
-});
-
-test("restored auth allows old and future names without expanding account or community scope", async () => {
-    const snapshot = {
-        user: { id: "permission-test", tier: "seed" },
-        apiKey: {
-            id: "test",
-            permissions: {
-                models: ["openai-fast", "openai/gpt-5-nano", "owner/custom"],
-                account: ["profile"],
+            definition: {
+                category: c.req.param("category") as "image" | "text",
             },
-        },
-    };
-    const app = new Hono<AuthEnv>();
-    app.use("*", authFromSnapshot(snapshot));
-    app.get("/:model", (c) => {
-        const requested = c.req.param("model");
-        let resolved = requested;
-        try {
-            resolved = resolveModelName(requested);
-        } catch {
-            /* Community ID. */
-        }
-        c.set("model", { requested, resolved });
-        c.var.auth.requireModelAccess();
-        return c.json(c.var.auth.apiKey?.permissions);
-    });
-    for (const model of ["openai-fast", "openai/gpt-5-nano", "owner/custom"]) {
-        const response = await app.request(`/${encodeURIComponent(model)}`);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            models: [resolveModelName("openai-fast"), "owner/custom"],
-            account: ["profile"],
         });
-    }
-    for (const model of ["other/custom", "flux"]) {
-        const res = await app.request(`/${encodeURIComponent(model)}`);
-        expect(res.status).toBe(403);
-        expect(await res.text()).toBe(
-            `Model '${model}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test`,
-        );
-    }
-    expect(snapshot.apiKey.permissions.models).toEqual([
-        "openai-fast",
-        "openai/gpt-5-nano",
-        "owner/custom",
-    ]);
-});
-
-test("keys allowed the retired Sonar Pro models still reach Sonar and nothing else", async () => {
-    // The canonical IDs migration 0062 stored before Sonar Pro and Reasoning
-    // Pro became aliases of Sonar.
-    const app = new Hono<AuthEnv>();
-    app.use(
-        "*",
-        authFromSnapshot({
-            user: { id: "permission-test", tier: "seed" },
-            apiKey: {
-                id: "test",
-                permissions: {
-                    models: [
-                        "perplexity/sonar-pro",
-                        "perplexity/sonar-reasoning-pro",
-                    ],
-                },
-            },
-        }),
+        c.var.auth.requireModelAccess();
+        return c.text("ok");
+    });
+    expect((await app.request("/image/any-image-model")).status).toBe(200);
+    const denied = await app.request("/text/openai");
+    expect(denied.status).toBe(403);
+    expect(await denied.text()).toBe(
+        "Model 'openai' is not allowed for this API key, which does not allow text models. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
     );
-    app.get("/:model", (c) => {
-        const requested = c.req.param("model");
-        c.set("model", { requested, resolved: resolveModelName(requested) });
-        c.var.auth.requireModelAccess();
-        return c.json(c.var.auth.apiKey?.permissions);
-    });
-
-    for (const model of [
-        "perplexity/sonar-pro",
-        "perplexity/sonar-reasoning-pro",
-        "perplexity",
-        "perplexity-reasoning",
-        "perplexity/sonar",
-    ]) {
-        const response = await app.request(`/${encodeURIComponent(model)}`);
-        expect(response.status, model).toBe(200);
-        expect(await response.json()).toEqual({
-            models: ["perplexity/sonar"],
-        });
-    }
-    const other = await app.request("/flux");
-    expect(other.status).toBe(403);
 });
 
 test("keyPermissionsLink resolves production and staging editor links", () => {
@@ -375,7 +133,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
         apiKey: {
             id: "staging-key-id",
             permissions: {
-                models: ["openai"],
+                models: ["text"],
                 account: ["profile"],
             },
         },
@@ -384,7 +142,11 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     app.use("*", authFromSnapshot(snapshot));
     app.get("/:model", (c) => {
         const model = c.req.param("model");
-        c.set("model", { requested: model, resolved: model });
+        c.set("model", {
+            requested: model,
+            resolved: model,
+            definition: { category: "image" },
+        });
         c.var.auth.requireModelAccess();
         return c.json(c.var.auth.apiKey?.permissions);
     });
@@ -394,46 +156,35 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
+        "Model 'forbidden-model' is not allowed for this API key, which does not allow image models. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
     );
 });
 
-test("filters OpenAI-compatible model list by API key permissions", async ({
+test("filters model lists to the API key's categories", async ({
     restrictedApiKey,
 }) => {
-    const response = await fetchWorker("/v1/models", {
-        headers: { Authorization: `Bearer ${restrictedApiKey}` },
-    });
-
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-        data: { id: string }[];
-    };
-    const modelIds = body.data.map((model) => model.id);
-    const allowedModels = new Set<string>(RESTRICTED_TEST_MODELS);
-
-    expect(modelIds.length).toBeGreaterThan(0);
-    expect(modelIds.every((modelId) => allowedModels.has(modelId))).toBe(true);
-    expect(modelIds).toContain(RESTRICTED_TEXT_TEST_MODEL);
-});
-
-test("filters image model list by API key permissions", async ({
-    restrictedApiKey,
-}) => {
-    const response = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${restrictedApiKey}` },
-    });
-
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as { name: string }[];
-    const modelNames = body.map((model) => model.name);
-    const allowedModels = new Set<string>(RESTRICTED_TEST_MODELS);
-
-    expect(modelNames.length).toBeGreaterThan(0);
-    expect(modelNames.every((modelName) => allowedModels.has(modelName))).toBe(
-        true,
+    const headers = { Authorization: `Bearer ${restrictedApiKey}` };
+    const [catalog, compatible] = await Promise.all([
+        fetchWorker("/models", { headers }),
+        fetchWorker("/v1/models", { headers }),
+    ]);
+    expect(catalog.status).toBe(200);
+    expect(compatible.status).toBe(200);
+    const models = (await catalog.json()) as {
+        name: string;
+        category: string;
+    }[];
+    expect(new Set(models.map(({ category }) => category))).toEqual(
+        new Set(RESTRICTED_TEST_CATEGORIES),
     );
-    expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
+    expect(models.map(({ name }) => name)).toEqual(
+        expect.arrayContaining([
+            RESTRICTED_TEXT_TEST_MODEL,
+            RESTRICTED_IMAGE_TEST_MODEL,
+        ]),
+    );
+    const { data } = (await compatible.json()) as { data: { id: string }[] };
+    expect(data.map(({ id }) => id)).toEqual(models.map(({ name }) => name));
 });
 
 test("applies the model list limit after API key permissions", async ({
@@ -444,18 +195,9 @@ test("applies the model list limit after API key permissions", async ({
     });
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { name: string }[];
+    const body = (await response.json()) as { category: string }[];
     expect(body).toHaveLength(1);
-    expect(RESTRICTED_TEST_MODELS).toContain(body[0].name);
-});
-
-test("rejects aliases in new model permissions", async () => {
-    await expect(
-        createTestApiKey({
-            allowedModels: ["nanobanana2"],
-            user: { packBalance: 100 },
-        }),
-    ).rejects.toThrow("not a canonical model ID");
+    expect(RESTRICTED_TEST_CATEGORIES).toContain(body[0].category);
 });
 
 test("empty model permissions deny access and return an empty catalog", async () => {
@@ -481,27 +223,15 @@ test("empty model permissions deny access and return an empty catalog", async ()
 
 test("media routes own their endpoint-specific model defaults", async () => {
     const { key } = await createTestApiKey({
-        allowedModels: ["tongyi-mai/z-image-turbo"],
+        allowedModels: ["image"],
         user: { packBalance: 100 },
     });
 
     const videoResponse = await fetchWorker("/video/test", {
         headers: { Authorization: `Bearer ${key}` },
     });
-    const editResponse = await fetchWorker("/v1/images/edits", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            prompt: "make it blue",
-            image: "https://example.test/cat.png",
-        }),
-    });
 
     expect(videoResponse.status).toBe(403);
-    expect(editResponse.status).toBe(403);
 });
 
 test("filters OpenRouter text models by paid balance", async ({
@@ -534,7 +264,6 @@ test("filters OpenRouter text models by paid balance", async ({
         "typesafe/jev-1.13",
         "jaredpalmer/kev-4b",
         "respan/span-01-lite",
-        "inclusionai/ling-3.1-flash",
     ]);
     const openRouterModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);

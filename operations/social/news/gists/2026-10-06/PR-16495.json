@@ -1,0 +1,34 @@
+{
+  "pr_number": 16495,
+  "title": "fix: serve public model stats from an hourly Tinybird snapshot",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16495",
+  "merged_at": "2026-10-06T15:55:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Split from #16497, which now contains the 30-minute model-health cache. This PR changes only public model statistics.\n- Compute seven-day stats once per hour in a Tinybird COPY snapshot, then serve them from a small table. Keep median prices, agent-run costs, private-model visibility, and the public response format.\n- Tinybird-only: gen keeps its one-hour KV cache, so there is no Worker change and no deploy order. Prices can be up to ~2 h old; they are seven-day medians.\n- Fixes the hourly vCPU 429s: when the KV key expires, 70–98 locations refresh in the same minute. Each refresh costs 2.7 CPU-s today, ~250 CPU-s against the 180 CPU-s/min budget. With the snapshot each refresh is a small table read. All 74 minutes with 429s in the last seven days were this refresh.\n- Also covers callers outside our Workers (~40% of calls, e.g. Facebook's link crawler), which hit the public endpoint directly.\n\n**Deploy (Tinybird, staging then prod):** `deployment create --check` passes against prod: 1 new datasource, 1 new copy pipe, 1 modified endpoint, no deletions. The deployment copies no data, so run `public_model_stats_refresh` before promoting, or the endpoint returns an empty list that gen caches for an hour. Then compare model counts and a few prices with the old endpoint.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01EiESgQiwYbspATwyFa9EJt\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Stats without the stampede",
+    "blurb": "The public model-stats endpoint gets an hourly snapshot instead of making dozens of locations recalculate the same seven-day numbers at once. Even link crawlers get a quieter path to the data.",
+    "summary": "Public model stats move to an hourly Tinybird snapshot of seven-day medians, replacing expensive calculations on cache refresh while preserving median prices, agent-run costs, private-model visibility, and the response format.",
+    "impact": "When the existing one-hour KV cache expires, 70–98 locations can read the small snapshot table instead of triggering the CPU spikes behind 74 minutes of 429s in the past week; direct callers benefit too, with prices potentially up to about two hours old.",
+    "keywords": [
+      "Tinybird",
+      "model stats",
+      "snapshot",
+      "429",
+      "pricing",
+      "reliability"
+    ],
+    "visual_concept": "A cozy garden data desk represents the public model-stats endpoint: Polli, wearing a tiny analyst visor, records seven-day price figures on a chart while the monitor robot reads a single hourly snapshot from a small table. A clock and several little paths converging on that table show many callers sharing one prepared result.",
+    "image_prompt": "In a cozy pixel-art garden workspace, Polli wears a tiny analyst visor and helps a cheerful CRT monitor robot read a seven-day chart from one small lime green (#ecf874) snapshot table, while a clock and flower-lined paths suggest many visitors sharing the same prepared stats. Polli is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16495.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli wears a tiny analyst visor and helps a cheerful CRT monitor robot read a seven-day chart from one small lime green (#ecf874) snapshot table, while a clock and flower-lined paths suggest many visitors sharing the same prepared stats. Polli is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, and a warm cream background."
+  },
+  "generated_at": "2026-10-06T15:57:07.193031+00:00"
+}

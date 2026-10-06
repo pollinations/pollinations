@@ -1,0 +1,34 @@
+{
+  "pr_number": 16487,
+  "title": "fix(ui): display labels for lazy copy values",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16487",
+  "merged_at": "2026-10-06T08:47:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Use the field label when a lazy copy value has no explicit display; preserve string values, empty displays and ReactNode overrides.\n- Leave the original function passed to CopyButton unchanged, so sync/async values are evaluated only on a copy click; document the fallback.\n- Extend existing composition SSR tests for output and non-evaluation; bump UI to alpha.6 with only its workspace lock entry.\n- Validation: original regression fails; all 110 UI tests, typecheck, full build and changed-file Biome pass. Parent regression passes; browser clipboard interaction was not exercised.\n\nFixes #16486\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A label worth copying",
+    "blurb": "Lazy copy fields get a readable label while their value waits for the actual copy click. Even the clipboard gets to respect boundaries.",
+    "summary": "CopyField in packages/ui alpha.6 uses the field label when a lazy copy value has no explicit display, while preserving string, empty, and ReactNode displays and evaluating sync or async values only on copy.",
+    "impact": "People see the field label instead of a blank lazy copy field; copying still resolves the value only when clicked.",
+    "keywords": [
+      "UI",
+      "CopyField",
+      "clipboard",
+      "lazy values",
+      "labels",
+      "SSR"
+    ],
+    "visual_concept": "Depict a cozy UI workbench with a clearly labeled CopyField and a clipboard button. Polli points to the visible label while a closed little box represents the lazy value waiting for a click; code-plants and flowers soften the scene. No external project mascot is indicated.",
+    "image_prompt": "In a cozy pixel art workbench, a labeled copy field glows softly beside a clipboard button, while a closed little box keeps its value tucked away until clicked; lime green (#ecf874) code-plants and flowers grow around the screen against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and points fondly at the label, small-to-medium in the scene, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16487.jpg",
+    "prompt": "In a cozy pixel art workbench, a labeled copy field glows softly beside a clipboard button, while a closed little box keeps its value tucked away until clicked; lime green (#ecf874) code-plants and flowers grow around the screen against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and points fondly at the label, small-to-medium in the scene, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T08:48:50.101308+00:00"
+}

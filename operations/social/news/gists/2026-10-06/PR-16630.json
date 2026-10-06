@@ -1,0 +1,33 @@
+{
+  "pr_number": 16630,
+  "title": "fix(sdk): remove n from imageGenerate",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16630",
+  "merged_at": "2026-10-06T18:50:57Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16629\n\n- Removes `n` from `imageGenerate()`. The API generates one image per request and rejects `n` above 1, so the option could only fail.\n- `imageGenerate()` now always returns one image instead of `ImageResponse | ImageResponse[]`.\n- Bumps the package to 5.1.0-alpha.12, with a CHANGELOG entry.\n- Verified: `npm run typecheck` and `npm test` (123/123) pass in `packages/sdk`.\n\n_Found by Ribbert. Reworked in review: the API caps `n` at 1, so the option is removed rather than fixed._\n\n<!-- ribbert:bug=10:97a47523 -->\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One image, one answer",
+    "blurb": "The SDK stops offering an image count the API never accepted. One request, one image, one less surprise.",
+    "summary": "SDK 5.1.0-alpha.12 removes the unsupported `n` option from `imageGenerate()` and makes its return type consistently `ImageResponse` instead of `ImageResponse | ImageResponse[]`.",
+    "impact": "SDK callers get a predictable single-image result without an option that failed whenever `n` exceeded 1.",
+    "keywords": [
+      "sdk",
+      "imageGenerate",
+      "images",
+      "typescript",
+      "return type"
+    ],
+    "visual_concept": "Depict the SDK as a cozy retro terminal printing one image into a single frame; a small code-plant reinforces the one-request, one-result idea. Polli, wearing tiny programmer glasses, guides the frame into place.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli wears tiny programmer glasses and gently places one generated picture into a frame beside a lime green (#ecf874) retro terminal and a sprouting code-plant; she is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings. Cozy 8-bit pixel art aesthetic, soft pastel gradients over warm cream, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley; dark purple (#110518) outlines and a prominent soft lime green (#ecf874) glow make the scene nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16630.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny programmer glasses and gently places one generated picture into a frame beside a lime green (#ecf874) retro terminal and a sprouting code-plant; she is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings. Cozy 8-bit pixel art aesthetic, soft pastel gradients over warm cream, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley; dark purple (#110518) outlines and a prominent soft lime green (#ecf874) glow make the scene nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-06T18:52:19.741083+00:00"
+}

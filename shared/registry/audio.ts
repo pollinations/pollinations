@@ -199,15 +199,9 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            // https://elevenlabs.io/pricing/api — launch offer through October 12.
-            // Read on access so long-lived workers also leave the promotion.
-            get completionAudioTokens() {
-                return (
-                    (Date.now() < Date.parse("2026-10-13T00:00:00Z")
-                        ? 0.022
-                        : 0.08) / 1000
-                );
-            },
+            // https://elevenlabs.io/pricing/api — current launch rate.
+            // Update explicitly when the provider changes its rate.
+            completionAudioTokens: 0.022 / 1000,
         },
         title: "ElevenLabs v4",
         description:

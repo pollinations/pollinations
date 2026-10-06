@@ -5,38 +5,15 @@ import {
     SELF,
 } from "cloudflare:test";
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { calculatePrice } from "@shared/registry/registry.ts";
 import {
     createTestApiKey,
     test as workerTest,
 } from "@shared/test/fixtures/index.ts";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, vi } from "vitest";
 
 afterEach(() => vi.restoreAllMocks());
 
-describe.each([
-    ["elevenlabs/eleven-v4", 0.022, 0.08],
-] as const)("%s", (model, promotionalRate, regularRate) => {
-    it("ends v4 launch pricing in an already-loaded registry", () => {
-        const definition = AUDIO_SERVICES[model];
-        const now = vi.spyOn(Date, "now");
-        now.mockReturnValue(Date.parse("2026-10-12T23:59:59Z"));
-        expect(definition.cost.completionAudioTokens).toBe(
-            promotionalRate / 1000,
-        );
-        expect(
-            calculatePrice(model, { completionAudioTokens: 1000 }).totalPrice,
-        ).toBe(promotionalRate);
-        now.mockReturnValue(Date.parse("2026-10-13T00:00:00Z"));
-        expect(definition.cost.completionAudioTokens).toBe(regularRate / 1000);
-        expect(
-            calculatePrice(model, { completionAudioTokens: 1000 }).totalPrice,
-        ).toBe(regularRate);
-        expect(definition.priceMultiplier).toBe(1);
-        expect(definition.paidOnly).toBe(true);
-        expect(definition.aliases).toEqual([]);
-    });
-
+describe.each(["elevenlabs/eleven-v4"] as const)("%s", (model) => {
     workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         "serves v4 through authenticated speech, simple audio, and timestamps",
         async ({ apiKey }) => {

@@ -160,14 +160,12 @@ export const Announcements: FC = () => {
             {launches.length > 0 && (
                 <AnnouncementGroup title="New">
                     {launches.map(({ name, change }) => (
-                        <li
-                            key={name}
-                            className="grid items-start gap-x-2 gap-y-2 sm:grid-cols-[10rem_minmax(0,1fr)]"
-                        >
-                            <strong className="min-w-0 text-theme-text-strong">
+                        <li key={name} className={ROW}>
+                            <strong className="col-span-3 min-w-0 text-theme-text-strong sm:col-span-2">
                                 {name}
                             </strong>
-                            <Markdown className="sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
+                            {/* Starts where the model names below start. */}
+                            <Markdown className="col-span-3 sm:col-span-2 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
                                 {change}
                             </Markdown>
                         </li>

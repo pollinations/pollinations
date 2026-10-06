@@ -1,0 +1,33 @@
+{
+  "pr_number": 16636,
+  "title": "fix(mcp): allow null content in assistant tool-call messages",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16636",
+  "merged_at": "2026-10-06T19:12:13Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16635\n\n- Accepts null or omitted assistant message content in tool-call continuations and passes tool calls and tool results through unchanged.\n- Adds one regression test, \"generateText accepts assistant tool calls with null content for tool-use continuation\", in `packages/mcp/test/textService.test.js`.\n- Verified: the regression fails on `main` and passes with the fix; `npm test --silent` show no new problems.\n\n_Found and fixed by Ribbert; manually refreshed and verified with Codex._\n\n<!-- ribbert:bug=13:53c21511 -->",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tools can take the floor",
+    "blurb": "An assistant can call a tool without filling in the message first. MCP lets the call and its result carry the conversation along.",
+    "summary": "MCP text generation accepts null or omitted content in assistant tool-call messages and preserves tool calls and tool results unchanged during continuation.",
+    "impact": "Tool-using conversations can continue when an assistant message contains a tool call but no text content.",
+    "keywords": [
+      "MCP",
+      "tool calls",
+      "text generation",
+      "conversation continuation",
+      "bug fix"
+    ],
+    "visual_concept": "Depict an MCP tool-use conversation as a cozy relay: Polli passes a blank message card bearing a small tool icon to the monitor robot, which returns a result card. The empty card is intentional; a code-plant and glowing terminal tie the scene to developer tools.",
+    "image_prompt": "In a cozy pixel art garden workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing a tiny tool belt as she hands a blank tool-call card to a friendly CRT monitor robot beside a code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent lime green (#ecf874) terminal glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16636.jpg",
+    "prompt": "In a cozy pixel art garden workspace, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing a tiny tool belt as she hands a blank tool-call card to a friendly CRT monitor robot beside a code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent lime green (#ecf874) terminal glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-06T19:13:16.861962+00:00"
+}

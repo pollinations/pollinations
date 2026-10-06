@@ -7,17 +7,17 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     adaptGoogleSearchToolForVertex,
-    createGeminiToolsTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
+import { mediaToVercelFiles } from "./transforms/mediaToVercelFiles.ts";
 import {
     omitParameters,
     preferTemperature,
 } from "./transforms/parameterTransforms.js";
-import { pipe } from "./transforms/pipe.js";
+import { addDefaultTools, pipe } from "./transforms/pipe.js";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import type { TransformFn, TransformOptions } from "./types.js";
 
@@ -655,27 +655,30 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiThinkingTransform("v2.5"),
+            mediaToVercelFiles,
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
-        name: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
-        config: portkeyConfig["gemini-fast-openrouter-vertex-eu"],
+        name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
+        config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createGeminiThinkingTransform("v2.5"),
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
         name: "google/gemini-2.5-flash-lite:search",
-        config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
+        config: portkeyConfig["google/gemini-2.5-flash-lite:search"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v2.5"),
+            addDefaultTools([
+                {
+                    type: "openrouter:web_search",
+                    parameters: { engine: "exa", max_results: 5 },
+                },
+            ]),
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
@@ -878,6 +881,11 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {
+        name: "z-ai/glm-5.3-flash:openrouter",
+        config: portkeyConfig["glm-5.3-flash-openrouter"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "z-ai/glm-5.3-flashx",
         config: portkeyConfig["z-ai/glm-5.3-flashx"],
         // Reasoning is mandatory; off requests keep the upstream default.
@@ -903,10 +911,34 @@ const models: ModelDefinition[] = [
     {
         name: "inclusionai/ling-3.1-flash",
         config: portkeyConfig["inclusionai/ling-3.1-flash"],
+        transform: (messages, options) => {
+            const { reasoning_effort, ...rest } = options;
+            const { reasoning } = options;
+            const control = reasoning as
+                | { enabled?: boolean; effort?: string; exclude?: boolean }
+                | undefined;
+            const effort = control?.effort ?? reasoning_effort;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    enable_thinking:
+                        control?.enabled ??
+                        (effort === undefined ? undefined : effort !== "none"),
+                    // Keep reasoning separate from answer content; the shared client
+                    // enforces the caller's visibility controls.
+                    separate_reasoning: true,
+                },
+            };
+        },
     },
     {
         name: "inclusionai/ling-3.1-flash:vercel:novita",
         config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash:openrouter:novita",
+        config: portkeyConfig["inclusionai/ling-3.1-flash:openrouter:novita"],
     },
     {
         name: "inclusionai/ling-3.0-flash-vl",

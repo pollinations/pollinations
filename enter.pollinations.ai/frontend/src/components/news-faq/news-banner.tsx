@@ -57,7 +57,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         change: "Alibaba routes retire. Choose another vision or voice model.",
     },
     {
-        date: "2026-10-13",
+        date: "2026-10-09",
         name: "Cohere Command A+",
         action: "Retiring",
         change: "Azure route is due to retire. Replacement details to follow.",

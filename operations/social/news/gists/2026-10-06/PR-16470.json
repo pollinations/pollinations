@@ -1,0 +1,34 @@
+{
+  "pr_number": 16470,
+  "title": "fix(cli): correct generation command help",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16470",
+  "merged_at": "2026-10-06T08:51:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Correct the text stdin example to `echo 'hello' | polli gen text`.\n- Describe the video's omitted model as the API default, matching the existing chat help. Remove the promise of an unsupported config default without changing generation behavior.\n- Keep both generation-help corrections together; bump CLI to `0.1.27` with its standalone lockfile.\n- Validation: all 292 CLI tests, build, changed-file Biome checks and built CLI help checks pass. Standalone TypeScript checking reports the same 36 baseline errors with byte-identical diagnostics; no new diagnostics.\n\nFixes #16468\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Help text finds its footing",
+    "blurb": "The CLI’s generation help gets its instructions straight: text has a working stdin example, and video points to the API default instead of an imaginary config setting.",
+    "summary": "Corrects the text stdin example to `echo 'hello' | polli gen text` and clarifies that an omitted video model uses the API default, without changing generation behavior.",
+    "impact": "CLI users get a working text command to copy and accurate guidance on video model selection.",
+    "keywords": [
+      "polli-cli",
+      "generation",
+      "help text",
+      "stdin",
+      "video",
+      "API default"
+    ],
+    "visual_concept": "Depict Polli tidying two help cards beside a retro terminal: one shows the text stdin command, while the other connects a video icon to an API-default sign. Small code-plants make the scene feel like a friendly workspace; the cards represent corrected instructions, not changed generation behavior.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli straightens two help cards beside a retro terminal and a small code-plant: one card reads `echo 'hello' | polli gen text`, while a video-icon card reads `API DEFAULT`. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), a warm cream background, dark purple (#110518) lettering, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16470.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli straightens two help cards beside a retro terminal and a small code-plant: one card reads `echo 'hello' | polli gen text`, while a video-icon card reads `API DEFAULT`. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), a warm cream background, dark purple (#110518) lettering, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "generated_at": "2026-10-06T08:52:37.437746+00:00"
+}

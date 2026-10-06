@@ -333,6 +333,7 @@ function insertCommunityEndpoints(
                         outputModalities,
                     }
                   : {
+                        paidOnly: false,
                         bearerTokenCiphertext:
                             bearerTokenCiphertext ?? "test-ciphertext",
                         api,
@@ -739,6 +740,7 @@ describe("community endpoint helpers", () => {
             "proxy",
             JSON.stringify({
                 bearerTokenCiphertext: "ciphertext",
+                paidOnly: false,
                 modality: "image",
                 api,
                 imagePricing: "request",
@@ -769,6 +771,7 @@ describe("community endpoint helpers", () => {
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
             bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
             modality: "text",
             imagePricing: "request",
             inputModalities: ["text"],
@@ -788,6 +791,16 @@ describe("community endpoint helpers", () => {
                 }),
             ),
         ).toMatchObject({ api: "chat_completions" });
+        const { paidOnly: _, ...withoutPaidOnly } = textPayload;
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    ...withoutPaidOnly,
+                    api: "chat_completions",
+                }),
+            ),
+        ).toBeNull();
         expect(parseListingPayload("proxy", "not json")).toBeNull();
         expect(
             parseListingPayload("proxy", JSON.stringify({ prices: {} })),

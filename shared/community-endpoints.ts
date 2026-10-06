@@ -575,9 +575,8 @@ export const ProxyListingPayloadSchema = z
         bearerTokenCiphertext: z.string().min(1),
         // Media listings have no text API and do not need a data migration.
         api: CommunityEndpointApiSchema.nullable().default(null),
-        // Owner-set: callers may only spend Paid Pollen on this model. Rows
-        // from before paid-only support are public-spend by default.
-        paidOnly: z.boolean().default(false),
+        // Owner-set: callers may only spend Paid Pollen on this model.
+        paidOnly: z.boolean(),
         modality: z.enum(COMMUNITY_ENDPOINT_MODALITIES),
         imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),
         inputModalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).min(1),

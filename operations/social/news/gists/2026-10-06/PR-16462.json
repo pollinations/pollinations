@@ -1,0 +1,38 @@
+{
+  "pr_number": 16462,
+  "title": "feat: key model permissions by category, Quest Pollen only keys",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16462",
+  "merged_at": "2026-10-06T08:38:11Z",
+  "labels": [
+    "API",
+    "FEATURE"
+  ],
+  "pr_body_excerpt": "Feedback in #dev-product: the per-model key picker was confusing, with community models mixed in and nothing to tell paid and free apart.\n\n**Model categories**\n- Adds model categories (text, image, audio, video, 3d, embedding, realtime) as key model permissions. gen checks the model's registry category, so new models in a chosen category are allowed automatically.\n- Replaces the per-model picker on the key dialog and consent screen with one chip per category and an All chip.\n- Widens model IDs written to a key (API, CLI, `/grant`, consent `models=`) to their category. Unknown values return 400.\n- Migration 0068 widens about 14.9k existing keys. 1,210 of them are active, restricted and have no budget.\n\n**Quest Pollen only keys** (Addresses #15455, smaller version of #13708)\n- Adds a per-key switch, off by default. The key spends only Quest Pollen on every charge: models, realtime, sandboxes and MCP tools. Paid-only models are hidden.\n- Refusals return 402 `QUEST_POLLEN_ONLY` with a link to change the key. MCP tool calls use #16562's shared balance check.\n- Keys created by such a key inherit it.\n- Releases SDK 5.1.0-alpha.9 and polli 0.1.27.\n- Available in the key dialog, consent screen, API, SDK, `polli keys create --quest-pollen-only` and MCP `createKey`.\n- In the key dialog it is a checkbox under Budget; Expiry moves above Budget.\n\n**Deploy notes**\n- Migrations run before both workers deploy. gen needs 0069's column.\n- Category-restricted keys can 403 between migrate and gen deploy.\n- Regenerate 0068's 759-ID snapshot if models are added before merge.\n- Overlaps #16407; whichever merges second adapts.\n- After production, the `finalize-canonical-permissions` job and its test can be removed; they only run for the deploy that ships 0068.\n- Removes the migrate job's `CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED` gate (from #13076) and the model-management rules for alias-aware key permissions. Delete that repo variable after merge.\n\n🤖 Generated with [Claude Code](https:/",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys find their lanes",
+    "blurb": "The model-by-model key picker gives way to seven tidy categories. There’s also a switch for keys that spend Quest Pollen only—even keys can have a budget philosophy.",
+    "summary": "API keys gain text, image, audio, video, 3d, embedding, and realtime permissions that automatically include new models in a chosen category, plus an optional Quest Pollen–only setting across model, realtime, sandbox, and MCP charges.",
+    "impact": "Key creators can choose categories instead of individual models in the dialog, consent screen, API, SDK, or CLI; Quest Pollen–only keys hide paid-only models and return 402 `QUEST_POLLEN_ONLY` when a charge cannot use Quest Pollen.",
+    "keywords": [
+      "API keys",
+      "model permissions",
+      "model categories",
+      "Quest Pollen",
+      "billing",
+      "SDK",
+      "MCP"
+    ],
+    "visual_concept": "Depict a friendly key-making desk: seven labeled category chips sit beside a key and a small jar of Quest Pollen. Polli sorts the chips with a tiny tool belt, while the Monitor Robot holds up the finished key; code-plants and flowers make the permissions feel like paths through a garden.",
+    "image_prompt": "In a cozy pixel art garden workshop, Polli sorts seven simple category chips beside a glowing lime green (#ecf874) key and a little jar labeled 'QUEST POLLEN', while a friendly CRT-headed robot holds the finished key among code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny tool belt, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and a warm, nostalgic feel like Stardew Valley or A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16462.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli sorts seven simple category chips beside a glowing lime green (#ecf874) key and a little jar labeled 'QUEST POLLEN', while a friendly CRT-headed robot holds the finished key among code-plants and flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny tool belt, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and a warm, nostalgic feel like Stardew Valley or A Short Hike."
+  },
+  "generated_at": "2026-10-06T08:39:16.698869+00:00"
+}

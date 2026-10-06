@@ -110,7 +110,7 @@ function rejectInvalidClientId(): never {
 
 // Caller-provided metadata is restricted to a typed allowlist. Server-controlled
 // fields like keyType / createdVia / plaintextKey / app attribution can never
-// be set or overridden by callers, even via /api/api-keys metadata patches.
+// be set or overridden by callers, even via /account/keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
     isPublishable: boolean,

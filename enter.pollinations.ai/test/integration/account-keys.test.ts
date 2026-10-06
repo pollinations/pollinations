@@ -224,11 +224,25 @@ describe("Account Key Management API", () => {
             expect(createChild.status).toBe(200);
             expect((await createChild.json()).questPollenOnly).toBe(true);
 
+            // The key itself can't lift the restriction.
+            const selfLift = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${parentKey.id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${parentKey.key}`,
+                    },
+                    body: JSON.stringify({ questPollenOnly: false }),
+                },
+            );
+            expect(selfLift.status).toBe(403);
+
             // The owner can lift the restriction from the dashboard.
             const update = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${parentKey.id}/update`,
+                `http://localhost:3000/api/account/keys/${parentKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -250,9 +264,9 @@ describe("Account Key Management API", () => {
 
             // Set account:keys permission via the update endpoint
             const updateResp = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${parentKey.id}/update`,
+                `http://localhost:3000/api/account/keys/${parentKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -331,9 +345,9 @@ describe("Account Key Management API", () => {
 
             // Set account:keys permission
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdPub.id}/update`,
+                `http://localhost:3000/api/account/keys/${createdPub.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -441,9 +455,9 @@ describe("Account Key Management API", () => {
 
             // Set account:keys permission
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdPub.id}/update`,
+                `http://localhost:3000/api/account/keys/${createdPub.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -566,9 +580,9 @@ describe("Account Key Management API", () => {
 
             // Grant account:keys permission
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                `http://localhost:3000/api/account/keys/${created.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,

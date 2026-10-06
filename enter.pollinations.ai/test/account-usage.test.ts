@@ -144,9 +144,9 @@ async function createUsageApiKey(sessionToken: string) {
     };
 
     const updateResponse = await SELF.fetch(
-        `http://localhost:3000/api/api-keys/${created.id}/update`,
+        `http://localhost:3000/api/account/keys/${created.id}`,
         {
-            method: "POST",
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 ...authHeaders(sessionToken),

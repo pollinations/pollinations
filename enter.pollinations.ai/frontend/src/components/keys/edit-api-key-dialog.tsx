@@ -79,9 +79,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     earningsEnabled,
                 })
             ) {
-                const metaRes = await apiClient["api-keys"][
-                    ":id"
-                ].metadata.$post({
+                const metaRes = await apiClient.account.keys[":id"].$patch({
                     param: { id: apiKey.id },
                     json: { redirectUris: cleaned, earningsEnabled },
                 });

@@ -411,7 +411,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
             try {
                 const [catalogResponse, rewardsResponse] = await Promise.all([
                     apiClient.quests.catalog.$get(),
-                    apiClient.quests.rewards.$get(),
+                    apiClient.account.quests.rewards.$get(),
                 ]);
                 if (!catalogResponse.ok || !rewardsResponse.ok) {
                     throw new Error("Quest status unavailable");

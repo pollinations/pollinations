@@ -108,13 +108,13 @@ describe("GET /api/account/balance", () => {
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        await setAccountBalances(userId);
-
         const created = await createKey(sessionToken, {
             name: "budget-and-usage",
             pollenBudget: 7,
             accountPermissions: ["usage"],
         });
+        // After creation: the first key earns a Quest Pollen reward.
+        await setAccountBalances(userId);
         const res = await getBalance({
             Authorization: `Bearer ${created.key}`,
         });
@@ -131,12 +131,12 @@ describe("GET /api/account/balance", () => {
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        await setAccountBalances(userId);
-
         const created = await createKey(sessionToken, {
             name: "usage-only",
             accountPermissions: ["usage"],
         });
+        // After creation: the first key earns a Quest Pollen reward.
+        await setAccountBalances(userId);
         const res = await getBalance({
             Authorization: `Bearer ${created.key}`,
         });

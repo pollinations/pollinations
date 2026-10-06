@@ -195,7 +195,7 @@ export const test = base.extend<Fixtures>({
     },
     /**
      * Creates an API key restricted to only ["openai/gpt-5-nano", "black-forest-labs/flux.1-schnell"] models.
-     * Uses the /api/api-keys/:id/update endpoint to set permissions.
+     * Uses PATCH /api/account/keys/:id to set permissions.
      */
     restrictedApiKey: async ({ sessionToken }, use) => {
         const created = await createApiKeyViaApi(sessionToken, {
@@ -204,9 +204,9 @@ export const test = base.extend<Fixtures>({
 
         // Update permissions via the API endpoint (same flow as production)
         const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${created.id}/update`,
+            `http://localhost:3000/api/account/keys/${created.id}`,
             {
-                method: "POST",
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     "Cookie": `better-auth.session_token=${sessionToken}`,
@@ -229,7 +229,7 @@ export const test = base.extend<Fixtures>({
     },
     /**
      * Creates an API key with zero pollen budget (exhausted).
-     * Uses the /api/api-keys/:id/update endpoint to set pollenBudget to 0.
+     * Uses PATCH /api/account/keys/:id to set pollenBudget to 0.
      */
     exhaustedBudgetApiKey: async ({ sessionToken }, use) => {
         const created = await createApiKeyViaApi(sessionToken, {
@@ -238,9 +238,9 @@ export const test = base.extend<Fixtures>({
 
         // Set pollenBudget to 0 via the API endpoint
         const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${created.id}/update`,
+            `http://localhost:3000/api/account/keys/${created.id}`,
             {
-                method: "POST",
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     "Cookie": `better-auth.session_token=${sessionToken}`,
@@ -269,9 +269,9 @@ export const test = base.extend<Fixtures>({
 
         // Set pollenBudget to 100 via the API endpoint
         const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${created.id}/update`,
+            `http://localhost:3000/api/account/keys/${created.id}`,
             {
-                method: "POST",
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     "Cookie": `better-auth.session_token=${sessionToken}`,

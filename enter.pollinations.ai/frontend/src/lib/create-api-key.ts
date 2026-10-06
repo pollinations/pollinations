@@ -13,7 +13,16 @@ type CreateKeyInput = {
     name: string;
     prefix: "sk" | "pk";
     expiryDays?: number | null;
-    metadata?: Record<string, unknown>;
+    description?: string;
+    redirectUris?: string[];
+    earningsEnabled?: boolean;
+    /** Set by the consent screen to bind the key to the app being authorized. */
+    consent?: {
+        requestedClientId?: string;
+        redirectUri?: string;
+        redirectOrigin?: string;
+        deviceUserCode?: string;
+    };
     permissions?: Permissions;
 };
 
@@ -31,7 +40,10 @@ export async function createKeyWithPermissions({
     name,
     prefix,
     expiryDays,
-    metadata,
+    description,
+    redirectUris,
+    earningsEnabled,
+    consent,
     permissions,
 }: CreateKeyInput): Promise<CreatedKey> {
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
@@ -41,14 +53,17 @@ export async function createKeyWithPermissions({
         name,
         type: keyType,
         expiresIn,
-        metadata,
+        description,
+        redirectUris,
+        earningsEnabled,
+        consent,
         allowedModels: permissions?.allowedModels,
         pollenBudget: permissions?.pollenBudget,
         accountPermissions: permissions?.accountPermissions,
         questPollenOnly: permissions?.questPollenOnly,
     };
 
-    const response = await apiClient["api-keys"].$post({
+    const response = await apiClient.account.keys.$post({
         json: body,
     });
 

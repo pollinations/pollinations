@@ -2,9 +2,7 @@ import { Hono } from "hono";
 import type { Env } from "./env.ts";
 import { accountRoutes } from "./routes/account.ts";
 import { publicAgentSyncRoutes } from "./routes/agents.ts";
-import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
-import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { integrationsRoutes } from "./routes/integrations.ts";
 import { modelStatsRoutes } from "./routes/model-stats.ts";
@@ -17,10 +15,8 @@ import { stripeRoutes } from "./routes/stripe.ts";
 import { x402KeysRoutes } from "./routes/x402-keys.ts";
 
 export const frontendApi = new Hono<Env>()
-    .route("/customer", customerRoutes)
     .route("/stripe", stripeRoutes)
     .route("/x402/keys", x402KeysRoutes)
-    .route("/api-keys", apiKeysRoutes)
     .route("/app-lookup", appLookupRoutes)
     .route("/account/integrations", integrationsRoutes)
     .route("/account/agents", publicAgentSyncRoutes)

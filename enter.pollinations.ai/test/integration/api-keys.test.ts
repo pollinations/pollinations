@@ -25,10 +25,10 @@ type ApiKeyListResponse = {
 };
 
 describe("API Key Management", () => {
-    describe("POST /api/api-keys", () => {
+    describe("POST /api/account/keys", () => {
         test("allows an expiry beyond one year", async ({ sessionToken }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -57,7 +57,7 @@ describe("API Key Management", () => {
                 Cookie: `better-auth.session_token=${sessionToken}`,
             };
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers,
@@ -77,7 +77,7 @@ describe("API Key Management", () => {
             });
 
             const list = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 { headers },
             );
             expect(list.status).toBe(200);
@@ -87,9 +87,9 @@ describe("API Key Management", () => {
             ).toEqual({ models: [], account: ["profile"] });
 
             const update = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                `http://localhost:3000/api/account/keys/${created.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers,
                     body: JSON.stringify({
                         allowedModels: [],
@@ -118,7 +118,7 @@ describe("API Key Management", () => {
         }) => {
             for (const pollenBudget of [undefined, null, 0]) {
                 const response = await SELF.fetch(
-                    "http://localhost:3000/api/api-keys",
+                    "http://localhost:3000/api/account/keys",
                     {
                         method: "POST",
                         headers: {
@@ -129,11 +129,9 @@ describe("API Key Management", () => {
                             name: `forced-zero-publishable-${String(pollenBudget)}`,
                             type: "publishable",
                             pollenBudget,
-                            metadata: {
-                                redirectUris: [
-                                    "https://zero-budget.example/callback",
-                                ],
-                            },
+                            redirectUris: [
+                                "https://zero-budget.example/callback",
+                            ],
                         }),
                     },
                 );
@@ -154,7 +152,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -181,7 +179,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -191,11 +189,9 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "one-step-publishable",
                         type: "publishable",
-                        metadata: {
-                            description: "created in one step",
-                            redirectUris: ["https://one-step.example/callback"],
-                            earningsEnabled: true,
-                        },
+                        description: "created in one step",
+                        redirectUris: ["https://one-step.example/callback"],
+                        earningsEnabled: true,
                     }),
                 },
             );
@@ -214,7 +210,7 @@ describe("API Key Management", () => {
 
         test("allows reward-enabled app keys", async ({ sessionToken }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -224,12 +220,10 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "wallet-reward-publishable",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: [
-                                "https://wallet-rewards.example/callback",
-                            ],
-                            earningsEnabled: true,
-                        },
+                        redirectUris: [
+                            "https://wallet-rewards.example/callback",
+                        ],
+                        earningsEnabled: true,
                     }),
                 },
             );
@@ -243,7 +237,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -253,9 +247,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "localhost-publishable",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["http://localhost:3456/callback"],
-                        },
+                        redirectUris: ["http://localhost:3456/callback"],
                     }),
                 },
             );
@@ -278,7 +270,7 @@ describe("API Key Management", () => {
                 "http://app.example/callback",
             ]) {
                 const response = await SELF.fetch(
-                    "http://localhost:3000/api/api-keys",
+                    "http://localhost:3000/api/account/keys",
                     {
                         method: "POST",
                         headers: {
@@ -288,9 +280,7 @@ describe("API Key Management", () => {
                         body: JSON.stringify({
                             name: "unsafe-publishable",
                             type: "publishable",
-                            metadata: {
-                                redirectUris: [redirectUri],
-                            },
+                            redirectUris: [redirectUri],
                         }),
                     },
                 );
@@ -299,28 +289,30 @@ describe("API Key Management", () => {
             }
         });
 
-        test("blocks native Better Auth api-key create/update routes", async ({
+        test("blocks every native Better Auth api-key route", async ({
             sessionToken,
         }) => {
-            // Keys are created/updated only through /api/api-keys, which validates
+            // Keys are managed only through /api/account/keys, which validates
             // redirect URIs and strips server-only metadata. The native routes store
-            // caller metadata verbatim, so they must not be reachable over HTTP.
+            // caller metadata verbatim, so none of them may be reachable over HTTP.
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const unsafeMetadata = {
+                redirectUris: [
+                    "javascript://x/%0afetch('https://example.com')//",
+                ],
+            };
             const nativeCreate = await SELF.fetch(
                 "http://localhost:3000/api/auth/api-key/create",
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
+                    headers,
                     body: JSON.stringify({
                         name: "native-redirect-bypass",
                         prefix: "pk",
-                        metadata: {
-                            redirectUris: [
-                                "javascript://x/%0afetch('https://example.com')//",
-                            ],
-                        },
+                        metadata: unsafeMetadata,
                     }),
                 },
             );
@@ -328,51 +320,63 @@ describe("API Key Management", () => {
 
             // The safe route still works and validates the scheme.
             const safeCreate = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
+                    headers,
                     body: JSON.stringify({
                         name: "safe-publishable",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://safe.example/callback"],
-                        },
+                        redirectUris: ["https://safe.example/callback"],
                     }),
                 },
             );
             expect(safeCreate.status).toBe(200);
             const created = await safeCreate.json();
 
-            const nativeUpdate = await SELF.fetch(
-                "http://localhost:3000/api/auth/api-key/update",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+            const nativeCalls: [string, string, unknown?][] = [
+                [
+                    "POST",
+                    "update",
+                    { keyId: created.id, metadata: unsafeMetadata },
+                ],
+                ["POST", "delete", { keyId: created.id }],
+                ["GET", "list"],
+                ["GET", `get?id=${created.id}`],
+                ["POST", "verify", { key: created.key }],
+            ];
+            for (const [method, path, body] of nativeCalls) {
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/auth/api-key/${path}`,
+                    {
+                        method,
+                        headers,
+                        ...(body !== undefined && {
+                            body: JSON.stringify(body),
+                        }),
                     },
-                    body: JSON.stringify({
-                        keyId: created.id,
-                        metadata: {
-                            redirectUris: [
-                                "javascript://x/%0afetch('https://example.com')//",
-                            ],
-                        },
-                    }),
-                },
+                );
+                expect(response.status, `${method} ${path}`).toBe(405);
+            }
+
+            // The blocked native delete and update left the key untouched.
+            const list = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                { headers },
             );
-            expect(nativeUpdate.status).toBe(405);
+            expect(list.status).toBe(200);
+            const listed = (await list.json()) as ApiKeyListResponse;
+            expect(
+                listed.data.find((key) => key.id === created.id)?.metadata
+                    ?.redirectUris,
+            ).toEqual(["https://safe.example/callback"]);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
             sessionToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -383,11 +387,14 @@ describe("API Key Management", () => {
                         name: "spoof-attempt",
                         type: "publishable",
                         accountPermissions: ["keys"],
+                        redirectUris: ["https://legit.example/callback"],
+                        keyType: "secret",
+                        createdVia: "forged",
+                        plaintextKey: "sk_forged",
                         metadata: {
                             keyType: "secret",
                             createdVia: "forged",
                             plaintextKey: "sk_forged",
-                            redirectUris: ["https://legit.example/callback"],
                         },
                     }),
                 },
@@ -408,7 +415,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -418,7 +425,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "unbranded-redirect-auth",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             redirectUri: "https://solo.example/callback",
                             redirectOrigin: "https://solo.example",
                             createdForUserId: "spoofed-user",
@@ -454,7 +461,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -464,10 +471,8 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "registered-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://legit.example/callback"],
-                            earningsEnabled: true,
-                        },
+                        redirectUris: ["https://legit.example/callback"],
+                        earningsEnabled: true,
                     }),
                 },
             );
@@ -475,7 +480,7 @@ describe("API Key Management", () => {
             const appKey = await appResponse.json();
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -485,7 +490,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "forged-redirect-auth",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri: "https://attacker.example/callback",
                             redirectOrigin: "https://attacker.example",
@@ -497,7 +502,7 @@ describe("API Key Management", () => {
             expect(response.status).toBe(400);
 
             const storedOnlyResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -507,7 +512,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "client-id-without-requested-client-id",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             clientId: appKey.id,
                             redirectUri: "https://legit.example/callback",
                             redirectOrigin: "https://legit.example",
@@ -516,10 +521,15 @@ describe("API Key Management", () => {
                 },
             );
 
-            expect(storedOnlyResponse.status).toBe(400);
+            // A caller-supplied stored clientId is stripped by the schema, so
+            // the key is created without any app attribution.
+            expect(storedOnlyResponse.status).toBe(200);
+            const storedOnlyCreated = await storedOnlyResponse.json();
+            expect(storedOnlyCreated.metadata.clientId).toBeUndefined();
+            expect(storedOnlyCreated.byopClientKeyId).toBeNull();
 
             const matchingResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -529,7 +539,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "valid-redirect-auth",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             createdForUserId: "spoofed-user",
                             createdForApp: "spoofed-app",
@@ -553,7 +563,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -563,12 +573,10 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "disabled-reward-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: [
-                                "https://disabled-reward.example/callback",
-                            ],
-                            earningsEnabled: false,
-                        },
+                        redirectUris: [
+                            "https://disabled-reward.example/callback",
+                        ],
+                        earningsEnabled: false,
                     }),
                 },
             );
@@ -576,7 +584,7 @@ describe("API Key Management", () => {
             const appKey = await appResponse.json();
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -586,7 +594,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "disabled-reward-attributed-secret",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri:
                                 "https://disabled-reward.example/callback",
@@ -606,7 +614,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -616,9 +624,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "device-registered-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://device.example/callback"],
-                        },
+                        redirectUris: ["https://device.example/callback"],
                     }),
                 },
             );
@@ -641,7 +647,7 @@ describe("API Key Management", () => {
             });
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -651,7 +657,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "device-auth-key",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             deviceUserCode: userCode,
                             requestedClientId: appKey.key,
                             createdForUserId: "spoofed-user",
@@ -691,7 +697,7 @@ describe("API Key Management", () => {
             });
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -701,7 +707,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "unbranded-device-auth-key",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             deviceUserCode: userCode,
                             createdForUserId: "victim-user",
                             createdForApp: "spoofed-device-app",
@@ -723,7 +729,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -733,9 +739,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "victim-device-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://device.example/callback"],
-                        },
+                        redirectUris: ["https://device.example/callback"],
                     }),
                 },
             );
@@ -758,7 +762,7 @@ describe("API Key Management", () => {
             });
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -768,7 +772,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "forged-device-auth-key",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             deviceUserCode: userCode,
                             requestedClientId: appKey.key,
                             createdForApp: "victim-device-app",
@@ -786,7 +790,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -824,7 +828,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -834,9 +838,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "query-bound-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://app.example/callback"],
-                        },
+                        redirectUris: ["https://app.example/callback"],
                     }),
                 },
             );
@@ -874,7 +876,7 @@ describe("API Key Management", () => {
         }) => {
             // Mint a publishable key with one registered URI.
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -884,9 +886,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "minting-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://mint.example/cb"],
-                        },
+                        redirectUris: ["https://mint.example/cb"],
                     }),
                 },
             );
@@ -896,7 +896,7 @@ describe("API Key Management", () => {
             // sk_ minting must accept query + trailing slash on the redirect
             // (matches what /authorize forwards from a browser address bar).
             const mint = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -906,7 +906,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "minted-sk",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri:
                                 "https://mint.example/cb/?prompt=hi&model=x",
@@ -918,7 +918,7 @@ describe("API Key Management", () => {
 
             // But mismatching host still fails.
             const evil = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -928,7 +928,7 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "evil-sk",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri: "https://attacker.example/cb",
                         },
@@ -939,7 +939,7 @@ describe("API Key Management", () => {
         });
     });
 
-    describe("GET /api/api-keys", () => {
+    describe("GET /api/account/keys", () => {
         test("should list all API keys for authenticated user", async ({
             sessionToken,
             apiKey,
@@ -952,7 +952,7 @@ describe("API Key Management", () => {
             expect(restrictedApiKey).toBeTruthy();
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -988,7 +988,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1015,14 +1015,14 @@ describe("API Key Management", () => {
                 Cookie: `better-auth.session_token=${sessionToken}`,
             };
             for (const model of ["retired-model", "community/nobody/missing"]) {
-                for (const path of [
-                    "/api/api-keys",
-                    `/api/api-keys/${created.id}/update`,
+                for (const [method, path] of [
+                    ["POST", "/api/account/keys"],
+                    ["PATCH", `/api/account/keys/${created.id}`],
                 ]) {
                     const response = await SELF.fetch(
                         `http://localhost:3000${path}`,
                         {
-                            method: "POST",
+                            method,
                             headers,
                             body: JSON.stringify({
                                 name: "invalid-model",
@@ -1091,9 +1091,9 @@ describe("API Key Management", () => {
                 legacyCommunityModelId("model-owner", "private-model"),
             ]) {
                 const update = await SELF.fetch(
-                    `http://localhost:3000/api/api-keys/${created.id}/update`,
+                    `http://localhost:3000/api/account/keys/${created.id}`,
                     {
-                        method: "POST",
+                        method: "PATCH",
                         headers,
                         body: JSON.stringify({ allowedModels: [model] }),
                     },
@@ -1102,7 +1102,7 @@ describe("API Key Management", () => {
             }
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 { headers },
             );
             expect(response.status).toBe(200);
@@ -1113,25 +1113,44 @@ describe("API Key Management", () => {
 
         test("should require authentication", async () => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
             );
             expect(response.status).toBe(401);
         });
 
-        test("should not allow API key authentication", async ({ apiKey }) => {
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+        test("should allow API key authentication only with account:keys", async ({
+            apiKey,
+            sessionToken,
+        }) => {
+            const denied = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Authorization: `Bearer ${apiKey}`,
                     },
                 },
             );
-            expect(response.status).toBe(401);
+            expect(denied.status).toBe(403);
+
+            const keysKey = await createApiKeyViaApi(sessionToken, {
+                name: "keys-permission-list",
+                accountPermissions: ["keys"],
+            });
+            const allowed = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    headers: {
+                        Authorization: `Bearer ${keysKey.key}`,
+                    },
+                },
+            );
+            expect(allowed.status).toBe(200);
+            const listed = (await allowed.json()) as ApiKeyListResponse;
+            expect(listed.data.some((key) => key.id === keysKey.id)).toBe(true);
         });
     });
 
-    describe("POST /api/api-keys/:id/update", () => {
+    describe("PATCH /api/account/keys/:id", () => {
         test("should update API key name", async ({ sessionToken }) => {
             // Create a new key for this test
             const createdKey = await createApiKeyViaApi(sessionToken, {
@@ -1141,9 +1160,9 @@ describe("API Key Management", () => {
 
             // Update the name
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1160,7 +1179,7 @@ describe("API Key Management", () => {
 
             // Verify the change persisted
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1181,9 +1200,9 @@ describe("API Key Management", () => {
 
             // Update with model restrictions
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1201,11 +1220,17 @@ describe("API Key Management", () => {
 
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
-            expect(result.permissions).toContain("models");
+            expect(result.permissions).toEqual({
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "google/gemini-3.1-flash-image",
+                ],
+                account: ["profile", "usage"],
+            });
 
             // Verify permissions in list
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1228,9 +1253,9 @@ describe("API Key Management", () => {
             });
 
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/update`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1266,9 +1291,9 @@ describe("API Key Management", () => {
             });
 
             const metadataResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1285,7 +1310,7 @@ describe("API Key Management", () => {
             ]);
 
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1309,9 +1334,9 @@ describe("API Key Management", () => {
             });
 
             const metadataResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1331,7 +1356,7 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const createResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
@@ -1341,11 +1366,9 @@ describe("API Key Management", () => {
                     body: JSON.stringify({
                         name: "metadata-reward-toggle",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: [
-                                "https://metadata-reward.example/callback",
-                            ],
-                        },
+                        redirectUris: [
+                            "https://metadata-reward.example/callback",
+                        ],
                     }),
                 },
             );
@@ -1353,9 +1376,9 @@ describe("API Key Management", () => {
             const createdKey = await createResponse.json();
 
             const metadataResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1384,9 +1407,9 @@ describe("API Key Management", () => {
 
             // Set budget to 50
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1400,11 +1423,11 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
-            expect(JSON.parse(result.permissions).models).toEqual(["image"]);
+            expect(result.permissions.models).toEqual(["image"]);
 
             // Verify in list
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1428,9 +1451,9 @@ describe("API Key Management", () => {
             futureDate.setDate(futureDate.getDate() + 30);
 
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1445,7 +1468,7 @@ describe("API Key Management", () => {
 
             // Verify in list
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1473,9 +1496,9 @@ describe("API Key Management", () => {
 
             // First set some permissions
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1489,9 +1512,9 @@ describe("API Key Management", () => {
 
             // Then clear them
             const clearResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1507,7 +1530,7 @@ describe("API Key Management", () => {
 
             // Verify permissions are cleared
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1523,9 +1546,9 @@ describe("API Key Management", () => {
             sessionToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys/non-existent-id/update",
+                "http://localhost:3000/api/account/keys/non-existent-id",
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1551,9 +1574,9 @@ describe("API Key Management", () => {
 
             // Try updating without authentication
             const response = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                     },
@@ -1577,9 +1600,9 @@ describe("API Key Management", () => {
 
             // Update 1: Set name and budget
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1593,9 +1616,9 @@ describe("API Key Management", () => {
 
             // Update 2: Add permissions
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1611,9 +1634,9 @@ describe("API Key Management", () => {
             expiryDate.setDate(expiryDate.getDate() + 7);
 
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1627,7 +1650,7 @@ describe("API Key Management", () => {
 
             // Verify all changes persisted
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1658,9 +1681,9 @@ describe("API Key Management", () => {
             pastDate.setDate(pastDate.getDate() - 1);
 
             const updateResp = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Cookie: `better-auth.session_token=${sessionToken}`,
@@ -1675,7 +1698,7 @@ describe("API Key Management", () => {
 
             // Verify the key was updated with expiry
             const listResp = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
                         Cookie: `better-auth.session_token=${sessionToken}`,

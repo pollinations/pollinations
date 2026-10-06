@@ -6,19 +6,45 @@ body:
   - type: markdown
     attributes:
       value: |
-        Submit a working app that uses Pollinations. An automated pre-review checks the live app and optional repository, then a maintainer reviews it before publication.
+        ## Submit your app
 
-        The app must work, visibly use Pollinations, have a clear purpose, credit Pollinations, and avoid spam, scams, or deceptive behavior.
+        Share your Pollinations-powered app with the community. An automated pre-review checks your submission, then a maintainer reviews it before publication.
 
-        **Credit:** add the badge to your repository README. Without a repository, show the badge or a visible link to pollinations.ai on the app page.
+        ### Before you submit
+
+        - Your app works, has a clear purpose, and visibly uses Pollinations.
+        - Provide a public app URL, a public repository, or both.
+        - Upload a screenshot of the app's real screen (requirements below).
+        - Credit Pollinations using the instructions below.
+        - No spam, scams, or deceptive behavior.
+
+        ### Credit Pollinations
+
+        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+
+        - **With a repository:** add the badge to your README.
+        - **Without a repository:** show the badge or a visible [pollinations.ai](https://pollinations.ai) link on the app page.
+
+        **README — copy this Markdown:**
 
         ```markdown
         [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
         ```
 
+        **App page — copy this HTML:**
+
         ```html
-        <a href="https://pollinations.ai/?ref=badge"><img src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg" alt="Made with pollinations.ai"></a>
+        <a href="https://pollinations.ai/?ref=badge">
+          <img
+            src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg"
+            alt="Made with pollinations.ai"
+          >
+        </a>
         ```
+
+        ---
+
+        ### App details
 
   - type: input
     id: app-name

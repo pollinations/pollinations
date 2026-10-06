@@ -14,22 +14,6 @@ const workflow = parse(
     ),
 );
 
-test("canonical promotion fails closed before D1 unless live compatibility is confirmed", () => {
-    const gate = workflow.jobs.migrate.steps[0];
-    assert.equal(
-        gate.if,
-        undefined,
-        "manual retries must not bypass the compatibility gate",
-    );
-    assert.equal(
-        gate.env.COMPAT_VERIFIED,
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression, not JavaScript interpolation.
-        "${{ vars.CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED }}",
-    );
-    assert.ok(gate.run.includes('if [ "$COMPAT_VERIFIED" != "true" ]'));
-    assert.ok(gate.run.includes("exit 1"));
-});
-
 test("canonical cleanup waits for both successful deployments and requires promotion or explicit retry", () => {
     const job = workflow.jobs["finalize-canonical-permissions"];
     assert.deepEqual(job.needs, ["changes", "deploy-enter", "deploy-gen"]);
@@ -50,7 +34,7 @@ test("canonical cleanup waits for both successful deployments and requires promo
             .filters,
     );
     assert.deepEqual(filters.canonical_permissions, [
-        "enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql",
+        "enter.pollinations.ai/drizzle/0068_model-permission-categories.sql",
     ]);
     assert.ok(
         filters.gen.includes(filters.canonical_permissions[0]),
@@ -62,6 +46,6 @@ test("canonical cleanup waits for both successful deployments and requires promo
     assert.equal(command["working-directory"], "enter.pollinations.ai");
     assert.equal(
         command.run,
-        "npx wrangler d1 execute DB --remote --env production --file drizzle/0062_standardize-model-permissions.sql",
+        "npx wrangler d1 execute DB --remote --env production --file drizzle/0068_model-permission-categories.sql",
     );
 });

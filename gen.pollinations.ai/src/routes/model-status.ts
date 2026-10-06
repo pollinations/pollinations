@@ -8,9 +8,12 @@ import type { Env } from "@/env.ts";
 const MODEL_ROUTE_HEALTH_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_route_health.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
-async function fetchHealthRows(url: URL): Promise<ModelHealthRow[]> {
+async function fetchHealthRows(
+    url: URL,
+    cacheTtl: number,
+): Promise<ModelHealthRow[]> {
     const upstream = await fetch(url, {
-        cf: { cacheTtl: 60, cacheEverything: true },
+        cf: { cacheTtl, cacheEverything: true },
         signal: AbortSignal.timeout(5_000),
     });
     if (!upstream.ok) {
@@ -22,18 +25,20 @@ async function fetchHealthRows(url: URL): Promise<ModelHealthRow[]> {
     return body.data;
 }
 
-// Community discovery uses its bounded 50-request sample.
+// Community discovery uses its bounded 50-request sample. The pipe merges
+// hourly samples and costs real CPU per call, so each colo caches it for
+// 10 minutes instead of re-running it every minute.
 export function fetchCatalogHealthRows(): Promise<ModelHealthRow[]> {
     const url = new URL(MODEL_ROUTE_HEALTH_URL);
     url.pathname = "/v0/pipes/model_catalog_health.json";
-    return fetchHealthRows(url);
+    return fetchHealthRows(url, 600);
 }
 
 // Official models and agents retain their existing 24-hour health display.
 export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
     const url = new URL(MODEL_ROUTE_HEALTH_URL);
     url.pathname = "/v0/pipes/model_health_24h.json";
-    return fetchHealthRows(url);
+    return fetchHealthRows(url, 60);
 }
 
 // Exists only for the shared edge cache: Tinybird runs the query on every

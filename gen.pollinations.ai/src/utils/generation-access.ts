@@ -54,8 +54,23 @@ export async function checkBalance(
     }
 
     const userBalance = await balance.getBalance(auth.user.id);
+    // A Quest Pollen only key can never draw on the paid balance.
+    const questPollenOnly = auth.apiKey?.questPollenOnly ?? false;
+    const spendable = questPollenOnly
+        ? { ...userBalance, packBalance: 0 }
+        : userBalance;
 
-    if (!canCoverEstimatedCharge(userBalance, estimatedCost, isPaidOnly)) {
+    if (!canCoverEstimatedCharge(spendable, estimatedCost, isPaidOnly)) {
+        if (questPollenOnly) {
+            const allowPaid = `allow paid Pollen for this key at ${keyPermissionsLink(auth.apiKey?.id ?? "", env.ENVIRONMENT)}`;
+            throw new PaymentRequiredError(
+                "QUEST_POLLEN_ONLY",
+                isPaidOnly
+                    ? `This model needs paid Pollen, but this API key only spends Quest Pollen. To use it, ${allowPaid}.`
+                    : `Not enough Quest Pollen. This request costs ~${estimatedCost.toFixed(4)} pollen, but you have ${Math.max(0, userBalance.tierBalance).toFixed(4)} Quest Pollen, and this API key only spends Quest Pollen. Complete a quest at https://enter.pollinations.ai/quests or ${allowPaid}.`,
+                isPaidOnly,
+            );
+        }
         const available = isPaidOnly
             ? userBalance.packBalance
             : Math.max(userBalance.tierBalance, userBalance.packBalance);
@@ -102,12 +117,21 @@ export async function requireFunds(
         c.env.DB,
         c.var.auth.requireUser().id,
     );
-    if (!canCoverEstimatedCharge(balance, price)) {
+    // A Quest Pollen only key can never draw on the paid balance.
+    const spendable = apiKey?.questPollenOnly
+        ? { ...balance, packBalance: 0 }
+        : balance;
+    if (canCoverEstimatedCharge(spendable, price)) return;
+    if (apiKey?.questPollenOnly) {
         throw new PaymentRequiredError(
-            "INSUFFICIENT_BALANCE",
-            `Insufficient balance for ${charge}. Top up at https://enter.pollinations.ai/top-up.`,
+            "QUEST_POLLEN_ONLY",
+            `Not enough Quest Pollen for ${charge}, and this API key only spends Quest Pollen. Complete a quest at https://enter.pollinations.ai/quests or allow paid Pollen for this key at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}.`,
         );
     }
+    throw new PaymentRequiredError(
+        "INSUFFICIENT_BALANCE",
+        `Insufficient balance for ${charge}. Top up at https://enter.pollinations.ai/top-up.`,
+    );
 }
 
 export async function reserveApiKeyBudget(

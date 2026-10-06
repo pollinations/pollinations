@@ -103,6 +103,7 @@ async function settleUsage(
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
+            questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
         c.var.log.error(

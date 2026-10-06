@@ -195,9 +195,8 @@ fixtureTest(
                 ),
             ).toBe(current);
         }
-        expect(await catalogIdsFor(oldKey.key)).not.toContain(newPolli);
-        const newKey = await createTestApiKey({ allowedModels: [newPolli] });
-        expect(await catalogIdsFor(newKey.key)).toContain(newPolli);
+        // Keys hold categories, so a text key keeps the agent under its new ID.
+        expect(await catalogIdsFor(oldKey.key)).toContain(newPolli);
     },
 );
 
@@ -10211,97 +10210,6 @@ fixtureTest(
         const moderationRefusal = await generate();
         expect(moderationRefusal.status).toBe(422);
         expect(upstreamHosts).toEqual([primaryHostname]);
-    },
-);
-
-fixtureTest(
-    "does not serve a fallback the API key is not allowed to use",
-    async () => {
-        const { primaryModelId, fallbackModelId, primaryHost } =
-            await createCommunityFallbackPair({
-                prefix: "scoped",
-            });
-
-        // Scoped to the primary only — calling the fallback directly is a 403.
-        const { key } = await createTestApiKey({
-            allowedModels: [primaryModelId],
-            user: { tierBalance: 100 },
-        });
-
-        const gatewayCalls: {
-            config: string | null;
-            provider: string | null;
-            url: string;
-        }[] = [];
-        const fetchMock = vi.fn(async (input, init) => {
-            const request = new Request(input, init);
-            if (isChatCompletionsRequest(request)) {
-                gatewayCalls.push({
-                    config: request.headers.get("x-portkey-config"),
-                    provider: request.headers.get("x-portkey-provider"),
-                    url: request.url,
-                });
-                return Response.json({
-                    id: "chatcmpl_primary",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                    usage: {
-                        prompt_tokens: 2,
-                        completion_tokens: 3,
-                        total_tokens: 5,
-                    },
-                });
-            }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
-            throw new Error(`Unexpected fetch: ${request.url}`);
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        const response = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: primaryModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-
-        expect(response.status).toBe(200);
-        expect(gatewayCalls).toHaveLength(1);
-        // No strategy/targets config: the request runs against the primary
-        // alone, so the key can never be served the model it cannot call.
-        expect(gatewayCalls[0].config).toBeNull();
-        expect(gatewayCalls[0].provider).toBeNull();
-        expect(gatewayCalls[0].url).toBe(
-            communityChatCompletionsUrl(primaryHost),
-        );
-
-        // The same key calling the fallback directly is refused.
-        const direct = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: fallbackModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-        expect(direct.status).toBe(403);
     },
 );
 

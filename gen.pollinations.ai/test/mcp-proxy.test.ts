@@ -385,6 +385,33 @@ test("refuses receipt-billed tool calls from an empty wallet but keeps initializ
     expect(initialized.status).toBe(200);
 });
 
+test("refuses tool calls from a Quest Pollen only key without Quest Pollen", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 10 },
+        questPollenOnly: true,
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/ffmpeg",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({
+        error: { code: "QUEST_POLLEN_ONLY" },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 10,
+    });
+});
+
 test("rejects MCP batch requests at the proxy", async () => {
     const { key } = await createTestApiKey();
     const response = await SELF.fetch(

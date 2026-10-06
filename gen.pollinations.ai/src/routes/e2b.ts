@@ -173,6 +173,7 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
+            questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
         c.var.log.error("Sandbox lease charge failed: {error}", {

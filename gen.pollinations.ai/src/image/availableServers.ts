@@ -185,8 +185,8 @@ type ReplayableRequestInit = Omit<RequestInit, "body"> & { body?: string };
 
 /**
  * Fetches from the weighted pool, retrying distinct workers only when the
- * request was not accepted (HTTP 503 or a known network failure). The body is
- * deliberately restricted to a string so every retry can safely resend it.
+ * request was not accepted (HTTP 503, Cloudflare 1033, or a known network
+ * failure). The body is restricted to a string so every retry can resend it.
  *
  * Do not add AbortSignal.timeout() here without production Workerd validation:
  * a timeout signal previously broke every pool request despite passing locally.
@@ -245,11 +245,17 @@ export const fetchFromWeightedServer = async (
             requestUrl: new URL(`${serverUrl}/generate`),
         });
 
-        // A queue-full response means this backend did not accept the request.
-        // Try each other registered worker once so spare pool capacity is used
-        // before the caller receives a 503. Other failures stay single-attempt:
-        // retrying a request that may already have started can duplicate work.
-        if (response.status !== 503 || remainingServers.length === 0) {
+        // Queue-full and Cloudflare's disconnected-tunnel error never reached
+        // inference. Retry another worker; other 5xx may have started generation.
+        const tunnelDisconnected =
+            response.status === 530 &&
+            /(?:error code:\s*1033\b|\berror\s+1033\b)/i.test(
+                errorBody.replace(/<[^>]*>/g, " "),
+            );
+        if (
+            (response.status !== 503 && !tunnelDisconnected) ||
+            remainingServers.length === 0
+        ) {
             console.error(
                 `[${type}] Server ${serverUrl} returned ${response.status}:`,
                 {
@@ -262,7 +268,7 @@ export const fetchFromWeightedServer = async (
         }
 
         console.warn(
-            `[${type}] Server ${serverUrl} returned 503; retrying another pool worker`,
+            `[${type}] Server ${serverUrl} returned ${response.status}; retrying another pool worker`,
             { body: errorBody },
         );
     }

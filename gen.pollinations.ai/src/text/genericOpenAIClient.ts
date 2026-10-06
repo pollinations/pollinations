@@ -397,6 +397,14 @@ export async function genericOpenAIClient(
         const choices = (data.choices?.length ? data.choices : [{}]).map(
             (choice): CompletionChoice => {
                 const formattedChoice = { ...choice };
+                if (formattedChoice.message) {
+                    const message = { ...formattedChoice.message };
+                    // DeepInfra returns null for optional fields that Chat
+                    // request messages require to be absent rather than null.
+                    if (message.name === null) delete message.name;
+                    if (message.tool_calls === null) delete message.tool_calls;
+                    formattedChoice.message = message;
+                }
                 // Some providers report "stop" even when they returned a tool
                 // call. Keep the compatibility fix without dropping choices.
                 if (formattedChoice.message?.tool_calls?.length) {

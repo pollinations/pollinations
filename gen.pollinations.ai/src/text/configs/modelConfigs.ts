@@ -579,6 +579,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
+    "moonshotai/Kimi-K3": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K3" }),
     "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
         createDeepInfraModelConfig({
             model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",

@@ -554,6 +554,30 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
+        const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "moonshotai/kimi-k3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.005985, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0063, 8);
+        expect(
+            findModelByName("moonshotai/kimi-k3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K3",
+        });
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),

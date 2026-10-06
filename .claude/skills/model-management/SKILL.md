@@ -106,7 +106,9 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 For direct Novita discovery, use the supported
 [model catalog](https://docs.novita.ai/api-reference/model-apis-llm-list-models)
 and [account quotas](https://docs.novita.ai/api-reference/quota-list) with an
-existing authorized key. The OpenAI-compatible base is
+existing authorized key. Quota queries require `modal=llm`; query `RPM` and
+`TPM` separately with `productType=Public Endpoint` and the exact model as
+`quotaObject`, then check the returned identity. The OpenAI-compatible base is
 `https://api.novita.ai/openai/v1`; probe the exact upstream model using
 [Chat Completions](https://docs.novita.ai/api-reference/model-apis-llm-create-chat-completion).
 Request `stream_options.include_usage` for streaming and prove terminal usage,

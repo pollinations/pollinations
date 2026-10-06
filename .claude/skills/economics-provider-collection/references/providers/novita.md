@@ -5,10 +5,10 @@ inference purchased through OpenRouter or Vercel remains billed to those vendors
 
 ## Sources
 
-Official documentation and the authenticated billing dashboard reviewed
-2026-10-06. Dashboard model rows expose token quantities, request counts,
-subtotal, voucher discount and total due. API access and collection still
-require verification; documentation is not evidence of an account balance.
+Official documentation, authenticated billing APIs and the billing dashboard
+verified 2026-10-06. Model/API-key token quantities, request counts and precise
+charges reconcile with each other and the monthly dashboard. Documentation
+alone is not evidence of an account balance.
 
 Use an existing authorized `NOVITA_API_KEY` with Bearer authentication. Load it
 directly from its secure location into the request process; never print it,
@@ -37,6 +37,11 @@ evidence, and never treat an API-key `ownerID` as the billing account ID.
 
 All endpoints above use `https://api.novita.ai`. Prefer these supported APIs;
 use the authenticated [console](https://novita.ai/console) for missing evidence.
+Send an explicit client `User-Agent`; the default Python urllib client received
+HTTP 403 during validation. Quota requests must include `modal=llm`, despite
+the documentation marking it optional. Select `quotaType=RPM` or `TPM`,
+`productType=Public Endpoint` and the exact `quotaObject`, then verify returned
+model names because matching is fuzzy.
 
 Dashboard sources: [model billing](https://novita.ai/billing/details),
 [monthly bills](https://novita.ai/billing),
@@ -62,17 +67,25 @@ do not interpret every token as cash-funded or infer cash burn from list prices.
    Its daily windows are at most 31 days; hourly windows at most seven days.
    Neither usage endpoint paginates: split longer intervals, rather than
    retrying pages. API-key billing supports data from 2026-01-01 onward.
-   Its returned `endTime` is the last included second; add one second for the
-   ledger's end-exclusive UTC bound and retain the original bounds. Verify the
-   model-usage endpoint independently. The current month is partial. Collect
+   Both usage endpoints returned daily `endTime` as the last included second;
+   add one second for the ledger's end-exclusive UTC bound and retain the
+   original bounds. For an in-progress daily row, cap collected coverage at
+   the evidence's checked time and mark it partial; a future period end does
+   not prove complete coverage. The current month is partial. Collect
    `productCategory=summary` as a control total; never ingest it as additional
    spend alongside detailed categories. `productName` filtering is fuzzy, so
    verify exact returned product IDs/names. Keep non-LLM products separate.
 3. Retain product ID/name, key owner ID, request count, every non-zero token or
-   cache quantity, discount and funding split. `amount`, `voucherAmount` and
-   `payAmount` are in 1/10000 USD; `payAmountDisplay` is already USD. Unit prices
-   also use `pricePrecision`; do not apply the amount conversion blindly to
-   rates. Reconcile the reported cash/voucher split against total charges.
+   cache quantity, discount and funding split. Use the decimal USD strings
+   `amountDecimal`, `voucherAmountDecimal` and `payableDecimal` for total,
+   credit-funded and cash-funded usage. Parse with decimal arithmetic and check
+   total equals voucher plus payable. `originAmountDecimal` is the amount
+   before discounts. The documented integer fields `amount`, `voucherAmount`
+   and `payAmount` use 1/10000 USD, but lose fractional charges: a nonzero
+   decimal charge can have an integer amount of zero. Do not use these fields
+   or `payAmountDisplay` to replace precise totals. Unit prices in USD are
+   `basePriceN / 10000 / pricePrecision` (likewise `discountPriceN`); do not
+   rebuild charges from those rates when precise reported charges are present.
    Record usage as negative paid/credit under the verified canonical account.
    `billNum0..5` in model-usage billing represent input, output, cache read,
    five-minute cache write, reasoning and one-hour cache write quantities.
@@ -87,22 +100,40 @@ do not interpret every token as cash-funded or infer cash burn from list prices.
    tokens and requests with zero cost; preserve them as usage evidence.
    Voucher deductions are credit-funded usage; they are not a cash top-up.
    Check each voucher's eligible products, validity and remaining value.
-   Keep Model API and Agent Sandbox vouchers in separate lots with their product
-   restriction in `resource_name` and evidence. Sandbox-only grants must not
-   imply that Model API inference is funded. Verify the timezone of displayed
+   Record Model API-eligible vouchers as separate inference balance lots with
+   their product restriction in `resource_name` and evidence. Keep Agent Sandbox
+   vouchers in separate supporting evidence; the current provider forecast does
+   not enforce product eligibility, so adding them to the inference balance
+   would overstate usable credits. Verify the timezone of displayed
    expiry dates before normalizing them. A dashboard label of account balance
    does not by itself prove the money was purchased: retain recharge records
    or grant evidence before deciding paid versus promotional funding.
 4. Query monthly bills with `startMonth`, `page` and `pageSize`; retain only the
-   requested billing month and verify pagination/coverage. Download `invoiceUrl`
-   when present. An empty URL is missing invoice evidence, not proof that no
-   invoice is required. Archive documents using the parent skill's Drive flow.
+   requested billing month and verify pagination/coverage. Reconcile the USD
+   strings `totalAmountDecimal`, `voucherPayAmountDecimal` and
+   `cashPayAmountDecimal` with precise usage. Keep debt, repayments, tax and
+   gross amounts separate. The live current-month summary returned `endTime`
+   before `startTime`; never use invalid summary bounds as usage coverage.
+   Use the detailed usage rows and verified `billingMonth` instead.
+   Download `invoiceUrl` when present. An empty URL is missing invoice evidence,
+   not proof that no invoice is required. Archive documents using the parent
+   skill's Drive flow.
 5. Query transactions with `pageNo`, `pageSize`, `transactionTimeStart` and
    `transactionTimeEnd`; paginate through `total`. Review successful recharges
    and refunds individually. Recharges are funding, never inference usage.
    Match supplier documents and bank payments without counting the same top-up
    twice. A recharge's downloadable document proves funding; it does not close
-   the month's model-usage coverage. Transaction amounts are in 1/10000 USD.
+   the month's model-usage coverage. The documentation says transaction amounts
+   use 1/10000 USD, but the verified recharge response corresponds to cents
+   against the dashboard, supplier invoice/payment receipt and cash balance.
+   Verify the exact supplier document before ingesting funding; do not apply the
+   balance/usage divisor automatically to transactions or wallet balances.
+   `invoiceURL` can open a Stripe invoice page rather than return PDF bytes;
+   download both the invoice and payment receipt from that page. Preserve the
+   invoiced USD amount and any different settlement currency on the receipt.
+   Link funding documents to the balance snapshot and matching bank movement.
+   Do not append a top-up as a positive non-balance `paid` vendor row: the
+   existing dashboard interprets that as a billing refund and reduces usage.
 6. Add reviewed `modelLabels` only from exact billed lines and the Pollen ID used
    in that period. Keep missing mappings visible. Reconcile against Pollen rows
    whose serving provider is `novita`, including local/staging/manual usage

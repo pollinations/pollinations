@@ -23,25 +23,19 @@ const logCloudflare = debug("pollinations:cloudflare");
 
 const AZURE_MAI_ENDPOINT =
     "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images";
-const MAI_ROUTES: Record<
-    string,
-    { deployment: string; title: string; maxPixels: number }
-> = {
+const MAI_ROUTES: Record<string, { deployment: string; title: string }> = {
     "microsoft/mai-image-2.6-flash": {
         deployment: "MAI-Image-2.6-Flash",
         title: "MAI Image 2.6 Flash",
-        maxPixels: 1536 * 1536,
     },
     "microsoft/mai-image-2.6": {
         deployment: "MAI-Image-2.6",
         title: "MAI Image 2.6",
-        maxPixels: 1536 * 1536,
     },
 };
 type MaiRoute = (typeof MAI_ROUTES)[string];
-// Azure MAI generation limits (docs and live 400s): each side at least 768px,
-// 16px steps (Azure otherwise snaps down silently); max pixels vary by version.
-const AZURE_MAI_MIN_SIDE = 768;
+// Azure MAI rejects out-of-range sizes itself, but snaps sizes that are not
+// 16px steps down silently.
 const AZURE_MAI_DIMENSION_STEP = 16;
 
 type AzureMaiResponse = {
@@ -58,22 +52,12 @@ function validateMaiDimensions(
     height: number,
     route: MaiRoute,
 ): void {
-    if (width < AZURE_MAI_MIN_SIDE || height < AZURE_MAI_MIN_SIDE) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${route.title} requires width and height of at least ${AZURE_MAI_MIN_SIDE}px`,
-        });
-    }
     if (
         width % AZURE_MAI_DIMENSION_STEP !== 0 ||
         height % AZURE_MAI_DIMENSION_STEP !== 0
     ) {
         throw UpstreamError.fromProvider(400, {
             message: `${route.title} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
-        });
-    }
-    if (width * height > route.maxPixels) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${route.title} supports at most ${route.maxPixels.toLocaleString("en-US")} pixels (width × height)`,
         });
     }
 }

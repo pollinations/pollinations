@@ -165,23 +165,6 @@ describe("qwenImage3Model", () => {
     });
 
     it.each([
-        [256, 256],
-        [4096, 4096],
-    ])("rejects output dimensions outside Fal's pixel range (%ix%i)", async (width, height) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callQwen3("invalid size", {
-                ...baseParams,
-                width,
-                height,
-                dimensionsExplicit: true,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
         ["1:1", { width: 1024, height: 1024 }],
         ["16:9", { width: 1376, height: 768 }],
         ["9:16", { width: 768, height: 1376 }],

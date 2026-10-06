@@ -70,21 +70,13 @@ export function resolveQwenImageSize(params: ImageParams): FalImageSize {
 
 /**
  * Qwen Image 3 takes explicit sizes as given (DashScope accepts any W×H in
- * range and bills its 1K/2K tier on the requested area), between 512×512 and
- * 2048×2048 total pixels.
+ * range and bills its 1K/2K tier on the requested area). The provider rejects
+ * sizes outside 512×512 to 2048×2048 total pixels.
  */
 export function resolveQwenImage3Size(params: ImageParams) {
-    const size = params.dimensionsExplicit
+    return params.dimensionsExplicit
         ? { width: params.width, height: params.height }
         : resolveQwenImageSize(params);
-    const pixels = size.width * size.height;
-    if (pixels < 512 * 512 || pixels > 2048 * 2048) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "qwen-image-3 output must contain between 512×512 and 2048×2048 total pixels",
-        });
-    }
-    return size;
 }
 
 export async function callFalQwenImageAPI(

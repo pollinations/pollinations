@@ -7,6 +7,7 @@ import {
 import { EarningsGraph } from "../components/activity/earnings-graph.tsx";
 import type { Metric } from "../components/activity/types.ts";
 import { UsageSection } from "../components/activity/usage-section.tsx";
+import { CliHint } from "../components/cli-hint.tsx";
 import { LastEventsPanel } from "../components/pollen/last-events-panel.tsx";
 
 function stringArray(value: unknown): string[] | undefined {
@@ -163,6 +164,7 @@ function ActivityPage() {
             <p className="px-4 text-micro text-theme-text-muted sm:px-0">
                 Times shown in UTC.
             </p>
+            <CliHint command="usage --history" task="show my recent usage" />
         </>
     );
 }

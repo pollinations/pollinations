@@ -30,15 +30,9 @@ type UpcomingChange = {
 const UPCOMING_CHANGES: UpcomingChange[] = [
     {
         date: "2026-10-09",
-        model: "Qwen3 VL 235B Thinking",
+        model: "Qwen3 VL 235B Thinking + TTS Instruct Flash",
         action: "Retiring",
-        change: "Alibaba route retires. Choose another vision model.",
-    },
-    {
-        date: "2026-10-09",
-        model: "Qwen3 TTS Instruct Flash",
-        action: "Retiring",
-        change: "Alibaba route retires. Choose another voice model.",
+        change: "Alibaba routes retire. Choose another vision or voice model.",
     },
     {
         date: "2026-10-13",

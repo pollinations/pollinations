@@ -1,0 +1,37 @@
+{
+  "pr_number": 16413,
+  "title": "feat: agent run tokens keep the key's account permissions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16413",
+  "merged_at": "2026-10-06T12:37:43Z",
+  "labels": [
+    "API",
+    "FEATURE"
+  ],
+  "pr_body_excerpt": "- Agent run tokens (`ag_`) now carry the parent key's account permissions (`profile`, `usage`, `keys`, `machines`) along with its model list. Until now, everything except models was stripped.\n- The owner decides what an agent may do through the key they call it with. Run tokens no longer have a rule of their own, so a `/grant?permission=machines` link from an agent's 403 now works.\n- Endpoint agents receive the token on their own server. `AGENTS_AND_MCP.md` now says to call third-party agents with a key that holds only what they need. Keys created in the dashboard start with no account permissions.\n- Fixes the stale line in `account.md` that said child keys can't get `account:keys`. They can since #15450.\n\n| | Before | After |\n|---|---|---|\n| Parent key has `machines` | Run token gets 403 | Run token can run sandboxes |\n| Parent key has no account permissions | No account access | No account access |\n\nFollows up on the discussion in #16407.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_012psAJ6Cty86Z6h8XvHD19c\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The agent gets its keys",
+    "blurb": "An agent sent to tend a sandbox can carry the permissions its owner gave it. No more asking the gate twice.",
+    "summary": "Agent run tokens (`ag_`) inherit the parent key’s `profile`, `usage`, `keys`, and `machines` account permissions alongside its model list, so agents can use authorized account actions without gaining permissions the key lacks.",
+    "impact": "An agent called with a key that has `machines` permission can run sandboxes through its run token; a key with no account permissions still grants the agent no account access.",
+    "keywords": [
+      "agents",
+      "run tokens",
+      "account permissions",
+      "API keys",
+      "sandboxes",
+      "auth"
+    ],
+    "visual_concept": "Show Polli handing a small, clearly labeled permission key to a friendly CRT monitor robot representing an agent. A garden gate leads to a tiny sandbox workspace; the key opens only the gate it matches. Polli is the pollinations.ai bee mascot, with no separate mascot implied for the agent.",
+    "image_prompt": "In a cozy pixel garden, Polli hands a tiny key marked 'MACHINES' to a friendly CRT monitor robot beside a garden gate leading to a sandbox workspace, with lime green (#ecf874) code-plants and a soft pastel gradient behind them. Polli is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, rounded light blue translucent wings, and a tiny tool belt; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16413.jpg",
+    "prompt": "In a cozy pixel garden, Polli hands a tiny key marked 'MACHINES' to a friendly CRT monitor robot beside a garden gate leading to a sandbox workspace, with lime green (#ecf874) code-plants and a soft pastel gradient behind them. Polli is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, rounded light blue translucent wings, and a tiny tool belt; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-06T12:38:50.043295+00:00"
+}

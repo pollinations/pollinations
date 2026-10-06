@@ -14,7 +14,7 @@ import type { RequestData, TransformOptions } from "./types.js";
  *
  * Agent-style endpoints call back into the generation API on the caller's
  * behalf, so they need spend authority — but never the caller's own key. They
- * get a run token: short-lived, no account scope, billed to the caller's key.
+ * get a run token: short-lived, with the caller key's permissions, billed to it.
  *
  * It replaces the endpoint's saved bearer rather than riding alongside it, so a
  * delegating endpoint stays a plain OpenAI-compatible server with no

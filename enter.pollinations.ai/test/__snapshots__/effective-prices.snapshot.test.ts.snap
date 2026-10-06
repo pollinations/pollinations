@@ -1639,6 +1639,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "kwaivgi/kling-v3.0-std": {
+    "cost": {
+      "completionAudioSeconds": 0.042,
+      "completionVideoSeconds": 0.084,
+    },
+    "price": {
+      "completionAudioSeconds": 0.042,
+      "completionVideoSeconds": 0.084,
+    },
+  },
   "liquid/d1": {
     "cost": {
       "completionTextTokens": 0,

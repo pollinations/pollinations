@@ -2181,6 +2181,17 @@
       "collectionMethod": null
     },
     {
+      "id": "novita",
+      "label": "Novita AI",
+      "category": "compute",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "openai",
       "label": "OpenAI",
       "category": "compute",

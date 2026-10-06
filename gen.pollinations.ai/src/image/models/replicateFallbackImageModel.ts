@@ -105,11 +105,6 @@ export async function callReplicateFallbackImage(
 
     switch (model) {
         case "black-forest-labs/flux.2-pro:replicate": {
-            if (params.image.length > 8) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "FLUX.2 Pro supports at most 8 reference images",
-                });
-            }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
             completionImageTokens = (params.width * params.height) / 1_000_000;
@@ -129,11 +124,6 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "black-forest-labs/flux.2-max": {
-            if (params.image.length > 8) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "FLUX.2 Max supports at most 8 reference images",
-                });
-            }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
             completionImageTokens = (params.width * params.height) / 1_000_000;
@@ -195,11 +185,6 @@ export async function callReplicateFallbackImage(
             if (params.image.length === 0) {
                 throw UpstreamError.fromProvider(400, {
                     message: "p-image-edit requires at least one input image",
-                });
-            }
-            if (params.image.length > 5) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "p-image-edit supports at most 5 input images",
                 });
             }
             buffer = await runReplicateImage(

@@ -21,6 +21,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "inclusionai/ling-3.1-flash": {
+        "inclusionai/ling-3.1-flash:openrouter:novita": {
+            provider: "openrouter",
+            // Planned post-promotion rates; verify before activating this PR.
+            cost: {
+                promptTextTokens: perMillion(0.06) * 1.055,
+                promptCachedTokens: perMillion(0.012) * 1.055,
+                completionTextTokens: perMillion(0.18) * 1.055,
+            },
+        },
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
             // Same Novita checkpoint through a separate gateway. Both routes

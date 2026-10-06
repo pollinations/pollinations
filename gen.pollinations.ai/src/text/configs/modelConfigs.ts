@@ -660,6 +660,26 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.3-flashx",
         "z-ai/fp8",
     ),
+    "glm-5.3-flash-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "z-ai/glm-5.3-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: [
+                        "together",
+                        "baseten/fp8",
+                        "modal/nvfp4",
+                        "crusoe/fp4",
+                        "friendli",
+                        "digitalocean",
+                        "parasail/fp4",
+                        "venice",
+                    ],
+                    allow_fallbacks: true,
+                },
+            },
+        }),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
         "friendli",

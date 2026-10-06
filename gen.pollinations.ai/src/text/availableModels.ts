@@ -878,6 +878,11 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {
+        name: "z-ai/glm-5.3-flash:openrouter",
+        config: portkeyConfig["glm-5.3-flash-openrouter"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "z-ai/glm-5.3-flashx",
         config: portkeyConfig["z-ai/glm-5.3-flashx"],
         // Reasoning is mandatory; off requests keep the upstream default.

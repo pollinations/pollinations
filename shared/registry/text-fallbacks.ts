@@ -703,6 +703,20 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "z-ai/glm-5.3-flash": {
+        "z-ai/glm-5.3-flash:openrouter": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGlm53,
+            provider: "openrouter",
+            contextLength: 1048575,
+            cost: {
+                // Same-priced OpenRouter routes, including its 5.5% credit fee.
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.03) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.5) * 1.055,
+            },
+        },
+    },
     "moonshotai/kimi-k2.7-code": {
         "moonshotai/kimi-k2.7-code:openrouter:streamlake": {
             supportedParameters: CHAT_PARAMETERS.openRouterKimiStreamLake,

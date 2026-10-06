@@ -1,0 +1,36 @@
+{
+  "pr_number": 16566,
+  "title": "fix: accept Gemini TTS usage that lists the voice's audio prompt",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16566",
+  "merged_at": "2026-10-06T09:46:02Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "Fixes #16435\n\n- Google's speech usage now has an `audio` input entry for the voice's built-in prompt (~201 tokens), next to the `text` entry\n- The parser accepted only `text`, so it rejected every Google reply. Since 2026-10-04 every Google call failed with \"invalid usage\" (73 on 10-06)\n- Each rejected call fell back to OpenRouter. Google had already generated (and billed) the audio, so we paid twice, and the fallback 502s when OpenRouter's usage record takes over 60 s (about 2 in 3 today)\n- Now accepts the `audio` entry and bills text input only, which matches Google's price list and OpenRouter's record for the same call\n\n| | Before | After |\n|---|---|---|\n| Google reply with an `audio` entry | rejected → OpenRouter | accepted |\n| Billed input tokens | — | text only (e.g. 5, not 206) |\n\nChecked: gen tsc, 22 Gemini TTS tests (new one uses the shape Google returns today), Biome. A real Google reply from today fails main's parser with the same \"invalid usage\" error as production and parses with this fix (6 text, 56 audio tokens). The reply still includes the zero-valued cached/thought/tool counters.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Qv9n8zUKi85ULQDkKt9Use\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Gemini finds its voice again",
+    "blurb": "Gemini TTS replies include a little audio prompt for the built-in voice. The parser makes room for it, so the speech can come through without taking a detour.",
+    "summary": "Gemini TTS accepts Google's usage records with an audio entry for the built-in voice prompt while counting only text input tokens for billing, matching Google's price list.",
+    "impact": "Google-generated speech is accepted directly instead of falling back to OpenRouter, and a request with 5 text tokens and about 201 voice-prompt audio tokens counts 5 billed input tokens rather than 206.",
+    "keywords": [
+      "Gemini TTS",
+      "audio",
+      "usage parsing",
+      "input tokens",
+      "billing",
+      "fallback"
+    ],
+    "visual_concept": "Depict a cozy speech-generation workstation: a text-token slip and a separate audio-wave slip arrive together, while a small counter marks only the text slip. Polli, wearing tiny headphones, listens beside a delighted CRT monitor robot; pixel flowers and a lime-green code-plant keep the scene warm.",
+    "image_prompt": "In a cozy pixel art garden workstation, Polli wears tiny headphones and listens beside a delighted CRT monitor robot as a terminal accepts separate text and audio-wave slips, with only the text slip passing a small token counter; flowers and code-plants glow against a prominent lime green (#ecf874) and soft pastel gradient background, with dark purple (#110518) outlines, chunky retro sprites, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16566.jpg",
+    "prompt": "In a cozy pixel art garden workstation, Polli wears tiny headphones and listens beside a delighted CRT monitor robot as a terminal accepts separate text and audio-wave slips, with only the text slip passing a small token counter; flowers and code-plants glow against a prominent lime green (#ecf874) and soft pastel gradient background, with dark purple (#110518) outlines, chunky retro sprites, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic."
+  },
+  "generated_at": "2026-10-06T09:47:00.380846+00:00"
+}

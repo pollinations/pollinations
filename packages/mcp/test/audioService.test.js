@@ -1,14 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { z } from "zod";
 import { audioTools, transcribeAudio } from "../src/services/audioService.js";
 
 const SOURCE = "https://cdn.example.com/speech.mp3";
 const CONTEXT = { http: { authInfo: { token: "sk_test" } } };
 
 test("generateAudio forwards the emotion/style instruction to the API", async (t) => {
-    const generateAudio = audioTools.find(
+    const [, , shape, generateAudio] = audioTools.find(
         ([name]) => name === "generateAudio",
-    )[3];
+    );
     const originalFetch = globalThis.fetch;
     let capturedUrl;
     t.after(() => {
@@ -24,13 +25,15 @@ test("generateAudio forwards the emotion/style instruction to the API", async (t
         });
     };
 
-    await generateAudio(
-        { text: "hello", model: "gemini-tts", instruct: "speak warmly" },
-        CONTEXT,
-    );
+    // The MCP server validates arguments against the tool schema first.
+    const args = z.object(shape).parse({
+        text: "hello",
+        model: "gemini-tts",
+        instructions: "speak warmly",
+    });
+    await generateAudio(args, CONTEXT);
 
     assert.equal(capturedUrl.searchParams.get("instructions"), "speak warmly");
-    assert.equal(capturedUrl.searchParams.get("instruct"), null);
 });
 
 test("transcribes public audio through the Pollinations API", async (t) => {

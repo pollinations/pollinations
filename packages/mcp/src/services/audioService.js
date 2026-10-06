@@ -88,12 +88,9 @@ export async function transcribeAudio(params, context) {
 async function generateAudio(params, context) {
     requireApiKey(context);
 
-    const { text, instruct, ...options } = params;
+    const { text, ...options } = params;
     const { contentType, mediaUrl } = await fetchMediaLink(
-        buildUrl(`/audio/${encodeURIComponent(text)}`, {
-            ...options,
-            instructions: instruct,
-        }),
+        buildUrl(`/audio/${encodeURIComponent(text)}`, options),
         context,
     );
     return createMCPResponse([
@@ -104,13 +101,7 @@ async function generateAudio(params, context) {
             mimeType: contentType,
         },
         createTextContent(
-            {
-                url: mediaUrl,
-                text,
-                instruct,
-                ...options,
-                mimeType: contentType,
-            },
+            { url: mediaUrl, text, ...options, mimeType: contentType },
             true,
         ),
     ]);
@@ -164,7 +155,7 @@ export const audioTools = [
                 .boolean()
                 .optional()
                 .describe("Generate instrumental music where supported"),
-            instruct: z
+            instructions: z
                 .string()
                 .optional()
                 .describe("Emotion or style instruction where supported"),

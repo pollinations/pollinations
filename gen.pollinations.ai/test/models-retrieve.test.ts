@@ -224,6 +224,16 @@ test("show all does not bypass key permissions or paid access", async ({
     ).toBe(false);
 });
 
+test("every catalog entry states paid_only as a boolean", async () => {
+    const response = await fetchWorker("/models?reliability=all");
+    const models = (await response.json()) as ModelInfo[];
+
+    expect(models.length).toBeGreaterThan(0);
+    for (const model of models) {
+        expect(typeof model.paid_only, model.name).toBe("boolean");
+    }
+});
+
 test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });
@@ -246,6 +256,7 @@ test("community reliability is discovery-only and legacy hide metadata no longer
                 hiddenAt: name === "hidden" ? new Date() : null,
                 hiddenBy: name === "hidden" ? "owner" : null,
                 payload: JSON.stringify({
+                    paidOnly: false,
                     bearerTokenCiphertext:
                         "test-placeholder-not-used-for-generation",
                     api: "chat_completions",

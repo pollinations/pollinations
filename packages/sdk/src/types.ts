@@ -1146,7 +1146,8 @@ export interface ModelInfo {
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    paid_only?: boolean;
+    /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
+    paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }
 

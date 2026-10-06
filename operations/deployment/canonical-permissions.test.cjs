@@ -50,7 +50,7 @@ test("canonical cleanup waits for both successful deployments and requires promo
             .filters,
     );
     assert.deepEqual(filters.canonical_permissions, [
-        "enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql",
+        "enter.pollinations.ai/drizzle/0068_model-permission-categories.sql",
     ]);
     assert.ok(
         filters.gen.includes(filters.canonical_permissions[0]),
@@ -62,6 +62,6 @@ test("canonical cleanup waits for both successful deployments and requires promo
     assert.equal(command["working-directory"], "enter.pollinations.ai");
     assert.equal(
         command.run,
-        "npx wrangler d1 execute DB --remote --env production --file drizzle/0062_standardize-model-permissions.sql",
+        "npx wrangler d1 execute DB --remote --env production --file drizzle/0068_model-permission-categories.sql",
     );
 });

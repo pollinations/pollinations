@@ -156,10 +156,7 @@ function KeysContent({
                 </LoadError>
             )}
             <ApiKeyList apiKeys={keys} {...actions} />
-            <CliHint
-                command="keys create --name my-app"
-                task="create an API key"
-            />
+            <CliHint command="keys create --name my-app" />
         </>
     );
 }

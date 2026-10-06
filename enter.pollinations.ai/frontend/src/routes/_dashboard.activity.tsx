@@ -164,7 +164,7 @@ function ActivityPage() {
             <p className="px-4 text-micro text-theme-text-muted sm:px-0">
                 Times shown in UTC.
             </p>
-            <CliHint command="usage --history" task="show my recent usage" />
+            <CliHint command="usage --history" />
         </>
     );
 }

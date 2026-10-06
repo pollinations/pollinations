@@ -1380,6 +1380,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.000012,
     },
   },
+  "google/gemini-nano-banana-2.1": {
+    "cost": {
+      "completionImageTokens": 0.00003165,
+      "completionTextTokens": 0.0000079125,
+      "promptImageTokens": 0.0000015825,
+      "promptTextTokens": 0.0000015825,
+    },
+    "price": {
+      "completionImageTokens": 0.00003339075,
+      "completionTextTokens": 0.0000083476875,
+      "promptImageTokens": 0.0000016695375,
+      "promptTextTokens": 0.0000016695375,
+    },
+  },
   "google/gemini-omni-1.1-flash": {
     "cost": {
       "completionTextTokens": 0.000009,

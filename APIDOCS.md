@@ -899,7 +899,7 @@ Generate images from text prompts via a simple GET request. Returns JPEG, PNG, o
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 ```
 
-**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
+**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-nano-banana-2.1, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
 
 ### Community image models
 
@@ -909,7 +909,7 @@ Community image models use a `community/owner/model` id and support generation t
 
 Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-3`, `qwen/qwen-image-3:fal`, `qwen/qwen-image-3:replicate`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
+**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-nano-banana-2.1`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-3`, `qwen/qwen-image-3:fal`, `qwen/qwen-image-3:replicate`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -1096,7 +1096,7 @@ Text-to-speech, music generation, and audio transcription.
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
 
-**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/stem-separation, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, google/gemini-3.5-transcribe, x-ai/grok-tts, openai/tts-1, openai/tts-1-hd, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
+**Audio models:** elevenlabs/eleven-v4, elevenlabs/eleven-v4-turbo, elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/stem-separation, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, google/gemini-3.5-transcribe, x-ai/grok-tts, openai/tts-1, openai/tts-1-hd, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -1204,13 +1204,13 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/speech" \
 
 #### `POST` `/v1/audio/speech/with-timestamps` — Generate Speech with Timestamps
 
-Generate base64-encoded speech with character-level timing for the original and normalized text. Supports `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2`.
+Generate base64-encoded speech with character-level timing for the original and normalized text. See `/audio/models` for models advertising this endpoint.
 
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | `"elevenlabs/eleven-v3"` \| `"elevenlabs/eleven-flash-v2.5"` \| `"elevenlabs/eleven-multilingual-v2"` | default: `"elevenlabs/eleven-v3"` |
+| `model` | `"elevenlabs/eleven-v4"` \| `"elevenlabs/eleven-v4-turbo"` \| `"elevenlabs/eleven-v3"` \| `"elevenlabs/eleven-flash-v2.5"` \| `"elevenlabs/eleven-multilingual-v2"` | default: `"elevenlabs/eleven-v3"` |
 | `input` * | `string` | Text to synthesize and align. · max length: `10000` |
 | `voice` | `string` | Preset voice name or custom ElevenLabs voice ID. · default: `"alloy"` |
 | `response_format` | `"mp3"` \| `"opus"` \| `"aac"` \| `"wav"` \| `"pcm"` | Encoding used for audio_base64. · default: `"mp3"` |
@@ -1480,7 +1480,7 @@ Gemini task instructions count toward prompt token usage. Cohere requests contai
 
 **Gemini GA migration:** `google/gemini-embedding-2` now uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.
 
-**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-large, cohere/embed-v4.0, cohere/embed-v4.0:azure:sweden, qwen/qwen3-embedding-8b
+**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-large, cohere/embed-v4.0, cohere/embed-v4.0:azure:sweden, qwen/qwen3-embedding-8b, qwen/qwen3-embedding-8b:fireworks
 
 ## Community embedding endpoints
 
@@ -2920,7 +2920,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000/metadat
 
 Self-service endpoints for the authenticated user. Endpoints require authentication (API key or session) unless their schema says otherwise. API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
-`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Newly created child keys cannot receive `account:keys` through this API.
+`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Agent run tokens (`ag_`) carry the same account permissions as the key the agent was called with.
 
 | Endpoint | Description |
 |----------|-------------|
@@ -3119,12 +3119,12 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
-| `usage[].input_image_tokens` * | `number` | Number of input image tokens |
+| `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_text_tokens` * | `number` | Number of output text tokens |
 | `usage[].output_reasoning_tokens` * | `number` | Number of reasoning tokens (for models with chain-of-thought) |
 | `usage[].output_audio_tokens` * | `number` | Number of output audio tokens |
 | `usage[].output_audio_seconds` * | `number` | Duration of output audio in seconds (for TTS/music generation) |
-| `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
+| `usage[].output_image_tokens` * | `number` | Output image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
 | `usage[].cost_usd` * | `number` | Cost in USD for this request |
 | `usage[].response_time_ms` * | `any` | Response time in milliseconds |
@@ -3455,12 +3455,12 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
-| `usage[].input_image_tokens` * | `number` | Number of input image tokens |
+| `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_text_tokens` * | `number` | Number of output text tokens |
 | `usage[].output_reasoning_tokens` * | `number` | Number of reasoning tokens (for models with chain-of-thought) |
 | `usage[].output_audio_tokens` * | `number` | Number of output audio tokens |
 | `usage[].output_audio_seconds` * | `number` | Duration of output audio in seconds (for TTS/music generation) |
-| `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
+| `usage[].output_image_tokens` * | `number` | Output image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
 | `usage[].cost_usd` * | `number` | Cost in USD for this request |
 | `usage[].response_time_ms` * | `any` | Response time in milliseconds |

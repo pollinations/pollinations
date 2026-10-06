@@ -156,14 +156,7 @@ export const Announcements: FC = () => {
     const firstUpcoming = changes.findIndex(({ date }) => date >= today);
     if (launches.length === 0 && changes.length === 0) return null;
     return (
-        <Section
-            title="Announcements"
-            action={
-                <InlineLink href="/models" size="sm">
-                    Browse models
-                </InlineLink>
-            }
-        >
+        <Section title="Announcements">
             {launches.length > 0 && (
                 <AnnouncementGroup title="New">
                     {launches.map(({ name, change }) => (
@@ -221,6 +214,9 @@ export const Announcements: FC = () => {
                     ))}
                 </AnnouncementGroup>
             )}
+            <InlineLink href="/models" size="sm" className="self-end">
+                Browse models
+            </InlineLink>
         </Section>
     );
 };

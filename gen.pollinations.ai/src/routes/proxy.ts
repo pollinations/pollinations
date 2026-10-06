@@ -357,6 +357,12 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         aliases: entry.info.aliases,
         category: entry.info.category,
         community: entry.info.community,
+        // Open WebUI's model tag shape; its model picker filters by these.
+        tags: [
+            { name: entry.info.category },
+            ...(entry.info.community ? [{ name: "community" }] : []),
+            ...(entry.info.agent ? [{ name: "agent" }] : []),
+        ],
         title: entry.info.title,
         description: entry.info.description,
         input_modalities: entry.info.input_modalities,
@@ -382,7 +388,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
 }
 
 // Resolve one model by ID or alias against the caller-visible registry view.
-// Returns null when unknown, hidden, or a private community model owned by
+// Returns null when unknown, unavailable, or a private community model owned by
 // someone else.
 async function resolveVisibleModelEntry(
     c: Context<Env>,

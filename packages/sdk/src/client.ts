@@ -18,6 +18,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
     DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
@@ -1283,6 +1285,48 @@ export class Pollinations {
                 }
 
                 return response.json() as Promise<EmbeddingsResponse>;
+            },
+        );
+    }
+
+    // ============================================================================
+    // Decisions (TypeSafe / Jev)
+    // ============================================================================
+
+    /**
+     * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.decision({
+     *   state: "My payouts have been failing for 3 days.",
+     *   questions: {
+     *     is_urgent: { type: "noul", instructions: "Does this convey urgency?" }
+     *   }
+     * });
+     * console.log(result.answers.is_urgent.noul);
+     * ```
+     */
+    async decision({
+        state,
+        questions,
+        model,
+        signal,
+    }: DecisionOptions): Promise<DecisionResponse> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/alpha/decisions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({ state, questions, model }),
+            },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return response.json() as Promise<DecisionResponse>;
             },
         );
     }

@@ -33,7 +33,14 @@ export type PriceKind =
 
 export type PriceDirection = "input" | "output";
 
-export type PriceUnit = "token" | "second" | "request";
+export type PriceUnit =
+    | "token"
+    | "second"
+    | "request"
+    | "megapixel"
+    | "character"
+    | "byte"
+    | "image";
 
 export type ModelPriceLine = {
     direction: PriceDirection;

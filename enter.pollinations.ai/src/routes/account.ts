@@ -286,6 +286,9 @@ function buildUsageWindowFromPeriod({
     return null;
 }
 
+const toTinybirdDateTime = (date: Date) =>
+    date.toISOString().slice(0, 19).replace("T", " ");
+
 function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
     const hasPeriodParam = period.granularity || period.period;
     const periodWindow = buildUsageWindowFromPeriod(period);
@@ -318,8 +321,6 @@ function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
         sinceDate: addUtcDays(today, 1 - days),
         untilDate: addUtcDays(today, 1),
     };
-    const toTinybirdDateTime = (date: Date) =>
-        date.toISOString().slice(0, 19).replace("T", " ");
 
     return {
         since: toTinybirdDateTime(sinceDate),
@@ -357,7 +358,18 @@ const usageQuerySchema = z.object({
         .max(MAX_USAGE_EXPORT_ROWS)
         .optional()
         .default(100),
-    before: z.string().optional(), // ISO timestamp cursor for pagination
+    // Pagination cursor: the last row's `timestamp` as returned (UTC
+    // "YYYY-MM-DD HH:MM:SS") or as ISO 8601. Tinybird's DateTime() rejects
+    // ISO, so convert it; the column has second precision, so dropping
+    // milliseconds loses nothing.
+    before: z
+        .union([
+            z.string().regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/),
+            z.iso
+                .datetime({ offset: true })
+                .transform((value) => toTinybirdDateTime(new Date(value))),
+        ])
+        .optional(),
     before_event_id: z.string().optional(), // Stable tie-breaker for same-second timestamps
     days: z.coerce
         .number()

@@ -153,6 +153,32 @@ workerTest(
     },
 );
 
+workerTest(
+    "accepts the source audio as file, like the other audio uploads",
+    async ({ paidApiKey }) => {
+        const formData = new FormData();
+        formData.append("file", createOneSecondWav());
+        // An unsupported format fails after the upload is found, before any
+        // provider request.
+        formData.append("response_format", "flac");
+
+        const response = await fetchGen(
+            "https://gen.pollinations.ai/v1/audio/voice-changer",
+            {
+                method: "POST",
+                headers: { Authorization: `Bearer ${paidApiKey}` },
+                body: formData,
+            },
+        );
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message: expect.stringContaining("response_format must be"),
+            },
+        });
+    },
+);
+
 workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
     "transforms audio through the full local route",
     async ({ paidApiKey }) => {

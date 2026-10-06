@@ -330,6 +330,8 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     enum: ["private", "public"],
   }),
   pendingAt: integer("pending_at", { mode: "timestamp" }),
+  // Historical manual/monitor hide metadata; discovery now uses visibility
+  // and recent reliability. Kept for D1/Tinybird history, never updated.
   hiddenAt: integer("hidden_at", { mode: "timestamp" }),
   hiddenReason: text("hidden_reason"),
   hiddenBy: text("hidden_by"),

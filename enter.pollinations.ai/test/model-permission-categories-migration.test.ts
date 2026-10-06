@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0067_model-permission-categories.sql?raw";
+import migrationSql from "../drizzle/0068_model-permission-categories.sql?raw";
 
 describe("model permission categories migration", () => {
     it("widens model IDs to their categories and is safe to rerun", async () => {

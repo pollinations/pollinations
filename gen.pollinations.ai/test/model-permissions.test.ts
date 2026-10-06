@@ -187,6 +187,19 @@ test("filters model lists to the API key's categories", async ({
     expect(data.map(({ id }) => id)).toEqual(models.map(({ name }) => name));
 });
 
+test("applies the model list limit after API key permissions", async ({
+    restrictedApiKey,
+}) => {
+    const response = await fetchWorker("/models?limit=1", {
+        headers: { Authorization: `Bearer ${restrictedApiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { category: string }[];
+    expect(body).toHaveLength(1);
+    expect(RESTRICTED_TEST_CATEGORIES).toContain(body[0].category);
+});
+
 test("empty model permissions deny access and return an empty catalog", async () => {
     const { key } = await createTestApiKey({
         allowedModels: [],
@@ -246,11 +259,12 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Only the approved low-cost decision models are exempt from paid balance.
+    // Only the approved low-cost models are exempt from paid balance.
     const questPollenModels = new Set([
         "typesafe/jev-1.13",
         "jaredpalmer/kev-4b",
         "respan/span-01-lite",
+        "inclusionai/ling-3.1-flash",
     ]);
     const openRouterModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);

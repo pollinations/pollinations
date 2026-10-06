@@ -1592,7 +1592,7 @@ fixtureTest(
                     input: "slow ambient strings",
                     duration: 20,
                 },
-                message: "fixed 30-second clips",
+                message: "Unsupported duration for google/lyria-3-clip-preview",
             },
             {
                 body: {

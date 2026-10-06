@@ -33,7 +33,6 @@ SQL >
 
 NODE public_model_stats_node
 SQL >
-    %
     SELECT
         model,
         count() as request_count,

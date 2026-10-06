@@ -1,5 +1,5 @@
 {
-  "version": 29,
+  "version": 30,
   "canonicalModelRenames": {
     "claude": "anthropic/claude-sonnet-4.6",
     "flux-2-pro": "black-forest-labs/flux.2-pro",
@@ -2157,19 +2157,6 @@
       "collectionMethod": null
     },
     {
-      "id": "novita",
-      "label": "Novita AI",
-      "category": "compute",
-      "meteringBasis": "direct",
-      "aliases": [],
-      "connector": "novita",
-      "monthlyReview": true,
-      "activeFrom": "2026-10",
-      "balanceTracking": true,
-      "collectionMethod": "api",
-      "modelLabels": {}
-    },
-    {
       "id": "noumi",
       "label": "Noumi",
       "category": "office",
@@ -2186,10 +2173,12 @@
       "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
-      "connector": null,
-      "monthlyReview": false,
-      "balanceTracking": false,
-      "collectionMethod": null
+      "connector": "novita",
+      "monthlyReview": true,
+      "activeFrom": "2026-10",
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "modelLabels": {}
     },
     {
       "id": "openai",

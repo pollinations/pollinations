@@ -67,9 +67,12 @@ const REFILL_LABELS = [
     null,
     ...POLLEN_PACKS.filter(isAutoTopUpPack).map((pack) => pack.amountUsd),
 ].map(refillLabel);
-const BUY_LABELS = POLLEN_PACKS.map(
-    (pack) => `Buy ${formatPollenPackValue(pack.amountUsd)} pollen`,
-);
+const buyLabel = (amountUsd: number | undefined) =>
+    amountUsd ? `Buy ${formatPollenPackValue(amountUsd)} pollen` : "Buy pollen";
+const BUY_LABELS = [
+    undefined,
+    ...POLLEN_PACKS.map((pack) => pack.amountUsd),
+].map(buyLabel);
 
 /**
  * Text that changes without moving anything: every option is stacked in one
@@ -300,11 +303,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             onClick={startCheckout}
                         >
                             <StableLabel
-                                text={
-                                    selectedPack
-                                        ? `Buy ${formatPollenPackValue(selectedPack.amountUsd)} pollen`
-                                        : "Buy pollen"
-                                }
+                                text={buyLabel(selectedPack?.amountUsd)}
                                 options={BUY_LABELS}
                             />
                         </Button>
@@ -322,17 +321,11 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                     external
                                     target="_self"
                                     size="sm"
-                                    className="inline-flex items-center gap-1.5"
+                                    className="inline-flex items-center gap-1 whitespace-nowrap font-semibold"
                                 >
-                                    <span className="flex flex-col items-start leading-tight">
-                                        <span className="font-semibold">
-                                            Pay with
-                                        </span>
-                                        <span className="inline-flex items-center gap-1 text-xs font-semibold opacity-70">
-                                            <CryptoIcon className="h-3.5 w-3.5 shrink-0" />
-                                            Crypto
-                                        </span>
-                                    </span>
+                                    Pay with
+                                    <CryptoIcon className="h-3.5 w-3.5 shrink-0" />
+                                    Crypto
                                 </InlineLink>
                             </Tooltip>
                         )}

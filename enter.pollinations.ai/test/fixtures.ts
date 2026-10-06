@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { apiKeyClient } from "@better-auth/api-key/client";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { ensureConfigured } from "@shared/logger.ts";
 import {
@@ -181,8 +182,20 @@ export const test = base.extend<Fixtures>({
         mocks.clear();
         await use(sessionToken);
     },
-    accountToken: async ({ sessionToken }, use) => {
-        await use(await mintAccountToken(sessionToken));
+    // Signed directly: session-token.test.ts covers minting over HTTP.
+    accountToken: async ({ sessionToken: _sessionToken }, use) => {
+        // Each test has an isolated DB with exactly one user, signed in above.
+        const user = await drizzle(env.DB)
+            .select({ id: userTable.id })
+            .from(userTable)
+            .get();
+        if (!user) throw new Error("Missing fixture user");
+        await use(
+            await signSessionToken({
+                secret: env.BETTER_AUTH_SECRET,
+                userId: user.id,
+            }),
+        );
     },
     apiKey: async ({ accountToken }, use) => {
         const created = await createApiKeyViaApi(accountToken, {

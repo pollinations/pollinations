@@ -4,11 +4,14 @@ import {
     atomicAdjustApiKeyBalance,
     atomicReserveApiKeyBalance,
 } from "@shared/billing/deduction.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { withByopMarkup } from "@shared/billing/markup.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import type { Env } from "@/env.ts";
 import { type AuthVariables, keyPermissionsLink } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
@@ -84,6 +87,48 @@ export async function checkBalance(
     );
     if (typeof apiKeyBudget === "number") {
         balance.apiKeyBudgetEstimate = requiredBudget;
+    }
+}
+
+/**
+ * Wallet and key budget preflight for charges known before execution
+ * (sandbox leases) or only after it (MCP tool receipts, price 0).
+ */
+export async function requireFunds(
+    c: Context<Env>,
+    price: number,
+    purpose: string,
+): Promise<void> {
+    const charge =
+        price > 0 ? `this ${purpose} (${price} pollen)` : `this ${purpose}`;
+    const apiKey = c.var.auth.apiKey;
+    if (
+        apiKey &&
+        typeof apiKey.pollenBalance === "number" &&
+        apiKey.pollenBalance < price
+    ) {
+        throw new PaymentRequiredError(
+            "KEY_BUDGET_EXHAUSTED",
+            `API key budget too low for ${charge}. Increase the key budget at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}; topping up the wallet does not increase this limit.`,
+        );
+    }
+    const balance = await getFundedUserBalance(
+        drizzle(c.env.DB),
+        c.env.DB,
+        c.var.auth.requireUser().id,
+    );
+    if (apiKey?.questPollenOnly) {
+        if (!canCoverEstimatedCharge({ ...balance, packBalance: 0 }, price)) {
+            throw new PaymentRequiredError(
+                "QUEST_POLLEN_ONLY",
+                `Not enough Quest Pollen for ${charge}, and this API key only spends Quest Pollen. Complete a quest at https://enter.pollinations.ai/quests or allow paid Pollen for this key at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}.`,
+            );
+        }
+    } else if (!canCoverEstimatedCharge(balance, price)) {
+        throw new PaymentRequiredError(
+            "INSUFFICIENT_BALANCE",
+            `Insufficient balance for ${charge}. Top up at https://enter.pollinations.ai/top-up.`,
+        );
     }
 }
 

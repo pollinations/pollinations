@@ -30,6 +30,7 @@ export type CreateTestApiKeyOptions = {
     expiresIn?: number;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    questPollenOnly?: boolean;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
 };
@@ -73,6 +74,7 @@ export async function createTestApiKey(opts: CreateTestApiKeyOptions = {}) {
         expiresIn: opts.expiresIn,
         allowedModels: opts.allowedModels,
         pollenBudget: type === "publishable" ? 0 : testPollenBudget,
+        questPollenOnly: opts.questPollenOnly,
         accountPermissions: opts.accountPermissions,
         metadata: opts.metadata,
         defaultCreatedVia: "test",

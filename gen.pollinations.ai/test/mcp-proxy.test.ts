@@ -296,7 +296,9 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
 });
 
 test("routes Composio with the authenticated user", async () => {
-    const { key, userId } = await createTestApiKey();
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
     const response = await SELF.fetch(
         "https://gen.pollinations.ai/mcp/composio",
         {
@@ -354,6 +356,51 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.9998,
         packBalance: 0,
+    });
+});
+
+const callFfmpeg = (key: string, body: unknown) =>
+    SELF.fetch("https://gen.pollinations.ai/mcp/ffmpeg", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+
+test("refuses receipt-billed tool calls from an empty wallet but keeps initialization free", async () => {
+    const { key } = await createTestApiKey();
+
+    const refused = await callFfmpeg(key, MCP_REQUEST);
+    expect(refused.status).toBe(402);
+    expect(await refused.json()).toMatchObject({
+        error: { code: "INSUFFICIENT_BALANCE" },
+    });
+    const initialized = await callFfmpeg(key, {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {},
+    });
+    expect(initialized.status).toBe(200);
+});
+
+test("refuses a Quest Pollen only key's tool call without Quest Pollen, leaving paid Pollen untouched", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 10 },
+        questPollenOnly: true,
+    });
+
+    const response = await callFfmpeg(key, MCP_REQUEST);
+
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({
+        error: { code: "QUEST_POLLEN_ONLY" },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 10,
     });
 });
 

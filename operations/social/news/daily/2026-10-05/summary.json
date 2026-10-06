@@ -1,0 +1,155 @@
+{
+  "date": "2026-10-05",
+  "period_start": "2026-10-05",
+  "period_end": "2026-10-05",
+  "title": "More ways to make images, and a saner Veo default",
+  "summary": "A busy day for media models and audio compatibility, with better model discovery, clearer usage, and a round of CLI and documentation fixes.\n\nFLUX.3 Image and Seedream 5.0 Flash arrived with reference-based editing and 1K or 2K output. Veo now defaults to landscape video and generates audio only when requested. An OpenAI image seed change was reverted the same day: unseeded generations remain new images on each call, while identical unseeded edits can still use the cache.\n\nDefault speech requests and the tts-1 aliases now use OpenAI TTS, so they work with Quest Pollen. Audio routes gained consistent duration and upload parameter names; gpt-4o-transcribe works as a transcription alias; and chat audio data URLs no longer get double-encoded.\n\nGen and MCP can search and filter the catalog, while Open WebUI can filter /v1/models by category tags. The SDK gained a typed Jev decision call alongside the new Liquid D1 decision model and Ling 3.1 Flash; Qwen3 Coder 30B kept its aliases on a new Bedrock route. Community-model owners now use Private instead of a separate hide toggle, and catalog health signals no longer require repeated raw-event scans.",
+  "pr_count": 36,
+  "prs": [
+    {
+      "number": 15410,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 15510,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 15861,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16023,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16244,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16245,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16246,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16248,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16250,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16346,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16369,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16391,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16429,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16431,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16441,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16443,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16448,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16450,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16453,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16461,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16482,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16488,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16504,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16505,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16506,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16507,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16508,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16510,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16512,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16515,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16516,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16520,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16529,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16530,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16531,
+      "date": "2026-10-05"
+    },
+    {
+      "number": 16537,
+      "date": "2026-10-05"
+    }
+  ],
+  "generated_at": "2026-10-06T06:31:33.817802+00:00"
+}

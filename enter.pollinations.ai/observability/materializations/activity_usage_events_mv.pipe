@@ -22,11 +22,13 @@ SQL >
         token_count_prompt_audio AS input_audio_tokens,
         token_count_prompt_audio_seconds AS input_audio_seconds,
         token_count_prompt_image AS input_image_tokens,
+        usage_prompt_image_units AS input_image_units,
         token_count_completion_text AS output_text_tokens,
         token_count_completion_reasoning AS output_reasoning_tokens,
         token_count_completion_audio AS output_audio_tokens,
         token_count_completion_audio_seconds AS output_audio_seconds,
         token_count_completion_image AS output_image_tokens,
+        usage_completion_image_units AS output_image_units,
         token_count_completion_video_seconds AS output_video_seconds,
         total_price AS price_usd,
         response_time AS response_time_ms
@@ -36,3 +38,5 @@ SQL >
 
 TYPE MATERIALIZED
 DATASOURCE activity_usage_events
+
+DEPLOYMENT_METHOD alter

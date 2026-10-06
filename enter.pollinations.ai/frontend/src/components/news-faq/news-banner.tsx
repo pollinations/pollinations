@@ -129,7 +129,6 @@ function formatNewsDate(date: string): string {
     });
 }
 
-// Launch rows share the model-change grid so both groups' descriptions line up.
 const ROW =
     "grid grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-start gap-x-2 gap-y-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]";
 const DESCRIPTION =
@@ -168,11 +167,14 @@ export const Announcements: FC = () => {
             {launches.length > 0 && (
                 <AnnouncementGroup title="New">
                     {launches.map(({ name, change }) => (
-                        <li key={name} className={ROW}>
-                            <strong className="col-span-3 min-w-0 text-theme-text-strong">
+                        <li
+                            key={name}
+                            className="grid items-start gap-x-2 gap-y-2 sm:grid-cols-[10rem_minmax(0,1fr)]"
+                        >
+                            <strong className="min-w-0 text-theme-text-strong">
                                 {name}
                             </strong>
-                            <Markdown className={DESCRIPTION}>
+                            <Markdown className="sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
                                 {change}
                             </Markdown>
                         </li>

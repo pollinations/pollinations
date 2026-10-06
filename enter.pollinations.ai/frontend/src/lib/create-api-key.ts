@@ -37,34 +37,16 @@ type CreatedKey = {
 // Server-side creation keeps Better Auth as an implementation detail and lets
 // us validate Pollinations-specific fields before the key exists.
 export async function createKeyWithPermissions({
-    name,
     prefix,
     expiryDays,
-    description,
-    redirectUris,
-    earningsEnabled,
-    consent,
     permissions,
+    ...fields
 }: CreateKeyInput): Promise<CreatedKey> {
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
-    const keyType: "publishable" | "secret" =
-        prefix === "pk" ? "publishable" : "secret";
-    const body = {
-        name,
-        type: keyType,
-        expiresIn,
-        description,
-        redirectUris,
-        earningsEnabled,
-        consent,
-        allowedModels: permissions?.allowedModels,
-        pollenBudget: permissions?.pollenBudget,
-        accountPermissions: permissions?.accountPermissions,
-        questPollenOnly: permissions?.questPollenOnly,
-    };
+    const type = prefix === "pk" ? "publishable" : "secret";
 
     const response = await accountClient.keys.$post({
-        json: body,
+        json: { ...fields, ...permissions, type, expiresIn },
     });
 
     if (!response.ok) {

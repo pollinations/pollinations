@@ -63,7 +63,7 @@ type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
 };
 
-export function resolveUsageTargetUserId(
+function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
     apiKey?: {
@@ -837,26 +837,6 @@ const accountQuestRewardsResponseSchema = z.object({
     ),
 });
 
-const questCheckResponseSchema = z.object({
-    success: z.boolean(),
-    recorded: z.number(),
-    rewardIds: z.array(z.string()),
-    progress: z.array(
-        z.object({
-            questId: z.string(),
-            current: z.number(),
-            target: z.number(),
-            unit: z.enum(["pollen", "users", "days"]),
-        }),
-    ),
-});
-
-const claimRewardResponseSchema = z.object({
-    claimed: z.boolean(),
-    newBalance: z.number().nullable(),
-    reward: accountQuestRewardSchema,
-});
-
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 
 function formatReward(
@@ -1060,15 +1040,7 @@ export const accountRoutes = new Hono<Env>()
             const [cards, rewardRows] = await Promise.all([
                 listQuestCards({ db, env: c.env }),
                 db
-                    .select({
-                        id: rewardsTable.id,
-                        questId: rewardsTable.questId,
-                        title: rewardsTable.title,
-                        pollenAmount: rewardsTable.pollenAmount,
-                        balanceBucket: rewardsTable.balanceBucket,
-                        earnedAt: rewardsTable.earnedAt,
-                        claimedAt: rewardsTable.claimedAt,
-                    })
+                    .select()
                     .from(rewardsTable)
                     .where(eq(rewardsTable.userId, user.id))
                     .orderBy(desc(rewardsTable.earnedAt)),
@@ -1146,108 +1118,60 @@ export const accountRoutes = new Hono<Env>()
             });
         },
     )
-    .post(
-        "/quests/check",
-        describeRoute({
-            tags: ["👤 Account"],
-            summary: "Check Quest Rewards",
-            description:
-                "Checks the dashboard user's quests and records newly earned rewards. Dashboard only; API keys are refused.",
-            hide: true,
-            responses: {
-                200: {
-                    description: "Quest check result",
-                    content: {
-                        "application/json": {
-                            schema: resolver(questCheckResponseSchema),
-                        },
-                    },
+    .post("/quests/check", async (c) => {
+        await c.var.auth.requireAuthorization({
+            message: "Authentication required to check quest rewards",
+        });
+        if (c.var.auth.apiKey) {
+            throw new HTTPException(403, {
+                message: "Quest checks require a dashboard session",
+            });
+        }
+
+        const user = c.var.auth.requireUser();
+        const throttleKey = `quest-check:throttle:${user.id}`;
+        if (await c.env.KV.get(throttleKey)) {
+            return c.json(
+                {
+                    error: "rate_limited",
+                    message:
+                        "Quest checks are limited to once per minute. Try again shortly.",
                 },
-                401: { description: "Unauthorized" },
-                403: { description: "API keys cannot check quest rewards" },
-                429: {
-                    description: "Rate limited - one check per 60 seconds",
-                },
-            },
-        }),
-        async (c) => {
-            await c.var.auth.requireAuthorization({
-                message: "Authentication required to check quest rewards",
-            });
-            if (c.var.auth.apiKey) {
-                throw new HTTPException(403, {
-                    message: "Quest checks require a dashboard session",
-                });
-            }
+                429,
+                { "Retry-After": String(QUEST_CHECK_THROTTLE_SECONDS) },
+            );
+        }
+        await c.env.KV.put(throttleKey, "1", {
+            expirationTtl: QUEST_CHECK_THROTTLE_SECONDS,
+        });
 
-            const user = c.var.auth.requireUser();
-            const throttleKey = `quest-check:throttle:${user.id}`;
-            if (await c.env.KV.get(throttleKey)) {
-                return c.json(
-                    {
-                        error: "rate_limited",
-                        message:
-                            "Quest checks are limited to once per minute. Try again shortly.",
-                    },
-                    429,
-                    { "Retry-After": String(QUEST_CHECK_THROTTLE_SECONDS) },
-                );
-            }
-            await c.env.KV.put(throttleKey, "1", {
-                expirationTtl: QUEST_CHECK_THROTTLE_SECONDS,
+        return c.json(await checkQuestsForUser(c.env, user.id));
+    })
+    .post("/quests/rewards/:rewardId/claim", async (c) => {
+        await c.var.auth.requireAuthorization({
+            message: "Authentication required to claim quest rewards",
+        });
+        if (c.var.auth.apiKey) {
+            throw new HTTPException(403, {
+                message: "Reward claims require a dashboard session",
             });
+        }
 
-            return c.json(await checkQuestsForUser(c.env, user.id));
-        },
-    )
-    .post(
-        "/quests/rewards/:rewardId/claim",
-        describeRoute({
-            tags: ["👤 Account"],
-            summary: "Claim Quest Reward",
-            description:
-                "Claims one pending reward and credits the account balance. Dashboard only; API keys are refused.",
-            hide: true,
-            responses: {
-                200: {
-                    description: "Reward claim result",
-                    content: {
-                        "application/json": {
-                            schema: resolver(claimRewardResponseSchema),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "API keys cannot claim rewards" },
-                404: { description: "Reward not found" },
-            },
-        }),
-        async (c) => {
-            await c.var.auth.requireAuthorization({
-                message: "Authentication required to claim quest rewards",
-            });
-            if (c.var.auth.apiKey) {
-                throw new HTTPException(403, {
-                    message: "Reward claims require a dashboard session",
-                });
-            }
+        const user = c.var.auth.requireUser();
+        const result = await claimReward(drizzle(c.env.DB, { schema }), {
+            rewardId: c.req.param("rewardId"),
+            userId: user.id,
+        });
+        if (!result.reward) {
+            throw new HTTPException(404, { message: "Reward not found" });
+        }
 
-            const user = c.var.auth.requireUser();
-            const result = await claimReward(drizzle(c.env.DB, { schema }), {
-                rewardId: c.req.param("rewardId"),
-                userId: user.id,
-            });
-            if (!result.reward) {
-                throw new HTTPException(404, { message: "Reward not found" });
-            }
-
-            return c.json({
-                claimed: result.claimed,
-                newBalance: result.newBalance,
-                reward: formatReward(result.reward),
-            });
-        },
-    )
+        return c.json({
+            claimed: result.claimed,
+            newBalance: result.newBalance,
+            reward: formatReward(result.reward),
+        });
+    })
     .get(
         "/balance",
         describeRoute({
@@ -1720,13 +1644,13 @@ export const accountRoutes = new Hono<Env>()
                 consent,
             } = c.req.valid("json");
 
+            // createApiKeyForUser keeps earningsEnabled only on publishable
+            // keys; it would keep redirectUris on any key.
             const metadata = {
-                ...(description !== undefined ? { description } : {}),
+                description,
+                earningsEnabled,
                 ...(type === "publishable" && redirectUris?.length
                     ? { redirectUris }
-                    : {}),
-                ...(type === "publishable" && earningsEnabled !== undefined
-                    ? { earningsEnabled }
                     : {}),
                 ...consent,
             };

@@ -138,11 +138,6 @@ async function validateClientRedirectBinding(
 ): Promise<VerifiedClientAttribution | null> {
     if (!metadata) return null;
     const requestedClientId = metadata.requestedClientId;
-
-    if (typeof (metadata as Record<string, unknown>).clientId === "string") {
-        rejectInvalidClientId();
-    }
-
     if (typeof requestedClientId !== "string") {
         return null;
     }

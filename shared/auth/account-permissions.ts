@@ -1,9 +1,9 @@
 import { HTTPException } from "hono/http-exception";
 import type { CONSENT_PERMISSIONS } from "./authorize-config.ts";
 
-export type AccountPermission = (typeof CONSENT_PERMISSIONS)[number];
+type AccountPermission = (typeof CONSENT_PERMISSIONS)[number];
 
-export type AccountPermissionApiKey = {
+type AccountPermissionApiKey = {
     permissions?: Record<string, string[]>;
 };
 

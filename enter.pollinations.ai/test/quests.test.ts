@@ -14,7 +14,7 @@ import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
@@ -234,37 +234,10 @@ async function seedByopConnections(
 }
 
 async function createUsageApiKey(accountToken: string, name: string) {
-    const createResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/keys",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accountToken}`,
-            },
-            body: JSON.stringify({ name }),
-        },
-    );
-    expect(createResponse.status).toBe(200);
-    const created = (await createResponse.json()) as {
-        id: string;
-        key: string;
-    };
-
-    const updateResponse = await SELF.fetch(
-        `http://localhost:3000/api/account/keys/${created.id}`,
-        {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accountToken}`,
-            },
-            body: JSON.stringify({
-                accountPermissions: ["usage"],
-            }),
-        },
-    );
-    expect(updateResponse.status).toBe(200);
+    const created = await createApiKeyViaApi(accountToken, {
+        name,
+        accountPermissions: ["usage"],
+    });
     return created.key;
 }
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 16588,
+  "title": "fix: recover disconnected GPU tunnels",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16588",
+  "merged_at": "2026-10-06T17:47:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes GPU pool failures when Cloudflare returns HTTP 530 with error 1033: retries another registered worker once, handling plain-text and HTML responses. Other 5xx responses keep their existing behavior to avoid duplicate generation.\n- Shares Klein's connection watchdog across all Vast GPU setups. Public tunnels restart after 30 seconds with zero connections; Klein retains its existing fewer-than-two threshold. Only the matching connector is stopped, leaving DNS helpers running.\n- Adds a targeted CI job covering both thresholds, healthy-sample recovery and process isolation, plus GPU setup shell syntax.\n- Validated: 21 Workers routing tests, Gen TypeScript check, shell/generated startup syntax, and the watchdog HTTP/process regression. An isolated local registry deliberately selected the obsolete DreamShaper hostname (530), then retried a healthy worker and returned a valid 512×512 image (200). The obsolete hostname was not found in the production registry.\n\nProduction rollout remains pending: deploy Gen through production CI and update the startup/watchdog scripts on existing GPU hosts. This PR changes no credentials, model pricing or rate limits.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A second path to pixels",
+    "blurb": "A disconnected GPU tunnel no longer has to end an image request. When Cloudflare reports error 1033, routing tries one other registered worker; a watchdog helps idle tunnels reconnect.",
+    "summary": "Image routing retries one other registered GPU worker on Cloudflare HTTP 530/error 1033, while a shared watchdog restarts public tunnels after 30 seconds with zero connections and preserves Klein’s fewer-than-two threshold.",
+    "impact": "Image requests gain a fallback when a registered GPU tunnel has disconnected; unrelated 5xx responses keep their existing behavior to avoid duplicate generation.",
+    "keywords": [
+      "image generation",
+      "GPU",
+      "Cloudflare 1033",
+      "worker routing",
+      "tunnel watchdog",
+      "reliability"
+    ],
+    "visual_concept": "Depict GPU workers as cozy, flower-shaped server terminals linked by garden paths. Polli, wearing a tiny repair tool belt, notices one disconnected path and guides an image request toward a healthy terminal; a small clock beside the idle tunnel represents the watchdog.",
+    "image_prompt": "In a cozy pixel garden, one flower-shaped GPU terminal has a loose connection while another glows beside a clear path carrying a tiny pixel picture; a small clock rests near the loose connector. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Wearing a tiny repair tool belt, she gently guides the picture toward the connected terminal against a prominent lime green (#ecf874) and soft pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16588.jpg",
+    "prompt": "In a cozy pixel garden, one flower-shaped GPU terminal has a loose connection while another glows beside a clear path carrying a tiny pixel picture; a small clock rests near the loose connector. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Wearing a tiny repair tool belt, she gently guides the picture toward the connected terminal against a prominent lime green (#ecf874) and soft pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T17:48:16.037908+00:00"
+}

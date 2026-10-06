@@ -223,9 +223,17 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Mistral Large 4 to Mistral on OpenRouter without fallback", () => {
+    it("routes Mistral Large 4 to Mistral direct", () => {
         const result = resolveModelConfig(messages, {
             model: "mistralai/mistral-large-4",
+        });
+
+        expect(result.options.model).toBe("mistral-large-4");
+    });
+
+    it("pins the Mistral Large 4 fallback to Mistral on OpenRouter", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-large-4:openrouter",
         });
 
         expect(result.options.model).toBe("mistralai/mistral-large-4-0");

@@ -1939,6 +1939,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "mistralai/mistral-large-4": {
     "cost": {
+      "completionTextTokens": 0.00000209,
+      "promptCachedTokens": 0.00000007,
+      "promptTextTokens": 0.00000068,
+    },
+    "price": {
+      "completionTextTokens": 0.00000209,
+      "promptCachedTokens": 0.00000007,
+      "promptTextTokens": 0.00000068,
+    },
+  },
+  "mistralai/mistral-large-4:openrouter": {
+    "cost": {
       "completionTextTokens": 0.00000220495,
       "promptCachedTokens": 0.00000007385,
       "promptTextTokens": 0.0000007174,

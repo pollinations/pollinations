@@ -2902,21 +2902,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-large-4": {
-        supportedParameters: CHAT_PARAMETERS.openRouterMistralLarge4,
+        supportedParameters: CHAT_PARAMETERS.mistralLarge,
         aliases: [],
-        provider: "openrouter",
+        provider: "mistral",
         publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-10-06").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Mistral endpoint rates (2026-10-06, as billed:
-            // $0.68 / $0.07 cached / $2.09 per million), including the
-            // mandatory 5.5% OpenRouter credit fee.
-            promptTextTokens: perMillion(0.68) * 1.055,
-            promptCachedTokens: perMillion(0.07) * 1.055,
-            completionTextTokens: perMillion(2.09) * 1.055,
+            // Mistral direct API launch rates (docs.mistral.ai, 2026-10-06):
+            // list price is $1.36 / $0.14 cached / $4.18 per million, shown
+            // at half until the discount ends.
+            promptTextTokens: perMillion(0.68),
+            promptCachedTokens: perMillion(0.07),
+            completionTextTokens: perMillion(2.09),
         },
         title: "Mistral Large 4",
         description:

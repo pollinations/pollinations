@@ -329,6 +329,20 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "mistralai/mistral-large-4": {
+        // Pinned to Mistral's own endpoint on OpenRouter, so this covers
+        // gateway failures, not a Mistral outage.
+        "mistralai/mistral-large-4:openrouter": {
+            supportedParameters: CHAT_PARAMETERS.openRouterMistralLarge4,
+            provider: "openrouter",
+            addedDate: new Date("2026-10-06").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.68) * 1.055,
+                promptCachedTokens: perMillion(0.07) * 1.055,
+                completionTextTokens: perMillion(2.09) * 1.055,
+            },
+        },
+    },
     "mistralai/mistral-small-3.2": {
         "mistralai/mistral-small-3.2:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfra,

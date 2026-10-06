@@ -364,7 +364,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
-    "mistralai/mistral-large-4": createPinnedOpenRouterConfig(
+    "mistral-large-4": () =>
+        createMistralModelConfig({ model: "mistral-large-4" }),
+    "mistral-large-4-openrouter": createPinnedOpenRouterConfig(
         "mistralai/mistral-large-4-0",
         "mistral",
     ),

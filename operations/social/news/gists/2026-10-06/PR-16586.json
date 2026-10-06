@@ -1,0 +1,34 @@
+{
+  "pr_number": 16586,
+  "title": "fix: preserve fractional image usage without rebuilding history",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16586",
+  "merged_at": "2026-10-06T15:26:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes successful Replicate image events being quarantined when provider usage contains fractional megapixels. Writes full quantities to Float64 fields and omits fractional values from legacy UInt32 fields, preserving prices.\n- Adds image-unit columns with defaults from historical integer values; updates Activity JSON/CSV, weekly classification, hourly aggregates, and Grafana queries. Uses in-place ALTER operations without copying the 422-million-row source or rebuilding downstream history.\n- Validated: 34 scoped Enter/Gen tests, both typechecks, live staging ingestion/exports/hourly sums with zero quarantine, and pre-migration integer history in all three tables. Staging deployment #180 is live; image-only staging/production dry-runs reported no data copy or token changes.\n- Rollout: deploy image-only Tinybird definitions before Gen/Enter producers and Grafana. Production is not deployed; retained quarantine replay is separate follow-up work. V3 canonical units and legacy-column cleanup: #15937 under #15935.\n- Supersedes #15134 and #15230; credits both contributors. Addresses #15132.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Half a megapixel counts",
+    "blurb": "Fractional megapixels are still megapixels. Replicate image usage keeps its precision instead of getting sent to quarantine, with prices intact.",
+    "summary": "Successful Replicate image events with fractional megapixel usage are stored in Float64 image-unit fields rather than quarantined; fractional values are omitted from legacy UInt32 fields, preserving prices without copying the 422-million-row source or rebuilding downstream history.",
+    "impact": "Activity JSON and CSV exports, weekly usage classification, hourly totals, and Grafana queries account for fractional image units while existing integer history remains available.",
+    "keywords": [
+      "Replicate",
+      "image usage",
+      "fractional megapixels",
+      "billing",
+      "Tinybird",
+      "Activity exports"
+    ],
+    "visual_concept": "A cozy observability workbench: Polli carefully measures a half-filled pixel-art image tile on a ruler marked in megapixels, while a CRT monitor robot records the precise value. A code-plant and lime-green display connect the scene to usage data; intact stacks of old records represent history left undisturbed.",
+    "image_prompt": "In a cozy pixel-art garden workbench, a small bee wearing tiny measuring glasses checks a half-filled image tile beside a lime green (#ecf874) CRT display, while a friendly boxy monitor robot records its fractional megapixels and vines curl around untouched stacks of old records. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, warm cream background, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16586.jpg",
+    "prompt": "In a cozy pixel-art garden workbench, a small bee wearing tiny measuring glasses checks a half-filled image tile beside a lime green (#ecf874) CRT display, while a friendly boxy monitor robot records its fractional megapixels and vines curl around untouched stacks of old records. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-06T15:27:12.929449+00:00"
+}

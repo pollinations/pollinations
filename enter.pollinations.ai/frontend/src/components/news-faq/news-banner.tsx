@@ -152,66 +152,67 @@ export const Announcements: FC = () => {
     const changes = MODEL_CHANGES.filter(
         ({ date, until = date }) => until >= today,
     );
-    // The "Today" line goes before the first upcoming change, after any past ones.
+    // A line marks today: before the first upcoming change, after any past ones.
     const firstUpcoming = changes.findIndex(({ date }) => date >= today);
     if (launches.length === 0 && changes.length === 0) return null;
     return (
         <Section title="Announcements">
-            {launches.length > 0 && (
-                <AnnouncementGroup title="New">
-                    {launches.map(({ name, change }) => (
-                        <li key={name} className={ROW}>
-                            <strong className="col-span-3 min-w-0 text-theme-text-strong sm:col-span-2">
-                                {name}
-                            </strong>
-                            {/* Starts where the model names below start. */}
-                            <Markdown className="col-span-3 sm:col-span-2 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
-                                {change}
-                            </Markdown>
-                        </li>
-                    ))}
-                </AnnouncementGroup>
-            )}
-            {changes.length > 0 && (
-                <AnnouncementGroup title="Model changes">
-                    {changes.map(({ date, name, action, change }, i) => (
-                        <Fragment key={name}>
-                            {i > 0 && i === firstUpcoming && (
-                                <li className="flex items-center gap-2">
-                                    <Eyebrow>Today</Eyebrow>
-                                    <hr className="flex-1 border-theme-text-soft/40" />
-                                </li>
-                            )}
-                            <li
-                                className={
-                                    date < today ? `${ROW} opacity-60` : ROW
-                                }
-                            >
-                                <time
-                                    dateTime={date}
-                                    className="whitespace-nowrap text-theme-text-muted"
-                                >
-                                    {formatNewsDate(date)}
-                                </time>
-                                <span className="border-l border-theme-text-strong/15 pl-2">
-                                    <Chip
-                                        size="sm"
-                                        intent={ACTION_INTENT[action]}
-                                    >
-                                        {action}
-                                    </Chip>
-                                </span>
-                                <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
+            <div className="flex flex-col gap-8">
+                {launches.length > 0 && (
+                    <AnnouncementGroup title="New">
+                        {launches.map(({ name, change }) => (
+                            <li key={name} className={ROW}>
+                                <strong className="col-span-3 min-w-0 text-theme-text-strong sm:col-span-2">
                                     {name}
                                 </strong>
-                                <Markdown className={DESCRIPTION}>
+                                {/* Starts where the model names below start. */}
+                                <Markdown className="col-span-3 sm:col-span-2 sm:border-l sm:border-theme-text-strong/15 sm:pl-2">
                                     {change}
                                 </Markdown>
                             </li>
-                        </Fragment>
-                    ))}
-                </AnnouncementGroup>
-            )}
+                        ))}
+                    </AnnouncementGroup>
+                )}
+                {changes.length > 0 && (
+                    <AnnouncementGroup title="Model changes">
+                        {changes.map(({ date, name, action, change }, i) => (
+                            <Fragment key={name}>
+                                {i > 0 && i === firstUpcoming && (
+                                    <li>
+                                        <hr className="border-theme-text-soft/40" />
+                                    </li>
+                                )}
+                                <li
+                                    className={
+                                        date < today ? `${ROW} opacity-60` : ROW
+                                    }
+                                >
+                                    <time
+                                        dateTime={date}
+                                        className="whitespace-nowrap text-theme-text-muted"
+                                    >
+                                        {formatNewsDate(date)}
+                                    </time>
+                                    <span className="border-l border-theme-text-strong/15 pl-2">
+                                        <Chip
+                                            size="sm"
+                                            intent={ACTION_INTENT[action]}
+                                        >
+                                            {action}
+                                        </Chip>
+                                    </span>
+                                    <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
+                                        {name}
+                                    </strong>
+                                    <Markdown className={DESCRIPTION}>
+                                        {change}
+                                    </Markdown>
+                                </li>
+                            </Fragment>
+                        ))}
+                    </AnnouncementGroup>
+                )}
+            </div>
             <InlineLink href="/models" size="sm" className="self-end">
                 Browse models
             </InlineLink>

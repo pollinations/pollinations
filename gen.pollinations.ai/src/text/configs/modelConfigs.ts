@@ -10,7 +10,6 @@ import {
     createFireworksModelConfig,
     createMistralModelConfig,
     createOpenRouterModelConfig,
-    createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityAgentConfig,
     createVercelAIGatewayModelConfig,
@@ -96,6 +95,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "jaredpalmer/kev-4b",
     }),
+    "liquid-d1": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "liquid/d1",
+    }),
+    "liquid/d1:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+            model: "liquid/d1",
+        }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -340,6 +351,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "inclusionai/ling-3.1-flash": createPinnedOpenRouterConfig(
+        "inclusionai/ling-3.1-flash",
+        "novita",
+    ),
+    "inclusionai/ling-3.1-flash:vercel:novita": () =>
+        createVercelAIGatewayModelConfig({
+            model: "inclusionai/ling-3.1-flash",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        }),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",
@@ -616,10 +639,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "google-vertex/global",
     ),
-    "gemini-fast-openrouter-vertex-eu": createPinnedOpenRouterGeminiConfig(
+    "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "google-ai-studio",
     ),
+    "google/gemini-2.5-flash-lite:search": () => ({
+        ...createPinnedOpenRouterGeminiConfig(
+            "gemini-2.5-flash-lite",
+            "google-ai-studio",
+        )(),
+        responsesEndpoint: undefined,
+    }),
     "gemini-flash-lite-3.5-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
             "gemini-3.5-flash-lite",
@@ -637,6 +667,26 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.3-flashx",
         "z-ai/fp8",
     ),
+    "glm-5.3-flash-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "z-ai/glm-5.3-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: [
+                        "together",
+                        "baseten/fp8",
+                        "modal/nvfp4",
+                        "crusoe/fp4",
+                        "friendli",
+                        "digitalocean",
+                        "parasail/fp4",
+                        "venice",
+                    ],
+                    allow_fallbacks: true,
+                },
+            },
+        }),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
         "friendli",
@@ -797,6 +847,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "nova-2-lite": () =>
         createBedrockNativeConfig({ model: "us.amazon.nova-2-lite-v1:0" }),
 
+    // -- AWS Bedrock (Qwen) ---------------------------------------------------
+    "qwen-coder-bedrock": () =>
+        createBedrockNativeConfig({ model: "qwen.qwen3-coder-30b-a3b-v1:0" }),
+
     // -- Google Vertex AI (Gemini) -------------------------------------------
     "google/gemini-3-flash-preview": createVertexGeminiConfig(
         "gemini-3-flash-preview",
@@ -806,10 +860,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-pro-preview",
         "global",
     ),
-    "google/gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "global",
-    ),
+    "google/gemini-2.5-flash-lite": () =>
+        createVercelAIGatewayModelConfig({
+            model: "google/gemini-2.5-flash-lite",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["google"] } },
+            },
+        }),
     "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",
@@ -824,10 +883,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // Dedicated Gemini Search services use the same direct Vertex adapter.
-    "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "global",
-    ),
     "vertex/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",
@@ -863,6 +918,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        }),
+    "accounts/fireworks/models/nemotron-3-ultra-nvfp4": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
         }),
     "accounts/fireworks/models/inkling": () =>
         createFireworksModelConfig({
@@ -928,12 +987,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudOAIConfig({
             model: "gpt-oss-20b",
             "max-tokens": 1500,
-            responsesEndpoint:
-                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
-        }),
-    "qwen3-coder-30b-a3b-instruct": () =>
-        createOVHcloudModelConfig({
-            model: "Qwen3-Coder-30B-A3B-Instruct",
             responsesEndpoint:
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
         }),

@@ -1,4 +1,3 @@
-import { UpstreamError } from "@shared/error.ts";
 /**
  * ByteDance Seedance Pro-Fast video generation via Replicate.
  *
@@ -26,8 +25,8 @@ import {
 const logOps = debug("pollinations:seedance:ops");
 const logError = debug("pollinations:seedance:error");
 
-// Replicate's seedance-1-lite/pro-fast accept these aspect ratios. Validate at
-// the boundary so users get 400 instead of a Replicate 422 round-trip.
+// Replicate's seedance-1-pro-fast accepts these aspect ratios; width/height
+// snap to one of them. A requested ratio goes through as-is.
 const SEEDANCE_ASPECT_RATIOS = [
     "16:9",
     "4:3",
@@ -37,20 +36,9 @@ const SEEDANCE_ASPECT_RATIOS = [
     "21:9",
     "9:21",
 ] as const;
-type SeedanceAspectRatio = (typeof SEEDANCE_ASPECT_RATIOS)[number];
 
-function resolveSeedanceAspectRatio(
-    safeParams: ImageParams,
-): SeedanceAspectRatio {
-    const requested = safeParams.aspectRatio;
-    if (requested) {
-        if ((SEEDANCE_ASPECT_RATIOS as readonly string[]).includes(requested)) {
-            return requested as SeedanceAspectRatio;
-        }
-        throw UpstreamError.fromProvider(400, {
-            message: `aspectRatio "${requested}" is not supported by Seedance. Supported: ${SEEDANCE_ASPECT_RATIOS.join(", ")}.`,
-        });
-    }
+function resolveSeedanceAspectRatio(safeParams: ImageParams): string {
+    if (safeParams.aspectRatio) return safeParams.aspectRatio;
     if (safeParams.width && safeParams.height) {
         // Derive a supported ratio from width/height (documented schema
         // contract: "If not set, determined by width/height").
@@ -67,7 +55,7 @@ interface SeedanceInput {
     prompt: string;
     duration: number;
     resolution: "480p" | "720p" | "1080p";
-    aspect_ratio: SeedanceAspectRatio;
+    aspect_ratio: string;
     fps: 24;
     camera_fixed: boolean;
     seed?: number;

@@ -97,7 +97,7 @@ declare namespace Cloudflare {
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		STRIPE_PUBLISHABLE_KEY: "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE";
 		STAGING_ALLOWED_GITHUB_IDS: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
-		STAGING_ALLOWED_EMAILS: "elliot@pollinations.ai";
+		STAGING_ALLOWED_EMAILS: "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;
@@ -233,7 +233,7 @@ declare namespace Cloudflare {
 		GITHUB_APP_PRIVATE_KEY: string;
 		COMPOSIO_MCP: Fetcher /* pollinations-composio-mcp */ | Fetcher /* pollinations-composio-mcp-staging */;
 		STAGING_ALLOWED_GITHUB_IDS?: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
-		STAGING_ALLOWED_EMAILS?: "elliot@pollinations.ai";
+		STAGING_ALLOWED_EMAILS?: "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
 		USAGE_DEBUG_USER_ID?: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
 		DISCORD_CLIENT_ID?: "test_discord_client_id";
 		DISCORD_CLIENT_SECRET?: "test_discord_client_secret";

@@ -586,6 +586,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 aliases: [],
                 category: "text",
                 community: false,
+                tags: [{ name: "text" }],
                 title: "OpenAI",
             },
             {
@@ -596,6 +597,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 aliases: [],
                 category: "text",
                 community: false,
+                tags: [{ name: "text" }],
                 title: "Claude",
             },
             {
@@ -606,6 +608,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 aliases: [],
                 category: "text",
                 community: false,
+                tags: [{ name: "text" }],
                 title: "Gemini",
             },
         ],

@@ -23,6 +23,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Jared Palmer": "jared-palmer",
     Krea: "krea",
     Kuaishou: "kling",
+    "Liquid AI": "liquid-ai",
     Lykon: "lykon",
     Meituan: "meituan",
     Meta: "meta",

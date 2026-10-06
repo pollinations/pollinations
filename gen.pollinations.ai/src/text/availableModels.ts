@@ -7,17 +7,17 @@ import { createGeminiThinkingTransform } from "./transforms/createGeminiThinking
 import {
     adaptGoogleSearchToolForOpenRouter,
     adaptGoogleSearchToolForVertex,
-    createGeminiToolsTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
 import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
+import { mediaToVercelFiles } from "./transforms/mediaToVercelFiles.ts";
 import {
     omitParameters,
     preferTemperature,
 } from "./transforms/parameterTransforms.js";
-import { pipe } from "./transforms/pipe.js";
+import { addDefaultTools, pipe } from "./transforms/pipe.js";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import type { TransformFn, TransformOptions } from "./types.js";
 
@@ -279,12 +279,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
-        config: portkeyConfig["qwen3-coder-30b-a3b-instruct"],
-        // OVHcloud Qwen3-Coder 400s on reasoning_effort (no reasoning mode).
-        transform: pipe(
-            createSystemPromptTransform(BASE_PROMPTS.coding),
-            stripReasoning,
-        ),
+        config: portkeyConfig["qwen-coder-bedrock"],
+        // No default coding prompt: it makes Bedrock narrate before a tool
+        // call, leaking raw <function=...> text. Qwen3-Coder has no reasoning
+        // mode, and Bedrock rejects stop with a ValidationException.
+        transform: pipe(stripReasoning, omitParameters("stop")),
     },
     {
         name: "qwen/qwen3-coder-next",
@@ -656,27 +655,30 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiThinkingTransform("v2.5"),
+            mediaToVercelFiles,
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
-        name: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
-        config: portkeyConfig["gemini-fast-openrouter-vertex-eu"],
+        name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
+        config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForOpenRouter,
-            createGeminiThinkingTransform("v2.5"),
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
         name: "google/gemini-2.5-flash-lite:search",
-        config: portkeyConfig["vertex/gemini-2.5-flash-lite"],
+        config: portkeyConfig["google/gemini-2.5-flash-lite:search"],
         transform: pipe(
             sanitizeToolSchemas,
-            adaptGoogleSearchToolForVertex,
-            createGeminiToolsTransform(["google_search"]),
-            createGeminiThinkingTransform("v2.5"),
+            addDefaultTools([
+                {
+                    type: "openrouter:web_search",
+                    parameters: { engine: "exa", max_results: 5 },
+                },
+            ]),
+            createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
     {
@@ -692,6 +694,16 @@ const models: ModelDefinition[] = [
     {
         name: "jaredpalmer/kev-4b",
         config: portkeyConfig["kev-4b"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "liquid/d1",
+        config: portkeyConfig["liquid-d1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "liquid/d1:vercel",
+        config: portkeyConfig["liquid/d1:vercel"],
         useSystemOneApi: true,
     },
     {
@@ -775,6 +787,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "nvidia/nemotron-3-ultra",
+        config: portkeyConfig[
+            "accounts/fireworks/models/nemotron-3-ultra-nvfp4"
+        ],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "nvidia/nemotron-3-ultra:deepinfra",
         config: portkeyConfig["nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B"],
         transform: createReasoningEffortTransform("toggle"),
     },
@@ -862,6 +881,11 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {
+        name: "z-ai/glm-5.3-flash:openrouter",
+        config: portkeyConfig["glm-5.3-flash-openrouter"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "z-ai/glm-5.3-flashx",
         config: portkeyConfig["z-ai/glm-5.3-flashx"],
         // Reasoning is mandatory; off requests keep the upstream default.
@@ -883,6 +907,14 @@ const models: ModelDefinition[] = [
     {
         name: "tencent/hy3",
         config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash",
+        config: portkeyConfig["inclusionai/ling-3.1-flash"],
+    },
+    {
+        name: "inclusionai/ling-3.1-flash:vercel:novita",
+        config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
     },
     {
         name: "inclusionai/ling-3.0-flash-vl",

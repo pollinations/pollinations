@@ -4,6 +4,8 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 
+import { isGoogleSearchTool } from "./transforms/createGeminiToolsTransform.ts";
+
 function forcesToolChoice(toolChoice: unknown): boolean {
     if (toolChoice === "required") return true;
     if (!toolChoice || typeof toolChoice !== "object") return false;
@@ -83,6 +85,12 @@ export function textCapabilityError(
     communityEndpoint?: CommunityEndpointRuntime,
 ): string | undefined {
     if (!definition) return;
+    if (
+        definition.search === false &&
+        Array.isArray(request.tools) &&
+        request.tools.some(isGoogleSearchTool)
+    )
+        return "This model does not support web search; choose a model with web_search capability";
     if (
         definition.tools === false &&
         ((Array.isArray(request.tools) && request.tools.length > 0) ||

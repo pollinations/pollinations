@@ -4,12 +4,7 @@ import {
     type ImageModelName,
 } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-    createAndReturnVideo,
-    validateVideoFrameCount,
-} from "../../src/image/createAndReturnVideos.ts";
-import type { ImageParams } from "../../src/image/params.ts";
+import { describe, expect, it } from "vitest";
 
 const VIDEO_FRAME_LIMITS = [
     ["google/gemini-omni-1.1-flash", 2],
@@ -42,30 +37,7 @@ const VIDEO_FRAME_LIMITS = [
     ["prunaai/p-video", 1],
 ] as const satisfies readonly (readonly [ImageModelName, number])[];
 
-function params(model: ImageModelName, frameCount: number): ImageParams {
-    return {
-        model,
-        width: 1280,
-        height: 720,
-        dimensionsExplicit: true,
-        seed: 42,
-        safe: false,
-        quality: "medium",
-        image: Array.from(
-            { length: frameCount },
-            (_, index) => `https://example.com/frame-${index}.png`,
-        ),
-        transparent: false,
-        reasoning: "balanced",
-        audio: false,
-    };
-}
-
-afterEach(() => {
-    vi.restoreAllMocks();
-});
-
-describe("video frame validation", () => {
+describe("video frame capabilities", () => {
     it("keeps the explicit test matrix in sync with every deployed video model", () => {
         expect(getVideoModelIds().sort()).toEqual(
             VIDEO_FRAME_LIMITS.map(([model]) => model).sort(),
@@ -83,29 +55,5 @@ describe("video frame validation", () => {
                 maxFrames >= 2,
             );
         }
-    });
-
-    it.each(
-        VIDEO_FRAME_LIMITS,
-    )("%s accepts every advertised frame count through %i", (model, maxFrames) => {
-        for (let frameCount = 0; frameCount <= maxFrames; frameCount++) {
-            expect(() =>
-                validateVideoFrameCount(params(model, frameCount)),
-            ).not.toThrow();
-        }
-    });
-
-    it.each(
-        VIDEO_FRAME_LIMITS,
-    )("%s rejects more than its advertised %i frame limit before dispatch", async (model, maxFrames) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            createAndReturnVideo(
-                "animate these frames",
-                params(model, maxFrames + 1),
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
     });
 });

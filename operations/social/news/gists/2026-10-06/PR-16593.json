@@ -1,0 +1,34 @@
+{
+  "pr_number": 16593,
+  "title": "fix: retain Gemini 2.5 Flash Lite via Vercel and OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16593",
+  "merged_at": "2026-10-06T13:57:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves `google/gemini-2.5-flash-lite` to Vercel Chat Completions pinned to Google, with generic fallback pinned to OpenRouter AI Studio. Preserves IDs, aliases, paid-only access, and `priceMultiplier: 1`.\n- Moves existing `:search` to OpenRouter AI Studio with Exa. Capability change: ordinary requests lose native Google Search; search uses Exa instead of Google grounding. Other modalities, reasoning, ordinary tools, and endpoints pass. Search has no fallback because Vercel Chat cannot preserve search.\n- Verifies [Vercel](https://ai-gateway.vercel.sh/v1/models), [OpenRouter](https://openrouter.ai/api/v1/models/google/gemini-2.5-flash-lite/endpoints), and [Exa](https://openrouter.ai/docs/guides/features/server-tools/web-search) pricing. OpenRouter token/search/storage costs include 5.5%; search costs $7.385/1K calls. Fallback retains the Vercel customer quote; Pollinations absorbs extra costs.\n- Passes real-provider authenticated Worker E2E, forced fallback, streaming usage, cache, aliases, permissions/errors, ten concurrent requests per route, 274 Gen tests, 63 pricing/snapshot tests, and both typechecks. Cached repeats on all three routes preserve text/attribution with no extra provider calls, debits, or billed events. Wallet/staging Tinybird reconcile at 0.09551782 Pollen; zero quarantined events.\n- Avoids [Vertex retirement](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions); availability depends on existing-provider access under [Gemini API restrictions](https://ai.google.dev/gemini-api/docs/deprecations). Our direct AI Studio key returns 404 for 2.5; 3.5 succeeds. No deployment or secret changes.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Gemini finds another garden path",
+    "blurb": "Gemini 2.5 Flash Lite gets a new route through Vercel, with OpenRouter ready as a fallback. Its search variant takes a separate path through Exa; apparently even models need directions.",
+    "summary": "Routes google/gemini-2.5-flash-lite through Vercel Chat Completions pinned to Google, with an OpenRouter AI Studio fallback; its :search variant uses OpenRouter with Exa search instead of Google grounding.",
+    "impact": "Paid users keep the same model IDs, aliases, and price multiplier of 1; search requests use Exa, while the search route has no fallback because Vercel Chat cannot preserve search.",
+    "keywords": [
+      "Gemini 2.5 Flash Lite",
+      "Vercel",
+      "OpenRouter",
+      "Exa",
+      "search",
+      "fallback"
+    ],
+    "visual_concept": "Depict Gemini 2.5 Flash Lite as a small glowing star traveling along two garden paths: a primary route marked by a simple Vercel triangle and a fallback route through an OpenRouter-style junction. A separate magnifying glass marks the Exa search path. Polli, wearing a tiny map-reader's cap, points out the routes among code-plants.",
+    "image_prompt": "In a cozy pixel garden, Polli wears a tiny map-reader's cap and guides a glowing Gemini star along a lime green (#ecf874) path past a Vercel triangle and an OpenRouter junction, while a separate path leads to an Exa magnifying glass among code-plants; The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and gentle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16593.jpg",
+    "prompt": "In a cozy pixel garden, Polli wears a tiny map-reader's cap and guides a glowing Gemini star along a lime green (#ecf874) path past a Vercel triangle and an OpenRouter junction, while a separate path leads to an Exa magnifying glass among code-plants; The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and gentle CRT glow."
+  },
+  "generated_at": "2026-10-06T14:00:32.157334+00:00"
+}

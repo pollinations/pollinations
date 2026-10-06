@@ -454,6 +454,19 @@ describe("static provider fallbacks", () => {
             provider: "openrouter",
             fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
         });
+        const lite = IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite"];
+        const liteFallback =
+            IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite:openrouter"];
+        expect(lite).toMatchObject({
+            provider: "xai",
+            aliases: [],
+            fallbacks: ["x-ai/grok-imagine-video-1.5-lite:openrouter"],
+        });
+        expect(liteFallback.provider).toBe("openrouter");
+        expect(liteFallback.cost).toEqual({
+            promptImageTokens: 0.01 * 1.055,
+            completionVideoSeconds: 0.03 * 1.055,
+        });
     });
 
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {

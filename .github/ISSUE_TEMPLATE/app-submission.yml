@@ -8,43 +8,13 @@ body:
       value: |
         ## Submit your app
 
-        Share your Pollinations-powered app with the community. An automated pre-review checks your submission, then a maintainer reviews it before publication.
+        - **App:** working, with a clear purpose and visible use of Pollinations.
+        - **Access:** a public app URL, repository, or both.
+        - **Screenshot:** your app's real screen; see the upload requirements below.
+        - **Credit:** add the badge or site link as described at the end of this form.
+        - **Content:** no spam, scams, or deceptive behavior.
 
-        ### Before you submit
-
-        - Your app works, has a clear purpose, and visibly uses Pollinations.
-        - Provide a public app URL, a public repository, or both.
-        - Upload a screenshot of the app's real screen (requirements below).
-        - Credit Pollinations using the instructions below.
-        - No spam, scams, or deceptive behavior.
-
-        ### Credit Pollinations
-
-        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
-
-        - **With a repository:** add the badge to your README.
-        - **Without a repository:** show the badge or a visible [pollinations.ai](https://pollinations.ai) link on the app page.
-
-        **README — copy this Markdown:**
-
-        ```markdown
-        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
-        ```
-
-        **App page — copy this HTML:**
-
-        ```html
-        <a href="https://pollinations.ai/?ref=badge">
-          <img
-            src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg"
-            alt="Made with pollinations.ai"
-          >
-        </a>
-        ```
-
-        ---
-
-        ### App details
+        Automated pre-review → maintainer review → community catalog.
 
   - type: input
     id: app-name
@@ -143,3 +113,30 @@ body:
       label: Quest
       description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its reward.
       placeholder: "#15600"
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Credit Pollinations
+
+        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/123ed07456106a4f752c0a22c584e8cadd2db6a8/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+
+        - **With a repository:** add the badge to your README.
+        - **Without a repository:** show the badge or a visible [pollinations.ai](https://pollinations.ai) link on the app page.
+
+        **README — copy this Markdown:**
+
+        ```markdown
+        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+        ```
+
+        **App page — copy this HTML:**
+
+        ```html
+        <a href="https://pollinations.ai/?ref=badge">
+          <img
+            src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg"
+            alt="Made with pollinations.ai"
+          >
+        </a>
+        ```

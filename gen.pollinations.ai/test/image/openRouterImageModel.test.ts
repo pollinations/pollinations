@@ -1355,6 +1355,26 @@ describe("OpenRouter Recraft vector", () => {
         });
     });
 
+    it("maps a 3:2 size to a ratio Recraft accepts", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockRecraftResponse(requests);
+
+        // Recraft rejects 3:2, the closest generic ratio to this size.
+        await callOpenRouterRecraftVectorAPI("edit prompt", {
+            ...baseParams,
+            model: "recraft/recraft-v4.1-vector",
+            width: 1536,
+            height: 1024,
+            image: ["https://example.com/input.png"],
+        });
+
+        expect(requests[0].aspect_ratio).toBe("4:3");
+    });
+
     it.each([
         null,
         "image/png",

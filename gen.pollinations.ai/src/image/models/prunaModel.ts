@@ -314,12 +314,24 @@ async function generatePrunaVideo(
         // ignored by the upstream in this mode.
         input.image = await toDataUri(images[0]);
     } else {
-        // Text-to-video: pick the closest supported aspect ratio.
-        input.aspect_ratio = closestRatioLogSpace(
-            safeParams.width || 1024,
-            safeParams.height || 1024,
-            PVIDEO_ASPECT_RATIOS,
-        );
+        // Text-to-video: the requested aspect ratio, else the closest
+        // supported one to width/height.
+        const requested = safeParams.aspectRatio;
+        if (
+            requested &&
+            !(PVIDEO_ASPECT_RATIOS as readonly string[]).includes(requested)
+        ) {
+            throw UpstreamError.fromProvider(400, {
+                message: `aspectRatio "${requested}" is not supported by p-video. Supported: ${PVIDEO_ASPECT_RATIOS.join(", ")}.`,
+            });
+        }
+        input.aspect_ratio =
+            (requested as PVideoAspectRatio | undefined) ??
+            closestRatioLogSpace(
+                safeParams.width || 1024,
+                safeParams.height || 1024,
+                PVIDEO_ASPECT_RATIOS,
+            );
     }
 
     if (safeParams.fps) input.fps = safeParams.fps >= 36 ? 48 : 24;

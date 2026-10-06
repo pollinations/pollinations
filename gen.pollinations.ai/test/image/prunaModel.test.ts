@@ -229,6 +229,33 @@ describe("prunaModel - p-video", () => {
         expect(result.trackingData?.usage?.completionVideoSeconds).toBe(5);
     });
 
+    it("uses the requested aspect ratio over width/height", async () => {
+        const requests: ProviderRequest[] = [];
+        mockPrunaFetch(requests);
+
+        await callPrunaVideoAPI("a paper boat", {
+            ...baseParams,
+            width: 1024,
+            height: 1024,
+            aspectRatio: "9:16",
+        });
+
+        expect(inputOf(requests[0]).aspect_ratio).toBe("9:16");
+    });
+
+    it("rejects an aspect ratio p-video does not support (400)", async () => {
+        const requests: ProviderRequest[] = [];
+        mockPrunaFetch(requests);
+
+        await expect(
+            callPrunaVideoAPI("a paper boat", {
+                ...baseParams,
+                aspectRatio: "21:9",
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(requests).toHaveLength(0);
+    });
+
     it("uses the input image (data URI) for image-to-video", async () => {
         const requests: ProviderRequest[] = [];
         mockPrunaFetch(requests);

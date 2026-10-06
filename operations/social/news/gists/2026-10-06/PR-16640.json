@@ -1,0 +1,34 @@
+{
+  "pr_number": 16640,
+  "title": "feat: add Grok Imagine Video 1.5 Lite (xAI direct, OpenRouter fallback)",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16640",
+  "merged_at": "2026-10-06T20:22:16Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #16646\n\n- Adds `x-ai/grok-imagine-video-1.5-lite`, xAI's faster, cheaper distilled Video 1.5 (released 2026-10-01): no aliases, paid-only, `priceMultiplier` 1, text or start-image input, 1-15 s, 480p / 720p (default) / 1080p. Video only: audio output is not advertised because neither xAI nor OpenRouter documents it for Lite.\n- Primary route is xAI's direct video API (`grok-imagine-video-1.5-lite`, existing `XAI_API_KEY`). New `callXaiVideoAPI` submits to `POST /v1/videos/generations`, polls `GET /v1/videos/{id}`, downloads the temporary URL, and bills the duration xAI reports. An image-to-video request omits `aspect_ratio` (xAI would stretch the frame). A video xAI filters by moderation is rejected as `content_policy_violation`.\n- Fallback `x-ai/grok-imagine-video-1.5-lite:openrouter` reuses the OpenRouter Grok handler at the same rates plus the 5.5% credit fee.\n- Cost, per [docs.x.ai](https://docs.x.ai/developers/models) (OpenRouter lists the same SKUs): $0.02 / $0.03 / $0.14 per second at 480p / 720p / 1080p, plus $0.01 per start-frame image.\n\n## Verification\n\n- Local Cloudflare Workers: 82 focused handler, fallback, registry and frame-validation tests pass; `npm run typecheck` passes.\n- Real xAI and OpenRouter direct probes pass. Authenticated local Gen passes text-to-video at 480p/720p/1080p on both primary and forced fallback, plus start-frame input at 480p and `/v1/images/generations` MP4 output. Forced failure was injected only in untracked build output, then restored.\n- Disconnect/rejoin and completed-cache replay pass on primary and fallback. Ten generated clips produce ten billed staging events; the 0.91 Pollen total matches the local wallet debit. Fallback costs include 5.5%, while public prices stay unchanged. No missing-conversion warnings.\n- Both catalogs expose the canonical model and hide the fallback. No paid balance returns 402; zero duration, unsupported resolution and direct fallback selection return 400.\n- Observed behavior: the shared Gro",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A little more motion",
+    "blurb": "Grok Imagine Video 1.5 Lite joins the video garden. Give it a prompt or a starting image, and it grows a clip up to 15 seconds long.",
+    "summary": "Adds paid-only `x-ai/grok-imagine-video-1.5-lite` for text-to-video and start-image-to-video clips of 1–15 seconds at 480p, 720p, or 1080p, routed through xAI directly with an OpenRouter fallback.",
+    "impact": "Developers get a video-only model with a 720p default; pricing is $0.02, $0.03, or $0.14 per second by resolution, plus $0.01 for a start image and a 5.5% credit fee on fallback requests.",
+    "keywords": [
+      "video",
+      "Grok Imagine",
+      "xAI",
+      "OpenRouter",
+      "image-to-video",
+      "model registry"
+    ],
+    "visual_concept": "Depict the xAI Grok Imagine Video 1.5 Lite model as a cozy filmstrip growing from a single picture frame into several moving frames. Polli, wearing a tiny director's beret, guides the frames beside a CRT monitor robot; lime-green code-plants and flowers connect the video-generation theme to the pollinations garden.",
+    "image_prompt": "In a cozy pixel art garden studio, a picture frame sprouts into a short filmstrip beside a helpful CRT monitor robot with square pixel eyes, while lime green (#ecf874) code-plants and flowers glow against a warm cream and soft lavender-to-mint pastel background. Polli wears a tiny director's beret and gently guides the frames: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art, never realistic—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16640.jpg",
+    "prompt": "In a cozy pixel art garden studio, a picture frame sprouts into a short filmstrip beside a helpful CRT monitor robot with square pixel eyes, while lime green (#ecf874) code-plants and flowers glow against a warm cream and soft lavender-to-mint pastel background. Polli wears a tiny director's beret and gently guides the frames: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art, never realistic—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-06T20:23:20.759225+00:00"
+}

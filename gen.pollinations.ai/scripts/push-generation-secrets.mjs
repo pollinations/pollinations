@@ -126,7 +126,6 @@ try {
     execFileSync(
         process.execPath,
         [
-            // Match deploy scripts; the test pool's workspace-local CLI is older.
             fileURLToPath(
                 new URL(
                     "../../node_modules/wrangler/bin/wrangler.js",

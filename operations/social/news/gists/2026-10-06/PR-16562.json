@@ -1,0 +1,36 @@
+{
+  "pr_number": 16562,
+  "title": "fix: require a balance before paid MCP tool calls",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16562",
+  "merged_at": "2026-10-06T08:24:37Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "Paid MCP tools (FFmpeg, Exa, Connectors, Computer) bill from their usage receipt after they run. The route never checked the wallet first, so an empty wallet could keep calling them and go into debt.\n\n- Adds a balance check before `tools/call` on receipt-billed servers: a positive balance in either bucket, and a key budget that isn't spent. Refusals return 402 `INSUFFICIENT_BALANCE` or `KEY_BUDGET_EXHAUSTED`.\n- `initialize` and `tools/list` stay free.\n- Moves the sandbox preflight from the E2B route to `utils/generation-access.ts` as `requireFunds`, so both routes share it.\n- Documents the check in the MCP billing docs.\n\n**Impact** (production, last 30 days): 87 of 260 MCP tool users have an empty wallet now, and 488 of 5,608 tool calls (0.31 Pollen) came from them. These are current balances, so the number is an upper bound.\n\nFound by @ElliotEtag on #16462, which adds the Quest Pollen only rule on top.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01EiESgQiwYbspATwyFa9EJt\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Check the wallet, then the toolbox",
+    "blurb": "The paid MCP toolbox gets a wallet check before it starts work. Looking through the tools stays free.",
+    "summary": "Paid FFmpeg, Exa, Connectors, and Computer MCP tools require a positive balance in either wallet bucket and an unspent key budget before tools/call; initialize and tools/list remain free.",
+    "impact": "Calls without funds or remaining key budget receive a 402 with INSUFFICIENT_BALANCE or KEY_BUDGET_EXHAUSTED, keeping paid tool usage within available funds.",
+    "keywords": [
+      "MCP",
+      "tool billing",
+      "wallet balance",
+      "key budget",
+      "FFmpeg",
+      "Exa"
+    ],
+    "visual_concept": "Depict paid MCP tools as a friendly toolbox beside a wallet with two lime-green credit compartments. Polli, wearing a tiny tool belt, checks the wallet before opening the toolbox; a nearby CRT robot displays a freely browsable tool list. Add small code-plants around the workbench.",
+    "image_prompt": "In a cozy pixel art garden workshop, Polli checks a two-compartment wallet glowing lime green (#ecf874) before opening a toolbox of video, search, connector, and computer tools, while a friendly CRT robot shows a tool list beside sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny tool belt, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16562.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli checks a two-compartment wallet glowing lime green (#ecf874) before opening a toolbox of video, search, connector, and computer tools, while a friendly CRT robot shows a tool list beside sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny tool belt, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-06T08:25:41.095322+00:00"
+}

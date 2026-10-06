@@ -2105,6 +2105,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
+  "moonshotai/kimi-k3:deepinfra": {
+    "cost": {
+      "completionTextTokens": 0.00001425,
+      "promptCachedTokens": 0.000000285,
+      "promptTextTokens": 0.00000285,
+    },
+    "price": {
+      "completionTextTokens": 0.00001425,
+      "promptCachedTokens": 0.000000285,
+      "promptTextTokens": 0.00000285,
+    },
+  },
   "nvidia/asset-harvester": {
     "cost": {
       "completionImageTokens": 0.07,

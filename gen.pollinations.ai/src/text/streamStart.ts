@@ -20,7 +20,7 @@ type StreamEvent = StreamError & {
     usage?: unknown;
 };
 
-/** Keep startup errors inside the fallback attempt; replay accepted bytes unchanged. */
+/** Catch startup errors for at most two seconds, then replay accepted bytes unchanged. */
 export async function acceptStreamStart(
     response: Response,
     requestUrl: URL,
@@ -37,19 +37,13 @@ export async function acceptStreamStart(
     let accepted = false;
     let bytes = 0;
     const fail = (details: unknown, message: string): never => {
-        const error = (
-            details as {
-                error?: { type?: string; status?: number; code?: unknown };
-            }
-        )?.error;
+        const error = (details as { error?: StreamError })?.error;
         const status =
-            error?.type === "invalid_request_error"
-                ? 400
-                : typeof error?.status === "number"
-                  ? error.status
-                  : typeof error?.code === "number"
-                    ? error.code
-                    : 502;
+            typeof error?.status === "number"
+                ? error.status
+                : typeof error?.code === "number"
+                  ? error.code
+                  : 502;
         throw new UpstreamError(
             apiErrorStatus(
                 details,
@@ -75,17 +69,10 @@ export async function acceptStreamStart(
             try {
                 value = JSON.parse(event.data);
             } catch {
-                fail(
-                    { message: "Malformed provider SSE event" },
-                    "Malformed provider SSE event",
-                );
+                // Compatible providers use non-JSON data as keepalives.
+                return;
             }
-            if (!value || typeof value !== "object") {
-                fail(
-                    { message: "Invalid provider SSE event" },
-                    "Invalid provider SSE event",
-                );
-            }
+            if (!value || typeof value !== "object") return;
             const data = value as StreamEvent;
             const type = data.type ?? event.event;
             const error =
@@ -147,9 +134,18 @@ export async function acceptStreamStart(
             if (data.usage) accepted = true;
         },
     });
+    let pendingRead: ReturnType<typeof reader.read> | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<undefined>((resolve) => {
+        timer = setTimeout(() => resolve(undefined), 2000);
+    });
     try {
         while (!accepted) {
-            const { done, value } = await reader.read();
+            pendingRead = reader.read();
+            const result = await Promise.race([pendingRead, timeout]);
+            if (!result) break;
+            pendingRead = undefined;
+            const { done, value } = result;
             if (done) {
                 parser.feed(`${decoder.decode()}\n\n`);
                 if (!accepted)
@@ -170,6 +166,8 @@ export async function acceptStreamStart(
         await reader.cancel().catch(() => {});
         reader.releaseLock();
         throw error;
+    } finally {
+        clearTimeout(timer);
     }
     return new ReadableStream({
         start(controller) {
@@ -177,7 +175,11 @@ export async function acceptStreamStart(
         },
         async pull(controller) {
             try {
-                const { done, value } = await reader.read();
+                // A timeout hands off the existing pending read too; starting
+                // another read here would drop the first post-timeout chunk.
+                const read = pendingRead ?? reader.read();
+                pendingRead = undefined;
+                const { done, value } = await read;
                 if (done) {
                     controller.close();
                     reader.releaseLock();

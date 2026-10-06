@@ -1577,7 +1577,7 @@ test("Chat-over-Responses stream without usage fails closed and remains unbilled
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });
 
-test("Chat-over-Responses stream failure is tracked as an upstream error and remains unbilled", async ({
+test("Chat-over-Responses startup failure returns 502 and remains unbilled", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird", "responsesDirect");
@@ -1602,10 +1602,14 @@ test("Chat-over-Responses stream failure is tracked as an upstream error and rem
         }),
     });
 
-    expect(response.status).toBe(200);
-    const stream = await response.text();
-    expect(stream).toContain('"message":"provider failed"');
-    expect(stream).not.toContain("[DONE]");
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            code: "BAD_GATEWAY",
+            message: "provider failed",
+            details: { upstreamStatus: 200 },
+        },
+    });
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -1615,7 +1619,7 @@ test("Chat-over-Responses stream failure is tracked as an upstream error and rem
         modelUsed: "openai/gpt-5.6-luna",
         isBilledUsage: false,
         totalPrice: 0,
-        errorResponseCode: "upstream_error",
+        errorResponseCode: "BAD_GATEWAY",
         errorMessage: "provider failed",
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
@@ -1769,7 +1773,9 @@ test("direct Responses SSE is unchanged and terminal usage bills once", async ({
     });
 });
 
-test("direct Responses stream failure remains unbilled", async ({ mocks }) => {
+test("direct Responses startup failure returns 502 and remains unbilled", async ({
+    mocks,
+}) => {
     await mocks.enable("tinybird", "responsesDirect");
     mocks.responsesDirect.state.failStream = true;
     const caller = await createTestApiKey({
@@ -1792,10 +1798,14 @@ test("direct Responses stream failure remains unbilled", async ({ mocks }) => {
         }),
     });
 
-    expect(response.status).toBe(200);
-    const stream = await response.text();
-    expect(stream).toContain('"type":"response.failed"');
-    expect(stream).not.toContain('"code":"usage_missing"');
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            code: "BAD_GATEWAY",
+            message: "provider failed",
+            details: { upstreamStatus: 200 },
+        },
+    });
     await wait();
 
     expect(mocks.tinybird.state.events).toHaveLength(1);
@@ -1805,7 +1815,8 @@ test("direct Responses stream failure remains unbilled", async ({ mocks }) => {
         modelUsed: "qwen/qwen3.7-plus",
         isBilledUsage: false,
         totalPrice: 0,
-        errorResponseCode: "upstream_finish_reason_error",
+        errorResponseCode: "BAD_GATEWAY",
+        errorMessage: "provider failed",
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });

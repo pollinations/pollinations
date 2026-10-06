@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";
 import { acceptStreamStart } from "../../src/text/streamStart.ts";
 
@@ -9,6 +9,8 @@ const error =
 const created =
     'event: response.created\ndata: {"type":"response.created","response":{"id":"failed-id"}}\n\n';
 const output = 'data: {"choices":[{"delta":{"content":"🌼"}}]}\n\n';
+
+afterEach(() => vi.useRealTimers());
 
 function source(text: string, split = 1, cancel = () => {}) {
     const bytes = encoder.encode(text);
@@ -26,6 +28,120 @@ function source(text: string, split = 1, cancel = () => {}) {
 }
 
 describe("stream startup fallback", () => {
+    it.each([
+        "",
+        ': OPENROUTER PROCESSING\n\ndata: keepalive\n\ndata: {"choices":[{"delta":{"role":"assistant"}}]}\n\n',
+    ])("hands off a slow stream after two seconds and keeps its pending read (%j)", async (prefix) => {
+        vi.useFakeTimers();
+        let controller!: ReadableStreamDefaultController<
+            Uint8Array<ArrayBuffer>
+        >;
+        let cancelled = false;
+        const response = new Response(
+            new ReadableStream({
+                start(c) {
+                    controller = c;
+                    if (prefix) c.enqueue(encoder.encode(prefix));
+                },
+                cancel() {
+                    cancelled = true;
+                },
+            }),
+        );
+        let handedOff = false;
+        const started = acceptStreamStart(response, url, "chat").then(
+            (body) => {
+                handedOff = true;
+                return body;
+            },
+        );
+        await vi.advanceTimersByTimeAsync(1999);
+        expect(handedOff).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        const body = new Response(await started).text();
+        expect(handedOff).toBe(true);
+        expect(cancelled).toBe(false);
+        controller.enqueue(encoder.encode(output + error));
+        controller.close();
+        expect(await body).toBe(prefix + output + error);
+    });
+
+    it("still cancels the upstream pending read after the startup window expires", async () => {
+        vi.useFakeTimers();
+        let cancelled = false;
+        const response = new Response(
+            new ReadableStream({
+                cancel() {
+                    cancelled = true;
+                },
+            }),
+        );
+        const started = acceptStreamStart(response, url, "responses");
+        await vi.advanceTimersByTimeAsync(2000);
+        await (await started).cancel();
+        expect(cancelled).toBe(true);
+    });
+
+    it("preserves non-JSON keepalives without hiding a subsequent startup error", async () => {
+        const prefix =
+            ': OPENROUTER PROCESSING\n\ndata: ping\n\ndata: "keepalive"\n\n';
+        expect(
+            await new Response(
+                await acceptStreamStart(source(prefix + output), url, "chat"),
+            ).text(),
+        ).toBe(prefix + output);
+        await expect(
+            acceptStreamStart(source(prefix + error), url, "chat"),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it.each([
+        "error",
+        "response.failed",
+    ])("does not retry Responses input errors from %s", async (type) => {
+        for (const code of ["context_length_exceeded", "invalid_prompt"]) {
+            const attempts: Parameters<typeof withModelFallback>[2] = [];
+            const error = { code, message: "Input rejected" };
+            const event =
+                type === "error"
+                    ? { type, ...error }
+                    : { type, response: { error } };
+            await expect(
+                withModelFallback(
+                    [{ id: "primary" }, { id: "fallback" }],
+                    async () =>
+                        acceptStreamStart(
+                            source(
+                                `event: ${type}\ndata: ${JSON.stringify(event)}\n\n`,
+                            ),
+                            url,
+                            "responses",
+                        ),
+                    attempts,
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(attempts).toHaveLength(1);
+        }
+    });
+
+    it("rejects an initial content filter without retrying another provider", async () => {
+        const attempts: Parameters<typeof withModelFallback>[2] = [];
+        await expect(
+            withModelFallback(
+                [{ id: "primary" }, { id: "fallback" }],
+                async () =>
+                    acceptStreamStart(
+                        source(
+                            'data: {"choices":[{"delta":{},"finish_reason":"content_filter"}]}\n\n',
+                        ),
+                        url,
+                        "chat",
+                    ),
+                attempts,
+            ),
+        ).rejects.toMatchObject({ status: 422 });
+        expect(attempts).toHaveLength(1);
+    });
     it("records exhausted alternatives when both streams fail before output", async () => {
         const attempts: Parameters<typeof withModelFallback>[2] = [];
         await expect(

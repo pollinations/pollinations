@@ -117,12 +117,13 @@ function isGatewayRoutingFailure(failure: UpstreamFailure): boolean {
     return false;
 }
 
-function upstreamStatus(failure: UpstreamFailure): number | undefined {
-    const upstream = failure.upstreamStatus;
+export function upstreamStatus(error: unknown): number | undefined {
+    const failure = error as UpstreamFailure | null | undefined;
+    const upstream = failure?.upstreamStatus;
     if (typeof upstream === "number" && (upstream < 200 || upstream >= 300)) {
         return upstream;
     }
-    return typeof failure.status === "number"
+    return typeof failure?.status === "number"
         ? failure.status
         : typeof upstream === "number"
           ? upstream

@@ -106,6 +106,7 @@ import {
     type FallbackAttempt,
     type FallbackCandidate,
     fallbackCandidates,
+    upstreamStatus,
 } from "../fallback.ts";
 
 export type ModelUsage = {
@@ -1660,16 +1661,5 @@ export function collectErrorData(status: number, error?: Error): ErrorData {
  * every request is rate limited.
  */
 function failedAttemptStatus(error: unknown): number {
-    const failure = error as
-        | { status?: unknown; upstreamStatus?: unknown }
-        | null
-        | undefined;
-    // HTTP 200 can carry a terminal SSE error. Keep it in diagnostics, but
-    // use the client's failure classification for the attempted generation.
-    const upstream = failure?.upstreamStatus;
-    const status =
-        typeof upstream === "number" && (upstream < 200 || upstream >= 300)
-            ? upstream
-            : failure?.status;
-    return typeof status === "number" ? remapUpstreamStatus(status) : 500;
+    return remapUpstreamStatus(upstreamStatus(error) ?? 500);
 }

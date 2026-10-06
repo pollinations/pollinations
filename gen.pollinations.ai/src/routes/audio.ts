@@ -1,13 +1,14 @@
 import type { Logger } from "@logtape/logtape";
-import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import {
+    collectUpstreamHeaders,
+    ensureUpstreamOk,
+    UpstreamError,
+} from "@shared/error.ts";
 import {
     AUDIO_VOICES,
     type AudioModelName,
-    CSM_VOICES,
     GEMINI_TTS_VOICES,
-    KOKORO_VOICES,
     resolveElevenLabsVoiceId,
-    XAI_TTS_VOICES,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
@@ -381,6 +382,26 @@ const ELEVENLABS_TTS_VOICE_SETTINGS = {
     use_speaker_boost: true,
 } as const;
 
+// An unknown caller-supplied voice is a client error, not a missing upstream route.
+async function ensureElevenLabsVoiceOk(response: Response, endpoint: string) {
+    if (response.status === 404) {
+        const body = await response
+            .clone()
+            .json<{ detail?: { status?: string; message?: string } }>()
+            .catch(() => null);
+        if (body?.detail?.status === "voice_not_found") {
+            throw new UpstreamError(400, {
+                message: body.detail.message,
+                upstreamStatus: response.status,
+                requestUrl: new URL(endpoint),
+                responseBody: await response.text(),
+                upstreamHeaders: collectUpstreamHeaders(response.headers),
+            });
+        }
+    }
+    return ensureUpstreamOk(response, endpoint);
+}
+
 type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
 
 export async function generateElevenLabsSpeech(opts: {
@@ -412,21 +433,7 @@ export async function generateElevenLabsSpeech(opts: {
         });
     }
 
-    if (characters > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${characters} characters. Maximum is 10000.`,
-        });
-    }
-
     const voiceId = resolveElevenLabsVoiceId(voice);
-
-    // Basic sanity check (custom voice IDs are long strings/UUIDs)
-    if (!voiceId || voiceId.length < 8) {
-        log.warn("Invalid voice requested: {voice}", { voice });
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
 
@@ -456,7 +463,7 @@ export async function generateElevenLabsSpeech(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
+    const response = await ensureElevenLabsVoiceOk(rawResponse, elevenLabsUrl);
 
     const usageHeaders = {
         ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
@@ -489,18 +496,8 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
             message: "TTS service is not configured (missing API key)",
         });
     }
-    if (characters > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${characters} characters. Maximum is 10000.`,
-        });
-    }
 
     const voiceId = resolveElevenLabsVoiceId(voice);
-    if (!voiceId || voiceId.length < 8) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
     const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=${outputFormat}`;
@@ -522,7 +519,7 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -568,11 +565,6 @@ export async function generateElevenLabsDialogue(opts: {
         (total, input) => total + input.text.length,
         0,
     );
-    if (characterCount > 2000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Dialogue input too long: ${characterCount} characters. Maximum is 2000.`,
-        });
-    }
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Dialogue service is not configured (missing API key)",
@@ -584,17 +576,6 @@ export async function generateElevenLabsDialogue(opts: {
         voice_id: resolveElevenLabsVoiceId(input.voice),
     }));
     const uniqueVoices = new Set(resolvedInputs.map((input) => input.voice_id));
-    if (uniqueVoices.size > 10) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: "Dialogue supports at most 10 unique voices per request.",
-        });
-    }
-    if (resolvedInputs.some((input) => input.voice_id.length < 8)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "Each dialogue voice must be a preset name or valid ElevenLabs voice ID.",
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
     const endpoint = `https://api.elevenlabs.io/v1/text-to-dialogue?output_format=${outputFormat}`;
@@ -614,7 +595,7 @@ export async function generateElevenLabsDialogue(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -713,11 +694,6 @@ export async function changeVoiceWithElevenLabs(opts: {
     }
 
     const voiceId = resolveElevenLabsVoiceId(voice);
-    if (!voiceId || voiceId.length < 8) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
     const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
@@ -734,7 +710,7 @@ export async function changeVoiceWithElevenLabs(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -1722,12 +1698,6 @@ export async function generateMusic(
         });
     }
 
-    if (prompt.length > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
-        });
-    }
-
     const modelId = ELEVENLABS_MUSIC_MODEL_IDS[modelName];
     let uploadedSongId: string | undefined;
     let uploadedReferenceDuration: number | undefined;
@@ -1898,11 +1868,6 @@ export async function generateSoundEffect(opts: {
             message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
         });
     }
-    if (prompt.length > 1000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 1000.`,
-        });
-    }
 
     const modelId = "eleven_text_to_sound_v2";
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
@@ -1953,22 +1918,18 @@ const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
 const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
-const XAI_TTS_FORMATS = ["mp3", "wav", "pcm"] as const;
 
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
-const DEEPINFRA_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
 const DEEPINFRA_TTS_CONFIGS = {
     "sesame/csm-1b": {
         modelId: "sesame/csm-1b",
-        voices: CSM_VOICES,
         defaultVoice: "conversational_a",
         maxCharacters: 200,
     },
     "hexgrad/kokoro-82m": {
         modelId: "hexgrad/Kokoro-82M",
-        voices: KOKORO_VOICES,
         defaultVoice: "af_alloy",
         maxCharacters: 10_000,
     },
@@ -1977,7 +1938,6 @@ const DEEPINFRA_TTS_CONFIGS = {
         AudioModelName,
         {
             modelId: string;
-            voices: readonly string[];
             defaultVoice: string;
             maxCharacters: number;
         }
@@ -2355,7 +2315,6 @@ export async function generateQwenTts(opts: {
 
 const OPENROUTER_SPEECH_ENDPOINT = "https://openrouter.ai/api/v1/audio/speech";
 const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
-const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
 
 export async function generateOpenRouterFishSpeech(opts: {
     text: string;
@@ -2369,16 +2328,6 @@ export async function generateOpenRouterFishSpeech(opts: {
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "OpenRouter is not configured (missing API key)",
-        });
-    }
-
-    if (
-        !OPENROUTER_FISH_TTS_FORMATS.includes(
-            responseFormat as (typeof OPENROUTER_FISH_TTS_FORMATS)[number],
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for fish-audio/s2.1-pro: ${responseFormat}. Supported formats: ${OPENROUTER_FISH_TTS_FORMATS.join(", ")}.`,
         });
     }
 
@@ -2813,21 +2762,6 @@ export async function generateXaiSpeech(opts: {
     }
 
     const voice = opts.voice === "alloy" ? "eve" : opts.voice;
-    if (!(XAI_TTS_VOICES as readonly string[]).includes(voice)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for x-ai/grok-tts: ${opts.voice}. Supported voices: ${XAI_TTS_VOICES.join(", ")}.`,
-        });
-    }
-
-    if (
-        !XAI_TTS_FORMATS.includes(
-            responseFormat as (typeof XAI_TTS_FORMATS)[number],
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for x-ai/grok-tts: ${responseFormat}. Supported formats: ${XAI_TTS_FORMATS.join(", ")}.`,
-        });
-    }
 
     log.info("xAI TTS request: voice={voice}, format={format}, chars={chars}", {
         voice,
@@ -2894,11 +2828,6 @@ export async function generateAzureSpeech(opts: {
         });
     }
     const characters = [...text].length;
-    if (characters > 4096) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: "Azure TTS input must be 4096 characters or fewer",
-        });
-    }
     const deployment = modelName === "openai/tts-1" ? "tts" : "tts-hd";
     const endpoint = `https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/${deployment}/audio/speech?api-version=2025-04-01-preview`;
     const response = await ensureUpstreamOk(
@@ -2948,21 +2877,6 @@ export async function generateDeepInfraSpeech(opts: {
     }
 
     const voice = opts.voice === "alloy" ? config.defaultVoice : opts.voice;
-    if (!(config.voices as readonly string[]).includes(voice)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${config.voices.join(", ")}.`,
-        });
-    }
-
-    if (
-        !DEEPINFRA_AUDIO_FORMATS.includes(
-            responseFormat as (typeof DEEPINFRA_AUDIO_FORMATS)[number],
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: ${DEEPINFRA_AUDIO_FORMATS.join(", ")}.`,
-        });
-    }
 
     log.info(
         "DeepInfra TTS request: model={model}, voice={voice}, format={format}, chars={chars}",
@@ -3058,12 +2972,6 @@ export async function generateStableAudio3Medium(opts: {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Stable Audio 3 Medium is not configured (missing FAL_KEY)",
-        });
-    }
-
-    if (prompt.length > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
         });
     }
 
@@ -3180,19 +3088,6 @@ export async function generateStableAudio3Large(opts: {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Stable Audio 3 Large is not configured (missing STABILITY_API_KEY)",
-        });
-    }
-
-    if (prompt.length > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
-        });
-    }
-
-    if (!["mp3", "wav"].includes(responseFormat)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "stability-ai/stable-audio-3 supports response_format values: mp3, wav",
         });
     }
 

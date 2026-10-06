@@ -15,10 +15,6 @@ import type { TrackingData } from "./utils/trackingHeaders.ts";
 
 // Import GPT Image logging utilities
 import { logGptImageError, logGptImagePrompt } from "./utils/gptImageLogger.ts";
-// Import user stats tracker for violation logging
-import { userStatsTracker } from "./utils/userStatsTracker.ts";
-// Import violation ratio checker
-import { checkViolationRatio, recordGptImageRequest } from "./utils/violationRatioChecker.ts";
 // Import Vertex AI Gemini image generator
 import { callVertexAIGemini } from "./vertexAIImageGenerator.js";
 import { writeExifMetadata } from "./writeExifMetadata.ts";

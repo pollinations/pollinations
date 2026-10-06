@@ -32,10 +32,6 @@ if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
   exit 1
 fi
 
-if [ -z "$GA_MEASUREMENT_ID" ] || [ -z "$GA_API_SECRET" ]; then
-  echo -e "${YELLOW}Warning: GA_MEASUREMENT_ID or GA_API_SECRET not set. Analytics may not work correctly.${NC}"
-fi
-
 # Create R2 bucket if it doesn't exist
 BUCKET_NAME="pollinations-images"
 echo -e "${GREEN}Ensuring R2 bucket exists: ${BUCKET_NAME}...${NC}"
@@ -75,9 +71,7 @@ if [ ! -f ".dev.vars" ]; then
   echo -e "${BLUE}Creating .dev.vars file for local development...${NC}"
   cat > .dev.vars << EOF
 # Generated from .env on $(date)
-GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID}
-GA_API_SECRET=${GA_API_SECRET}
-TINYBIRD_API_KEY=${TINYBIRD_API_KEY}
+# No environment variables currently needed for local development
 EOF
   echo -e "${GREEN}.dev.vars file created for local development.${NC}"
 fi

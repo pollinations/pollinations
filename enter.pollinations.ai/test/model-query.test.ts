@@ -211,6 +211,22 @@ describe("model query filter tokens", () => {
         ).toBe("paid ");
     });
 
+    it("keeps typed words in draft suggestion values", () => {
+        expect(
+            getModelQueryDraftSuggestionValue(
+                "publisher:openai ",
+                "gpt o",
+                "o",
+            ),
+        ).toBe("gpt openai ");
+        expect(
+            getModelQueryDraftSuggestionValue("publisher:openai ", "gpt", ""),
+        ).toBe("gpt openai ");
+        expect(getModelQueryDraftSuggestionValue("publisher:openai ")).toBe(
+            "openai ",
+        );
+    });
+
     it("treats filters unsupported by the current tab as plain text", () => {
         const agentKeys = ["publisher", "id", "capability"] as const;
         const query = "source:community access:paid capability:agent";

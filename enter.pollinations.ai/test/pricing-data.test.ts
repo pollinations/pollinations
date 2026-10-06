@@ -1257,7 +1257,6 @@ const OPENROUTER_QUEST_POLLEN_MODELS = new Set([
     "typesafe/jev-1.13",
     "jaredpalmer/kev-4b",
     "respan/span-01-lite",
-    "inclusionai/ling-3.1-flash",
 ]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {

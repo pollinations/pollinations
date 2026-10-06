@@ -24,6 +24,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "inclusionai/ling-3.1-flash": {
+        "inclusionai/ling-3.1-flash:openrouter:novita": {
+            provider: "openrouter",
+            // Free during the launch promotion, matching the public quote.
+            cost: {
+                promptTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                completionTextTokens: perMillion(0),
+            },
+        },
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
             // Same Novita checkpoint through a separate gateway. Both routes

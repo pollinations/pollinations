@@ -5,9 +5,10 @@ inference purchased through OpenRouter or Vercel remains billed to those vendors
 
 ## Sources
 
-Official documentation reviewed 2026-10-06. Account access, collection and
-financial evidence still require live verification; documentation is not
-evidence of a balance, account identity or enabled model.
+Official documentation and the authenticated billing dashboard reviewed
+2026-10-06. Dashboard model rows expose token quantities, request counts,
+subtotal, voucher discount and total due. API access and collection still
+require verification; documentation is not evidence of an account balance.
 
 Use an existing authorized `NOVITA_API_KEY` with Bearer authentication. Load it
 directly from its secure location into the request process; never print it,
@@ -20,6 +21,9 @@ account, lifecycle and access target. Do not infer the account from another
 provider. For dashboard work enumerate every connected Chrome window and use
 the existing tab whose visible account and organization match; ask if ambiguous.
 Keep account-specific evidence and raw financial responses outside Git.
+The Team settings page exposes the billing team's owner UUID; Account settings
+shows the user's UUID. Verify which `userId` billing returns before assigning
+evidence, and never treat an API-key `ownerID` as the billing account ID.
 
 | Fact | Supported API and reference |
 | --- | --- |
@@ -34,6 +38,17 @@ Keep account-specific evidence and raw financial responses outside Git.
 All endpoints above use `https://api.novita.ai`. Prefer these supported APIs;
 use the authenticated [console](https://novita.ai/console) for missing evidence.
 
+Dashboard sources: [model billing](https://novita.ai/billing/details),
+[monthly bills](https://novita.ai/billing),
+[recharges](https://novita.ai/billing/transactions), and
+[voucher lots](https://novita.ai/billing/voucher). Billing records are generated
+hourly (storage daily); the monthly overview warns of a T-1 reporting delay.
+Monthly bills are issued at 10:00 UTC on the third day of the following month.
+Recheck a probe after its reporting window closes before calling it missing.
+The billing overview lists deduction priority as Coding Plan, voucher, account
+balance, then credit limit. Verify whether a plan applies to the exact product;
+do not interpret every token as cash-funded or infer cash burn from list prices.
+
 ## Collect and reconcile
 
 1. Save the balance response with its checked time. Monetary balance fields are
@@ -45,15 +60,39 @@ use the authenticated [console](https://novita.ai/console) for missing evidence.
 2. Query model usage with `cycleType=Day`, `productCategory=llm` and Unix-second
    `startTime`/`endTime`. Query API-key usage with `category=llm` instead.
    Its daily windows are at most 31 days; hourly windows at most seven days.
-   Verify boundary semantics from returned intervals, normalize ledger coverage
-   to end-exclusive UTC, and retain the original bounds. The current month is
-   partial. Keep non-LLM products separate and check all billed categories.
+   Neither usage endpoint paginates: split longer intervals, rather than
+   retrying pages. API-key billing supports data from 2026-01-01 onward.
+   Its returned `endTime` is the last included second; add one second for the
+   ledger's end-exclusive UTC bound and retain the original bounds. Verify the
+   model-usage endpoint independently. The current month is partial. Collect
+   `productCategory=summary` as a control total; never ingest it as additional
+   spend alongside detailed categories. `productName` filtering is fuzzy, so
+   verify exact returned product IDs/names. Keep non-LLM products separate.
 3. Retain product ID/name, key owner ID, request count, every non-zero token or
    cache quantity, discount and funding split. `amount`, `voucherAmount` and
    `payAmount` are in 1/10000 USD; `payAmountDisplay` is already USD. Unit prices
    also use `pricePrecision`; do not apply the amount conversion blindly to
    rates. Reconcile the reported cash/voucher split against total charges.
    Record usage as negative paid/credit under the verified canonical account.
+   `billNum0..5` in model-usage billing represent input, output, cache read,
+   five-minute cache write, reasoning and one-hour cache write quantities.
+   The API-key documentation inconsistently calls some `billNum` fields prices;
+   validate them against model-usage rows, response usage and dashboard exports
+   before treating them as token counts. The reasoning quantity is documented
+   as currently unsupported; do not infer a separate charge or add reasoning
+   tokens to output without exact-route evidence. Retain every other non-zero
+   `billNum`, multimodal or tiered field and resolve its unit before closing.
+   Model totals and API-key totals are alternative views of the same usage;
+   reconcile them without appending both. Free/promotion rows can have positive
+   tokens and requests with zero cost; preserve them as usage evidence.
+   Voucher deductions are credit-funded usage; they are not a cash top-up.
+   Check each voucher's eligible products, validity and remaining value.
+   Keep Model API and Agent Sandbox vouchers in separate lots with their product
+   restriction in `resource_name` and evidence. Sandbox-only grants must not
+   imply that Model API inference is funded. Verify the timezone of displayed
+   expiry dates before normalizing them. A dashboard label of account balance
+   does not by itself prove the money was purchased: retain recharge records
+   or grant evidence before deciding paid versus promotional funding.
 4. Query monthly bills with `startMonth`, `page` and `pageSize`; retain only the
    requested billing month and verify pagination/coverage. Download `invoiceUrl`
    when present. An empty URL is missing invoice evidence, not proof that no
@@ -62,7 +101,8 @@ use the authenticated [console](https://novita.ai/console) for missing evidence.
    `transactionTimeEnd`; paginate through `total`. Review successful recharges
    and refunds individually. Recharges are funding, never inference usage.
    Match supplier documents and bank payments without counting the same top-up
-   twice. Transaction amounts are in 1/10000 USD.
+   twice. A recharge's downloadable document proves funding; it does not close
+   the month's model-usage coverage. Transaction amounts are in 1/10000 USD.
 6. Add reviewed `modelLabels` only from exact billed lines and the Pollen ID used
    in that period. Keep missing mappings visible. Reconcile against Pollen rows
    whose serving provider is `novita`, including local/staging/manual usage

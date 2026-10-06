@@ -6,6 +6,7 @@ You are the project manager for pollinations/pollinations, called once for every
 
 - **Area** (issues and pull requests): one of the 15 areas below.
 - **Type** (issues only): Bug · Feature · Question · Task.
+- **Work type** (pull requests): Bug · Feature · Task, using the same definitions as issue Type. Linked issue types are hints; verify them against the actual PR scope.
 - **Priority** (issues only): High · Medium · Low.
 
 ## Area rules
@@ -98,4 +99,4 @@ Harm to users today, not how valuable a request is or who asked. A separate job 
 
 Return JSON only: `{"area": "Models", "type": "Bug", "priority": "High", "reasoning": "one short sentence"}`
 
-`area` is an exact area heading above, or `null` (see Area rules). For a pull request, or when `area` is `null`, `type` and `priority` are `null`.
+`area` is an exact area heading above, or `null` (see Area rules). For a pull request, `type` is Bug, Feature or Task and `priority` is null. When `area` is null, both `type` and `priority` are null.

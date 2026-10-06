@@ -1,3 +1,4 @@
+import { EMBEDDING_FALLBACKS } from "./embeddings-fallbacks";
 import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
@@ -113,14 +114,7 @@ const EMBEDDING_BASE_SERVICES = {
     },
 } as const satisfies Record<string, ModelDefinition>;
 
-export const EMBEDDING_SERVICES = mergeFallbacks(EMBEDDING_BASE_SERVICES, {
-    "qwen/qwen3-embedding-8b": {
-        "qwen/qwen3-embedding-8b:fireworks": {
-            provider: "fireworks",
-            cost: { promptTextTokens: perMillion(0.1) },
-        },
-    },
-    "cohere/embed-v4.0": {
-        "cohere/embed-v4.0:azure:sweden": { provider: "azure" },
-    },
-});
+export const EMBEDDING_SERVICES = mergeFallbacks(
+    EMBEDDING_BASE_SERVICES,
+    EMBEDDING_FALLBACKS,
+);

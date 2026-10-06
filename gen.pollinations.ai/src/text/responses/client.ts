@@ -1,6 +1,7 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
 import { findModelByName } from "../availableModels.js";
+import { acceptStreamStart } from "../streamStart.js";
 import type { ServiceError, TransformOptions } from "../types.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
 import { isPlainObject } from "../utils/objectCleaners.js";
@@ -169,6 +170,18 @@ export async function callDirectResponses(
         error.status = 502;
         error.requestUrl = requestUrl;
         throw error;
+    }
+    if (
+        request.stream &&
+        response.headers.get("content-type")?.includes("text/event-stream")
+    ) {
+        response = new Response(
+            await acceptStreamStart(response, requestUrl, "responses"),
+            {
+                status: response.status,
+                headers: response.headers,
+            },
+        );
     }
     return { response, requestUrl };
 }

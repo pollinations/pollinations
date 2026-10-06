@@ -1,6 +1,7 @@
 import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
 import { apiErrorStatus } from "./errors.ts";
+import { acceptStreamStart } from "./streamStart.js";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
@@ -267,7 +268,9 @@ export async function genericOpenAIClient(
                     requestUrl,
                 );
             }
-            const streamToReturn = ensureOpenAISseDone(response.body);
+            const streamToReturn = ensureOpenAISseDone(
+                await acceptStreamStart(response, requestUrl, "chat"),
+            );
             return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,

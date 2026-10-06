@@ -2724,6 +2724,117 @@ describe("tracking observability", () => {
     });
 
     it.each([
+        "/v1/chat/completions",
+        "/v1/responses",
+    ])("rescues an early Azure SSE error on %s and bills once", async (path) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+            allowedModels: ["openai/gpt-6-luna"],
+        });
+        const before = await getUserBalance(drizzle(env.DB), caller.userId);
+        const events: TinybirdEvent[] = [];
+        const upstreamHosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (
+                    url.hostname === "myceli-prod-eastus.openai.azure.com" ||
+                    url.hostname === "api.openai.com"
+                ) {
+                    upstreamHosts.push(url.hostname);
+                    const created =
+                        'event: response.created\ndata: {"type":"response.created","response":{"id":"resp_start"}}\n\n';
+                    const body =
+                        url.hostname === "myceli-prod-eastus.openai.azure.com"
+                            ? `${created}event: error\ndata: {"type":"error","code":"rate_limit_exceeded","message":"Azure token rate cap"}\n\n`
+                            : `${created}event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"rescued"}\n\nevent: response.completed\ndata: ${JSON.stringify({ type: "response.completed", response: { id: "resp_success", object: "response", model: "gpt-6-luna", status: "completed", output: [{ type: "message", id: "msg_success", role: "assistant", content: [{ type: "output_text", text: "rescued", annotations: [] }] }], usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 } } })}\n\n`;
+                    return new Response(body, {
+                        headers: { "Content-Type": "text/event-stream" },
+                    });
+                }
+                if (url.pathname === "/v0/events")
+                    events.push(
+                        ...(await request.text())
+                            .split("\n")
+                            .filter(Boolean)
+                            .map((line) => JSON.parse(line)),
+                    );
+                return Response.json({ data: [] });
+            },
+        );
+        const bindings = withInlineGenerationCoordinator({
+            ...env,
+            AZURE_MYCELI_PROD_API_KEY: "azure-test-key",
+            OPENAI_API_KEY: "openai-test-key",
+        });
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(`https://gen.pollinations.ai${path}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-6-luna",
+                    stream: true,
+                    safe: false,
+                    ...(path === "/v1/responses"
+                        ? { input: `startup rescue ${crypto.randomUUID()}` }
+                        : {
+                              messages: [
+                                  {
+                                      role: "user",
+                                      content: `startup rescue ${crypto.randomUUID()}`,
+                                  },
+                              ],
+                          }),
+                }),
+            }),
+            bindings,
+            ctx,
+        );
+        const body = await response.text();
+        await waitOnExecutionContext(ctx);
+        expect(response.status, body).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(
+            "openai/gpt-6-luna:openai",
+        );
+        expect(body).toContain("rescued");
+        expect(body).not.toContain("rate_limit_exceeded");
+        expect(upstreamHosts).toEqual([
+            "myceli-prod-eastus.openai.azure.com",
+            "api.openai.com",
+        ]);
+        const calls = events.filter(
+            (event) => event.eventType === "generate.text",
+        );
+        expect(calls).toHaveLength(2);
+        expect(calls[0]).toMatchObject({
+            isFinal: false,
+            responseStatus: 502,
+            isBilledUsage: false,
+            modelUsed: "openai/gpt-6-luna",
+        });
+        expect(calls[1]).toMatchObject({
+            isFinal: true,
+            responseStatus: 200,
+            fallbackUsed: true,
+            isBilledUsage: true,
+            modelUsed: "openai/gpt-6-luna:openai",
+            tokenCountPromptText: 10,
+            tokenCountCompletionText: 5,
+        });
+        const after = await getUserBalance(drizzle(env.DB), caller.userId);
+        expect(before.packBalance - after.packBalance).toBeCloseTo(
+            Number(calls[1].totalPrice),
+            9,
+        );
+        expect(after.tierBalance).toBe(before.tierBalance);
+    });
+
+    it.each([
         "valid",
         "missing",
         "malformed",

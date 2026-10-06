@@ -897,8 +897,9 @@ describe("Chat Completions over Responses", () => {
         expect(events.at(-1)).toBe("[DONE]");
     });
 
-    it("preserves a provider's top-level stream error and omits success markers", async () => {
+    it("preserves a provider's stream error after generation begins and omits success markers", async () => {
         mockStream([
+            'event: response.output_item.added\ndata: {"type":"response.output_item.added","item":{"type":"reasoning","id":"rs_started"}}\n\n',
             'event: error\ndata: {"type":"error","message":"Provider capacity exhausted","code":"rate_limit_exceeded","param":null,"sequence_number":3}\n\n',
         ]);
         const events = await streamEvents(
@@ -917,6 +918,25 @@ describe("Chat Completions over Responses", () => {
                 },
             },
         ]);
+    });
+
+    it("throws a startup rate-limit error before handing off the Chat stream", async () => {
+        mockStream([
+            'event: response.created\ndata: {"type":"response.created","response":{"id":"resp_failed"}}\n\n',
+            'event: error\ndata: {"type":"error","message":"Provider capacity exhausted","code":"rate_limit_exceeded"}\n\n',
+        ]);
+        await expect(
+            callChatViaResponses([{ role: "user", content: "Hi" }], {
+                model: "provider-model",
+                modelConfig,
+                stream: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 200,
+            requestUrl: new URL(ENDPOINT),
+            responseBody: expect.stringContaining("rate_limit_exceeded"),
+        });
     });
 
     it("fails closed when non-streaming usage is absent", async () => {

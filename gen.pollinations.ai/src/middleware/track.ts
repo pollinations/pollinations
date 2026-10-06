@@ -1664,6 +1664,12 @@ function failedAttemptStatus(error: unknown): number {
         | { status?: unknown; upstreamStatus?: unknown }
         | null
         | undefined;
-    const status = failure?.upstreamStatus ?? failure?.status;
+    // HTTP 200 can carry a terminal SSE error. Keep it in diagnostics, but
+    // use the client's failure classification for the attempted generation.
+    const upstream = failure?.upstreamStatus;
+    const status =
+        typeof upstream === "number" && (upstream < 200 || upstream >= 300)
+            ? upstream
+            : failure?.status;
     return typeof status === "number" ? remapUpstreamStatus(status) : 500;
 }

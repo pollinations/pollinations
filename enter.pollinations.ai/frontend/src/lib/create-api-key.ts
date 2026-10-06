@@ -6,6 +6,7 @@ type Permissions = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
+    questPollenOnly?: boolean;
 };
 
 type CreateKeyInput = {
@@ -44,6 +45,7 @@ export async function createKeyWithPermissions({
         allowedModels: permissions?.allowedModels,
         pollenBudget: permissions?.pollenBudget,
         accountPermissions: permissions?.accountPermissions,
+        questPollenOnly: permissions?.questPollenOnly,
     };
 
     const response = await apiClient["api-keys"].$post({

@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-05** – **🎨 FLUX.3 Image arrives** Generate 1K or 2K images in fifteen aspect ratios, or edit with up to ten reference images. [Explore image models](https://gen.pollinations.ai/image/models).
+- **2026-10-05** – **🎨 Seedream 5.0 Flash joins the garden** Generate and edit images with up to ten references, seed control, and 1K or 2K output. [Explore image models](https://gen.pollinations.ai/image/models).
+- **2026-10-05** – **🤖 Ling 3.1 Flash is here** Try a new text model with reasoning, tool use, and a 262K-token context at zero launch pricing, including with Quest Pollen. [See text models](https://gen.pollinations.ai/v1/models).
+- **2026-10-05** – **💡 Decisions get another model** Liquid D1 is available for paid decision requests and chat; the [SDK](https://www.npmjs.com/package/@pollinations/sdk) now has a typed `decision()` call for Jev.
+- **2026-10-05** – **🔗 Find the model you meant** Search and filter the model catalog by capabilities through the API or MCP; Open WebUI can now sort models by category tags. [API docs](https://gen.pollinations.ai/docs).
+- **2026-10-05** – **🎯 Seven quests, one page** Pollinations Quest Starter walks new users through setup without sending their API key to its server. [Try it](https://elite-surely-machine-enemies.trycloudflare.com) <!-- app -->
 - **2026-10-04** – **🌟 New Quests for video and community models** Earn Pollen for trying a video or community model; model publishers can earn it when others use their models.
 - **2026-10-04** – **🔗 Claude Code connects directly** Polli CLI can connect Claude Code to Pollinations’ `/v1/messages` endpoint, with model aliases and a separate config that leaves your Claude settings alone. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
 - **2026-10-04** – **🎨 Explore a painted world** In Postcard Worlds, enter a place, then step through doors and paths in AI-painted scenes that carry the view forward. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds) <!-- app -->
 - **2026-10-04** – **🎵 Turn study notes into songs** Tunemory makes short songs from facts, formulas, or word lists and checks the lyrics for missing details. [Try it](https://tomdacatto.github.io/pollinations-tunemory) <!-- app -->
-- **2026-10-03** – **🔗 More tools for MCP clients** Check usage and earnings, browse quests, and manage API keys from your MCP client. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).
-- **2026-10-03** – **📱 Sandboxes from `polli`** Create, list, and stop sandboxes from the CLI, then generate SSH configuration to connect. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).
-- **2026-10-03** – **✨ PDFs and audio in chat requests** Send inline PDFs to OpenRouter models or base64 audio to Inkling; Gen handles the media transfer behind the scenes. [API docs](https://gen.pollinations.ai/docs).
-- **2026-10-03** – **🎨 Sixteen design decisions from one sentence** Jev Assembler turns a page description into choices for layout, typography, palette, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler) <!-- app -->
-- **2026-10-02** – **🚀 A little room to compute** Create E2B-compatible sandboxes through the gen API or `polli sandbox`, then connect over SSH. The coding-agent template comes with five agents ready to use. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-10-02** – **🤖 The models meet Alice** Compare official and community models on weekly puzzle evals, with past runs and uncertainty shown alongside the scores. [See the rankings](https://model-monitor.pollinations.ai)
 ---
 
 ## 🌱 Introduction

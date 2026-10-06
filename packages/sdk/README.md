@@ -508,6 +508,29 @@ console.log(batch.data.length, batch.usage.total_tokens);
 | `taskType` | string | Gemini task hint, e.g. `'RETRIEVAL_QUERY'` |
 | `inputType` | string | Cohere retrieval role: `'query'` or `'document'` |
 
+## Decisions
+
+Send typed questions to `/alpha/decisions` using your Pollinations key:
+
+```javascript
+import { decision } from '@pollinations/sdk';
+
+const response = await decision({
+  state: "User ticket: I was charged twice for subscription this month.",
+  questions: {
+    department: {
+      type: 'choice',
+      instructions: 'Which team should handle this ticket?',
+      criteria: { billing: 'Payment issues', technical: 'Product bugs' }
+    }
+  }
+});
+
+console.log(response.answers.department.choice);
+```
+
+See the [API reference](https://gen.pollinations.ai/docs) for `choice`, `score`, and `noul` question shapes. The API chooses its default decision model when `model` is omitted.
+
 ## List Available Models
 
 ```javascript

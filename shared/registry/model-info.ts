@@ -17,6 +17,7 @@ import {
     MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelName,
+    PRICE_UNITS,
     type PriceDefinition,
     VIDEO_CAPABILITIES,
 } from "./registry";
@@ -185,6 +186,22 @@ export const ModelInfoSchema = z.object({
         .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
+    pricing_units: z
+        .record(
+            z.string(),
+            z.object({
+                unit: z.enum(PRICE_UNITS),
+                quantity: z
+                    .number()
+                    .positive()
+                    .optional()
+                    .describe("Usage units in one billed unit; defaults to 1."),
+            }),
+        )
+        .optional()
+        .describe(
+            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel.",
+        ),
     added_date: z.number().optional(),
     health: ModelHealthSchema.optional(),
 });
@@ -303,6 +320,7 @@ export function modelInfoFromDefinition(
             (service.category === "image"
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
+        pricing_units: service.priceUnits,
         added_date: service.addedDate,
     };
 }

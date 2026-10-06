@@ -37,6 +37,7 @@ const EMBEDDING_BASE_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         retirementDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.02),
         },
@@ -55,6 +56,7 @@ const EMBEDDING_BASE_SERVICES = {
         addedDate: new Date("2026-05-08").getTime(),
         retirementDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.13),
         },
@@ -77,6 +79,7 @@ const EMBEDDING_BASE_SERVICES = {
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         // Azure Cohere retail rates (Global).
         cost: {
             promptTextTokens: perMillion(0.12),
@@ -96,6 +99,7 @@ const EMBEDDING_BASE_SERVICES = {
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.1),
         },

@@ -190,6 +190,56 @@ export const AUDIO_VOICES = [
 // on a model that is not paid-only.
 export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
+    "elevenlabs/eleven-v4": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-10-06").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // https://elevenlabs.io/pricing/api — current launch rate.
+            // Update explicitly when the provider changes its rate.
+            completionAudioTokens: 0.022 / 1000,
+        },
+        title: "ElevenLabs v4",
+        description:
+            "Expressive speech in 90+ languages with audio tags and character timestamps",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
+    },
+    "elevenlabs/eleven-v4-turbo": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-10-06").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // https://elevenlabs.io/pricing/api — current launch rate.
+            // Update explicitly when the provider changes its rate.
+            completionAudioTokens: 0.011 / 1000,
+        },
+        title: "ElevenLabs v4 Turbo",
+        description:
+            "Low-latency expressive speech in 90+ languages with audio tags and character timestamps",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
+    },
     "elevenlabs/eleven-v3": {
         aliases: ["tts", "text-to-speech", "eleven", "elevenlabs"],
         provider: "elevenlabs",
@@ -478,6 +528,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // OVHcloud USD list price: $0.163/hour.
             promptAudioSeconds: 0.163 / 3600,
@@ -489,7 +540,8 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "openai/gpt-transcribe": {
-        aliases: ["gpt-transcribe"],
+        // gpt-4o-transcribe is the name OpenAI clients send by default.
+        aliases: ["gpt-transcribe", "gpt-4o-transcribe"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -673,6 +725,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
@@ -726,6 +779,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,

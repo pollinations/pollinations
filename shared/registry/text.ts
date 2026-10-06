@@ -46,6 +46,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         retirementDate: new Date("2027-09-21").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.02),
@@ -71,6 +72,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         retirementDate: new Date("2027-02-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.05),
             promptCachedTokens: perMillion(0.005),
@@ -95,6 +97,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.05),
             completionTextTokens: perMillion(0.18),
@@ -145,6 +148,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-22").getTime(),
         retirementDate: new Date("2027-08-24").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(1.75),
             promptCachedTokens: perMillion(0.175),
@@ -179,6 +183,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         retirementDate: new Date("2027-09-02").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.5),
             promptCachedTokens: perMillion(0.25),
@@ -237,6 +242,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-05-15").getTime(),
         retirementDate: new Date("2027-09-21").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.75),
             promptCachedTokens: perMillion(0.075),
@@ -267,6 +273,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-05-02").getTime(),
         retirementDate: new Date("2027-10-26").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -326,6 +333,7 @@ const TEXT_BASE_SERVICES = {
         // deeply than input/cache. One third matches its output rate and keeps
         // the other dimensions below that endpoint under a uniform multiplier.
         priceMultiplier: 1 / 3,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -381,6 +389,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-07-10").getTime(),
         retirementDate: new Date("2028-01-11").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -436,6 +445,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-07-10").getTime(),
         retirementDate: new Date("2028-01-11").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.02),
@@ -491,6 +501,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         retirementDate: new Date("2028-01-11").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(10.0),
             promptCachedTokens: perMillion(1.0),
@@ -768,9 +779,11 @@ const TEXT_BASE_SERVICES = {
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Azure model catalog; the retirement schedule says 2026-10-16.
-        retirementDate: new Date("2026-10-13").getTime(),
+        // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
+        // 2026-10-13 and its retirement schedule 2026-10-16.
+        retirementDate: new Date("2026-10-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.8),
             completionTextTokens: perMillion(3.2),
@@ -884,6 +897,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2025-10-07").getTime(),
         retirementDate: new Date("2027-06-15").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.6),
             completionTextTokens: perMillion(2.4),
@@ -914,6 +928,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-04-02").getTime(),
         retirementDate: new Date("2027-08-24").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             // Azure GPT Audio 1.5 Global meters, verified against account
             // usage and Retail Prices on 2026-08-24.
@@ -1116,6 +1131,7 @@ const TEXT_BASE_SERVICES = {
         // Azure model catalog and retirement schedule (Preview).
         retirementDate: new Date("2026-12-03").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             // Azure Global Standard "V4 Flash 0731" meters (2026-09-23).
@@ -1140,6 +1156,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.22),
@@ -1289,6 +1306,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2025-11-10").getTime(),
         retirementDate: new Date("2027-04-06").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -1313,6 +1331,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-05-26").getTime(),
         retirementDate: new Date("2027-05-12").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.2),
@@ -1601,6 +1620,7 @@ const TEXT_BASE_SERVICES = {
         // Its Azure gpt-5.4-mini route.
         retirementDate: new Date("2027-09-21").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.75),
             promptCachedTokens: perMillion(0.075),
@@ -1623,6 +1643,7 @@ const TEXT_BASE_SERVICES = {
         // Its Azure gpt-5.5 route.
         retirementDate: new Date("2027-10-26").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -1998,6 +2019,7 @@ const TEXT_BASE_SERVICES = {
         // Azure model catalog and retirement schedule (Preview).
         retirementDate: new Date("2027-04-16").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         // Azure Global Standard "K2.6 Thinking" meters (2026-09-23).
         cost: {
             promptTextTokens: perMillion(0.95),
@@ -2527,6 +2549,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.035),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
@@ -2552,6 +2575,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.33),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
@@ -2690,6 +2714,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.71),
             completionTextTokens: perMillion(0.71),
@@ -2802,6 +2827,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
@@ -2886,6 +2912,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.5),
             promptCachedTokens: perMillion(0.05),
@@ -3429,6 +3456,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.01),
             completionTextTokens: perMillion(0.01),

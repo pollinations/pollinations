@@ -36,6 +36,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 300,
         cost: {
             completionImageTokens: 0.0001, // per image
@@ -53,6 +54,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             completionImageTokens: 0.04, // per image
         },
@@ -564,6 +566,7 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2025-10-10").getTime(),
         retirementDate: new Date("2027-04-07").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
             promptCachedTokens: perMillion(0.2), // per 1M tokens
@@ -584,6 +587,7 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2025-12-23").getTime(),
         retirementDate: new Date("2026-12-16").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens
@@ -676,6 +680,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             completionImageTokens: 0.002, // per image
@@ -692,6 +697,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             completionImageTokens: 0.004, // per image
@@ -1999,6 +2005,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             completionImageTokens: 0.005,

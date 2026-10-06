@@ -1,6 +1,5 @@
 import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
-    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
@@ -387,7 +386,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Community models this model may declare as fallbacks: registered, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -579,9 +578,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
-            const policy = queuesPublication
-                ? deriveCreateProxyPolicy({ ...input, visibility: "private" })
-                : targetPolicy;
             const modelId = communityModelId(ownerGithubUsername, input.name);
             const bearerTokenCiphertext = await encryptSecret(
                 normalizeInputBearerToken(input.bearerToken),
@@ -598,7 +594,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const payload: ProxyListingPayload = {
                 bearerTokenCiphertext,
                 api,
-                ...policy,
+                ...targetPolicy,
                 fallbacks,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
@@ -853,24 +849,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.requiredSafetyFeatures !== undefined) {
                 update.requiredSafetyFeatures = input.requiredSafetyFeatures;
             }
-            if (input.hidden !== undefined) {
-                if (
-                    !input.hidden &&
-                    (input.visibility ?? currentVisibility) === "public" &&
-                    endpoint.hiddenAt &&
-                    Date.now() <
-                        endpoint.hiddenAt.getTime() +
-                            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
-                ) {
-                    throw new HTTPException(400, {
-                        message:
-                            "Community models can be relisted 3 hours after they were hidden",
-                    });
-                }
-                update.hiddenAt = input.hidden ? new Date() : null;
-                update.hiddenReason = input.hidden ? "Hidden by owner" : null;
-                update.hiddenBy = input.hidden ? "owner" : null;
-            }
             await enforcePublishingAccess(
                 db,
                 user.id,
@@ -895,7 +873,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 endpoint.type === "code_agent"
             ) {
                 // Managed configuration is edited through /account/agents.
-                // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
                 const current = parseListingPayload(
                     "endpoint_agent",
@@ -939,8 +916,15 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                     pendingAt: endpoint.pendingAt,
                 }).payload;
-                const queued = parseListingPayload("proxy", pendingPayload);
+                const queued = parseListingPayload(
+                    "proxy",
+                    pendingReady ? null : endpoint.pendingPayload,
+                );
                 const targetBase = queued ?? stored;
+                // Going private applies the latest queued configuration instead
+                // of discarding it with the publication delay.
+                const base =
+                    input.visibility === "private" ? targetBase : stored;
                 if (
                     (stored.modality === "text" &&
                         input.baseUrl !== undefined) ||
@@ -955,7 +939,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const targetPolicy = deriveUpdatedProxyPolicy(
                     targetBase,
                     input,
-                    targetVisibility,
                 );
                 const delayPricing =
                     targetVisibility === "public" &&
@@ -969,14 +952,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 const immediateInput = delayPricing
                     ? withoutProxyPricingChanges(input)
                     : input;
-                const policy = deriveUpdatedProxyPolicy(
-                    stored,
-                    immediateInput,
-                    nextVisibility,
-                );
+                const policy = deriveUpdatedProxyPolicy(base, immediateInput);
                 const fallbacks =
                     input.fallbacks === undefined
-                        ? stored.fallbacks
+                        ? base.fallbacks
                         : await resolveFallbacks(db, input.fallbacks, {
                               modelId: communityModelId(
                                   ownerGithubUsername,
@@ -987,12 +966,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                           });
                 const bearerTokenCiphertext =
                     input.bearerToken === undefined
-                        ? stored.bearerTokenCiphertext
+                        ? base.bearerTokenCiphertext
                         : await encryptSecret(
                               normalizeInputBearerToken(input.bearerToken),
                               c.env.BETTER_AUTH_SECRET,
                           );
-                const api = input.api ?? stored.api;
+                const api = input.api ?? base.api;
                 const url = input.url ?? input.baseUrl;
                 if (url !== undefined) {
                     update.baseUrl = validateInputEndpointUrl(url);

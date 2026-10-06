@@ -1,9 +1,6 @@
 import {
-    normalizeAllowedModelSelection,
-    setConsentModelGroup,
-    toggleConsentModel,
-    toggleConsentModelGroup,
-    withUncataloguedModels,
+    readModelSelection,
+    writeModelSelection,
 } from "@frontend/components/keys/model-selection.ts";
 import {
     DEFAULT_CONSENT_BUDGET,
@@ -13,32 +10,6 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
-
-describe("normalizeAllowedModelSelection", () => {
-    it("collapses fully selected model lists back to null", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(
-            normalizeAllowedModelSelection(["a", "b", "c"], allModelIds),
-        ).toBeNull();
-    });
-
-    it("keeps partial selections as explicit arrays", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(normalizeAllowedModelSelection(["a", "b"], allModelIds)).toEqual(
-            ["a", "b"],
-        );
-    });
-
-    it("does not collapse to null when selections include stale model ids", () => {
-        const allModelIds = ["a", "b", "c"];
-
-        expect(
-            normalizeAllowedModelSelection(["a", "b", "x"], allModelIds),
-        ).toEqual(["a", "b", "x"]);
-    });
-});
 
 describe("getAuthorizeInitialPermissions", () => {
     it("uses the consent defaults when url params are absent", () => {
@@ -162,71 +133,38 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
     });
 });
 
-describe("permission picker selections", () => {
-    it("keeps a finite consent grant finite when every offered model is reselected", () => {
-        const offered = ["a", "b"];
-        const narrowed = toggleConsentModel(null, offered, "a");
-        expect(narrowed).toEqual(["b"]);
-        expect(new Set(toggleConsentModel(narrowed, offered, "a"))).toEqual(
-            new Set(offered),
+describe("model category selection", () => {
+    const catalog = [
+        { name: "flux", aliases: ["flux-schnell"], category: "image" as const },
+        { name: "openai", category: "text" as const },
+    ];
+
+    it("reads requested model IDs and aliases as their categories", () => {
+        const selection = readModelSelection(
+            ["flux-schnell", "openai", "audio"],
+            catalog,
         );
-        expect(toggleConsentModel(narrowed, offered, "unrequested")).toEqual([
-            "b",
-        ]);
+        expect([...selection.categories]).toEqual(["image", "text", "audio"]);
+        expect(selection.unknown).toEqual([]);
     });
-    it("changes only visible models and preserves selections outside the loaded catalog", () => {
-        expect(
-            setConsentModelGroup(
-                ["a", "b", "private"],
-                ["a", "b", "c"],
-                ["a"],
-                false,
-            ),
-        ).toEqual(["b", "private"]);
-        expect(
-            setConsentModelGroup(["b"], ["a", "b"], ["a", "unrequested"], true),
-        ).toEqual(["b", "a"]);
-    });
-    it("clears a full or partial category and fills an empty one", () => {
-        const offered = ["t1", "t2", "i1"];
-        const text = ["t1", "t2"];
-        expect(toggleConsentModelGroup(null, offered, text)).toEqual(["i1"]);
-        expect(toggleConsentModelGroup(["t1", "i1"], offered, text)).toEqual([
-            "i1",
-        ]);
-        expect(toggleConsentModelGroup(["i1"], offered, text)).toEqual([
-            "i1",
-            "t1",
-            "t2",
-        ]);
-    });
-    it("keeps a full selection finite until the catalog has loaded", () => {
-        expect(
-            normalizeAllowedModelSelection(["a", "b"], ["a", "b"], false),
-        ).toEqual(["a", "b"]);
-        expect(
-            normalizeAllowedModelSelection(["a", "b"], ["a", "b"], true),
-        ).toBeNull();
-    });
-    it("offers selected IDs the catalog lacks so bulk toggles reach them", () => {
-        const catalog = [{ id: "a", label: "A" }];
-        expect(withUncataloguedModels(catalog, ["a", "gone"])).toEqual([
-            { id: "a", label: "A" },
-            { id: "gone", label: "gone" },
-        ]);
-        expect(withUncataloguedModels(catalog, null)).toEqual(catalog);
-        const offered = withUncataloguedModels(catalog, ["gone"]).map(
-            ({ id }) => id,
+
+    it("keeps values the catalog lacks for the server to resolve", () => {
+        const selection = readModelSelection(
+            ["openai", "community/alice/private"],
+            catalog,
         );
-        expect(setConsentModelGroup(["gone"], offered, offered, false)).toEqual(
-            [],
-        );
+        expect(writeModelSelection(selection)).toEqual([
+            "text",
+            "community/alice/private",
+        ]);
     });
-    it("preserves the difference between no models and all models", () => {
-        expect(normalizeAllowedModelSelection([], ["a", "b"])).toEqual([]);
-        expect(normalizeAllowedModelSelection([], [])).toEqual([]);
+
+    it("stores every category as all models and keeps none distinct", () => {
+        const all = readModelSelection(null, catalog);
+        expect(all.categories.size).toBe(7);
+        expect(writeModelSelection(all)).toBeNull();
         expect(
-            setConsentModelGroup(null, ["a", "b"], ["a", "b"], false),
+            writeModelSelection({ categories: new Set(), unknown: [] }),
         ).toEqual([]);
     });
 });

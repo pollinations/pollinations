@@ -9,6 +9,9 @@ import worker from "../src/index.ts";
 import { generateElevenLabsDialogue } from "../src/routes/audio.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
+const AZURE_TTS_URL =
+    "https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/";
+
 const log = {
     info: vi.fn(),
     warn: vi.fn(),
@@ -246,7 +249,7 @@ workerTest(
 );
 
 workerTest(
-    "serves explicit and default ElevenLabs TTS on both standard audio routes",
+    "serves explicit ElevenLabs TTS and the default model on both standard audio routes",
     async ({ paidApiKey }) => {
         const realFetch = globalThis.fetch.bind(globalThis);
         const fetchMock = vi
@@ -257,7 +260,8 @@ workerTest(
                 if (
                     url.startsWith(
                         "https://api.elevenlabs.io/v1/text-to-speech/",
-                    )
+                    ) ||
+                    url.startsWith(AZURE_TTS_URL)
                 ) {
                     return new Response(new Uint8Array([73, 68, 51, 4]), {
                         headers: { "content-type": "audio/mpeg" },
@@ -315,6 +319,7 @@ workerTest(
                 withInlineGenerationCoordinator({
                     ...env,
                     ELEVENLABS_API_KEY: "test-eleven-key",
+                    AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-azure-key",
                 } as unknown as CloudflareBindings),
                 ctx,
             );
@@ -328,15 +333,18 @@ workerTest(
             await waitOnExecutionContext(ctx);
         }
 
+        const providerCalls = (prefix: string) =>
+            fetchMock.mock.calls.filter(([input]) =>
+                (input instanceof Request
+                    ? input.url
+                    : input.toString()
+                ).startsWith(prefix),
+            );
         expect(
-            fetchMock.mock.calls.filter(([input]) => {
-                const url =
-                    input instanceof Request ? input.url : input.toString();
-                return url.startsWith(
-                    "https://api.elevenlabs.io/v1/text-to-speech/",
-                );
-            }),
-        ).toHaveLength(3);
+            providerCalls("https://api.elevenlabs.io/v1/text-to-speech/"),
+        ).toHaveLength(2);
+        // Requests without a model use the default, Azure OpenAI tts-1.
+        expect(providerCalls(AZURE_TTS_URL)).toHaveLength(1);
     },
 );
 

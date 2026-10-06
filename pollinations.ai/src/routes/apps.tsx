@@ -363,7 +363,7 @@ function AppsPage() {
 
     /** Within an axis it's OR; across axes it's AND. An empty axis is no constraint. */
     const filtered = useMemo(() => {
-        const needle = q?.toLowerCase();
+        const needle = q?.trim().toLowerCase();
         return apps
             .filter((app) => {
                 if (category) {
@@ -502,7 +502,7 @@ function AppsPage() {
                                 pollenPay={pollenPay}
                                 onQueryChange={(next) =>
                                     updateSearch({
-                                        q: next.trim() || undefined,
+                                        q: next || undefined,
                                     })
                                 }
                                 onPlatformsChange={(next) =>

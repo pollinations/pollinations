@@ -15,7 +15,7 @@
  * ```
  */
 
-import { Pollinations } from "./client.js";
+import { buildTextRequest, Pollinations } from "./client.js";
 import {
     type AudioResponseExt,
     type ChatResponseExt,
@@ -39,6 +39,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
     DeviceAuthorization,
     EmbeddingInput,
     EmbeddingsOptions,
@@ -246,9 +248,10 @@ export async function generateText(
 ): Promise<string | ChatResponseExt> {
     const { raw = false, ...textOptions } = options || {};
     if (raw) {
+        const request = buildTextRequest(prompt, textOptions);
         const response = await getClient().chat(
-            [{ role: "user", content: prompt }],
-            textOptions,
+            request.messages,
+            request.options,
         );
         return wrapChatResponse(response);
     }
@@ -447,6 +450,17 @@ export async function upload(
     options?: UploadOptions,
 ): Promise<UploadResponse> {
     return getClient().upload(data, options);
+}
+
+// ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/**
+ * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+ */
+export function decision(options: DecisionOptions): Promise<DecisionResponse> {
+    return getClient().decision(options);
 }
 
 // ============================================================================

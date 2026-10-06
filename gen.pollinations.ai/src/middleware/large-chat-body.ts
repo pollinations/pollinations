@@ -36,11 +36,18 @@ function inlineMedia(value: unknown): InlineMedia | undefined {
             audio.data.length > MAX_REWRITTEN_BODY &&
             typeof audio.format === "string"
         ) {
+            // Like file.file_data, accept either a bare base64 payload or an
+            // already-encoded data: URL. Re-wrapping a data: URL would create
+            // a double-encoded payload that fails media validation.
+            const dataUrl = audio.data.startsWith("data:")
+                ? audio.data
+                : `data:audio/${audio.format === "opus" ? "ogg" : audio.format};base64,${audio.data}`;
+            if (!dataUrl.startsWith("data:audio/")) return;
             return {
                 type,
                 container: audio,
                 field: "data",
-                dataUrl: `data:audio/${audio.format === "opus" ? "ogg" : audio.format};base64,${audio.data}`,
+                dataUrl,
             };
         }
     }

@@ -4,10 +4,12 @@ import {
     BotIcon,
     ClockIcon,
     EditableCombobox,
+    ImageIcon,
     InlineLink,
     McpIcon,
     Section,
     SparklesIcon,
+    SpeakerIcon,
     TabButton,
     TokensIcon,
     UsageIcon,
@@ -264,7 +266,13 @@ export const Models: FC = () => {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter
-            ? options.map(getModelQueryDraftSuggestionValue)
+            ? options.map((option) =>
+                  getModelQueryDraftSuggestionValue(
+                      option,
+                      visibleSearch,
+                      draftFilter.value,
+                  ),
+              )
             : options;
     }, [
         activeTabModels,
@@ -715,16 +723,30 @@ export const Models: FC = () => {
                         <p className="flex items-start gap-1.5">
                             <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/sec</strong> — per second of
-                                video/audio; TTS is estimated from text length.
+                                <strong>/sec</strong> — per second of video or
+                                audio.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/MP · /image</strong> — per megapixel,
+                                or per reference image.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/K chars · /K bytes</strong> — speech
+                                priced per thousand characters or UTF-8 bytes of
+                                input text.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>requests /pollen</strong> — estimated
-                                from the median observed cost over the last 7
-                                days.
+                                <strong>requests /$1</strong> — estimated from
+                                the median observed cost over the last 7 days.
                             </span>
                         </p>
                     </div>

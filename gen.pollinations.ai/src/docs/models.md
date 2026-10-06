@@ -26,6 +26,23 @@ it does not change generation permissions.
 curl 'https://gen.pollinations.ai/v1/models?source=official'
 ```
 
+To search or narrow a list instead of fetching the whole catalog, add any of:
+
+| Parameter | Effect |
+|-----------|--------|
+| `query` | Case-insensitive search of the name, aliases, title, description and publisher; every word must match |
+| `capabilities` | Comma-separated list (`tool_calling`, `reasoning`, `web_search`, `code_execution`, `pollinations_models`); a model needs all of them |
+| `agent` | `true`/`1` for agents only, `false`/`0` to exclude agents |
+| `limit` | At most this many models (1-500), in catalog order |
+
+They apply after the access, source and reliability rules above, so `limit`
+never counts a model the caller cannot see. Unknown capabilities and values
+outside these ranges return **400 Bad Request**.
+
+```bash
+curl 'https://gen.pollinations.ai/text/models?query=gpt&capabilities=reasoning,tool_calling&limit=5'
+```
+
 OpenAI-compatible clients that append `/models` to their base URL can use the
 equivalent header instead of the query parameter:
 
@@ -94,7 +111,9 @@ Reasoning effort levels and forced-tool restrictions remain model-specific.
 
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 
-The old `owner/model` IDs remain generation aliases in each model's `aliases` array. Key creation and updates accept only canonical model IDs. Existing stored permissions are migrated with the rename.
+The old `owner/model` IDs remain generation aliases in each model's `aliases` array.
+
+API key model permissions are model categories: `text`, `image`, `video`, `audio`, `3d`, `embedding` and `realtime`. A key allows every model in its categories, including models added later. Key creation and updates also accept model IDs, and each ID allows its whole category.
 
 The `source=community` and `source=official` filters are equivalent source filters
 for discovery. Source, access, and status filters combine with AND semantics.

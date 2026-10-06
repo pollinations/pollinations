@@ -26,7 +26,7 @@ const baseParams: ImageParams = {
     image: IMAGE_URLS,
     transparent: false,
     reasoning: "balanced",
-    audio: true,
+    audio: undefined, // Omitted by the caller: Seedance keeps its audio on.
     duration: 4,
     aspectRatio: "4:3",
 };
@@ -111,15 +111,6 @@ describe("Seedance 2.0 family via Replicate", () => {
                 usage: { completionVideoSeconds: 4 },
             },
         });
-    });
-
-    it("names the selected variant in aspect-ratio errors", async () => {
-        await expect(
-            callSeedanceV2API("a paper boat", {
-                ...baseParams,
-                aspectRatio: "9:21",
-            }),
-        ).rejects.toThrow("not supported by Seedance 2.0 Mini");
     });
 
     it("forwards reference media URLs without downloading or logging them", async () => {

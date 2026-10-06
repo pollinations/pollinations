@@ -577,7 +577,8 @@ test("nano-banana-2.1 omits sampling parameters and bills exact usage", async ({
     const event = mocks.tinybird.state.events[0];
     const expectedCost = (10 * 1.5 + 1680 * 30) / 1_000_000;
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
+    // 0.053187825 sits on a rounding boundary at 8 decimals.
+    expect(event.totalPrice).toBeCloseTo(expectedCost * 1.055, 7);
 });
 
 test("nanobanana-pro preserves 4K Vertex routing and exact billing", async ({

@@ -9,3 +9,12 @@ it("reads data lines without a space after the colon", async () => {
     for await (const chunk of streamSSE(response)) chunks.push(chunk);
     expect(chunks).toEqual(["Hello"]);
 });
+
+it("reads SSE content with CR-only event line endings", async () => {
+    const response = new Response(
+        'data: {"choices":[{"delta":{"content":"Hello"}}]}\r\rdata: [DONE]\r\r',
+    );
+    const chunks: string[] = [];
+    for await (const chunk of streamSSE(response)) chunks.push(chunk);
+    expect(chunks).toEqual(["Hello"]);
+});

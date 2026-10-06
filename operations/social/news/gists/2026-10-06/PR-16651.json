@@ -1,0 +1,34 @@
+{
+  "pr_number": 16651,
+  "title": "fix: add DeepInfra fallback for MiniMax M3",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16651",
+  "merged_at": "2026-10-06T23:58:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes upstream rate-limit failures with hidden `minimax/minimax-m3:deepinfra`, using the shared fallback mechanism and exact upstream `MiniMaxAI/MiniMax-M3` at `https://api.deepinfra.com/v1/openai`.\n- Keeps Fireworks primary, canonical `minimax/minimax-m3`, all four aliases, multiplier 1, Quest access, external hardware, 512K context, vision and tools. Caller prices stay $0.30/$0.06/$1.20 per million input/cached/output tokens; [DeepInfra costs](https://deepinfra.com/MiniMaxAI/MiniMax-M3/api) are $0.28/$0.056/$1.10.\n- Passes 146 focused Gen tests, Gen typecheck, Biome and the Enter price snapshot. Direct and forced-fallback E2E verifies native/chat endpoints, aliases, streaming usage, reasoning, tools/raw-message reuse, JSON/schema, 1/2/30 images, prompt/output caches, access and errors.\n- Confirms 47 once-billed DeepInfra successes, 47 unbilled primary failures and 28 matching wallet checks. All 10 concurrent short requests pass; three large prompts total 192,880 tokens, above the observed 189,674-token/minute peak.\n- Three default-effort coding probes took 106–117 seconds versus 15 seconds on Fireworks. Retains Fireworks as primary; no secret or deployment changes.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A second path for M3",
+    "blurb": "MiniMax M3 gets a backup route through DeepInfra when Fireworks hits an upstream rate limit. Same model, same caller prices; fewer requests stranded at the gate.",
+    "summary": "MiniMax M3 keeps Fireworks as its primary provider and gains a hidden DeepInfra fallback using MiniMaxAI/MiniMax-M3 through the shared fallback mechanism, without changing its aliases, capabilities, or caller prices.",
+    "impact": "Requests that hit a Fireworks rate limit can continue through DeepInfra while retaining MiniMax M3’s 512K context, vision and tools, and $0.30/$0.06/$1.20 per million input/cached/output token prices.",
+    "keywords": [
+      "MiniMax M3",
+      "DeepInfra",
+      "Fireworks",
+      "provider fallback",
+      "rate limits",
+      "text API"
+    ],
+    "visual_concept": "Depict MiniMax M3 as a glowing code-plant fed by two paths: a main Fireworks-labeled terminal and a quieter DeepInfra-labeled backup terminal. Polli, wearing a tiny tool belt, gently tends the backup connection; the two paths show continuity rather than a provider switch.",
+    "image_prompt": "In a cozy pixel art garden-shed server room, a glowing MiniMax M3 code-plant grows between a main Fireworks terminal and a smaller DeepInfra backup terminal, while Polli in a tiny tool belt connects the backup cable with care. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, sharing the frame, never elongated or realistic, amid prominent lime green (#ecf874) glow, a warm cream and soft pastel gradient background, dark purple (#110518) outlines, chunky sprites, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16651.jpg",
+    "prompt": "In a cozy pixel art garden-shed server room, a glowing MiniMax M3 code-plant grows between a main Fireworks terminal and a smaller DeepInfra backup terminal, while Polli in a tiny tool belt connects the backup cable with care. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, sharing the frame, never elongated or realistic, amid prominent lime green (#ecf874) glow, a warm cream and soft pastel gradient background, dark purple (#110518) outlines, chunky sprites, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T23:59:43.498695+00:00"
+}

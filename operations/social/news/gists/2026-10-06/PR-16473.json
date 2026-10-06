@@ -1,0 +1,34 @@
+{
+  "pr_number": 16473,
+  "title": "fix(ui): detect Markdown media extensions from URL paths",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16473",
+  "merged_at": "2026-10-06T08:44:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Detect Markdown media extensions from the parsed URL pathname. A link to `https://example.mov` now remains an anchor instead of becoming a video player.\n- Preserve actual media files, relative paths, uppercase extensions, query/fragment URLs and extensionless generated-media labels through the shared helper.\n- Extend existing renderer tests with a `.mov` hostname regression and a real `.mov` file control; bump UI to `0.1.0-alpha.6` and its root workspace lock entry.\n- Validation: the regression fails on the original code; all 109 UI tests, typecheck, full build, changed-file Biome checks and diff checks pass. The lockfile contains only the matching version update.\n\nFixes #16472\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A dot is not a movie",
+    "blurb": "A website ending in .mov is still a website. Markdown gets better at telling a link from a video file.",
+    "summary": "The shared Markdown renderer checks parsed URL pathnames for media extensions, keeping links to hosts like example.mov as anchors while preserving video files, relative paths, uppercase extensions, query strings, fragments, and extensionless generated-media labels.",
+    "impact": "Links to .mov hostnames remain clickable links instead of turning into video players; links to actual .mov files still render as videos.",
+    "keywords": [
+      "Markdown",
+      "UI",
+      "media",
+      "URL parsing",
+      "video",
+      "links"
+    ],
+    "visual_concept": "Depict the Markdown UI as two garden paths: a sign for example.mov leads to a clickable website, while a separate .mov file leads to a small video screen. Polli, wearing a tiny librarian's visor, sorts the two with an amused expression; pixel flowers and a glowing lime-green terminal keep the scene cozy.",
+    "image_prompt": "In a cozy pixel art garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art and never realistic, and wears a tiny librarian's visor as she sorts a sign reading 'example.mov' toward a link and a separate '.mov' file toward a little video screen. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent lime green (#ecf874) glow, warm cream background, dark purple (#110518) outlines, and pixel flowers make the distinction feel friendly."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16473.jpg",
+    "prompt": "In a cozy pixel art garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art and never realistic, and wears a tiny librarian's visor as she sorts a sign reading 'example.mov' toward a link and a separate '.mov' file toward a little video screen. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent lime green (#ecf874) glow, warm cream background, dark purple (#110518) outlines, and pixel flowers make the distinction feel friendly."
+  },
+  "generated_at": "2026-10-06T08:45:43.044631+00:00"
+}

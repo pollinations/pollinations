@@ -2,18 +2,16 @@ import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
 import {
-    Announcements,
     HIGHLIGHTS_GITHUB_URL,
     NewsBanner,
+    UpcomingChanges,
 } from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => (
     <>
-        <Section title="Announcements" framed>
-            <Announcements />
-        </Section>
+        <UpcomingChanges />
         <Section
-            title="What's new"
+            title="News"
             framed
             action={
                 <InlineLink href={HIGHLIGHTS_GITHUB_URL} size="sm">

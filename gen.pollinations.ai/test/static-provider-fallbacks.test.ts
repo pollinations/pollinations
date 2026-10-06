@@ -95,9 +95,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "google-ai-studio",
     ],
     [
         "google/gemini-3.5-flash-lite:openrouter:vertex-global",

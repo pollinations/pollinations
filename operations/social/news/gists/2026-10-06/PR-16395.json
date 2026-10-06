@@ -1,0 +1,34 @@
+{
+  "pr_number": 16395,
+  "title": "feat: add crypto-only Pollen checkout",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16395",
+  "merged_at": "2026-10-06T07:11:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a direct crypto-only Stripe checkout beside the selected Pollen pack's regular checkout. Crypto stays in USD without currency conversion or card-only options.\n- Fixes checkout creation by sending explicit crypto payment methods separately from the regular payment-method configuration.\n- Refines top-up controls with a stable-width Buy button, a one-line \"Pay with Crypto\" link with Stripe reassurance, and a left-aligned mobile auto-top-up switch and pack label.\n- Adds Stripe's crypto symbol to the footer payment logos, with source attribution.\n- Clarifies that crypto payments follow the same refund policy and approved refunds return through Stripe as stablecoins to the original wallet.\n\nValidation: focused Stripe integration tests, Enter TypeScript checks, Biome, desktop/mobile browser checks, Stripe sandbox crypto checkout on staging (main + this branch).\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A new path to Pollen",
+    "blurb": "Pollen packs get a crypto checkout alongside the regular one. Same pack, different path through Stripe.",
+    "summary": "Adds a separate Stripe crypto checkout for Pollen packs that stays in USD, sends explicit crypto payment methods, and clarifies that approved refunds return as stablecoins to the original wallet.",
+    "impact": "People topping up Pollen get a Pay with Crypto option beside regular checkout, with no currency conversion or card-only options in the crypto flow.",
+    "keywords": [
+      "Pollen",
+      "crypto",
+      "Stripe",
+      "checkout",
+      "top-up",
+      "refunds"
+    ],
+    "visual_concept": "Depict two friendly paths from a Pollen pack to a cozy checkout terminal: a regular payment path and a coin-marked crypto path. Polli, wearing a tiny coin-patterned scarf, points toward the crypto path; a small code-plant and prominent lime-green glow keep the scene rooted in the pollinations garden.",
+    "image_prompt": "In a cozy pixel art garden shop, two little paths lead from a Pollen pack to a glowing checkout terminal, and Polli warmly points to the coin-marked path beside the regular one. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wears a tiny coin-patterned scarf, and is strictly pixel art, never realistic. Cozy 8-bit pixel art aesthetic with chunky retro sprites, a prominent soft lime green (#ecf874) and pastel gradient background, code-plant flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16395.jpg",
+    "prompt": "In a cozy pixel art garden shop, two little paths lead from a Pollen pack to a glowing checkout terminal, and Polli warmly points to the coin-marked path beside the regular one. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wears a tiny coin-patterned scarf, and is strictly pixel art, never realistic. Cozy 8-bit pixel art aesthetic with chunky retro sprites, a prominent soft lime green (#ecf874) and pastel gradient background, code-plant flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-06T07:12:41.082026+00:00"
+}

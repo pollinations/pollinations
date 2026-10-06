@@ -460,6 +460,7 @@ describe("static provider fallbacks", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
         const parent: ModelDefinition = {
             ...TEXT_SERVICES[parentId],
+            // Isolate the synthetic pair from this model's live fallback list.
             fallbacks: undefined,
         };
         const studioId = `${parentId}:openrouter:ai-studio`;

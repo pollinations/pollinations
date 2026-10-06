@@ -1042,7 +1042,7 @@ test("search fallback bills Vercel counters once and retains the OpenRouter quot
     }
 });
 
-test("search server-tool loops use provider charges when video counters differ", () => {
+test("search routes use provider charges when video counters differ", () => {
     const model = "google/gemini-2.5-flash-lite:search";
     const terminal = {
         usage: {

@@ -1474,7 +1474,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
-            "Answers grounded in live web search; fast and cheap, not a deep reasoner",
+            "Web search on every uncached request unless disabled; structured JSON fallback includes an extra billed generation",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.

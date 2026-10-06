@@ -23,6 +23,7 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import { publicChatChoices, publicChatStream } from "./chat/public.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -197,11 +198,10 @@ function publicCompletionUsage(
 
 function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
-    if (usage === completion.usage) return completion;
-
     const publicCompletion = {
         ...completion,
         usage,
+        choices: publicChatChoices(completion.choices),
     };
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
@@ -398,7 +398,7 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = clientBody;
+            completion.responseStream = publicChatStream(clientBody);
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),

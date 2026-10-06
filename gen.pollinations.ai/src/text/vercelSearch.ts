@@ -72,17 +72,24 @@ export async function callVercelSearch(
             response_format: undefined,
             stream: false,
             stream_options: undefined,
+            // Preparation is separately billed; max_tokens still limits the final answer.
             max_tokens: Math.max(options.max_tokens ?? 2048, 2048),
         },
         config,
     );
     const searchUsage = requireUsage(search);
+    const searchContent = search.choices?.[0]?.message?.content;
+    if (typeof searchContent !== "string" || !searchContent.trim())
+        throw new UpstreamError(502, {
+            message: "Vercel search returned no answer to format",
+            requestUrl: search.upstreamRequestUrl,
+        });
     const result = await genericOpenAIClient(
         [
             ...messages,
             {
                 role: "user",
-                content: `Format this search answer as JSON for the requested format. Preserve its facts and source URLs; do not invent facts or sources.\n${search.choices?.[0]?.message?.content ?? ""}`,
+                content: `Format this search answer as JSON for the requested format. Preserve its facts and source URLs; do not invent facts or sources.\n${searchContent}`,
             },
         ],
         { ...options, tools: undefined, tool_choice: undefined },

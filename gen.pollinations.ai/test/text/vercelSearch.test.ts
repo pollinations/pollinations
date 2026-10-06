@@ -158,6 +158,31 @@ describe("Vercel search then JSON formatting", () => {
         ).rejects.toThrow();
         expect(requests).toHaveLength(1);
     });
+    it.each([
+        null,
+        "",
+        "   ",
+    ])("rejects an empty search answer %j before formatting", async (content) => {
+        const { config, requests } = upstream([
+            Response.json({
+                ...completion(firstUsage),
+                choices: [
+                    {
+                        message: {
+                            role: "assistant",
+                            content,
+                            tool_calls: [{ id: "search" }],
+                        },
+                        finish_reason: "tool_calls",
+                    },
+                ],
+            }),
+        ]);
+        await expect(
+            callVercelSearch(messages, options, config),
+        ).rejects.toMatchObject({ status: 502 });
+        expect(requests).toHaveLength(1);
+    });
     it("rejects a formatting answer without usage", async () => {
         const { config } = upstream([
             Response.json(completion(firstUsage)),

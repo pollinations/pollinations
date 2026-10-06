@@ -484,6 +484,7 @@ function rateAgainst(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
+    // Opt-in provider totals include search; adjustments remain an informational breakdown.
     const reportedCost = svc.billing?.resolveTotalCost?.(output);
 
     return {

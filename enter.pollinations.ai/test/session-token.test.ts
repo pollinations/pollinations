@@ -2,30 +2,16 @@ import { env, SELF } from "cloudflare:test";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { mintAccountToken, test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";
-
-async function mintSessionToken(sessionCookie: string): Promise<string> {
-    const response = await SELF.fetch(`${BASE}/api/session-token`, {
-        method: "POST",
-        headers: { Cookie: `better-auth.session_token=${sessionCookie}` },
-    });
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-        token: string;
-        expiresIn: number;
-    };
-    expect(body.expiresIn).toBe(900);
-    return body.token;
-}
 
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 test("a session token acts as the account owner on the account API", async ({
     sessionToken,
 }) => {
-    const token = await mintSessionToken(sessionToken);
+    const token = await mintAccountToken(sessionToken);
 
     const created = await SELF.fetch(`${BASE}/api/account/keys`, {
         method: "POST",
@@ -71,7 +57,7 @@ test("only the session cookie can mint a session token", async ({ apiKey }) => {
 test("session tokens are refused in the query string, expired, forged or for a banned user", async ({
     sessionToken,
 }) => {
-    const token = await mintSessionToken(sessionToken);
+    const token = await mintAccountToken(sessionToken);
     const auth = await authenticateApiKeyRequest({
         request: new Request(BASE, { headers: bearer(token) }),
         env,

@@ -3,7 +3,6 @@ import {
     signSessionToken,
 } from "@shared/auth/session-token.ts";
 import { Hono } from "hono";
-import { describeRoute } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 
@@ -14,21 +13,11 @@ import { auth } from "../middleware/auth.ts";
  */
 export const sessionTokenRoutes = new Hono<Env>()
     .use(auth({ allowSessionCookie: true, allowApiKey: false }))
-    .post(
-        "/",
-        describeRoute({
-            tags: ["👤 Account"],
-            description:
-                "Mint a short-lived API token for the signed-in dashboard user.",
-            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const token = await signSessionToken({
-                secret: c.env.BETTER_AUTH_SECRET,
-                userId: user.id,
-            });
-            c.header("Cache-Control", "private, no-store, max-age=0");
-            return c.json({ token, expiresIn: SESSION_TOKEN_TTL_SECONDS });
-        },
-    );
+    .post("/", async (c) => {
+        const user = c.var.auth.requireUser();
+        const token = await signSessionToken({
+            secret: c.env.BETTER_AUTH_SECRET,
+            userId: user.id,
+        });
+        return c.json({ token, expiresIn: SESSION_TOKEN_TTL_SECONDS });
+    });

@@ -30,7 +30,7 @@ import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
-import { modelStatusRoutes } from "./routes/model-status.ts";
+import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 import { stemSeparationRoutes } from "./routes/stem-separation.ts";
@@ -195,6 +195,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
+    .route("/", modelStatsRoutes)
     .route(
         "/",
         createMessagesRoutes((request, c) =>

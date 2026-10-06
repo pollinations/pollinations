@@ -62,7 +62,6 @@ import {
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
-    session as sessionTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
@@ -491,18 +490,12 @@ async function fetchGen(
     return new Response(body, response);
 }
 
-// The account API is bearer-only: the dashboard swaps its session for a
-// short-lived session token, signed here for the session's user.
-async function sessionAuthorization(token: string): Promise<string> {
-    const session = await db
-        .select({ userId: sessionTable.userId })
-        .from(sessionTable)
-        .where(eq(sessionTable.token, token))
-        .get();
-    if (!session) throw new Error("Expected a session for the token");
+// The account API is bearer-only: the dashboard calls it with a short-lived
+// session token, signed here for the user.
+async function sessionAuthorization(userId: string): Promise<string> {
     return `Bearer ${await signSessionToken({
         secret: env.BETTER_AUTH_SECRET,
-        userId: session.userId,
+        userId,
     })}`;
 }
 
@@ -5578,15 +5571,6 @@ fixtureTest(
             githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         // The probes are open to every account, so they reach the upstream
@@ -5661,7 +5645,7 @@ fixtureTest(
                         headers: {
                             "Content-Type": "application/json",
                             Authorization:
-                                await sessionAuthorization(sessionToken),
+                                await sessionAuthorization(ownerUserId),
                         },
                         body: JSON.stringify(probe.body),
                     },
@@ -5686,7 +5670,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: `${modelName}-direct-public`,
@@ -5712,7 +5696,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: privateModelName,
@@ -5747,7 +5731,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: await sessionAuthorization(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         visibility: "public",
@@ -5858,15 +5842,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
@@ -5959,7 +5934,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: modelName,
@@ -6009,7 +5984,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: registered.api,
@@ -6034,7 +6009,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: registered.api,
@@ -6086,15 +6061,6 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
         });
 
         const enterApi = await createEnterCommunityApi();
@@ -6227,7 +6193,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -6244,7 +6210,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -6283,7 +6249,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -6572,7 +6538,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: await sessionAuthorization(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         completionImagePrice: MAX_COMMUNITY_PRICE_PER_IMAGE,
@@ -6590,7 +6556,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: await sessionAuthorization(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         completionImagePrice:
@@ -6612,16 +6578,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const authorization = await sessionAuthorization(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const enterApi = await createEnterCommunityApi();
         const videoEndpointUrl =
             "https://api.example.com/generate-video?version=1";
@@ -7010,15 +6967,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const transcriptionUrl =
@@ -7062,7 +7010,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -7082,7 +7030,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -7103,7 +7051,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -7138,7 +7086,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -7242,15 +7190,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const embeddingUrl = "https://api.example.com/v1/embeddings";
@@ -7300,7 +7239,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -7334,7 +7273,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -8040,16 +7979,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const authorization = await sessionAuthorization(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const enterApi = await createEnterCommunityApi();
         const createResponse = await fetchEnterApi(
             enterApi,
@@ -8150,15 +8080,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
@@ -8185,7 +8106,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: "chat_completions",
@@ -8208,15 +8129,6 @@ fixtureTest("rejects unsafe community model names", async () => {
         githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterApi = await createEnterCommunityApi();
     for (const name of [
@@ -8231,7 +8143,7 @@ fixtureTest("rejects unsafe community model names", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name,
@@ -8257,18 +8169,9 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
-        const authorization = await sessionAuthorization(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const register = (body: Record<string, unknown>) =>
             fetchEnterApi(
                 enterApi,
@@ -8381,15 +8284,6 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterEnv = {
         ...env,
@@ -8397,7 +8291,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         GEN_BASE_URL: "https://gen.pollinations.ai",
     };
     const enterApi = await createEnterFrontendApi();
-    const authorization = await sessionAuthorization(sessionToken);
+    const authorization = await sessionAuthorization(ownerUserId);
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai/gpt-5-nano",
@@ -8820,18 +8714,9 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterApi = await createEnterFrontendApi();
-    const authorization = await sessionAuthorization(sessionToken);
+    const authorization = await sessionAuthorization(ownerUserId);
     let commit = "a".repeat(40);
     let repositoryDescription: string | null = "Example code agents";
     let source = `export default async ({ request, pollinations, mcp }) => {
@@ -9184,15 +9069,6 @@ fixtureTest("validates community fallback targets on write", async () => {
         githubId: nextAllowedGithubId(),
         githubUsername: otherOwnerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const bearerTokenCiphertext = await encryptSecret(
         "sk_saved_token",
@@ -9328,7 +9204,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name,
@@ -9455,7 +9331,7 @@ fixtureTest("validates community fallback targets on write", async () => {
             `http://localhost:3000/api/community-endpoints/${created.id}/fallback-candidates`,
             {
                 headers: {
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
             },
         ),
@@ -9490,7 +9366,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: await sessionAuthorization(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     fallbacks: [],

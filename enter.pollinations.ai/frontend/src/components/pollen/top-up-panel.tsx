@@ -1,7 +1,6 @@
 import {
     Button,
     CardIcon,
-    CryptoIcon,
     cn,
     InlineLink,
     Switch,
@@ -323,9 +322,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                                     size="sm"
                                     className="inline-flex items-center gap-1 whitespace-nowrap font-semibold"
                                 >
-                                    Pay with
-                                    <CryptoIcon className="h-3.5 w-3.5 shrink-0" />
-                                    Crypto
+                                    Pay with Crypto
                                 </InlineLink>
                             </Tooltip>
                         )}

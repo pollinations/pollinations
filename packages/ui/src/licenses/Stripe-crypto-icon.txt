@@ -1,3 +1,0 @@
-CryptoIcon uses Stripe's Stablecoins and Crypto payment-method symbol,
-sourced from https://dashboard.stripe.com/settings/payment_methods.
-Copyright Stripe, Inc. This symbol is not covered by this package's MIT License.

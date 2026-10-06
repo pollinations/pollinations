@@ -448,25 +448,6 @@ export function EarningsIcon(props: IconProps) {
     );
 }
 
-/** Stripe's crypto payment symbol, without its payment-badge background. */
-export function CryptoIcon(props: IconProps) {
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="4 4 24 24"
-            fill="currentColor"
-            {...props}
-        >
-            <path d="M14.281 9.75a.781.781 0 0 0-.78.781v1.139a5 5 0 0 0 0 8.66v1.139a.781.781 0 0 0 1.562 0v-.558a5 5 0 0 0 1.874 0v.558a.781.781 0 0 0 1.563 0V20.33a5 5 0 0 0 1.453-1.268c.338-.436.128-1.044-.366-1.288-.495-.245-1.086-.025-1.479.363a2.999 2.999 0 0 1-4.464-.278 3.001 3.001 0 0 1 4.479-3.981c.39.39.98.614 1.476.373s.71-.847.375-1.286A5 5 0 0 0 18.5 11.67v-1.14a.781.781 0 1 0-1.563 0v.558a5 5 0 0 0-1.874 0v-.558a.781.781 0 0 0-.782-.781Z" />
-            <path
-                fillRule="evenodd"
-                d="M26 16c0 5.523-4.477 10-10 10S6 21.523 6 16 10.477 6 16 6s10 4.477 10 10Zm-1.875 0a8.125 8.125 0 1 1-16.25 0 8.125 8.125 0 0 1 16.25 0Z"
-                clipRule="evenodd"
-            />
-        </svg>
-    );
-}
-
 export function WalletIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

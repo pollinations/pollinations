@@ -75,6 +75,7 @@ const createKey = (
         models,
         budget,
         permissions,
+        questPollenOnly,
         redirectUri,
         earnings,
     },
@@ -89,6 +90,7 @@ const createKey = (
             allowedModels: models,
             pollenBudget: budget,
             accountPermissions: permissions,
+            questPollenOnly,
             redirectUris: redirectUri,
             earningsEnabled: earnings,
         },
@@ -153,9 +155,8 @@ export const accountTools = [
                 .number()
                 .int()
                 .min(1)
-                .max(90)
                 .optional()
-                .describe("Rolling window in days, max 90"),
+                .describe("Rolling window in days"),
         },
         getEarnings,
     ],
@@ -192,7 +193,9 @@ export const accountTools = [
             models: z
                 .array(z.string())
                 .optional()
-                .describe("Restrict the key to these model ids"),
+                .describe(
+                    "Restrict the key to these model categories (text, image, video, audio, 3d, embedding, realtime); a model id allows its whole category",
+                ),
             budget: z
                 .number()
                 .min(0)
@@ -203,6 +206,12 @@ export const accountTools = [
                 .optional()
                 .describe(
                     'Account permissions, e.g. ["profile", "usage"]; "keys" lets the new key create keys',
+                ),
+            questPollenOnly: z
+                .boolean()
+                .optional()
+                .describe(
+                    "Never spend paid Pollen; requests stop when Quest Pollen runs out",
                 ),
             redirectUri: z
                 .array(z.string())

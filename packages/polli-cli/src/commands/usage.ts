@@ -4,12 +4,12 @@ import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
 import {
     ExitSignal,
+    fail,
     getOutputMode,
     printError,
     printResult,
     printTable,
 } from "../lib/output.js";
-import { parseDaysWindow } from "./earnings.js";
 
 interface UsageRecord {
     timestamp: string;
@@ -191,7 +191,7 @@ export const usageCommand = new Command("usage")
         collect,
         [] as string[],
     )
-    .option("--days <n>", "Rolling window in days, max 90")
+    .option("--days <n>", "Rolling window in days (--daily defaults to 7)")
     .option("--csv", "Print the raw CSV export")
     .addHelpText(
         "after",
@@ -259,18 +259,6 @@ export const usageCommand = new Command("usage")
             }
         }
 
-        let days: number | undefined;
-        if (opts.days !== undefined) {
-            try {
-                days = parseDaysWindow(opts.days);
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "Invalid --days value",
-                );
-                throw new ExitSignal(1);
-            }
-        }
-
         let keyIds: string[] = [];
         if (filterKeys.length > 0) {
             const ids = filterKeys.filter(isKeyId);
@@ -295,7 +283,10 @@ export const usageCommand = new Command("usage")
         }
 
         const params = new URLSearchParams();
-        if (days !== undefined) params.set("days", String(days));
+        // The daily endpoint's 90-day default times out on heavy accounts
+        // (#16560), so --daily asks for a week unless --days is given.
+        const days = opts.days ?? (opts.daily ? "7" : undefined);
+        if (days !== undefined) params.set("days", days);
 
         try {
             if (opts.daily) {
@@ -317,6 +308,11 @@ export const usageCommand = new Command("usage")
                     apiKey: key,
                 });
                 const rows = filterDailyRows(data.usage, keyIds, models);
+                // JSON keeps the API records: numeric cost_usd, no rounding.
+                if (getOutputMode() !== "human") {
+                    printResult(rows);
+                    return;
+                }
                 printTable(
                     rows.map((r) => ({
                         date: r.date,
@@ -333,12 +329,7 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            const limit = Number(opts.limit);
-            if (!Number.isInteger(limit) || limit < 1) {
-                printError("--limit must be a positive integer");
-                throw new ExitSignal(1);
-            }
-            params.set("limit", String(limit));
+            params.set("limit", opts.limit);
             if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));
             if (opts.csv) params.set("format", "csv");
@@ -348,6 +339,10 @@ export const usageCommand = new Command("usage")
                 return;
             }
             const data = await gen<UsageResponse>(path, { apiKey: key });
+            if (getOutputMode() !== "human") {
+                printResult(data.usage);
+                return;
+            }
             printTable(
                 data.usage.map((r) => ({
                     time: r.timestamp,
@@ -362,9 +357,6 @@ export const usageCommand = new Command("usage")
                 })),
             );
         } catch (err) {
-            printError(
-                `Failed to fetch usage: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            throw new ExitSignal(1);
+            fail("Failed to fetch usage", err);
         }
     });

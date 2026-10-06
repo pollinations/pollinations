@@ -300,17 +300,6 @@ async function callFalMinimaxMaxVariant(
               ? imageEndpoint
               : textEndpoint;
     const requestedAspectRatio = safeParams.aspectRatio;
-    if (
-        !hasFrames &&
-        requestedAspectRatio &&
-        !H3_MAX_ASPECT_RATIOS.includes(
-            requestedAspectRatio as (typeof H3_MAX_ASPECT_RATIOS)[number],
-        )
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${title} does not support aspectRatio ${requestedAspectRatio}`,
-        });
-    }
 
     return callFalH3API(
         title,

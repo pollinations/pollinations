@@ -44,7 +44,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
-| Developer earnings | `polli earnings` (`--days <n>`, max 90) |
+| Developer earnings | `polli earnings` (`--days <n>`) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
@@ -187,11 +187,11 @@ polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
 polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
-polli earnings --days 7  # rolling window, max 90
+polli earnings --days 7  # rolling window
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
-**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
+**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
 
 ### Manage my-models
 ```bash

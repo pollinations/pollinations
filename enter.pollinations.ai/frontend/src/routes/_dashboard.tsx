@@ -8,6 +8,7 @@ import {
 import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
+import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
 import {
     LoadError,
@@ -168,6 +169,7 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
+            {!data.user && <DashboardSignInBanner />}
             <Outlet />
         </DashboardShell>
     );

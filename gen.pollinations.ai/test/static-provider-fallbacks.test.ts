@@ -95,9 +95,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "google-ai-studio",
     ],
     [
         "google/gemini-3.5-flash-lite:openrouter:vertex-global",
@@ -173,6 +173,38 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("lets OpenRouter recover GLM Flash across independent providers", () => {
+        const model = "z-ai/glm-5.3-flash";
+        const route = `${model}:openrouter`;
+        expect(TEXT_SERVICES[model].provider).toBe("fireworks");
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([route]);
+        expect(findModelByName(route)?.config()).toMatchObject({
+            provider: "openrouter",
+            model,
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: [
+                        "together",
+                        "baseten/fp8",
+                        "modal/nvfp4",
+                        "crusoe/fp4",
+                        "friendli",
+                        "digitalocean",
+                        "parasail/fp4",
+                        "venice",
+                    ],
+                    allow_fallbacks: true,
+                },
+            },
+        });
+        expect(TEXT_SERVICES[route].cost).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.03 / 1_000_000) * 1.055,
+            completionTextTokens: (0.5 / 1_000_000) * 1.055,
+        });
+    });
+
     it.each([
         "qwen/qwen3.7-flash",
         "qwen/qwen3.8-flash",
@@ -476,6 +508,33 @@ describe("static provider fallbacks", () => {
         expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
         expect(services[undatedId].retirementDate).toBeUndefined();
         expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
+    });
+
+    it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
+        const primary = TEXT_SERVICES["liquid/d1"];
+        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
+        expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(findModelByName("liquid/d1:vercel")?.config()).toMatchObject({
+            model: "liquid/d1",
+            provider: "openai",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        const billing = calculateUsageBilling({
+            model: "liquid/d1",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
     it("registers exact text routes as fallback-only inherited models", () => {
@@ -860,6 +919,31 @@ describe("static provider fallbacks", () => {
                 messages: [{ role: "user", content: "Hello" }],
             }),
         ).toBeUndefined();
+    });
+
+    it("routes Ling fallback through Vercel Novita with launch pricing", () => {
+        const primary = "inclusionai/ling-3.1-flash";
+        const route = `${primary}:vercel:novita`;
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([route]);
+        expect(TEXT_SERVICES[route]).toMatchObject({
+            provider: "vercel",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            cost: {
+                promptTextTokens: 0,
+                promptCachedTokens: 0,
+                completionTextTokens: 0,
+            },
+        });
+        expect(findModelByName(route)?.config()).toMatchObject({
+            model: primary,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["novita"] } },
+            },
+        });
+        expect(getVisibleTextModels()).not.toContain(route);
     });
 
     it("uses the same primary and single fallback for both API formats", () => {

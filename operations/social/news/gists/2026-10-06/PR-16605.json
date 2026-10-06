@@ -1,0 +1,34 @@
+{
+  "pr_number": 16605,
+  "title": "fix: use DeepInfra for Qwen embeddings with Fireworks fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16605",
+  "merged_at": "2026-10-06T17:41:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `qwen/qwen3-embedding-8b` through DeepInfra `Qwen/Qwen3-Embedding-8B`, with Fireworks `accounts/fireworks/models/qwen3-embedding-8b` as the hidden shared fallback.\n- Sets `paidOnly: true`, keeps multiplier 1, both existing aliases, text input, 128–4096 dimensions and 40,960-token support. No Pollinations GPU. User input price drops from $0.10 to $0.01/M tokens; Fireworks costs $0.10/M and retains the primary quote.\n- Preserves character-heavy inputs by falling back before DeepInfra's 131,072-character limit. Reuses the existing embedding client, response mapping and fallback loop.\n- Verified 146 Gen and 541 Enter tests, typechecking, formatting, real gateway primary/forced-fallback requests, aliases, batching, base64, permissions, caching, long inputs, wallet debits and staging billing records. DeepInfra's billing API confirms the rate.\n- Capacity: 192/192 DeepInfra requests succeeded at 192 RPM with 4K-token inputs; p50 8.9s, p95 34.3s. Fireworks still throttles under load; manual validation needed quota cooldowns. Production rollout pending.\n\nPricing: [DeepInfra](https://deepinfra.com/Qwen/Qwen3-Embedding-8B), [Fireworks](https://fireworks.ai/models/fireworks/qwen3-embedding-8b).\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A cheaper path through the garden",
+    "blurb": "Qwen embeddings take the DeepInfra path, with Fireworks waiting at the next fork. Long inputs still have somewhere to go.",
+    "summary": "Routes qwen/qwen3-embedding-8b through DeepInfra at $0.01 per million input tokens instead of $0.10, with a hidden Fireworks fallback for provider failures and inputs exceeding DeepInfra's 131,072-character limit.",
+    "impact": "DeepInfra requests get the lower input rate, while character-heavy inputs can fall back to Fireworks; the existing aliases, 128–4096 dimensions, and 40,960-token support remain.",
+    "keywords": [
+      "Qwen3",
+      "embeddings",
+      "DeepInfra",
+      "Fireworks",
+      "fallback",
+      "pricing"
+    ],
+    "visual_concept": "Depict the Qwen embedding route as two paths through a code garden: a prominent lime-green DeepInfra path and a Fireworks fallback path for an oversized scroll. Polli, wearing a tiny tool belt, guides a CRT monitor robot carrying the scroll.",
+    "image_prompt": "In a cozy pixel art code garden, two paths marked 'DeepInfra' and 'Fireworks' branch beside a glowing CRT robot carrying an oversized text scroll; Polli guides it toward the fallback path through flowers and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny tool belt; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, prominent soft lime green (#ecf874), warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16605.jpg",
+    "prompt": "In a cozy pixel art code garden, two paths marked 'DeepInfra' and 'Fireworks' branch beside a glowing CRT robot carrying an oversized text scroll; Polli guides it toward the fallback path through flowers and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny tool belt; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, prominent soft lime green (#ecf874), warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-06T17:42:20.934853+00:00"
+}

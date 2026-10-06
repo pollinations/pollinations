@@ -51,23 +51,11 @@ export const docsCommand = new Command("docs")
                 let content = doc;
                 if (endpoint) {
                     const sections = [""];
-                    let fence = "";
+                    let inFence = false;
                     for (const line of doc.split(/(?<=\n)/)) {
-                        const delimiter = line.match(/^ {0,3}(`{3,}|~{3,})/);
-                        if (delimiter) {
-                            const marker = delimiter[1];
-                            if (!fence) {
-                                fence = marker;
-                            } else if (
-                                marker[0] === fence[0] &&
-                                marker.length >= fence.length &&
-                                line.slice(delimiter[0].length).trim() === ""
-                            ) {
-                                fence = "";
-                            }
-                        }
+                        if (line.startsWith("```")) inFence = !inFence;
                         // Shell comments inside examples are not headings.
-                        if (!fence && /^#{1,6} /.test(line)) {
+                        if (!inFence && /^#{1,6} /.test(line)) {
                             sections.push("");
                         }
                         sections[sections.length - 1] += line;

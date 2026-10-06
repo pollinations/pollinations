@@ -578,6 +578,30 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("keeps the MiniMax M3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["minimax/minimax-m3"];
+        const fallback = TEXT_SERVICES["minimax/minimax-m3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-m3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.000556, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0006, 8);
+        expect(
+            findModelByName("minimax/minimax-m3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "MiniMaxAI/MiniMax-M3",
+        });
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),

@@ -1,6 +1,10 @@
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { describe, expect, it } from "vitest";
-import { findModelByName } from "../../../src/text/availableModels.js";
+import {
+    findModelByName,
+    supportsDirectResponses,
+} from "../../../src/text/availableModels.js";
+import { textCapabilityError } from "../../../src/text/fallbackCompatibility.ts";
 import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 describe("Vertex Gemini routing with OpenRouter fallback", () => {
@@ -10,12 +14,6 @@ describe("Vertex Gemini routing with OpenRouter fallback", () => {
             "gemini-3-flash-preview",
             "google/gemini-3-flash-preview:openrouter:vertex-global",
             "google-vertex/global",
-        ],
-        [
-            "gemini-fast",
-            "gemini-2.5-flash-lite",
-            "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
-            "google-vertex/eu",
         ],
         [
             "gemini-large",
@@ -161,7 +159,7 @@ describe("Vertex Gemini routing with OpenRouter fallback", () => {
     });
 });
 
-describe("Vertex Gemini Search routing", () => {
+describe("OpenRouter Gemini Search routing", () => {
     const routes = [
         "google/gemini-2.5-flash-lite:search",
         "gemini-search",
@@ -175,57 +173,50 @@ describe("Vertex Gemini Search routing", () => {
         "gemini-3.5-flash-search",
     ] as const;
 
-    it.each(routes)("routes %s directly to Vertex", (model) => {
-        const upstreamModel = "gemini-2.5-flash-lite";
+    it.each(routes)("routes %s through OpenRouter AI Studio", (model) => {
         const { options } = resolveModelConfig([], { model });
-
-        expect(options.model).toBe(upstreamModel);
+        expect(options.model).toBe("google/gemini-2.5-flash-lite");
+        expect(options.provider).toEqual({
+            only: ["google-ai-studio"],
+            allow_fallbacks: false,
+        });
         expect(options.modelConfig).toMatchObject({
-            provider: "vertex-ai",
-            "vertex-region": "global",
-            "vertex-model-id": upstreamModel,
-            "strict-openai-compliance": "false",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
-        expect(options.provider).toBeUndefined();
     });
-
-    it.each(routes)("adds native Google Search for %s", async (model) => {
+    it.each(routes)("adds Exa web search for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
-
-        const { options } = await transform(
-            [{ role: "user", content: "latest news" }],
-            { model },
-        );
-
-        expect(options.tools).toEqual([
-            {
-                type: "function",
-                function: { name: "google_search" },
-            },
+        const { options } = await transform([], { model });
+        expect(options.tools).toBeUndefined();
+        expect(options.plugins).toEqual([
+            { id: "web", engine: "exa", max_results: 5 },
         ]);
     });
 
-    it.each(
-        routes,
-    )("adapts the public Google Search shape for %s", async (model) => {
-        const transform = findModelByName(model)?.transform;
-        if (!transform) throw new Error(`${model} transform missing`);
-
-        const { options } = await transform([], {
-            model,
-            tools: [{ type: "google_search" }],
-        });
-
-        expect(options.tools).toEqual([
-            {
-                type: "function",
-                function: { name: "google_search" },
-            },
-        ]);
+    it.each([
+        { tools: [] },
+        { tool_choice: "none" },
+    ])("preserves explicit search opt-out %j", async (disabled) => {
+        const transform = findModelByName("gemini-search")?.transform;
+        if (!transform) throw new Error("search transform missing");
+        const result = await transform([], disabled);
+        expect(result.options.plugins).toEqual([]);
+    });
+    it.each([
+        "google/gemini-2.5-flash-lite:search",
+        "google/gemini-2.5-flash-lite:search:vercel",
+    ])("allows search with JSON on %s", (model) => {
+        expect(
+            textCapabilityError(
+                TEXT_SERVICES[model as keyof typeof TEXT_SERVICES],
+                { response_format: { type: "json_object" } },
+            ),
+        ).toBeUndefined();
     });
 
-    it("preserves logit_bias on the direct Vertex route", async () => {
+    it("preserves logit_bias on the OpenRouter route", async () => {
         const transform = findModelByName("gemini-search")?.transform;
         if (!transform) throw new Error("gemini-search transform missing");
 
@@ -236,16 +227,18 @@ describe("Vertex Gemini Search routing", () => {
         expect(options.logit_bias).toEqual({ "1": -1 });
     });
 
-    it("preserves logit_bias with explicit search on the 2.5 route", async () => {
-        const transform = findModelByName("gemini-fast")?.transform;
-        if (!transform) throw new Error("gemini-fast transform missing");
-
-        const { options } = await transform([], {
-            tools: [{ type: "google_search" }],
-            logit_bias: { "1": -1 },
-        });
-
-        expect(options.logit_bias).toEqual({ "1": -1 });
+    it("rejects explicit search on the standard Flash Lite model", () => {
+        for (const tools of [
+            [{ type: "google_search" }],
+            [{ type: "function", function: { name: "google_search" } }],
+        ]) {
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["google/gemini-2.5-flash-lite"],
+                    { tools },
+                ),
+            ).toContain("does not support web search");
+        }
     });
 
     it("preserves logit_bias without native search on the 2.5 route", async () => {
@@ -257,5 +250,113 @@ describe("Vertex Gemini Search routing", () => {
         });
 
         expect(options.logit_bias).toEqual({ "1": -1 });
+    });
+});
+
+describe("Flash Lite Vercel routing", () => {
+    it("keeps search on the Vercel fallback and requires an initial Exa call", async () => {
+        const model = "google/gemini-2.5-flash-lite:search:vercel";
+        const { options } = resolveModelConfig([], { model });
+        expect(options.providerOptions).toEqual({
+            gateway: { only: ["google"] },
+        });
+        expect(
+            TEXT_SERVICES["google/gemini-2.5-flash-lite:search"].fallbacks,
+        ).toEqual([model]);
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error("search fallback transform missing");
+        const result = await transform([], {});
+        expect(result.options.tool_choice).toBe("required");
+        const disabled = await transform([], { tools: [] });
+        expect(disabled.options.tools).toEqual([]);
+        expect(disabled.options.tool_choice).toBeUndefined();
+        expect(result.options.tools).toEqual([
+            {
+                type: "vercel:exa_search",
+                config: { type: "instant", num_results: 5 },
+            },
+        ]);
+        expect(supportsDirectResponses(model)).toBe(false);
+    });
+    it.each([
+        "google/gemini-2.5-flash-lite",
+        "gemini-2.5-flash-lite",
+        "gemini-fast",
+    ])("routes %s to Vercel pinned to Google", (model) => {
+        const { options } = resolveModelConfig([], { model });
+        expect(options.model).toBe("google/gemini-2.5-flash-lite");
+        expect(options.providerOptions).toEqual({
+            gateway: { only: ["google"] },
+        });
+        expect(options.modelConfig).toMatchObject({
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+        });
+    });
+    it("converts audio and video to Vercel files while preserving images and text", async () => {
+        const transform = findModelByName("gemini-fast")?.transform;
+        if (!transform) throw new Error("gemini-fast transform missing");
+        const image = {
+            type: "image_url",
+            image_url: { url: "data:image/png;base64,aW1hZ2U=" },
+        };
+        const text = { type: "text", text: "Describe these inputs" };
+        const { messages } = await transform(
+            [
+                {
+                    role: "user",
+                    content: [
+                        text,
+                        image,
+                        {
+                            type: "input_audio",
+                            input_audio: { format: "wav", data: "YXVkaW8=" },
+                        },
+                        {
+                            type: "video_url",
+                            video_url: {
+                                url: "data:video/mp4;base64,dmlkZW8=",
+                            },
+                        },
+                    ],
+                },
+            ],
+            {},
+        );
+        expect(messages[0].content).toEqual([
+            text,
+            image,
+            {
+                type: "file",
+                file: {
+                    filename: "audio.wav",
+                    file_data: "data:audio/wav;base64,YXVkaW8=",
+                },
+            },
+            {
+                type: "file",
+                file: {
+                    filename: "video.mp4",
+                    file_data: "data:video/mp4;base64,dmlkZW8=",
+                },
+            },
+        ]);
+    });
+    it("preserves the existing public endpoint capabilities", () => {
+        expect(supportsDirectResponses("google/gemini-2.5-flash-lite")).toBe(
+            false,
+        );
+        expect(
+            supportsDirectResponses("google/gemini-2.5-flash-lite:search"),
+        ).toBe(false);
+    });
+
+    it("pins the fallback to AI Studio", () => {
+        const { options } = resolveModelConfig([], {
+            model: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
+        });
+        expect(options.provider).toEqual({
+            only: ["google-ai-studio"],
+            allow_fallbacks: false,
+        });
     });
 });

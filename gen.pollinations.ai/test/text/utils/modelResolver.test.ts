@@ -199,9 +199,21 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Ling 3.1 Flash to Novita on OpenRouter without fallback", () => {
+    it("routes Ling 3.1 Flash directly to Novita without gateway routing options", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.1-flash",
+        });
+        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins the Ling OpenRouter fallback to Novita without gateway fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.1-flash:openrouter:novita",
         });
 
         expect(result.options.model).toBe("inclusionai/ling-3.1-flash");

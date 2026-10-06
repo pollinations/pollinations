@@ -245,8 +245,12 @@ export class Conversation {
 
     /** Internal: send and add response to history */
     private async _sendAndAddResponse(): Promise<ChatResponseExt> {
-        const response = await this.client.chat(this.messages, this.options);
+        const messages = this.messages;
+        const response = await this.client.chat(messages, this.options);
         const wrapped = wrapChatResponse(response);
+
+        // clear() replaces the history, invalidating pending responses.
+        if (messages !== this.messages) return wrapped;
 
         // Add full assistant message to history (including tool_calls if present)
         const assistantMessage: Message & { tool_calls?: unknown } = {

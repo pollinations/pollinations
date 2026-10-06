@@ -1,7 +1,6 @@
 import type { BillingRules } from "./registry";
 
 const OPENROUTER_CACHE_TTL_HOURS = 5 / 60;
-const GEMINI_25_GROUNDING_COST_PER_PROMPT = 35 / 1000;
 const GEMINI_3_GROUNDING_COST_PER_QUERY = 14 / 1000;
 const VERTEX_CACHE_TTL_HOURS = 1;
 
@@ -47,17 +46,6 @@ function webSearchQueryStrings(metadata: GroundingMetadata): string[] {
         (query): query is string =>
             typeof query === "string" && query.trim() !== "",
     );
-}
-
-function countGeminiGroundedPrompt(output: unknown): number {
-    for (const metadata of eachGroundingMetadata(output)) {
-        if (webSearchQueryStrings(metadata).length > 0) return 1;
-        const chunks = Array.isArray(metadata.groundingChunks)
-            ? metadata.groundingChunks
-            : [];
-        if (chunks.some((chunk) => chunk?.web?.uri)) return 1;
-    }
-    return countOpenRouterWebSearchRequests(output) > 0 ? 1 : 0;
 }
 
 // Gemini 3.x charges per distinct search query. Streaming chunks repeat the
@@ -123,7 +111,7 @@ export function openRouterGeminiBilling({
         adjustments: [
             {
                 id: "openrouter.google.web_search.v1",
-                description: `OpenRouter native Google Search adds $${searchCostPerThousandRequests} / 1K search requests reported by provider usage.`,
+                description: `OpenRouter web search adds $${searchCostPerThousandRequests} / 1K search requests reported by provider usage.`,
                 kind: "search_request",
                 unit: "request",
                 unitCost: searchCostPerThousandRequests / 1_000,
@@ -180,25 +168,6 @@ export function withVertexCacheStorage(
         ],
     };
 }
-
-export const GEMINI_25_GROUNDING_BILLING: BillingRules = {
-    adjustments: [
-        {
-            id: "google.gemini_2.grounded_prompt.v1",
-            description:
-                "Google Search grounding adds $35 / 1K grounded prompts when grounding metadata is present.",
-            kind: "grounded_prompt",
-            unit: "prompt",
-            unitCost: GEMINI_25_GROUNDING_COST_PER_PROMPT,
-            publicPricing: {
-                label: "Search",
-                quantity: 1_000,
-                unit: "grounded prompts",
-            },
-            countUnits: countGeminiGroundedPrompt,
-        },
-    ],
-};
 
 export const GEMINI_3_SEARCH_BILLING: BillingRules = {
     adjustments: [

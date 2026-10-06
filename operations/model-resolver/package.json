@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "test": "node --test *.test.mjs ../model-pricing/analyze.test.mjs",
+        "verify:agents": "node verify-live-agents.mjs",
         "check:worker": "wrangler deploy --dry-run",
         "deploy:production": "wrangler deploy"
     },

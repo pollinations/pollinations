@@ -364,6 +364,28 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
+    "google/gemini-nano-banana-2.1": {
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "image",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.055,
+        cost: {
+            // Gemini Nano Banana 2.1 via Vertex AI (global)
+            promptTextTokens: perMillion(1.5), // per 1M tokens
+            promptImageTokens: perMillion(1.5), // per 1M tokens
+            completionTextTokens: perMillion(7.5), // text/reasoning output tokens
+            completionImageTokens: perMillion(30), // per 1M tokens, 1120/1680/3780 tokens at 1K/2K/4K
+        },
+        title: "Nano Banana 2.1",
+        description:
+            "Balanced image generation and editing with output up to 4K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14, // Gemini Nano Banana 2.1 provider limit.
+    },
     "google/gemini-3-pro-image": {
         aliases: ["nanobanana-pro"],
         provider: "google",

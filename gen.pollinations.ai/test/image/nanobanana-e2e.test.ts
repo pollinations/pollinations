@@ -532,6 +532,54 @@ test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
     expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
 });
 
+test("nano-banana-2.1 omits sampling parameters and bills exact usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "vertex");
+    mocks.vertex.state.usageMetadata = {
+        promptTokenCount: 10,
+        candidatesTokenCount: 1680,
+        totalTokenCount: 1690,
+        promptTokensDetails: [{ modality: "TEXT", tokenCount: 10 }],
+        candidatesTokensDetails: [{ modality: "IMAGE", tokenCount: 1680 }],
+    };
+
+    const { response, wait } = await fetchWorker(
+        "/image/green%20star?model=google/gemini-nano-banana-2.1&width=1920&height=1080&seed=42",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe(
+        "google/gemini-nano-banana-2.1",
+    );
+    expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
+        "1680",
+    );
+    await response.arrayBuffer();
+    await wait();
+
+    expect(mocks.vertex.state.requests).toHaveLength(1);
+    expect(mocks.vertex.state.requests[0].url).toContain(
+        "/models/gemini-nano-banana-2.1:generateContent",
+    );
+    const generationConfig = mocks.vertex.state.requests[0].body
+        .generationConfig as Record<string, unknown>;
+    expect(generationConfig.imageConfig).toMatchObject({
+        aspectRatio: "16:9",
+        imageSize: "2K",
+    });
+    for (const key of ["temperature", "topP", "topK", "seed"]) {
+        expect(generationConfig[key]).toBeUndefined();
+    }
+    expect(generationConfig.thinkingConfig).toBeUndefined();
+    const event = mocks.tinybird.state.events[0];
+    const expectedCost = (10 * 1.5 + 1680 * 30) / 1_000_000;
+    expect(event.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
+});
+
 test("nanobanana-pro preserves 4K Vertex routing and exact billing", async ({
     paidApiKey,
     mocks,

@@ -94,26 +94,32 @@ const EMBEDDING_BASE_SERVICES = {
     },
     "qwen/qwen3-embedding-8b": {
         aliases: ["qwen3-embedding", "qwen3-embedding-8b"],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "Qwen",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1),
+            promptTextTokens: perMillion(0.01),
         },
         title: "Qwen3 Embedding 8B",
         description:
             "Multilingual text vectors. 4096 dimensions, 40,960-token context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
-        // Match the effective context advertised by the Fireworks deployment.
+        // Verified on the live DeepInfra route; its catalog still lists 32K.
         contextLength: 40960,
     },
 } as const satisfies Record<string, ModelDefinition>;
 
 export const EMBEDDING_SERVICES = mergeFallbacks(EMBEDDING_BASE_SERVICES, {
+    "qwen/qwen3-embedding-8b": {
+        "qwen/qwen3-embedding-8b:fireworks": {
+            provider: "fireworks",
+            cost: { promptTextTokens: perMillion(0.1) },
+        },
+    },
     "cohere/embed-v4.0": {
         "cohere/embed-v4.0:azure:sweden": { provider: "azure" },
     },

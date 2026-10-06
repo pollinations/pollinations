@@ -2975,6 +2975,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3-embedding-8b": {
     "cost": {
+      "promptTextTokens": 0.00000001,
+    },
+    "price": {
+      "promptTextTokens": 0.00000001,
+    },
+  },
+  "qwen/qwen3-embedding-8b:fireworks": {
+    "cost": {
       "promptTextTokens": 0.0000001,
     },
     "price": {

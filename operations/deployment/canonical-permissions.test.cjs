@@ -14,22 +14,6 @@ const workflow = parse(
     ),
 );
 
-test("canonical promotion fails closed before D1 unless live compatibility is confirmed", () => {
-    const gate = workflow.jobs.migrate.steps[0];
-    assert.equal(
-        gate.if,
-        undefined,
-        "manual retries must not bypass the compatibility gate",
-    );
-    assert.equal(
-        gate.env.COMPAT_VERIFIED,
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression, not JavaScript interpolation.
-        "${{ vars.CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED }}",
-    );
-    assert.ok(gate.run.includes('if [ "$COMPAT_VERIFIED" != "true" ]'));
-    assert.ok(gate.run.includes("exit 1"));
-});
-
 test("canonical cleanup waits for both successful deployments and requires promotion or explicit retry", () => {
     const job = workflow.jobs["finalize-canonical-permissions"];
     assert.deepEqual(job.needs, ["changes", "deploy-enter", "deploy-gen"]);

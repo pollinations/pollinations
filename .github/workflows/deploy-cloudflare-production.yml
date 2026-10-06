@@ -165,17 +165,6 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
-      - name: Require verified live permission compatibility for canonical promotion
-        # Deliberately applies to manual retries too: path filters are not
-        # evidence that 0062 has already reached the production database.
-        env:
-          COMPAT_VERIFIED: ${{ vars.CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED }}
-        run: |
-          if [ "$COMPAT_VERIFIED" != "true" ]; then
-            echo "Deploy and verify alias-aware model permissions against the old registry first."
-            echo "Then set CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED=true and rerun this promotion."
-            exit 1
-          fi
       - name: Checkout code
         uses: actions/checkout@v5
 

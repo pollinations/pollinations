@@ -63,6 +63,7 @@ export function buildLeaderboard(models) {
     return {
         ranking: scored,
         pairs,
-        skipped: models.filter((model) => model.status !== "scored"),
+        skipped: models.filter((model) => model.status === "skipped"),
+        unscored: models.filter((model) => model.status === "unscored"),
     };
 }

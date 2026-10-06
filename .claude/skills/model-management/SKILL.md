@@ -74,17 +74,16 @@ State plainly: `This adds/changes the public API: ...` Then ask for explicit con
 
 ### Secrets are a separate approval
 
-Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, dedicated-PR requirement, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
+Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
 
 ## Workflow
 
 ### 1. Reconcile current state
 
 - Resolve aliases to the canonical registry entry.
-- Before any canonical rename, count production and staging API keys whose
-  `permissions.models` contains the old canonical ID. Verify the deployed
-  authorization code resolves stored aliases; registry aliases alone cannot
-  protect keys while an old exact-string reader is still running.
+- API keys store model categories, not model IDs, so a rename never touches
+  them. A model that changes category changes which restricted keys reach it;
+  state that in the PR.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
 - If a model or provider is missing from the registry, check `git log --all -- <path>`
@@ -178,32 +177,14 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
 - Use the resolved registry entry for canonical model identity in generic handlers. Never maintain handler-level lists of model IDs for response, tracking, billing, or routing behavior.
 - Canonicalize all stale stored aliases found by the same registry-wide audit in
-  one D1 migration PR. Replace old IDs, preserve unrelated permission fields
-  and array order, deduplicate old/new pairs, prove idempotence, and verify all
+  one D1 migration PR. Replace old IDs, preserve unrelated fields and array
+  order, deduplicate old/new pairs, prove idempotence, and verify all
   audited old-ID counts are zero after deployment.
 - Keep every migration statement within D1's per-query CPU limit: one statement
   per alias, and prefilter with `instr()` inside `CASE` so JSON functions never
   run on non-matching rows. A single whole-table JSON scan fails with error
   7429 at production scale (~150k apikey rows).
-- API-key create and update paths must store recognized aliases as canonical
-  IDs, while preserving unknown and community IDs, so migrations do not need to
-  repair newly written aliases again.
-- Before promoting a canonical rename or its migration, deploy and verify
-  alias-aware permission checks against the old registry, which must already
-  recognize every future canonical ID as an alias. Cover generation, catalogs,
-  realtime, fallback filtering and readback. Merging this prerequisite is not
-  sufficient: verify it is live before the migration can run.
-- For #13076, production migration is gated by the repository variable
-  `CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED=true`. Set it only after live
-  old/new-ID restricted-key checks pass on the compatibility deployment.
-  The post-deploy cleanup runs after both workers succeed; for a deployment
-  retry use `service=all` with `finalize_canonical_permissions=true`.
-- Keep request-time permission normalization permanently and use the existing
-  registry resolver, preserving unknown/community IDs and empty allowlists.
-  Writes and migrations still store canonical IDs. After both workers deploy,
-  repeat the bounded permission cleanup to catch old Enter writes made after
-  the migration; verify no audited old IDs remain. Do not rewrite historical
-  analytics using today's mutable aliases.
+- Do not rewrite historical analytics using today's mutable aliases.
 - Update every consumer of a changed public ID at once.
 - New models, including new versions and checkpoints, must have no aliases.
 - Preserve existing alias targets until removal.

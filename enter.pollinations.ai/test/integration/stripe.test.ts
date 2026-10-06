@@ -478,6 +478,36 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     );
 });
 
+test("crypto checkout offers only crypto in USD without card options", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(
+        `${base}/checkout/p5?payment_method=crypto`,
+        {
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        },
+    );
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expectUsdPriceData(body, 5);
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expect(body?.payment_method_configuration).toBeUndefined();
+    expect(body?.["payment_method_types[0]"]).toBe("crypto");
+    expect(
+        body?.["payment_method_options[card][request_three_d_secure]"],
+    ).toBeUndefined();
+    expect(
+        body?.["saved_payment_method_options[payment_method_save]"],
+    ).toBeUndefined();
+});
+
 test("GET /api/stripe/checkout marks new-card gate locked after four distinct failed cards in 24h", async ({
     sessionToken,
     mocks,
@@ -936,11 +966,13 @@ test("GET /api/stripe/billing returns default card billing address", async ({
         method: "GET",
         headers: {
             cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "IN",
         },
     });
 
     expect(response.status).toBe(200);
     const data = (await response.json()) as {
+        ipCountry: string | null;
         paymentMethods: { isDefault: boolean }[];
         billingDetails: {
             name: string | null;
@@ -953,6 +985,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
             country: string | null;
         } | null;
     };
+    expect(data.ipCountry).toBe("IN");
     expect(data.paymentMethods.some((m) => m.isDefault)).toBe(true);
     // The company is its own field; the name is the person's.
     expect(data.billingDetails).toEqual({
@@ -4098,6 +4131,8 @@ test("wallet and hosted checkout create the same session apart from how Stripe r
     const { success_url, cancel_url, ...hostedShared } = hostedBody ?? {};
     const { ui_mode, return_url, ...walletShared } = walletBody ?? {};
     expect(walletShared).toEqual(hostedShared);
+    expect(hostedShared.payment_method_configuration).toBe(stripePmcId);
+    expect(hostedShared["payment_method_types[0]"]).toBeUndefined();
     expect(
         hostedShared["saved_payment_method_options[payment_method_save]"],
     ).toBe("enabled");

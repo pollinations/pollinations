@@ -160,6 +160,11 @@ export function PlayGenerator({
         false;
     const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
+    // Keep uploads for switching back, but only send them to models that take images.
+    const effectiveImageUrls = useMemo(
+        () => (supportsImageInput ? imageUrls : []),
+        [supportsImageInput, imageUrls],
+    );
     const availableVoices = currentModelData?.voices || [];
 
     const [selectedVoice, setSelectedVoice] = useState<string>(
@@ -185,17 +190,21 @@ export function PlayGenerator({
             width: width.toString(),
             height: height.toString(),
             seed: seed.toString(),
-            ...(imageUrls.length > 0 ? { image: imageUrls.join("|") } : {}),
+            ...(effectiveImageUrls.length > 0
+                ? { image: effectiveImageUrls.join("|") }
+                : {}),
         }),
-        [selectedModel, width, height, seed, imageUrls],
+        [selectedModel, width, height, seed, effectiveImageUrls],
     );
 
     const textParams = useMemo(
         () => ({
             model: selectedModel,
-            ...(imageUrls.length > 0 ? { image: imageUrls.join("|") } : {}),
+            ...(effectiveImageUrls.length > 0
+                ? { image: effectiveImageUrls.join("|") }
+                : {}),
         }),
-        [selectedModel, imageUrls],
+        [selectedModel, effectiveImageUrls],
     );
 
     const audioParams = useMemo(
@@ -384,10 +393,10 @@ export function PlayGenerator({
             await runGeneration(
                 () => {
                     const content =
-                        imageUrls.length > 0
+                        effectiveImageUrls.length > 0
                             ? [
                                   { type: "text", text: prompt },
-                                  ...imageUrls.map((url: string) => ({
+                                  ...effectiveImageUrls.map((url: string) => ({
                                       type: "image_url",
                                       image_url: { url },
                                   })),

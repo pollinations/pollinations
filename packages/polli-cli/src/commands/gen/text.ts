@@ -29,7 +29,7 @@ interface ChatResponse {
 export function createTextCommand() {
     return new Command("text")
         .description(
-            "Generate text from a prompt (also reads stdin: echo 'hello' | polli text)",
+            "Generate text from a prompt (also reads stdin: echo 'hello' | polli gen text)",
         )
         .argument("[prompt]", "Text prompt (or pipe via stdin)")
         .option("--model <model>", "Text model")

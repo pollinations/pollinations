@@ -1,6 +1,6 @@
 import { Chip, Eyebrow, InlineLink, Section, Surface } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import { type FC, Fragment, type ReactNode, useEffect, useState } from "react";
 
 const HIGHLIGHTS_RAW_URL =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
@@ -153,6 +153,8 @@ export const Announcements: FC = () => {
     const changes = MODEL_CHANGES.filter(
         ({ date, until = date }) => until >= today,
     );
+    // The "Today" line goes before the first upcoming change, after any past ones.
+    const firstUpcoming = changes.findIndex(({ date }) => date >= today);
     if (launches.length === 0 && changes.length === 0) return null;
     return (
         <Section
@@ -179,26 +181,41 @@ export const Announcements: FC = () => {
             )}
             {changes.length > 0 && (
                 <AnnouncementGroup title="Model changes">
-                    {changes.map(({ date, name, action, change }) => (
-                        <li key={name} className={ROW}>
-                            <time
-                                dateTime={date}
-                                className="whitespace-nowrap text-theme-text-muted"
+                    {changes.map(({ date, name, action, change }, i) => (
+                        <Fragment key={name}>
+                            {i > 0 && i === firstUpcoming && (
+                                <li className="flex items-center gap-2">
+                                    <Eyebrow>Today</Eyebrow>
+                                    <hr className="flex-1 border-theme-text-soft/40" />
+                                </li>
+                            )}
+                            <li
+                                className={
+                                    date < today ? `${ROW} opacity-60` : ROW
+                                }
                             >
-                                {formatNewsDate(date)}
-                            </time>
-                            <span className="border-l border-theme-text-strong/15 pl-2">
-                                <Chip size="sm" intent={ACTION_INTENT[action]}>
-                                    {action}
-                                </Chip>
-                            </span>
-                            <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
-                                {name}
-                            </strong>
-                            <Markdown className={DESCRIPTION}>
-                                {change}
-                            </Markdown>
-                        </li>
+                                <time
+                                    dateTime={date}
+                                    className="whitespace-nowrap text-theme-text-muted"
+                                >
+                                    {formatNewsDate(date)}
+                                </time>
+                                <span className="border-l border-theme-text-strong/15 pl-2">
+                                    <Chip
+                                        size="sm"
+                                        intent={ACTION_INTENT[action]}
+                                    >
+                                        {action}
+                                    </Chip>
+                                </span>
+                                <strong className="min-w-0 border-l border-theme-text-strong/15 pl-2 text-theme-text-strong">
+                                    {name}
+                                </strong>
+                                <Markdown className={DESCRIPTION}>
+                                    {change}
+                                </Markdown>
+                            </li>
+                        </Fragment>
                     ))}
                 </AnnouncementGroup>
             )}

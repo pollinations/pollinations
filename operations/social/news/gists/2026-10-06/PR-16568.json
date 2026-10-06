@@ -1,0 +1,35 @@
+{
+  "pr_number": 16568,
+  "title": "fix: push STABILITY_API_KEY to the gen worker",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16568",
+  "merged_at": "2026-10-06T10:07:19Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "- Fix: `stability-ai/stable-audio-3` fails with \"missing STABILITY_API_KEY\" because the secret never reached the gen worker.\n- #11912 added `STABILITY_API_KEY` to `gen.pollinations.ai/secrets/*.vars.json`, but not to the push allowlist in `push-generation-secrets.mjs`, so every deploy dropped it.\n- Adds it to `REQUIRED_SECRET_KEYS`. The value is unchanged and already present in prod, staging and dev.\n- Live workers checked (names only): neither `pollinations-gen-production` nor `pollinations-gen-staging` has it. The stored key is valid with the Stability API.\n- Secret addition approved for staging and production.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01Aj15m1tbSVxFnVTaHpqi3X\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The audio key finds its way",
+    "blurb": "Stable Audio 3 had a key; the gen worker just wasn't receiving it. One allowlist entry gives the music a way through.",
+    "summary": "Added `STABILITY_API_KEY` to the gen worker's `REQUIRED_SECRET_KEYS` push allowlist so deployments pass the existing secret to `stability-ai/stable-audio-3`.",
+    "impact": "Stable Audio 3 requests can authenticate with Stability instead of failing with `missing STABILITY_API_KEY`.",
+    "keywords": [
+      "Stable Audio 3",
+      "Stability AI",
+      "gen worker",
+      "secrets",
+      "audio"
+    ],
+    "visual_concept": "Depict the gen worker as a cozy retro music terminal: Polli hands it a small pixel key while gentle sound waves emerge. A lime-green code-plant and warm pastel surroundings keep the one-line configuration fix friendly rather than dramatic.",
+    "image_prompt": "In a cozy pixel art garden studio, Polli hands a tiny key to a retro music terminal as soft sound waves curl around a lime green (#ecf874) code-plant; she wears little headphones and is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small within the scene and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16568.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli hands a tiny key to a retro music terminal as soft sound waves curl around a lime green (#ecf874) code-plant; she wears little headphones and is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, small within the scene and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky sprites, and a nostalgic, emotionally warm feel."
+  },
+  "generated_at": "2026-10-06T10:09:03.648290+00:00"
+}

@@ -369,6 +369,7 @@ async function buildElevenLabsAudioResponse(
 
 const ELEVENLABS_TTS_MODEL_IDS = {
     "elevenlabs/eleven-v4": "eleven_v4",
+    "elevenlabs/eleven-v4-turbo": "eleven_v4_turbo",
     "elevenlabs/eleven-v3": "eleven_v3",
     "elevenlabs/eleven-flash-v2.5": "eleven_flash_v2_5",
     "elevenlabs/eleven-multilingual-v2": "eleven_multilingual_v2",
@@ -3387,6 +3388,7 @@ async function dispatchAudioGeneration(
 
     switch (model) {
         case "elevenlabs/eleven-v4":
+        case "elevenlabs/eleven-v4-turbo":
         case "elevenlabs/eleven-v3":
         case "elevenlabs/eleven-flash-v2.5":
         case "elevenlabs/eleven-multilingual-v2":
@@ -4277,6 +4279,7 @@ export const audioRoutes = new Hono<Env>()
                                     default: "elevenlabs/eleven-v3",
                                     enum: [
                                         "elevenlabs/eleven-v4",
+                                        "elevenlabs/eleven-v4-turbo",
                                         "elevenlabs/eleven-v3",
                                         "elevenlabs/eleven-flash-v2.5",
                                         "elevenlabs/eleven-multilingual-v2",

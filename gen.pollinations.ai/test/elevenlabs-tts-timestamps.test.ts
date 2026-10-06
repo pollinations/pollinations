@@ -87,6 +87,7 @@ describe("ElevenLabs timestamped TTS", () => {
 
     describe.each([
         ["elevenlabs/eleven-v4", "eleven_v4"],
+        ["elevenlabs/eleven-v4-turbo", "eleven_v4_turbo"],
     ] as const)("%s", (modelName, modelId) => {
         it.each([
             ["speech", generateElevenLabsSpeech],

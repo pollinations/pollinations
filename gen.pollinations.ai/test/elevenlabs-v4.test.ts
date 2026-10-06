@@ -13,7 +13,10 @@ import { afterEach, describe, expect, vi } from "vitest";
 
 afterEach(() => vi.restoreAllMocks());
 
-describe.each(["elevenlabs/eleven-v4"] as const)("%s", (model) => {
+describe.each([
+    "elevenlabs/eleven-v4",
+    "elevenlabs/eleven-v4-turbo",
+] as const)("%s", (model) => {
     workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         "serves v4 through authenticated speech, simple audio, and timestamps",
         async ({ apiKey }) => {

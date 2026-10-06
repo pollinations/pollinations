@@ -323,10 +323,6 @@ const img = await imageGenerate('A robot reading a book', {
   model: 'flux',
 });
 await img.saveToFile('robot.png');
-
-// Multiple images in one request
-const imgs = await imageGenerate('A robot reading a book', { n: 3 });
-imgs.forEach((img, i) => img.saveToFile(`robot-${i}.png`));
 ```
 
 For the simpler GET-based endpoint, see `generateImage` above.

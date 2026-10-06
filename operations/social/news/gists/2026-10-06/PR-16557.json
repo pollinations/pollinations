@@ -1,0 +1,33 @@
+{
+  "pr_number": 16557,
+  "title": "feat: news page with dated announcements and the news feed",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16557",
+  "merged_at": "2026-10-06T12:02:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- News page now has two sections: **Announcements** and **News** (FAQ unchanged below).\n- **Announcements**: one dated row per item (date · New/Retiring/Updating · name · change), using Elliot's row layout from #16336. New launches show for two weeks; upcoming changes hide after their date; the section hides when empty.\n- Current rows: Sandboxes (New, Oct 2), Pay with crypto (New, Oct 6), and the Qwen, Command A+, Gemini 2.5 Flash Lite and Grok Imagine Pro changes. Retirement dates match `retirementDate` in the registry.\n- Moves Command A+ `retirementDate` from Oct 13 to Oct 9 so it retires with the Qwen3 routes (metadata only; no code reads it).\n- **News**: the automatic daily feed, unchanged.\n- Removes the hand-written announcement cards, which never expired and only described changes that had already shipped.\n\n| | Before | After |\n|---|---|---|\n| Top section | 7 never-expiring cards about past changes | New launches (2 weeks) + upcoming changes, each auto-hidden |\n| Second section | Daily news feed | Daily news feed |\n\nChecked: Enter and Gen `tsc`, Biome, `/news` rendered at 1280px and 390px with no horizontal overflow.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_016VqwnftUw8DUP9T1G469kF\n\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "News with an expiration date",
+    "blurb": "The news page gets dated announcements that know when to leave. The daily feed and FAQ keep their usual spots.",
+    "summary": "The /news page replaces seven never-expiring cards with dated New, Retiring, and Updating rows: launches remain for two weeks, upcoming changes hide after their dates, and the daily news feed stays unchanged.",
+    "impact": "Readers get a clearer view of launches and upcoming model changes, including Sandboxes, crypto payments, and Qwen, Command A+, Gemini 2.5 Flash Lite, and Grok Imagine Pro updates; the announcements section hides when empty.",
+    "keywords": [
+      "news page",
+      "announcements",
+      "daily feed",
+      "model changes",
+      "retirement dates"
+    ],
+    "visual_concept": "Depict the news page as a cozy garden noticeboard: dated announcement rows are fresh leaves beside an unchanged daily-news stack. Polli tends the board while a small CRT robot reads it; a few gently fallen leaves suggest that old notices clear themselves away.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli pins dated announcement leaves to a lime green (#ecf874) noticeboard beside a tidy daily-news stack while a small CRT monitor robot reads along; tiny flowers grow around the board. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny editor's visor and stays small within the scene, rendered in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16557.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli pins dated announcement leaves to a lime green (#ecf874) noticeboard beside a tidy daily-news stack while a small CRT monitor robot reads along; tiny flowers grow around the board. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny editor's visor and stays small within the scene, rendered in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-06T12:03:38.661029+00:00"
+}

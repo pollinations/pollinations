@@ -9,7 +9,10 @@ import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
-import { generateElevenLabsSpeechWithTimestamps } from "../src/routes/audio.ts";
+import {
+    generateElevenLabsSpeech,
+    generateElevenLabsSpeechWithTimestamps,
+} from "../src/routes/audio.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const log = {
@@ -80,6 +83,58 @@ describe("ElevenLabs timestamped TTS", () => {
             "2",
         );
         await expect(response.json()).resolves.toEqual(providerResponse);
+    });
+
+    describe.each([
+        ["elevenlabs/eleven-v4", "eleven_v4"],
+        ["elevenlabs/eleven-v4-turbo", "eleven_v4_turbo"],
+    ] as const)("%s", (modelName, modelId) => {
+        it.each([
+            ["speech", generateElevenLabsSpeech],
+            ["timestamps", generateElevenLabsSpeechWithTimestamps],
+        ] as const)("%s counts Unicode and sends only supported settings", async (_name, generate) => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(Response.json(providerResponse));
+            const response = await generate({
+                modelName,
+                text: "Hi 😀",
+                voice: "nova",
+                responseFormat: "mp3",
+                seed: 42,
+                apiKey: "test-eleven-key",
+                log,
+            });
+            expect(
+                response.headers.get("x-usage-completion-audio-tokens"),
+            ).toBe("4");
+            const request = new Request(
+                fetchMock.mock.calls[0][0],
+                fetchMock.mock.calls[0][1],
+            );
+            await expect(request.json()).resolves.toEqual({
+                text: "Hi 😀",
+                model_id: modelId,
+                seed: 42,
+                voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+            });
+            await response.arrayBuffer();
+        });
+
+        it("rejects FLAC before calling the speech provider", async () => {
+            const fetchMock = vi.spyOn(globalThis, "fetch");
+            await expect(
+                generateElevenLabsSpeech({
+                    modelName,
+                    text: "Hi 😀",
+                    voice: "nova",
+                    responseFormat: "flac",
+                    apiKey: "test-eleven-key",
+                    log,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
     });
 
     it("rejects non-JSON provider responses", async () => {

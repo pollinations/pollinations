@@ -811,6 +811,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionAudioTokens": 0.0001,
     },
   },
+  "elevenlabs/eleven-v4": {
+    "cost": {
+      "completionAudioTokens": 0.000022,
+    },
+    "price": {
+      "completionAudioTokens": 0.000022,
+    },
+  },
   "elevenlabs/eleven-v4-turbo": {
     "cost": {
       "completionAudioTokens": 0.000011,

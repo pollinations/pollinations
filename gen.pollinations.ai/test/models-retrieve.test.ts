@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import { communityEndpoint } from "@shared/db/better-auth.ts";
 import type { ModelHealthRow } from "@shared/model-health.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -54,7 +55,7 @@ function mockCatalogHealth(
             );
             if (
                 url.pathname === "/v0/pipes/model_catalog_health.json" ||
-                url.pathname === "/v0/pipes/model_route_health.json"
+                url.pathname === "/v0/pipes/model_health_24h.json"
             ) {
                 return Response.json(
                     {
@@ -220,7 +221,7 @@ test("show all does not bypass key permissions or paid access", async ({
     ).toBe(false);
 });
 
-test("community reliability is discovery-only and show all preserves manual hiding and privacy", async () => {
+test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });
     const { key: ownerKey } = await createTestApiKey({ userId: ownerUserId });
@@ -258,6 +259,7 @@ test("community reliability is discovery-only and show all preserves manual hidi
     const id = `community/${owner}/public`;
     const passingId = `community/${owner}/passing`;
     const privateId = `community/${owner}/private`;
+    const legacyHiddenId = `community/${owner}/hidden`;
     mockCatalogHealth([
         {
             model: id,
@@ -285,6 +287,9 @@ test("community reliability is discovery-only and show all preserves manual hidi
     const normalModels = (await normal.json()) as { name: string }[];
     expect(normalModels.some((model) => model.name === id)).toBe(false);
     expect(normalModels.some((model) => model.name === passingId)).toBe(true);
+    expect(normalModels.some((model) => model.name === legacyHiddenId)).toBe(
+        true,
+    );
     const ownerList = await fetchWorker("/models?source=community", {
         headers: { Authorization: `Bearer ${ownerKey}` },
     });
@@ -301,12 +306,66 @@ test("community reliability is discovery-only and show all preserves manual hidi
             .filter((model) => model.name.startsWith(`community/${owner}/`))
             .map((model) => model.name)
             .sort(),
-    ).toEqual([passingId, id].sort());
+    ).toEqual([passingId, id, legacyHiddenId].sort());
     expect(
         (await fetchWorker(`/v1/models/${encodeURIComponent(id)}`)).status,
     ).toBe(200);
     const registry = await getGenerationModelRegistry(env);
     expect(registry.resolve(id)?.visible).toBe(true);
+});
+
+test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async () => {
+    type CatalogPrice = Pick<ModelInfo, "pricing" | "pricing_variants"> & {
+        name?: string;
+        id?: string;
+    };
+    const model = "black-forest-labs/flux-3-image";
+    const cutoff = Date.parse("2026-10-08T15:00:00Z");
+    const now = vi.spyOn(Date, "now").mockReturnValue(cutoff - 1);
+    const registry = await getGenerationModelRegistry(env);
+    for (const [time, rate, twoK] of [
+        [cutoff - 1, 0.024, 0.05],
+        [cutoff, 0.024, 0.05],
+        [cutoff + 60_000, 0.048, 0.1],
+    ]) {
+        now.mockReturnValue(time);
+        const currentRegistry = await getGenerationModelRegistry(env);
+        if (time < cutoff + 60_000) {
+            expect(currentRegistry).toBe(registry);
+        } else {
+            expect(currentRegistry).not.toBe(registry);
+        }
+        for (const path of [
+            "/models",
+            "/image/models",
+            "/v1/models",
+            `/v1/models/${encodeURIComponent(model)}`,
+        ]) {
+            const response = await fetchWorker(path);
+            expect(response.status).toBe(200);
+            const body = await response.json<
+                CatalogPrice[] | CatalogPrice | { data: CatalogPrice[] }
+            >();
+            const info = Array.isArray(body)
+                ? body.find((info) => info.name === model)
+                : "data" in body
+                  ? body.data.find((info) => info.id === model)
+                  : body;
+            expect(Number(info?.pricing.completionImageTokens)).toBeCloseTo(
+                rate * 1.055,
+                10,
+            );
+            if (Array.isArray(body)) {
+                expect(
+                    Number(
+                        info?.pricing_variants?.find(
+                            (variant) => variant.name === "2k",
+                        )?.pricing.completionImageTokens,
+                    ),
+                ).toBeCloseTo(twoK * 1.055, 10);
+            }
+        }
+    }
 });
 
 test("retrieves a model by canonical ID", async () => {
@@ -327,6 +386,7 @@ test("retrieves a model by canonical ID", async () => {
         aliases: expect.any(Array),
         category: "text",
         community: false,
+        tags: [{ name: "text" }],
         title: expect.any(String),
     });
 });

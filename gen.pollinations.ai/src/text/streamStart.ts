@@ -39,11 +39,15 @@ export async function acceptStreamStart(
     const fail = (details: unknown, message: string): never => {
         const error = (details as { error?: StreamError })?.error;
         const status =
-            typeof error?.status === "number"
-                ? error.status
-                : typeof error?.code === "number"
-                  ? error.code
-                  : 502;
+            error?.type === "invalid_request_error" ||
+            error?.code === "context_length_exceeded" ||
+            error?.code === "invalid_prompt"
+                ? 400
+                : typeof error?.status === "number"
+                  ? error.status
+                  : typeof error?.code === "number"
+                    ? error.code
+                    : 502;
         throw new UpstreamError(
             apiErrorStatus(
                 details,

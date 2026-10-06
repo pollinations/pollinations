@@ -15,17 +15,6 @@ function serializeDetails(details: unknown): string | undefined {
 export function apiErrorStatus(details: unknown, status: number): number {
     const serialized = serializeDetails(details) ?? "";
     if (isContentPolicyViolation(serialized)) return CONTENT_POLICY_STATUS;
-    const body = details as { error?: unknown } | null | undefined;
-    const error = (body?.error ?? details) as
-        | { type?: unknown; code?: unknown }
-        | null
-        | undefined;
-    if (
-        error?.type === "invalid_request_error" ||
-        error?.code === "context_length_exceeded" ||
-        error?.code === "invalid_prompt"
-    )
-        return 400;
     if (
         /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:|Tool call id was [^\r\n]* but must be a-z, A-Z, 0-9, with a length of 9\./i.test(
             serialized,

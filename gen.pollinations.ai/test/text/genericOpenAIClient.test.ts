@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isRetryableFallbackError } from "../../src/fallback.ts";
+import {
+    isRetryableFallbackError,
+    withModelFallback,
+} from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 
@@ -8,6 +11,51 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it.each([
+        [401, "invalid_api_key"],
+        [404, "model_not_found"],
+    ])("falls back on HTTP %s invalid_request_error (%s)", async (status, code) => {
+        const fetcher = vi
+            .fn()
+            .mockResolvedValueOnce(
+                Response.json(
+                    { error: { type: "invalid_request_error", code } },
+                    { status },
+                ),
+            )
+            .mockResolvedValueOnce(
+                Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "ok" } },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
+                }),
+            );
+        const attempts: Parameters<typeof withModelFallback>[2] = [];
+        const { result, candidate } = await withModelFallback(
+            [{ id: "primary" }, { id: "fallback" }],
+            async ({ id }) =>
+                genericOpenAIClient(
+                    [{ role: "user", content: "test" }],
+                    { model: id },
+                    { endpoint: "https://provider.test/chat", fetcher },
+                ),
+            attempts,
+        );
+
+        expect(candidate.id).toBe("fallback");
+        expect(result.choices?.[0]?.message?.content).toBe("ok");
+        expect(fetcher).toHaveBeenCalledTimes(2);
+        expect(attempts).toMatchObject([
+            { settled: false, error: { status: 502, upstreamStatus: status } },
+            { settled: true, candidate: { id: "fallback" } },
+        ]);
+    });
+
     it("keeps an embedded quota error retryable when diagnostics echo moderation words", async () => {
         const responseBody = JSON.stringify({
             error: {

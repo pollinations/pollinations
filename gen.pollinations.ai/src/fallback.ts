@@ -303,7 +303,6 @@ export function linkFallbackEntries(
             if (!target || target === entry) continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
-                if (targetEndpoint?.hiddenAt != null) continue;
                 if (
                     targetEndpoint?.visibility === "private" &&
                     entry.communityEndpoint.ownerUserId !==

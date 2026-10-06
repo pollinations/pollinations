@@ -10,6 +10,28 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "liquid/d1": {
+        // Same Liquid backend; this covers gateway failures, not Liquid outages.
+        "liquid/d1:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(0.04),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
+    "inclusionai/ling-3.1-flash": {
+        "inclusionai/ling-3.1-flash:vercel:novita": {
+            provider: "vercel",
+            // Same Novita checkpoint through a separate gateway. Both routes
+            // are free during the launch promotion; recheck rates at cutover.
+            cost: {
+                promptTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
     "qwen/qwen3.8-max": {

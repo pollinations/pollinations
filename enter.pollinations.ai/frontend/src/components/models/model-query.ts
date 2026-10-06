@@ -212,11 +212,23 @@ export function getModelQueryVisibleSearch(
         .join(" ");
 }
 
-export function getModelQueryDraftSuggestionValue(option: string): string {
+/** The search text after picking `option`: typed words stay, the draft value is replaced. */
+export function getModelQueryDraftSuggestionValue(
+    option: string,
+    visibleSearch = "",
+    draftValue = "",
+): string {
     const trimmedOption = option.trimEnd();
     const token = trimmedOption.slice(trimmedOption.lastIndexOf(" ") + 1);
     const trailingSpace = option.endsWith(" ") ? " " : "";
-    return `${token.slice(token.indexOf(":") + 1)}${trailingSpace}`;
+    const prefix = visibleSearch
+        .slice(0, visibleSearch.length - draftValue.length)
+        .trim();
+    return (
+        [prefix, token.slice(token.indexOf(":") + 1)]
+            .filter(Boolean)
+            .join(" ") + trailingSpace
+    );
 }
 
 function getModelAccess(model: ModelPrice): ModelAccess {

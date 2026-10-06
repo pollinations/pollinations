@@ -18,18 +18,18 @@ function matchesAccept(file: File, accept: string | undefined): boolean {
     if (!accept) return true;
     const tokens = accept
         .split(",")
-        .map((t) => t.trim())
+        .map((t) => t.trim().toLowerCase())
         .filter(Boolean);
     if (tokens.length === 0) return true;
     return tokens.some((token) => {
         if (token.startsWith(".")) {
-            return file.name.toLowerCase().endsWith(token.toLowerCase());
+            return file.name.toLowerCase().endsWith(token);
         }
         if (token.endsWith("/*")) {
             const prefix = token.slice(0, token.length - 1); // "image/"
-            return file.type.startsWith(prefix);
+            return file.type.toLowerCase().startsWith(prefix);
         }
-        return file.type === token;
+        return file.type.toLowerCase() === token;
     });
 }
 

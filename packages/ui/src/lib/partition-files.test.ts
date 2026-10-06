@@ -14,6 +14,16 @@ describe("partitionFiles", () => {
         expect(r.rejected).toHaveLength(0);
     });
 
+    it("accepts MIME accept tokens regardless of ASCII case", () => {
+        const png = file("photo.png", "image/png", 10);
+        const result = partitionFiles([png], [], {
+            maxFiles: 1,
+            maxSizeBytes: 100,
+            accept: "IMAGE/PNG",
+        });
+        expect(result).toEqual({ accepted: [png], rejected: [] });
+    });
+
     it("rejects by type, then size, then count — order preserved, each with a reason", () => {
         const r = partitionFiles(
             [

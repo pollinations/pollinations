@@ -1190,7 +1190,13 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        formData.append("file", blob, "audio.mp3");
+        // Some providers read the format from the extension, so a File keeps
+        // its own name.
+        formData.append(
+            "file",
+            blob,
+            (blob as Partial<File>).name || "audio.mp3",
+        );
         if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);
@@ -1532,7 +1538,7 @@ export class Pollinations {
                         body.error ||
                         "Device flow failed",
                     body.error || "DEVICE_FLOW_ERROR",
-                    400,
+                    tokenRes.status,
                 );
             }
             throw new PollinationsError(
@@ -1781,6 +1787,8 @@ export class Pollinations {
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
             body.accountPermissions = options.accountPermissions;
+        if (options.questPollenOnly !== undefined)
+            body.questPollenOnly = options.questPollenOnly;
         if (options.redirectUris) body.redirectUris = options.redirectUris;
         if (options.earningsEnabled !== undefined)
             body.earningsEnabled = options.earningsEnabled;

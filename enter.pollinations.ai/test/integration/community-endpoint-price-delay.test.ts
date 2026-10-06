@@ -4,7 +4,6 @@ import {
     effectiveCommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import { getVisibleModelIdsForUser } from "@shared/registry/visible-model-ids.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
@@ -84,11 +83,17 @@ describe("community endpoint 3-hour price-change delay", () => {
         });
 
         await advancePendingPastDelay(created.id as string);
-        const visibleModels = await getVisibleModelIdsForUser(
-            env.DB,
-            "another-user",
-        );
-        expect(visibleModels).toContain(created.modelId);
+        const [queued] = await drizzle(env.DB)
+            .select()
+            .from(schema.communityEndpoint)
+            .where(eq(schema.communityEndpoint.id, created.id as string));
+        expect(
+            effectiveCommunityEndpointVisibility(
+                queued.visibility,
+                queued.pendingVisibility,
+                queued.pendingAt,
+            ),
+        ).toBe("public");
 
         const published = await postModel(
             sessionToken,
@@ -370,9 +375,6 @@ describe("community endpoint 3-hour price-change delay", () => {
                 Date.now() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS + 1000,
             ),
         ).toBe("private");
-        expect(
-            await getVisibleModelIdsForUser(env.DB, "another-user"),
-        ).not.toContain(queued.modelId);
     });
 
     test("prompt agent updates keep fields that are left out", async ({

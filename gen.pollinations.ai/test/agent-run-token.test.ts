@@ -38,6 +38,7 @@ function communityProbe(type: CommunityEndpointRuntime["type"] = "proxy") {
             c.set("model", {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
+                definition: { category: "text" },
                 communityEndpoint: {
                     id: "managed-agent-id",
                     modelId: "Itachi-1824/polli",
@@ -93,7 +94,7 @@ test("resolves to the parent key, without its account scope", async () => {
         pollenBalance: 42,
         // Model access is inherited; every other scope the parent may hold is
         // dropped, so the token cannot manage the owner's account.
-        permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
+        permissions: { models: ["text"] },
         agentRun: { parentApiKeyId: parent.id },
     });
 });

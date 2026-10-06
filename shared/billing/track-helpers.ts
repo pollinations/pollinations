@@ -84,6 +84,8 @@ interface DeductionParams {
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
+    /** The key never spends paid Pollen, so the charge always takes Quest Pollen. */
+    questPollenOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
 }
 
@@ -184,6 +186,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyReservedAmount,
         byopClientKeyId,
         modelPaidOnly,
+        questPollenOnly,
         communityModelReward: communityModelRewardInput,
     } = params;
 
@@ -277,6 +280,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 userId,
                 billedPrice,
                 modelPaidOnly,
+                questPollenOnly,
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
@@ -515,6 +519,7 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelPaidOnly?: boolean,
+    questPollenOnly?: boolean,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
@@ -527,6 +532,7 @@ async function deductUserBalance(
                 userId,
                 amount,
                 modelPaidOnly ?? false,
+                questPollenOnly ?? false,
             );
         if (!ok) {
             throw new Error(

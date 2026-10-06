@@ -1,0 +1,33 @@
+{
+  "pr_number": 16584,
+  "title": "chore: align Cloudflare tooling on wrangler 4.147",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16584",
+  "merged_at": "2026-10-06T12:11:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Bumps `wrangler` to `^4.147.0` in root, enter, gen and economics, and `@cloudflare/vite-plugin` to `^1.62.5`. The tree now exposes one wrangler CLI. Production deploys were running 4.85.\n- Moves enter's test pool to `@cloudflare/vitest-pool-workers` `^0.12.21`, matching gen. It is the last release that supports vitest 3.\n- Keeps gen on `@cloudflare/workers-types` v4. v5 declares `Buffer: any`, which breaks Node `Buffer` typing in 26 places in gen. Drops the two `/// <reference>` lines in `shared/` that pulled v5 into gen's compile; gen's tsconfig already loads the types.\n- Types the auth context in `shared/auth/api-key.ts` as `Pick<ExecutionContext, \"waitUntil\">`. Newer types require `tracing`, which Hono's context doesn't have, and the code only calls `waitUntil`.\n- Gen deploy scripts call plain `wrangler` again. The test pool's older CLI is now nested privately, so it resolves to the root 4.147. The secret push script keeps its explicit path, because changing how secrets are uploaded needs separate approval.\n\n**Deploy-time 503s (context, not proven fixed):** each gen production deploy activates twice, once for the code deploy and once for the secret push 5 s later. Each activation is followed about 1 s later by a burst of 503 \"Generation coordination is unavailable\", 15–35 requests per deploy. With wrangler ≥4.147, deploys send Cloudflare's deferred Durable Object code update (300 s). A probe Worker shaped like the coordinator was not reset by any redeploy, so it is still unconfirmed that this removes the bursts. Similar bursts also occur without deploys. Next step: run `wrangler tail` during the promotion deploy to capture the RPC error text.\n\n**Checks:** typecheck passes for gen, enter and economics. Builds pass for gen (staging and production), enter (staging) and economics. Tests: gen 2,618 passed, enter 1,371 passed, 0 failed. Staging gen deployed with the new script (wrangler 4.147); `/models` and image requests return 200. The production build output stil",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One Wrangler to Herd",
+    "blurb": "Cloudflare tooling gets one Wrangler CLI instead of several competing copies. The deploy scripts know which one to call; the 503 mystery remains a separate investigation.",
+    "summary": "Aligned root, enter, gen, and economics on Wrangler ^4.147.0, updated the Cloudflare Vite plugin to ^1.62.5, and restored gen deploy scripts to the shared Wrangler CLI while keeping its secret-upload path unchanged.",
+    "impact": "Deploy tooling resolves to Wrangler 4.147 instead of the production deploy's previous 4.85; whether deferred Durable Object updates reduce deploy-time 503 bursts remains unconfirmed.",
+    "keywords": [
+      "Cloudflare",
+      "Wrangler",
+      "deploys",
+      "Durable Objects",
+      "tooling"
+    ],
+    "visual_concept": "Depict the Cloudflare deployment toolchain as a cozy garden workbench with one clearly marked Wrangler tool shared by several small terminals. Polli checks the tool with a tiny mechanic's cap; a small, unopened parcel near a code-plant hints at deferred updates without suggesting the 503 issue is fixed.",
+    "image_prompt": "In a cozy pixel art garden workshop, several little retro terminals share one lime green (#ecf874) Wrangler tool while a code-plant grows beside a neatly waiting parcel; Polli, wearing a tiny mechanic's cap, checks the tool with a warm, observant smile. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium within the scene, never oversized, with consistent rounded proportions, and is strictly pixel art, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16584.jpg",
+    "prompt": "In a cozy pixel art garden workshop, several little retro terminals share one lime green (#ecf874) Wrangler tool while a code-plant grows beside a neatly waiting parcel; Polli, wearing a tiny mechanic's cap, checks the tool with a warm, observant smile. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium within the scene, never oversized, with consistent rounded proportions, and is strictly pixel art, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-06T12:12:58.234567+00:00"
+}

@@ -4,6 +4,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.12] - 2026-10-06
+
+### Fixed
+- `chatStream()` rejects prematurely closed responses without a terminal
+  finish event or `[DONE]` instead of silently returning partial text.
+
 ## [5.1.0-alpha.11] - 2026-10-06
 
 ### Fixed

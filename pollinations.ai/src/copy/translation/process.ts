@@ -36,9 +36,8 @@ Process all items now:`;
 }
 
 // Memoized version - deduplicates concurrent identical requests
-const memoizedTranslate = memoizeAsync(
-    translateCopy,
-    (items, lang) => `${lang}:${items.map((i) => i.id).join(",")}`,
+const memoizedTranslate = memoizeAsync(translateCopy, (items, lang) =>
+    JSON.stringify([lang, items]),
 );
 
 /**

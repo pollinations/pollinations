@@ -1,0 +1,34 @@
+{
+  "pr_number": 16582,
+  "title": "feat: add Eleven v4 Turbo speech",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16582",
+  "merged_at": "2026-10-06T13:21:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `elevenlabs/eleven-v4-turbo`: ElevenLabs `api.elevenlabs.io/v1/text-to-speech/{voice_id}`, upstream `eleven_v4_turbo`, no aliases, paid-only, 1× multiplier, no Pollinations GPU. Supports simple speech, OpenAI-compatible speech, and timestamps.\n- Includes #16581 and should merge after it. Both models use the same v4-family condition and parameterized test suite; removes the duplicate Turbo test file. CI covers Unicode usage, supported settings, and FLAC rejection for both models.\n- Uses the current [official launch rate](https://elevenlabs.io/pricing/api), $0.011/1K characters, with no automatic expiry. Provider rate changes require an explicit registry update; the advertised regular rate is $0.04/1K.\n- Keeps fallback **none**. Researched fal `elevenlabs/tts/eleven-v4-turbo`: direct probe passed, but fallback billing remains unverified. Account concurrency limit is 15; three concurrent misses passed.\n- Validation: 93 focused Gen tests, 479 Enter tests, Gen/Enter typechecks, and six live tests across both models covering 35 voices, five formats, all endpoints, cache, and disconnect/rejoin. Provider analytics confirm 63 Unicode characters cost $0.000693; wallet and staging Tinybird agree. The Turbo rejoin produced one $0.009856 debit/event. Live tests run separately from credential-free CI.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Another voice in the garden",
+    "blurb": "Eleven v4 Turbo joins the speech lineup, with timestamps for anyone who likes their words and audio to arrive together. Polli is taking notes.",
+    "summary": "Adds paid-only `elevenlabs/eleven-v4-turbo` for simple and OpenAI-compatible speech and timestamped output, priced at $0.011 per 1,000 characters with a 1× multiplier.",
+    "impact": "Developers get a new ElevenLabs voice model across all three speech paths, including timestamps, with usage billed at $0.011 per 1,000 characters.",
+    "keywords": [
+      "audio",
+      "text-to-speech",
+      "ElevenLabs",
+      "eleven-v4-turbo",
+      "timestamps",
+      "API"
+    ],
+    "visual_concept": "Depict Eleven v4 Turbo as a cozy retro speech terminal sending a waveform alongside neatly aligned timestamp markers. Polli, wearing tiny headphones, listens beside the terminal; lime-green code-plants and flowers connect the audio feature to the pollinations garden.",
+    "image_prompt": "In a cozy pixel art garden studio, a retro speech terminal glows lime green (#ecf874) as a soft waveform flows past little timestamp markers and flowering code-plants; use a soft pastel gradient background, warm lighting, and chunky retro sprites. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. She wears tiny headphones and listens fondly to the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16582.jpg",
+    "prompt": "In a cozy pixel art garden studio, a retro speech terminal glows lime green (#ecf874) as a soft waveform flows past little timestamp markers and flowering code-plants; use a soft pastel gradient background, warm lighting, and chunky retro sprites. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. She wears tiny headphones and listens fondly to the terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-06T13:22:30.865875+00:00"
+}

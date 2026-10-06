@@ -573,12 +573,6 @@ export async function callOpenRouterGrokImagineImage2API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 3) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "grok-imagine-image-2.0 supports at most 3 reference images",
-        });
-    }
     const apiKey = requireOpenRouterImageApiKey();
     const inputReferences = safeParams.image.map((url) => ({
         type: "image_url",

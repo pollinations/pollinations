@@ -15,7 +15,6 @@ const FAL_QWEN_MODELS = {
     "qwen/qwen-image-3:fal": {
         label: "Qwen Image 3",
         endpoint: "alibaba/qwen-image-3",
-        maxImages: 3,
         promptExpansion: { enable_prompt_expansion: false },
         editOptions: {},
         resolveSize: resolveQwenImage3Size,
@@ -28,7 +27,6 @@ const FAL_QWEN_MODELS = {
     "qwen/qwen-image-2.1": {
         label: "Qwen Image 2.1",
         endpoint: "alibaba/qwen-image-2.1",
-        maxImages: 10,
         promptExpansion: { prompt_expander: "none" },
         // Fal defaults to no guidance, which leaves edits noisy and
         // oversharpened. Guidance doubles the edit price (measured 2026-09-25).
@@ -93,11 +91,6 @@ export async function callFalQwenImageAPI(
     }
 
     const images = safeParams.image ?? [];
-    if (images.length > config.maxImages) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${config.label} supports at most ${config.maxImages} reference images`,
-        });
-    }
     const size = config.resolveSize(safeParams);
     const references = await Promise.all(images.map(toDataUri));
     const isEdit = references.length > 0;

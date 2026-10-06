@@ -116,12 +116,8 @@ export async function callAzureMaiImage(
             message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
         });
     }
-    if (safeParams.image.length > 1) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${route.title} supports at most 1 reference image`,
-        });
-    }
-    const isEdit = safeParams.image.length === 1;
+    // MAI edits take one reference image; extra images are ignored.
+    const isEdit = safeParams.image.length > 0;
     if (!isEdit) {
         validateMaiDimensions(safeParams.width, safeParams.height, route);
     }

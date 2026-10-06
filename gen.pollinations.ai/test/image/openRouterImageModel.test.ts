@@ -222,20 +222,6 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         });
     });
 
-    it("rejects more than three reference images", async () => {
-        await expect(
-            callOpenRouterGrokImagineImage2API("test prompt", {
-                ...baseParams,
-                model: "x-ai/grok-imagine-image-2.0",
-                image: ["one", "two", "three", "four"],
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            message:
-                "grok-imagine-image-2.0 supports at most 3 reference images",
-        });
-    });
-
     it("returns content-policy refusals as client errors", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,

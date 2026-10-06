@@ -152,18 +152,6 @@ describe("qwenImage3Model", () => {
         });
     });
 
-    it("rejects more than three reference images before calling Fal", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callQwen3("too many references", {
-                ...baseParams,
-                image: Array.from({ length: 4 }, () => INPUT_IMAGE),
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it.each([
         ["1:1", { width: 1024, height: 1024 }],
         ["16:9", { width: 1376, height: 768 }],

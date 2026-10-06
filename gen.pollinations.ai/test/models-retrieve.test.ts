@@ -9,6 +9,7 @@ import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     createTestApiKey,
     createTestUser,
+    RESTRICTED_TEST_CATEGORIES,
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
@@ -203,14 +204,16 @@ test("show all does not bypass key permissions or paid access", async ({
     apiKey,
 }) => {
     mockCatalogHealth([]);
-    const restricted = await fetchWorker("/text/models?reliability=all", {
+    const restricted = await fetchWorker("/models?reliability=all", {
         headers: { Authorization: `Bearer ${restrictedApiKey}` },
     });
     expect(
-        ((await restricted.json()) as { name: string }[]).map(
-            (model) => model.name,
+        new Set(
+            ((await restricted.json()) as { category: string }[]).map(
+                (model) => model.category,
+            ),
         ),
-    ).toEqual([RESTRICTED_TEXT_TEST_MODEL]);
+    ).toEqual(new Set(RESTRICTED_TEST_CATEGORIES));
     const unpaid = await fetchWorker("/models?reliability=all", {
         headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -631,7 +634,7 @@ test("retired Nova models and aliases disappear from catalogs and cannot generat
 test("returns 404 when API key permissions exclude the model", async ({
     restrictedApiKey,
 }) => {
-    const excluded = await fetchWorker("/v1/models/krea", {
+    const excluded = await fetchWorker("/v1/models/whisper-1", {
         headers: { Authorization: `Bearer ${restrictedApiKey}` },
     });
     expect(excluded.status).toBe(404);

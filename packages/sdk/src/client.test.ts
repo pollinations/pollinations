@@ -1570,6 +1570,54 @@ describe("Pollinations model discovery", () => {
     });
 });
 
+describe("Pollinations.authorizeDevice", () => {
+    const deviceCode = {
+        device_code: "dev",
+        user_code: "ABCD",
+        verification_uri_complete: "https://example.test/device",
+        expires_in: 60,
+        interval: 5,
+    };
+
+    async function pollWith(...tokenResponses: Response[]) {
+        vi.useFakeTimers();
+        fetchMock.mockResolvedValueOnce(Response.json(deviceCode));
+        for (const res of tokenResponses) fetchMock.mockResolvedValueOnce(res);
+        const auth = await Pollinations.authorizeDevice();
+        const result = auth.poll();
+        result.catch(() => {});
+        await vi.advanceTimersByTimeAsync(5000 * tokenResponses.length);
+        return result;
+    }
+
+    it.each([
+        [
+            new Response("Service Unavailable", { status: 503 }),
+            503,
+            "DEVICE_FLOW_ERROR",
+        ],
+        [
+            Response.json({ error: "access_denied" }, { status: 400 }),
+            400,
+            "access_denied",
+        ],
+    ])("keeps the token endpoint status (%#)", async (res, status, code) => {
+        await expect(pollWith(res)).rejects.toMatchObject({ status, code });
+    });
+
+    it("keeps polling while pending and returns the token", async () => {
+        await expect(
+            pollWith(
+                Response.json(
+                    { error: "authorization_pending" },
+                    { status: 400 },
+                ),
+                Response.json({ access_token: "sk_device" }),
+            ),
+        ).resolves.toBe("sk_device");
+    });
+});
+
 describe("Pollinations.accountQuests", () => {
     it("fetches the quest catalog and returns it typed", async () => {
         const client = newClient();

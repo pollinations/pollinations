@@ -309,8 +309,12 @@ export function Authorize() {
         setError(null);
 
         try {
-            const { allowedModels, pollenBudget, accountPermissions } =
-                keyPermissions.permissions;
+            const {
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                questPollenOnly,
+            } = keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
             const { key, id, expiresIn } = await createKeyWithPermissions({
@@ -335,6 +339,7 @@ export function Authorize() {
                     allowedModels,
                     pollenBudget,
                     accountPermissions: grantedAccountPermissions,
+                    questPollenOnly,
                 },
             });
 

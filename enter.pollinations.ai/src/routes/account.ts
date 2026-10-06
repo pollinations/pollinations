@@ -14,10 +14,6 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import {
-    filterPermissionsToVisibleModels,
-    getVisibleModelIdsForUser,
-} from "@shared/registry/visible-model-ids.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -119,13 +115,21 @@ const CreateKeySchema = z.object({
         .array(z.string())
         .nullable()
         .optional()
-        .describe("Model IDs this key can access. null = all models"),
+        .describe(
+            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models",
+        ),
     pollenBudget: z
         .number()
         .nullable()
         .optional()
         .describe(
             "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
         ),
     accountPermissions: z
         .array(z.string())
@@ -1431,28 +1435,23 @@ export const accountRoutes = new Hono<Env>()
                     permissions: apikeyTable.permissions,
                     metadata: apikeyTable.metadata,
                     pollenBalance: apikeyTable.pollenBalance,
+                    questPollenOnly: apikeyTable.questPollenOnly,
                     enabled: apikeyTable.enabled,
                 })
                 .from(apikeyTable)
                 .where(eq(apikeyTable.referenceId, user.id))
                 .all();
-            const parsedPermissions = keys.map((key) => {
-                if (!key.permissions) return null;
+            const parsePermissions = (raw: string | null) => {
+                if (!raw) return null;
                 try {
-                    return JSON.parse(key.permissions);
+                    return JSON.parse(raw);
                 } catch {
                     return null;
                 }
-            });
-            const hasModelRestrictions = parsedPermissions.some((permissions) =>
-                Array.isArray(permissions?.models),
-            );
-            const visibleModelIds = hasModelRestrictions
-                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
-                : null;
+            };
 
             return c.json({
-                data: keys.map((key, index) => ({
+                data: keys.map((key) => ({
                     id: key.id,
                     name: key.name,
                     start: key.start,
@@ -1460,14 +1459,10 @@ export const accountRoutes = new Hono<Env>()
                     createdAt: key.createdAt,
                     expiresAt: key.expiresAt,
                     lastRequest: key.lastRequest,
-                    permissions: visibleModelIds
-                        ? filterPermissionsToVisibleModels(
-                              parsedPermissions[index],
-                              visibleModelIds,
-                          )
-                        : parsedPermissions[index],
+                    permissions: parsePermissions(key.permissions),
                     metadata: parseMetadata(key.metadata),
                     pollenBalance: key.pollenBalance,
+                    questPollenOnly: key.questPollenOnly,
                     enabled: key.enabled,
                 })),
             });
@@ -1498,6 +1493,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 allowedModels,
                 pollenBudget,
+                questPollenOnly,
                 accountPermissions,
                 redirectUris,
                 earningsEnabled,
@@ -1522,6 +1518,10 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 allowedModels,
                 pollenBudget,
+                // A child key can't spend what its creator can't.
+                questPollenOnly:
+                    questPollenOnly ||
+                    (c.var.auth.apiKey?.questPollenOnly ?? false),
                 accountPermissions,
                 metadata,
                 defaultCreatedVia: "api",
@@ -1660,7 +1660,7 @@ export const accountRoutes = new Hono<Env>()
                                                 .array(z.string())
                                                 .nullable()
                                                 .describe(
-                                                    "List of allowed model IDs, null = all models allowed",
+                                                    "Model categories this key can use (text, image, video, audio, 3d, embedding, realtime), null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())
@@ -1675,6 +1675,11 @@ export const accountRoutes = new Hono<Env>()
                                         .nullable()
                                         .describe(
                                             "Remaining pollen budget for this key, null = unlimited (uses user balance)",
+                                        ),
+                                    questPollenOnly: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether this key spends only Quest Pollen, never paid Pollen",
                                         ),
                                     rateLimitEnabled: z
                                         .boolean()
@@ -1772,21 +1777,9 @@ export const accountRoutes = new Hono<Env>()
                 }
             }
 
-            // Format permissions for response
-            const userId = c.var.auth.user?.id;
-            const visibleModelIds =
-                userId && Array.isArray(apiKey.permissions?.models)
-                    ? await getVisibleModelIdsForUser(c.env.DB, userId)
-                    : null;
-            const effectivePermissions = visibleModelIds
-                ? filterPermissionsToVisibleModels(
-                      apiKey.permissions ?? null,
-                      visibleModelIds,
-                  )
-                : (apiKey.permissions ?? null);
             const permissions = {
-                models: effectivePermissions?.models ?? null,
-                account: effectivePermissions?.account ?? null,
+                models: apiKey.permissions?.models ?? null,
+                account: apiKey.permissions?.account ?? null,
             };
 
             const byopApp = apiKey.byopClientKeyId
@@ -1806,6 +1799,7 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
+                questPollenOnly: apiKey.questPollenOnly ?? false,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
                 // Server-attested identity. Downstream services (media catalog)

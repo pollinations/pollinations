@@ -1,0 +1,33 @@
+{
+  "pr_number": 16485,
+  "title": "fix: preserve spaces while typing app search",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16485",
+  "merged_at": "2026-10-06T08:59:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserve raw app-search text in controlled input updates and URL validation, so sequential multi-word typing retains spaces.\n- Trim only the derived matching query; keep empty-query clearing, filters and navigation options unchanged.\n- Add focused URL serialization/validator regressions. Validation: original regression fails; all 70 website tests, declared build (TypeScript/Vite), changed-file Biome and independent component checks pass. Component evidence uses fixture data and a controlled input shell.\n\nFixes #16484\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Spaces get to stay",
+    "blurb": "App search stops eating the space between words as you type. A small fix for anyone looking for an app with more than one word in its name.",
+    "summary": "App search preserves raw input and URL text while trimming only the query used for matching, so sequential multi-word typing keeps its spaces without changing empty-query clearing, filters, or navigation.",
+    "impact": "Users can type multi-word app searches without spaces disappearing between keystrokes.",
+    "keywords": [
+      "app search",
+      "website",
+      "multi-word queries",
+      "input",
+      "URL validation"
+    ],
+    "visual_concept": "Depict the pollinations.ai app directory as a cozy garden of app cards. Polli types a two-word query into a retro search terminal; a clearly visible space separates the words, and matching app cards bloom nearby. Give her tiny typing glasses.",
+    "image_prompt": "In a cozy pixel art app garden, Polli wears tiny typing glasses and enters two words with a visible space between them on a retro search terminal, while matching app cards bloom among flowers and code-vines. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic; prominent lime green (#ecf874), warm cream and pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16485.jpg",
+    "prompt": "In a cozy pixel art app garden, Polli wears tiny typing glasses and enters two words with a visible space between them on a retro search terminal, while matching app cards bloom among flowers and code-vines. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic; prominent lime green (#ecf874), warm cream and pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-06T09:00:55.340955+00:00"
+}

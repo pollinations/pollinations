@@ -69,9 +69,9 @@ export const createApiKeyViaApi = async (
         name: string;
         type?: "secret" | "publishable";
         allowedModels?: string[];
+        pollenBudget?: number | null;
         accountPermissions?: string[];
         questPollenOnly?: boolean;
-        pollenBudget?: number | null;
     },
 ) => {
     const response = await SELF.fetch(
@@ -244,10 +244,10 @@ export const test = base.extend<Fixtures>({
         await use(created.key);
     },
     budgetedApiKey: async ({ accountToken }, use) => {
-        const created = await createApiKeyViaApi(accountToken, {
+        const { key, id } = await createApiKeyViaApi(accountToken, {
             name: "budgeted-test-key",
             pollenBudget: 100,
         });
-        await use({ key: created.key, id: created.id });
+        await use({ key, id });
     },
 });

@@ -1644,14 +1644,12 @@ export const accountRoutes = new Hono<Env>()
                 consent,
             } = c.req.valid("json");
 
-            // createApiKeyForUser keeps earningsEnabled only on publishable
-            // keys; it would keep redirectUris on any key.
+            // createApiKeyForUser keeps redirectUris and earningsEnabled only
+            // on publishable keys.
             const metadata = {
                 description,
                 earningsEnabled,
-                ...(type === "publishable" && redirectUris?.length
-                    ? { redirectUris }
-                    : {}),
+                redirectUris,
                 ...consent,
             };
             const createdVia = consent
@@ -1766,26 +1764,25 @@ export const accountRoutes = new Hono<Env>()
                 });
             }
 
-            // null clears a restriction; omitted leaves it unchanged.
+            // Only the columns a request names are written, so concurrent
+            // edits of different fields can't undo each other. null clears a
+            // restriction; omitted leaves it unchanged.
             const permissions = parsePermissions(key.permissions) ?? {};
-            const models =
-                allowedModels &&
-                (await toModelCategories(c.env.DB, allowedModels));
-            const account =
-                accountPermissions &&
-                sanitizeAuthorizeAccountPermissions(accountPermissions);
             if (allowedModels !== undefined) {
-                if (models) permissions.models = models;
-                else delete permissions.models;
+                if (allowedModels) {
+                    permissions.models = await toModelCategories(
+                        c.env.DB,
+                        allowedModels,
+                    );
+                } else delete permissions.models;
             }
             if (accountPermissions !== undefined) {
+                const account =
+                    accountPermissions &&
+                    sanitizeAuthorizeAccountPermissions(accountPermissions);
                 if (account) permissions.account = account;
                 else delete permissions.account;
             }
-
-            const storedPermissions = Object.keys(permissions).length
-                ? permissions
-                : null;
             const metadataPatch = Object.fromEntries(
                 Object.entries({
                     description,
@@ -1803,11 +1800,17 @@ export const accountRoutes = new Hono<Env>()
                     }),
                     ...(questPollenOnly !== undefined && { questPollenOnly }),
                     ...(expiresAt !== undefined && { expiresAt }),
-                    permissions:
-                        storedPermissions && JSON.stringify(storedPermissions),
-                    metadata: JSON.stringify({
-                        ...parseMetadata(key.metadata),
-                        ...metadataPatch,
+                    ...((allowedModels !== undefined ||
+                        accountPermissions !== undefined) && {
+                        permissions: Object.keys(permissions).length
+                            ? JSON.stringify(permissions)
+                            : null,
+                    }),
+                    ...(Object.keys(metadataPatch).length > 0 && {
+                        metadata: JSON.stringify({
+                            ...parseMetadata(key.metadata),
+                            ...metadataPatch,
+                        }),
                     }),
                     updatedAt: new Date(),
                 })

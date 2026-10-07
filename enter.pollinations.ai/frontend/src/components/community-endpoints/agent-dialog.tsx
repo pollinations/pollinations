@@ -10,6 +10,7 @@ import {
     RefreshIcon,
     Surface,
     TabButton,
+    Tooltip,
     XIcon,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
@@ -27,6 +28,27 @@ import {
     agentToForm,
     type ManagedAgent,
 } from "./types.ts";
+
+export function getAgentSubmitDisabledReason({
+    form,
+    syncStatus,
+}: {
+    form: AgentFormState;
+    syncStatus: string;
+}): string | null {
+    if (syncStatus === "syncing") {
+        return "Waiting for agent sync to complete";
+    }
+    if (form.type === "code_agent") {
+        if (form.repository.trim() === "") return "Enter a GitHub repository";
+    } else {
+        if (form.name.trim() === "") return "Enter an agent ID";
+        if (form.title.trim() === "") return "Enter an agent title";
+        if (form.systemPrompt.trim() === "") return "Enter a system prompt";
+        if (form.baseModel.trim() === "") return "Select a base model";
+    }
+    return "Complete all required fields to save";
+}
 
 type AgentDialogProps = {
     agent?: ManagedAgent;
@@ -111,6 +133,21 @@ export function AgentDialog({
             (form.name.trim() !== "" && form.title.trim() !== "")) &&
         hasRuntimeConfiguration;
     const submitLabel = agent ? "Save changes" : "Create agent";
+    const submitDisabledReason =
+        isSubmitting || canSubmit
+            ? null
+            : getAgentSubmitDisabledReason({ form, syncStatus });
+
+    const submitButton = (
+        <Button
+            icon={<BotIcon />}
+            type="submit"
+            intent="commit"
+            disabled={!canSubmit}
+        >
+            {isSubmitting ? (agent ? "Saving…" : "Creating…") : submitLabel}
+        </Button>
+    );
 
     const actions = (
         <>
@@ -122,14 +159,18 @@ export function AgentDialog({
             >
                 Cancel
             </Button>
-            <Button
-                icon={<BotIcon />}
-                type="submit"
-                intent="commit"
-                disabled={!canSubmit}
-            >
-                {isSubmitting ? (agent ? "Saving…" : "Creating…") : submitLabel}
-            </Button>
+            {submitDisabledReason ? (
+                <Tooltip
+                    triggerAs="span"
+                    content={submitDisabledReason}
+                    align="center"
+                    className="inline-flex cursor-not-allowed"
+                >
+                    {submitButton}
+                </Tooltip>
+            ) : (
+                submitButton
+            )}
         </>
     );
 

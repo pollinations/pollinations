@@ -2819,8 +2819,18 @@ describe("community endpoint helpers", () => {
     });
 });
 
-for (const protocol of ["chat_completions", "responses", "text"] as const) {
-    const api = protocol === "text" ? "chat_completions" : protocol;
+for (const protocol of [
+    "chat_completions",
+    "responses",
+    "text",
+    // A Chat Completions agent called through /v1/responses.
+    "responses_on_chat",
+] as const) {
+    const api =
+        protocol === "text" || protocol === "responses_on_chat"
+            ? "chat_completions"
+            : protocol;
+    const clientApi = protocol === "responses_on_chat" ? "responses" : api;
     fixtureTest(
         `routes ${protocol} metadata through JSON and SSE with caller-scoped delegation`,
         async ({ apiKey }) => {
@@ -2830,11 +2840,11 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
             const path =
                 protocol === "text"
                     ? "/text"
-                    : api === "responses"
+                    : clientApi === "responses"
                       ? "/v1/responses"
                       : "/v1/chat/completions";
             const input =
-                api === "responses"
+                clientApi === "responses"
                     ? { input: "hello" }
                     : { messages: [{ role: "user", content: "hello" }] };
             const agentUrl = `https://agent.example.com/v1/${api === "responses" ? "responses" : "chat/completions"}`;
@@ -3023,7 +3033,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                                           },
                                       }
                                     : {}),
-                                ...(stream && api === "chat_completions"
+                                ...(stream && clientApi === "chat_completions"
                                     ? {
                                           stream_options: {
                                               include_usage: true,
@@ -3036,7 +3046,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                     expect(response.status).toBe(200);
                     expect(response.headers.get("x-model-used")).toBe(modelId);
                     const innerModel = agentModel ?? "polli";
-                    if (api === "responses") {
+                    if (clientApi === "responses") {
                         const body = await response.text();
                         expect(body).toContain(`"text":"${innerModel}"`);
                         expect(body).toContain('"input_tokens":2');

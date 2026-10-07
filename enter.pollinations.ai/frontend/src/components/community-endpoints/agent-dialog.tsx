@@ -162,6 +162,8 @@ export function AgentDialog({
             {submitDisabledReason ? (
                 <Tooltip
                     triggerAs="span"
+                    tapEnabled
+                    ariaLabel={submitDisabledReason}
                     content={submitDisabledReason}
                     align="center"
                     className="inline-flex cursor-not-allowed"

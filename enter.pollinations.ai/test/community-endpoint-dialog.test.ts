@@ -1,7 +1,10 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { getAgentSubmitDisabledReason } from "../frontend/src/components/community-endpoints/agent-dialog.tsx";
+import {
+    AgentDialog,
+    getAgentSubmitDisabledReason,
+} from "../frontend/src/components/community-endpoints/agent-dialog.tsx";
 import {
     CommunityEndpointDialog,
     getCommunityEndpointSubmitDisabledReason,
@@ -291,40 +294,45 @@ describe("getAgentSubmitDisabledReason", () => {
 });
 
 describe("CommunityEndpointDialog rendering", () => {
-    it("renders disabled reason tooltip when submit requirements are not met", () => {
-        const endpoint: EditableEndpoint = {
-            id: "model-1",
-            modelId: "community/user/model-1",
-            name: "model-1",
-            title: "Model 1",
-            description: null,
-            visibility: "private",
-            type: "proxy",
-            modality: "text",
-            api: "chat_completions",
-            url: "https://api.example.com/v1",
-            upstreamModel: "gpt-4",
-            paidOnly: false,
-            imagePricing: "request",
-            perUserRpm: null,
-            fallbacks: [],
-            requiredSafetyFeatures: [],
-            pricing: {
-                promptTextPrice: null,
-                promptAudioPrice: null,
-                promptImagePrice: null,
-                completionTextPrice: null,
-                completionAudioPrice: null,
-                completionImagePrice: null,
-                completionVideoPrice: null,
-            },
-            createdAt: "2026-09-01T00:00:00Z",
-            updatedAt: "2026-09-01T00:00:00Z",
-        };
+    const validEndpoint: EditableEndpoint = {
+        id: "model-1",
+        modelId: "community/user/model-1",
+        name: "model-1",
+        title: "Model 1",
+        description: null,
+        visibility: "private",
+        type: "proxy",
+        modality: "text",
+        api: "chat_completions",
+        url: "https://api.example.com/v1",
+        upstreamModel: "gpt-4",
+        paidOnly: false,
+        imagePricing: "request",
+        perUserRpm: null,
+        fallbacks: [],
+        requiredSafetyFeatures: [],
+        inputModalities: ["text"],
+        advertised: {
+            capabilities: [],
+            contextLength: 4096,
+        },
+        pricing: {
+            promptTextPrice: null,
+            promptAudioPrice: null,
+            promptImagePrice: null,
+            completionTextPrice: null,
+            completionAudioPrice: null,
+            completionImagePrice: null,
+            completionVideoPrice: null,
+        },
+        createdAt: "2026-09-01T00:00:00Z",
+        updatedAt: "2026-09-01T00:00:00Z",
+    };
 
+    it("renders an enabled submit button without tooltip when editing a valid private endpoint", () => {
         const html = renderToStaticMarkup(
             createElement(CommunityEndpointDialog, {
-                endpoint,
+                endpoint: validEndpoint,
                 canPublish: true,
                 fallbackOptions: [],
                 open: true,
@@ -333,7 +341,101 @@ describe("CommunityEndpointDialog rendering", () => {
             }),
         );
 
-        // When opened in private mode, the button is enabled and has no disabled tooltip
-        expect(html).toContain("Save changes");
+        // When opened with valid private model, button is enabled
+        const submitButton = html.match(
+            /<button\b(?:(?!<\/button>).)*Save changes<\/button>/,
+        )?.[0];
+        expect(submitButton).toBeDefined();
+        expect(submitButton).toContain('type="submit"');
+        expect(submitButton).not.toMatch(/\bdisabled\b(?!:)/);
+        // No disabled tooltip wrapper around the submit button
+        expect(html).not.toContain('aria-label="Enter');
+        expect(html).not.toContain('aria-label="Complete');
+        expect(html).not.toContain('aria-label="Re-enter');
+    });
+
+    it("renders an accessible tooltip and disabled submit button when creating a new endpoint", () => {
+        const html = renderToStaticMarkup(
+            createElement(CommunityEndpointDialog, {
+                endpoint: undefined,
+                canPublish: true,
+                fallbackOptions: [],
+                open: true,
+                onOpenChange: () => {},
+                onSubmit: async () => {},
+            }),
+        );
+
+        // Submit button is disabled
+        const submitButton = html.match(
+            /<button\b(?:(?!<\/button>).)*Create model<\/button>/,
+        )?.[0];
+        expect(submitButton).toBeDefined();
+        expect(submitButton).toContain('type="submit"');
+        expect(submitButton).toMatch(/\bdisabled\b(?!:)/);
+
+        // Keyboard accessible tab stop and tooltip trigger
+        expect(html).toContain('tabindex="0"');
+        expect(html).toContain('role="button"');
+        expect(html).toContain('aria-label="Enter a model ID"');
+        expect(html).toContain('role="tooltip"');
+        expect(html).toContain("Enter a model ID");
+    });
+
+    it("renders an accessible tooltip and disabled submit button when editing an endpoint with invalid title", () => {
+        const html = renderToStaticMarkup(
+            createElement(CommunityEndpointDialog, {
+                endpoint: { ...validEndpoint, title: "   " },
+                canPublish: true,
+                fallbackOptions: [],
+                open: true,
+                onOpenChange: () => {},
+                onSubmit: async () => {},
+            }),
+        );
+
+        // Submit button is disabled
+        const submitButton = html.match(
+            /<button\b(?:(?!<\/button>).)*Save changes<\/button>/,
+        )?.[0];
+        expect(submitButton).toBeDefined();
+        expect(submitButton).toContain('type="submit"');
+        expect(submitButton).toMatch(/\bdisabled\b(?!:)/);
+
+        // Keyboard accessible tab stop and tooltip trigger
+        expect(html).toContain('tabindex="0"');
+        expect(html).toContain('role="button"');
+        expect(html).toContain('aria-label="Enter a title"');
+        expect(html).toContain('role="tooltip"');
+        expect(html).toContain("Enter a title");
+    });
+});
+
+describe("AgentDialog rendering", () => {
+    it("renders an accessible tooltip on disabled submit button when required agent fields are missing", () => {
+        const html = renderToStaticMarkup(
+            createElement(AgentDialog, {
+                agent: undefined,
+                canPublish: true,
+                open: true,
+                onOpenChange: () => {},
+                onSubmit: async () => {},
+            }),
+        );
+
+        // Submit button is disabled
+        const submitButton = html.match(
+            /<button\b(?:(?!<\/button>).)*Create agent<\/button>/,
+        )?.[0];
+        expect(submitButton).toBeDefined();
+        expect(submitButton).toContain('type="submit"');
+        expect(submitButton).toMatch(/\bdisabled\b(?!:)/);
+
+        // Keyboard accessible tab stop and tooltip trigger
+        expect(html).toContain('tabindex="0"');
+        expect(html).toContain('role="button"');
+        expect(html).toContain('aria-label="Enter an agent ID"');
+        expect(html).toContain('role="tooltip"');
+        expect(html).toContain("Enter an agent ID");
     });
 });

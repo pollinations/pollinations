@@ -57,9 +57,9 @@ test(
 test(
     "GET /api/account/key - accepts an agent run token",
     { timeout: 30000 },
-    async ({ sessionToken, mocks }) => {
+    async ({ accountToken, mocks }) => {
         await mocks.enable("tinybird");
-        const { key } = await createApiKeyViaApi(sessionToken, {
+        const { key } = await createApiKeyViaApi(accountToken, {
             name: "agent-parent",
             accountPermissions: ["usage"],
         });

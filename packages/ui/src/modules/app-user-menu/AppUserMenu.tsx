@@ -49,11 +49,11 @@ const defaultLabels: AppUserMenuLabels = {
 const CONNECT_SIZES = {
     md: {
         button: "polli:h-10 polli:px-4",
-        mark: "polli:h-6 polli:w-6",
+        mark: "polli:h-5 polli:w-5",
     },
     lg: {
         button: "polli:h-12 polli:px-5 polli:text-base",
-        mark: "polli:h-7 polli:w-7",
+        mark: "polli:h-6 polli:w-6",
     },
 };
 

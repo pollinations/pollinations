@@ -589,6 +589,27 @@ def validate_gist(gist: Dict) -> List[str]:
     if "keywords" in ai and not isinstance(ai["keywords"], list):
         errors.append("keywords must be a list")
 
+    if "enrichment" in gist:
+        for field in ("classification", "models"):
+            if gist["enrichment"].get(field) not in {"complete", "failed"}:
+                errors.append(f"invalid enrichment.{field}")
+        if gist["enrichment"].get("classification") == "complete":
+            sys.path.insert(0, get_repo_root())
+            from operations.github.project_manager import area_names, read_brief, PR_TYPES, SOURCES
+            if gist.get("area") not in [None, *area_names(read_brief())]:
+                errors.append("invalid area")
+            if gist.get("type") not in ([None] if gist.get("area") is None else PR_TYPES):
+                errors.append("invalid type")
+            if gist.get("source") not in SOURCES:
+                errors.append("invalid source")
+        for event in gist.get("announcements", []):
+            if event.get("action") not in {"NEW", "UPDATE", "RETIRE"}:
+                errors.append("invalid announcement action")
+            if not event.get("model_id") or not isinstance(event.get("changes"), dict):
+                errors.append("announcement requires model_id and changes")
+            if event.get("effective_status") not in {"unconfirmed", "scheduled"}:
+                errors.append("invalid announcement effective_status")
+
     return errors
 
 

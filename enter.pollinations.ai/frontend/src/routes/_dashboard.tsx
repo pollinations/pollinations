@@ -147,6 +147,7 @@ function DashboardLayout() {
             accountArea={data.user ? undefined : <SignedOutAccountArea />}
             showFooterLinks={Boolean(data.user)}
             showQuestStatus={Boolean(data.user)}
+            signInBanner={data.user ? undefined : <DashboardSignInBanner />}
             walletArea={
                 data.user ? (
                     // Await adds no boundary for a null fallback; without this
@@ -182,7 +183,6 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
-            {!data.user && <DashboardSignInBanner />}
             <Outlet />
         </DashboardShell>
     );

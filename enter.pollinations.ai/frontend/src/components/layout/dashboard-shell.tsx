@@ -70,6 +70,7 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    signInBanner?: ReactNode;
     showFooterLinks?: boolean;
     showQuestStatus?: boolean;
 }>;
@@ -154,6 +155,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onSignOut,
     accountArea,
     walletArea,
+    signInBanner,
     showFooterLinks = true,
     showQuestStatus = false,
     children,
@@ -383,9 +385,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     )}
                     <ScrollArea
                         ref={mainScrollRef}
-                        className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
+                        className={cn(
+                            "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                            signInBanner ? "pt-3" : "pt-16",
+                        )}
                     >
                         <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                            {signInBanner}
                             {children}
                         </main>
                     </ScrollArea>

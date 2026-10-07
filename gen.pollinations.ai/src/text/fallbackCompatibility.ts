@@ -102,6 +102,8 @@ export function textCapabilityError(
             hasToolHistory(request.input))
     )
         return "This model does not support tool calling or tool history";
+    if (definition.supportsStreaming === false && request.stream === true)
+        return `${communityEndpoint?.modelId ?? "This model"} does not support streaming; send stream: false`;
     const text = request.text as { format?: unknown } | undefined;
     if (
         definition.supportsStructuredOutput === false &&

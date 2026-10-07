@@ -684,7 +684,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage unless the endpoint does not stream (a JSON reply or a 400/422 to `stream: true`), which registers as non-streaming with `advertised.streaming: false`. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -766,7 +766,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   ? "Endpoint responded with audio data"
                                   : input.modality === "embedding"
                                     ? "Endpoint responded with embedding data"
-                                    : "JSON and streaming requests returned valid token usage",
+                                    : result.streaming === false
+                                      ? "JSON request returned valid token usage; the endpoint does not stream, so only stream: false calls will work"
+                                      : "JSON and streaming requests returned valid token usage",
                     ...result,
                 });
             } catch (error) {

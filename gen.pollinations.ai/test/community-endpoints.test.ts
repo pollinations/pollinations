@@ -280,6 +280,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         bearerTokenCiphertext?: string | null;
         perUserRpm?: number | null;
         fallbacks?: string[] | null;
+        advertised?: { streaming?: false };
     };
 
 /**
@@ -303,6 +304,7 @@ function insertCommunityEndpoints(
             bearerTokenCiphertext,
             perUserRpm,
             fallbacks,
+            advertised,
             promptTextPrice: _promptTextPrice,
             promptCachedPrice: _promptCachedPrice,
             promptCacheWritePrice: _promptCacheWritePrice,
@@ -348,6 +350,7 @@ function insertCommunityEndpoints(
                             ),
                         perUserRpm: perUserRpm ?? null,
                         fallbacks: fallbacks ?? [],
+                        ...(advertised ? { advertised } : {}),
                         prices: communityEndpointPrices(row),
                     };
         return {
@@ -3249,6 +3252,154 @@ fixtureTest(
         );
         expect(upstreamCalls).toHaveLength(3);
     },
+);
+
+fixtureTest(
+    "registers an endpoint without SSE and serves stream: false but rejects stream: true by name",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `nostream-${crypto.randomUUID().slice(0, 8)}`;
+        const chatUrl = "https://api.example.com/v1/chat/completions";
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const enterApi = await createEnterCommunityApi();
+        const upstreamBodies: { stream?: boolean }[] = [];
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            if (request.url === chatUrl) {
+                // A plain JSON server: it ignores `stream` and never sends SSE.
+                upstreamBodies.push(await request.clone().json());
+                return Response.json({
+                    id: "chatcmpl_test",
+                    object: "chat.completion",
+                    model: "plain-json-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "ok" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }
+            if (isBillingFetch(request)) return Response.json({ data: [] });
+            throw new Error(`Unexpected fetch: ${request.url}`);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        const enterPost = async (path: string, body: unknown) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints${path}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization:
+                                await sessionAuthorization(ownerUserId),
+                        },
+                        body: JSON.stringify(body),
+                    },
+                ),
+            );
+
+        const probe = await enterPost("/test", {
+            api: "chat_completions",
+            url: chatUrl,
+            bearerToken: "sk_saved_token",
+            model: "plain-json-model",
+        });
+        expect(probe.status).toBe(200);
+        await expect(probe.json()).resolves.toMatchObject({
+            ok: true,
+            streaming: false,
+            usage: { prompt_tokens: 2, completion_tokens: 3 },
+        });
+
+        const registerResponse = await enterPost("", {
+            name: modelName,
+            title: "Endpoint Without SSE",
+            description: "Plain JSON endpoint",
+            api: "chat_completions",
+            url: chatUrl,
+            upstreamModel: "plain-json-model",
+            bearerToken: "sk_saved_token",
+            visibility: "public",
+            advertised: { streaming: false },
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
+        });
+        expect(registerResponse.status).toBe(200);
+        const registered = (await registerResponse.json()) as {
+            id: string;
+            modelId: string;
+            advertised: unknown;
+        };
+        expect(registered.advertised).toEqual({ streaming: false });
+        await maturePendingCommunityEndpoint(registered.id);
+
+        const chat = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: registered.modelId,
+                        ...body,
+                    }),
+                }),
+            );
+        const messages = [{ role: "user", content: "hello" }];
+
+        const json = await chat("/v1/chat/completions", {
+            messages,
+            stream: false,
+        });
+        expect(json.status).toBe(200);
+        expect(json.headers.get("x-model-used")).toBe(registered.modelId);
+        expect(json.headers.get("x-usage-completion-text-tokens")).toBe("3");
+        expect(await json.json()).toMatchObject({
+            choices: [{ message: { content: "ok" } }],
+            usage: { prompt_tokens: 2, completion_tokens: 3 },
+        });
+
+        for (const [path, body] of [
+            ["/v1/chat/completions", { messages, stream: true }],
+            ["/v1/responses", { input: "hello", stream: true }],
+        ] as const) {
+            const streamed = await chat(path, body);
+            expect(streamed.status).toBe(400);
+            expect(await streamed.text()).toContain(
+                `${registered.modelId} does not support streaming; send stream: false`,
+            );
+        }
+
+        const models = (await (
+            await fetchGen("https://gen.pollinations.ai/v1/models")
+        ).json()) as { data: { id: string; supports_streaming?: boolean }[] };
+        expect(
+            models.data.find((model) => model.id === registered.modelId),
+        ).toMatchObject({ supports_streaming: false });
+
+        // The probe made two upstream calls, then only the stream: false call
+        // reached the endpoint.
+        expect(upstreamBodies.map((body) => body.stream)).toEqual([
+            false,
+            true,
+            false,
+        ]);
+    },
+    20_000,
 );
 
 fixtureTest(

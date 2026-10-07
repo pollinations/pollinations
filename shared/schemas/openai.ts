@@ -764,6 +764,12 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        supports_streaming: z
+            .boolean()
+            .optional()
+            .describe(
+                "False when the model answers only `stream: false` requests and rejects `stream: true`; omitted when streaming is supported.",
+            ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),

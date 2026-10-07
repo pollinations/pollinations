@@ -387,9 +387,154 @@ describe("community endpoint OpenAI service", () => {
                 completionImageTokens: 0,
                 completionReasoningTokens: 0,
             },
+            streaming: true,
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    describe("endpoints without SSE", () => {
+        const chatJson = {
+            choices: [{ message: { role: "assistant", content: "OK" } }],
+            usage: { prompt_tokens: 4, completion_tokens: 1, total_tokens: 5 },
+        };
+        const responseJson = {
+            id: "resp_1",
+            object: "response",
+            model: "test-model",
+            status: "completed",
+            output: [],
+            usage: { input_tokens: 4, output_tokens: 1, total_tokens: 5 },
+        };
+        const targets = {
+            chat_completions: [chatJson, chatJson.usage],
+            responses: [responseJson, responseJson.usage],
+        } as const;
+
+        it.each([
+            "chat_completions",
+            "responses",
+        ] as const)("registers a %s endpoint that returns JSON for stream: true", async (api) => {
+            const [json, usage] = targets[api];
+            const fetchMock = vi.fn(async () => Response.json(json));
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await testCommunityEndpoint({
+                api,
+                url: "https://api.example.com/v1/infer",
+                bearerToken: "sk_saved_token",
+                model: "test-model",
+            });
+
+            expect(result).toMatchObject({ usage, streaming: false });
+            expect(result.streamingError).toMatch(/text\/event-stream/);
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("registers an endpoint that rejects stream: true with a 400", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) =>
+                    JSON.parse(init.body).stream
+                        ? Response.json(
+                              {
+                                  error: {
+                                      message: "streaming is not supported",
+                                  },
+                              },
+                              { status: 400 },
+                          )
+                        : Response.json(chatJson),
+                ),
+            );
+
+            await expect(
+                testCommunityEndpoint({
+                    api: "chat_completions",
+                    url: "https://api.example.com/v1/chat/completions",
+                    bearerToken: "sk_saved_token",
+                    model: "test-model",
+                }),
+            ).resolves.toMatchObject({
+                streaming: false,
+                streamingError: expect.stringContaining(
+                    "streaming is not supported",
+                ),
+            });
+        });
+
+        it.each([
+            401, 429, 500,
+        ])("fails the registration when the stream probe returns %i", async (status) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) =>
+                    JSON.parse(init.body).stream
+                        ? Response.json({}, { status })
+                        : Response.json(chatJson),
+                ),
+            );
+
+            await expect(
+                testCommunityEndpoint({
+                    api: "chat_completions",
+                    url: "https://api.example.com/v1/chat/completions",
+                    bearerToken: "sk_saved_token",
+                    model: "test-model",
+                }),
+            ).rejects.toThrow(`Endpoint responded ${status}`);
+        });
+
+        it("still fails an endpoint that streams without usage", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) =>
+                    JSON.parse(init.body).stream
+                        ? new Response(
+                              'data: {"choices":[{"delta":{"content":"OK"}}]}\n\ndata: [DONE]\n\n',
+                              {
+                                  headers: {
+                                      "content-type": "text/event-stream",
+                                  },
+                              },
+                          )
+                        : Response.json(chatJson),
+                ),
+            );
+
+            await expect(
+                testCommunityEndpoint({
+                    api: "chat_completions",
+                    url: "https://api.example.com/v1/chat/completions",
+                    bearerToken: "sk_saved_token",
+                    model: "test-model",
+                }),
+            ).rejects.toThrow(
+                "Endpoint omitted valid terminal streaming usage",
+            );
+        });
+
+        it("accepts advertised.streaming: false only as false", () => {
+            const listing = {
+                name: "test-model",
+                title: "Test model",
+                api: "chat_completions",
+                url: "https://api.example.com/v1/chat/completions",
+                bearerToken: "sk_saved_token",
+            };
+            expect(
+                CreateEndpointSchema.safeParse({
+                    ...listing,
+                    advertised: { streaming: false },
+                }).success,
+            ).toBe(true);
+            expect(
+                CreateEndpointSchema.safeParse({
+                    ...listing,
+                    advertised: { streaming: true },
+                }).success,
+            ).toBe(false);
+        });
     });
 
     it("detects token billing when image endpoints return OpenAI usage", async () => {

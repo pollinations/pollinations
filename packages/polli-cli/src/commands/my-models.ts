@@ -205,6 +205,8 @@ export function modelBody(
         body.imagePricing = opts.imagePricing;
     }
 
+    if (opts.streaming === false) body.advertised = { streaming: false };
+
     // An empty string clears the list, which is why this checks for the flag
     // being present rather than for a truthy value.
     if (opts.fallbacks !== undefined) {
@@ -373,6 +375,10 @@ const create = addPriceOptions(
         .option(
             "--image-pricing <mode>",
             "Image billing: request (per image, default) or tokens",
+        )
+        .option(
+            "--no-streaming",
+            "Text endpoint has no SSE; `my-models test` reports this. Callers must send stream: false",
         ),
 ).action(async (opts) => {
     const key = requireKey();

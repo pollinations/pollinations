@@ -162,6 +162,12 @@ export const ModelInfoSchema = z.object({
         .describe(
             "Whether JSON and JSON-schema output are supported; omitted when unverified.",
         ),
+    supports_streaming: z
+        .boolean()
+        .optional()
+        .describe(
+            "False when the model answers only `stream: false` requests and rejects `stream: true`; omitted when streaming is supported.",
+        ),
     max_completion_tokens: z
         .number()
         .int()
@@ -308,6 +314,7 @@ export function modelInfoFromDefinition(
         supported_parameters: service.supportedParameters,
         tools: service.tools,
         supports_structured_output: service.supportsStructuredOutput,
+        supports_streaming: service.supportsStreaming,
         max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
         context_length: service.contextLength,

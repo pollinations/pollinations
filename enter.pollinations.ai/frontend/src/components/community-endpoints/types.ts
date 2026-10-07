@@ -211,6 +211,8 @@ export type EndpointFormState = ModelListingFormState & {
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
+    // Detected by the endpoint test for text models; true until tested.
+    streaming: boolean;
     api: CommunityEndpointApi;
     url: string;
     upstreamModel: string;
@@ -257,6 +259,7 @@ export type CommunityEndpointTestResponse = {
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[];
     imageEditError?: string;
+    streaming?: boolean;
 };
 
 export type ActionState = {
@@ -285,6 +288,7 @@ export const emptyForm: EndpointFormState = {
     ...emptyListingForm,
     modality: "text",
     imagePricing: "request",
+    streaming: true,
     api: "chat_completions",
     url: "",
     upstreamModel: "",
@@ -404,6 +408,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         inputModalities: endpoint.inputModalities,
         capabilities: endpoint.advertised.capabilities ?? [],
         contextLength: endpoint.advertised.contextLength?.toString() ?? "",
+        streaming: endpoint.advertised.streaming !== false,
         name: endpoint.name,
         title: endpoint.title,
         description: endpoint.description ?? "",
@@ -598,6 +603,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
                 contextLength: form.contextLength.trim()
                     ? Number(form.contextLength)
                     : undefined,
+                streaming: form.streaming ? undefined : false,
             },
             modality,
         ),

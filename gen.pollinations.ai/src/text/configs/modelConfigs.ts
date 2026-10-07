@@ -364,6 +364,13 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
+    // Sole OpenRouter route for Nex AGI's Nex-N2.5-Mini (Nex AGI bf16), so
+    // pinning it costs no availability; fallbacks stay off so the verified
+    // route and its pricing cannot silently change.
+    "nex-agi/nex-n2.5-mini": createPinnedOpenRouterConfig(
+        "nex-agi/nex-n2.5-mini",
+        "nex-agi/bf16",
+    ),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

@@ -399,6 +399,20 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Nex AGI bf16 tag for Nex-N2.5-Mini (verified 2026-10-07):
+    // the endpoint advertises no tool support, so tools/tool_choice stay out
+    // and tool requests are rejected here instead of failing upstream.
+    openRouterNexMini: [
+        "max_tokens",
+        "stream",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
     openRouterLing: [
         "max_tokens",

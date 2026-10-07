@@ -2243,6 +2243,39 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
+    "nex-agi/nex-n2.5-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter lists one route only for this model (Nex AGI bf16,
+            // verified 2026-10-07): prompt $0.025/M, cache read $0.0025/M,
+            // completion $0.1/M, plus the mandatory 5.5% OpenRouter credit
+            // fee. Image parts are tokenized into the prompt and billed at the
+            // prompt rate; the provider reports no separate image usage.
+            promptTextTokens: perMillion(0.025) * 1.055,
+            promptCachedTokens: perMillion(0.0025) * 1.055,
+            promptImageTokens: perMillion(0.025) * 1.055,
+            completionTextTokens: perMillion(0.1) * 1.055,
+        },
+        title: "Nex N2.5 Mini",
+        description:
+            "Compact agentic coding model with image input and switchable reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // Guards the single OpenRouter route like the sibling vision route.
+        // Nex AGI's only endpoint rejects tool requests (no tools/tool_choice
+        // in its advertised parameters), so tools are off rather than probed.
+        tools: false,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "meituan/longcat-2.0": {
         supportedParameters: CHAT_PARAMETERS.longcat,
         aliases: ["longcat-2.0", "longcat-2", "longcat"],

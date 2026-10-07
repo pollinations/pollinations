@@ -256,12 +256,13 @@ export async function buildQuestStandings(
             ...row,
             supporter: supporters.has(row.githubLogin),
         })),
-        you: viewer && viewer !== EXCLUDED_GITHUB_LOGIN
-            ? {
-                  githubLogin: viewer,
-                  rank: viewerIndex >= 0 ? viewerIndex + 1 : null,
-                  totalPollen: ranking[viewerIndex]?.totalPollen ?? 0,
-              }
-            : null,
+        you:
+            viewer && viewer !== EXCLUDED_GITHUB_LOGIN
+                ? {
+                      githubLogin: viewer,
+                      rank: viewerIndex >= 0 ? viewerIndex + 1 : null,
+                      totalPollen: ranking[viewerIndex]?.totalPollen ?? 0,
+                  }
+                : null,
     };
 }

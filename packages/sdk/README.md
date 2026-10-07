@@ -418,8 +418,15 @@ await video.saveToFile('clouds.mp4');
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
-| `referenceImage` | string | - | URL for image-to-video |
+| `referenceImage` | string or string[] | - | Frame URL(s): first is the start frame, second is the optional end frame |
+| `referenceImages` | string or string[] | - | Image URL(s) for visual guidance, separate from frame controls |
+| `referenceVideos` | string or string[] | - | Video URL(s) for motion or style guidance |
+| `referenceAudios` | string or string[] | - | Audio URL(s) for audio-driven generation |
 | `safe` | boolean | `false` | Safety filter |
+
+Reference media must use public HTTP(S) URLs. See `video_capabilities` in
+[`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
+controls and guidance media can be combined depends on the selected model.
 
 ## Audio (Text-to-Speech & Music)
 

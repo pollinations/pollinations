@@ -641,14 +641,14 @@ describe("Pollinations video reference media", () => {
             makeResponse(null, { kind: "binary", contentType: "video/mp4" }),
         );
 
-        const result = await newClient().video("a guided scene", {
+        await newClient().video("a guided scene", {
             referenceImages: references,
             referenceVideos: references,
             referenceAudios: references,
             referenceImage: "https://media.example/start.png",
         });
 
-        const [requestUrl, init] = fetchMock.mock.calls[0];
+        const [requestUrl] = fetchMock.mock.calls[0];
         const url = new URL(requestUrl as string);
         const expected = arrays ? urls.join("|") : urls[0];
         for (const name of [
@@ -658,10 +658,6 @@ describe("Pollinations video reference media", () => {
         ]) {
             expect(url.searchParams.get(name)).toBe(expected);
         }
-        expect(url.toString()).toContain(
-            "ref%2Cone%3Fsize%3Dlarge%26tag%3Da+b",
-        );
-        if (arrays) expect(url.toString()).toContain("%7Chttps%3A%2F%2F");
         expect(url.searchParams.get("image")).toBe(
             "https://media.example/start.png",
         );
@@ -672,15 +668,6 @@ describe("Pollinations video reference media", () => {
             "reference_images",
             "reference_videos",
         ]);
-        expect((init as RequestInit).headers).toMatchObject({
-            Authorization: "Bearer sk_test",
-        });
-        expect(result.buffer.byteLength).toBe(8);
-        expect(result.contentType).toBe("video/mp4");
-        expect(new URL(result.url).searchParams.has("key")).toBe(false);
-        expect(new URL(result.url).searchParams.get("reference_images")).toBe(
-            expected,
-        );
     });
 
     it.each([

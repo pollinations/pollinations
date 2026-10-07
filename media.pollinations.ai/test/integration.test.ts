@@ -96,6 +96,29 @@ const KEY_IDENTITIES: Record<
         userId: "user_bob",
         byopApp: null,
     },
+    // user_admin has the Better Auth admin role; only its own secret key may
+    // upload permanently.
+    sk_admin: {
+        valid: true,
+        type: "secret",
+        name: "admin-secret",
+        userId: "user_admin",
+        byopApp: null,
+    },
+    pk_admin: {
+        valid: true,
+        type: "publishable",
+        name: "admin-publishable",
+        userId: "user_admin",
+        byopApp: null,
+    },
+    sk_admin_app: {
+        valid: true,
+        type: "secret",
+        name: "admin-app",
+        userId: "user_admin",
+        byopApp: { clientKeyId: "pk_app_2" },
+    },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopApp entirely absent, not null.
     sk_legacy: {
@@ -105,9 +128,13 @@ const KEY_IDENTITIES: Record<
     },
 };
 
-function createMediaEnv(bucket = createTestR2Bucket()) {
+function createMediaEnv(
+    bucket = createTestR2Bucket(),
+    permanentBucket = createTestR2Bucket(),
+) {
     return {
         MEDIA_BUCKET: bucket,
+        PERMANENT_BUCKET: permanentBucket,
         MAX_FILE_SIZE: "104857600",
         DB: env.DB,
     };
@@ -148,13 +175,18 @@ function mockAuth() {
 async function seedUsers() {
     const db = drizzle(env.DB);
     const now = new Date();
-    for (const id of ["user_alice", "user_bob"]) {
+    for (const [id, role] of [
+        ["user_alice", null],
+        ["user_bob", null],
+        ["user_admin", "admin"],
+    ]) {
         await db
             .insert(userTable)
             .values({
                 id,
                 name: id,
                 email: `${id}@test.com`,
+                role,
                 createdAt: now,
                 updatedAt: now,
             })
@@ -1565,6 +1597,148 @@ describe("media.pollinations.ai", () => {
             "https://media.pollinations.ai/media?tag=sunset",
         );
         expect(publicGallery.status).toBe(200);
+    });
+
+    describe("permanent uploads", () => {
+        function rawUpload(key: string) {
+            return SELF.fetch(
+                "https://media.pollinations.ai/upload?permanent=true",
+                {
+                    method: "POST",
+                    body: TINY_PNG,
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "image/png",
+                        "Content-Length": String(TINY_PNG.length),
+                    },
+                },
+            );
+        }
+
+        it.each([
+            ["an admin's publishable key", "pk_admin"],
+            ["a non-admin secret key", "sk_bob"],
+            ["an admin key minted for a BYOP app", "sk_admin_app"],
+        ])("rejects %s with 403 before storing anything", async (_, key) => {
+            const res = await rawUpload(key);
+            expect(res.status).toBe(403);
+            expect((await env.PERMANENT_BUCKET.list()).objects).toHaveLength(0);
+        });
+
+        it("stores raw and JSON uploads in the permanent bucket under p_ ids", async () => {
+            const rawRes = await rawUpload("sk_admin");
+            expect(rawRes.status).toBe(200);
+            const raw = (await rawRes.json()) as UploadResponse;
+            expect(raw.id).toMatch(/^p_[0-9a-f-]{36}$/);
+
+            const jsonRes = await SELF.fetch(
+                "https://media.pollinations.ai/upload?permanent=true",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: "Bearer sk_admin",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        id: "news-cover",
+                        data: btoa(String.fromCharCode(...TINY_PNG)),
+                        contentType: "image/png",
+                    }),
+                },
+            );
+            expect(jsonRes.status).toBe(200);
+            const json = (await jsonRes.json()) as UploadResponse;
+            expect(json.id).toMatch(/^p_u_[0-9a-f]{64}_news-cover$/);
+
+            for (const { id, url } of [raw, json]) {
+                expect(await env.MEDIA_BUCKET.head(id)).toBeNull();
+                expect(await env.PERMANENT_BUCKET.head(id)).not.toBeNull();
+                const getRes = await SELF.fetch(url);
+                expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(
+                    TINY_PNG,
+                );
+                const metaRes = await SELF.fetch(`${url}/metadata`);
+                expect(metaRes.status).toBe(200);
+            }
+        });
+
+        it("serves permanent files without TTL-refresh rewrites", async () => {
+            const mediaBucket = createTestR2Bucket();
+            const permanentBucket = createTestR2Bucket();
+            const mediaEnv = createMediaEnv(mediaBucket, permanentBucket);
+            const form = new FormData();
+            form.append("file", pngFile("keep.png"));
+            const uploadCtx = createExecutionContext();
+            const uploadRes = await app.fetch(
+                new Request(
+                    "https://media.pollinations.ai/upload?permanent=true",
+                    {
+                        method: "POST",
+                        body: form,
+                        headers: { Authorization: "Bearer sk_admin" },
+                    },
+                ),
+                mediaEnv,
+                uploadCtx,
+            );
+            await waitOnExecutionContext(uploadCtx);
+            expect(uploadRes.status).toBe(200);
+            const upload = (await uploadRes.json()) as UploadResponse;
+
+            const getCtx = createExecutionContext();
+            const getRes = await app.fetch(
+                new Request(upload.url),
+                mediaEnv,
+                getCtx,
+            );
+            expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(
+                TINY_PNG,
+            );
+            await waitOnExecutionContext(getCtx);
+            expect(permanentBucket.putCount).toBe(1);
+            expect(mediaBucket.putCount).toBe(0);
+        });
+
+        it("copies a staged multipart upload into the permanent bucket and deletes it there", async () => {
+            const size = 8 * 1024 * 1024 + 17;
+            const bytes = new Uint8Array(size);
+            bytes[size - 1] = 91;
+            const form = new FormData();
+            form.append(
+                "file",
+                new File([bytes], "large.bin", {
+                    type: "application/octet-stream",
+                }),
+            );
+            form.append("tags", "permanent-test");
+            const uploadRes = await SELF.fetch(
+                "https://media.pollinations.ai/upload?permanent=true",
+                {
+                    method: "POST",
+                    body: form,
+                    headers: { Authorization: "Bearer sk_admin" },
+                },
+            );
+            expect(uploadRes.status, await uploadRes.clone().text()).toBe(200);
+            const upload = (await uploadRes.json()) as UploadResponse;
+            expect(upload.id).toMatch(/^p_/);
+            expect((await env.PERMANENT_BUCKET.head(upload.id))?.size).toBe(
+                size,
+            );
+            expect(
+                (await env.MEDIA_BUCKET.list({ prefix: "pending/" })).objects,
+            ).toHaveLength(0);
+
+            const delRes = await SELF.fetch(
+                `https://media.pollinations.ai/media/${upload.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer sk_admin" },
+                },
+            );
+            expect(delRes.status).toBe(200);
+            expect(await env.PERMANENT_BUCKET.head(upload.id)).toBeNull();
+        }, 30_000);
     });
 
     describe("DELETE /media/:id", () => {

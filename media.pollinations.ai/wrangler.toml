@@ -15,6 +15,11 @@ MAX_FILE_SIZE = "419430400"  # 400 MiB in bytes
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media-dev"
 
+# Permanent uploads (`p_` ids). This bucket has no lifecycle rule.
+[[env.development.r2_buckets]]
+binding = "PERMANENT_BUCKET"
+bucket_name = "pollinations-media-permanent-dev"
+
 [[env.development.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -32,6 +37,11 @@ MAX_FILE_SIZE = "419430400"
 [[env.staging.r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
+
+# Permanent uploads (`p_` ids). This bucket has no lifecycle rule.
+[[env.staging.r2_buckets]]
+binding = "PERMANENT_BUCKET"
+bucket_name = "pollinations-media-permanent"
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -62,6 +72,11 @@ custom_domain = true
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
 
+# Permanent uploads (`p_` ids). This bucket has no lifecycle rule.
+[[env.production.r2_buckets]]
+binding = "PERMANENT_BUCKET"
+bucket_name = "pollinations-media-permanent"
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"
@@ -75,6 +90,11 @@ MAX_FILE_SIZE = "419430400"  # 400 MiB in bytes
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
+
+# Permanent uploads (`p_` ids). This bucket has no lifecycle rule.
+[[r2_buckets]]
+binding = "PERMANENT_BUCKET"
+bucket_name = "pollinations-media-permanent"
 
 [[d1_databases]]
 binding = "DB"

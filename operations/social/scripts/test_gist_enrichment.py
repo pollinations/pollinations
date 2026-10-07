@@ -149,10 +149,13 @@ class GistEnrichmentTest(unittest.TestCase):
                 generate(old)
                 self.assertEqual(api.call_args.args[1], new_prompt)
             for fact in ("Account balance deduction is fixed.", '"area": "Models"',
-                         '"type": "Task"', '"source": "Team"', '"before": {', '"image": "1"',
-                         '"image": "2"', '"effective_status": "unconfirmed"'):
+                         '"type": "Task"', '"source": "Team"'):
                 self.assertIn(fact, new_prompt)
             self.assertNotIn("Old excerpt", new_prompt)
+            # Only Discord states model prices; recaps feeding X/Reddit/LinkedIn/Instagram never see them.
+            check = self.assertIn if module == "publish_realtime" else self.assertNotIn
+            for value in ('"announcements"', '"image": "2"'):
+                check(value, new_prompt)
         broken = copy.deepcopy(gist)
         broken["image"]["prompt"] = None
         self.assertIn("missing image.prompt", validate_gist(broken))
@@ -163,7 +166,7 @@ class GistEnrichmentTest(unittest.TestCase):
             changelog, count = load_gists_as_changelog("2026-10-07")
         self.assertEqual(count, 1)
         self.assertEqual(changelog.count("https://example.com/app"), 1)
-        self.assertIn('"image": "2"', changelog)
+        self.assertNotIn('"announcements"', changelog)
 
     def test_platform_posts_keep_arc_facts_and_distinguish_selected_counts(self):
         digest = {

@@ -1045,6 +1045,14 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "mistralai/mistral-large-4",
+        config: portkeyConfig["mistral-large-4"],
+    },
+    {
+        name: "mistralai/mistral-large-4:vercel",
+        config: portkeyConfig["mistral-large-4-vercel"],
+    },
+    {
         name: "mistralai/mistral-large-3",
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.

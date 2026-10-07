@@ -18,6 +18,8 @@ export const PLAY_SEARCH_KEYS = [
     "seed",
     "voice",
     "language",
+    "sound",
+    "guidance",
 ] as const;
 
 export type PlaySearch = Partial<

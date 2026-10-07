@@ -60,7 +60,7 @@ import {
     generatePlaygroundAudio,
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
-import { reproducibleApiUrl } from "./video-options";
+import { reproducibleApiUrl, videoOptions } from "./video-options";
 
 /** A fixed setting shown as an icon and value instead of a control. */
 function MediaFact({
@@ -161,6 +161,16 @@ const CATEGORY_ICON = {
     audio: AudioIcon,
 } as const;
 const UPLOAD_MEDIA_ORDER = ["image", "video", "audio"] as const;
+const REFERENCE_CAPABILITY = {
+    image: "reference_images",
+    video: "reference_videos",
+    audio: "reference_audios",
+} as const;
+const MEDIA_PLURAL = {
+    image: "images",
+    video: "videos",
+    audio: "audio",
+} as const;
 type UploadMedia = (typeof UPLOAD_MEDIA_ORDER)[number];
 const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     image: "image/*",
@@ -169,7 +179,6 @@ const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
 };
 // Most video models take 16:9 or 9:16; the API rejects or adapts others.
 // "" sends no ratio, so the model picks its default.
-const VIDEO_ASPECT_RATIOS = ["", "16:9", "9:16"] as const;
 
 const AUDIO_UPLOAD_MAX_SIZE_BYTES = 20 * 1024 * 1024;
 const IMAGE_UPLOAD_MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -677,6 +686,13 @@ export function Playground() {
     const [language, setLanguage] = useState(search.language ?? "");
     const [seed, setSeed] = useState(search.seed ?? "");
     const [referenceImages, setReferenceImages] = useState<File[]>([]);
+    const [videoReferences, setVideoReferences] = useState<
+        Record<UploadMedia, File[]>
+    >({ image: [], video: [], audio: [] });
+    const [referenceMode, setReferenceMode] = useState(
+        search.guidance === "references" ? "references" : "frames",
+    );
+    const [sound, setSound] = useState(search.sound ?? "");
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
     const [selectedVoice, setSelectedVoice] = useState(search.voice ?? "");
     const configuredModelRef = useRef(search.model ?? "");
@@ -724,6 +740,9 @@ export function Playground() {
             seed,
             voice: selectedVoice,
             language,
+            sound,
+            guidance:
+                referenceMode === "references" ? referenceMode : undefined,
         });
     }, [
         showInUrl,
@@ -739,6 +758,8 @@ export function Playground() {
         seed,
         selectedVoice,
         language,
+        sound,
+        referenceMode,
     ]);
 
     // Community models stay off the playground menu: this page pitches the
@@ -838,14 +859,22 @@ export function Playground() {
         };
     }, [result]);
 
+    const videoConfig = videoOptions(
+        currentModel?.id ?? "",
+        currentModel?.videoCapabilities ?? [],
+    );
+    const videoSound = sound ? sound === "on" : videoConfig.defaultSound;
+    const usesReferences =
+        videoConfig.exclusiveReferences && referenceMode === "references";
     const maxReferenceImages = referenceImageLimit(currentModel);
     const supportsReferenceImages = maxReferenceImages > 0;
     const isVideoReferenceMode =
         currentModel?.category === "video" &&
+        !usesReferences &&
         currentModel.videoCapabilities.includes("start_frame") &&
         supportsReferenceImages;
     const isReferenceImageListMode =
-        supportsReferenceImages && !isVideoReferenceMode;
+        supportsReferenceImages && currentModel?.category === "image";
     const supportsLastFrame =
         isVideoReferenceMode &&
         (currentModel?.videoCapabilities.includes("end_frame") ?? false) &&
@@ -890,14 +919,23 @@ export function Playground() {
         !!currentModel &&
         isLoggedIn &&
         catalog.allowedModelIds.has(currentModel.id);
-    const mediaSettings = mediaModelSettings(currentModel, {
-        resolution: selectedResolution,
-        duration,
-    });
+    const mediaSettings = mediaModelSettings(
+        currentModel?.id === "alibaba/wan-2.7" && usesReferences
+            ? { ...currentModel, maxDuration: 10 }
+            : currentModel,
+        {
+            resolution: selectedResolution,
+            duration,
+        },
+    );
     const videoDuration =
         currentModel?.category === "video" ? mediaSettings.duration : undefined;
     const videoAspectRatio =
-        currentModel?.category === "video" ? aspectRatio : undefined;
+        currentModel?.category === "video"
+            ? videoConfig.ratios.includes(aspectRatio)
+                ? aspectRatio
+                : videoConfig.ratios[0]
+            : undefined;
     const isVisualModel =
         currentModel?.category === "image" ||
         currentModel?.category === "video";
@@ -968,6 +1006,10 @@ export function Playground() {
                                 aspectRatio: videoAspectRatio,
                                 duration: videoDuration?.value,
                                 seed: fixedSeed,
+                                ...(currentModel.category === "video" &&
+                                videoConfig.sound === "optional"
+                                    ? { audio: videoSound }
+                                    : {}),
                             }
                           : {
                                 voice: selectedVoice || undefined,
@@ -1001,6 +1043,9 @@ export function Playground() {
     function selectModel(modelId: string) {
         setSelectedModel(modelId);
         setAudioFiles([]);
+        setVideoReferences({ image: [], video: [], audio: [] });
+        setReferenceMode("frames");
+        setSound("");
     }
 
     function setFrameImage(index: 0 | 1, files: File[]) {
@@ -1027,12 +1072,34 @@ export function Playground() {
                 baseUrl: API_BASE_URL,
             });
             const requestSeed = fixedSeed ?? randomGenerationSeed();
-            const referenceUrls = supportsReferenceImages
-                ? await uploadReferenceImages(client, referenceImages)
-                : [];
+            const referenceUrls =
+                supportsReferenceImages && !usesReferences
+                    ? await uploadReferenceImages(client, referenceImages)
+                    : [];
 
             if (currentModel.category === "video") {
+                const [images, videos, audios] = await Promise.all(
+                    UPLOAD_MEDIA_ORDER.map((media) =>
+                        currentModel.videoCapabilities.includes(
+                            REFERENCE_CAPABILITY[media],
+                        ) &&
+                        (!videoConfig.exclusiveReferences || usesReferences)
+                            ? uploadReferenceImages(
+                                  client,
+                                  videoReferences[media],
+                              )
+                            : Promise.resolve([]),
+                    ),
+                );
                 const response = await client.video(trimmedPrompt, {
+                    audio:
+                        videoConfig.sound === "optional"
+                            ? videoSound
+                            : undefined,
+                    referenceImages: images.length ? images : undefined,
+                    referenceVideos: videos.length ? videos : undefined,
+                    referenceAudios: audios.length ? audios : undefined,
+
                     model: currentModel.id,
                     duration: videoDuration?.value,
                     aspectRatio: videoAspectRatio || undefined,
@@ -1318,6 +1385,102 @@ export function Playground() {
                                 </div>
                             )}
 
+                            {currentModel?.category === "video" &&
+                                videoConfig.exclusiveReferences && (
+                                    <FieldStack
+                                        label="Guidance"
+                                        className="play-parameter-row min-w-0"
+                                    >
+                                        <ButtonGroup aria-label="Video guidance">
+                                            {["frames", "references"].map(
+                                                (mode) => (
+                                                    <TabButton
+                                                        key={mode}
+                                                        active={
+                                                            referenceMode ===
+                                                            mode
+                                                        }
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setReferenceMode(
+                                                                mode,
+                                                            )
+                                                        }
+                                                    >
+                                                        {mode === "frames"
+                                                            ? "Frames"
+                                                            : "References"}
+                                                    </TabButton>
+                                                ),
+                                            )}
+                                        </ButtonGroup>
+                                    </FieldStack>
+                                )}
+                            {currentModel?.category === "video" &&
+                                (!videoConfig.exclusiveReferences ||
+                                    usesReferences) &&
+                                UPLOAD_MEDIA_ORDER.filter((media) =>
+                                    currentModel.videoCapabilities.includes(
+                                        REFERENCE_CAPABILITY[media],
+                                    ),
+                                ).map((media) => (
+                                    <FieldStack
+                                        key={media}
+                                        label={`Reference ${MEDIA_PLURAL[media]}`}
+                                        className="play-parameter-row min-w-0"
+                                    >
+                                        <FileUpload
+                                            value={videoReferences[media]}
+                                            onChange={(files) =>
+                                                setVideoReferences(
+                                                    (previous) => ({
+                                                        ...previous,
+                                                        [media]: files,
+                                                    }),
+                                                )
+                                            }
+                                            maxFiles={Infinity}
+                                            accept={UPLOAD_ACCEPT[media]}
+                                            maxSizeBytes={
+                                                media === "image"
+                                                    ? IMAGE_UPLOAD_MAX_SIZE_BYTES
+                                                    : AUDIO_UPLOAD_MAX_SIZE_BYTES
+                                            }
+                                            label={`Add ${MEDIA_PLURAL[media]}`}
+                                            icon={
+                                                media === "video" ? (
+                                                    <VideoIcon className="h-6 w-6 shrink-0" />
+                                                ) : media === "audio" ? (
+                                                    <AudioIcon className="h-6 w-6 shrink-0" />
+                                                ) : (
+                                                    <ImageIcon className="h-6 w-6 shrink-0" />
+                                                )
+                                            }
+                                            previewIcon={
+                                                media === "video" ? (
+                                                    <VideoIcon className="h-6 w-6" />
+                                                ) : media === "audio" ? (
+                                                    <AudioIcon className="h-6 w-6" />
+                                                ) : undefined
+                                            }
+                                            onReject={rejectWith({
+                                                size:
+                                                    media === "image"
+                                                        ? "Images must be under 5 MB each."
+                                                        : "Files must be under 20 MB each.",
+                                                count: "Too many files.",
+                                                type: `Only ${media} files are allowed.`,
+                                            })}
+                                        />
+                                    </FieldStack>
+                                ))}
+                            {Object.values(videoReferences).some(
+                                (files) => files.length > 0,
+                            ) && (
+                                <div className="col-span-full">
+                                    <UploadPrivacyNote />
+                                </div>
+                            )}
                             {isVideoReferenceMode && (
                                 <FieldStack
                                     label="Frame"
@@ -1437,17 +1600,23 @@ export function Playground() {
                                             className="play-parameter-row min-w-0"
                                         >
                                             <ButtonGroup aria-label="Aspect ratio">
-                                                {VIDEO_ASPECT_RATIOS.map(
+                                                {videoConfig.ratios.map(
                                                     (ratio) => (
                                                         <TabButton
                                                             key={
                                                                 ratio || "auto"
                                                             }
                                                             active={
-                                                                aspectRatio ===
+                                                                videoAspectRatio ===
                                                                 ratio
                                                             }
                                                             size="sm"
+                                                            disabled={
+                                                                videoConfig
+                                                                    .ratios
+                                                                    .length ===
+                                                                1
+                                                            }
                                                             onClick={() =>
                                                                 setAspectRatio(
                                                                     ratio,
@@ -1462,6 +1631,52 @@ export function Playground() {
                                         </FieldStack>
                                     )}
 
+                                    {currentModel.category === "video" && (
+                                        <FieldStack
+                                            label="Sound"
+                                            className="play-parameter-row min-w-0"
+                                        >
+                                            <ButtonGroup aria-label="Video sound">
+                                                {[true, false]
+                                                    .filter(
+                                                        (value) =>
+                                                            videoConfig.sound ===
+                                                                "optional" ||
+                                                            value ===
+                                                                (videoConfig.sound ===
+                                                                    "on"),
+                                                    )
+                                                    .map((value) => (
+                                                        <TabButton
+                                                            key={String(value)}
+                                                            size="sm"
+                                                            active={
+                                                                videoConfig.sound ===
+                                                                "optional"
+                                                                    ? videoSound ===
+                                                                      value
+                                                                    : true
+                                                            }
+                                                            disabled={
+                                                                videoConfig.sound !==
+                                                                "optional"
+                                                            }
+                                                            onClick={() =>
+                                                                setSound(
+                                                                    value
+                                                                        ? "on"
+                                                                        : "off",
+                                                                )
+                                                            }
+                                                        >
+                                                            {value
+                                                                ? "On"
+                                                                : "Off"}
+                                                        </TabButton>
+                                                    ))}
+                                            </ButtonGroup>
+                                        </FieldStack>
+                                    )}
                                     {videoDuration && (
                                         <FieldStack
                                             label="Duration"

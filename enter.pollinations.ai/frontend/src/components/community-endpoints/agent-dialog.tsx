@@ -66,7 +66,7 @@ export function AgentDialog({
 
     function updateAgentForm(
         key: keyof AgentFormState,
-        value: string | AgentFormState["mcpServers"],
+        value: string | boolean | AgentFormState["mcpServers"],
     ): void {
         setForm((current) => ({ ...current, [key]: value }));
     }

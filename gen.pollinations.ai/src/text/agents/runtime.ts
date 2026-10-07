@@ -1,4 +1,6 @@
 import { createMCPClient } from "@ai-sdk/mcp";
+import { DynamicWorkerExecutor } from "@cloudflare/codemode";
+import { createCodeTool } from "@cloudflare/codemode/ai";
 import { getLogger } from "@logtape/logtape";
 import { safeMcpModelOutput } from "@shared/agents/mcp-output.ts";
 import {
@@ -21,6 +23,7 @@ import {
     stepCountIs,
     ToolLoopAgent,
     type ToolSet,
+    tool,
 } from "ai";
 
 const log = getLogger(["gen", "prompt-agent-runtime"]);
@@ -30,6 +33,7 @@ export type PromptAgentRuntime = {
     apiKey: string;
     genBaseUrl: string;
     fetcher: typeof fetch;
+    loader: WorkerLoader;
 };
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
@@ -39,6 +43,16 @@ const MAX_TOOL_CALLS = 48;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
+// The mcp__ prefix makes Responses treat it like the other Gen-run tools.
+const CODE_TOOL_NAME = "mcp__codemode__execute";
+const CODE_TOOL_DESCRIPTION = `Run JavaScript that calls your tools. Use it to chain tool calls, run independent calls in parallel with Promise.all, and return only what you need.
+
+Available:
+{{types}}
+
+Write an async arrow function in plain JavaScript (no TypeScript) and return the result. A tool function returns the tool's text, or its structured JSON when the tool provides it, and throws when the tool fails. console.log output is returned with the result. The code has no network access.
+
+Example: async () => { const pages = await Promise.all(["a", "b"].map((query) => server.search({ query }))); return pages.map((page) => page.slice(0, 1000)); }`;
 
 async function loadMcpTools(
     serverId: McpServerId,
@@ -47,6 +61,7 @@ async function loadMcpTools(
     signal: AbortSignal,
     fetcher: typeof fetch,
 ): Promise<{
+    serverId: McpServerId;
     tools: Record<string, McpTool>;
     client: McpClient;
 }> {
@@ -69,12 +84,10 @@ async function loadMcpTools(
                 }),
         },
     });
-    const tools: Record<string, McpTool> = {};
+    let tools: Record<string, McpTool>;
 
     try {
-        for (const [name, definition] of Object.entries(await client.tools())) {
-            tools[`mcp__${serverId}__${name}`] = definition;
-        }
+        tools = await client.tools();
         log.info("MCP_SERVER_LOADED: name={name} url={url} tools={tools}", {
             name: serverId,
             url,
@@ -85,7 +98,74 @@ async function loadMcpTools(
         throw error;
     }
 
-    return { tools, client };
+    return { serverId, tools, client };
+}
+
+// Code receives what a reader would: structured content when the server
+// sends it, otherwise the text. Tool errors throw so the code can catch them.
+function codeValue(result: unknown): unknown {
+    const output = result as {
+        content?: { type?: string; text?: string }[];
+        structuredContent?: unknown;
+        isError?: boolean;
+    } | null;
+    if (!Array.isArray(output?.content)) return result;
+    const text = output.content.every((part) => part?.type === "text")
+        ? output.content.map((part) => part.text).join("\n")
+        : undefined;
+    if (output.isError) throw new Error(text || "Tool call failed");
+    return output.structuredContent ?? text ?? output.content;
+}
+
+// One tool that runs model-written JavaScript in a Dynamic Worker with no
+// network access. Each MCP server is a namespace in the sandbox (ask-jev
+// becomes ask_jev); calls come back to Gen and run as ordinary MCP calls.
+function createCodemodeTools(
+    servers: { serverId: McpServerId; tools: Record<string, McpTool> }[],
+    loader: WorkerLoader,
+    signal: AbortSignal,
+): ToolSet {
+    const code = createCodeTool({
+        tools: servers.map(({ serverId, tools }) => ({
+            name: serverId.replaceAll("-", "_"),
+            tools: Object.fromEntries(
+                Object.entries(tools).map(([name, mcpTool]) => [
+                    name,
+                    {
+                        ...mcpTool,
+                        execute: async (input: unknown) =>
+                            codeValue(
+                                await mcpTool.execute(input, {
+                                    toolCallId: crypto.randomUUID(),
+                                    messages: [],
+                                    abortSignal: signal,
+                                    context: undefined,
+                                }),
+                            ),
+                    },
+                ]),
+            ),
+        })),
+        executor: new DynamicWorkerExecutor({ loader, globalOutbound: null }),
+        description: CODE_TOOL_DESCRIPTION,
+    });
+    return {
+        [CODE_TOOL_NAME]: tool({
+            description: code.description,
+            inputSchema: code.inputSchema,
+            execute: async (input, options) => ({
+                content: [
+                    {
+                        type: "text" as const,
+                        text: JSON.stringify(
+                            await code.execute?.(input, options),
+                        ),
+                    },
+                ],
+            }),
+            toModelOutput: safeMcpModelOutput,
+        }),
+    };
 }
 
 async function createAgent(
@@ -121,26 +201,26 @@ async function createAgent(
         throw failure.reason;
     }
     const tools: Record<string, McpTool> = {};
-    for (const server of loadedServers) {
-        Object.assign(tools, server.tools);
-    }
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
-    for (const [name, tool] of Object.entries(tools)) {
-        const execute = tool.execute;
-        tools[name] = {
-            ...tool,
-            toModelOutput: safeMcpModelOutput,
-            execute(input, options) {
-                if (toolCalls >= MAX_TOOL_CALLS) {
-                    throw new Error(
-                        `Agent exceeded the maximum of ${MAX_TOOL_CALLS} tool calls`,
-                    );
-                }
-                toolCallCounts.mcp_call = ++toolCalls;
-                return execute(input, options);
-            },
-        };
+    for (const server of loadedServers) {
+        for (const [name, mcpTool] of Object.entries(server.tools)) {
+            const execute = mcpTool.execute;
+            server.tools[name] = {
+                ...mcpTool,
+                toModelOutput: safeMcpModelOutput,
+                execute(input, options) {
+                    if (toolCalls >= MAX_TOOL_CALLS) {
+                        throw new Error(
+                            `Agent exceeded the maximum of ${MAX_TOOL_CALLS} tool calls`,
+                        );
+                    }
+                    toolCallCounts.mcp_call = ++toolCalls;
+                    return execute(input, options);
+                },
+            };
+            tools[`mcp__${server.serverId}__${name}`] = server.tools[name];
+        }
     }
     const pollinations = createAgentModelProvider({
         baseURL: `${genBaseUrl}/v1`,
@@ -163,7 +243,12 @@ async function createAgent(
               }
             : runtime.config.systemPrompt,
         allowSystemInMessages: true,
-        tools: { ...callerTools, ...tools },
+        tools: {
+            ...callerTools,
+            ...(runtime.config.codemode
+                ? createCodemodeTools(loadedServers, runtime.loader, signal)
+                : tools),
+        },
         stopWhen: stepCountIs(MAX_STEPS),
         ...agentSettings,
         // Model calls spend the caller's balance, so do not retry billed calls.

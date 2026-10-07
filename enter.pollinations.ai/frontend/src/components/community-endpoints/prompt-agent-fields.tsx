@@ -11,7 +11,7 @@ type PromptAgentFieldsProps = {
     disabled: boolean;
     onChange: (
         key: keyof AgentFormState,
-        value: string | AgentFormState["mcpServers"],
+        value: string | boolean | AgentFormState["mcpServers"],
     ) => void;
 };
 
@@ -114,6 +114,20 @@ export function PromptAgentTools({
                     </AuthAccessItem>
                 ))}
             </ul>
+            <AuthAccessItem
+                checked={form.codemode}
+                disabled={disabled}
+                ariaLabel="Use code mode"
+                onChange={(selected) => onChange("codemode", selected)}
+                info={
+                    <InfoTip
+                        text="The agent writes JavaScript that calls the selected tools, so one step can chain, combine and filter many tool calls. Each run uses a sandbox with no network access."
+                        label="Code mode information"
+                    />
+                }
+            >
+                Code mode
+            </AuthAccessItem>
         </div>
     );
 }

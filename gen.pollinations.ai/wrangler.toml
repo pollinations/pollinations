@@ -28,6 +28,11 @@ services = [
 [images]
 binding = "IMAGES"
 
+# Dynamic Worker loader: prompt agents with codemode run model-written
+# JavaScript in a fresh isolate with no network access.
+[[worker_loaders]]
+binding = "LOADER"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -127,6 +132,9 @@ service = "pollinations-composio-mcp"
 [[env.production.services]]
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
+
+[[env.production.worker_loaders]]
+binding = "LOADER"
 
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
@@ -243,6 +251,9 @@ service = "pollinations-composio-mcp-staging"
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp-staging"
 
+[[env.staging.worker_loaders]]
+binding = "LOADER"
+
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-staging"
@@ -343,6 +354,9 @@ service = "pollinations-composio-mcp"
 [[env.test.services]]
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
+
+[[env.test.worker_loaders]]
+binding = "LOADER"
 
 [[env.test.d1_databases]]
 binding = "DB"

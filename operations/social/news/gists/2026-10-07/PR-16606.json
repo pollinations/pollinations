@@ -1,0 +1,137 @@
+{
+  "pr_number": 16606,
+  "title": "feat: add Mistral Large 4 (Mistral direct, Vercel fallback)",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16606",
+  "merged_at": "2026-10-07T22:52:18Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added paid-only Mistral Large 4 with text and image input, tool calling, and reasoning. Requests use direct Mistral inference with an automatic Mistral-pinned Vercel fallback; neither route uses Pollinations GPU. Input, cached-input, and output are billed per million tokens, with multiplier 1 and no aliases. Fixed native reasoning responses and request controls. Streaming, JSON/schema responses, and native and Messages endpoints were verified; the Responses API is unsupported. Cache handling was verified, but no prompt-cache benefit was observed.",
+    "keywords": [
+      "Mistral Large 4",
+      "text models",
+      "vision",
+      "reasoning",
+      "provider fallback",
+      "paid access"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16606.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli tends a lime green (#ecf874) code-plant beside two small retro terminals showing parallel routes to a Mistral-labeled server. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny engineer goggles; she is small-to-medium in the scene, never oversized, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream surroundings and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-07T22:54:02.555475+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "e5065cedebc9d69e43496b151255baa61e2fda3b",
+  "announcements": [
+    {
+      "id": "pr-16606:mistralai/mistral-large-4",
+      "model_id": "mistralai/mistral-large-4",
+      "title": "Mistral Large 4",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 524288
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000068",
+            "promptCachedTokens": "0.00000007",
+            "completionTextTokens": "0.00000209"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "seed",
+            "reasoning_effort"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "e5065cedebc9d69e43496b151255baa61e2fda3b^1",
+    "after_ref": "e5065cedebc9d69e43496b151255baa61e2fda3b"
+  }
+}

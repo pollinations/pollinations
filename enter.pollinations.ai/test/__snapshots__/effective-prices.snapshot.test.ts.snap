@@ -1947,6 +1947,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "minimax/minimax-m3:deepinfra": {
+    "cost": {
+      "completionTextTokens": 0.0000011,
+      "promptCachedTokens": 0.000000056,
+      "promptTextTokens": 0.00000028,
+    },
+    "price": {
+      "completionTextTokens": 0.0000011,
+      "promptCachedTokens": 0.000000056,
+      "promptTextTokens": 0.00000028,
+    },
+  },
   "mistralai/mistral-large-3": {
     "cost": {
       "completionTextTokens": 0.0000015,
@@ -2103,6 +2115,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.000015,
       "promptCachedTokens": 0.0000003,
       "promptTextTokens": 0.000003,
+    },
+  },
+  "moonshotai/kimi-k3:deepinfra": {
+    "cost": {
+      "completionTextTokens": 0.00001425,
+      "promptCachedTokens": 0.000000285,
+      "promptTextTokens": 0.00000285,
+    },
+    "price": {
+      "completionTextTokens": 0.00001425,
+      "promptCachedTokens": 0.000000285,
+      "promptTextTokens": 0.00000285,
     },
   },
   "nvidia/asset-harvester": {
@@ -3737,6 +3761,42 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.1477,
+      "promptImageTokens": 0.01055,
+    },
+  },
+  "x-ai/grok-imagine-video-1.5-lite": {
+    "cost": {
+      "completionVideoSeconds": 0.03,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.14,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.02,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.03,
+      "promptImageTokens": 0.01,
+    },
+  },
+  "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+    "cost": {
+      "completionVideoSeconds": 0.03165,
+      "promptImageTokens": 0.01055,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.1477,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.0211,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.03165,
       "promptImageTokens": 0.01055,
     },
   },

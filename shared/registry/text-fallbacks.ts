@@ -174,6 +174,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "minimax/minimax-m3": {
+        "minimax/minimax-m3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/MiniMaxAI/MiniMax-M3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(0.28),
+                promptCachedTokens: perMillion(0.056),
+                completionTextTokens: perMillion(1.1),
+            },
+        },
+    },
     "qwen/qwen3.8-2.4t-a95b": {
         "qwen/qwen3.8-2.4t-a95b:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -306,6 +318,18 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.15),
                 promptImageTokens: perMillion(0.75),
                 completionTextTokens: perMillion(3.5),
+            },
+        },
+    },
+    "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/moonshotai/Kimi-K3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(2.85),
+                promptCachedTokens: perMillion(0.285),
+                completionTextTokens: perMillion(14.25),
             },
         },
     },

@@ -1,0 +1,34 @@
+{
+  "pr_number": 16650,
+  "title": "feat: classify pull requests with project work type",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16650",
+  "merged_at": "2026-10-07T00:12:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Bug / Feature / Task classification for PRs and writes it to the Dev project’s Work type field.\n- Reuses linked issue types as scope-checked hints and shares the lookup with Source attribution; failed lookups stop classification.\n- Preserves native issue Type/Priority and clears Work type for unclassified promotion PRs.\n- Runs six regression tests in PR CI, including linked-hint prompts and the organizer’s clear-field path.\n\nSetup complete: Dev now has **Work type** with **Bug, Feature, Task**. Three real PR organizer dry-runs passed against that field without writing item values.\n\nValidation: six unit tests, authenticated Bug/Feature/Task dry-runs, native issue dry-run, syntax/diff and workflow checks. Backfill code stays local with a seven-day default; it was not applied. News/frontend changes are outside this PR.\n\nAddresses #16647; merge-time gist enrichment remains follow-up work.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A label for the work",
+    "blurb": "The PR organizer sorts work into Bug, Feature, and Task. Promotion PRs that don't fit get a clean slate instead of a guess.",
+    "summary": "The PR organizer classifies pull requests into the Dev project's Work type field as Bug, Feature, or Task, using scope-checked linked issue types as hints while preserving native issue Type and Priority.",
+    "impact": "Maintainers get consistent Work type values for classified PRs; unclassified promotion PRs have the field cleared rather than carrying a misleading value.",
+    "keywords": [
+      "GitHub",
+      "PR organizer",
+      "Dev project",
+      "Work type",
+      "issue classification",
+      "CI"
+    ],
+    "visual_concept": "Depict a cozy project-organizing desk with three pixel cards labeled Bug, Feature, and Task. Polli sorts a PR card while a small code-plant grows beside the terminal; an empty card slot represents the cleared field for unclassified promotion PRs.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears a tiny organizer visor and gently sorts a PR card beside three pixel cards labeled Bug, Feature, and Task, with a code-plant growing by the desk; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent soft lime green (#ecf874) glow, dark purple (#110518) outlines, and an emotionally warm atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16650.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny organizer visor and gently sorts a PR card beside three pixel cards labeled Bug, Feature, and Task, with a code-plant growing by the desk; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent soft lime green (#ecf874) glow, dark purple (#110518) outlines, and an emotionally warm atmosphere."
+  },
+  "generated_at": "2026-10-07T00:14:01.043807+00:00"
+}

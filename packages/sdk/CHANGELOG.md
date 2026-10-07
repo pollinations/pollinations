@@ -4,6 +4,13 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.13] - 2026-10-07
+
+### Added
+- `referenceImages`, `referenceVideos`, and `referenceAudios` on video options
+  accept a URL or an array of URLs for guidance. `referenceImage` continues
+  to control first/last frames separately.
+
 ## [5.1.0-alpha.12] - 2026-10-06
 
 ### Removed

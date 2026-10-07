@@ -109,6 +109,14 @@ All generated content lives on the **`news` branch**.
 
 ### PR Gists: `operations/social/news/gists/YYYY-MM-DD/PR-{number}.json`
 
+New gists also carry `area`, `type` (Dev Work type), `source`, and `merge_commit_sha`.
+The project manager rechecks classification at merge using its existing brief and updates Dev before returning these values.
+`announcements[]` stores exact official-model deltas from the merged registry trees, with `model_id`, `action` (`NEW`, `UPDATE`, `RETIRE`), `changes` (each field's `before` and `after`), pricing units, and effective timing.
+`announcement_evidence` records the compared commit references. Merge time never proves production availability: immediate changes have `effective_at: null` and `effective_status: unconfirmed`; registry retirement dates create scheduled retirements.
+`enrichment.classification` and `enrichment.models` report `complete` or `failed`. Failed enrichment leaves unknown values and can be retried with the existing manual workflow dispatch; social publication continues.
+Existing AI categories, text, images, and publish-tier rules remain available to social consumers. This PR does not change consumers or backfill historical records.
+
+
 - Committed directly to `news` branch (no PR needed — small auto-generated JSON)
 - One file per merged PR per day
 - Unique filenames per PR (`PR-{number}.json`) — no git push race conditions

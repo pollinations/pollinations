@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   project-manager:
-    name: Test project manager
+    name: Test PR classification and gist enrichment
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -23,7 +23,7 @@ jobs:
       - name: Check for project manager changes
         id: changes
         run: |
-          if ! git diff --quiet HEAD^1 HEAD -- operations/github .github/workflows/ci-pull-request-checks.yml; then
+          if ! git diff --quiet HEAD^1 HEAD -- operations/github operations/social/scripts .github/workflows/ci-pull-request-checks.yml; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-python@v6
@@ -33,9 +33,9 @@ jobs:
       - name: Install dependencies
         if: steps.changes.outputs.changed == 'true'
         run: pip install requests
-      - name: Test PR classification and project updates
+      - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
-        run: python3 -m unittest operations/github/test_project_manager.py
+        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_gist_enrichment.py
 
   gpu-tunnels:
     name: Test GPU tunnel recovery

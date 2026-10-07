@@ -10,13 +10,14 @@ Given PR gists for the past 7 days (grouped by date), weave them into a weekly d
 
 ## Rules
 
-- Gists are the factual source. Use Area and Type to group work, and Source for attribution. Exact model values come from `announcements`, including units and before/after; do not invent missing values or describe scheduled/unconfirmed changes as live.
+- Gists are the factual source. Use Area and Type to group work, and Source for attribution. Exact model values come from `announcements`, including units and before/after; do not invent missing values or describe scheduled/unconfirmed changes as live. Use declared pricing units or the summary's explicit billing basis. A `Tokens` field may bill per character or image; never present an internal field name as a billing unit. Omit rates whose basis is unknown.
 
 - **Synthesize themes, don't concatenate.** "This week was about speed" > listing Monday's PRs then Tuesday's PRs.
 - **Find the through-lines.** 3 days of billing PRs = "We overhauled billing this week."
 - **Major first.** Lead with the week's biggest story. Minor items go last or get grouped.
 - **Narrative, not changelog.** Write like a tech blogger, not a git log.
-- **Positive framing only.** The weekly is a highlight reel of cool stuff. Skip pricing changes, feature removals, or business negatives.
+- **Keep useful facts.** State important model price, balance eligibility, capability and availability changes neutrally, including before/after and billing units when known. Do not conceal restrictions or invent a benefit. Leave internal financial motivations out.
+- **Public copy only.** Describe the user impact, not credential approvals, secret handling, deployment instructions or internal workspace names. Keep operational checklists out of the recap.
 
 ## Output Format (JSON only)
 

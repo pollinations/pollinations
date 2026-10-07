@@ -181,6 +181,7 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str, enrichment: Dict) 
     # not arbitrary user input. Truncated to 2000 chars as a size guard.
     labels = [l["name"] for l in pr_data.get("labels", [])]
     body = pr_data.get("body") or ""
+    context = {key: enrichment.get(key) for key in ("area", "type", "source", "announcements")}
     user_prompt = f"""PR #{pr_data['number']}: {pr_data['title']}
 
 Author: {pr_data.get('user', {}).get('login', 'unknown')}
@@ -195,7 +196,7 @@ Changed files:
 {files_summary}
 
 Classification and exact model changes already recorded:
-{json.dumps(enrichment, indent=2)}"""
+{json.dumps(context, indent=2)}"""
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,

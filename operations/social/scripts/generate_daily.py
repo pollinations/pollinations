@@ -76,9 +76,6 @@ def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
     lines = [f"# Updates for {date_str}\n"]
     for g in filtered:
         lines.append(json.dumps(gist_context(g), indent=2))
-        # Include app link so highlights can reference it
-        if g.get("app_name") and g.get("app_url"):
-            lines.append(f"**App Link:** [{g['app_name']}]({g['app_url']})")
         lines.append("")
 
     return "\n".join(lines), len(filtered)

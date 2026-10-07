@@ -33,7 +33,7 @@ Given the canonical daily summaries for one calendar month, identify the few the
       "importance": "major"
     }
   ],
-  "pr_summary": "MONTHLY UPDATES (123 merged PRs):\n- Theme one\n- Theme two"
+  "pr_summary": "MONTHLY UPDATES (123 selected PRs):\n- Theme one\n- Theme two"
 }
 ```
 

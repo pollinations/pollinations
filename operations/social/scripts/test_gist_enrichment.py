@@ -10,11 +10,13 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent))
 from common import filter_daily_gists, generate_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
-from generate_daily import generate_summary, load_gists_as_changelog
+from build_news_index import build_index, highlight_entries, model_entries
+from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import model_changes, pr_comparison_refs
+from update_readme import get_top_highlights
 
 
 class GistEnrichmentTest(unittest.TestCase):
@@ -162,11 +164,59 @@ class GistEnrichmentTest(unittest.TestCase):
         broken["gist"]["summary"] = ""
         self.assertIn("gist.summary must be non-empty text", validate_gist(broken))
         gist.update(app_name="Example app", app_url="https://example.com/app")
-        with patch("generate_daily.read_gists_for_date", return_value=[gist]):
-            changelog, count = load_gists_as_changelog("2026-10-07")
-        self.assertEqual(count, 1)
-        self.assertEqual(changelog.count("https://example.com/app"), 1)
-        self.assertNotIn('"announcements"', changelog)
+        with patch("generate_daily.call_pollinations_api", return_value="{}") as api:
+            generate_summary([gist], "2026-10-07", "test")
+        self.assertEqual(api.call_args.args[1].count("https://example.com/app"), 1)
+
+    def test_daily_summary_stores_its_highlights_for_the_index(self):
+        summary = {"arcs": [{"headline": "New speech", "summary": "Eleven v4 added."}],
+                   "highlights": [{"emoji": "🎵", "title": "Eleven v4", "text": "Generate speech.", "prs": [1]},
+                                  {"title": "No text"}, "not an item"]}
+        artifact = build_daily_summary_artifact(summary, [{"pr_number": 1}], "2026-10-06", "now")
+        self.assertEqual(artifact["highlights"], [summary["highlights"][0]])
+        quiet = build_daily_summary_artifact({"arcs": []}, [{"pr_number": 2}], "2026-10-07", "now")
+        self.assertEqual(quiet["highlights"], [])
+
+    def test_index_keeps_card_changes_and_settles_scheduled_retirements(self):
+        def gist(number, merged_at, *announcements):
+            return {"pr_number": number, "merged_at": merged_at, "announcements": list(announcements),
+                    "url": f"https://github.com/example/repo/pull/{number}"}
+        def event(model, action, changes, effective_at=None, status="unconfirmed"):
+            return {"id": f"{model}:{action}:{effective_at}", "model_id": model, "title": model, "action": action,
+                    "changes": changes, "effective_at": effective_at, "effective_status": status}
+        retire = {"availability": {"before": "Available", "after": "Retired"}}
+        gists = [
+            gist(1, "2026-08-01T00:00:00Z", event("old", "NEW", {"paid_only": {"before": None, "after": True}})),
+            gist(2, "2026-10-01T00:00:00Z",
+                 event("kept", "RETIRE", retire, "2026-11-01T00:00:00Z", "scheduled"),
+                 event("cancelled", "RETIRE", retire, "2026-10-20T00:00:00Z", "scheduled"),
+                 event("routed", "UPDATE", {"supported_endpoints": {"before": [], "after": ["/v1"]}}),
+                 event("priced", "UPDATE", {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}},
+                                            "voices": {"before": [], "after": ["alloy"]}})),
+            gist(3, "2026-10-06T00:00:00Z",
+                 event("cancelled", "UPDATE", {"retirement_at": {"before": "2026-10-20", "after": None}})),
+        ]
+        entries = model_entries(gists, "2026-09-08")
+        self.assertEqual([(e["model_id"], e["date"]) for e in entries],
+                         [("priced", "2026-10-01"), ("kept", "2026-11-01")])
+        self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
+        self.assertTrue(entries[1]["scheduled"])
+        self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
+
+    def test_index_highlights_cover_the_readme_and_feed_it(self):
+        summaries = [{"date": f"2026-09-{day:02d}", "highlights": [
+            {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"app": True} if day == 3 else {})}]}
+            for day in range(1, 13)]
+        self.assertEqual(len(highlight_entries(summaries, "2026-09-11")), 10)
+        self.assertEqual(highlight_entries(summaries, "2026-09-11")[0]["title"], "Item 12")
+        self.assertEqual(len(highlight_entries(summaries, "2026-09-01")), 12)
+        with tempfile.TemporaryDirectory() as directory:
+            news = Path(directory)
+            (news / "daily/2026-09-12").mkdir(parents=True)
+            (news / "daily/2026-09-12/summary.json").write_text(json.dumps(summaries[-1]))
+            index = build_index(news, "2026-09-13")
+        self.assertEqual(index["models"], [])
+        self.assertEqual(get_top_highlights(index), ["- **2026-09-12** – **🎨 Item 12** Try it."])
 
     def test_platform_posts_keep_arc_facts_and_distinguish_selected_counts(self):
         digest = {

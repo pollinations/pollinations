@@ -8,7 +8,6 @@ import type { Env } from "@/env.ts";
 import {
     type ModelListHeaders,
     type ModelListQueryParams,
-    splitList,
 } from "@/schemas/models.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import {

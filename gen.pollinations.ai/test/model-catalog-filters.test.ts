@@ -1,5 +1,8 @@
 import { SELF } from "cloudflare:test";
-import { RESTRICTED_TEST_MODELS, test } from "@shared/test/fixtures/index.ts";
+import {
+    RESTRICTED_TEST_CATEGORIES,
+    test,
+} from "@shared/test/fixtures/index.ts";
 import { expect } from "vitest";
 
 // Focused coverage for the quest-16168 model-list filters: query search,
@@ -159,7 +162,17 @@ test("API-key permission filtering applies before limit truncation", async ({
     restrictedApiKey,
 }) => {
     const headers = { Authorization: `Bearer ${restrictedApiKey}` };
-    const allowed = new Set<string>(RESTRICTED_TEST_MODELS);
+    // The restricted fixture key is allowed only the categories in
+    // RESTRICTED_TEST_CATEGORIES; build the expected model-id universe from
+    // the same category routes the key may use, then assert /v1/models
+    // returns nothing outside it.
+    const allModels = await listModels("/models?reliability=all");
+    const allowedCategories = [...RESTRICTED_TEST_CATEGORIES] as string[];
+    const allowed = new Set(
+        allModels
+            .filter((m) => m.category && allowedCategories.includes(m.category))
+            .map((m) => m.name),
+    );
     const response = await fetchWorker("/v1/models?limit=500", { headers });
     expect(response.status).toBe(200);
     const ids = (

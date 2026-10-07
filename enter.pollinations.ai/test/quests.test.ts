@@ -14,7 +14,7 @@ import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 import type { MockGithubState } from "./mocks/github.ts";
 
 const ELIXPO_INTERN_QUEST_ID = "elixpo_intern";
@@ -234,37 +234,10 @@ async function seedByopConnections(
 }
 
 async function createUsageApiKey(sessionToken: string, name: string) {
-    const createResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/keys",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: JSON.stringify({ name }),
-        },
-    );
-    expect(createResponse.status).toBe(200);
-    const created = (await createResponse.json()) as {
-        id: string;
-        key: string;
-    };
-
-    const updateResponse = await SELF.fetch(
-        `http://localhost:3000/api/api-keys/${created.id}/update`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: JSON.stringify({
-                accountPermissions: ["usage"],
-            }),
-        },
-    );
-    expect(updateResponse.status).toBe(200);
+    const created = await createApiKeyViaApi(sessionToken, {
+        name,
+        accountPermissions: ["usage"],
+    });
     return created.key;
 }
 
@@ -608,8 +581,8 @@ test("account quests merge earned rewards into completed status", async ({
         {
             idempotencyKey: `quest:test-earned:${user.id}`,
             userId: user.id,
-            questId: "first_api_key",
-            title: "Create your first API key",
+            questId: "use_app",
+            title: "Use a Pollinations app",
             amount: 0.25,
             bucket: "tier",
         },
@@ -635,7 +608,7 @@ test("account quests merge earned rewards into completed status", async ({
     };
     const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
 
-    expect(byId.get("first_api_key")).toMatchObject({
+    expect(byId.get("use_app")).toMatchObject({
         state: "available",
         status: "completed",
         reward: {
@@ -663,7 +636,7 @@ test("account quests merge earned rewards into completed status", async ({
     const usageById = new Map(
         usagePayload.quests.map((quest) => [quest.id, quest]),
     );
-    expect(usageById.get("first_api_key")).toMatchObject({
+    expect(usageById.get("use_app")).toMatchObject({
         status: "completed",
         reward: {
             id: recorded.rewardIds[0],
@@ -700,7 +673,7 @@ test("quest check records product rewards and claim endpoint credits one", async
     ]);
 
     const checkResponse = await SELF.fetch(
-        "http://localhost:3000/api/quests/check",
+        "http://localhost:3000/api/account/quests/check",
         {
             method: "POST",
             headers: {
@@ -725,10 +698,12 @@ test("quest check records product rewards and claim endpoint credits one", async
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 0.25);
+    // The fixture key already earned and auto-claimed the first-key reward;
+    // the top-up reward waits for a manual claim.
+    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
 
     const response = await SELF.fetch(
-        "http://localhost:3000/api/quests/rewards",
+        "http://localhost:3000/api/account/quests/rewards",
         {
             headers: {
                 cookie: `better-auth.session_token=${sessionToken}`,
@@ -773,7 +748,7 @@ test("quest check records product rewards and claim endpoint credits one", async
     if (!topUpReward) throw new Error("Expected top-up reward");
     expect(topUpReward.claimedAt).toBeNull();
     const claimResponse = await SELF.fetch(
-        `http://localhost:3000/api/quests/rewards/${topUpReward.id}/claim`,
+        `http://localhost:3000/api/account/quests/rewards/${topUpReward.id}/claim`,
         {
             method: "POST",
             headers: {
@@ -795,7 +770,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(claimedBalance?.tierBalance).toBeCloseTo(
-        (user.tierBalance ?? 0) + 5.25,
+        (user.tierBalance ?? 0) + 5,
     );
 });
 
@@ -1027,7 +1002,7 @@ test("top-up 100 quest sums multiple Stripe checkout rows", async ({
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
 });
 
-test("POST /quests/check throttles a user to once per minute", async ({
+test("POST /account/quests/check throttles a user to once per minute", async ({
     apiKey: _apiKey,
     mocks,
     sessionToken,
@@ -1036,16 +1011,22 @@ test("POST /quests/check throttles a user to once per minute", async ({
     await mocks.enable("github", "tinybird");
     await env.KV.delete(`quest-check:throttle:${user.id}`);
 
-    const first = await SELF.fetch("http://localhost:3000/api/quests/check", {
-        method: "POST",
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-    });
+    const first = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/check",
+        {
+            method: "POST",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        },
+    );
     expect(first.status).toBe(200);
 
-    const second = await SELF.fetch("http://localhost:3000/api/quests/check", {
-        method: "POST",
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-    });
+    const second = await SELF.fetch(
+        "http://localhost:3000/api/account/quests/check",
+        {
+            method: "POST",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        },
+    );
     expect(second.status).toBe(429);
     expect(second.headers.get("Retry-After")).toBe("60");
     const body = (await second.json()) as { error: string };
@@ -1065,9 +1046,7 @@ test("D1 quest check only records the requested user", async ({
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     await mocks.enable("github", "tinybird");
-
-    const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThan(0);
+    // Creating the fixture key already recorded this user's first-key reward.
 
     const secondUserId = "api-key-window-user";
     await db.insert(schema.user).values({
@@ -1591,6 +1570,12 @@ test("quest check continues after one group fails", async ({
             throw new Error("planned quest failure");
         },
     };
+
+    // Creating the fixture key already earned the first-key reward; clear it so
+    // the remaining groups have a reward to record.
+    await drizzle(env.DB, { schema })
+        .delete(schema.rewards)
+        .where(eq(schema.rewards.userId, user.id));
 
     questIndex.QUEST_GROUPS.unshift(failingGroup);
     try {
@@ -2347,7 +2332,7 @@ test("account quest history includes pending and claimed GitHub quest rewards", 
     });
 
     const response = await SELF.fetch(
-        "http://localhost:3000/api/quests/rewards",
+        "http://localhost:3000/api/account/quests/rewards",
         {
             headers: {
                 cookie: `better-auth.session_token=${sessionToken}`,
@@ -2393,7 +2378,7 @@ test("account quest history requires account usage permission for API keys", asy
     apiKey,
 }) => {
     const response = await SELF.fetch(
-        "http://localhost:3000/api/quests/rewards",
+        "http://localhost:3000/api/account/quests/rewards",
         {
             headers: {
                 authorization: `Bearer ${apiKey}`,
@@ -2412,7 +2397,7 @@ test("account quest history accepts account usage permission", async ({
         "quest-rewards-usage-key",
     );
     const response = await SELF.fetch(
-        "http://localhost:3000/api/quests/rewards",
+        "http://localhost:3000/api/account/quests/rewards",
         {
             headers: {
                 authorization: `Bearer ${usageKey}`,
@@ -2422,6 +2407,6 @@ test("account quest history accepts account usage permission", async ({
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-        rewards: [],
+        rewards: [{ questId: "first_api_key" }],
     });
 });

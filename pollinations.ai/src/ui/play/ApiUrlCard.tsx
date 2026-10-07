@@ -40,7 +40,7 @@ export function ApiUrlCard({
                     content={
                         fields
                             ? "Use this endpoint with the POST fields shown below to generate or process media with Pollinations. Provide your API key in the Authorization header."
-                            : "Open this URL to generate or retrieve this media with Pollinations. Replace YOUR_API_KEY with your own API key in the URL. After generation, the URL includes the inputs used for that result."
+                            : "Generate media with Pollinations by opening this URL with your API key in place of YOUR_API_KEY. You can also use it to retrieve the generated media. After generation, the URL includes the inputs used for that result."
                     }
                     className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-theme-border text-xs text-theme-text-muted"
                 >

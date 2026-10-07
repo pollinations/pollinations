@@ -116,8 +116,9 @@ function pickCallerMetadata(
     isPublishable: boolean,
 ): Record<string, unknown> {
     const out: Record<string, unknown> = {};
-    if (Array.isArray(metadata?.redirectUris)) {
-        out.redirectUris = cleanRedirectUris(metadata.redirectUris);
+    const redirectUris = cleanRedirectUris(metadata?.redirectUris ?? []);
+    if (isPublishable && redirectUris.length > 0) {
+        out.redirectUris = redirectUris;
     }
     if (typeof metadata?.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
@@ -138,11 +139,6 @@ async function validateClientRedirectBinding(
 ): Promise<VerifiedClientAttribution | null> {
     if (!metadata) return null;
     const requestedClientId = metadata.requestedClientId;
-
-    if (typeof (metadata as Record<string, unknown>).clientId === "string") {
-        rejectInvalidClientId();
-    }
-
     if (typeof requestedClientId !== "string") {
         return null;
     }

@@ -1,4 +1,5 @@
 import type { ModelHealthRow } from "@shared/model-health.ts";
+import { getModelStats } from "@shared/utils/model-stats.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
@@ -103,5 +104,27 @@ export const modelStatusRoutes = new Hono<Env>().get(
                 "Cache-Control": "public, max-age=60",
             },
         });
+    },
+);
+
+export const modelStatsRoutes = new Hono<Env>().get(
+    "/models/stats",
+    describeRoute({
+        tags: ["📊 Monitor"],
+        summary: "Model Usage Stats",
+        description: [
+            "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",
+            "",
+            "`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.",
+            "",
+            "Refreshed hourly.",
+        ].join("\n"),
+        responses: {
+            200: { description: "Raw Tinybird pipe rows" },
+        },
+    }),
+    async (c) => {
+        c.header("Cache-Control", "public, max-age=300");
+        return c.json(await getModelStats(c.env.KV, c.var.log));
     },
 );

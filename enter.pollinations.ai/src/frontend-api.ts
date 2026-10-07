@@ -5,7 +5,6 @@ import { publicAgentSyncRoutes } from "./routes/agents.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { integrationsRoutes } from "./routes/integrations.ts";
-import { modelStatsRoutes } from "./routes/model-stats.ts";
 import { oauthRoutes } from "./routes/oauth.ts";
 import { productAnalyticsRoutes } from "./routes/product-analytics.ts";
 import { questsRoutes } from "./routes/quests.ts";
@@ -23,7 +22,6 @@ export const frontendApi = new Hono<Env>()
     .route("/account", accountRoutes)
     .route("/device", deviceRoutes)
     .route("/oauth", oauthRoutes)
-    .route("/model-stats", modelStatsRoutes)
     .route("/referral", referralRoutes)
     .route("/analytics", productAnalyticsRoutes)
     .route("/status-notice", statusNoticeRoutes)

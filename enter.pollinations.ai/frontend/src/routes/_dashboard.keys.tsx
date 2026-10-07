@@ -54,25 +54,17 @@ function KeysPage() {
     async function handleCreateApiKey(
         formState: CreateApiKey,
     ): Promise<CreateApiKeyResponse> {
-        const keyType = formState.keyType || "secret";
-        const isPublishable = keyType === "publishable";
         const created = await createKeyWithPermissions({
             name: formState.name,
-            prefix: isPublishable ? "pk" : "sk",
+            prefix: formState.keyType === "publishable" ? "pk" : "sk",
             expiryDays: formState.expiryDays,
             description: formState.description,
-            ...(isPublishable && formState.redirectUris?.length
-                ? { redirectUris: formState.redirectUris }
-                : {}),
-            ...(isPublishable
-                ? { earningsEnabled: formState.earningsEnabled === true }
-                : {}),
+            redirectUris: formState.redirectUris,
+            earningsEnabled: formState.earningsEnabled,
             permissions: {
                 allowedModels: formState.allowedModels,
                 pollenBudget: formState.pollenBudget,
-                accountPermissions: formState.accountPermissions?.length
-                    ? formState.accountPermissions
-                    : undefined,
+                accountPermissions: formState.accountPermissions,
                 questPollenOnly: formState.questPollenOnly,
             },
         });

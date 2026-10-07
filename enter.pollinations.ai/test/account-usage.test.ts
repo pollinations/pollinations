@@ -1,6 +1,6 @@
 import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 const authHeaders = (sessionToken: string) => ({
     Cookie: `better-auth.session_token=${sessionToken}`,
@@ -126,37 +126,10 @@ test("activity filters, cursors and exports keep the exact recorded model ID", a
 });
 
 async function createUsageApiKey(sessionToken: string) {
-    const createResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/keys",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                ...authHeaders(sessionToken),
-            },
-            body: JSON.stringify({ name: "usage-read-key" }),
-        },
-    );
-    expect(createResponse.status).toBe(200);
-    const created = (await createResponse.json()) as {
-        id: string;
-        key: string;
-    };
-
-    const updateResponse = await SELF.fetch(
-        `http://localhost:3000/api/account/keys/${created.id}`,
-        {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                ...authHeaders(sessionToken),
-            },
-            body: JSON.stringify({
-                accountPermissions: ["usage"],
-            }),
-        },
-    );
-    expect(updateResponse.status).toBe(200);
+    const created = await createApiKeyViaApi(sessionToken, {
+        name: "usage-read-key",
+        accountPermissions: ["usage"],
+    });
     return created.key;
 }
 

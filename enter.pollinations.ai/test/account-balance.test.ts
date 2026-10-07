@@ -31,31 +31,6 @@ async function sessionUserId(sessionToken: string): Promise<string> {
     return session.user.id;
 }
 
-async function createKey(
-    sessionToken: string,
-    options: {
-        name: string;
-        pollenBudget?: number | null;
-        accountPermissions?: string[] | null;
-    },
-) {
-    const response = await SELF.fetch(
-        "http://localhost:3000/api/account/keys",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: JSON.stringify(options),
-        },
-    );
-    if (!response.ok) {
-        throw new Error(`Failed to create API key: ${await response.text()}`);
-    }
-    return (await response.json()) as { id: string; key: string };
-}
-
 async function getBalance(headers: Record<string, string>) {
     return SELF.fetch("http://localhost:3000/api/account/balance", {
         headers,
@@ -89,7 +64,7 @@ describe("GET /api/account/balance", () => {
         const userId = await sessionUserId(sessionToken);
         await setAccountBalances(userId);
 
-        const created = await createKey(sessionToken, {
+        const created = await createApiKeyViaApi(sessionToken, {
             name: "budget-only",
             pollenBudget: 7,
         });
@@ -108,7 +83,7 @@ describe("GET /api/account/balance", () => {
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        const created = await createKey(sessionToken, {
+        const created = await createApiKeyViaApi(sessionToken, {
             name: "budget-and-usage",
             pollenBudget: 7,
             accountPermissions: ["usage"],
@@ -131,7 +106,7 @@ describe("GET /api/account/balance", () => {
     }) => {
         await mocks.enable("tinybird");
         const userId = await sessionUserId(sessionToken);
-        const created = await createKey(sessionToken, {
+        const created = await createApiKeyViaApi(sessionToken, {
             name: "usage-only",
             accountPermissions: ["usage"],
         });

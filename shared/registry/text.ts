@@ -2968,12 +2968,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Mistral direct API launch rates (docs.mistral.ai, 2026-10-06):
-            // list price is $1.36 / $0.14 cached / $4.18 per million, shown
-            // at half until the discount ends.
-            promptTextTokens: perMillion(0.68),
-            promptCachedTokens: perMillion(0.07),
-            completionTextTokens: perMillion(2.09),
+            // Mistral regular rates; activate after the 50% launch promotion ends.
+            promptTextTokens: perMillion(1.36),
+            promptCachedTokens: perMillion(0.14),
+            completionTextTokens: perMillion(4.18),
         },
         title: "Mistral Large 4",
         description:

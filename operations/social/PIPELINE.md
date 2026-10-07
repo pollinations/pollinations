@@ -16,9 +16,9 @@ The pipeline uses **event-centric interpretation**: each PR is analyzed once at 
 
 ```
 TIER 1: PER-PR (real-time)
-  PR merged → AI analyzes → gist JSON committed to news branch → image generated → Discord post
+  PR merged → classification/model enrichment → AI analyzes remaining facts → image generated → gist JSON committed to news branch → Discord post
 
-TIER 2: DAILY (Mon-Sat 06:00 UTC)
+TIER 2: DAILY (every day 06:00 UTC; social delivery Mon-Sat)
   Read day's gists → AI generates daily summary → platform posts (X, Reddit)
   → commit to news branch → Buffer stages X immediately → README-only PR to main
   LinkedIn and Instagram are weekly-only. Reddit publishes via cron at 15:00 UTC.
@@ -43,11 +43,11 @@ TIER 3: WEEKLY (Sunday 06:00 UTC)
 
 PR merge ──→ generate_realtime.py
                 │
-                ├──→ Step 1: AI analysis → gist JSON (incl. image prompt)
-                │    (committed to news branch)
+                ├──→ Step 1: classification/model enrichment → AI factual summary
                 │
                 └──→ Step 2: 🎨 GENERATE 1 image (8-bit pixel art)
-                     → stored in gist as image.url
+                     → stored once as image.prompt + image.url
+                     → complete gist committed to news branch
 
            ──→ publish_realtime.py (separate step)
                 └──→ Reads gist → AI announcement → Discord webhook post
@@ -129,20 +129,21 @@ Existing AI categories, text, images, and publish-tier rules remain available to
   "author": "username",
   "url": "https://github.com/pollinations/pollinations/pull/8117",
   "merged_at": "2026-02-09T15:30:00Z",
-  "labels": ["bug", "enter"],
+  "labels": [],
+  "area": "Billing & payments",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "abc123",
+  "announcements": [],
+  "enrichment": {"classification": "complete", "models": "complete"},
 
   "gist": {
     "category": "bug_fix",
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "headline": "One bucket to rule them all",
-    "blurb": "The bees fixed a leaky honey jar — balance deductions now flow through a single bucket instead of spilling across many.",
-    "summary": "Fixed balance deduction to use a single bucket instead of splitting across multiple.",
-    "impact": "Users no longer see incorrect balance after API calls.",
-    "keywords": ["billing", "balance", "api"],
-    "visual_concept": "A bee repairing a cracked piggy bank. The piggy bank represents the single-bucket billing system. Wrench = fix.",
-    "image_prompt": "Cozy pixel art scene of a tiny bee fixing a cracked piggy bank with a wrench. Soft lime green glow, chunky 8-bit sprites, warm lighting."
+    "summary": "Fixed balance deduction to use a single bucket instead of splitting across multiple. Users no longer see incorrect balances after API calls.",
+    "keywords": ["billing", "balance", "api"]
   },
 
   "image": {
@@ -161,9 +162,14 @@ Existing AI categories, text, images, and publish-tier rules remain available to
 | `publish_tier` | `"none"` / `"discord_only"` / `"daily"` — controls which tiers pick up this PR. See `publish_tier` decision logic below. |
 | `importance` | `"major"` / `"minor"` — AI picks. Binary: headline-worthy or not. |
 | `user_facing` | Boolean — AI determines if end users would notice this change |
-| `headline` | Short creative name for the change (3-8 words). Used in daily/weekly narrative arcs. |
-| `blurb` | Whimsical 1-2 sentence description for the website diary. Bee/nature metaphors welcome. |
-| `visual_concept` | AI reasoning space — identifies project mascots, symbols, and scene concept before writing `image_prompt`. |
+| `gist.summary` | One neutral account of meaningful PR changes and practical effects. Model values already in `announcements` are not repeated. |
+| `area`, `type`, `source` | Shared project-manager classification; null when unknown. |
+| `announcements` | Exact official-model changes computed once from the registry before/after merge. Scheduled/unconfirmed status is retained. |
+| `image.prompt`, `image.url` | The image prompt stored once and the generated image used by realtime Discord. |
+
+`gist_context()` passes the same facts to realtime Discord, daily, weekly and highlights: summary, selection metadata, Area/Type/Source, app links and model announcements. Platform prose is generated downstream. Existing archive summaries remain readable without a backfill. Optional metadata backfills are prepared locally and preserve existing text, images and publishing flags. `gist.category` remains during classification migration. Highlights remain until README and dashboard consumers move to the index.
+
+Important user-facing price increases, balance restrictions and removals are eligible for daily and weekly recaps. Posts are curated, but selected changes are stated neutrally with known units and before/after values. Unconfirmed deployment stays in metadata; public copy describes merged changes without routine deployment disclaimers and includes known effective dates when relevant. Public gists and posts omit unresolved vulnerability details, user complaints and churn narratives; factual descriptions of product fixes remain appropriate.
 
 **Importance is binary:**
 
@@ -364,7 +370,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 12. **No fallback content for zero-PR days** — if no PRs merged, the daily workflow skips entirely. No posts generated. Quiet days are quiet days.
 
-13. **Website diary reads from gists + summary** — no separate diary generation step. Gists include `headline` and `blurb` fields; daily/weekly summaries include `mood`. The website can render a diary view directly from these sources.
+13. **Gists hold facts; summaries and posts hold presentation** — creative headlines and platform wording are generated downstream. Monthly diary generation reads canonical daily summaries; README and dashboard news still use highlights until the index migration.
 
 14. **Weekly reads gists directly, independent of dailies** — the weekly summary reads the week's gists (Sun→Sat) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"). This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
 

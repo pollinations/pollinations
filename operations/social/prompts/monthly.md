@@ -14,7 +14,7 @@ Given the canonical daily summaries for one calendar month, identify the few the
 - **Lead with user-visible progress.** Infrastructure and maintenance belong in supporting themes.
 - **Be concrete.** Name important products, capabilities, models, or systems when they matter.
 - **Keep it compact.** The website displays one title and one short summary.
-- **Positive framing only.** Skip pricing changes, feature removals, and business negatives.
+- **Keep useful facts.** Describe selected price, access and capability changes neutrally. Keep known billing units and before/after values; do not conceal restrictions or invent a benefit. Not every change needs to appear in the retrospective.
 - **Use only the supplied daily summaries.** Do not invent releases, metrics, or outcomes.
 
 ## Output Format (JSON only)

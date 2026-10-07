@@ -187,7 +187,7 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str, enrichment: Dict) 
 Author: {pr_data.get('user', {}).get('login', 'unknown')}
 Labels: {', '.join(labels) if labels else 'none'}
 Branch: {pr_data.get('head', {}).get('ref', 'unknown')} → {pr_data.get('base', {}).get('ref', 'main')}
-Deploy status: merged to {pr_data.get('base', {}).get('ref', 'main')}; ships to users with the next production release (not live yet)
+Deploy status: merged to {pr_data.get('base', {}).get('ref', 'main')}; deployment and availability have not been verified
 
 Description:
 {body[:2000] if body else 'No description provided.'}

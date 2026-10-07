@@ -37,3 +37,9 @@ Earn Pollen by completing useful actions — onboarding, using models, growing a
 - Contribute quests may receive multiple PRs; the author of the selected merged PR claims the fixed reward
 - A quest that asks for an app is completed by submitting the app with the quest number; the submitter claims the reward once the app is approved
 - in alpha — rewards and availability evolve
+
+## Public Content
+
+- Unconfirmed deployment means availability is unknown. Say "deployment unconfirmed"; do not claim a change is live, inactive or awaiting activation unless the source confirms that status.
+- Gists and generated posts are public. Omit details of unresolved security vulnerabilities; a merge alone does not prove a fix is live.
+- Omit user complaints and churn narratives. Describe the resulting product fixes and their practical effects factually.

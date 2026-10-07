@@ -59,7 +59,7 @@ function needsConversion(url: string | undefined): boolean {
 
 interface ContentPart {
     type: string;
-    image_url?: { url: string; [key: string]: unknown };
+    image_url?: string | { url: string; [key: string]: unknown };
     [key: string]: unknown;
 }
 
@@ -73,11 +73,15 @@ async function processContentPart(
     part: ContentPart,
     context: ImageConversionContext,
 ): Promise<ContentPart> {
-    if (part.type !== "image_url" || !part.image_url?.url) {
-        return part;
-    }
-
-    if (!needsConversion(part.image_url.url)) {
+    const url =
+        part?.type === "input_image" && typeof part.image_url === "string"
+            ? part.image_url
+            : part?.type === "image_url" &&
+                part.image_url &&
+                typeof part.image_url === "object"
+              ? part.image_url.url
+              : undefined;
+    if (!url || !needsConversion(url)) {
         return part;
     }
 
@@ -91,13 +95,16 @@ async function processContentPart(
 
     const remainingBytes = MAX_IMAGE_SIZE - context.totalBytes;
     const { dataUrl, byteLength } = await fetchImageAsBase64(
-        part.image_url.url,
+        url,
         remainingBytes,
     );
     context.totalBytes += byteLength;
     return {
         ...part,
-        image_url: { ...part.image_url, url: dataUrl },
+        image_url:
+            typeof part.image_url === "string"
+                ? dataUrl
+                : { ...part.image_url, url: dataUrl },
     };
 }
 
@@ -138,7 +145,7 @@ export const imageUrlToBase64Transform: TransformFn = async (
     };
     const processedMessages = [];
     for (const message of messages) {
-        if (!message.content || typeof message.content === "string") {
+        if (!Array.isArray(message.content)) {
             processedMessages.push(message);
             continue;
         }

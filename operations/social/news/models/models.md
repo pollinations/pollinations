@@ -1,5 +1,109 @@
 # Pollinations Model Changelog
 
+## 2026-10-07
+
+### Added
+- `inclusionai/ling-3.1-flash` (inclusionAI, text) — reasoning and tool calling; 262K context.
+- `liquid/d1` (Liquid AI, text) — typed decisions via `/alpha/decisions` or chat completions.
+- `jaredpalmer/kev-4b` (Jared Palmer, text) — typed choices, scores, and probabilities.
+- `openai/gpt-6.1-sol` (OpenAI, text) — image input, reasoning, and tool calling.
+- `respan/span-01-lite` (Respan, text) — behaviour scoring for agent or LLM conversations.
+- `community/CloudCompile/gpt-6-luna` (My Github, text) — text, image, and audio input; tool calling.
+- `community/MarcosFRG/qwen3.8-flash:paid` (JankRouter, text) — text, image, and video input; reasoning and tool calling.
+- `community/kreggscode/jev-test-triage` (kreggscode, text) — failing-test triage agent.
+- `community/sharktide/inferenceport-ai-lightning-text-v2.1` (InferencePort AI, InferencePort LLC., text) — image input, reasoning, and tool calling.
+- `community/chigwell/gpt-6.1-sol` (LLM7.io, text) — image input, reasoning, and tool calling.
+- `community/vendouple/gpt-6.1-sol:stable` (OrchidLLM Proxy, text) — image input, reasoning, and tool calling.
+- `community/Guest453/idea-judge` (Community, text) — idea verdicts with risk and novelty probability.
+- `community/vendouple/gpt-6-luna:stable` (OrchidLLM Proxy, text) — image input, reasoning, and tool calling.
+- `community/vendouple/gpt-6-sol` (OrchidLLM Proxy, text) — image input, reasoning, and tool calling.
+- `community/AkshayCoder48/claude-fable-5` (FreeAIXYZ, text) — image input and 1M context.
+- `community/AkshayCoder48/gpt-5-6-luna` (FreeAIXYZ, text) — image input and tool calling.
+- `community/AkshayCoder48/glm-5-2` (FreeAIXYZ, text) — text input and 1M context.
+- `community/AkshayCoder48/qwen3-coder-480b` (FreeAIXYZ, text) — image input and tool calling.
+- `community/AkshayCoder48/grok-4-3` (FreeAIXYZ, text) — image input and tool calling.
+- `community/vendouple/glm-5.3-flash` (OrchidLLM Proxy, text) — image input, reasoning, and tool calling.
+- `community/pegalink/jimmy` (Openrouter, text) — text-only model without tool calling.
+- `community/CloudCompile/agnes-3.0-flash` (My Github, text) — image input, reasoning, and tool calling.
+- `community/JustScriptzz/qwen-3.8-max` (Free AI API, text) — image input, reasoning, and tool calling.
+- `community/MarcosFRG/gpt-5.6-luna:paid` (JankRouter, text) — image input, reasoning, and tool calling.
+- `community/JustScriptzz/kimi-k2-7-code` (Free AI API, text) — reasoning and tool calling.
+- `community/iotserver24/deepseek-fast` (R3AP3R editz, text) — image input, reasoning, and tool calling.
+- `community/iotserver24/stealth-code` (R3AP3R editz, text) — image input, reasoning, and tool calling.
+- `community/gggff123/gpt-5-nano` (Community, text) — text input and output.
+- `community/vendouple/gemini-3.8-flash` (OrchidLLM Proxy, text) — text and image input.
+- `community/YoannDev90/muse-glimmer-30b:free` (Free AI API, text) — image input, reasoning, and tool calling.
+- `community/vendouple/gemma-4-31b-isometry-rp` (OrchidLLM Proxy, text) — image input, reasoning, and tool calling.
+- `community/sharktide/inferenceport-ai-mimo-v2.5` (InferencePort AI, InferencePort LLC., text) — text, image, audio, and video input.
+- `google/gemini-nano-banana-2.1` (Google, image) — generation and editing up to 2K.
+- `black-forest-labs/flux-3-image` (Black Forest Labs, image) — generation and editing at 1K or 2K with up to ten references.
+- `bytedance/seedream-5.0-flash` (ByteDance, image) — generation and editing at 1K or 2K.
+- `community/scriptsnsenses-sys/flux-2-dev-free` (My discord server, image) — image generation and editing.
+- `community/scriptsnsenses-sys/sdxl-lightning-free` (My discord server, image) — image generation and editing.
+- `community/MarcosFRG/flux-schnell:paid` (JankRouter, image) — text-to-image generation.
+- `community/MarcosFRG/lucid-origin:paid` (JankRouter, image) — generation and editing.
+- `community/vendouple/qwen-image-3.0-pro` (OrchidLLM Proxy, image) — text-to-image generation.
+- `community/vendouple/lucid-origin` (OrchidLLM Proxy, image) — text-to-image generation.
+- `x-ai/grok-imagine-video-1.5-lite` (xAI, video) — video from text or a start image at 480p, 720p, or 1080p.
+- `heygen/heygen-video-1` (HeyGen, video) — video with synchronized audio from text or a first frame.
+- `elevenlabs/eleven-v4` (ElevenLabs, audio) — text-to-speech with character timestamps.
+- `elevenlabs/eleven-v4-turbo` (ElevenLabs, audio) — text-to-speech with character timestamps.
+
+### Changed
+- `community/vendouple/gpt-6-sol:stable` — completion-text price cut ~25%; prompt-text price cut 60%.
+- `community/iotserver24/supercharge` — completion-text price cut ~10%; cached-prompt price increased.
+- `community/MarcosFRG/glm-5.3-flash` — completion-text price cut ~10%; cached-prompt price increased.
+- `community/MarcosFRG/qwen3.8-27b:paid` — completion-text price cut ~10%.
+- `community/MarcosFRG/metraxai` — completion-text price cut ~10%; cached-prompt price increased.
+- `google/gemini-2.5-flash-lite` — completion-text price cut ~5%; web-search capability removed.
+- `qwen/qwen3-embedding-8b` — prompt-text price cut 90%; `paid_only` now set to true.
+- `nvidia/nemotron-3-ultra` — completion-text price increased ~10%; prompt-text price increased 20%; `paid_only` now set to false.
+- `qwen/qwen3-coder-30b-a3b-instruct` — completion-text price increased ~130%; `paid_only` now set to true.
+- `community/AkshayCoder48/code-pair` — completion-text price increased ~130%; `paid_only` now set to true.
+- `google/gemini-2.5-flash-lite:search` — completion-text price increased ~5%; search and cache-storage pricing adjustments changed.
+- `community/MarcosFRG/deepseek-v4-flash-0731` — completion-text price increased 400%.
+- `community/MarcosFRG/gemma-4-31b` — completion-text price increased ~10%.
+
+### Removed
+- `community/tomdacatto/gemma-4-31B-it-uncensored` (was: text)
+- `community/vendouple/claude-sonnet-5.5:stable` (was: text)
+- `community/vendouple/claude-opus-5.5:stable` (was: text)
+- `community/Catniti/muse-glimmer-30b` (was: text)
+- `community/YoannDev90/agentic-gt` (was: text)
+- `community/scriptsnsenses-sys/muse-spark-1.2-contributor-free` (was: text)
+- `community/scriptsnsenses-sys/glm-5.3-flash-free` (was: text)
+- `community/ZapGaming/gpt-oss-120b-ultrafast` (was: text)
+- `community/ZapGaming/llama3.1-8b-ultrafast` (was: text)
+- `community/ZapGaming/mercury-2.5-ultrafast` (was: text)
+- `community/MarcosFRG/gemma-4-31b:paid` (was: text)
+- `community/MarcosFRG/deepseek-v4-flash-0731:paid` (was: text)
+- `community/MarcosFRG/glm-5.3:paid` (was: text)
+- `community/YoannDev90/poolside-laguna-s-2.1:free` (was: text)
+- `community/iotserver24/kimi-k2.7-code-nitro` (was: text)
+- `community/morriszdweck/osaii-swarm` (was: text)
+- `community/MarcosFRG/nemotron-3.5-lightning:paid` (was: text)
+- `community/MarcosFRG/gemma-4-26b-a4b:paid` (was: text)
+- `community/vendouple/glm-5.3` (was: text)
+- `community/morriszdweck/osaii-api-fast` (was: text)
+- `community/chirag-gamer/gpt-oss-120b` (was: text)
+- `community/vendouple/qwen-3.8-max` (was: text)
+- `community/MarcosFRG/glm-4.6v-flash` (was: text)
+- `community/sharktide/inferenceport-ai-gemini-2.5-flash` (was: text)
+- `community/sharktide/inferenceport-ai-lightning-text-v2` (was: text)
+- `community/sharktide/inferenceport-ai-qwen-3.8-27b` (was: text)
+- `community/MarcosFRG/gemini-3.1-flash-lite` (was: text)
+- `community/MarcosFRG/minimax-m3:paid` (was: text)
+- `microsoft/mai-image-2.5-flash` (was: image)
+- `community/chigwell/gpt-image-2.5` (was: image)
+- `community/MarcosFRG/flux-1-schnell:paid` (was: image)
+- `community/sharktide/inferenceport-ai-gpt-image-2.5-sunburst` (was: image)
+- `community/sharktide/inferenceport-ai-gpt-image-2.5-flare` (was: image)
+- `community/MarcosFRG/flux-1-schnell` (was: image)
+- `community/MarcosFRG/flux-2-klein-4b` (was: image)
+- `community/sharktide/inferenceport-ai-gpt-image-router` (was: image)
+- `community/vendouple/nano-banana-pro` (was: image)
+- `community/sharktide/inferenceport-ai-lightning-image-turbo` (was: image)
+
 ## 2026-09-30
 
 ### Added

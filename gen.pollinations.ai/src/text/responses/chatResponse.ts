@@ -65,12 +65,18 @@ function chatUsage(usage: ResponseUsage): JsonObject {
     const inputDetails = usage.input_tokens_details;
     const outputDetails = usage.output_tokens_details;
     // Perplexity reports built-in search calls here; Chat carries the count in
-    // OpenRouter's usage field so billing reads one shape.
-    const webSearches = positiveCount(
-        (usage.tool_calls_details as JsonObject | undefined)?.search_web &&
-            ((usage.tool_calls_details as JsonObject).search_web as JsonObject)
-                .invocation,
-    );
+    // OpenRouter's usage field so billing reads one shape. Downhill
+    // (chatUsageToResponsesUsage) writes server_tool_use_details, so read that
+    // back too or a Chat->Responses->Chat round-trip undercounts.
+    const toolCallsDetails = usage.tool_calls_details as JsonObject | undefined;
+    const serverToolDetails = usage.server_tool_use_details as
+        | JsonObject
+        | undefined;
+    const webSearches =
+        positiveCount(
+            toolCallsDetails?.search_web &&
+                (toolCallsDetails.search_web as JsonObject).invocation,
+        ) ?? positiveCount(serverToolDetails?.web_search_requests);
     return {
         prompt_tokens: usage.input_tokens,
         completion_tokens: usage.output_tokens,

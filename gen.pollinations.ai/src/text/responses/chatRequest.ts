@@ -235,7 +235,26 @@ function messageItems(message: ChatMessage): JsonObject[] {
             content[content.length - 1].prompt_cache_breakpoint =
                 messageBreakpoint;
         }
+        // Preserve reasoning_content as a Responses reasoning item — without
+        // this a Responses->Chat->Responses round-trip silently drops it
+        // (previously only the completion path round-tripped).
+        const reasoning =
+            typeof message.reasoning_content === "string" &&
+            message.reasoning_content
+                ? [
+                      {
+                          type: "reasoning",
+                          summary: [
+                              {
+                                  type: "summary_text",
+                                  text: message.reasoning_content,
+                              },
+                          ],
+                      },
+                  ]
+                : [];
         return [
+            ...reasoning,
             ...(content.length ? [{ role: "assistant", content }] : []),
             ...functionCalls(message),
         ];
@@ -310,7 +329,7 @@ function functionTools(tools: unknown[] | undefined): JsonObject[] | undefined {
             ...(typeof definition.description === "string"
                 ? { description: definition.description }
                 : {}),
-            ...(definition.parameters === undefined
+            ...(definition.parameters == null
                 ? {}
                 : { parameters: definition.parameters }),
             strict: definition.strict === true,

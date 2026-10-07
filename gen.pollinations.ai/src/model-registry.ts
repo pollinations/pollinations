@@ -32,7 +32,6 @@ import {
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
-import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
 // A static-only registry is cached briefly so the community models come back
@@ -120,8 +119,15 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const baseEndpoints =
         definition.supportedEndpoints ??
         supportedEndpointsForEventType(eventType);
+    // Every text model works on /v1/responses: native where the provider
+    // speaks it, adapted through the Chat pipeline otherwise (#16674).
+    // Definitions with an explicit endpoint list opt out: they pin contracts
+    // like decision-only models that must not advertise Responses.
     const supportedEndpoints =
-        eventType === "generate.text" && supportsDirectResponses(modelName)
+        eventType === "generate.text" &&
+        (definition.supportedEndpoints === undefined ||
+            definition.supportedEndpoints.includes("/v1/responses")) &&
+        !baseEndpoints.includes("/v1/responses")
             ? [...baseEndpoints, "/v1/responses"]
             : baseEndpoints;
     const info = modelInfoFromDefinition(modelName, definition);
@@ -146,8 +152,10 @@ function communityEntryToGenerationEntry(
     );
     if (
         entry.communityEndpoint.modality === "text" &&
-        entry.communityEndpoint.api === "responses"
+        !supportedEndpoints.includes("/v1/responses")
     ) {
+        // Community text endpoints serve /v1/responses natively or adapted
+        // through the Chat pipeline depending on their declared api (#16674).
         supportedEndpoints.push("/v1/responses");
     }
     return {

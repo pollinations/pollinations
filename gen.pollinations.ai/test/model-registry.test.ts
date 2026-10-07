@@ -103,13 +103,15 @@ describe("getGenerationModelRegistry", () => {
         expect(model?.definition.provider).toBe("aws");
         expect(model?.definition.paidOnly).toBe(true);
         expect(model?.definition.fallbacks ?? []).toEqual([]);
-        expect(model?.supportedEndpoints).not.toContain("/v1/responses");
+        // Chat-pipeline models are served on Responses through the shared
+        // stateless adapter (#16674), so the coder advertises it.
+        expect(model?.supportedEndpoints).toContain("/v1/responses");
         for (const parameter of ["seed", "logprobs", "stop"]) {
             expect(model?.info.supported_parameters).not.toContain(parameter);
         }
     });
 
-    it("advertises every configured direct Responses model", async () => {
+    it("advertises Responses for direct and Chat-adapted text models", async () => {
         const registry = await getGenerationModelRegistry(env);
         const configured = availableModels
             .filter(
@@ -132,7 +134,15 @@ describe("getGenerationModelRegistry", () => {
             .map((entry) => entry.id)
             .sort();
 
-        expect(advertised).toEqual(configured);
+        // Every directly configured model stays advertised.
+        for (const model of configured) {
+            expect(advertised).toContain(model);
+        }
+        // Chat-only models join through the shared adapter (#16674).
+        expect(advertised).toContain("anthropic/claude-sonnet-4.6");
+        // Decision-only contracts opt out: explicit endpoint lists without
+        // /v1/responses are respected.
+        expect(advertised).not.toContain("typesafe/jev-1.13");
         for (const model of advertised) {
             expect(registry.resolve(model)?.info.supported_endpoints).toContain(
                 "/v1/responses",

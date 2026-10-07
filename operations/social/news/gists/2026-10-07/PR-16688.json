@@ -1,0 +1,42 @@
+{
+  "pr_number": 16688,
+  "title": "fix: hide announcements for signed-out users",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16688",
+  "merged_at": "2026-10-07T13:05:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Hides Announcements when the user is signed out, using the existing dashboard user state.\n- Removes the Announcements heading from the loading placeholder.\n\nValidation: frontend build and Biome pass. TypeScript reports the same five pre-existing backend errors on unchanged main.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Notices for the right bees",
+    "blurb": "The announcements board waits until someone signs in. Its heading also stays out of the loading placeholder, where it had nothing to announce.",
+    "summary": "The Enter dashboard uses its existing user state to hide Announcements for signed-out visitors and removes the Announcements heading from the loading placeholder.",
+    "impact": "Signed-out visitors get a cleaner dashboard, while signed-in users retain their announcements.",
+    "keywords": [
+      "Enter",
+      "dashboard",
+      "announcements",
+      "signed-out",
+      "loading state"
+    ],
+    "visual_concept": "Depict Enter's announcements as a small garden noticeboard that Polli opens for a signed-in visitor; an empty loading frame nearby has no heading. Keep the scene friendly and quiet, with a prominent lime-green garden and a tiny clipboard accessory for Polli.",
+    "image_prompt": "In a cozy pixel garden, Polli opens a little announcements noticeboard beside a glowing sign-in doorway, while a nearby empty loading frame has no heading. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny clipboard, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, prominent lime green (#ecf874), warm cream and mint, and dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16688.jpg",
+    "prompt": "In a cozy pixel garden, Polli opens a little announcements noticeboard beside a glowing sign-in doorway, while a nearby empty loading frame has no heading. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny clipboard, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, prominent lime green (#ecf874), warm cream and mint, and dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-07T13:06:34.765272+00:00",
+  "area": "Dashboard",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "faee45c54d20da4f029d154b52b3b39998584563",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

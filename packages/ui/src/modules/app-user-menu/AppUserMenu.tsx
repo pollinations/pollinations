@@ -48,16 +48,12 @@ const defaultLabels: AppUserMenuLabels = {
 
 const CONNECT_SIZES = {
     md: {
-        button: "polli:h-10",
-        cell: "polli:w-10",
+        button: "polli:h-10 polli:px-4",
         mark: "polli:h-6 polli:w-6",
-        label: "polli:px-3",
     },
     lg: {
-        button: "polli:h-12 polli:text-base",
-        cell: "polli:w-12",
+        button: "polli:h-12 polli:px-5 polli:text-base",
         mark: "polli:h-7 polli:w-7",
-        label: "polli:px-4",
     },
 };
 
@@ -125,27 +121,14 @@ export function AppUserMenu({
         >
             {!isLoggedIn ? (
                 <LoginButton
+                    intent="brand"
                     className={cn(
-                        "polli:gap-0 polli:overflow-hidden polli:border polli:border-theme-bg-active polli:bg-surface-white polli:p-0 polli:text-theme-text-strong polli:whitespace-nowrap polli:hover:bg-surface-white polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-transparent",
+                        "polli:gap-2 polli:py-0 polli:whitespace-nowrap",
                         size.button,
                     )}
                 >
-                    {/* Amber cell with the mark, then a light cell with the label. */}
-                    <span
-                        aria-hidden="true"
-                        className={cn(
-                            "polli:flex polli:h-full polli:shrink-0 polli:items-center polli:justify-center polli:bg-theme-bg-active",
-                            size.cell,
-                        )}
-                    >
-                        <BrandMark
-                            className={cn(
-                                "polli:relative polli:-top-px polli:left-px",
-                                size.mark,
-                            )}
-                        />
-                    </span>
-                    <span className={size.label}>{labels.authorize}</span>
+                    <BrandMark className={size.mark} />
+                    {labels.authorize}
                 </LoginButton>
             ) : (
                 <AccountMenu

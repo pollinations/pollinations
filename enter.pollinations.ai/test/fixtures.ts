@@ -1,6 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { ensureConfigured } from "@shared/logger.ts";
 import {
@@ -40,6 +41,8 @@ type Fixtures = {
     mocks: ReturnType<typeof createFetchMock<Mocks>>;
     auth: ReturnType<typeof createAuthClientInstance>;
     sessionToken: string;
+    /** Dashboard session token for the account API, minted from the session cookie */
+    accountToken: string;
     apiKey: string;
     /** API key for a user with pack balance (can use paidOnly models) */
     paidApiKey: string;
@@ -61,7 +64,7 @@ type SignupData = {
  * (same flow as production) and returns the created key record.
  */
 export const createApiKeyViaApi = async (
-    sessionToken: string,
+    accountToken: string,
     options: {
         name: string;
         type?: "secret" | "publishable";
@@ -77,7 +80,7 @@ export const createApiKeyViaApi = async (
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify(options),
         },
@@ -86,6 +89,21 @@ export const createApiKeyViaApi = async (
         throw new Error(`Failed to create API key: ${await response.text()}`);
     }
     return (await response.json()) as { id: string; key: string };
+};
+
+/** Mints the dashboard's short-lived account API token from a session cookie. */
+export const mintAccountToken = async (sessionToken: string) => {
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/session-token",
+        {
+            method: "POST",
+            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        },
+    );
+    if (!response.ok) {
+        throw new Error(`Failed to mint session token: ${response.status}`);
+    }
+    return ((await response.json()) as { token: string }).token;
 };
 
 export const test = base.extend<Fixtures>({
@@ -164,8 +182,23 @@ export const test = base.extend<Fixtures>({
         mocks.clear();
         await use(sessionToken);
     },
-    apiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    // Signed directly: session-token.test.ts covers minting over HTTP.
+    accountToken: async ({ sessionToken: _sessionToken }, use) => {
+        // Each test has an isolated DB with exactly one user, signed in above.
+        const user = await drizzle(env.DB)
+            .select({ id: userTable.id })
+            .from(userTable)
+            .get();
+        if (!user) throw new Error("Missing fixture user");
+        await use(
+            await signSessionToken({
+                secret: env.BETTER_AUTH_SECRET,
+                userId: user.id,
+            }),
+        );
+    },
+    apiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "test-api-key",
         });
         await use(created.key);
@@ -174,18 +207,18 @@ export const test = base.extend<Fixtures>({
      * API key for a user with pack balance, enabling paidOnly model access.
      * Grants 100 pollen pack balance via direct DB update.
      */
-    paidApiKey: async ({ sessionToken }, use) => {
+    paidApiKey: async ({ accountToken }, use) => {
         // Each test has an isolated DB with exactly one user — update all users
         const db = drizzle(env.DB);
         await db.update(userTable).set({ packBalance: 100 });
 
-        const created = await createApiKeyViaApi(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "paid-test-api-key",
         });
         await use(created.key);
     },
-    pubApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    pubApiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "test-api-key",
             type: "publishable",
         });
@@ -193,8 +226,8 @@ export const test = base.extend<Fixtures>({
         expect(pubApiKey.startsWith("pk_")).toBe(true);
         await use(pubApiKey);
     },
-    restrictedApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    restrictedApiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "restricted-test-key",
             allowedModels: [
                 "openai/gpt-5-nano",
@@ -203,15 +236,15 @@ export const test = base.extend<Fixtures>({
         });
         await use(created.key);
     },
-    exhaustedBudgetApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+    exhaustedBudgetApiKey: async ({ accountToken }, use) => {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "exhausted-budget-key",
             pollenBudget: 0,
         });
         await use(created.key);
     },
-    budgetedApiKey: async ({ sessionToken }, use) => {
-        const { key, id } = await createApiKeyViaApi(sessionToken, {
+    budgetedApiKey: async ({ accountToken }, use) => {
+        const { key, id } = await createApiKeyViaApi(accountToken, {
             name: "budgeted-test-key",
             pollenBudget: 100,
         });

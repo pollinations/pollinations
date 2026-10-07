@@ -2,7 +2,6 @@ import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -406,11 +405,11 @@ describe("community endpoint configuration policy", () => {
             visibility: "private",
             inputModalities: ["text", "image"],
             perUserRpm: 2.5,
-            paidOnly: false,
+            paidOnly: true,
+            imagePricing: "tokens",
+            promptImagePrice: 0.000001,
+            completionImagePrice: 0,
         });
-        for (const { key } of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-            expect(privateModel[key]).toBe(0);
-        }
     });
 
     test("keeps fallback writes and candidate discovery aligned", async ({

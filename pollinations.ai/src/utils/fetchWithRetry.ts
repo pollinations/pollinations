@@ -48,8 +48,6 @@ export async function fetchWithRetry(
     options?: RequestInit,
 ): Promise<Response> {
     return enqueue(async () => {
-        let lastError: Error | null = null;
-
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             const response = await fetch(url, options);
 
@@ -69,9 +67,9 @@ export async function fetchWithRetry(
             }
 
             // For non-429 errors or final attempt, throw with details
-            lastError = new Error(`HTTP ${response.status}: ${errorText}`);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        throw lastError || new Error("Max retries exceeded");
+        throw new Error("Max retries exceeded");
     });
 }

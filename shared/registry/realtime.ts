@@ -41,6 +41,7 @@ export const REALTIME_SERVICES = {
         description:
             "Live voice conversations with instant replies and solid noise handling",
         contextLength: 32000,
+        paidOnly: false,
     },
     "openai/gpt-realtime-2.1-mini": {
         ...OPENAI_REALTIME_BASE,

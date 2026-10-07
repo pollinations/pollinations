@@ -199,6 +199,30 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Ling 3.1 Flash directly to Novita without gateway routing options", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.1-flash",
+        });
+        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins the Ling OpenRouter fallback to Novita without gateway fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inclusionai/ling-3.1-flash:openrouter:novita",
+        });
+
+        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
+        expect(result.options.provider).toEqual({
+            only: ["novita"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",
@@ -317,17 +341,60 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Nemotron directly to DeepInfra without fallback", () => {
+    it.each([
+        "qwen/qwen3-coder-30b-a3b-instruct",
+        "qwen3-coder",
+        "qwen3-coder-30b-a3b-instruct",
+        "qwen-coder",
+    ])("routes %s directly to Bedrock", (model) => {
         const result = resolveModelConfig(messages, {
-            model: "nvidia/nemotron-3-ultra",
+            model,
+            stop: ["STOP"],
+            reasoning_effort: "high",
         });
 
-        expect(result.options.model).toBe(
+        expect(result.options.model).toBe("qwen.qwen3-coder-30b-a3b-v1:0");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "bedrock",
+            "aws-region": "us-east-1",
+        });
+        expect(result.options.modelConfig?.responsesEndpoint).toBeUndefined();
+        expect(result.messages).toEqual(messages);
+    });
+
+    it("removes unsupported controls without injecting a coder prompt", async () => {
+        const definition = findModelByName("qwen-coder");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen-coder",
+            stop: ["STOP"],
+            reasoning_effort: "high",
+            temperature: 0.2,
+        });
+
+        expect(transformed?.messages).toEqual(messages);
+        expect(transformed?.options.stop).toBeUndefined();
+        expect(transformed?.options.reasoning_effort).toBeUndefined();
+        expect(transformed?.options.temperature).toBe(0.2);
+    });
+
+    it.each([
+        [
+            "nvidia/nemotron-3-ultra",
+            "accounts/fireworks/models/nemotron-3-ultra-nvfp4",
+            "https://api.fireworks.ai/inference/v1",
+        ],
+        [
+            "nvidia/nemotron-3-ultra:deepinfra",
             "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
-        );
+            "https://api.deepinfra.com/v1/openai",
+        ],
+    ])("routes %s directly to its provider", (model, upstream, host) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(upstream);
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+            "custom-host": host,
         });
         expect(result.options.provider).toBeUndefined();
     });

@@ -196,12 +196,15 @@ exec "$VENV/bin/python" -u server.py
 EOF
 chmod 700 /root/run-zimage.sh
 
+install -m 700 "$WORK_DIR/operations/infrastructure/gpu/watch-tunnel.sh" /root/watch-tunnel.sh
+
 cat > /root/onstart.sh <<EOF
 #!/bin/bash
 set -euo pipefail
 
 screen -S zimage -X quit 2>/dev/null || true
 screen -S cloudflared -X quit 2>/dev/null || true
+screen -S cloudflared-watchdog -X quit 2>/dev/null || true
 screen -S tunnel-dns -X quit 2>/dev/null || true
 
 # The DoH fallback points resolv.conf at localhost while it is running. Restore
@@ -240,7 +243,8 @@ if [ -f "$TUNNEL_DNS_FALLBACK_MARKER" ]; then
     fi
 fi
 
-screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:$PORT/health >/dev/null; do echo "Waiting for Z-Image health before joining the production tunnel" >> /root/cloudflared.log; sleep 5; done; while true; do cloudflared tunnel --no-autoupdate run --token-file "$TUNNEL_TOKEN_FILE" >> /root/cloudflared.log 2>&1; sleep 5; done'
+screen -dmS cloudflared bash -c 'until curl -fsS --max-time 3 http://127.0.0.1:$PORT/health >/dev/null; do echo "Waiting for Z-Image health before joining the production tunnel" >> /root/cloudflared.log; sleep 5; done; while true; do cloudflared tunnel --no-autoupdate --metrics 127.0.0.1:20241 run --token-file "$TUNNEL_TOKEN_FILE" >> /root/cloudflared.log 2>&1; sleep 5; done'
+screen -dmS cloudflared-watchdog bash /root/watch-tunnel.sh 127.0.0.1:20241 /root/cloudflared.log
 EOF
 chmod 700 /root/onstart.sh
 

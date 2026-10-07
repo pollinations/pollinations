@@ -24,7 +24,7 @@ function compact(num: number): string {
 
 /** Format a rolling median-derived estimate as a coarse count. */
 function formatCount(num: number): string {
-    if (num < 1) return "1";
+    if (num < 1) return "<1";
     if (num < 10) return Math.round(num).toString();
     if (num < 100) return (Math.round(num / 5) * 5).toString();
     const rounded = Math.round(num / 50) * 50;

@@ -38,6 +38,7 @@ function communityProbe(type: CommunityEndpointRuntime["type"] = "proxy") {
             c.set("model", {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
+                definition: { category: "text" },
                 communityEndpoint: {
                     id: "managed-agent-id",
                     modelId: "Itachi-1824/polli",
@@ -71,9 +72,10 @@ async function probe(app: Hono<AuthEnv>, url: string, token?: string) {
     );
 }
 
-test("resolves to the parent key, without its account scope", async () => {
+test("resolves to the parent key and its permissions", async () => {
     const parent = await createTestApiKey({
         allowedModels: [RESTRICTED_TEXT_TEST_MODEL],
+        accountPermissions: ["usage", "machines"],
         pollenBudget: 42,
         user: { tierBalance: 100 },
     });
@@ -91,9 +93,10 @@ test("resolves to the parent key, without its account scope", async () => {
         userId: parent.userId,
         apiKeyId: parent.id,
         pollenBalance: 42,
-        // Model access is inherited; every other scope the parent may hold is
-        // dropped, so the token cannot manage the owner's account.
-        permissions: { models: [RESTRICTED_TEXT_TEST_MODEL] },
+        permissions: {
+            models: ["text"],
+            account: ["usage", "machines"],
+        },
         agentRun: { parentApiKeyId: parent.id },
     });
 });

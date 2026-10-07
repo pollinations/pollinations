@@ -663,6 +663,107 @@ export interface UploadResponse {
 }
 
 // ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/**
+ * State, instructions, and criteria accept a string, object, or array.
+ */
+export type DecisionContent = string | Record<string, unknown> | unknown[];
+
+/** A choice question between named options */
+export interface ChoiceQuestion {
+    type: "choice";
+    /** What to decide */
+    instructions: DecisionContent;
+    /** Selectable options mapped to what each one means (or null) */
+    criteria: Record<string, DecisionContent | null>;
+}
+
+/** A score question on an ordered scale */
+export interface ScoreQuestion {
+    type: "score";
+    /** What to rate */
+    instructions: DecisionContent;
+    /** Ordered rungs from lowest to highest (at least 2 levels) */
+    criteria: DecisionContent[];
+}
+
+/** A yes/no proposition question evaluating probability (0 to 1) */
+export interface NoulQuestion {
+    type: "noul";
+    /** The yes/no proposition to evaluate */
+    instructions: DecisionContent;
+    /** Optional descriptions of what true and false mean */
+    criteria?: {
+        true?: DecisionContent;
+        false?: DecisionContent;
+    };
+}
+
+/** A typed decision question: choice, score, or noul */
+export type DecisionQuestion = ChoiceQuestion | ScoreQuestion | NoulQuestion;
+
+/** Answer for a choice question */
+export interface ChoiceAnswer {
+    type: "choice";
+    /** The selected criteria key */
+    choice: string;
+    /** Probability assigned to each option */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a score question */
+export interface ScoreAnswer {
+    type: "score";
+    /** Position on the criteria scale (can be fractional) */
+    score: number;
+    /** Maps each scale index back to its criteria entry */
+    legend: Record<string, unknown>;
+    /** Probability assigned to each scale index */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a noul question */
+export interface NoulAnswer {
+    type: "noul";
+    /** Probability that the proposition is true, 0 to 1 */
+    noul: number;
+}
+
+/** Typed answer matching the question type */
+export type DecisionAnswer = ChoiceAnswer | ScoreAnswer | NoulAnswer;
+
+/** Token usage for a decision request */
+export interface DecisionUsage {
+    input_tokens: number;
+    output_tokens: number;
+}
+
+/** Options for requesting a decision (POST /alpha/decisions) */
+export interface DecisionOptions extends RequestOptions {
+    /** Decision model to use (default: 'typesafe/jev-1.13') */
+    model?: string;
+    /** The facts/context to decide on */
+    state: DecisionContent;
+    /** Questions to answer about the state, keyed by custom names */
+    questions: Record<string, DecisionQuestion>;
+}
+
+/** Response from the decisions endpoint */
+export interface DecisionResponse {
+    id: string;
+    model: string;
+    provider: string;
+    answers: Record<string, DecisionAnswer>;
+    usage: DecisionUsage;
+}
+
+// ============================================================================
 // BYOP (Bring Your Own Pollen)
 // ============================================================================
 
@@ -873,6 +974,7 @@ export interface KeyInfo {
         account?: string[] | null;
     };
     pollenBudget?: number | null;
+    questPollenOnly?: boolean;
     rateLimitEnabled?: boolean;
 }
 
@@ -893,6 +995,7 @@ export interface AccountKey {
     } | null;
     metadata: Record<string, unknown> | null;
     pollenBalance: number | null;
+    questPollenOnly?: boolean;
     enabled: boolean;
 }
 
@@ -907,7 +1010,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to specific model IDs */
+    /** Restrict to model categories (text, image, ...); a model ID allows its whole category */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;
@@ -918,6 +1021,8 @@ export interface CreateKeyOptions {
      * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
+    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    questPollenOnly?: boolean;
     /**
      * Allowed OAuth redirect URIs for publishable app keys. Required when
      * creating a `publishable` key that drives the `/authorize` BYOP flow.
@@ -949,6 +1054,7 @@ export interface CreatedKey {
         account?: string[];
     } | null;
     pollenBudget: number | null;
+    questPollenOnly?: boolean;
 }
 
 // ============================================================================
@@ -1040,7 +1146,8 @@ export interface ModelInfo {
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    paid_only?: boolean;
+    /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
+    paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }
 
@@ -1112,8 +1219,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     width?: number;
     /** Image height in pixels */
     height?: number;
-    /** Number of images to generate (default: 1) */
-    n?: number;
     /** Response format (default: server decides — usually b64_json) */
     responseFormat?: "url" | "b64_json";
     /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */

@@ -9,8 +9,8 @@
         "seed:local": "node scripts/seed-local-key.mjs",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
         "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
-        "deploy:staging": "npm run build:staging && ../node_modules/.bin/wrangler deploy --env staging",
-        "deploy:production": "npm run build:production && ../node_modules/.bin/wrangler deploy --env production",
+        "deploy:staging": "npm run build:staging && wrangler deploy --env staging",
+        "deploy:production": "npm run build:production && wrangler deploy --env production",
         "apply-lifecycle:production": "wrangler r2 bucket lifecycle set pollinations-text-enter --file r2-lifecycle.json --force",
         "push-secrets:staging": "sops exec-file --no-fifo secrets/staging.vars.json 'node scripts/push-generation-secrets.mjs {} staging'",
         "push-secrets:production": "sops exec-file --no-fifo secrets/prod.vars.json 'node scripts/push-generation-secrets.mjs {} production'",
@@ -20,7 +20,7 @@
         "docs:validate": "tsx scripts/validate-apidocs.ts"
     },
     "devDependencies": {
-        "@cloudflare/vite-plugin": "^1.33.2",
+        "@cloudflare/vite-plugin": "^1.62.5",
         "@cloudflare/vitest-pool-workers": "^0.12.21",
         "@cloudflare/workers-types": "^4.20251202.0",
         "@hono/node-server": "^1.19.14",
@@ -34,7 +34,7 @@
         "vite": "^7.2.4",
         "vite-tsconfig-paths": "^5.1.4",
         "vitest": "3.2.4",
-        "wrangler": "^4.52.1"
+        "wrangler": "^4.147.0"
     },
     "dependencies": {
         "@ai-sdk/mcp": "^2.0.32",

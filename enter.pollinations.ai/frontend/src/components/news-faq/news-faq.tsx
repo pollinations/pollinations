@@ -9,9 +9,7 @@ import {
 
 export const NewsFaq: FC = () => (
     <>
-        <Section title="Announcements" framed>
-            <Announcements />
-        </Section>
+        <Announcements />
         <Section
             title="News"
             framed

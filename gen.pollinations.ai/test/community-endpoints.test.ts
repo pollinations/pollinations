@@ -332,6 +332,7 @@ function insertCommunityEndpoints(
                         outputModalities,
                     }
                   : {
+                        paidOnly: false,
                         bearerTokenCiphertext:
                             bearerTokenCiphertext ?? "test-ciphertext",
                         api,
@@ -738,6 +739,7 @@ describe("community endpoint helpers", () => {
             "proxy",
             JSON.stringify({
                 bearerTokenCiphertext: "ciphertext",
+                paidOnly: false,
                 modality: "image",
                 api,
                 imagePricing: "request",
@@ -768,6 +770,7 @@ describe("community endpoint helpers", () => {
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
             bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
             modality: "text",
             imagePricing: "request",
             inputModalities: ["text"],
@@ -787,6 +790,16 @@ describe("community endpoint helpers", () => {
                 }),
             ),
         ).toMatchObject({ api: "chat_completions" });
+        const { paidOnly: _, ...withoutPaidOnly } = textPayload;
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    ...withoutPaidOnly,
+                    api: "chat_completions",
+                }),
+            ),
+        ).toBeNull();
         expect(parseListingPayload("proxy", "not json")).toBeNull();
         expect(
             parseListingPayload("proxy", JSON.stringify({ prices: {} })),
@@ -825,6 +838,7 @@ describe("community endpoint helpers", () => {
             parseListingPayload(
                 "proxy",
                 JSON.stringify({
+                    paidOnly: false,
                     bearerTokenCiphertext: "ciphertext",
                     modality: "image",
                     imagePricing: "request",
@@ -983,6 +997,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/transcription",
             title: "Transcription",
             description: null,
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({}),
         });
@@ -1005,6 +1020,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/speech",
             title: "Speech",
             description: null,
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({}),
         });
@@ -1042,6 +1058,7 @@ describe("community endpoint helpers", () => {
             modelId: "community/voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -1063,6 +1080,7 @@ describe("community endpoint helpers", () => {
                 modelId: "voodoohop/openai",
                 title: "OpenAI",
                 description: null,
+                paidOnly: false,
                 ...prices,
             }).paidOnly,
         ).toBe(false);
@@ -1083,6 +1101,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({ promptTextPrice: 0.1 }),
         });
 
@@ -1098,6 +1117,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: null,
+            paidOnly: false,
             providerName: "Example AI",
             providerUrl: "https://example.com/",
             ...communityEndpointPrices({}),
@@ -1113,6 +1133,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Image",
             description: "Community image model",
+            paidOnly: false,
             modality: "image",
             ...communityEndpointPrices({
                 promptTextPrice: 0.2,
@@ -1151,6 +1172,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "GPT Image",
             description: "Token-priced image model",
+            paidOnly: false,
             modality: "image",
             imagePricing: "tokens",
             inputModalities: ["text", "image"],
@@ -1190,6 +1212,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Video",
             description: "Community video model",
+            paidOnly: false,
             modality: "video",
             inputModalities: ["text", "image", "audio", "video"],
             ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
@@ -1217,6 +1240,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Embedding",
             description: "Community embedding model",
+            paidOnly: false,
             modality: "embedding",
             ...communityEndpointPrices({
                 promptTextPrice: 0.00001,
@@ -1269,6 +1293,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -1283,6 +1308,7 @@ describe("community endpoint helpers", () => {
             modelId: "marcosfrgames08/glm-4.6v-flash",
             title: "GLM Vision",
             description: "Vision model",
+            paidOnly: false,
             inputModalities: ["image", "video"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -1298,6 +1324,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
                 contextLength: 128000,
@@ -1317,6 +1344,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
@@ -1335,6 +1363,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             inputModalities: ["text", "audio"],
             ...communityEndpointPrices({
@@ -1352,6 +1381,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Transcription",
             description: "Community transcription model",
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
         });
@@ -1402,6 +1432,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Speech",
             description: "Community speech model",
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({ completionAudioPrice: 0.00002 }),
         });

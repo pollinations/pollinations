@@ -916,7 +916,11 @@ const usageRecordSchema = z.object({
     input_audio_seconds: z
         .number()
         .describe("Duration of input audio in seconds (for transcription/STT)"),
-    input_image_tokens: z.number().describe("Number of input image tokens"),
+    input_image_tokens: z
+        .number()
+        .describe(
+            "Input image usage quantity (provider-specific tokens, images, or megapixels)",
+        ),
     output_text_tokens: z.number().describe("Number of output text tokens"),
     output_reasoning_tokens: z
         .number()
@@ -931,7 +935,9 @@ const usageRecordSchema = z.object({
         ),
     output_image_tokens: z
         .number()
-        .describe("Number of output image tokens (1 per image)"),
+        .describe(
+            "Output image usage quantity (provider-specific tokens, images, or megapixels)",
+        ),
     output_video_seconds: z
         .number()
         .describe("Duration of output video in seconds"),

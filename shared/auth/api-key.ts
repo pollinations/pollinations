@@ -167,7 +167,7 @@ export function createApiKeyPlugin() {
 
 export function createApiKeyAuth(
     env: ApiKeyAuthBindings,
-    ctx?: ExecutionContext,
+    ctx?: Pick<ExecutionContext, "waitUntil">,
 ) {
     const db = drizzle(env.DB);
     return betterAuth({
@@ -221,7 +221,7 @@ export async function authenticateApiKeyRequest(opts: {
     request: Request;
     env: ApiKeyAuthBindings;
     client?: VerifyApiKeyClient;
-    ctx?: ExecutionContext;
+    ctx?: Pick<ExecutionContext, "waitUntil">;
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
@@ -269,19 +269,9 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    // The token inherits the parent's model access but never its account scope:
-    // it is a generation credential held by a third party, so it must not be
-    // able to manage the owner's keys, endpoints or account.
-    const models = parent.apiKey.permissions?.models;
-
-    return {
-        ...parent,
-        apiKey: {
-            ...parent.apiKey,
-            permissions: models ? { models } : undefined,
-        },
-        agentRun: claims,
-    };
+    // The token carries the parent key's permissions unchanged; the owner
+    // limits what an agent can do by limiting the key it is called with.
+    return { ...parent, agentRun: claims };
 }
 
 /**

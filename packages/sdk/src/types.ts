@@ -1146,7 +1146,8 @@ export interface ModelInfo {
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    paid_only?: boolean;
+    /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
+    paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }
 
@@ -1218,8 +1219,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     width?: number;
     /** Image height in pixels */
     height?: number;
-    /** Number of images to generate (default: 1) */
-    n?: number;
     /** Response format (default: server decides — usually b64_json) */
     responseFormat?: "url" | "b64_json";
     /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */

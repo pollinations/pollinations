@@ -9,6 +9,7 @@ import {
     createDeepInfraModelConfig,
     createFireworksModelConfig,
     createMistralModelConfig,
+    createNovitaModelConfig,
     createOpenRouterModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityAgentConfig,
@@ -351,10 +352,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/fp8",
     ),
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
-    "inclusionai/ling-3.1-flash": createPinnedOpenRouterConfig(
-        "inclusionai/ling-3.1-flash",
-        "novita",
-    ),
+    "inclusionai/ling-3.1-flash": () =>
+        createNovitaModelConfig({ model: "inclusionai/ling-3.1-flash" }),
+    "inclusionai/ling-3.1-flash:openrouter:novita":
+        createPinnedOpenRouterConfig("inclusionai/ling-3.1-flash", "novita"),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>
         createVercelAIGatewayModelConfig({
             model: "inclusionai/ling-3.1-flash",
@@ -578,6 +579,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
+    "moonshotai/Kimi-K3": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K3" }),
     "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
         createDeepInfraModelConfig({
             model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
@@ -639,10 +642,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "google-vertex/global",
     ),
-    "gemini-fast-openrouter-vertex-eu": createPinnedOpenRouterGeminiConfig(
+    "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "google-ai-studio",
     ),
+    "google/gemini-2.5-flash-lite:search": () => ({
+        ...createPinnedOpenRouterGeminiConfig(
+            "gemini-2.5-flash-lite",
+            "google-ai-studio",
+        )(),
+        responsesEndpoint: undefined,
+    }),
     "gemini-flash-lite-3.5-openrouter-vertex-global":
         createPinnedOpenRouterGeminiConfig(
             "gemini-3.5-flash-lite",
@@ -660,6 +670,26 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.3-flashx",
         "z-ai/fp8",
     ),
+    "glm-5.3-flash-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "z-ai/glm-5.3-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: [
+                        "together",
+                        "baseten/fp8",
+                        "modal/nvfp4",
+                        "crusoe/fp4",
+                        "friendli",
+                        "digitalocean",
+                        "parasail/fp4",
+                        "venice",
+                    ],
+                    allow_fallbacks: true,
+                },
+            },
+        }),
     "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
         "z-ai/glm-5.3",
         "friendli",
@@ -833,10 +863,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.1-pro-preview",
         "global",
     ),
-    "google/gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "global",
-    ),
+    "google/gemini-2.5-flash-lite": () =>
+        createVercelAIGatewayModelConfig({
+            model: "google/gemini-2.5-flash-lite",
+            responsesEndpoint: undefined,
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["google"] } },
+            },
+        }),
+    "google/gemini-2.5-flash-lite:search:vercel": () =>
+        portkeyConfig["google/gemini-2.5-flash-lite"](),
     "google/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",
@@ -851,10 +888,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // Dedicated Gemini Search services use the same direct Vertex adapter.
-    "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
-        "gemini-2.5-flash-lite",
-        "global",
-    ),
     "vertex/gemini-3.5-flash-lite": createVertexGeminiConfig(
         "gemini-3.5-flash-lite",
         "global",
@@ -887,6 +920,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "MiniMaxAI/MiniMax-M3": () =>
+        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",

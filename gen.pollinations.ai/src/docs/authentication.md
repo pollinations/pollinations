@@ -16,3 +16,5 @@ Two ways to authenticate generation requests:
 - Query param: `?key=YOUR_API_KEY`
 
 For detailed integration guidance on user-pays authorization, including OAuth discovery and token exchange, see [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
+
+To buy a prepaid API key with USDC without a Pollinations account, see [x402 Prepaid Keys](/docs#tag/x402-prepaid-keys).

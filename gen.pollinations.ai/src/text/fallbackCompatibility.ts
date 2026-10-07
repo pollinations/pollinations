@@ -85,6 +85,8 @@ export function textCapabilityError(
     communityEndpoint?: CommunityEndpointRuntime,
 ): string | undefined {
     if (!definition) return;
+    if (definition.streaming === false && request.stream === true)
+        return `${communityEndpoint?.modelId ?? "This model"} does not support streaming; send stream: false`;
     if (
         definition.search === false &&
         Array.isArray(request.tools) &&

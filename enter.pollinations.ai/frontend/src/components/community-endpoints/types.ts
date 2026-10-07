@@ -196,6 +196,7 @@ export function publicCommunityFallbackOptions(
 export type ModelListingFormState = {
     inputModalities: ModelInputModality[];
     capabilities: CommunityEndpointCapability[];
+    streaming: boolean;
     contextLength: string;
     name: string;
     title: string;
@@ -254,6 +255,7 @@ export type CommunityEndpointTestResponse = {
     message?: string;
     usage?: CommunityEndpointUsage;
     billableUsage?: Usage;
+    streaming?: boolean;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[];
     imageEditError?: string;
@@ -273,6 +275,7 @@ const emptyPriceForm = Object.fromEntries(
 const emptyListingForm: ModelListingFormState = {
     inputModalities: ["text"],
     capabilities: [],
+    streaming: true,
     contextLength: "",
     name: "",
     title: "",
@@ -403,6 +406,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         imagePricing,
         inputModalities: endpoint.inputModalities,
         capabilities: endpoint.advertised.capabilities ?? [],
+        streaming: endpoint.advertised.streaming !== false,
         contextLength: endpoint.advertised.contextLength?.toString() ?? "",
         name: endpoint.name,
         title: endpoint.title,
@@ -594,6 +598,8 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         imagePricing,
         advertised: normalizeCommunityEndpointAdvertised(
             {
+                streaming:
+                    modality === "text" && !form.streaming ? false : undefined,
                 capabilities: form.capabilities,
                 contextLength: form.contextLength.trim()
                     ? Number(form.contextLength)

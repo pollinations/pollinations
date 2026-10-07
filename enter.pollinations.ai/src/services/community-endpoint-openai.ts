@@ -53,6 +53,7 @@ export type CommunityEndpointUsage = Record<string, unknown>;
 export type CommunityEndpointTestResult = {
     usage: CommunityEndpointUsage;
     billableUsage: Usage;
+    streaming?: boolean;
     /** Image tests only: billing mode detected from the probe response. */
     imagePricing?: CommunityEndpointImagePricing;
     /** Image tests only: input types detected by the generation/edit probes. */
@@ -100,10 +101,10 @@ async function fetchText(
     if (!response.ok) {
         throw new Error(endpointErrorMessage(response.status, parseJson(text)));
     }
-    if (
-        streaming &&
-        !response.headers.get("content-type")?.includes("text/event-stream")
-    ) {
+    const isEventStream = response.headers
+        .get("content-type")
+        ?.includes("text/event-stream");
+    if (streaming && !isEventStream && parseJson(text) === null) {
         throw new Error("Endpoint did not return a text/event-stream response");
     }
     return text;
@@ -223,7 +224,7 @@ export async function testCommunityEndpoint({
         };
     }
 
-    const stream = await fetchText(
+    const streamResponse = await fetchText(
         url,
         {
             ...init,
@@ -237,6 +238,9 @@ export async function testCommunityEndpoint({
         },
         true,
     );
+    if (!streamResponse.trim() || parseJson(streamResponse) !== null) {
+        return { ...result, streaming: false };
+    }
     let hasUsage = false;
     const parser = createParser({
         onEvent(event) {
@@ -277,10 +281,10 @@ export async function testCommunityEndpoint({
             }
         },
     });
-    parser.feed(`${stream}\n\n`);
+    parser.feed(`${streamResponse}\n\n`);
     if (!hasUsage)
         throw new Error("Endpoint omitted valid terminal streaming usage");
-    return result;
+    return { ...result, streaming: true };
 }
 
 export async function testCommunityImageEndpoint({

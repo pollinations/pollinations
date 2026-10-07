@@ -93,6 +93,7 @@ export type CommunityEndpointCapability =
 
 export const CommunityEndpointAdvertisedSchema = z
     .object({
+        streaming: z.literal(false).optional(),
         capabilities: z
             .array(z.enum(COMMUNITY_ENDPOINT_CAPABILITIES))
             .optional(),
@@ -115,6 +116,7 @@ export function normalizeCommunityEndpointAdvertised(
 ): CommunityEndpointAdvertised {
     if (!value || modality !== "text") return {};
     const advertised: CommunityEndpointAdvertised = {};
+    if (value.streaming === false) advertised.streaming = false;
     if (value.capabilities?.length) {
         const declared = new Set<string>(value.capabilities);
         const capabilities = COMMUNITY_ENDPOINT_CAPABILITIES.filter(

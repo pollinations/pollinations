@@ -766,7 +766,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   ? "Endpoint responded with audio data"
                                   : input.modality === "embedding"
                                     ? "Endpoint responded with embedding data"
-                                    : "JSON and streaming requests returned valid token usage",
+                                    : result.streaming === false
+                                      ? "JSON request returned valid token usage; the endpoint does not stream"
+                                      : "JSON and streaming requests returned valid token usage",
                     ...result,
                 });
             } catch (error) {

@@ -1,0 +1,37 @@
+{
+  "pr_number": 16678,
+  "title": "refactor: dashboard uses the account API for keys, balance and quests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16678",
+  "merged_at": "2026-10-07T10:36:09Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "The dashboard uses the public account API (`/api/account/*`) for keys, balance, quests and earnings, so apps and agents with API keys can do the same things. Login is unchanged: the dashboard still sends its cookie. Split out of #16563, which adds the session token on top.\n\n- Adds `PATCH /account/keys/:id` and removes `/api/api-keys`. Better Auth's native `/api/auth/api-key/*` routes are blocked\n- Removes `/api/customer`: balance comes from `/account/balance`, and weekly earnings sum `/account/earnings?days=7`. The unused `developer_earnings_today` pipe is deleted; remove it from Tinybird prod after release\n- Quest rewards, check and claim move from `/api/quests/*` to `/account/quests/*`. The catalog and standings stay put\n- Model usage stats move from Enter `/api/model-stats` to Gen `/models/stats` (public, no auth)\n- Docs: `account:keys` is account admin (it can edit every key); grant it rarely\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_018tvvRGa1XJWY6p5K4438dC\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One account API, more hands",
+    "blurb": "The dashboard and API-key-powered apps share the same account paths for keys, balance, earnings, and quest rewards. Even the dashboard has to use the front door.",
+    "summary": "The dashboard switches to the public /api/account/* API for keys, balance, seven-day earnings, and quest checks and claims, adding PATCH /account/keys/:id while moving public model stats to Gen’s /models/stats.",
+    "impact": "Apps and agents with API keys can use the same account operations as the dashboard; login stays cookie-based, and the account:keys scope can edit every key, so it should be granted sparingly.",
+    "keywords": [
+      "account API",
+      "dashboard",
+      "API keys",
+      "balance",
+      "earnings",
+      "quests",
+      "model stats"
+    ],
+    "visual_concept": "Depict the account API as one welcoming garden gate connecting a dashboard terminal and a small app-running robot. Polli tends the gate, with pixel signs for keys, balance, and quests; a separate little sign points to public model stats. No external project mascot is indicated.",
+    "image_prompt": "In a cozy pixel garden, Polli opens a lime green (#ecf874) account-API gate between a dashboard terminal and a friendly CRT monitor robot carrying a tiny app, with key, balance, and quest icons growing like flowers nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny key-shaped tool belt and stays small within the scene, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16678.jpg",
+    "prompt": "In a cozy pixel garden, Polli opens a lime green (#ecf874) account-API gate between a dashboard terminal and a friendly CRT monitor robot carrying a tiny app, with key, balance, and quest icons growing like flowers nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny key-shaped tool belt and stays small within the scene, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-07T10:37:14.004130+00:00"
+}

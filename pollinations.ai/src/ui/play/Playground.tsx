@@ -15,6 +15,7 @@ import {
     Button,
     ButtonGroup,
     ChevronIcon,
+    Chip,
     cn,
     Dialog,
     DownloadIcon,
@@ -430,19 +431,19 @@ function ModelPicker({
                                 return (
                                     <Fragment key={model.id}>
                                         {startsGroup && (
-                                            <Text
-                                                as="h3"
-                                                size="sm"
-                                                weight="bold"
-                                                tone="strong"
+                                            <h3
                                                 className={cn(
-                                                    "m-0 px-3 pt-2 pb-2 text-xs uppercase tracking-wider",
-                                                    index > 0 &&
-                                                        "mt-3 border-t border-theme-border pt-4",
+                                                    "mx-3 mb-1 self-start",
+                                                    index > 0 ? "mt-4" : "mt-2",
                                                 )}
                                             >
-                                                {group}
-                                            </Text>
+                                                <Chip
+                                                    intent="neutral"
+                                                    size="sm"
+                                                >
+                                                    {group}
+                                                </Chip>
+                                            </h3>
                                         )}
                                         <TabButton
                                             active={model.id === selectedModel}

@@ -2189,6 +2189,7 @@ const TEXT_BASE_SERVICES = {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],
         provider: "novita",
+        perUserRpm: 8,
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),

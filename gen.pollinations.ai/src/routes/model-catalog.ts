@@ -5,9 +5,9 @@ import {
 } from "@shared/model-health.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
-import {
-    type ModelListHeaders,
-    type ModelListQueryParams,
+import type {
+    ModelListHeaders,
+    ModelListQueryParams,
 } from "@/schemas/models.ts";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import {

@@ -22,9 +22,14 @@ export function createCodeAgentResponsesClient(
         error.status = 503;
         throw error;
     }
+    const { exports } = c.executionCtx as unknown as {
+        exports: { CodeMode: (options: object) => Fetcher };
+    };
     const worker = namespace.get(
         endpoint.id,
-        {},
+        // A capability for the agent's `codemode()` helper; it runs code in
+        // Gen's Dynamic Worker loader and is valid for this request only.
+        { props: { CODEMODE: exports.CodeMode({}) } },
         {
             // Guards against runaway code, not normal use: an agent with every
             // hosted MCP server, eight steps and sixteen tool calls makes ~30

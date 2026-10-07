@@ -33,7 +33,7 @@ async function readMcpResult(response, id) {
     throw new Error("MCP tool call returned no result");
 }
 
-function createAgentContext(request, baseUrl) {
+function createAgentContext(request, baseUrl, codemode) {
     const origin = new URL(baseUrl);
     const pollinations = (path, init = {}) => {
         const url = new URL(path instanceof Request ? path.url : path, origin);
@@ -139,13 +139,13 @@ function createAgentContext(request, baseUrl) {
         request,
         pollinations,
         mcp,
-        ...createCodeAgentAI(request, baseUrl, pollinations, mcp),
+        ...createCodeAgentAI(request, baseUrl, pollinations, mcp, codemode),
     };
 }
 
 export default function createCodeAgentWorker(agent) {
     return {
-        async fetch(request, env) {
+        async fetch(request, env, ctx) {
             try {
                 if (typeof agent !== "function") {
                     return jsonError(
@@ -153,7 +153,12 @@ export default function createCodeAgentWorker(agent) {
                     );
                 }
                 const response = await agent(
-                    createAgentContext(request, env.POLLINATIONS_BASE_URL),
+                    createAgentContext(
+                        request,
+                        env.POLLINATIONS_BASE_URL,
+                        // Gen's CodeMode capability, passed in dispatch props.
+                        ctx?.props?.CODEMODE,
+                    ),
                 );
                 return response instanceof Response
                     ? response

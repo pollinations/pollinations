@@ -1,4 +1,5 @@
 import {
+    asSchema,
     jsonSchema,
     stepCountIs,
     ToolLoopAgent,
@@ -34,11 +35,32 @@ type Mcp = {
     tools?: (server: string) => Promise<ToolSet>;
 };
 
+type JsonSchema = Parameters<typeof jsonSchema>[0];
+
+// Gen's CodeMode entrypoint (gen.pollinations.ai/src/text/agents/codemode.ts).
+type CodeMode = {
+    tool(
+        tools: Record<
+            string,
+            {
+                description?: string;
+                inputSchema: JsonSchema;
+                execute: (input: unknown) => Promise<unknown>;
+            }
+        >,
+    ): Promise<{
+        description: string;
+        inputSchema: JsonSchema;
+        execute: (input: unknown) => Promise<unknown>;
+    }>;
+};
+
 export function createCodeAgentAI(
     request: Request,
     baseUrl: string,
     pollinations: typeof fetch,
     mcp: Mcp,
+    codemodeCapability?: CodeMode,
 ) {
     // The agent may read its own request before calling respond().
     const responseRequest = request.clone();
@@ -167,5 +189,37 @@ export function createCodeAgentAI(
         );
     }
 
-    return { model, respond };
+    // One tool that runs model-written JavaScript calling `tools`. Gen runs
+    // the code in a sandbox; each tool call comes back here over RPC.
+    async function codemode(tools: ToolSet) {
+        if (!codemodeCapability) throw new Error("codemode is not available");
+        const code = await codemodeCapability.tool(
+            Object.fromEntries(
+                await Promise.all(
+                    Object.entries(tools).map(async ([name, agentTool]) => [
+                        name,
+                        {
+                            description: agentTool.description,
+                            inputSchema: await asSchema(agentTool.inputSchema)
+                                .jsonSchema,
+                            execute: async (input: unknown) =>
+                                agentTool.execute?.(input, {
+                                    toolCallId: crypto.randomUUID(),
+                                    messages: [],
+                                    abortSignal: request.signal,
+                                    context: undefined,
+                                }),
+                        },
+                    ]),
+                ),
+            ),
+        );
+        return tool({
+            description: code.description,
+            inputSchema: jsonSchema(code.inputSchema),
+            execute: (input) => code.execute(input),
+        });
+    }
+
+    return { model, respond, codemode };
 }

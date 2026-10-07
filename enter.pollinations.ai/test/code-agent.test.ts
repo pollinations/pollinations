@@ -677,6 +677,61 @@ describe("code agent runtime", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it("hands the agent's tools to Gen's codemode capability", async () => {
+        const capability = {
+            tool: vi.fn(async (tools) => ({
+                description: "Run JavaScript",
+                inputSchema: {
+                    type: "object",
+                    properties: { code: { type: "string" } },
+                },
+                // Stands in for Gen running the code in a Dynamic Worker.
+                execute: async () => ({
+                    result: await tools.add.execute({ a: 2, b: 3 }),
+                }),
+            })),
+        };
+        const worker = createCodeAgentWorker(async ({ codemode }) => {
+            const code = await codemode({
+                add: tool({
+                    description: "Add two numbers",
+                    inputSchema: jsonSchema<{ a: number; b: number }>({
+                        type: "object",
+                        properties: {
+                            a: { type: "number" },
+                            b: { type: "number" },
+                        },
+                    }),
+                    execute: async ({ a, b }) => a + b,
+                }),
+            });
+            return Response.json({
+                description: code.description,
+                output: await code.execute?.(
+                    { code: "async () => codemode.add({ a: 2, b: 3 })" },
+                    { toolCallId: "call", messages: [] },
+                ),
+            });
+        });
+
+        const response = await worker.fetch(
+            new Request("https://agent.test"),
+            runtimeEnv,
+            { props: { CODEMODE: capability } },
+        );
+        await expect(response.json()).resolves.toEqual({
+            description: "Run JavaScript",
+            output: { result: 5 },
+        });
+        expect(capability.tool.mock.calls[0][0].add).toMatchObject({
+            description: "Add two numbers",
+            inputSchema: {
+                type: "object",
+                properties: { a: { type: "number" }, b: { type: "number" } },
+            },
+        });
+    });
+
     it("discovers raw MCP tool definitions without calling them", async () => {
         const tools = [
             {

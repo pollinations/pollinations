@@ -2243,6 +2243,37 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
+    "nex-agi/nex-n2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexPro,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter lists one route only for this model (Nex AGI fp8,
+            // verified 2026-10-07): prompt $0.075/M, cache read $0.015/M,
+            // completion $0.25/M, plus the mandatory 5.5% OpenRouter credit
+            // fee. Image parts are tokenized into the prompt and billed at the
+            // prompt rate; the provider reports no separate image usage.
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            promptImageTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(0.25) * 1.055,
+        },
+        title: "Nex N2.5 Pro",
+        description:
+            "Reasoning agentic coding model with tool use, image input and a 262k context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10, // Guards the single OpenRouter route like the sibling vision route.
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "meituan/longcat-2.0": {
         supportedParameters: CHAT_PARAMETERS.longcat,
         aliases: ["longcat-2.0", "longcat-2", "longcat"],

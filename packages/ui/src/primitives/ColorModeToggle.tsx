@@ -1,6 +1,6 @@
 import { type FC, useSyncExternalStore } from "react";
-import { cn } from "../lib/cn.ts";
 import { MoonIcon, SunIcon } from "./icons/index.tsx";
+import { Switch } from "./Switch.tsx";
 
 /**
  * Light/dark colour mode. The chosen mode is reflected as `class="dark"` on
@@ -11,7 +11,8 @@ import { MoonIcon, SunIcon } from "./icons/index.tsx";
  *
  * The chosen mode is persisted to localStorage (per-origin), which also powers
  * the cross-tab `storage` sync below. Read priority: localStorage → system
- * preference.
+ * preference. Choosing the mode the system already uses clears the stored
+ * choice, so later visits follow the system again.
  *
  * Host apps should set the initial class pre-paint (a tiny inline script in the
  * document head, reading the same key) to avoid a flash of light before React
@@ -34,15 +35,14 @@ function readStored(): ColorMode | null {
     }
 }
 
-function systemPrefersDark(): boolean {
-    return (
-        typeof window !== "undefined" &&
+function systemMode(): ColorMode {
+    return typeof window !== "undefined" &&
         window.matchMedia?.("(prefers-color-scheme: dark)").matches === true
-    );
+        ? "dark"
+        : "light";
 }
 
-let current: ColorMode =
-    readStored() ?? (systemPrefersDark() ? "dark" : "light");
+let current: ColorMode = readStored() ?? systemMode();
 const listeners = new Set<() => void>();
 
 function apply(): void {
@@ -75,7 +75,7 @@ function emit(): void {
 
 function handleStorage(event: StorageEvent): void {
     if (event.key !== STORAGE_KEY) return;
-    const next: ColorMode = event.newValue === "dark" ? "dark" : "light";
+    const next = readStored() ?? systemMode();
     if (next === current) return;
     current = next;
     apply();
@@ -107,14 +107,15 @@ function getServerSnapshot(): ColorMode {
 /**
  * Set the color mode programmatically. Updates the shared store (so every
  * `useColorMode()` consumer re-renders), flips the `.dark` class, and persists
- * to localStorage.
+ * to localStorage, or clears it when the mode matches the system.
  */
 export function setColorMode(mode: ColorMode): void {
     if (mode === current) return;
     current = mode;
     apply();
     try {
-        localStorage.setItem(STORAGE_KEY, mode);
+        if (mode === systemMode()) localStorage.removeItem(STORAGE_KEY);
+        else localStorage.setItem(STORAGE_KEY, mode);
     } catch {
         // ignore write failures (private mode / storage disabled)
     }
@@ -139,40 +140,19 @@ export function useColorMode(): {
 }
 
 /**
- * Sliding sun/moon switch. Light/dark is a two-state choice, not an on/off
- * affordance, so this uses `Switch`'s shape but its own palette. The thumb
- * carries the active mode's icon tinted with the accent (`text-soft`); the
- * mode you'd switch to sits ghosted (faint neutral) on the
- * empty side. Self-contained — wires itself to `useColorMode`.
+ * Sliding sun/moon switch: `Switch` as a two-way choice, so the track stays
+ * neutral and the thumb carries the active mode's icon. Self-contained —
+ * wires itself to `useColorMode`.
  */
 export const ColorModeToggle: FC = () => {
     const { isDark, toggle } = useColorMode();
     return (
-        <button
-            type="button"
-            role="switch"
-            aria-checked={isDark}
-            aria-label="Toggle dark mode"
-            onClick={toggle}
-            className="polli-control polli:relative polli:inline-block polli:h-7 polli:w-[52px] polli:shrink-0 polli:cursor-pointer polli:rounded-full polli:border polli:border-theme-text-strong/10 polli:bg-surface-opaque polli:transition-colors"
-        >
-            {isDark ? (
-                <SunIcon className="polli:absolute polli:top-1/2 polli:left-[7px] polli:h-3.5 polli:w-3.5 polli:-translate-y-1/2 polli:text-theme-text-strong/40" />
-            ) : (
-                <MoonIcon className="polli:absolute polli:top-1/2 polli:right-[7px] polli:h-3.5 polli:w-3.5 polli:-translate-y-1/2 polli:text-theme-text-strong/40" />
-            )}
-            <span
-                className={cn(
-                    "polli:absolute polli:top-1/2 polli:left-0.5 polli:flex polli:h-5 polli:w-5 polli:-translate-y-1/2 polli:items-center polli:justify-center polli:rounded-full polli:bg-app-bg polli:text-theme-text-soft polli:transition-transform",
-                    isDark ? "polli:translate-x-[26px]" : "polli:translate-x-0",
-                )}
-            >
-                {isDark ? (
-                    <MoonIcon className="polli:h-3.5 polli:w-3.5" />
-                ) : (
-                    <SunIcon className="polli:h-3.5 polli:w-3.5" />
-                )}
-            </span>
-        </button>
+        <Switch
+            checked={isDark}
+            onChange={toggle}
+            ariaLabel="Toggle dark mode"
+            size="sm"
+            icons={{ off: <SunIcon />, on: <MoonIcon /> }}
+        />
     );
 };

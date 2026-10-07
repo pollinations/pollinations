@@ -265,9 +265,21 @@ describe("Codex harness", () => {
     });
 
     it("reuses the child key already stored by Codex Router", async () => {
+        const result = await codex.on(ctx, {});
+        expect(result.model).toBe("pollinations/openai/gpt-6-sol");
+        expect(readState().models).toEqual(["openai/gpt-6-sol"]);
+        await codex.on(ctx, {});
+        expect(mocks.resolveHarnessKey).toHaveBeenLastCalledWith(
+            expect.objectContaining({ existingKey: "sk_new" }),
+            expect.anything(),
+        );
+    });
+
+    it("reuses the child key with an explicit model override", async () => {
         await codex.on(ctx, { model: "openai/gpt-5.4-nano" });
         mocks.resolveHarnessKey.mockClear();
-        await codex.on(ctx, { model: "openai/gpt-5.4-mini" });
+        const selected = await codex.on(ctx, { model: "openai/gpt-5.4-mini" });
+        expect(selected.model).toBe("pollinations/openai/gpt-5.4-mini");
         expect(mocks.resolveHarnessKey).toHaveBeenCalledWith(
             expect.objectContaining({ existingKey: "sk_new" }),
             expect.anything(),

@@ -4,13 +4,19 @@ The Pollinations CLI — for humans, AI agents, and everything in between.
 
 Generate text, images, audio, video from the terminal. Backed by the [Pollinations API](https://gen.pollinations.ai).
 
+## First result
+
+```bash
+npm install -g @pollinations/cli
+polli auth login
+polli gen text "Say hello in one sentence" --model openai/gpt-5.4-nano
+```
+
+Device login opens a browser for approval. The last command prints a short, low-cost result in your terminal. To try an image next, run `polli gen image "a cat in space" --output cat.png` and check that `cat.png` was saved.
+
 <video src="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785" controls muted loop playsinline width="720">
   <a href="https://github.com/user-attachments/assets/c3ff5c45-672c-4c45-9027-7743d32f9785">▶️ Watch the demo</a>
 </video>
-
-```bash
-npx @pollinations/cli gen image "a cat in space" --output cat.png
-```
 
 ## For AI agents
 
@@ -24,18 +30,18 @@ Every command is agent-friendly:
 
 - `--json` — structured stdout, human messages to stderr. Safe to parse.
 - Exit code `0` on success, non-zero on error.
-- When a call runs out of pollen, the first line of the error is the top-up link.
+- A 402 error links to your balance, Quests, and top-up options.
 - `polli auth status --json` (or `polli whoami --json`) exposes everything about the current session.
 
-## Get started
+## Other ways to start
 
 ```bash
-npm install -g @pollinations/cli     # installs the `polli` binary
-polli auth login                         # device-flow via enter.pollinations.ai
 printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 ```
 
-Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+
+Set `POLLINATIONS_ENV=staging` to use the staging API, with a separate login stored in `~/.pollinations/credentials.staging.json`. `polli upload` has no staging.
 
 ```bash
 polli update    # npm install -g @pollinations/cli@latest, if installed globally
@@ -107,7 +113,7 @@ polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
-polli earnings               # developer earnings (default 30 days, --days up to 90)
+polli earnings               # developer earnings (default 30 days, --days <n>)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
@@ -135,13 +141,16 @@ polli agents delete <id>
 
 Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
-`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
+`polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, `keys`, and `machines`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
 ## Coding harnesses
 
 Point an agentic coding tool at Pollinations. `on` logs in if needed, mints a
 key for the harness, backs up its config, and writes the provider; `off`
 restores the backup.
+
+The default is `openai/gpt-6-sol`; pass `--model <id>` to choose another model.
+Bloom is key-only and keeps its own model selection.
 
 ```bash
 polli harness --help              # supported harnesses
@@ -169,8 +178,24 @@ stores its provider and skill under `$HERMES_HOME` (default `~/.hermes`, or
 install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
+Pi 0.99+ also supports `polli mcp install pi --all` for native hosted MCP
+servers. Run `/reload` in Pi afterward; remove them with `polli mcp remove pi`.
+Model setup remains compatible with older Pi versions.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
+
+## Sandboxes
+
+Linux VMs from E2B, paid from your wallet (alpha).
+
+```bash
+polli sandbox create              # prints the id and sets up ssh
+ssh <id>.polli                    # scp and rsync work too
+polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
+polli sandbox kill <id>
+```
+
+The default template comes logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

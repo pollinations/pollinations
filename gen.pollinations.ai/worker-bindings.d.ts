@@ -20,6 +20,7 @@ interface CloudflareBindings {
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
+    E2B_API_KEY?: string;
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
@@ -75,6 +76,7 @@ interface CloudflareBindings {
     GOOGLE_PROJECT_ID: string;
     KLEIN_URL: string;
     MISTRAL_API_KEY: string;
+    NOVITA_API_KEY?: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;

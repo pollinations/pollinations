@@ -21,15 +21,17 @@ import {
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
-import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterFlux2MaxAPI,
+    callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
@@ -836,6 +838,7 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image:openrouter:vertex-global":
         case "google/gemini-3.1-flash-image:openrouter:vertex-global":
+        case "google/gemini-nano-banana-2.1":
         case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
         case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
@@ -903,7 +906,9 @@ const generateImage = async (
         case "black-forest-labs/flux.2-max:openrouter":
             return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
 
-        case "microsoft/mai-image-2.5-flash":
+        case "black-forest-labs/flux-3-image":
+            return await callOpenRouterFlux3API(prompt, safeParams);
+
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {
             try {
@@ -915,11 +920,31 @@ const generateImage = async (
             }
         }
 
+        case "inferenceport-ai/lightning-image-turbo": {
+            try {
+                return await callInferencePortImage(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                );
+            } catch (error) {
+                logError(
+                    "InferencePort image generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "bytedance/seedream-5.0-lite":
             return await callSeedream5API(prompt, safeParams);
 
         case "bytedance/seedream-5.0-lite:fal":
             return await callFalFallbackImage(prompt, safeParams);
+
+        case "bytedance/seedream-5.0-flash":
+            return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
         case "bytedance/seedream-5.0-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
@@ -969,9 +994,6 @@ const generateImage = async (
 
         case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
-
-        case "amazon/nova-canvas-v1":
-            return await callNovaCanvasAPI(prompt, safeParams);
 
         case "alibaba/wan-2.7-image":
             return await callAlibabaImage(prompt, safeParams, "wan2.7-image");

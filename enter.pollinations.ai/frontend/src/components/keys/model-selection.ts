@@ -1,43 +1,56 @@
-export function normalizeAllowedModelSelection(
-    next: string[],
-    allModelIds: string[],
-): string[] | null {
-    const uniqueNext = new Set(next);
-    const hasExactFullSelection =
-        uniqueNext.size > 0 &&
-        uniqueNext.size === allModelIds.length &&
-        allModelIds.every((id) => uniqueNext.has(id));
+import {
+    type ApiModelInfo,
+    getCatalogCategory,
+    getCatalogModelId,
+} from "../models/model-catalog.ts";
+import { MODEL_CATEGORY_ORDER } from "../models/model-categories.ts";
+import type { ModelCategory } from "../models/types.ts";
 
-    return hasExactFullSelection ? null : next;
-}
+export type ModelSelection = {
+    categories: Set<ModelCategory>;
+    /** Values the catalog does not know, left for the server to resolve. */
+    unknown: string[];
+};
 
-/** Consent may narrow a request, but reselecting every offered model must not
- * turn a finite request into an unrestricted key. */
-export function toggleConsentModel(
-    current: string[] | null,
-    requestedIds: string[],
-    modelId: string,
-): string[] {
-    const selected = current ?? requestedIds;
-    if (!requestedIds.includes(modelId)) return selected;
-    return selected.includes(modelId)
-        ? selected.filter((id) => id !== modelId)
-        : [...selected, modelId];
-}
-
-/** Apply a filtered bulk selection without changing hidden models or widening the grant. */
-export function setConsentModelGroup(
-    current: string[] | null,
-    requestedIds: string[],
-    groupIds: string[],
-    enabled: boolean,
-): string[] {
-    const group = new Set(groupIds);
-    const selected = new Set(current ?? requestedIds);
-    for (const id of requestedIds) {
-        if (!group.has(id)) continue;
-        if (enabled) selected.add(id);
-        else selected.delete(id);
+/**
+ * Reads a key's model permissions as categories; null allows all of them. A
+ * model ID or alias counts as its catalog category, as the server widens it the
+ * same way when the key is saved.
+ */
+export function readModelSelection(
+    allowedModels: string[] | null,
+    catalog: ApiModelInfo[],
+): ModelSelection {
+    if (allowedModels === null) {
+        return { categories: new Set(MODEL_CATEGORY_ORDER), unknown: [] };
     }
-    return [...selected];
+    const categoryById = new Map(
+        catalog.flatMap((model) =>
+            [getCatalogModelId(model), ...(model.aliases ?? [])].map(
+                (id) => [id, getCatalogCategory(model)] as const,
+            ),
+        ),
+    );
+    const categories = new Set<ModelCategory>();
+    const unknown: string[] = [];
+    for (const value of allowedModels) {
+        const category = MODEL_CATEGORY_ORDER.includes(value as ModelCategory)
+            ? (value as ModelCategory)
+            : categoryById.get(value);
+        if (category) categories.add(category);
+        else unknown.push(value);
+    }
+    return { categories, unknown };
+}
+
+/** Every category selected allows every model, so it is stored as null. */
+export function writeModelSelection({
+    categories,
+    unknown,
+}: ModelSelection): string[] | null {
+    if (categories.size === MODEL_CATEGORY_ORDER.length) return null;
+    return [
+        ...MODEL_CATEGORY_ORDER.filter((category) => categories.has(category)),
+        ...unknown,
+    ];
 }

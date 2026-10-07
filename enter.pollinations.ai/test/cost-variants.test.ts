@@ -485,21 +485,69 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
-    it.each([
-        [1024, 1024, 0.04, undefined],
-        [1008, 1040, 0.06, "2048"],
-        [1024, 1040, 0.06, "2048"],
-        [2048, 2048, 0.06, "2048"],
-    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
-        const billing = bill(
-            "amazon/nova-canvas-v1",
-            { completionImageTokens: 1 },
-            { maxImageDimension: Math.max(width, height) },
-        );
-
-        expect(billing.costVariant).toBe(variant);
-        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    it("FLUX.3 quotes both launch and list prices at the cutoff in the same warm registry", () => {
+        const model = "black-forest-labs/flux-3-image";
+        const definition = getRegistryModelDefinition(model);
+        const cutoff = Date.parse("2026-10-08T15:00:00Z");
+        const now = vi.spyOn(Date, "now");
+        try {
+            for (const [time, oneK, twoK] of [
+                [cutoff - 1, 0.024, 0.05],
+                [cutoff, 0.048, 0.1],
+                [cutoff + 1, 0.048, 0.1],
+            ]) {
+                now.mockReturnValue(time);
+                const info = modelInfoFromDefinition(model, definition);
+                expect(Number(info.pricing.completionImageTokens)).toBeCloseTo(
+                    oneK * 1.055,
+                    10,
+                );
+                expect(
+                    Number(
+                        info.pricing_variants?.find(({ name }) => name === "2k")
+                            ?.pricing.completionImageTokens,
+                    ),
+                ).toBeCloseTo(twoK * 1.055, 10);
+                for (const [resolution, cost] of [
+                    ["1k", oneK],
+                    ["2k", twoK],
+                ] as const) {
+                    const billing = bill(
+                        model,
+                        { completionImageTokens: 1 },
+                        { resolution },
+                    );
+                    expect(billing.cost.totalCost).toBeCloseTo(
+                        cost * 1.055,
+                        10,
+                    );
+                    expect(billing.price.totalPrice).toBeCloseTo(
+                        cost * 1.055,
+                        10,
+                    );
+                    // In-flight requests settle the actual provider receipt,
+                    // even when it differs from the catalog's current quote.
+                    const receipt = bill(
+                        model,
+                        { completionImageTokens: 1 },
+                        {
+                            resolution,
+                            providerBilling: { units: 0.024, unitCost: 1.055 },
+                        },
+                    );
+                    expect(receipt.cost.totalCost).toBeCloseTo(
+                        0.024 * 1.055,
+                        10,
+                    );
+                    expect(receipt.price.totalPrice).toBeCloseTo(
+                        0.024 * 1.055,
+                        10,
+                    );
+                }
+            }
+        } finally {
+            now.mockRestore();
+        }
     });
 
     it("p-video bills the 720p base and 1080p variant", () => {

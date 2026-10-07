@@ -44,12 +44,14 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
-| Developer earnings | `polli earnings` (`--days <n>`, max 90) |
+| Developer earnings | `polli earnings` (`--days <n>`) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
+| Start a Linux sandbox (alpha) | `polli sandbox create` (then `list`, `logs <id>`, `timeout <id> <seconds>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
+| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -58,6 +60,7 @@ One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status` (or `polli whoami`).
 Override the stored key for a single command with `--key <key>`.
+Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its own login, so run `POLLINATIONS_ENV=staging polli auth login` once.
 
 ## Recipes
 
@@ -72,7 +75,7 @@ Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `
 URL=$(polli upload cat.png)
 polli gen image "make the cat purple" --image "$URL" --output purple.png
 ```
-`polli upload <file>` posts a multipart upload to `media.pollinations.ai` (100MB max; 30-day lifecycle, refreshed by GETs once the object is at least 15 days old). Each upload receives a unique id. Human mode: URL on stdout and id/size/contentType on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
+`polli upload <file>` streams one raw-file request to `media.pollinations.ai` (400 MiB max; 30-day lifecycle, refreshed by GETs once the object is at least 15 days old). Each upload receives a unique id. Human mode: URL on stdout and id/size/contentType on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
 
 ### Generate text
 ```bash
@@ -184,11 +187,11 @@ polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
 polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
-polli earnings --days 7  # rolling window, max 90
+polli earnings --days 7  # rolling window
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
-**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
+**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
 
 ### Manage my-models
 ```bash
@@ -241,6 +244,8 @@ polli keys revoke <id>                                             # id comes fr
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness
+Polli defaults to `openai/gpt-6-sol`; `--model <id>` overrides it. Bloom is key-only and keeps its own model selection.
+
 ```bash
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI

@@ -14,7 +14,7 @@ const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
 // not clear the cache — bump this in the same commit as the pipe change.
-const TINYBIRD_CACHE_VERSION = "7";
+const TINYBIRD_CACHE_VERSION = "8";
 
 async function fetchTinybird(
     env: Env["Bindings"],
@@ -169,8 +169,8 @@ kpiRoutes.get("/registrations/daily", async (c) => {
     return c.json({ data: result.data });
 });
 
-// D7 Activations: users who made their first API request within 7 days of registration
-// Fully computed in Tinybird by joining d1_user with generation_event_v2
+// D7 activations: first regular request within 7 days of registration.
+// Tinybird joins d1_user with the regular-only first-activity aggregate.
 kpiRoutes.get("/activations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_activations", {
         min_created_at: DATA_START_TIMESTAMP_SEC,
@@ -209,6 +209,16 @@ kpiRoutes.get("/usage", async (c) => {
     return c.json({ data: result.data });
 });
 
+// Tinybird: requests and cost across every traffic group, incl. legacy
+kpiRoutes.get("/traffic-totals", async (c) => {
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_traffic_totals",
+        parseWeeksBack(c),
+    );
+    return c.json({ data: result.data });
+});
+
 // Tinybird: Agent/MCP usage — separate from existing model KPIs.
 kpiRoutes.get("/agent-mcp-usage", async (c) => {
     const result = await fetchTinybirdByWeek(
@@ -219,6 +229,21 @@ kpiRoutes.get("/agent-mcp-usage", async (c) => {
     // A missing pipe or failed week is unavailable, not zero activity.
     if (result.errors.length) {
         return c.json({ error: "Agent/MCP usage unavailable", data: [] }, 503);
+    }
+    return c.json({ data: result.data });
+});
+
+kpiRoutes.get("/official-apps", async (c) => {
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_official_app_usage",
+        parseWeeksBack(c),
+    );
+    if (result.errors.length) {
+        return c.json(
+            { error: "Official app usage unavailable", data: [] },
+            503,
+        );
     }
     return c.json({ data: result.data });
 });
@@ -388,22 +413,23 @@ kpiRoutes.get("/app-submissions", async (c) => {
     return c.json({ data: result });
 });
 
-// GitHub: Stars
+// Daily authenticated Actions snapshots, not anonymous per-visit API reads.
 kpiRoutes.get("/github", async (c) => {
     const res = await fetchPublicGithub(
-        "https://api.github.com/repos/pollinations/pollinations",
+        "https://raw.githubusercontent.com/pollinations/pollinations/kpi-data/github-stars.json",
     );
 
-    if (!res.ok) return c.json({ stars: 0, forks: 0, error: true });
-
-    const data = (await res.json()) as {
-        stargazers_count: number;
-        forks_count: number;
-        subscribers_count: number;
-    };
+    if (!res.ok)
+        return c.json({ error: "GitHub star snapshots unavailable" }, 502);
+    const data = (await res.json()) as Array<{
+        date: string;
+        stars: number;
+        capturedAt: string;
+    }>;
+    const latest = data.at(-1);
     return c.json({
-        stars: data.stargazers_count || 0,
-        forks: data.forks_count || 0,
-        watchers: data.subscribers_count || 0,
+        stars: latest?.stars,
+        capturedAt: latest?.capturedAt,
+        data,
     });
 });

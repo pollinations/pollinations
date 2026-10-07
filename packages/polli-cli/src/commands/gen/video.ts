@@ -14,10 +14,7 @@ export function createVideoCommand() {
     return new Command("video")
         .description("Generate a video from a prompt")
         .argument("<prompt>", "Video description")
-        .option(
-            "--model <model>",
-            "Video model (default: from config or 'wan')",
-        )
+        .option("--model <model>", "Video model (default: API default)")
         .option("--width <n>", "Video width", "1024")
         .option("--height <n>", "Video height", "1024")
         .option("--duration <n>", "Duration in seconds (1-30)")

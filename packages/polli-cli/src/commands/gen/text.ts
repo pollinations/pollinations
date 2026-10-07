@@ -13,12 +13,16 @@ import {
     printMeta,
     printResult,
     printSuccess,
+    printWarn,
 } from "../../lib/output.js";
 import { readStdin } from "../../lib/stdin.js";
 import { streamSSE } from "../../lib/stream.js";
 
 interface ChatResponse {
-    choices: Array<{ message: { content: string } }>;
+    choices: Array<{
+        message: { content: string };
+        finish_reason?: string | null;
+    }>;
     model: string;
     usage?: { total_tokens: number };
 }
@@ -26,7 +30,7 @@ interface ChatResponse {
 export function createTextCommand() {
     return new Command("text")
         .description(
-            "Generate text from a prompt (also reads stdin: echo 'hello' | polli text)",
+            "Generate text from a prompt (also reads stdin: echo 'hello' | polli gen text)",
         )
         .argument("[prompt]", "Text prompt (or pipe via stdin)")
         .option("--model <model>", "Text model")
@@ -165,6 +169,13 @@ export function createTextCommand() {
                 mkdirSync(dirname(opts.output), { recursive: true });
             if (isHuman && !useStream) printInfo("Generating...");
 
+            const warnIfTruncated = (reason?: string | null) => {
+                if (reason === "length")
+                    printWarn(
+                        "The model reached its output token limit; the response may be truncated.",
+                    );
+            };
+
             try {
                 const res = await fetchGen("/v1/chat/completions", {
                     method: "POST",
@@ -184,15 +195,19 @@ export function createTextCommand() {
                     let content = "";
                     let model: string | null = null;
                     let tokens: number | null = null;
+                    let lengthTerminated = false;
                     for await (const chunk of streamSSE(res, (event) => {
                         if (typeof event.model === "string")
                             model = event.model;
                         if (typeof event.usage?.total_tokens === "number")
                             tokens = event.usage.total_tokens;
+                        if (event.choices?.[0]?.finish_reason === "length")
+                            lengthTerminated = true;
                     })) {
                         content += chunk;
                         if (isHuman) process.stdout.write(colorize(chunk));
                     }
+                    if (lengthTerminated) warnIfTruncated("length");
                     if (isHuman) process.stdout.write("\n");
                     if (getOutputMode() === "json") {
                         printResult({ content, model, tokens });
@@ -202,6 +217,7 @@ export function createTextCommand() {
 
                 const data = (await res.json()) as ChatResponse;
                 const content = data.choices[0]?.message?.content ?? "";
+                warnIfTruncated(data.choices[0]?.finish_reason);
 
                 if (opts.output) {
                     writeFileSync(opts.output, content, "utf-8");

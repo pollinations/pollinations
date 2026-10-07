@@ -7,6 +7,7 @@ import {
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import {
@@ -29,7 +30,12 @@ import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../utils/upstream-response.ts";
 
 export const textBodyLimit = bodyLimit({
-    maxSize: 20 * 1024 * 1024,
+    maxSize: 32 * 1024 * 1024,
+    onError: () => {
+        throw new HTTPException(413, {
+            message: "Request body exceeds the 32 MiB limit",
+        });
+    },
 });
 
 export const simpleAudioQuerySchema = z.object({
@@ -55,14 +61,14 @@ export const simpleAudioQuerySchema = z.object({
         .string()
         .optional()
         .transform((v) => (v ? parseFloat(v) : undefined))
-        .pipe(z.number().min(0.5).max(300).optional())
+        .pipe(z.number().min(0.5).max(380).optional())
         .meta({
             description:
-                "Music duration in seconds (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` 3-300; `google/lyria-3-clip-preview` fixed at 30)",
+                "Output duration in seconds for music and sound effects. Each model lists its range as `min_duration` and `max_duration`, or `allowed_durations`, in `/audio/models`.",
             example: "30",
         }),
-    seconds: z.coerce.number().min(1).max(380).optional().meta({
-        description: "Audio duration in seconds for Stable Audio models, 1-380",
+    seconds: z.coerce.number().min(0.5).max(380).optional().meta({
+        description: "Alias for `duration`.",
         example: "30",
     }),
     steps: z.coerce.number().int().min(1).max(100).optional().meta({

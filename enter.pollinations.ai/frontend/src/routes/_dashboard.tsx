@@ -7,7 +7,8 @@ import {
 } from "@tanstack/react-router";
 import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
-import { authClient } from "../auth.ts";
+import { authClient, type User } from "../auth.ts";
+import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
 import {
     LoadError,
@@ -22,6 +23,11 @@ const DASHBOARD_DATA_STALE_TIME = 30_000;
 let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
     null;
 let dashboardSessionExpiresAt = 0;
+// The last session the server confirmed. A refresh that fails to complete is
+// not a sign-out (an expired session resolves with no user), so reuse this
+// instead of replacing the dashboard, and an open new-key secret, with an
+// error page.
+let lastDashboardSession: { user: User | null } | null = null;
 
 function getDashboardSession() {
     if (!dashboardSessionPromise || Date.now() >= dashboardSessionExpiresAt) {
@@ -37,13 +43,15 @@ function getDashboardSession() {
 export const Route = createFileRoute("/_dashboard")({
     staleTime: DASHBOARD_DATA_STALE_TIME,
     beforeLoad: async () => {
-        const result = await getDashboardSession();
-        if (result.error) {
+        const result = await getDashboardSession().catch(() => null);
+        if (!result || result.error) {
             dashboardSessionPromise = null;
             dashboardSessionExpiresAt = 0;
+            if (lastDashboardSession) return lastDashboardSession;
             throw new Error("Authentication failed.");
         }
-        return { user: result.data?.user ?? null };
+        lastDashboardSession = { user: result.data?.user ?? null };
+        return lastDashboardSession;
     },
     loader: ({ context }) => {
         const user = context.user;
@@ -161,6 +169,7 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
+            {!data.user && <DashboardSignInBanner />}
             <Outlet />
         </DashboardShell>
     );

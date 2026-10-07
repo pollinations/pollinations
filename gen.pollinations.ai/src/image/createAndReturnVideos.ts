@@ -1,11 +1,9 @@
-import { UpstreamError } from "@shared/error.ts";
 /**
  * Video generation handler for Pollinations
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
-import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
 import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
 import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
@@ -15,9 +13,9 @@ import {
     callMinimaxH3MaxAPI,
     callMinimaxH3MaxTurboAPI,
 } from "./models/minimaxH3Model.ts";
-import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
+    callHeyGenVideoAPI,
     callOpenRouterGrokVideoAPI,
 } from "./models/openRouterVideoModel.ts";
 import { callPrunaVideoAPI } from "./models/prunaModel.ts";
@@ -35,6 +33,7 @@ import {
     callWanFastAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
+import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 
 export type { VideoGenerationResult };
@@ -42,32 +41,11 @@ export type { VideoGenerationResult };
 const logOps = debug("pollinations:video:ops");
 const VIDEO_MODEL_IDS = new Set(getVideoModelIds());
 
-export function validateVideoFrameCount(safeParams: ImageParams): void {
-    const definition = IMAGE_SERVICES[safeParams.model] as ModelDefinition;
-    const frameCount = safeParams.image.length;
-    const maxFrames = definition.maxReferenceImages ?? 0;
-
-    if (frameCount <= maxFrames) return;
-
-    const supportedFrames =
-        maxFrames === 0
-            ? "no frame images"
-            : maxFrames === 1
-              ? "one start-frame image (image[0])"
-              : `${maxFrames} frame images (image[0] as the start frame and image[1] as the end frame)`;
-
-    throw UpstreamError.fromProvider(400, {
-        message: `${definition.title} supports ${supportedFrames}; received ${frameCount}.`,
-    });
-}
-
 export async function createAndReturnVideo(
     prompt: string,
     safeParams: ImageParams,
-    requestId: string,
 ): Promise<VideoGenerationResult> {
     logOps("Starting video generation:", { prompt, model: safeParams.model });
-    validateVideoFrameCount(safeParams);
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
@@ -116,18 +94,22 @@ export async function createAndReturnVideo(
         case "prunaai/p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);
             break;
-        case "amazon/nova-reel-v1":
-            result = await callNovaReelAPI(prompt, safeParams, requestId);
-            break;
         case "x-ai/grok-imagine-video:openrouter":
         case "x-ai/grok-imagine-video-1.5":
+        case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "x-ai/grok-imagine-video-1.5-lite":
+            result = await callXaiVideoAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);
             break;
         case "alibaba/happyhorse-1.1":
             result = await callHappyHorseAPI(prompt, safeParams);
+            break;
+        case "heygen/heygen-video-1":
+            result = await callHeyGenVideoAPI(prompt, safeParams);
             break;
         case "minimax/minimax-h3":
             result = await callMinimaxH3API(prompt, safeParams);

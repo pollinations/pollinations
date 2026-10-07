@@ -110,11 +110,12 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.2-max:openrouter": {
             provider: "openrouter",
             addedDate: new Date("2026-09-13").getTime(),
-            // OpenRouter (BFL's own "black-forest-labs/us-3" deployment),
-            // verified 2026-09-13: flat $0.07 per output megapixel (0.07 *
-            // 1.055 with the mandatory OpenRouter credit fee, #14895), no
-            // input charge and no flat execution fee — replaces the
-            // Replicate adjustment entirely rather than adding to it.
+            // OpenRouter (BFL's own "black-forest-labs/us-3" deployment). The
+            // handler records OpenRouter's reported usage.cost (plus the
+            // 5.5% credit fee, #14895) as this route's cost, since BFL bills
+            // tiered megapixels of the size it picks. These rates only
+            // describe the route: $0.07 per output megapixel with the fee,
+            // no input charge, no execution fee.
             cost: {
                 promptImageTokens: 0,
                 completionImageTokens: 0.07 * 1.055,
@@ -245,6 +246,24 @@ export const IMAGE_FALLBACKS = {
                 },
                 "1080p": {
                     completionVideoSeconds: 0.25,
+                },
+            },
+        },
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-06").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.03 * 1.055, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.02 * 1.055,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14 * 1.055,
                 },
             },
         },

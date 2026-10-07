@@ -79,11 +79,6 @@
     --color-outcome-positive-text: var(--polli-color-outcome-positive-text);
     --color-outcome-negative-text: var(--polli-color-outcome-negative-text);
 
-    --color-switch-thumb: var(--polli-color-switch-thumb);
-    --color-switch-track-off: var(--polli-color-switch-track-off);
-    --color-switch-track-on: var(--polli-color-switch-track-on);
-    --color-switch-track-invalid: var(--polli-color-switch-track-invalid);
-
     --color-surface-block: var(--polli-color-surface-block);
     --color-surface-opaque: var(--polli-color-surface-opaque);
     --color-surface-menu: var(--polli-color-surface-menu);

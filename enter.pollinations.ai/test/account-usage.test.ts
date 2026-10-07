@@ -388,6 +388,23 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     expect(usageCalls).toHaveLength(1);
     expect(usageCalls[0].query.before).toBe("2026-04-14 12:10:00");
     expect(usageCalls[0].query.before_event_id).toBe("event-1");
+
+    // Clients send the cursor back as ISO 8601, which Tinybird's DateTime()
+    // rejects, so it must reach the pipe as "YYYY-MM-DD HH:MM:SS".
+    const isoCursor = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&limit=25&before=2026-04-14T12%3A10%3A00.000Z&before_event_id=event-1",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(isoCursor.status).toBe(200);
+    expect(mocks.tinybird.state.pipeCalls.at(-1)?.query.before).toBe(
+        "2026-04-14 12:10:00",
+    );
+
+    const invalidCursor = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30&before=not-a-date",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(invalidCursor.status).toBe(400);
 });
 
 test("GET /api/account/usage accepts account usage permission", async ({
@@ -480,12 +497,12 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             input_cached_tokens: 0,
             input_audio_tokens: 0,
             input_audio_seconds: 0,
-            input_image_tokens: 0,
+            input_image_tokens: 0.9216,
             output_text_tokens: 20,
             output_reasoning_tokens: 0,
             output_audio_tokens: 0,
             output_audio_seconds: 0,
-            output_image_tokens: 0,
+            output_image_tokens: 2.0736,
             output_video_seconds: 0,
             cost_usd: 1,
             response_time_ms: 123,
@@ -509,11 +526,26 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     expect(lines[0]).not.toContain("cursor_event_id");
     expect(lines[1]).toContain("2026-04-14 12:10:00");
     expect(lines[1]).toContain("alpha");
+    const columns = lines[0].split(",");
+    const values = lines[1].split(",");
+    expect(values[columns.indexOf("input_image_tokens")]).toBe("0.9216");
+    expect(values[columns.indexOf("output_image_tokens")]).toBe("2.0736");
+
+    const jsonResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?days=30",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(jsonResponse.status).toBe(200);
+    const body = (await jsonResponse.json()) as {
+        usage: Array<Record<string, unknown>>;
+    };
+    expect(body.usage[0].input_image_tokens).toBe(0.9216);
+    expect(body.usage[0].output_image_tokens).toBe(2.0736);
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_usage_transactions.json"),
     );
-    expect(usageCalls).toHaveLength(1);
+    expect(usageCalls).toHaveLength(2);
     expect(usageCalls[0].query.limit).toBe("50000");
 });
 

@@ -162,8 +162,6 @@ function createCommunityEndpoint(
         paidOnly: false,
         perUserRpm: null,
         fallbacks: [],
-        hiddenAt: null,
-        hiddenReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,
@@ -2312,8 +2310,8 @@ describe("tracking observability", () => {
     });
 
     it.each([
-        [5, 0.0625],
-        [6.25, 0.078125],
+        [5, 0.125],
+        [6.25, 0.15625],
     ])("charges MiniMax Turbo at provider cost for %s reported units", async (units, totalCost) => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -2332,7 +2330,7 @@ describe("tracking observability", () => {
                 ...buildTrackingHeaders(model, {
                     actualModel: model,
                     usage: { completionVideoSeconds: 5 },
-                    providerBilling: { units, unitCost: 0.0125 },
+                    providerBilling: { units, unitCost: 0.025 },
                 }),
             },
         });
@@ -2369,7 +2367,7 @@ describe("tracking observability", () => {
             modelUsed: model,
             isBilledUsage: true,
             tokenCountCompletionVideoSeconds: 5,
-            tokenPriceCompletionVideoSeconds: 0.0125,
+            tokenPriceCompletionVideoSeconds: 0.025,
             totalCost,
             totalPrice: totalCost,
         });
@@ -2742,6 +2740,7 @@ describe("tracking observability", () => {
             {
                 id: crypto.randomUUID(),
                 modelId: `${publisher}/test-model`,
+                paidOnly: false,
                 bearerTokenCiphertext: await encryptSecret(
                     "test-upstream-key",
                     env.BETTER_AUTH_SECRET,
@@ -2764,6 +2763,7 @@ describe("tracking observability", () => {
                 inputModalities: ["text"],
                 perUserRpm: null,
                 fallbacks: [],
+                paidOnly: false,
                 bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
                 prices: communityEndpointPrices(endpoint),
             }),

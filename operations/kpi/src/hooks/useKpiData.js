@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import * as api from "../lib/api";
 import { buildDailyComparison } from "../lib/dailyComparison";
 import { currentWeekStart } from "../lib/format";
+import { buildStarWeeks } from "../lib/githubStars";
+import { OFFICIAL_APP_VIEWS } from "../lib/officialApps";
 import { DEFAULT_WEEKS } from "../lib/range";
 
 const RETENTION_WEEKS = 8;
@@ -36,6 +38,11 @@ const SOURCES = [
         load: (weeks) => api.weekly("usage", weeks),
     },
     {
+        label: "Traffic totals",
+        key: "trafficTotals",
+        load: (weeks) => api.weekly("traffic-totals", weeks),
+    },
+    {
         label: "Retention",
         key: "retention",
         load: () => api.weekly("retention", RETENTION_WEEKS),
@@ -44,6 +51,11 @@ const SOURCES = [
         label: "Agent/MCP usage",
         key: "agentMcpUsage",
         load: (weeks) => api.weekly("agent-mcp-usage", weeks),
+    },
+    {
+        label: "Official apps",
+        key: "officialApps",
+        load: (weeks) => api.weekly("official-apps", weeks),
     },
     {
         label: "User segments",
@@ -64,7 +76,9 @@ const REQUIRED = {
     registrations: "D1 (registrations)",
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
+    trafficTotals: "Tinybird (traffic totals)",
     agentMcpUsage: "Tinybird (agent/MCP usage)",
+    officialApps: "Tinybird (official apps)",
     revenue: "Revenue (Stripe)",
     dailyRevenue: "Revenue (daily Stripe)",
     dailyRegistrations: "Daily signups (D1 snapshot)",
@@ -127,6 +141,17 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                     .map(([, label]) => label);
 
                 const weekMap = new Map();
+                if ("github" in raw && !raw.github?.data?.length) {
+                    missing.push("GitHub (star snapshots)");
+                }
+                mergeInto(
+                    weekMap,
+                    buildStarWeeks(raw.github?.data ?? []),
+                    (row) => ({
+                        githubStars: row.githubStars,
+                        githubStarGrowth: row.githubStarGrowth,
+                    }),
+                );
                 mergeInto(weekMap, raw.registrations, (row) => ({
                     registrations: row.registrations,
                 }));
@@ -167,10 +192,23 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                     communityRequestPct: row.community_request_pct,
                     communityAvailability: row.community_availability,
                 }));
+                // Every traffic group, not just regular: the cost side of cash
+                // coverage and the legacy migration row.
+                mergeInto(weekMap, raw.trafficTotals, (row) => ({
+                    requestsAll: row.total_requests,
+                    costUsdAll: row.total_cost_usd,
+                    legacyRequests: row.legacy_requests,
+                    legacyCostUsd: row.legacy_cost_usd,
+                }));
                 mergeInto(weekMap, raw.revenue, (row) => ({
                     revenue: row.revenue,
                     packPurchases: row.purchases,
                 }));
+                mergeInto(weekMap, raw.officialApps, (row) =>
+                    Object.fromEntries(
+                        OFFICIAL_APP_VIEWS.map(({ key }) => [key, row[key]]),
+                    ),
+                );
                 mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
                     agentRequests: row.agent_requests,
                     agentUsers: row.agent_users,

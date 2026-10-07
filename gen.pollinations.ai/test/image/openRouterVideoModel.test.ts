@@ -480,6 +480,26 @@ describe("OpenRouter Grok Video Pro", () => {
         );
     });
 
+    it("routes the 1.5 Lite fallback to the OpenRouter Lite model", async () => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockGrokFetch(requests);
+
+        const result = await callOpenRouterGrokVideoAPI("a calm ocean", {
+            ...baseParams,
+            model: "x-ai/grok-imagine-video-1.5-lite:openrouter",
+            resolution: "1080p",
+        });
+
+        expect(requests[0]).toMatchObject({
+            model: "x-ai/grok-imagine-video-1.5-lite",
+            resolution: "1080p",
+        });
+        expect(result.trackingData?.actualModel).toBe(
+            "x-ai/grok-imagine-video-1.5-lite:openrouter",
+        );
+    });
+
     it.each([
         ["x-ai/grok-imagine-video", "x-ai/grok-imagine-video"],
         ["x-ai/grok-imagine-video-1.5", "x-ai/grok-imagine-video-1.5"],

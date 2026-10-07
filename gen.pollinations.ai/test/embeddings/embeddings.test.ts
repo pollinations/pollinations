@@ -29,7 +29,8 @@ const TEST_OPENAI_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
 const TEST_COHERE_MODEL = "cohere/embed-v4.0";
 const TEST_COHERE_PROVIDER_MODEL = "embed-v-4-0";
 const TEST_QWEN_MODEL = "qwen/qwen3-embedding-8b";
-const TEST_QWEN_PROVIDER_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
+const TEST_QWEN_PROVIDER_MODEL = "Qwen/Qwen3-Embedding-8B";
+const DEEPINFRA_HOST = "api.deepinfra.com";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
 const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
@@ -72,6 +73,7 @@ function createEmbeddingMocks() {
     env.OPENAI_API_KEY = "test-openai-api-key";
     env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
     env.AZURE_MYCELI_PROD_SWEDEN_API_KEY = "test-azure-sweden-api-key";
+    env.DEEPINFRA_API_KEY = "test-deepinfra-api-key";
     env.FIREWORKS_NEO_API_KEY = "test-fireworks-neo-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
 
@@ -86,7 +88,8 @@ function createEmbeddingMocks() {
         } satisfies MockAPI<Record<string, never>>,
         azureOpenAI: createAzureOpenAIMock(),
         cohereAzure: createCohereAzureMock(),
-        fireworks: createFireworksMock(),
+        fireworks: createHostedMock(FIREWORKS_HOST),
+        deepinfra: createHostedMock(DEEPINFRA_HOST),
         vertex: createVertexMock(),
     });
 }
@@ -289,7 +292,7 @@ function createCohereAzureMock(): MockAPI<{
     };
 }
 
-function createFireworksMock(): MockAPI<{
+function createHostedMock(host: string): MockAPI<{
     requests: unknown[];
     urls: string[];
 }> {
@@ -300,7 +303,7 @@ function createFireworksMock(): MockAPI<{
     return {
         state,
         handlerMap: {
-            [FIREWORKS_HOST]: async (request) => {
+            [host]: async (request) => {
                 const body = (await request.json()) as {
                     input?: string[];
                     dimensions?: number;
@@ -356,7 +359,7 @@ describe("POST /v1/embeddings", () => {
     for (const [model, provider] of [
         [TEST_OPENAI_SMALL_MODEL, "azureOpenAI"],
         [TEST_COHERE_MODEL, "cohereAzure"],
-        [TEST_QWEN_MODEL, "fireworks"],
+        [TEST_QWEN_MODEL, "deepinfra"],
     ] as const) {
         test(`sorts out-of-order ${model} embeddings before base64 encoding`, async ({
             paidApiKey: apiKey,
@@ -980,11 +983,11 @@ describe("POST /v1/embeddings", () => {
         });
     });
 
-    test("supports Fireworks Qwen3 embeddings at 4096 dimensions", async ({
-        apiKey,
+    test("supports DeepInfra Qwen3 embeddings at 4096 dimensions", async ({
+        paidApiKey: apiKey,
         mocks,
     }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "fireworks");
+        await mocks.enable("tinybird", "tinybirdStats", "deepinfra");
         const { response, wait } = await fetchWorker("/v1/embeddings", {
             method: "POST",
             headers: {
@@ -1013,7 +1016,7 @@ describe("POST /v1/embeddings", () => {
         expect(data.data[0].embedding).toHaveLength(4096);
         expect(data.usage).toEqual({ prompt_tokens: 4, total_tokens: 4 });
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("4");
-        expect(mocks.fireworks.state.requests).toEqual([
+        expect(mocks.deepinfra.state.requests).toEqual([
             {
                 model: TEST_QWEN_PROVIDER_MODEL,
                 input: [TEST_EMBEDDING_INPUT],
@@ -1032,6 +1035,80 @@ describe("POST /v1/embeddings", () => {
             tokenCountPromptText: 4,
             isBilledUsage: true,
         });
+    });
+
+    for (const mode of ["character limit", "rate limit"]) {
+        test(`falls back to Fireworks for DeepInfra ${mode}`, async ({
+            paidApiKey: apiKey,
+            mocks,
+        }) => {
+            if (mode === "rate limit") {
+                mocks.deepinfra.handlerMap[DEEPINFRA_HOST] = async () =>
+                    Response.json(
+                        { error: { message: "Capacity reached" } },
+                        { status: 429 },
+                    );
+            }
+            await mocks.enable(
+                "tinybird",
+                "tinybirdStats",
+                "deepinfra",
+                "fireworks",
+            );
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({
+                    model: TEST_QWEN_MODEL,
+                    ...(mode === "character limit"
+                        ? { input: "x".repeat(131072) }
+                        : {}),
+                }),
+            });
+            expect(response.status).toBe(200);
+            expect(response.headers.get("x-model-used")).toBe(
+                `${TEST_QWEN_MODEL}:fireworks`,
+            );
+            await response.text();
+            expect(mocks.deepinfra.state.requests).toHaveLength(0);
+            expect(mocks.fireworks.state.requests).toHaveLength(1);
+            await wait();
+            const billed = mocks.tinybird.state.events.filter(
+                (event) => event.isBilledUsage,
+            );
+            expect(billed).toHaveLength(1);
+            expect(billed[0].modelProviderUsed).toBe("fireworks");
+            expect(billed[0].totalCost).toBeCloseTo(0.0000004, 12);
+            expect(billed[0].totalPrice).toBeCloseTo(0.00000004, 12);
+        });
+    }
+
+    test("requires purchased pack balance for Qwen embeddings", async ({
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable(
+            "tinybird",
+            "tinybirdStats",
+            "deepinfra",
+            "fireworks",
+        );
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({ model: TEST_QWEN_MODEL }),
+        });
+        expect(response.status).toBe(402);
+        await response.text();
+        expect(mocks.deepinfra.state.requests).toHaveLength(0);
+        expect(mocks.fireworks.state.requests).toHaveLength(0);
+        await wait();
     });
 
     test("rejects text-embedding-3-small dimensions above its model limit", async ({

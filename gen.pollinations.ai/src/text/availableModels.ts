@@ -78,6 +78,8 @@ interface ModelDefinition {
     useResponsesApi?: boolean;
     /** Route typed decisions directly through TypeSafe System One. */
     useSystemOneApi?: boolean;
+    /** Search before formatting JSON on Gemini 2.5 through Vercel. */
+    useVercelSearchFormatting?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -633,6 +635,31 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-2.5-flash-lite:search:vercel",
+        useVercelSearchFormatting: true,
+        config: portkeyConfig["google/gemini-2.5-flash-lite:search:vercel"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            mediaToVercelFiles,
+            addDefaultTools([
+                {
+                    type: "vercel:exa_search",
+                    config: { type: "instant", num_results: 5 },
+                },
+            ]),
+            (messages, options) => ({
+                messages,
+                options: {
+                    ...options,
+                    tool_choice: options.tools?.length
+                        ? (options.tool_choice ?? "required")
+                        : options.tool_choice,
+                },
+            }),
+            createGeminiThinkingTransform("v2.5", "gateway"),
+        ),
+    },
+    {
         name: "google/gemini-3.5-flash-lite",
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
@@ -672,12 +699,17 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite:search"],
         transform: pipe(
             sanitizeToolSchemas,
-            addDefaultTools([
-                {
-                    type: "openrouter:web_search",
-                    parameters: { engine: "exa", max_results: 5 },
+            (messages, options) => ({
+                messages,
+                options: {
+                    ...options,
+                    plugins:
+                        options.tools?.length === 0 ||
+                        options.tool_choice === "none"
+                            ? []
+                            : [{ id: "web", engine: "exa", max_results: 5 }],
                 },
-            ]),
+            }),
             createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
@@ -756,6 +788,11 @@ const models: ModelDefinition[] = [
     {
         name: "moonshotai/kimi-k3",
         config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "moonshotai/kimi-k3:deepinfra",
+        config: portkeyConfig["moonshotai/Kimi-K3"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
@@ -955,6 +992,11 @@ const models: ModelDefinition[] = [
     {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "minimax/minimax-m3:deepinfra",
+        config: portkeyConfig["MiniMaxAI/MiniMax-M3"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {

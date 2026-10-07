@@ -3,7 +3,10 @@ import {
     longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
-import { openRouterGeminiBilling } from "./gemini-billing";
+import {
+    openRouterGeminiBilling,
+    VERCEL_EXA_SEARCH_BILLING,
+} from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
@@ -171,6 +174,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "minimax/minimax-m3": {
+        "minimax/minimax-m3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/MiniMaxAI/MiniMax-M3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(0.28),
+                promptCachedTokens: perMillion(0.056),
+                completionTextTokens: perMillion(1.1),
+            },
+        },
+    },
     "qwen/qwen3.8-2.4t-a95b": {
         "qwen/qwen3.8-2.4t-a95b:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -303,6 +318,18 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.15),
                 promptImageTokens: perMillion(0.75),
                 completionTextTokens: perMillion(3.5),
+            },
+        },
+    },
+    "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/moonshotai/Kimi-K3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(2.85),
+                promptCachedTokens: perMillion(0.285),
+                completionTextTokens: perMillion(14.25),
             },
         },
     },
@@ -620,6 +647,21 @@ export const TEXT_FALLBACKS = {
                 searchCostPerThousandRequests: 14 * 1.055,
                 storageCostPerMillionTokenHours: 1.0 * 1.055,
             }),
+        },
+    },
+    "google/gemini-2.5-flash-lite:search": {
+        "google/gemini-2.5-flash-lite:search:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptCacheWriteTokens: perMillion(0.1),
+                promptAudioTokens: perMillion(0.1),
+                promptImageTokens: perMillion(0.1),
+                promptVideoTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0.4),
+            },
+            billing: VERCEL_EXA_SEARCH_BILLING,
         },
     },
     "google/gemini-3.5-flash-lite": {

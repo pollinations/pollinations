@@ -1,11 +1,18 @@
 import type { Logger } from "@logtape/logtape";
 import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
+import {
     type ApiKeyType,
     createApiKeyForUser,
+    validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
+import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
 import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
+import { claimReward } from "@shared/billing/rewards.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -14,6 +21,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { toModelCategories } from "@shared/registry/model-permissions.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -24,17 +32,17 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { discordConfigFromEnv } from "../services/discord.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
-import { listQuestCards } from "../services/quests/index.ts";
+import {
+    ACCOUNT_SETUP_QUEST_GROUP,
+    listQuestCards,
+} from "../services/quests/index.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
-import {
-    hasAccountPermission,
-    requireAccountPermission,
-} from "./account-permissions.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 
@@ -55,7 +63,7 @@ type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
 };
 
-export function resolveUsageTargetUserId(
+function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
     apiKey?: {
@@ -150,7 +158,69 @@ const CreateKeySchema = z.object({
         .describe(
             "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
         ),
+    description: z.string().optional().describe("Note shown with the key"),
+    consent: z
+        .object({
+            requestedClientId: z.string().optional(),
+            redirectUri: z.string().optional(),
+            redirectOrigin: z.string().optional(),
+            deviceUserCode: z.string().optional(),
+        })
+        .optional()
+        .describe(
+            "Set by the consent screen when a user authorizes an app: binds the key to the app's publishable key and verifies the redirect URI or device code against it.",
+        ),
 });
+
+// Same fields as creation; omitted fields stay unchanged and null clears.
+const UpdateKeySchema = CreateKeySchema.pick({
+    allowedModels: true,
+    pollenBudget: true,
+    questPollenOnly: true,
+    accountPermissions: true,
+    redirectUris: true,
+    earningsEnabled: true,
+    description: true,
+}).extend({
+    name: CreateKeySchema.shape.name.optional(),
+    expiresAt: z
+        .string()
+        .datetime()
+        .nullable()
+        .optional()
+        .transform((val) => (val == null ? val : new Date(val)))
+        .describe("Expiry as an ISO 8601 timestamp. null = never expires"),
+});
+
+function parsePermissions(
+    raw: string | null | undefined,
+): Record<string, string[]> | null {
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+// The JSON shape of a key in the list and update responses; never the hash.
+function formatKey(key: typeof apikeyTable.$inferSelect) {
+    return {
+        id: key.id,
+        name: key.name,
+        start: key.start,
+        prefix: key.prefix,
+        createdAt: key.createdAt,
+        expiresAt: key.expiresAt,
+        lastRequest: key.lastRequest,
+        permissions: parsePermissions(key.permissions),
+        metadata: parseMetadata(key.metadata),
+        pollenBalance: key.pollenBalance,
+        questPollenOnly: key.questPollenOnly,
+        enabled: key.enabled,
+        byopClientKeyId: key.byopClientKeyId,
+    };
+}
 
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
@@ -761,10 +831,37 @@ const accountQuestsResponseSchema = z.object({
     quests: z.array(accountQuestSchema),
 });
 
-function formatRewardTimestamp(value: Date | number | string): string {
-    return value instanceof Date
-        ? value.toISOString()
-        : new Date(value).toISOString();
+const accountQuestRewardsResponseSchema = z.object({
+    rewards: z.array(
+        accountQuestRewardSchema.extend({ url: z.string().nullable() }),
+    ),
+});
+
+const QUEST_CHECK_THROTTLE_SECONDS = 60;
+
+function formatReward(
+    reward: Pick<
+        typeof rewardsTable.$inferSelect,
+        | "id"
+        | "questId"
+        | "title"
+        | "pollenAmount"
+        | "balanceBucket"
+        | "earnedAt"
+        | "claimedAt"
+    >,
+) {
+    return {
+        id: reward.id,
+        questId: reward.questId,
+        title: reward.title,
+        pollenAmount: reward.pollenAmount,
+        balanceBucket: reward.balanceBucket,
+        earnedAt: new Date(reward.earnedAt).toISOString(),
+        claimedAt: reward.claimedAt
+            ? new Date(reward.claimedAt).toISOString()
+            : null,
+    };
 }
 
 const usageRecordSchema = z.object({
@@ -799,7 +896,11 @@ const usageRecordSchema = z.object({
     input_audio_seconds: z
         .number()
         .describe("Duration of input audio in seconds (for transcription/STT)"),
-    input_image_tokens: z.number().describe("Number of input image tokens"),
+    input_image_tokens: z
+        .number()
+        .describe(
+            "Input image usage quantity (provider-specific tokens, images, or megapixels)",
+        ),
     output_text_tokens: z.number().describe("Number of output text tokens"),
     output_reasoning_tokens: z
         .number()
@@ -814,7 +915,9 @@ const usageRecordSchema = z.object({
         ),
     output_image_tokens: z
         .number()
-        .describe("Number of output image tokens (1 per image)"),
+        .describe(
+            "Output image usage quantity (provider-specific tokens, images, or megapixels)",
+        ),
     output_video_seconds: z
         .number()
         .describe("Duration of output video in seconds"),
@@ -833,11 +936,12 @@ const usageResponseSchema = z.object({
 });
 
 /**
- * Account routes - profile, balance and usage endpoints.
- * Supports both session cookies and API keys with permission checks.
+ * Account routes - profile, balance and usage endpoints, served publicly as
+ * gen.pollinations.ai/account. Bearer-only: apps use API keys with permission
+ * checks; the dashboard uses a session token minted from its cookie.
  */
 export const accountRoutes = new Hono<Env>()
-    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     // Account responses are per-user and must never be cached by browsers or
     // intermediary proxies. Applied once here so nested routes (agents,
     // my-models, keys, ...) inherit it without repeating it per handler.
@@ -936,15 +1040,7 @@ export const accountRoutes = new Hono<Env>()
             const [cards, rewardRows] = await Promise.all([
                 listQuestCards({ db, env: c.env }),
                 db
-                    .select({
-                        id: rewardsTable.id,
-                        questId: rewardsTable.questId,
-                        title: rewardsTable.title,
-                        pollenAmount: rewardsTable.pollenAmount,
-                        balanceBucket: rewardsTable.balanceBucket,
-                        earnedAt: rewardsTable.earnedAt,
-                        claimedAt: rewardsTable.claimedAt,
-                    })
+                    .select()
                     .from(rewardsTable)
                     .where(eq(rewardsTable.userId, user.id))
                     .orderBy(desc(rewardsTable.earnedAt)),
@@ -972,25 +1068,110 @@ export const accountRoutes = new Hono<Env>()
                 return {
                     ...card,
                     status,
-                    reward: reward
-                        ? {
-                              id: reward.id,
-                              questId: reward.questId,
-                              title: reward.title,
-                              pollenAmount: reward.pollenAmount,
-                              balanceBucket: reward.balanceBucket,
-                              earnedAt: formatRewardTimestamp(reward.earnedAt),
-                              claimedAt: reward.claimedAt
-                                  ? formatRewardTimestamp(reward.claimedAt)
-                                  : null,
-                          }
-                        : null,
+                    reward: reward ? formatReward(reward) : null,
                 };
             });
 
             return c.json({ quests });
         },
     )
+    .get(
+        "/quests/rewards",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Quest Rewards",
+            description:
+                "Returns every reward the account has earned, newest first, including claim state. API keys require the read-only `account:usage` permission.",
+            responses: {
+                200: {
+                    description: "Quest rewards",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountQuestRewardsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view quest rewards",
+            });
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "usage");
+
+            const rows = await drizzle(c.env.DB)
+                .select()
+                .from(rewardsTable)
+                .where(eq(rewardsTable.userId, user.id))
+                .orderBy(desc(rewardsTable.earnedAt));
+            return c.json({
+                rewards: rows.map((row) => ({
+                    ...formatReward(row),
+                    url: row.url,
+                })),
+            });
+        },
+    )
+    .post("/quests/check", async (c) => {
+        await c.var.auth.requireAuthorization({
+            message: "Authentication required to check quest rewards",
+        });
+        if (c.var.auth.apiKey) {
+            throw new HTTPException(403, {
+                message: "Quest checks require a dashboard session",
+            });
+        }
+
+        const user = c.var.auth.requireUser();
+        const throttleKey = `quest-check:throttle:${user.id}`;
+        if (await c.env.KV.get(throttleKey)) {
+            return c.json(
+                {
+                    error: "rate_limited",
+                    message:
+                        "Quest checks are limited to once per minute. Try again shortly.",
+                },
+                429,
+                { "Retry-After": String(QUEST_CHECK_THROTTLE_SECONDS) },
+            );
+        }
+        await c.env.KV.put(throttleKey, "1", {
+            expirationTtl: QUEST_CHECK_THROTTLE_SECONDS,
+        });
+
+        return c.json(await checkQuestsForUser(c.env, user.id));
+    })
+    .post("/quests/rewards/:rewardId/claim", async (c) => {
+        await c.var.auth.requireAuthorization({
+            message: "Authentication required to claim quest rewards",
+        });
+        if (c.var.auth.apiKey) {
+            throw new HTTPException(403, {
+                message: "Reward claims require a dashboard session",
+            });
+        }
+
+        const user = c.var.auth.requireUser();
+        const result = await claimReward(drizzle(c.env.DB, { schema }), {
+            rewardId: c.req.param("rewardId"),
+            userId: user.id,
+        });
+        if (!result.reward) {
+            throw new HTTPException(404, { message: "Reward not found" });
+        }
+
+        return c.json({
+            claimed: result.claimed,
+            newBalance: result.newBalance,
+            reward: formatReward(result.reward),
+        });
+    })
     .get(
         "/balance",
         describeRoute({
@@ -1422,50 +1603,12 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "keys");
 
-            const db = drizzle(c.env.DB);
-            const keys = await db
-                .select({
-                    id: apikeyTable.id,
-                    name: apikeyTable.name,
-                    start: apikeyTable.start,
-                    prefix: apikeyTable.prefix,
-                    createdAt: apikeyTable.createdAt,
-                    expiresAt: apikeyTable.expiresAt,
-                    lastRequest: apikeyTable.lastRequest,
-                    permissions: apikeyTable.permissions,
-                    metadata: apikeyTable.metadata,
-                    pollenBalance: apikeyTable.pollenBalance,
-                    questPollenOnly: apikeyTable.questPollenOnly,
-                    enabled: apikeyTable.enabled,
-                })
+            const keys = await drizzle(c.env.DB)
+                .select()
                 .from(apikeyTable)
                 .where(eq(apikeyTable.referenceId, user.id))
                 .all();
-            const parsePermissions = (raw: string | null) => {
-                if (!raw) return null;
-                try {
-                    return JSON.parse(raw);
-                } catch {
-                    return null;
-                }
-            };
-
-            return c.json({
-                data: keys.map((key) => ({
-                    id: key.id,
-                    name: key.name,
-                    start: key.start,
-                    prefix: key.prefix,
-                    createdAt: key.createdAt,
-                    expiresAt: key.expiresAt,
-                    lastRequest: key.lastRequest,
-                    permissions: parsePermissions(key.permissions),
-                    metadata: parseMetadata(key.metadata),
-                    pollenBalance: key.pollenBalance,
-                    questPollenOnly: key.questPollenOnly,
-                    enabled: key.enabled,
-                })),
-            });
+            return c.json({ data: keys.map(formatKey) });
         },
     )
     .post(
@@ -1497,17 +1640,23 @@ export const accountRoutes = new Hono<Env>()
                 accountPermissions,
                 redirectUris,
                 earningsEnabled,
+                description,
+                consent,
             } = c.req.valid("json");
 
-            const metadata =
-                type === "publishable"
-                    ? {
-                          ...(redirectUris?.length ? { redirectUris } : {}),
-                          ...(earningsEnabled !== undefined
-                              ? { earningsEnabled }
-                              : {}),
-                      }
-                    : undefined;
+            // createApiKeyForUser keeps redirectUris and earningsEnabled only
+            // on publishable keys.
+            const metadata = {
+                description,
+                earningsEnabled,
+                redirectUris,
+                ...consent,
+            };
+            const createdVia = consent
+                ? "redirect-auth"
+                : c.var.auth.apiKey
+                  ? "api"
+                  : "dashboard";
 
             const created = await createApiKeyForUser({
                 authClient: c.var.auth.client,
@@ -1524,7 +1673,7 @@ export const accountRoutes = new Hono<Env>()
                     (c.var.auth.apiKey?.questPollenOnly ?? false),
                 accountPermissions,
                 metadata,
-                defaultCreatedVia: "api",
+                defaultCreatedVia: createdVia,
                 createdByApiKeyId: c.var.auth.apiKey?.id,
                 originAppKeyId:
                     c.var.auth.apiKey?.byopClientKeyId ??
@@ -1534,7 +1683,141 @@ export const accountRoutes = new Hono<Env>()
                               | string
                               | undefined)),
             });
+
+            // Awarding the first-key quest is a few D1 queries; awaiting it
+            // means the balance and quests the caller reads next include it.
+            await checkQuestsForUser(c.env, user.id, [
+                ACCOUNT_SETUP_QUEST_GROUP,
+            ]).catch((error) =>
+                c.get("log").warn("API key quest check failed: {error}", {
+                    error,
+                }),
+            );
             return c.json(created);
+        },
+    )
+    .patch(
+        "/keys/:id",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Update API Key",
+            description:
+                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys.",
+            responses: {
+                200: { description: "Updated API key" },
+                400: { description: "Invalid update" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Key not found" },
+            },
+        }),
+        validator("json", UpdateKeySchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+
+            const { id } = c.req.param();
+            const {
+                name,
+                allowedModels,
+                pollenBudget,
+                questPollenOnly,
+                accountPermissions,
+                expiresAt,
+                description,
+                redirectUris,
+                earningsEnabled,
+            } = c.req.valid("json");
+
+            const db = drizzle(c.env.DB);
+            const key = await db
+                .select()
+                .from(apikeyTable)
+                .where(
+                    and(
+                        eq(apikeyTable.id, id),
+                        eq(apikeyTable.referenceId, user.id),
+                    ),
+                )
+                .get();
+            if (!key) {
+                throw new HTTPException(404, { message: "API key not found" });
+            }
+            if (earningsEnabled !== undefined && key.prefix !== "pk") {
+                throw new HTTPException(400, {
+                    message:
+                        "BYOP earnings can only be enabled on publishable app keys",
+                });
+            }
+            for (const uri of redirectUris ?? []) {
+                validateRedirectUriFormat(uri);
+            }
+            // As on creation: a key can't grant spending it doesn't have.
+            if (
+                questPollenOnly === false &&
+                c.var.auth.apiKey?.questPollenOnly
+            ) {
+                throw new HTTPException(403, {
+                    message:
+                        "A Quest Pollen only key can't lift that limit from a key",
+                });
+            }
+
+            // Only the columns a request names are written, so concurrent
+            // edits of different fields can't undo each other. null clears a
+            // restriction; omitted leaves it unchanged.
+            const permissions = parsePermissions(key.permissions) ?? {};
+            if (allowedModels !== undefined) {
+                if (allowedModels) {
+                    permissions.models = await toModelCategories(
+                        c.env.DB,
+                        allowedModels,
+                    );
+                } else delete permissions.models;
+            }
+            if (accountPermissions !== undefined) {
+                const account =
+                    accountPermissions &&
+                    sanitizeAuthorizeAccountPermissions(accountPermissions);
+                if (account) permissions.account = account;
+                else delete permissions.account;
+            }
+            const metadataPatch = Object.fromEntries(
+                Object.entries({
+                    description,
+                    redirectUris,
+                    earningsEnabled,
+                }).filter(([, value]) => value !== undefined),
+            );
+
+            const [updated] = await db
+                .update(apikeyTable)
+                .set({
+                    ...(name !== undefined && { name }),
+                    ...(pollenBudget !== undefined && {
+                        pollenBalance: pollenBudget,
+                    }),
+                    ...(questPollenOnly !== undefined && { questPollenOnly }),
+                    ...(expiresAt !== undefined && { expiresAt }),
+                    ...((allowedModels !== undefined ||
+                        accountPermissions !== undefined) && {
+                        permissions: Object.keys(permissions).length
+                            ? JSON.stringify(permissions)
+                            : null,
+                    }),
+                    ...(Object.keys(metadataPatch).length > 0 && {
+                        metadata: JSON.stringify({
+                            ...parseMetadata(key.metadata),
+                            ...metadataPatch,
+                        }),
+                    }),
+                    updatedAt: new Date(),
+                })
+                .where(eq(apikeyTable.id, id))
+                .returning();
+
+            return c.json(formatKey(updated));
         },
     )
     .post(

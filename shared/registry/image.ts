@@ -364,6 +364,28 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
+    "google/gemini-nano-banana-2.1": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Google",
+        category: "image",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.055,
+        cost: {
+            // Google AI Studio via OpenRouter, including the 5.5% credit fee.
+            promptTextTokens: perMillion(1.5) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(1.5) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(7.5) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens
+        },
+        title: "Nano Banana 2.1",
+        description:
+            "Balanced image generation and editing with output up to 2K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14, // Gemini Nano Banana 2.1 provider limit.
+    },
     "google/gemini-3-pro-image": {
         aliases: ["nanobanana-pro"],
         provider: "google",
@@ -1638,6 +1660,66 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        aliases: [],
+        provider: "xai",
+        publisher: "xAI",
+        category: "video",
+        addedDate: new Date("2026-10-06").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // xAI direct API rates (docs.x.ai, 2026-10-06).
+            promptImageTokens: 0.01, // per start-frame image
+            completionVideoSeconds: 0.03, // per sec at 720p
+        },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.02,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14,
+                },
+            },
+            matchResolution("480p", "1080p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["720p", "480p", "1080p"],
+        title: "Grok Imagine Video 1.5 Lite",
+        description:
+            "Faster, lower-cost video from text or a start image at 480p, 720p, or 1080p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
         minDuration: 1,
         maxDuration: 15,

@@ -399,6 +399,18 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Nex AGI bf16 tag for Nex-N2.5-Mini (2026-10-03); the endpoint has no tool support.
+    openRouterNexMini: [
+        "max_tokens",
+        "stream",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter Nex AGI fp8 tag for Nex-N2.5-Pro (2026-10-03).
     openRouterNexPro: [
         "max_tokens",

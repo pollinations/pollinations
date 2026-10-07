@@ -2129,6 +2129,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000285,
     },
   },
+  "nex-agi/nex-n2.5-mini": {
+    "cost": {
+      "completionTextTokens": 0.0000001055,
+      "promptCachedTokens": 0.0000000026375,
+      "promptTextTokens": 0.000000026375,
+    },
+    "price": {
+      "completionTextTokens": 0.0000001055,
+      "promptCachedTokens": 0.0000000026375,
+      "promptTextTokens": 0.000000026375,
+    },
+  },
   "nex-agi/nex-n2.5-pro": {
     "cost": {
       "completionTextTokens": 0.00000026375,

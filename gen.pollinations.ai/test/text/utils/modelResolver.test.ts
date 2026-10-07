@@ -223,6 +223,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Nex N2.5 Mini to Nex AGI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nex-agi/nex-n2.5-mini",
+        });
+
+        expect(result.options.model).toBe("nex-agi/nex-n2.5-mini");
+        expect(result.options.provider).toEqual({
+            only: ["nex-agi/bf16"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Nex N2.5 Pro to Nex AGI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "nex-agi/nex-n2.5-pro",

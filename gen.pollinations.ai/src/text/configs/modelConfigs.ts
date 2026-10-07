@@ -365,6 +365,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
     // Nex returns a generic server error when it cannot fetch an image URL.
+    "nex-agi/nex-n2.5-mini": () => ({
+        ...createPinnedOpenRouterConfig(
+            "nex-agi/nex-n2.5-mini",
+            "nex-agi/bf16",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
     "nex-agi/nex-n2.5-pro": () => ({
         ...createPinnedOpenRouterConfig(
             "nex-agi/nex-n2.5-pro",

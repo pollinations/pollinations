@@ -38,6 +38,12 @@ async function fetchImageAsBase64(
         maxBytes,
         redirect: "manual",
     });
+    if (!mimeType.startsWith("image/")) {
+        throw new UserImageError(
+            `Unsupported image format from ${url}: expected image content, received ${mimeType}.`,
+            "unsupported_image_media_type",
+        );
+    }
     const base64 = arrayBufferToBase64(bytes);
     log(`Converted image to base64: ${mimeType}, ${base64.length} chars`);
     return {

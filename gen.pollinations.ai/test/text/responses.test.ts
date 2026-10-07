@@ -58,6 +58,41 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("rejects invalid image URLs on Nex Mini before calling the provider", async () => {
+        const directRequest = request({
+            model: "nex-agi/nex-n2.5-mini",
+            input: [
+                null,
+                { role: "user", content: { invalid: true } },
+                {
+                    role: "user",
+                    content: [
+                        null,
+                        {
+                            type: "input_image",
+                            image_url: "http://127.0.0.1/image.png",
+                        },
+                    ],
+                },
+            ],
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected direct Nex target");
+
+        await expect(
+            callDirectResponses(directRequest, {
+                ...target,
+                authConfigured: true,
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
     it("rejects invalid image URLs on Nex Pro before calling the provider", async () => {
         const directRequest = request({
             model: "nex-agi/nex-n2.5-pro",

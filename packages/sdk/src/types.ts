@@ -103,6 +103,12 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
+    /** Public image URL(s) for visual guidance, separate from first/last frames. */
+    referenceImages?: string | string[];
+    /** Public video URL(s) for motion or style guidance. */
+    referenceVideos?: string | string[];
+    /** Public audio URL(s) for audio-driven generation. */
+    referenceAudios?: string | string[];
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }

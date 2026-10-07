@@ -237,6 +237,18 @@ Before publishing:
 - Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
 
+The PR description must include a user-visible change table for each affected model, using its public model ID:
+
+| Model | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- |
+| `<public ID>` | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
+
+- Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
+- For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
+- For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.
+- A merge is not a deployment. Use `On production deployment (not live yet)` unless a scheduled date or verified deployment is known. Link an existing notice and its `notice_id` when applicable.
+- For a provider-only change with no user-visible difference, state that price, balance access, capabilities, and availability are unchanged instead of adding status rows. Keep provider and verification evidence separately below the summary.
+
 ## Completion gate
 
 A model change is not complete until all applicable statements are true:

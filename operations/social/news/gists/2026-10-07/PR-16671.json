@@ -1,0 +1,33 @@
+{
+  "pr_number": 16671,
+  "title": "fix: exclude voodoohop from quest leaderboards",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16671",
+  "merged_at": "2026-10-07T08:36:52Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes voodoohop from the monthly quest standings and public GitHub quest leaderboard.\n- Keeps rewards and balances unchanged.\n- Adds a regression test for both views.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "More room on the leaderboard",
+    "blurb": "The monthly quest standings and public GitHub quest leaderboard leave voodoohop off the board. Rewards and balances stay exactly where they are.",
+    "summary": "Excludes voodoohop from the monthly quest standings and public GitHub quest leaderboard, with regression tests for both views and no changes to rewards or balances.",
+    "impact": "Quest participants get standings without voodoohop in either view; earned Pollen and wallet balances remain unchanged.",
+    "keywords": [
+      "quests",
+      "leaderboard",
+      "GitHub",
+      "standings",
+      "Pollen"
+    ],
+    "visual_concept": "Depict two small leaderboard boards for monthly quests and GitHub quests in a flower-filled garden. Polli, wearing a tiny scorekeeper visor, tends the boards while other contributors' names have room to be seen; a nearby Pollen jar remains untouched.",
+    "image_prompt": "The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Wearing a tiny scorekeeper visor, she warmly tends two little quest leaderboard boards beside flowers and an untouched Pollen jar in a cozy pixel garden, with lime green (#ecf874) prominent, dark purple (#110518) outlines, soft pastel gradients, warm lighting, and retro gaming vibes; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16671.jpg",
+    "prompt": "The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Wearing a tiny scorekeeper visor, she warmly tends two little quest leaderboard boards beside flowers and an untouched Pollen jar in a cozy pixel garden, with lime green (#ecf874) prominent, dark purple (#110518) outlines, soft pastel gradients, warm lighting, and retro gaming vibes; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-07T08:38:07.829576+00:00"
+}

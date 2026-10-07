@@ -367,6 +367,10 @@ main > * {
     max-width: 10rem;
 }
 
+.play-parameter-row input[type="range"]:disabled {
+    filter: grayscale(1);
+    opacity: 0.35;
+}
 @media (min-width: 64rem) {
     .play-parameter-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

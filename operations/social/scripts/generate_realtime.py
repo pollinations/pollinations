@@ -172,7 +172,7 @@ def lookup_newest_app() -> Optional[Dict]:
 
 # ── Step 1: AI analysis ─────────────────────────────────────────────
 
-def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
+def analyze_pr(pr_data: Dict, files_summary: str, token: str, enrichment: Dict) -> Optional[Dict]:
     """Call AI to analyze a PR and return structured gist JSON."""
     system_prompt = load_prompt("gist")
 
@@ -181,18 +181,21 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
     # not arbitrary user input. Truncated to 2000 chars as a size guard.
     labels = [l["name"] for l in pr_data.get("labels", [])]
     body = pr_data.get("body") or ""
+    context = {key: enrichment.get(key) for key in ("area", "type", "source", "announcements")}
     user_prompt = f"""PR #{pr_data['number']}: {pr_data['title']}
 
 Author: {pr_data.get('user', {}).get('login', 'unknown')}
 Labels: {', '.join(labels) if labels else 'none'}
 Branch: {pr_data.get('head', {}).get('ref', 'unknown')} → {pr_data.get('base', {}).get('ref', 'main')}
-Deploy status: merged to {pr_data.get('base', {}).get('ref', 'main')}; ships to users with the next production release (not live yet)
 
 Description:
 {body[:2000] if body else 'No description provided.'}
 
 Changed files:
-{files_summary}"""
+{files_summary}
+
+Classification and exact model changes already recorded:
+{json.dumps(context, indent=2)}"""
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
@@ -207,9 +210,8 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
     labels = [l["name"] for l in pr_data.get("labels", [])]
     author = pr_data.get("user", {}).get("login", "unknown")
 
-    # Preserve a PR body excerpt so downstream realtime/Discord generation can
-    # quote concrete numbers/names that the AI-distilled summary may abstract away.
-    pr_body_excerpt = (pr_data.get("body") or "")[:2000]
+    analysis = dict(ai_analysis)
+    image_prompt = analysis.pop("image_prompt", None)
 
     gist = {
         "pr_number": pr_data["number"],
@@ -218,9 +220,8 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
         "url": pr_data["html_url"],
         "merged_at": pr_data.get("merged_at", datetime.now(timezone.utc).isoformat()),
         "labels": labels,
-        "pr_body_excerpt": pr_body_excerpt,
-        "gist": ai_analysis,
-        "image": {"url": None, "prompt": None},
+        "gist": analysis,
+        "image": {"url": None, "prompt": image_prompt},
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -246,7 +247,7 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
 def generate_gist_image(gist: Dict, pollinations_token: str,
                         github_token: str, owner: str, repo: str) -> Optional[str]:
     """Generate pixel art image for a gist. Returns image URL or None."""
-    image_prompt = gist["gist"].get("image_prompt", "")
+    image_prompt = gist["image"].get("prompt", "")
     if not image_prompt:
         print("  FATAL: No image prompt in gist")
         return None
@@ -287,15 +288,17 @@ def main():
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
     files_summary, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
 
-    # ── Step 1: AI analysis → gist JSON → commit ────────────────────
-    ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token)
+    # ── Step 1: Enrichment + AI analysis → gist JSON ─────────────────
+    enrichment = {}
+    enrich_gist(enrichment, pr_data, changed_files, github_token)
+    ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token, enrichment)
     if not ai_analysis:
         print(f"  FATAL: PR analysis failed with model {MODEL}")
         sys.exit(1)
 
     gist = build_full_gist(pr_data, ai_analysis, changed_files)
 
-    enrich_gist(gist, pr_data, changed_files, github_token)
+    gist.update(enrichment)
 
     errors = validate_gist(gist)
     if errors:
@@ -313,7 +316,6 @@ def main():
         sys.exit(1)
 
     gist["image"]["url"] = image_url
-    gist["image"]["prompt"] = gist["gist"].get("image_prompt")
 
     if not commit_gist(gist, github_token, owner, repo):
         print("  FATAL: Could not commit gist to news branch")

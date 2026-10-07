@@ -1,10 +1,11 @@
 import { CheckIcon, ClipboardIcon, CopyButton, Text } from "@pollinations/ui";
 
 const SECTION_STYLE = {
-    base: "text-theme-text-muted",
-    endpoint: "text-[light-dark(#6d28d9,#c4b5fd)]",
-    input: "text-[light-dark(#115e59,#5eead4)]",
-    key: "text-[light-dark(#92400e,#fcd34d)]",
+    base: "text-theme-text-strong",
+    endpoint:
+        "box-decoration-clone bg-[light-dark(#ede9fe,#302447)] py-0.5 text-theme-text-strong",
+    input: "box-decoration-clone bg-[light-dark(#dff3ef,#123a34)] py-0.5 text-theme-text-strong",
+    key: "box-decoration-clone bg-[light-dark(#fff0ce,#443514)] py-0.5 text-theme-text-strong",
 };
 
 export function ApiUrlCard({
@@ -84,9 +85,7 @@ export function ApiUrlCard({
                             Authorization: Bearer YOUR_API_KEY
                         </span>
                     </Text>
-                    <pre
-                        className={`whitespace-pre-wrap break-all font-mono text-xs leading-6 ${SECTION_STYLE.input}`}
-                    >
+                    <pre className="whitespace-pre-wrap break-all font-mono text-xs leading-6 text-theme-text-strong">
                         {JSON.stringify(fields, null, 2)}
                     </pre>
                 </div>

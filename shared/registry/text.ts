@@ -1715,6 +1715,66 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
+    "anthropic/claude-haiku-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global standard rates (prompts up to 100K tokens);
+            // 5-minute cache writes.
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        // Prompts over 100K tokens bill every token of the request at 5x
+        // input and cache rates and 5x output.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.5),
+                    promptCachedTokens: perMillion(0.05),
+                    promptCacheWriteTokens: perMillion(0.625),
+                    completionTextTokens: perMillion(2.5),
+                },
+            },
+            longContextAbove(100_000),
+            {
+                long_context: {
+                    label: "Long context (>100K)",
+                    description:
+                        "More than 100,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+            "≤100K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤100K",
+                        "long_context": ">100K",
+                    },
+                },
+            ],
+        ),
+        title: "Claude Haiku 5.5",
+        description:
+            "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-sonnet-4.6": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
         aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],

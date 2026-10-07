@@ -480,6 +480,14 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-haiku-5.5": {
+        // Same model through Vercel's AI Gateway at Anthropic's list price,
+        // so it inherits the primary's rates and long-context tier.
+        "anthropic/claude-haiku-5.5:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-10-07").getTime(),
+        },
+    },
     "anthropic/claude-opus-5.5": {
         "anthropic/claude-opus-5.5:openrouter:anthropic": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,

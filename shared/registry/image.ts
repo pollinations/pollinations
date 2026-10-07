@@ -124,6 +124,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
     },
+    // Bounty #16514: Add FLUX.3 Image via OpenRouter
     "black-forest-labs/flux-3-image": {
         aliases: [],
         provider: "openrouter",

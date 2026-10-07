@@ -554,6 +554,46 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("charges Luna Decisions' list price on the Vercel fallback and adds the OpenRouter fee on the primary", () => {
+        const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
+        const fallback = TEXT_SERVICES["openai/gpt-6-luna-decisions:vercel"];
+        expect(primary).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["openai/gpt-6-luna-decisions:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(
+            findModelByName("openai/gpt-6-luna-decisions:vercel")?.config(),
+        ).toMatchObject({
+            model: "openai/gpt-6-luna-decisions",
+            directEndpoint: "https://ai-gateway.vercel.sh/v4/ai/decision-model",
+            decisionsProtocol: "gateway",
+        });
+        expect(
+            findModelByName("openai/gpt-6-luna-decisions")?.config(),
+        ).toMatchObject({
+            model: "openai/gpt-6-luna-decisions",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        });
+        const usage = { promptTextTokens: 1000, completionTextTokens: 0 };
+        const viaVercel = calculateUsageBilling({
+            model: "openai/gpt-6-luna-decisions",
+            usage,
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(viaVercel.cost.totalCost).toBeCloseTo(0.0001, 12);
+        expect(viaVercel.price.totalPrice).toBeCloseTo(0.0001055, 8);
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];

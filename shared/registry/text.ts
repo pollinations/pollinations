@@ -1612,6 +1612,37 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "openai/gpt-6-luna-decisions": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // OpenAI list price ($0.10/M input, nothing for output or cache)
+            // plus OpenRouter's 5.5% credit fee, as every OpenRouter route
+            // records.
+            promptTextTokens: perMillion(0.1) * 1.055,
+            completionTextTokens: perMillion(0),
+        },
+        title: "GPT-6 Luna Decisions",
+        description:
+            "Typed answers with probabilities and confidence instead of " +
+            "generated text, billed on input tokens only; post state and " +
+            "questions to /alpha/decisions, or send the same JSON in the " +
+            "last user message on /v1/chat/completions. Text state only",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 1050000,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

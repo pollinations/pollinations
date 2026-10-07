@@ -186,6 +186,128 @@ describe("System One adapter", () => {
         }
     });
 
+    it("routes openai/gpt-6-luna-decisions to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "openai/gpt-6-luna-decisions",
+                });
+                return Response.json({
+                    model: "openai/gpt-6-luna-decisions-20261006",
+                    answers,
+                    usage: { input_tokens: 61, output_tokens: 0 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "openai/gpt-6-luna-decisions",
+                modelConfig: {
+                    ...modelConfig,
+                    model: "openai/gpt-6-luna-decisions",
+                },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("translates native decisions through the Vercel gateway route (stream=%s)", async (stream) => {
+        const gatewayAnswers = {
+            ...answers,
+            is_urgent: { type: "boolean", probability: 0.98 },
+        };
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://ai-gateway.vercel.sh/v4/ai/decision-model",
+                );
+                const headers = new Headers(init?.headers);
+                expect(headers.get("ai-model-id")).toBe(
+                    "openai/gpt-6-luna-decisions",
+                );
+                expect(headers.get("ai-gateway-protocol-version")).toBe(
+                    "0.0.1",
+                );
+                expect(
+                    headers.get("ai-decision-model-specification-version"),
+                ).toBe("4");
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    state: nativeState,
+                    questions: {
+                        ...nativeQuestions,
+                        is_urgent: {
+                            ...nativeQuestions.is_urgent,
+                            type: "boolean",
+                        },
+                    },
+                });
+                return Response.json({
+                    answers: gatewayAnswers,
+                    usage: { inputTokens: 61 },
+                });
+            },
+        );
+        const result = await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "openai/gpt-6-luna-decisions:vercel",
+                stream,
+                modelConfig: {
+                    ...findModelByName(
+                        "openai/gpt-6-luna-decisions:vercel",
+                    )?.config(),
+                    authKey: "test-key",
+                },
+            },
+            vi.fn(),
+        );
+        expect(
+            JSON.parse(String(result.choices?.[0]?.message?.content)),
+        ).toEqual(answers);
+        expect(result.usage).toEqual({
+            prompt_tokens: 61,
+            completion_tokens: 0,
+            total_tokens: 61,
+        });
+        if (stream) {
+            if (!result.responseStream) throw new Error("Missing stream");
+            const body = await new Response(
+                requireChatStreamUsage(result.responseStream),
+            ).text();
+            expect(body).toContain('"prompt_tokens":61');
+            expect(body).toContain("data: [DONE]");
+        }
+    });
+
+    it("rejects a Vercel gateway decision that reports no usage", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ answers }),
+        );
+        await expect(
+            generateTextPortkey(
+                [{ role: "user", content: nativeContent }],
+                {
+                    model: "openai/gpt-6-luna-decisions:vercel",
+                    modelConfig: {
+                        ...findModelByName(
+                            "openai/gpt-6-luna-decisions:vercel",
+                        )?.config(),
+                        authKey: "test-key",
+                    },
+                },
+                vi.fn(),
+            ),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
     it("routes jaredpalmer/kev-4b to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

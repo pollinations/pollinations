@@ -23,6 +23,53 @@ type SystemOneRequest = {
     questions: Record<string, unknown>;
 };
 
+// Vercel's AI Gateway takes the same state and questions but names the yes/no
+// question `boolean`, reads the model from a header, and reports camelCase usage.
+type GatewayDecisionResponse = {
+    model?: string;
+    answers: Record<string, unknown>;
+    usage?: { inputTokens?: number; outputTokens?: number };
+};
+
+const GATEWAY_DECISION_HEADERS = {
+    "ai-gateway-protocol-version": "0.0.1",
+    "ai-decision-model-specification-version": "4",
+};
+
+function toGatewayQuestions(questions: Record<string, unknown>) {
+    return Object.fromEntries(
+        Object.entries(questions).map(([name, question]) => [
+            name,
+            isPlainObject(question) && question.type === "noul"
+                ? { ...question, type: "boolean" }
+                : question,
+        ]),
+    );
+}
+
+function fromGatewayResponse(
+    response: GatewayDecisionResponse,
+    model: unknown,
+): SystemOneResponse {
+    const answers = isPlainObject(response?.answers) ? response.answers : {};
+    return {
+        model: response?.model ?? String(model),
+        answers: Object.fromEntries(
+            Object.entries(answers).map(([name, answer]) => [
+                name,
+                isPlainObject(answer) && answer.type === "boolean"
+                    ? { type: "noul", noul: answer.probability }
+                    : answer,
+            ]),
+        ),
+        usage: {
+            input_tokens: response?.usage?.inputTokens as number,
+            // Decisions bill input tokens only, so an omitted count is zero.
+            output_tokens: response?.usage?.outputTokens ?? 0,
+        },
+    };
+}
+
 function serviceError(message: string, status: number): ServiceError {
     const error = new Error(message) as ServiceError;
     error.status = status;
@@ -122,6 +169,7 @@ export async function requestDecision(
             500,
         );
     }
+    const gateway = options.modelConfig?.decisionsProtocol === "gateway";
     const requestUrl = new URL(endpoint);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -131,12 +179,23 @@ export async function requestDecision(
             headers: {
                 Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
+                ...(gateway && {
+                    ...GATEWAY_DECISION_HEADERS,
+                    "ai-model-id": String(model),
+                }),
             },
-            body: JSON.stringify({ state, model, questions }),
+            body: JSON.stringify(
+                gateway
+                    ? { state, questions: toGatewayQuestions(questions) }
+                    : { state, model, questions },
+            ),
             signal: controller.signal,
         });
         await ensureUpstreamOk(response, requestUrl);
-        const result = (await response.json()) as SystemOneResponse;
+        const body = await response.json();
+        const result = gateway
+            ? fromGatewayResponse(body as GatewayDecisionResponse, model)
+            : (body as SystemOneResponse);
         // Billable responses must carry usage; reject rather than bill zero.
         if (
             !isPlainObject(result?.answers) ||

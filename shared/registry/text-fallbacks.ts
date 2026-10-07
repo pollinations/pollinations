@@ -23,6 +23,17 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-6-luna-decisions": {
+        // Same OpenAI model through Vercel's AI Gateway, which bills the
+        // list price without OpenRouter's credit fee.
+        "openai/gpt-6-luna-decisions:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "inclusionai/ling-3.1-flash": {
         "inclusionai/ling-3.1-flash:openrouter:novita": {
             provider: "openrouter",

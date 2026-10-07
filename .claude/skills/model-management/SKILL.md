@@ -239,10 +239,11 @@ Before publishing:
 
 The PR description must include a user-visible change table for each affected model, using its public model ID:
 
-| Model | Change | Before | After | Effective |
-| --- | --- | --- | --- | --- |
-| `<public ID>` | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `<public ID>` | NEW / UPDATE / RETIRE | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
 
+- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability. A future retirement uses `RETIRE` with its scheduled effective date; passing that date does not prove the model has been removed.
 - Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
 - For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
 - For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.

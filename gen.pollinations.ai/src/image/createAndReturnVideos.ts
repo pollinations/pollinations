@@ -33,6 +33,7 @@ import {
     callWanFastAPI,
     callWanProAPI,
 } from "./models/wanVideoModel.ts";
+import { callXaiVideoAPI } from "./models/xaiVideoModel.ts";
 import type { ImageParams } from "./params.ts";
 
 export type { VideoGenerationResult };
@@ -95,7 +96,11 @@ export async function createAndReturnVideo(
             break;
         case "x-ai/grok-imagine-video:openrouter":
         case "x-ai/grok-imagine-video-1.5":
+        case "x-ai/grok-imagine-video-1.5-lite:openrouter":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
+            break;
+        case "x-ai/grok-imagine-video-1.5-lite":
+            result = await callXaiVideoAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.5":
             result = await callSeedance25API(prompt, safeParams);

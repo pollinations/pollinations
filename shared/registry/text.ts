@@ -7,6 +7,7 @@ import {
 import {
     GEMINI_3_SEARCH_BILLING,
     openRouterGeminiBilling,
+    reportedTextCost,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
@@ -1464,10 +1465,13 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 7 * 1.055,
-            storageCostPerMillionTokenHours: 1 * 1.055,
-        }),
+        billing: {
+            ...openRouterGeminiBilling({
+                searchCostPerThousandRequests: 7 * 1.055,
+                storageCostPerMillionTokenHours: 1 * 1.055,
+            }),
+            resolveTotalCost: reportedTextCost(1.055),
+        },
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
@@ -2185,6 +2189,7 @@ const TEXT_BASE_SERVICES = {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],
         provider: "novita",
+        perUserRpm: 8,
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),

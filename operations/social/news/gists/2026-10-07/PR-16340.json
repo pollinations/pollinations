@@ -1,0 +1,137 @@
+{
+  "pr_number": 16340,
+  "title": "feat: add Nex N2.5 Pro via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16340",
+  "merged_at": "2026-10-07T21:15:06Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added paid-only Nex N2.5 Pro (`nex-agi/nex-n2.5-pro`) with no aliases, a 1× multiplier, a 262,144-token context, image input, tool calling, reasoning, and structured output. Input, cached input, and output are billed in Pollen per million tokens; the rates include OpenRouter’s 5.5% fee once. Requests are pinned to OpenRouter’s `nex-agi/fp8` route, with provider fallback disabled. Added the Nex AGI logo and model information. Chat, Responses, and Messages use guarded image conversion: valid remote images are sent inline, while invalid remote image URLs return HTTP 400.",
+    "keywords": [
+      "Nex N2.5 Pro",
+      "OpenRouter",
+      "text models",
+      "vision",
+      "image input",
+      "Pollen billing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16340.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny programmer glasses and guides picture cards into a retro terminal displaying a small Nex N2.5 Pro model tile, while code-plants grow beside it; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients over a warm cream background, prominent lime green (#ecf874) glow, dark purple (#110518) outlines, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-10-07T21:17:12.226595+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "e8642e62e8a42515faaf893f49b1527833b369a3",
+  "announcements": [
+    {
+      "id": "pr-16340:nex-agi/nex-n2.5-pro",
+      "model_id": "nex-agi/nex-n2.5-pro",
+      "title": "Nex N2.5 Pro",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000079125",
+            "promptCachedTokens": "0.000000015825",
+            "completionTextTokens": "0.00000026375"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "structured_outputs",
+            "temperature",
+            "top_p",
+            "top_k",
+            "logprobs",
+            "top_logprobs",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "e8642e62e8a42515faaf893f49b1527833b369a3^1",
+    "after_ref": "e8642e62e8a42515faaf893f49b1527833b369a3"
+  }
+}

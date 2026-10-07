@@ -1,0 +1,183 @@
+{
+  "date": "2026-10-06",
+  "period_start": "2026-10-06",
+  "period_end": "2026-10-06",
+  "title": "More ways to make images, speech, and video",
+  "summary": "New creative models, more precise key permissions, and a lot of work making generation, usage reports, and provider failover behave as advertised.\n\nEleven v4 and v4 Turbo add speech with word timestamps; Nano Banana 2.1 adds image generation and reference-based editing; and Grok Imagine Video 1.5 Lite adds text-to-video and start-image-to-video. Audio fixes also restore Stable Audio 3 authentication, preserve WAV filenames during transcription, accept Gemini’s voice-prompt usage records, and pass MCP emotion and style instructions through to generation.\n\nAPI keys can now grant access by model category and optionally restrict spending to Quest Pollen. Agent run tokens inherit only their parent key’s account permissions, including sandbox access when authorized. Pollen top-ups gain a separate crypto checkout; paid MCP calls check available funds and key budgets; and MCP text conversations can continue after assistant tool calls with no text content.\n\nFallback routes improve continuity for GLM 5.3 Flash, Kimi K3, MiniMax M3, Gemini 2.5 Flash Lite, Ling 3.1 Flash, and Qwen embeddings. Gemini search also regains structured JSON responses, while disconnected GPU tunnels trigger another-worker retries for image requests. An hourly model-stats snapshot reduces expensive refreshes, and generation now lets providers return their own parameter errors where local checks could become stale.",
+  "pr_count": 43,
+  "prs": [
+    {
+      "number": 16235,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16395,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16413,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16434,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16462,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16469,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16470,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16473,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16475,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16479,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16485,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16487,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16490,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16495,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16527,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16557,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16562,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16564,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16566,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16568,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16569,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16573,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16581,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16582,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16585,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16586,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16587,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16588,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16593,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16594,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16601,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16604,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16605,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16609,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16614,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16616,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16630,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16636,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16638,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16640,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16641,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16649,
+      "date": "2026-10-06"
+    },
+    {
+      "number": 16651,
+      "date": "2026-10-06"
+    }
+  ],
+  "generated_at": "2026-10-07T06:31:15.216065+00:00"
+}

@@ -18,45 +18,18 @@ const PREVIEWABLE_IMAGE_TYPES = new Set([
     "image/png",
     "image/webp",
 ]);
-const PREVIEW_SIZE = 64;
-const LARGE_PREVIEW_SIZE = 112;
-
-const previewSizeClasses = {
-    sm: "polli:h-16 polli:w-16",
-    lg: "polli:h-28 polli:w-28",
-} as const;
+const PREVIEW_SIZE = 80;
 
 function isPreviewableImage(file: File): boolean {
     return PREVIEWABLE_IMAGE_TYPES.has(file.type);
 }
 
-function formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function attachmentSummary(files: File[]): string {
-    const kinds = new Set(
-        files.map((file) => file.type.split("/")[0]).filter(Boolean),
-    );
-    if (kinds.size !== 1) return `${files.length} files attached`;
-    const [kind] = kinds;
-    return `${files.length} ${kind}${files.length === 1 ? "" : "s"} attached`;
-}
-
-function PreviewPlaceholder({
-    icon,
-    size,
-}: {
-    icon: ReactNode;
-    size: "sm" | "lg";
-}) {
+function PreviewPlaceholder({ icon }: { icon: ReactNode }) {
     return (
         <div
             className={cn(
                 "polli:flex polli:items-center polli:justify-center polli:rounded-xl polli:bg-theme-bg-active polli:text-theme-text-soft",
-                previewSizeClasses[size],
+                "polli:h-20 polli:w-20",
             )}
         >
             {icon}
@@ -67,17 +40,14 @@ function PreviewPlaceholder({
 function FilePreview({
     file,
     placeholderIcon,
-    size = "sm",
 }: {
     file: File;
     placeholderIcon: ReactNode;
-    size?: "sm" | "lg";
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [canPreview, setCanPreview] = useState(() =>
         isPreviewableImage(file),
     );
-    const previewSize = size === "lg" ? LARGE_PREVIEW_SIZE : PREVIEW_SIZE;
 
     useEffect(() => {
         if (!isPreviewableImage(file)) {
@@ -104,19 +74,19 @@ function FilePreview({
                     return;
                 }
 
-                canvas.width = previewSize;
-                canvas.height = previewSize;
+                canvas.width = PREVIEW_SIZE;
+                canvas.height = PREVIEW_SIZE;
 
                 const scale = Math.max(
-                    previewSize / bitmap.width,
-                    previewSize / bitmap.height,
+                    PREVIEW_SIZE / bitmap.width,
+                    PREVIEW_SIZE / bitmap.height,
                 );
                 const width = bitmap.width * scale;
                 const height = bitmap.height * scale;
-                const x = (previewSize - width) / 2;
-                const y = (previewSize - height) / 2;
+                const x = (PREVIEW_SIZE - width) / 2;
+                const y = (PREVIEW_SIZE - height) / 2;
 
-                context.clearRect(0, 0, previewSize, previewSize);
+                context.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
                 context.drawImage(bitmap, x, y, width, height);
                 bitmap.close();
             } catch {
@@ -129,10 +99,10 @@ function FilePreview({
         return () => {
             cancelled = true;
         };
-    }, [file, previewSize]);
+    }, [file]);
 
     if (!canPreview) {
-        return <PreviewPlaceholder icon={placeholderIcon} size={size} />;
+        return <PreviewPlaceholder icon={placeholderIcon} />;
     }
 
     return (
@@ -140,9 +110,9 @@ function FilePreview({
             ref={canvasRef}
             role="img"
             aria-label={file.name}
-            className={cn("polli:rounded-xl", previewSizeClasses[size])}
-            width={previewSize}
-            height={previewSize}
+            className="polli:h-20 polli:w-20 polli:rounded-xl"
+            width={PREVIEW_SIZE}
+            height={PREVIEW_SIZE}
         />
     );
 }
@@ -157,8 +127,6 @@ export type FileUploadProps = {
     icon?: ReactNode;
     label?: ReactNode;
     previewIcon?: ReactNode;
-    /** Compact drop zone, or preview-only strip for a parent drop target. */
-    variant?: "default" | "compact" | "inline";
     /** Fully locks the field: no add, no remove, drops ignored. */
     disabled?: boolean;
     className?: string;
@@ -178,7 +146,6 @@ export function FileUpload({
         </>
     ),
     previewIcon = <ImageIcon className="polli:h-5 polli:w-5" />,
-    variant = "default",
     disabled = false,
     className,
 }: FileUploadProps) {
@@ -200,196 +167,88 @@ export function FileUpload({
         if (rejected.length > 0) onReject?.(rejected);
     }
 
-    const hasFiles = value.length > 0;
     const canAdd = !disabled && value.length < maxFiles;
-    const isSingleFile = maxFiles === 1;
-    const compact = variant !== "default";
-    const inline = variant === "inline";
-    const previewSize = compact ? "sm" : isSingleFile ? "lg" : "sm";
     const inputId = useId();
-    const addInputId = `${inputId}-add`;
 
     function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
         addFiles(Array.from(event.target.files ?? []));
         event.target.value = "";
     }
 
-    if (inline && !hasFiles) return null;
-
     return (
-        <div className={cn("polli:flex polli:flex-col polli:gap-2", className)}>
-            <fieldset
-                disabled={disabled}
-                className={cn(
-                    "polli:m-0",
-                    !inline &&
-                        "polli:rounded-xl polli:border polli:border-dashed polli:border-theme-border polli:bg-theme-bg-pale",
-                    "polli:text-sm",
-                    inline
-                        ? "polli:border-0 polli:bg-transparent polli:p-0 polli:text-left"
-                        : compact
-                          ? "polli:min-h-16 polli:px-3 polli:py-2 polli:text-left"
-                          : "polli:px-4 polli:py-4 polli:text-center",
-                    "polli:text-theme-text-soft polli:transition-colors",
-                    disabled
-                        ? "polli:opacity-50"
-                        : "polli:hover:bg-theme-bg-hover",
-                )}
-                // Always prevent the browser's default file-drop navigation,
-                // even when disabled; only the file handling is gated.
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    if (disabled) return;
-                    addFiles(Array.from(e.dataTransfer.files));
-                }}
-            >
-                {!hasFiles ? (
-                    <label
-                        htmlFor={inputId}
-                        className={cn(
-                            "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-lg",
-                            compact
-                                ? "polli:min-h-12 polli:flex-row polli:justify-start"
-                                : "polli:min-h-32 polli:flex-col polli:justify-center",
-                            canAdd
-                                ? "polli:cursor-pointer"
-                                : "polli:cursor-not-allowed",
-                        )}
+        <fieldset
+            disabled={disabled}
+            className={cn(
+                "polli:m-0 polli:min-w-0 polli:border-0 polli:p-0",
+                disabled && "polli:opacity-50",
+                className,
+            )}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+                event.preventDefault();
+                addFiles(Array.from(event.dataTransfer.files));
+            }}
+        >
+            <ul className="polli:m-0 polli:flex polli:flex-wrap polli:gap-3 polli:p-0">
+                {value.map((file, index) => (
+                    <li
+                        // biome-ignore lint/suspicious/noArrayIndexKey: Duplicate files are allowed; position identifies each attachment.
+                        key={`${file.name}-${index}`}
+                        title={file.name}
+                        className="polli:relative polli:list-none"
                     >
-                        {icon}
-                        <span>{label}</span>
-                        <input
-                            id={inputId}
-                            type="file"
-                            accept={accept}
-                            multiple={maxFiles > 1}
-                            disabled={disabled || !canAdd}
-                            className="polli:sr-only"
-                            onChange={handleInputChange}
+                        <FilePreview
+                            file={file}
+                            placeholderIcon={previewIcon}
                         />
-                    </label>
-                ) : (
-                    <div
-                        className={cn(
-                            "polli:flex polli:gap-3",
-                            compact ? "polli:items-center" : "polli:flex-col",
+                        <span className="polli:sr-only">{file.name}</span>
+                        {!disabled && (
+                            <div className="polli:absolute polli:-top-2 polli:right-1">
+                                <IconButton
+                                    intent="danger"
+                                    title={`Remove ${file.name}`}
+                                    onClick={() =>
+                                        onChange(
+                                            value.filter((_, i) => i !== index),
+                                        )
+                                    }
+                                >
+                                    <XIcon className="polli:h-3 polli:w-3" />
+                                </IconButton>
+                            </div>
                         )}
-                    >
-                        {compact && !inline && (
-                            <span className="polli:text-xs polli:font-medium polli:text-theme-text-muted">
-                                {attachmentSummary(value)}
-                            </span>
-                        )}
-                        <ul
+                    </li>
+                ))}
+                {(canAdd || value.length === 0) && (
+                    <li className="polli:list-none">
+                        <label
+                            htmlFor={inputId}
                             className={cn(
-                                "polli:m-0 polli:gap-3 polli:p-0",
-                                compact
-                                    ? cn(
-                                          "polli:flex polli:min-w-0 polli:flex-1 polli:flex-wrap",
-                                          inline
-                                              ? "polli:justify-start"
-                                              : "polli:ml-auto polli:justify-end",
-                                      )
-                                    : "polli:grid polli:grid-cols-[repeat(auto-fill,minmax(5rem,1fr))]",
-                                isSingleFile &&
-                                    !compact &&
-                                    "polli:flex polli:justify-center",
+                                "polli-control polli:flex polli:h-20 polli:w-20 polli:flex-col polli:items-center polli:justify-center polli:gap-2 polli:rounded-xl polli:border polli:border-dashed polli:border-theme-border polli:bg-theme-bg-pale polli:p-2 polli:text-center polli:text-xs polli:text-theme-text-soft polli:transition-colors",
+                                canAdd
+                                    ? "polli:cursor-pointer polli:hover:bg-theme-bg-hover"
+                                    : "polli:cursor-not-allowed",
                             )}
                         >
-                            {value.map((file, index) => (
-                                <li
-                                    key={`${file.name}-${index}`}
-                                    className={cn(
-                                        "polli:relative polli:flex polli:min-w-0 polli:list-none polli:flex-col polli:items-center polli:gap-1",
-                                        isSingleFile && "polli:max-w-full",
-                                    )}
-                                >
-                                    <FilePreview
-                                        file={file}
-                                        placeholderIcon={previewIcon}
-                                        size={previewSize}
-                                    />
-                                    {!compact && (
-                                        <>
-                                            <span
-                                                className={cn(
-                                                    "polli:max-w-full polli:truncate polli:text-xs polli:font-medium polli:text-theme-text-base",
-                                                    isSingleFile
-                                                        ? "polli:w-36"
-                                                        : "polli:w-16",
-                                                )}
-                                            >
-                                                {file.name}
-                                            </span>
-                                            <span className="polli:text-micro polli:text-theme-text-muted">
-                                                {formatFileSize(file.size)}
-                                            </span>
-                                        </>
-                                    )}
-                                    {!disabled && (
-                                        <div className="polli:absolute polli:-top-2 polli:right-1">
-                                            <IconButton
-                                                intent="danger"
-                                                title={`Remove ${file.name}`}
-                                                onClick={() =>
-                                                    onChange(
-                                                        value.filter(
-                                                            (_, i) =>
-                                                                i !== index,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <XIcon className="polli:h-3 polli:w-3" />
-                                            </IconButton>
-                                        </div>
-                                    )}
-                                </li>
-                            ))}
-
-                            {!inline && !isSingleFile && canAdd && (
-                                <li className="polli:flex polli:list-none">
-                                    <label
-                                        htmlFor={addInputId}
-                                        className={cn(
-                                            "polli-control polli:flex polli:cursor-pointer polli:flex-col polli:items-center polli:justify-center polli:gap-1 polli:rounded-lg polli:bg-theme-bg-active polli:text-theme-text-soft polli:transition-colors polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-strong",
-                                            compact
-                                                ? "polli:h-16 polli:w-16 polli:px-2 polli:py-1"
-                                                : "polli:min-h-20 polli:w-full polli:px-3 polli:py-2",
-                                        )}
-                                    >
-                                        <PlusIcon className="polli:h-5 polli:w-5" />
-                                        {!compact && (
-                                            <span className="polli:text-xs polli:font-medium">
-                                                Add
-                                            </span>
-                                        )}
-                                        <input
-                                            id={addInputId}
-                                            type="file"
-                                            aria-label="Add files"
-                                            accept={accept}
-                                            multiple
-                                            disabled={disabled || !canAdd}
-                                            className="polli:sr-only"
-                                            onChange={handleInputChange}
-                                        />
-                                    </label>
-                                </li>
+                            {value.length ? (
+                                <PlusIcon className="polli:h-6 polli:w-6" />
+                            ) : (
+                                icon
                             )}
-                        </ul>
-
-                        {Number.isFinite(maxFiles) &&
-                            maxFiles > 1 &&
-                            !compact && (
-                                <span className="polli:text-xs polli:text-theme-text-muted">
-                                    {value.length} / {maxFiles} files
-                                </span>
-                            )}
-                    </div>
+                            <span>{value.length ? "Add files" : label}</span>
+                            <input
+                                id={inputId}
+                                type="file"
+                                accept={accept}
+                                multiple={maxFiles > 1}
+                                disabled={!canAdd}
+                                className="polli:sr-only"
+                                onChange={handleInputChange}
+                            />
+                        </label>
+                    </li>
                 )}
-            </fieldset>
-        </div>
+            </ul>
+        </fieldset>
     );
 }

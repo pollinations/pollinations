@@ -1082,7 +1082,6 @@ export function Playground() {
                 <FileUpload
                     value={audioFiles}
                     onChange={setAudioFiles}
-                    variant="compact"
                     maxFiles={1}
                     maxSizeBytes={AUDIO_UPLOAD_MAX_SIZE_BYTES}
                     accept={mediaUploadAccept}
@@ -1236,7 +1235,6 @@ export function Playground() {
                             <FileUpload
                                 value={referenceImages}
                                 onChange={setReferenceImages}
-                                variant="compact"
                                 maxFiles={maxReferenceImages}
                                 maxSizeBytes={IMAGE_UPLOAD_MAX_SIZE_BYTES}
                                 label={
@@ -1267,7 +1265,6 @@ export function Playground() {
                                     onChange={(files) =>
                                         setFrameImage(0, files)
                                     }
-                                    variant="compact"
                                     maxFiles={1}
                                     maxSizeBytes={IMAGE_UPLOAD_MAX_SIZE_BYTES}
                                     label={
@@ -1293,7 +1290,6 @@ export function Playground() {
                                         onChange={(files) =>
                                             setFrameImage(1, files)
                                         }
-                                        variant="compact"
                                         maxFiles={1}
                                         maxSizeBytes={
                                             IMAGE_UPLOAD_MAX_SIZE_BYTES

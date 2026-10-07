@@ -1154,7 +1154,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.22),
@@ -1492,8 +1492,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Free upstream, so billed at zero.
-        // Free upstream, so Quest Pollen can reach it at no cost.
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0),
             completionTextTokens: perMillion(0),
@@ -1522,10 +1521,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-17").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
-        // Deliberately not paid-only, unlike the other OpenRouter routes:
-        // Quest Pollen must reach Jev, and $0.042/M in with free output
-        // bounds what a free-tier account can spend.
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             // TypeSafe list price (docs.typesafe.ai, checked 2026-09-17) plus
             // OpenRouter's 5.5% credit fee, as every OpenRouter route records.
@@ -1558,9 +1554,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
-        // Like Jev, Quest Pollen must reach it; $0.042/M in with free output
-        // bounds what a free-tier account can spend.
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             // OpenRouter list price plus its 5.5% credit fee, as every
             // OpenRouter route records.
@@ -2076,7 +2070,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-07-30).
         cost: {
@@ -2192,7 +2186,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // Free during the launch promotion on direct Novita and both
@@ -2333,7 +2327,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // Fireworks NVFP4 serverless rates (2026-09-30).
@@ -2358,7 +2352,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
@@ -2629,7 +2623,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-08-29).
         cost: {
@@ -2654,7 +2648,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-27").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-08-29).
         cost: {
@@ -2828,7 +2822,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         perUserRpm: 60,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
@@ -3050,7 +3044,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // Fireworks accounts/fireworks/models/qwen3p8-2p4t-a95b rates (2026-08-14).

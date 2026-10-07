@@ -132,6 +132,57 @@ async function createBalanceUser(
 }
 
 describe("BYOP markup", () => {
+    it.each([
+        "inclusionai/ling-3.1-flash",
+        "jaredpalmer/kev-4b",
+        "respan/span-01-lite",
+        "typesafe/jev-1.13",
+        "deepseek/deepseek-v4.1-flash",
+        "z-ai/glm-5.3-flash",
+        "z-ai/glm-5.3",
+        "nvidia/nemotron-3.5-lightning",
+        "nvidia/nemotron-3-ultra",
+        "qwen/qwen3.8-2.4t-a95b",
+        "moonshotai/kimi-k3",
+        "minimax/minimax-m3",
+    ] as const)("requires paid balance for %s and its fallback routes", async (model) => {
+        const userId = await createBalanceUser("paid-model", {
+            tier: 100,
+            pack: 0,
+        });
+        const vars = {
+            auth: { user: { id: userId } },
+            balance: { getBalance: (id: string) => getUserBalance(db, id) },
+            model: testModel(model),
+            log: fakeLog(),
+        } as unknown as Parameters<typeof checkBalance>[0];
+
+        for (const route of [
+            model,
+            ...(vars.model.definition.fallbacks ?? []),
+        ]) {
+            vars.model = testModel(route as ModelName);
+            await expect(
+                checkBalance(vars, fakeStatsEnv(0, route)),
+            ).rejects.toMatchObject({
+                status: 402,
+                errorCode: "INSUFFICIENT_BALANCE",
+                paidOnly: true,
+            });
+            await db
+                .update(userTable)
+                .set({ packBalance: 1 })
+                .where(sql`${userTable.id} = ${userId}`);
+            await expect(
+                checkBalance(vars, fakeStatsEnv(0, route)),
+            ).resolves.toBeUndefined();
+            await db
+                .update(userTable)
+                .set({ packBalance: 0 })
+                .where(sql`${userTable.id} = ${userId}`);
+        }
+    });
+
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);
         expect(computeDevCredit(-1)).toBe(0);

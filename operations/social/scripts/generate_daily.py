@@ -23,6 +23,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
 from common import (
+    gist_context,
     build_canonical_summary,
     join_summary_parts,
     normalize_platform_post,
@@ -74,16 +75,7 @@ def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
 
     lines = [f"# Updates for {date_str}\n"]
     for g in filtered:
-        ai = g.get("gist", {})
-        lines.append(f"## PR #{g['pr_number']}: {g['title']}")
-        if ai.get("summary"):
-            lines.append(f"**Summary:** {ai['summary']}")
-        if ai.get("impact"):
-            lines.append(f"**Impact:** {ai['impact']}")
-        if ai.get("headline"):
-            lines.append(f"**Headline:** {ai['headline']}")
-        if ai.get("keywords"):
-            lines.append(f"**Keywords:** {', '.join(ai['keywords'])}")
+        lines.append(json.dumps(gist_context(g), indent=2))
         # Include app link so highlights can reference it
         if g.get("app_name") and g.get("app_url"):
             lines.append(f"**App Link:** [{g['app_name']}]({g['app_url']})")
@@ -229,18 +221,7 @@ def generate_summary(gists: List[Dict], date_str: str, token: str) -> Optional[D
     # Build gist context for AI
     gist_lines = []
     for g in gists:
-        ai = g.get("gist", {})
-        gist_lines.append(json.dumps({
-            "pr_number": g["pr_number"],
-            "title": g["title"],
-            "author": g["author"],
-            "category": ai.get("category"),
-            "importance": ai.get("importance"),
-            "user_facing": ai.get("user_facing"),
-            "summary": ai.get("summary"),
-            "impact": ai.get("impact"),
-            "keywords": ai.get("keywords"),
-        }, indent=2))
+        gist_lines.append(json.dumps(gist_context(g), indent=2))
 
     user_prompt = f"""Date: {date_str}
 Number of PRs: {len(gists)}

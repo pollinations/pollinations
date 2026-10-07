@@ -10,6 +10,8 @@ Given PR gists for the past 7 days (grouped by date), weave them into a weekly d
 
 ## Rules
 
+- Gists are the factual source. Use Area and Type to group work, and Source for attribution. Exact model values come from `announcements`, including units and before/after; do not invent missing values or describe scheduled/unconfirmed changes as live.
+
 - **Synthesize themes, don't concatenate.** "This week was about speed" > listing Monday's PRs then Tuesday's PRs.
 - **Find the through-lines.** 3 days of billing PRs = "We overhauled billing this week."
 - **Major first.** Lead with the week's biggest story. Minor items go last or get grouped.

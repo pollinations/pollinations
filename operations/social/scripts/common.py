@@ -554,7 +554,7 @@ _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
 
 # Required keys inside gist.gist (the AI-generated analysis)
 _GIST_AI_KEYS = {"category", "user_facing", "publish_tier", "importance",
-                 "headline", "blurb", "summary", "impact", "keywords", "image_prompt"}
+                 "summary", "keywords"}
 
 VALID_CATEGORIES = {"feature", "bug_fix", "improvement", "docs", "infrastructure", "community"}
 VALID_PUBLISH_TIERS = {"none", "discord_only", "daily"}
@@ -589,6 +589,11 @@ def validate_gist(gist: Dict) -> List[str]:
     if "keywords" in ai and not isinstance(ai["keywords"], list):
         errors.append("keywords must be a list")
 
+    if not isinstance(ai.get("summary"), str) or not ai["summary"].strip():
+        errors.append("gist.summary must be non-empty text")
+    if not gist.get("image", {}).get("prompt"):
+        errors.append("missing image.prompt")
+
     if "enrichment" in gist:
         for field in ("classification", "models"):
             if gist["enrichment"].get(field) not in {"complete", "failed"}:
@@ -611,6 +616,20 @@ def validate_gist(gist: Dict) -> List[str]:
                 errors.append("invalid announcement effective_status")
 
     return errors
+
+
+def gist_context(gist: Dict) -> Dict:
+    """The shared factual input for realtime, daily, weekly and highlights."""
+    ai = gist.get("gist", {})
+    return {
+        **{key: gist.get(key) for key in (
+            "pr_number", "title", "author", "url", "area", "type", "source", "app_name", "app_url"
+        )},
+        **{key: ai.get(key) for key in (
+            "summary", "category", "importance", "user_facing", "keywords"
+        )},
+        "announcements": gist.get("announcements", []),
+    }
 
 
 def apply_publish_tier_rules(gist: Dict) -> str:

@@ -11,6 +11,7 @@ import {
 import {
     Alert,
     AudioIcon,
+    BrandMark,
     Button,
     ButtonGroup,
     ChevronIcon,
@@ -23,7 +24,6 @@ import {
     type FileUploadProps,
     ImageIcon,
     Input,
-    LockIcon,
     MicIcon,
     ScrollArea,
     Slider,
@@ -1877,15 +1877,19 @@ export function Playground() {
                     ) : (
                         <Button
                             size="lg"
+                            intent={needsSignIn ? "brand" : undefined}
                             disabled={isGenerating}
                             // Wrapped: login() takes an optional request
                             // object, so passing the ref directly would
                             // hand it the click event.
                             onClick={needsSignIn ? () => login() : generate}
-                            className="self-start"
+                            className={cn(
+                                "self-start",
+                                needsSignIn && "h-12 gap-2 px-5 py-0",
+                            )}
                         >
                             {needsSignIn ? (
-                                <LockIcon className="mr-2 h-4 w-4" />
+                                <BrandMark className="h-6 w-6" />
                             ) : (
                                 <GenerateIcon className="mr-2 h-4 w-4" />
                             )}

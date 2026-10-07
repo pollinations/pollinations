@@ -205,12 +205,19 @@ def closing_issues() -> list:
         } } } } }""",
         {"id": ISSUE_NODE_ID},
     )
-    return data.get("node", {}).get("closingIssuesReferences", {}).get("nodes", [])
+    node = data.get("node")
+    if node is None:
+        fail(f"Failed to fetch linked issues for PR #{ISSUE_NUMBER}")
+    return node["closingIssuesReferences"]["nodes"]
 
 
 def item_source(labels: set) -> str:
     """Exactly one source: Apps, then Quests, then who opened it."""
-    linked = {label["name"].upper() for issue in closing_issues() for label in issue["labels"]["nodes"]} if IS_PULL_REQUEST else set()
+    linked = {
+        label["name"].upper()
+        for issue in closing_issues()
+        for label in issue["labels"]["nodes"]
+    } if IS_PULL_REQUEST else set()
     for name, label in LABEL_SOURCES:
         if label in labels or label in linked:
             return name

@@ -364,6 +364,14 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
+    // Nex returns a generic server error when it cannot fetch an image URL.
+    "nex-agi/nex-n2.5-pro": () => ({
+        ...createPinnedOpenRouterConfig(
+            "nex-agi/nex-n2.5-pro",
+            "nex-agi/fp8",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

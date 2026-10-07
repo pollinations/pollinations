@@ -30,6 +30,18 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("rejects invalid image URLs on the configured Nex Pro route", async () => {
+        const input = imageMessage(["http://127.0.0.1/image.png"]);
+        const resolved = resolveModelConfig(input, {
+            model: "nex-agi/nex-n2.5-pro",
+        });
+
+        await expect(transform(input, resolved.options)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
     it("uses the declared flag rather than the provider name", async () => {
         const input = imageMessage(["not-a-url"]);
         const result = await transform(input, {

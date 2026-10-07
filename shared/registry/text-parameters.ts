@@ -399,6 +399,19 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Nex AGI fp8 tag for Nex-N2.5-Pro (2026-10-03).
+    openRouterNexPro: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
     openRouterLing: [
         "max_tokens",

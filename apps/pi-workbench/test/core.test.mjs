@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
     authorizeRequest,
     mcpResult,
+    projectEntries,
     projectPath,
     streamReceipt,
 } from "../public/core.js";
@@ -87,6 +88,21 @@ test("project import and editor reject paths outside the visible project and res
         "src//file",
     ])
         assert.throws(() => projectPath(path));
+});
+test("project listing includes unusual guest filenames without exposing runtime folders", async () => {
+    const listings = {
+        ".": [
+            { name: ".pi", kind: "directory" },
+            { name: ".bridge", kind: "directory" },
+            { name: "a\\b", kind: "file" },
+            { name: "src", kind: "directory" },
+        ],
+        src: [{ name: "hello.js", kind: "file" }],
+    };
+    const files = await projectEntries({
+        readDir: async (path) => listings[path],
+    });
+    assert.deepEqual(Object.keys(files), ["a\\b", "src/hello.js"]);
 });
 test("stream receipts require provider usage and retain the real response ID", () => {
     const body =

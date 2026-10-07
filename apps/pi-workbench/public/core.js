@@ -14,6 +14,17 @@ export function projectPath(value) {
         );
     return path;
 }
+export async function projectEntries(fs, path = "") {
+    const result = {};
+    for (const entry of await fs.readDir(path || ".")) {
+        if (!path && [".pi", ".bridge"].includes(entry.name)) continue;
+        const file = path ? `${path}/${entry.name}` : entry.name;
+        if (entry.kind === "directory")
+            Object.assign(result, await projectEntries(fs, file));
+        else result[file] = entry;
+    }
+    return result;
+}
 export function authorizeRequest(request, { model, mode, exa, computer }) {
     const url = new URL(request.url);
     if (

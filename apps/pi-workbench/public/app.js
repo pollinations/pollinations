@@ -4,6 +4,7 @@ import {
     authorizeRequest,
     DEFAULT_MODEL,
     mcpResult,
+    projectEntries,
     projectPath,
     streamReceipt,
 } from "./core.js";
@@ -206,6 +207,8 @@ try {
         (model) =>
             model.category === "text" &&
             model.tools &&
+            // Pi's chat-completions adapter drops Gemini 3.8's tool-call signature on the next request.
+            model.name !== "google/gemini-3.8-flash" &&
             model.supported_endpoints.includes("/v1/chat/completions"),
     );
     $("model").replaceChildren(
@@ -279,21 +282,9 @@ async function boot(files) {
     }
 }
 $("boot").onclick = handle(() => boot());
-async function projectEntries(path = "") {
-    const result = {};
-    for (const entry of await sandbox.fs.readDir(path || ".")) {
-        if (!path && [".pi", ".bridge"].includes(entry.name)) continue;
-        const file = path ? `${path}/${entry.name}` : entry.name;
-        projectPath(file);
-        if (entry.kind === "directory")
-            Object.assign(result, await projectEntries(file));
-        else result[file] = entry;
-    }
-    return result;
-}
 async function projectFiles() {
     const files = {};
-    for (const path of Object.keys(await projectEntries())) {
+    for (const path of Object.keys(await projectEntries(sandbox.fs))) {
         const bytes = await sandbox.fs.readFile(path);
         try {
             files[path] = new TextDecoder("utf-8", { fatal: true }).decode(
@@ -307,7 +298,7 @@ async function projectFiles() {
 }
 async function selectFile(path) {
     $("path").value = path;
-    const bytes = await sandbox.fs.readFile(projectPath(path));
+    const bytes = await sandbox.fs.readFile(path);
     try {
         if (bytes.includes(0)) throw new Error("Binary file");
         $("editor").value = new TextDecoder("utf-8", { fatal: true }).decode(
@@ -324,7 +315,7 @@ async function selectFile(path) {
     controls();
 }
 async function refresh() {
-    const files = await projectEntries();
+    const files = await projectEntries(sandbox.fs);
     $("files").replaceChildren(
         ...Object.keys(files)
             .sort()
@@ -363,13 +354,15 @@ function download(name, value) {
 async function exportProject(name = "pi-project.zip") {
     const { zipSync } = await import("./vendor/fflate/browser.js");
     const files = {};
-    for (const path of Object.keys(await projectEntries()))
+    for (const path of Object.keys(await projectEntries(sandbox.fs)))
         files[path] = await sandbox.fs.readFile(path);
     downloadBytes(name, zipSync(files, { level: 0 }), "application/zip");
 }
 $("export").onclick = handle(() => exportProject());
 $("download-file").onclick = handle(async () => {
-    const path = projectPath($("path").value);
+    const path = $("path").value;
+    if (!Object.hasOwn(await projectEntries(sandbox.fs), path))
+        throw new Error("Select a project file to download.");
     downloadBytes(path.split("/").at(-1), await sandbox.fs.readFile(path));
 });
 $("import").onchange = handle(async () => {

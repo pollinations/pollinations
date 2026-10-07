@@ -43,7 +43,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            expirationDate: new Date("2026-12-01").getTime(),
         },
     },
     "openai/gpt-image-1.5": {
@@ -51,7 +51,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            expirationDate: new Date("2026-12-01").getTime(),
         },
     },
     "openai/gpt-image-2": {
@@ -154,7 +154,7 @@ export const IMAGE_FALLBACKS = {
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
             // OpenRouter expiration_date.
-            retirementDate: new Date("2027-03-15").getTime(),
+            expirationDate: new Date("2027-03-15").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.3) * 1.055,
                 promptImageTokens: perMillion(0.3) * 1.055,

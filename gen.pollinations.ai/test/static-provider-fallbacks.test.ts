@@ -505,7 +505,7 @@ describe("static provider fallbacks", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
         const parent: ModelDefinition = {
             ...TEXT_SERVICES[parentId],
-            retirementDate: Date.UTC(2026, 9, 20),
+            expirationDate: Date.UTC(2026, 9, 20),
         };
         const undatedId = `${parentId}:openrouter:ai-studio`;
         const datedId = `${parentId}:openrouter:vertex`;
@@ -516,15 +516,15 @@ describe("static provider fallbacks", () => {
                     [undatedId]: { provider: "openrouter" },
                     [datedId]: {
                         provider: "openrouter",
-                        retirementDate: Date.UTC(2027, 2, 15),
+                        expirationDate: Date.UTC(2027, 2, 15),
                     },
                 },
             },
         );
 
-        expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
-        expect(services[undatedId].retirementDate).toBeUndefined();
-        expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
+        expect(services[parentId].expirationDate).toBe(Date.UTC(2026, 9, 20));
+        expect(services[undatedId].expirationDate).toBeUndefined();
+        expect(services[datedId].expirationDate).toBe(Date.UTC(2027, 2, 15));
     });
 
     it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {

@@ -36,7 +36,7 @@ const EMBEDDING_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        retirementDate: new Date("2028-02-09").getTime(),
+        expirationDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -55,7 +55,7 @@ const EMBEDDING_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        retirementDate: new Date("2028-02-09").getTime(),
+        expirationDate: new Date("2028-02-09").getTime(),
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {

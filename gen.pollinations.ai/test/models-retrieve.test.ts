@@ -249,13 +249,13 @@ test("lists each model's expiration date from its own registry definition", asyn
         ),
     ];
 
-    for (const [id, expirationDate] of listed) {
-        const retirementDate = registry.resolve(id)?.definition.retirementDate;
+    for (const [id, date] of listed) {
+        const expiresAt = registry.resolve(id)?.definition.expirationDate;
         // toBe(null) also fails when the key is missing.
-        expect(expirationDate, id).toBe(
-            retirementDate === undefined
+        expect(date, id).toBe(
+            expiresAt === undefined
                 ? null
-                : new Date(retirementDate).toISOString().slice(0, 10),
+                : new Date(expiresAt).toISOString().slice(0, 10),
         );
     }
     // The catalog has both kinds, so the loop covers dates and nulls.

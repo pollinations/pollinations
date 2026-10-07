@@ -203,7 +203,7 @@ export type ModelDefinition = {
     // known: a provider's published retirement, or our own decision to retire
     // it. Exact cutoff when the provider gives one, else the start of the day.
     // Fallback routes never inherit it.
-    retirementDate?: number;
+    expirationDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;

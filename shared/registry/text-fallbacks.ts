@@ -63,13 +63,13 @@ export const TEXT_FALLBACKS = {
     "openai/gpt-5.3-codex": {
         "openai/gpt-5.3-codex:azure:sweden": {
             provider: "azure",
-            retirementDate: new Date("2027-08-24").getTime(),
+            expirationDate: new Date("2027-08-24").getTime(),
         },
     },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",
-            retirementDate: new Date("2028-01-11").getTime(),
+            expirationDate: new Date("2028-01-11").getTime(),
             // Same checkpoint, separate US Data Zone quota pool. The caller
             // keeps the Global quote; Pollinations absorbs the 10% premium.
             cost: {
@@ -101,7 +101,7 @@ export const TEXT_FALLBACKS = {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-06").getTime(),
-            retirementDate: new Date("2027-08-24").getTime(),
+            expirationDate: new Date("2027-08-24").getTime(),
         },
         "x-ai/grok-4.6:xai": {
             provider: "xai",
@@ -307,7 +307,7 @@ export const TEXT_FALLBACKS = {
         "moonshotai/kimi-k2.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-23").getTime(),
-            retirementDate: new Date("2027-04-16").getTime(),
+            expirationDate: new Date("2027-04-16").getTime(),
         },
         "moonshotai/kimi-k2.6:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

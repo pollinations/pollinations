@@ -256,7 +256,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-22").getTime(),
-        retirementDate: new Date("2027-01-09").getTime(),
+        expirationDate: new Date("2027-01-09").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12,
@@ -279,7 +279,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-23").getTime(),
-        retirementDate: new Date("2027-01-09").getTime(),
+        expirationDate: new Date("2027-01-09").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12,
@@ -303,7 +303,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         // Vertex AI model page.
-        retirementDate: new Date("2027-03-15").getTime(),
+        expirationDate: new Date("2027-03-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1.055,
         cost: {
@@ -586,7 +586,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
-        retirementDate: new Date("2027-04-07").getTime(),
+        expirationDate: new Date("2027-04-07").getTime(),
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -607,7 +607,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
-        retirementDate: new Date("2026-12-16").getTime(),
+        expirationDate: new Date("2026-12-16").getTime(),
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -631,7 +631,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
-        retirementDate: new Date("2027-10-21").getTime(),
+        expirationDate: new Date("2027-10-21").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -654,7 +654,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         // Azure model catalog; the retirement schedule says 2027-09-09.
-        retirementDate: new Date("2027-09-08").getTime(),
+        expirationDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
@@ -678,7 +678,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         // Azure model catalog; the retirement schedule says 2027-09-09.
-        retirementDate: new Date("2027-09-08").getTime(),
+        expirationDate: new Date("2027-09-08").getTime(),
         paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
@@ -1447,7 +1447,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         // xAI retires the slug and redirects it to grok-imagine-image-2.0.
-        retirementDate: new Date("2026-11-02").getTime(),
+        expirationDate: new Date("2026-11-02").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
         cost: {

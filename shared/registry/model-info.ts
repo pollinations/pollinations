@@ -329,9 +329,9 @@ export function modelInfoFromDefinition(
         pricing_units: service.priceUnits,
         added_date: service.addedDate,
         expiration_date:
-            service.retirementDate === undefined
+            service.expirationDate === undefined
                 ? null
-                : new Date(service.retirementDate).toISOString().slice(0, 10),
+                : new Date(service.expirationDate).toISOString().slice(0, 10),
     };
 }
 

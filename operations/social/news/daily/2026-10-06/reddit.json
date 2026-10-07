@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-06",
+  "period_start": "2026-10-06",
+  "period_end": "2026-10-06",
+  "generated_at": "2026-10-07T06:31:15.216065+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-06/images/reddit.jpg"
+    }
+  ],
+  "title": "New media models, tighter agent keys, more provider fallbacks",
+  "text": "43 PRs merged today. The visible additions are [Nano Banana 2.1 image generation and editing](https://github.com/pollinations/pollinations/pull/16609), [Eleven v4 speech with timestamps](https://github.com/pollinations/pollinations/pull/16581), its [Turbo variant](https://github.com/pollinations/pollinations/pull/16582), and Grok Imagine Video 1.5 Lite. SDK `imageGenerate` now returns a consistent single-image result.\n\nA chunk of the work is less visible until something fails. Agent-run tokens now inherit their authorized account permissions, keys can be limited by category or to Quest Pollen, and paid MCP tool calls check available funds and key budgets before running. We also added provider fallbacks for GLM 5.3 Flash, Kimi K3, and MiniMax M3, plus alternate routes for Gemini 2.5 Flash Lite. A disconnected GPU-worker tunnel now triggers a retry on another worker.\n\nThe CLI got several small fixes: it warns when generation hits the token limit, shows queued model changes, keeps search terms in filter suggestions, and preserves numeric costs and API fields in usage JSON. Usage reports now default to seven days. Separately, model stats come from an hourly snapshot, `paid_only` is an explicit catalog boolean, and Gemini search returns structured JSON again.\n\nThe thing to test next is whether those fallback routes catch the failures people actually see, rather than just the tidy ones in tests. If you hit an odd route or response shape, a reproducible request on the [repo](https://github.com/pollinations/pollinations) is useful."
+}

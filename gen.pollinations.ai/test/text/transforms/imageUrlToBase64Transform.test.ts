@@ -30,6 +30,18 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("rejects invalid image URLs on the configured Nex Mini route", async () => {
+        const input = imageMessage(["http://127.0.0.1/image.png"]);
+        const resolved = resolveModelConfig(input, {
+            model: "nex-agi/nex-n2.5-mini",
+        });
+
+        await expect(transform(input, resolved.options)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
     it("uses the declared flag rather than the provider name", async () => {
         const input = imageMessage(["not-a-url"]);
         const result = await transform(input, {
@@ -223,24 +235,22 @@ describe("imageUrlToBase64Transform", () => {
         });
     });
 
-    // Not our call to make: the type is relayed and the provider answers. It
-    // gives a better error about its own accepted formats than a guess here.
-    it("relays a non-image content type instead of refusing it", async () => {
+    it("rejects non-image content before calling the provider", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response("<html></html>", {
                 headers: { "content-type": "text/html" },
             }),
         );
 
-        const { messages } = await transform(
-            imageMessage(["https://example.com/page.html"]),
-            bedrockOptions,
-        );
-
-        const [part] = (
-            messages[0] as { content: { image_url: { url: string } }[] }
-        ).content;
-        expect(part.image_url.url).toMatch(/^data:text\/html;base64,/);
+        await expect(
+            transform(
+                imageMessage(["https://example.com/page.html"]),
+                bedrockOptions,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "unsupported_image_media_type",
+        });
     });
 
     it("rejects an image larger than the request budget", async () => {

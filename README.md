@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ SoloForge AI](https://soloforge-ai-web.onrender.com) | SoloForge AI is an AI Creator OS that turns content ideas into generated assets, review queues, and automated publishing workflows. It uses Pollinations for AI image generation, authenticated AI sessi | [@soloforge-ai](https://github.com/soloforge-ai) |
 | [📚 Pollinations Quest Starter](https://elite-surely-machine-enemies.trycloudflare.com) | A zero-backend web app that walks a brand-new Pollinations user through the seven setup quests on one page. You paste your API key (kept only in browser localStorage - no server, no data collection) a | [@lingt11](https://github.com/lingt11) |
 | [🎮 Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds) | Type a place and an AI paints it as a postcard. A vision model finds the doors, paths and windows in the picture; click one to step into the next view, painted to match the last using the previous vie | [@tomdacatto](https://github.com/tomdacatto) |
 | [📚 Chorus](https://xiaotian1171.github.io/chorus) | Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor | [@xiaotian1171](https://github.com/xiaotian1171) |
@@ -37,7 +38,6 @@
 | [🎮 Mole Party](https://tomdacatto.github.io/pollinations-mole-party) | Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 | [🎮 Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) | Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi | [@NamanSoni78](https://github.com/NamanSoni78) |
-| [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

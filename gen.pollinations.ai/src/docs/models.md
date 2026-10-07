@@ -89,6 +89,10 @@ Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
 
+Every model includes `expiration_date`, in OpenRouter's format: the UTC date
+(`YYYY-MM-DD`) on which the model stops being served, or `null` when no
+retirement is scheduled.
+
 ### Chat parameters
 
 Official Chat models include `supported_parameters`: verified generation

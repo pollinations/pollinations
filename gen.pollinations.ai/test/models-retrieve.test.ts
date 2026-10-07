@@ -234,6 +234,35 @@ test("every catalog entry states paid_only as a boolean", async () => {
     }
 });
 
+test("lists each model's expiration date from its own registry definition", async () => {
+    const registry = await getGenerationModelRegistry(env);
+    const rich = (await (
+        await fetchWorker("/models?reliability=all")
+    ).json()) as ModelInfo[];
+    const openai = (await (
+        await fetchWorker("/v1/models?reliability=all")
+    ).json()) as { data: { id: string; expiration_date: string | null }[] };
+    const listed = [
+        ...rich.map((model) => [model.name, model.expiration_date] as const),
+        ...openai.data.map(
+            (model) => [model.id, model.expiration_date] as const,
+        ),
+    ];
+
+    for (const [id, expirationDate] of listed) {
+        const retirementDate = registry.resolve(id)?.definition.retirementDate;
+        // toBe(null) also fails when the key is missing.
+        expect(expirationDate, id).toBe(
+            retirementDate === undefined
+                ? null
+                : new Date(retirementDate).toISOString().slice(0, 10),
+        );
+    }
+    // The catalog has both kinds, so the loop covers dates and nulls.
+    expect(listed.some(([, date]) => date !== null)).toBe(true);
+    expect(listed.some(([, date]) => date === null)).toBe(true);
+});
+
 test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
     const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({ githubUsername: owner });

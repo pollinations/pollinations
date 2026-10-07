@@ -766,6 +766,12 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        expiration_date: z
+            .string()
+            .nullable()
+            .describe(
+                "UTC date (YYYY-MM-DD) on which the model stops being served, in OpenRouter's `expiration_date` format; null when no retirement is scheduled.",
+            ),
         health: ModelHealthSchema.optional(),
     })
     .meta({

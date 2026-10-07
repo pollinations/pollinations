@@ -172,6 +172,12 @@ export const ModelInfoSchema = z.object({
         ),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
+    streaming: z
+        .boolean()
+        .optional()
+        .describe(
+            "False when the model only answers `stream: false` requests.",
+        ),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
     paid_only: z.boolean(),
@@ -311,6 +317,7 @@ export function modelInfoFromDefinition(
         max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
         context_length: service.contextLength,
+        streaming: service.streaming,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,

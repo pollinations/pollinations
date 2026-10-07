@@ -220,6 +220,8 @@ export type ModelDefinition = {
     search?: boolean;
     codeExecution?: boolean;
     contextLength?: number;
+    /** False when the model only answers `stream: false` requests. */
+    streaming?: boolean;
     voices?: string[];
     isSpecialized?: boolean;
     // True when callers may only spend Paid Pollen; false when Quest Pollen

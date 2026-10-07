@@ -12,6 +12,31 @@ permissions:
 # request diff without fetching the full repository history.
 
 jobs:
+  project-manager:
+    name: Test project manager
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Check for project manager changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- operations/github .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v6
+        if: steps.changes.outputs.changed == 'true'
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: pip install requests
+      - name: Test PR classification and project updates
+        if: steps.changes.outputs.changed == 'true'
+        run: python3 -m unittest operations/github/test_project_manager.py
+
   gpu-tunnels:
     name: Test GPU tunnel recovery
     runs-on: ubuntu-latest

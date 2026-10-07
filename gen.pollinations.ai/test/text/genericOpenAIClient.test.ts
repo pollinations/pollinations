@@ -1,3 +1,4 @@
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isRetryableFallbackError } from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
@@ -8,6 +9,56 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it.each([
+        false,
+        true,
+    ])("returns reusable assistant messages when optional provider fields are null (tools=%s)", async (tools) => {
+        const message = {
+            role: "assistant",
+            content: tools ? null : "hello",
+            name: null,
+            tool_calls: tools
+                ? [
+                      {
+                          id: "call_1",
+                          type: "function",
+                          function: {
+                              name: "get_temperature",
+                              arguments: '{"city":"Berlin"}',
+                          },
+                      },
+                  ]
+                : null,
+        };
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    Response.json({
+                        choices: [{ message, finish_reason: "stop" }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+            },
+        );
+        const returned = completion.choices?.[0]?.message;
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                model: "provider-model",
+                messages: [returned],
+            }).success,
+        ).toBe(true);
+        expect(returned?.content).toBe(message.content);
+        expect(returned).not.toHaveProperty("name");
+        if (tools) expect(returned?.tool_calls).toEqual(message.tool_calls);
+        else expect(returned).not.toHaveProperty("tool_calls");
+    });
+
     it.each([
         [false, { reasoning: { enabled: true, exclude: true } }],
         [true, { reasoning: { enabled: true, exclude: true } }],

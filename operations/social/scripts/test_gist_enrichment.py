@@ -130,8 +130,8 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertNotIn("image_prompt", gist["gist"])
         self.assertNotIn("pr_body_excerpt", gist)
         with patch("generate_realtime.generate_image", return_value=(b"image", None)) as image, \
-             patch("generate_realtime.upload_image", return_value="https://example.com/image.jpg"):
-            self.assertEqual(generate_gist_image(gist, "test"),
+             patch("generate_realtime.commit_image_to_branch", return_value="https://example.com/image.jpg"):
+            self.assertEqual(generate_gist_image(gist, "test", "test", "example", "repo"),
                              "https://example.com/image.jpg")
             image.assert_called_once_with(ai["image_prompt"], "test")
         old = copy.deepcopy(gist)

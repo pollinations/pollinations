@@ -19,7 +19,7 @@ from common import (
     build_canonical_summary,
     call_pollinations_api,
     commit_files_to_branch,
-    upload_image,
+    commit_image_to_branch,
     generate_image,
     generate_platform_post,
     get_env,
@@ -192,9 +192,16 @@ def main() -> None:
         month, daily_summaries, pollinations_token
     )
     base_path = f"{MONTHLY_REL_DIR}/{month}"
-    image_url = upload_image(image_bytes, pollinations_token)
+    image_url = commit_image_to_branch(
+        image_bytes,
+        f"{base_path}/images/cover.jpg",
+        GISTS_BRANCH,
+        github_token,
+        owner,
+        repo,
+    )
     if not image_url:
-        print("  FATAL: monthly cover upload failed")
+        print("  FATAL: monthly cover commit failed")
         sys.exit(1)
 
     commit_files_to_branch(

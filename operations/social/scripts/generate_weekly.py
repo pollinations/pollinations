@@ -36,7 +36,7 @@ from common import (
     call_pollinations_api,
     generate_image,
     generate_platform_post,
-    upload_image,
+    commit_image_to_branch,
     read_gists_for_date,
     filter_daily_gists,
     parse_json_response,
@@ -277,11 +277,17 @@ def generate_platform_images(
     twitter_post: Optional[Dict],
     linkedin_post: Optional[Dict],
     instagram_post: Optional[Dict],
+    weekly_date: str,
     token: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+    branch: str,
     reddit_post: Optional[Dict] = None,
     discord_post: Optional[Dict] = None,
 ) -> None:
-    """Generate images for all platforms and upload them."""
+    """Generate images for all platforms and commit to branch."""
+    image_dir = f"{WEEKLY_REL_DIR}/{weekly_date}/images"
 
     # Twitter: 1 image
     if twitter_post and twitter_post.get("image_prompt"):
@@ -290,9 +296,12 @@ def generate_platform_images(
         if not img_bytes:
             print("  FATAL: Weekly Twitter image generation failed")
             sys.exit(1)
-        url = upload_image(img_bytes, token)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/twitter.jpg", branch,
+            github_token, owner, repo
+        )
         if not url:
-            print("  FATAL: Weekly Twitter image upload failed")
+            print("  FATAL: Weekly Twitter image commit failed")
             sys.exit(1)
         twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
 
@@ -303,9 +312,12 @@ def generate_platform_images(
         if not img_bytes:
             print("  FATAL: Weekly LinkedIn image generation failed")
             sys.exit(1)
-        url = upload_image(img_bytes, token)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/linkedin.jpg", branch,
+            github_token, owner, repo
+        )
         if not url:
-            print("  FATAL: Weekly LinkedIn image upload failed")
+            print("  FATAL: Weekly LinkedIn image commit failed")
             sys.exit(1)
         linkedin_post["image"] = {"url": url, "prompt": linkedin_post["image_prompt"]}
 
@@ -321,7 +333,10 @@ def generate_platform_images(
             if not img_bytes:
                 print(f"  FATAL: Weekly Instagram image {i+1} generation failed")
                 sys.exit(1)
-            url = upload_image(img_bytes, token)
+            url = commit_image_to_branch(
+                img_bytes, f"{image_dir}/instagram-{i+1}.jpg", branch,
+                github_token, owner, repo
+            )
             if not url:
                 print(f"  FATAL: Weekly Instagram image {i+1} commit failed")
                 sys.exit(1)
@@ -335,9 +350,12 @@ def generate_platform_images(
         if not img_bytes:
             print("  FATAL: Weekly Reddit image generation failed")
             sys.exit(1)
-        url = upload_image(img_bytes, token)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/reddit.jpg", branch,
+            github_token, owner, repo
+        )
         if not url:
-            print("  FATAL: Weekly Reddit image upload failed")
+            print("  FATAL: Weekly Reddit image commit failed")
             sys.exit(1)
         reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
 
@@ -348,9 +366,12 @@ def generate_platform_images(
         if not img_bytes:
             print("  FATAL: Weekly Discord image generation failed")
             sys.exit(1)
-        url = upload_image(img_bytes, token)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/discord.jpg", branch,
+            github_token, owner, repo
+        )
         if not url:
-            print("  FATAL: Weekly Discord image upload failed")
+            print("  FATAL: Weekly Discord image commit failed")
             sys.exit(1)
         discord_post["image"] = {"url": url, "prompt": discord_post["image_prompt"]}
 
@@ -380,7 +401,8 @@ def commit_weekly_to_news(
     print("\n  Generating platform images...")
     generate_platform_images(
         twitter_post, linkedin_post, instagram_post,
-        pollinations_token,
+        weekly_date, pollinations_token,
+        github_token, owner, repo, GISTS_BRANCH,
         reddit_post=reddit_post,
         discord_post=discord_post,
     )

@@ -33,7 +33,7 @@ from common import (
     call_pollinations_api,
     generate_image,
     generate_platform_post,
-    upload_image,
+    commit_image_to_branch,
     read_gists_for_date,
     read_news_text_file,
     filter_daily_gists,
@@ -251,11 +251,17 @@ def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
 
 def generate_platform_images(
     twitter_post: Optional[Dict],
+    date_str: str,
     token: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+    branch: str,
     reddit_post: Optional[Dict] = None,
 ) -> Dict[str, List[str]]:
     """Generate images for all platforms. Returns {platform: [urls]}.
     Note: LinkedIn and Instagram are weekly-only, with no daily image generation."""
+    image_dir = f"{DAILY_REL_DIR}/{date_str}/images"
     urls = {"twitter": [], "reddit": []}
 
     # Twitter: 1 image
@@ -265,9 +271,12 @@ def generate_platform_images(
         if not img_bytes:
             print("  FATAL: Daily Twitter image generation failed")
             sys.exit(1)
-        url = upload_image(img_bytes, token)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/twitter.jpg", branch,
+            github_token, owner, repo
+        )
         if not url:
-            print("  FATAL: Daily Twitter image upload failed")
+            print("  FATAL: Daily Twitter image commit failed")
             sys.exit(1)
         urls["twitter"].append(url)
         twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
@@ -279,9 +288,12 @@ def generate_platform_images(
         if not img_bytes:
             print("  FATAL: Daily Reddit image generation failed")
             sys.exit(1)
-        url = upload_image(img_bytes, token)
+        url = commit_image_to_branch(
+            img_bytes, f"{image_dir}/reddit.jpg", branch,
+            github_token, owner, repo
+        )
         if not url:
-            print("  FATAL: Daily Reddit image upload failed")
+            print("  FATAL: Daily Reddit image commit failed")
             sys.exit(1)
         urls["reddit"].append(url)
         reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
@@ -309,7 +321,8 @@ def commit_daily_to_news(
     print("\n  Generating platform images...")
     generate_platform_images(
         twitter_post,
-        get_env("POLLINATIONS_TOKEN"),
+        date_str, get_env("POLLINATIONS_TOKEN"),
+        github_token, owner, repo, GISTS_BRANCH,
         reddit_post=reddit_post,
     )
 

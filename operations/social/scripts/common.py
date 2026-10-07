@@ -18,8 +18,6 @@ from pathlib import Path
 GITHUB_API_BASE = "https://api.github.com"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
-# Approved accounts only; news images must outlive the 30-day media lifecycle.
-MEDIA_UPLOAD_URL = "https://media.pollinations.ai/upload?permanent=true"
 
 # Models - single source of truth for all social scripts
 MODEL = "openai/gpt-6-sol"  # Text generation model
@@ -486,29 +484,49 @@ def _github_headers(token: str) -> Dict:
     }
 
 
-def upload_image(image_bytes: bytes, token: str) -> Optional[str]:
-    """Upload a JPEG to permanent media storage and return its public URL.
+def commit_image_to_branch(
+    image_bytes: bytes,
+    file_path: str,
+    branch: str,
+    github_token: str,
+    owner: str,
+    repo: str,
+) -> Optional[str]:
+    """Commit an image file to a GitHub branch and return a raw URL.
 
-    Returns None on failure.
+    Returns the raw.githubusercontent.com URL on success, None on failure.
     """
-    try:
-        resp = requests.post(
-            MEDIA_UPLOAD_URL,
-            data=image_bytes,
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "image/jpeg"},
-            timeout=120,
-        )
-    except requests.exceptions.RequestException as e:
-        print(f"  Failed to upload image: {e}")
-        return None
+    import base64 as _b64
 
-    if resp.status_code != 200:
-        print(f"  Failed to upload image: {resp.status_code} {resp.text[:200]}")
-        return None
+    headers = _github_headers(github_token)
 
-    url = resp.json()["url"]
-    print(f"  Uploaded image to {url}")
-    return url
+    encoded = _b64.b64encode(image_bytes).decode()
+
+    # Check if file already exists on this branch
+    sha = get_file_sha(github_token, owner, repo, file_path, branch)
+
+    payload = {
+        "message": f"add image {file_path.split('/')[-1]}",
+        "content": encoded,
+        "branch": branch,
+    }
+    if sha:
+        payload["sha"] = sha
+
+    resp = github_api_request(
+        "PUT",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        headers=headers,
+        json=payload,
+    )
+
+    if resp.status_code in [200, 201]:
+        raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file_path}"
+        print(f"  Committed image to {file_path}")
+        return raw_url
+
+    print(f"  Failed to commit image: {resp.status_code} {resp.text[:200]}")
+    return None
 
 
 def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branch: str = "main") -> str:

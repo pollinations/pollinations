@@ -1,0 +1,34 @@
+{
+  "pr_number": 15780,
+  "title": "fix: create the polli gen --output folder before the request",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15780",
+  "merged_at": "2026-10-07T10:23:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix `polli gen image|video|audio|text|3d|isolate|voice-change --output some/missing/dir/file`: the CLI now creates the folder before the paid request instead of failing with ENOENT after it\n- A folder that can't be created (bad path, no permission) now fails before any request is sent, so nothing is billed\n- Adds a test that `gen 3d --output out/nested/fox.glb` saves into a new folder\n\nFixes #15556\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0173LR1AQTLF2njvmaJQD3BS",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Make the nest before the egg",
+    "blurb": "Polli makes the output folder before sending a generation request. If the path won't cooperate, the request stays put—and so does your Pollen.",
+    "summary": "The polli CLI creates missing --output directories before paid image, video, audio, text, 3D, isolate, and voice-change requests, and stops before sending a request if the directory cannot be created.",
+    "impact": "A command such as polli gen 3d --output out/nested/fox.glb saves into a new folder; an invalid or unwritable path fails before anything is billed.",
+    "keywords": [
+      "polli CLI",
+      "generation",
+      "output directories",
+      "billing",
+      "3D",
+      "file paths"
+    ],
+    "visual_concept": "The polli CLI is represented by a cozy terminal. Polli, wearing a tiny tool belt, builds a nested stack of lime-green folders before the terminal sends a generation request; a little pixel fox figurine labeled fox.glb waits beside the finished folder. Flowers and code-plants make the workspace feel like a garden shed.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli uses a tiny tool belt to assemble nested lime green (#ecf874) folders beside a retro terminal, with a small pixel fox figurine waiting to be saved and code-plants blooming nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art, with a soft pastel gradient background and dark purple (#110518) details—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-15780.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli uses a tiny tool belt to assemble nested lime green (#ecf874) folders beside a retro terminal, with a small pixel fox figurine waiting to be saved and code-plants blooming nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art, with a soft pastel gradient background and dark purple (#110518) details—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-07T10:24:17.849967+00:00"
+}

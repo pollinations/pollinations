@@ -22,7 +22,15 @@ const MessageSchema = z.object({
         }),
     ),
 });
+const ReasoningSchema = z.object({
+    type: z.literal("reasoning"),
+    id: z.string(),
+    summary: z.array(
+        z.object({ type: z.literal("summary_text"), text: z.string() }),
+    ),
+});
 const OutputItemSchema = z.discriminatedUnion("type", [
+    ReasoningSchema,
     MessageSchema,
     FunctionCallSchema,
     FunctionCallOutputSchema,
@@ -38,6 +46,28 @@ export function collectOutput(
     const pendingCalls = new Map<string, FunctionCall>();
     const callIds = new Set<string>();
     let message: z.infer<typeof MessageSchema> | undefined;
+    let reasoning: z.infer<typeof ReasoningSchema> | undefined;
+    const closeReasoning = () => {
+        if (!reasoning) return;
+        const position = {
+            item_id: reasoning.id,
+            output_index: items.indexOf(reasoning),
+            summary_index: 0,
+        };
+        send?.("response.reasoning_summary_text.done", {
+            ...position,
+            text: reasoning.summary[0].text,
+        });
+        send?.("response.reasoning_summary_part.done", {
+            ...position,
+            part: reasoning.summary[0],
+        });
+        send?.("response.output_item.done", {
+            output_index: position.output_index,
+            item: reasoning,
+        });
+        reasoning = undefined;
+    };
     const closeMessage = (status: "completed" | "incomplete" = "completed") => {
         if (!message) return;
         message.status = status;
@@ -64,8 +94,41 @@ export function collectOutput(
     return {
         items,
         onPart(part: AgentPart) {
+            if (part.type === "reasoning-delta") {
+                if (!part.text) return;
+                if (!reasoning) {
+                    closeMessage();
+                    reasoning = {
+                        type: "reasoning",
+                        id: `rs_${crypto.randomUUID()}`,
+                        summary: [],
+                    };
+                    items.push(reasoning);
+                    const output_index = items.length - 1;
+                    send?.("response.output_item.added", {
+                        output_index,
+                        item: reasoning,
+                    });
+                    reasoning.summary.push({ type: "summary_text", text: "" });
+                    send?.("response.reasoning_summary_part.added", {
+                        item_id: reasoning.id,
+                        output_index,
+                        summary_index: 0,
+                        part: reasoning.summary[0],
+                    });
+                }
+                reasoning.summary[0].text += part.text;
+                send?.("response.reasoning_summary_text.delta", {
+                    item_id: reasoning.id,
+                    output_index: items.indexOf(reasoning),
+                    summary_index: 0,
+                    delta: part.text,
+                });
+                return;
+            }
             if (part.type === "text-delta") {
                 if (!part.text) return;
+                closeReasoning();
                 if (!message) {
                     message = {
                         id: `msg_${crypto.randomUUID()}`,
@@ -109,6 +172,7 @@ export function collectOutput(
                     skippedToolCalls.add(part.toolCallId);
                     return;
                 }
+                closeReasoning();
                 closeMessage();
                 if (callIds.has(part.toolCallId)) {
                     throw new Error("Agent reused a tool call ID");
@@ -198,6 +262,7 @@ export function collectOutput(
             ) {
                 throw new Error("Agent tool call has no result");
             }
+            closeReasoning();
             closeMessage(
                 finishReason === "length" || finishReason === "content_filter"
                     ? "incomplete"

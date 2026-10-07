@@ -1619,12 +1619,11 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
-        priceMultiplier: 1, // Billed at cost, no margin.
+        priceMultiplier: 1, // Quote the primary route; fallback cost is separate.
         paidOnly: true,
         cost: {
-            // OpenAI list price ($0.10/M input, nothing for output or cache)
-            // plus OpenRouter's 5.5% credit fee, as every OpenRouter route
-            // records.
+            // OpenRouter Decisions: $0.10/M input, including long context,
+            // plus its 5.5% credit-purchase fee. Output and cache are free.
             promptTextTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(0),
         },
@@ -2237,6 +2236,58 @@ const TEXT_BASE_SERVICES = {
         description:
             "Hybrid reasoning mixture-of-experts for agentic workflows with tool use and long context",
         inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.025) * 1.055,
+            promptCachedTokens: perMillion(0.0025) * 1.055,
+            completionTextTokens: perMillion(0.1) * 1.055,
+        },
+        title: "Nex N2.5 Mini",
+        description:
+            "Compact agentic coding model with image input and switchable reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexPro,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            completionTextTokens: perMillion(0.25) * 1.055,
+        },
+        title: "Nex N2.5 Pro",
+        description:
+            "Agentic coding model with a visual feedback loop for multi-file changes, tool use and image input",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -2935,6 +2986,33 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "mistralai/mistral-large-4": {
+        supportedParameters: CHAT_PARAMETERS.mistralLarge4,
+        aliases: [],
+        provider: "mistral",
+        publisher: "Mistral",
+        category: "text",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Mistral direct API launch rates (docs.mistral.ai, 2026-10-06):
+            // list price is $1.36 / $0.14 cached / $4.18 per million, shown
+            // at half until the discount ends.
+            promptTextTokens: perMillion(0.68),
+            promptCachedTokens: perMillion(0.07),
+            completionTextTokens: perMillion(2.09),
+        },
+        title: "Mistral Large 4",
+        description:
+            "Frontier multimodal model for reasoning, coding and agentic workloads with a 512K context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "mistralai/mistral-large-3": {

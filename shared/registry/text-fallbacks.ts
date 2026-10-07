@@ -1,5 +1,6 @@
 import {
     defineCostVariants,
+    longContextAbove,
     longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
@@ -24,14 +25,30 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-luna-decisions": {
-        // Same OpenAI model through Vercel's AI Gateway, which bills the
-        // list price without OpenRouter's credit fee.
-        "openai/gpt-6-luna-decisions:vercel": {
-            provider: "vercel",
+        // Same OpenAI backend; covers OpenRouter failures, not OpenAI outages.
+        "openai/gpt-6-luna-decisions:openai": {
+            provider: "openai",
             cost: {
                 promptTextTokens: perMillion(0.1),
                 completionTextTokens: perMillion(0),
             },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(0.2),
+                        completionTextTokens: perMillion(0),
+                    },
+                },
+                longContextAbove(272_000),
+                {
+                    long_context: {
+                        label: "Long context (>272K)",
+                        description:
+                            "More than 272,000 input tokens; OpenAI doubles the input rate for the full request.",
+                    },
+                },
+                "≤272K context",
+            ),
         },
     },
     "inclusionai/ling-3.1-flash": {
@@ -365,6 +382,14 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
             },
+        },
+    },
+    "mistralai/mistral-large-4": {
+        // Both routes use Mistral infrastructure; this covers gateway failures.
+        "mistralai/mistral-large-4:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
+            provider: "vercel",
+            addedDate: new Date("2026-10-06").getTime(),
         },
     },
     "mistralai/mistral-small-3.2": {

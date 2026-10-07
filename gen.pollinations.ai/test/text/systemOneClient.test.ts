@@ -219,50 +219,95 @@ describe("System One adapter", () => {
     it.each([
         false,
         true,
-    ])("translates native decisions through the Vercel gateway route (stream=%s)", async (stream) => {
-        const gatewayAnswers = {
-            ...answers,
-            is_urgent: { type: "boolean", probability: 0.98 },
-        };
+    ])("translates direct OpenAI decisions without losing confidence or legends (stream=%s)", async (stream) => {
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
             async (input, init) => {
                 expect(String(input)).toBe(
-                    "https://ai-gateway.vercel.sh/v4/ai/decision-model",
+                    "https://api.openai.com/v1/decisions",
                 );
-                const headers = new Headers(init?.headers);
-                expect(headers.get("ai-model-id")).toBe(
-                    "openai/gpt-6-luna-decisions",
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer test-key",
                 );
-                expect(headers.get("ai-gateway-protocol-version")).toBe(
-                    "0.0.1",
-                );
-                expect(
-                    headers.get("ai-decision-model-specification-version"),
-                ).toBe("4");
-                expect(JSON.parse(String(init?.body))).toEqual({
-                    state: nativeState,
-                    questions: {
-                        ...nativeQuestions,
-                        is_urgent: {
-                            ...nativeQuestions.is_urgent,
-                            type: "boolean",
-                        },
+                const request = JSON.parse(String(init?.body));
+                expect(request.model).toBe("gpt-6-luna");
+                expect(request.input).toBe(JSON.stringify(nativeState));
+                expect(request.questions).toEqual([
+                    {
+                        name: "department",
+                        type: "choice",
+                        instructions: nativeQuestions.department.instructions,
+                        choices: [
+                            { value: "billing", description: "Payment issues" },
+                            {
+                                value: "technical",
+                                description: "Product failures",
+                            },
+                        ],
                     },
-                });
+                    {
+                        name: "frustration",
+                        type: "score",
+                        instructions: JSON.stringify(
+                            nativeQuestions.frustration.instructions,
+                        ),
+                        levels: nativeQuestions.frustration.criteria.map(
+                            (criterion, index) => ({
+                                label: String(index),
+                                description:
+                                    typeof criterion === "string"
+                                        ? criterion
+                                        : JSON.stringify(criterion),
+                            }),
+                        ),
+                    },
+                    {
+                        name: "is_urgent",
+                        type: "predicate",
+                        instructions: `${nativeQuestions.is_urgent.instructions}\n${JSON.stringify(nativeQuestions.is_urgent.criteria)}`,
+                    },
+                ]);
                 return Response.json({
-                    answers: gatewayAnswers,
-                    usage: { inputTokens: 61 },
+                    model: "gpt-6-luna",
+                    answers: [
+                        {
+                            name: "department",
+                            type: "choice",
+                            choice: "technical",
+                            confidence: 0.85,
+                            probabilities: [
+                                { value: "billing", probability: 0.08 },
+                                { value: "technical", probability: 0.92 },
+                            ],
+                        },
+                        {
+                            name: "frustration",
+                            type: "score",
+                            score: 1.6,
+                            confidence: 0.78,
+                            probabilities: [
+                                { value: 0, label: "0", probability: 0.1 },
+                                { value: 1, label: "1", probability: 0.2 },
+                                { value: 2, label: "2", probability: 0.7 },
+                            ],
+                        },
+                        {
+                            name: "is_urgent",
+                            type: "predicate",
+                            probability: 0.98,
+                        },
+                    ],
+                    usage: { input_tokens: 61, output_tokens: 0 },
                 });
             },
         );
         const result = await generateTextPortkey(
             [{ role: "user", content: nativeContent }],
             {
-                model: "openai/gpt-6-luna-decisions:vercel",
+                model: "openai/gpt-6-luna-decisions:openai",
                 stream,
                 modelConfig: {
                     ...findModelByName(
-                        "openai/gpt-6-luna-decisions:vercel",
+                        "openai/gpt-6-luna-decisions:openai",
                     )?.config(),
                     authKey: "test-key",
                 },
@@ -271,7 +316,17 @@ describe("System One adapter", () => {
         );
         expect(
             JSON.parse(String(result.choices?.[0]?.message?.content)),
-        ).toEqual(answers);
+        ).toEqual({
+            ...answers,
+            frustration: {
+                ...answers.frustration,
+                legend: Object.fromEntries(
+                    nativeQuestions.frustration.criteria.map(
+                        (criterion, index) => [String(index), criterion],
+                    ),
+                ),
+            },
+        });
         expect(result.usage).toEqual({
             prompt_tokens: 61,
             completion_tokens: 0,
@@ -279,26 +334,36 @@ describe("System One adapter", () => {
         });
         if (stream) {
             if (!result.responseStream) throw new Error("Missing stream");
-            const body = await new Response(
+            const text = await new Response(
                 requireChatStreamUsage(result.responseStream),
             ).text();
-            expect(body).toContain('"prompt_tokens":61');
-            expect(body).toContain("data: [DONE]");
+            expect(text).toContain('"prompt_tokens":61');
+            expect(text).toContain("data: [DONE]");
         }
     });
 
-    it("rejects a Vercel gateway decision that reports no usage", async () => {
+    it.each([
+        { answers: [] },
+        { answers: [], usage: { input_tokens: 61, output_tokens: 0 } },
+        { answers: {}, usage: { input_tokens: 61, output_tokens: 0 } },
+        {
+            answers: [
+                { name: "is_urgent", type: "predicate", probability: 0.98 },
+            ],
+            usage: { input_tokens: -1, output_tokens: 0 },
+        },
+    ])("rejects invalid OpenAI answers or usage", async (response) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ answers }),
+            Response.json(response),
         );
         await expect(
             generateTextPortkey(
                 [{ role: "user", content: nativeContent }],
                 {
-                    model: "openai/gpt-6-luna-decisions:vercel",
+                    model: "openai/gpt-6-luna-decisions:openai",
                     modelConfig: {
                         ...findModelByName(
-                            "openai/gpt-6-luna-decisions:vercel",
+                            "openai/gpt-6-luna-decisions:openai",
                         )?.config(),
                         authKey: "test-key",
                     },

@@ -554,28 +554,28 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
-    it("charges Luna Decisions' list price on the Vercel fallback and adds the OpenRouter fee on the primary", () => {
+    it("charges Luna Decisions' list price on the OpenAI fallback and adds the OpenRouter fee on the primary", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
-        const fallback = TEXT_SERVICES["openai/gpt-6-luna-decisions:vercel"];
+        const fallback = TEXT_SERVICES["openai/gpt-6-luna-decisions:openai"];
         expect(primary).toMatchObject({
             provider: "openrouter",
             paidOnly: true,
             aliases: [],
-            fallbacks: ["openai/gpt-6-luna-decisions:vercel"],
+            fallbacks: ["openai/gpt-6-luna-decisions:openai"],
         });
         expect(fallback).toMatchObject({
-            provider: "vercel",
+            provider: "openai",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,
             aliases: [],
         });
         expect(
-            findModelByName("openai/gpt-6-luna-decisions:vercel")?.config(),
+            findModelByName("openai/gpt-6-luna-decisions:openai")?.config(),
         ).toMatchObject({
-            model: "openai/gpt-6-luna-decisions",
-            directEndpoint: "https://ai-gateway.vercel.sh/v4/ai/decision-model",
-            decisionsProtocol: "gateway",
+            model: "gpt-6-luna",
+            directEndpoint: "https://api.openai.com/v1/decisions",
+            decisionsProtocol: "openai",
         });
         expect(
             findModelByName("openai/gpt-6-luna-decisions")?.config(),
@@ -584,14 +584,31 @@ describe("static provider fallbacks", () => {
             directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         });
         const usage = { promptTextTokens: 1000, completionTextTokens: 0 };
-        const viaVercel = calculateUsageBilling({
+        const viaOpenAI = calculateUsageBilling({
             model: "openai/gpt-6-luna-decisions",
             usage,
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(viaVercel.cost.totalCost).toBeCloseTo(0.0001, 12);
-        expect(viaVercel.price.totalPrice).toBeCloseTo(0.0001055, 8);
+        expect(viaOpenAI.cost.totalCost).toBeCloseTo(0.0001, 12);
+        expect(viaOpenAI.price.totalPrice).toBeCloseTo(0.0001055, 8);
+        for (const promptTextTokens of [272_000, 272_001, 900_000, 900_001]) {
+            const billing = calculateUsageBilling({
+                model: "openai/gpt-6-luna-decisions",
+                usage: { promptTextTokens, completionTextTokens: 0 },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(
+                (promptTextTokens * (promptTextTokens > 272_000 ? 0.2 : 0.1)) /
+                    1_000_000,
+                12,
+            );
+            expect(billing.price.totalPrice).toBeCloseTo(
+                (promptTextTokens * 0.1055) / 1_000_000,
+                8,
+            );
+        }
     });
 
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
@@ -1174,6 +1191,30 @@ describe("static provider fallbacks", () => {
             model: "mistralai/mistral-small-2603",
             defaultOptions: { max_tokens: 64000 },
         });
+        expect(
+            findModelByName("mistralai/mistral-large-4")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-large-4",
+        });
+        expect(
+            findModelByName("mistralai/mistral-large-4:vercel")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            model: "mistral/mistral-large-4",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["mistral"] } },
+            },
+        });
+        for (const [unit, cost] of Object.entries(
+            TEXT_SERVICES["mistralai/mistral-large-4"].cost,
+        )) {
+            expect(
+                TEXT_SERVICES["mistralai/mistral-large-4:vercel"].cost[
+                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-large-4"]["cost"]
+                ],
+            ).toBeCloseTo(cost, 15);
+        }
         for (const [unit, cost] of Object.entries(
             TEXT_SERVICES["mistralai/mistral-small-4"].cost,
         )) {

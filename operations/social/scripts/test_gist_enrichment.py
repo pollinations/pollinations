@@ -8,8 +8,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import validate_gist
-from generate_realtime import build_full_gist, enrich_gist
+from common import filter_daily_gists, generate_platform_post, validate_gist
+from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
+from generate_daily import generate_summary, load_gists_as_changelog
+from generate_monthly import generate_digest as generate_monthly_digest
+from generate_weekly import generate_digest, generate_discord_post
+from publish_realtime import generate_snippet
 from model_announcements import model_changes, pr_comparison_refs
 
 
@@ -82,7 +86,7 @@ class GistEnrichmentTest(unittest.TestCase):
         pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",
               "body": "Existing description", "merge_commit_sha": "abc", "labels": []}
         ai = dict(category="feature", user_facing=True, publish_tier="daily", importance="minor",
-                  headline="Headline", blurb="Blurb", summary="Summary", impact="Impact", keywords=[], image_prompt="Image")
+                  summary="Summary", keywords=[], image_prompt="Image")
         gist = build_full_gist(pr, ai, [])
         original = copy.deepcopy(gist)
         def classification(args, **kwargs):
@@ -103,6 +107,90 @@ class GistEnrichmentTest(unittest.TestCase):
         gist["enrichment"]["classification"] = "complete"
         gist.update(area="Models", type="Question", source="Team")
         self.assertIn("invalid type", validate_gist(gist))
+
+    def test_same_facts_reach_social_readers_without_duplicate_text(self):
+        pr = {"number": 1, "title": "Model price and account fix",
+              "html_url": "https://github.com/example/repo/pull/1", "labels": [],
+              "merged_at": "2026-10-07T00:00:00Z", "body": "PR description"}
+        ai = dict(category="improvement", user_facing=True, publish_tier="daily", importance="major",
+                  summary="Example model pricing changes. Account balance deduction is fixed.",
+                  keywords=["models", "billing"], image_prompt="Bee fixing a honey jar")
+        gist = build_full_gist(pr, ai, [])
+        gist.update(area="Models", type="Task", source="Team", announcements=model_changes(
+            [{"name": "example/model", "pricing": {"currency": "pollen", "image": "1"}}],
+            [{"name": "example/model", "pricing": {"currency": "pollen", "image": "2"}}], pr))
+        self.assertEqual(validate_gist(gist), [])
+        with patch("generate_realtime.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
+            context = {**gist, "merge_commit_sha": "unused-commit", "enrichment": {"models": "complete"}}
+            self.assertEqual(analyze_pr(pr, "shared/registry/image.ts", "test", context), ai)
+            self.assertIn('"image": "2"', analysis.call_args.args[1])
+            self.assertNotIn("unused-commit", analysis.call_args.args[1])
+            self.assertNotIn('"enrichment"', analysis.call_args.args[1])
+        self.assertEqual(gist["image"]["prompt"], ai["image_prompt"])
+        self.assertNotIn("image_prompt", gist["gist"])
+        self.assertNotIn("pr_body_excerpt", gist)
+        with patch("generate_realtime.generate_image", return_value=(b"image", None)) as image, \
+             patch("generate_realtime.commit_image_to_branch", return_value="https://example.com/image.jpg"):
+            self.assertEqual(generate_gist_image(gist, "test", "test", "example", "repo"),
+                             "https://example.com/image.jpg")
+            image.assert_called_once_with(ai["image_prompt"], "test")
+        old = copy.deepcopy(gist)
+        old["gist"].update(headline="Old headline", blurb="Old blurb", impact="Old impact")
+        old["pr_body_excerpt"] = "Old excerpt"
+        self.assertEqual(filter_daily_gists([gist, old]), [gist, old])
+        for module, generate in (
+            ("generate_daily", lambda g: generate_summary([g], "2026-10-07", "test")),
+            ("generate_weekly", lambda g: generate_digest([g], "2026-10-01", "2026-10-07", "test")),
+            ("publish_realtime", lambda g: generate_snippet(g, "test")),
+        ):
+            with patch(f"{module}.call_pollinations_api", return_value='{"arcs": []}') as api:
+                generate(gist)
+                new_prompt = api.call_args.args[1]
+                generate(old)
+                self.assertEqual(api.call_args.args[1], new_prompt)
+            for fact in ("Account balance deduction is fixed.", '"area": "Models"',
+                         '"type": "Task"', '"source": "Team"'):
+                self.assertIn(fact, new_prompt)
+            self.assertNotIn("Old excerpt", new_prompt)
+            # Only Discord states model prices; recaps feeding X/Reddit/LinkedIn/Instagram never see them.
+            check = self.assertIn if module == "publish_realtime" else self.assertNotIn
+            for value in ('"announcements"', '"image": "2"'):
+                check(value, new_prompt)
+        broken = copy.deepcopy(gist)
+        broken["image"]["prompt"] = None
+        self.assertIn("missing image.prompt", validate_gist(broken))
+        broken["gist"]["summary"] = ""
+        self.assertIn("gist.summary must be non-empty text", validate_gist(broken))
+        gist.update(app_name="Example app", app_url="https://example.com/app")
+        with patch("generate_daily.read_gists_for_date", return_value=[gist]):
+            changelog, count = load_gists_as_changelog("2026-10-07")
+        self.assertEqual(count, 1)
+        self.assertEqual(changelog.count("https://example.com/app"), 1)
+        self.assertNotIn('"announcements"', changelog)
+
+    def test_platform_posts_keep_arc_facts_and_distinguish_selected_counts(self):
+        digest = {
+            "pr_count": 1,
+            "pr_summary": "#1: Larger media inputs",
+            "arcs": [{
+                "headline": "Larger uploads",
+                "summary": "Uploads increase from 32 MiB to 100 MiB.",
+            }],
+        }
+        for module, generate in (
+            ("common", lambda: generate_platform_post("twitter", digest, "test", "Write a recap")),
+            ("generate_weekly", lambda: generate_discord_post(digest, "test", "2026-10-04")),
+        ):
+            with patch(f"{module}.call_pollinations_api", return_value='{"message": "Recap"}') as api:
+                generate()
+                task = api.call_args.args[1]
+            self.assertIn("32 MiB to 100 MiB", task)
+            self.assertIn("PRs selected for this recap: 1", task)
+            self.assertNotIn("Total PRs merged:", task)
+        with patch("generate_monthly.call_pollinations_api", return_value='{"arcs": []}') as api:
+            generate_monthly_digest([{"date": "2026-10-01", "summary": "One selected update", "pr_count": 1}], "2026-10", "test")
+        self.assertIn("PRs selected for daily recaps: 1", api.call_args.args[1])
+        self.assertNotIn("Merged PRs:", api.call_args.args[1])
 
     def test_squash_after_syncing_main_excludes_unrelated_changes(self):
         with tempfile.TemporaryDirectory() as directory:

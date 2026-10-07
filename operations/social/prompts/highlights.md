@@ -13,13 +13,16 @@ The highlights you extract will be displayed **DIRECTLY** (copy-pasted as-is) on
 
 This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes users go "wow, I want to try this!"
 
+## FACTUAL SOURCE
+The input contains PR gist JSON. Use `summary` for prose. A merge alone does not prove availability: describe unconfirmed work as added or merged, and scheduled changes with their effective date. Never describe them as live.
+
 ## SELECTION CRITERIA
 **Typically 3-4 highlights per week. Sometimes 0. Max ~10 for huge release weeks.**
 
 ### INCLUDE (things that TRULY affect users):
-- 🚀 **New AI models** - New LLMs, image models, audio models users can now access
+- 🚀 **New AI models** - New LLMs, image models, audio models; match availability to the source
 - ⚡ **Speed/Performance boosts** - Faster generation, reduced latency (only if significant/noticeable)
-- ✨ **New features** - New capabilities users can try RIGHT NOW
+- ✨ **New features** - New capabilities; match availability to the source
 - 🔗 **New integrations** - Discord bot features, new platform connections, new APIs
 - 📱 **New endpoints/tools** - New API endpoints, new web apps, new parameters
 - 🎨 **New creative options** - New styles, formats, output options
@@ -41,7 +44,7 @@ This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes u
 
 ## OUTPUT FORMAT
 ```
-- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what users can DO now. [Relevant Link](url) if applicable.
+- **YYYY-MM-DD** – **🚀 Feature Name** Punchy description of what changed. [Relevant Link](url) if applicable.
 - **YYYY-MM-DD** – **✨ Another Feature** Brief and exciting. Use `backticks` for code. Check the [API Docs](url).
 ```
 
@@ -54,7 +57,7 @@ Rules:
 6. 1-2 lines max per entry
 7. Output ONLY the markdown bullets
 8. Add relevant links from REFERENCE LINKS section when they add value (don't force links)
-9. When a changelog entry has an **App Link**, ALWAYS include it in the highlight. End the line with ` <!-- app -->` so it can be filtered programmatically. Link text rules:
+9. When a gist has `app_name` and `app_url`, ALWAYS include that link in its highlight. End the line with ` <!-- app -->` so it can be filtered programmatically. Link text rules:
    - If the URL is a web app or live site: use `[Try it](url)`
    - If the URL is a GitHub repo: use `[View repo](url)`
    - If linking multiple apps in one entry: use `[View repos](url)` pointing to the apps directory

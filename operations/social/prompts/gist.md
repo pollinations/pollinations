@@ -113,7 +113,7 @@ A short (1-2 sentence) pixel art scene description for the PR image. Identify th
 
 The gist is a factual archive, not a social post. Record pricing increases, removals, limits and other changes plainly; never conceal them or invent a benefit. Use `publish_tier` to control social selection, without changing the facts in `summary`.
 
-Important user-facing price increases, tighter limits and removals are eligible for `"daily"`, just like improvements. Do not downgrade them solely because users lose something. Consumers select what matters and describe selected changes neutrally; not every eligible change needs a post. Do not include internal financial motivations, speculation, or unconfirmed claims.
+Price, Pollen balance and Quest/Paid eligibility changes reach users through Discord and Enter's model news, which read `announcements`; X, Reddit, LinkedIn and Instagram skip them. Do not include internal financial motivations, speculation, or unconfirmed claims.
 
 ## Hard Rules
 
@@ -122,6 +122,7 @@ These override your judgment:
 1. If labels include `deps` or `chore` AND `user_facing` is false → set `publish_tier` to `"discord_only"`
 2. If labels include `feature` → set `publish_tier` to at least `"daily"`
 3. If the PR only touches test files → set `publish_tier` to `"none"`
+4. If the PR only changes prices, Pollen balance or Quest/Paid eligibility → set `publish_tier` to `"none"`
 
 ## Output Format
 

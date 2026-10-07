@@ -14,7 +14,7 @@ The highlights you extract will be displayed **DIRECTLY** (copy-pasted as-is) on
 This is a HIGHLIGHT REEL - not a changelog. Only the exciting stuff that makes users go "wow, I want to try this!"
 
 ## FACTUAL SOURCE
-The input contains PR gist JSON. Use `summary` for prose and `announcements` for exact model changes. Preserve price units: use declared `pricing_units`, or the summary's explicit billing basis when none is declared. Names ending in `Tokens` do not prove token billing; omit ambiguous amounts instead of guessing. A merge alone does not prove availability: describe unconfirmed work as added or merged, and scheduled changes with their effective date. Never describe them as live.
+The input contains PR gist JSON. Use `summary` for prose. A merge alone does not prove availability: describe unconfirmed work as added or merged, and scheduled changes with their effective date. Never describe them as live.
 
 ## SELECTION CRITERIA
 **Typically 3-4 highlights per week. Sometimes 0. Max ~10 for huge release weeks.**

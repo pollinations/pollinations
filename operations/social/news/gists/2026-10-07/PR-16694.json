@@ -1,0 +1,42 @@
+{
+  "pr_number": 16694,
+  "title": "fix(ui): use bordered Pollinations Connect button",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16694",
+  "merged_at": "2026-10-07T14:17:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reuses the shared bordered brand button with an inline Pollinations icon.\n- Removes the separate amber icon cell in both Connect sizes.\n- Bumps @pollinations/ui to 0.1.0-alpha.8.\n\nValidation: 111 UI tests, typecheck, package build, and light/dark browser preview passed.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One button, fewer boxes",
+    "blurb": "The Connect button gets a tidier outline. Its Pollinations icon sits inside the button instead of occupying a little amber room of its own.",
+    "summary": "The app user menu reuses the shared bordered Pollinations Connect button with an inline icon in both sizes, and bumps @pollinations/ui to 0.1.0-alpha.8.",
+    "impact": "People using the app user menu get a consistent bordered Connect button in both sizes, without the separate amber icon cell.",
+    "keywords": [
+      "Connect button",
+      "app user menu",
+      "UI",
+      "Pollinations icon",
+      "design system"
+    ],
+    "visual_concept": "Show a cozy interface workshop where Polli helps fit a small Pollinations icon neatly inside a bordered Connect button. Two button sizes sit side by side; the shared border and inline placement are the point, with a code-plant and warm lime glow tying the scene together.",
+    "image_prompt": "In a cozy pixel art interface workshop, Polli gently adjusts a tiny Pollinations icon inside two bordered buttons labeled 'CONNECT', one small and one large, beside a glowing code-plant and a prominent lime green (#ecf874) workbench. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and a soft lime green (#ecf874) and pastel gradient background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16694.jpg",
+    "prompt": "In a cozy pixel art interface workshop, Polli gently adjusts a tiny Pollinations icon inside two bordered buttons labeled 'CONNECT', one small and one large, beside a glowing code-plant and a prominent lime green (#ecf874) workbench. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, and a soft lime green (#ecf874) and pastel gradient background."
+  },
+  "generated_at": "2026-10-07T14:18:12.651425+00:00",
+  "area": "Dashboard",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "b4a6c08a0d829c79d4551678abaf62e493403bb8",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

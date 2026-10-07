@@ -337,3 +337,58 @@ main > * {
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
 }
+
+/* Description and aligned parameter rows share one surface. */
+.play-parameter-card {
+    border-radius: var(--polli-radius-card);
+    background: var(--polli-color-surface-opaque);
+    padding: 1rem 1rem 1.5rem;
+}
+
+.play-parameter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem 2rem;
+}
+.play-parameter-grid:empty {
+    display: none;
+}
+.play-parameter-row {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+.play-parameter-row > :not(:first-child) {
+    grid-column: 2;
+    min-width: 0;
+}
+.play-parameter-row input:not([type="range"]) {
+    max-width: 10rem;
+}
+
+@media (min-width: 64rem) {
+    .play-parameter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: center;
+    }
+}
+@media (width < 40rem) {
+    .play-parameter-row {
+        grid-template-columns: 5.5rem minmax(0, 1fr);
+        column-gap: 0.5rem;
+    }
+}
+
+@media (width < 40rem) {
+    .play-parameter-row button[aria-pressed] {
+        padding-inline: 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+.play-dimensions input {
+    width: 6rem;
+    min-width: 0;
+    padding-inline: 0.5rem;
+}

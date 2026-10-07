@@ -387,6 +387,10 @@ main > * {
     }
 }
 
+.play-media-lightbox {
+    background: transparent;
+}
+
 .play-dimensions input {
     width: 6rem;
     min-width: 0;

@@ -60,6 +60,7 @@ import {
     generatePlaygroundAudio,
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
+import { reproducibleApiUrl } from "./video-options";
 
 /** A fixed setting shown as an icon and value instead of a control. */
 function MediaFact({
@@ -178,6 +179,7 @@ type PlaygroundResult =
           type: "image" | "video" | "audio";
           url: string;
           filename: string;
+          requestUrl?: string;
       }
     | {
           type: "text";
@@ -210,12 +212,17 @@ const FILE_EXTENSIONS: Record<string, string> = {
 
 function mediaResult(
     type: "image" | "video" | "audio",
-    { buffer, contentType }: { buffer: ArrayBuffer; contentType: string },
+    {
+        buffer,
+        contentType,
+        url,
+    }: { buffer: ArrayBuffer; contentType: string; url?: string },
 ): PlaygroundResult {
     const mime = contentType.split(";")[0].trim();
     return {
         type,
         url: URL.createObjectURL(new Blob([buffer], { type: contentType })),
+        requestUrl: url ? reproducibleApiUrl(url) : undefined,
         filename: `pollinations-playground.${FILE_EXTENSIONS[mime] ?? mime.split("/")[1]}`,
     };
 }
@@ -505,8 +512,7 @@ function Lightbox({
             }}
             ariaLabel={`Enlarged ${result.type}`}
             size="xl"
-            backdropBlur={false}
-            contentClassName="relative border-0 p-3 sm:p-4"
+            contentClassName="play-media-lightbox relative border-0 p-0"
         >
             <Button
                 type="button"
@@ -521,7 +527,7 @@ function Lightbox({
                     <img
                         src={result.url}
                         alt="Generated, enlarged"
-                        className="max-h-[calc(100dvh-5rem)] w-full rounded-lg object-contain"
+                        className="block max-h-[calc(100dvh-5rem)] w-auto max-w-full self-center rounded-lg object-contain"
                     />
                 ) : (
                     <video
@@ -530,7 +536,7 @@ function Lightbox({
                         autoPlay
                         loop
                         playsInline
-                        className="max-h-[calc(100dvh-5rem)] w-full rounded-lg"
+                        className="block max-h-[calc(100dvh-5rem)] w-auto max-w-full self-center rounded-lg"
                     >
                         <track kind="captions" />
                     </video>
@@ -543,7 +549,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     const [expanded, setExpanded] = useState(false);
 
     const zoomButtonClass =
-        "flex h-full w-full cursor-zoom-in items-center justify-center border-0 bg-transparent p-0";
+        "block w-full cursor-zoom-in border-0 bg-transparent p-0";
 
     if (result.type === "audio") {
         return (
@@ -562,7 +568,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     }
 
     return (
-        <div className="flex min-h-[360px] flex-col p-4">
+        <div className="w-full min-w-0">
             {result.type === "text" ? (
                 <div className="relative min-h-0 flex-1 overflow-auto rounded-xl bg-surface-white p-4 pr-16 text-theme-text-strong">
                     <ResultDownloadButton
@@ -578,10 +584,10 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     </Text>
                 </div>
             ) : (
-                <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-white p-3 text-theme-text-strong">
+                <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-card bg-surface-white text-theme-text-strong">
                     <ResultDownloadButton
                         result={result}
-                        className="absolute top-3 right-3 z-10"
+                        className="absolute bottom-3 right-3 z-10"
                     />
                     {result.type === "image" && (
                         <button
@@ -593,7 +599,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                             <img
                                 src={result.url}
                                 alt="Generated"
-                                className="max-h-full w-full rounded-lg object-contain"
+                                className="block h-auto max-h-[min(70dvh,640px)] w-auto max-w-full"
                             />
                         </button>
                     )}
@@ -616,7 +622,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                                 loop
                                 muted
                                 playsInline
-                                className="pointer-events-none max-h-full w-full rounded-lg"
+                                className="pointer-events-none block h-auto max-h-[min(70dvh,640px)] w-auto max-w-full"
                             >
                                 <track kind="captions" />
                             </video>
@@ -1678,8 +1684,23 @@ export function Playground() {
                         </Button>
                     )}
 
-                    {apiUrl && <ApiUrlCard url={apiUrl} fields={apiFields} />}
                     {result && <ResultPanel result={result} />}
+                    {apiUrl && (
+                        <ApiUrlCard
+                            url={
+                                result && result.type !== "text"
+                                    ? (result.requestUrl ?? apiUrl)
+                                    : apiUrl
+                            }
+                            fields={
+                                result &&
+                                result.type !== "text" &&
+                                result.type !== "audio"
+                                    ? undefined
+                                    : apiFields
+                            }
+                        />
+                    )}
                 </div>
             </div>
         </div>

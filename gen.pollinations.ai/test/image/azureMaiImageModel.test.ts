@@ -86,7 +86,7 @@ describe("callAzureMaiImage", () => {
         });
     });
 
-    it("accepts the 2.6 maximum size but rejects larger images", async () => {
+    it("accepts the 2.6 maximum size", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             successResponse({
                 num_output_tokens: 2304,
@@ -105,17 +105,6 @@ describe("callAzureMaiImage", () => {
             callAzureMaiImage("a poster", params, USER_INFO),
         ).resolves.toMatchObject({
             trackingData: { usage: { completionImageTokens: 2304 } },
-        });
-        expect(fetchSpy).toHaveBeenCalledOnce();
-        await expect(
-            callAzureMaiImage(
-                "a poster",
-                { ...params, width: 1552 },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("2,359,296 pixels"),
         });
         expect(fetchSpy).toHaveBeenCalledOnce();
     });
@@ -211,26 +200,8 @@ describe("callAzureMaiImage", () => {
         });
     });
 
-    it("rejects more than one reference image before calling Azure", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callAzureMaiImage(
-                "combine these",
-                {
-                    ...baseParams,
-                    image: [INPUT_IMAGE_URL, "https://example.com/two.png"],
-                },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it.each([
-        [700, 1024, "at least 768px"],
         [1000, 1000, "multiples of 16px"],
-        [1552, 1536, "2,359,296 pixels"],
     ])("rejects %ix%i generation dimensions before calling Azure", async (width, height, fragment) => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 

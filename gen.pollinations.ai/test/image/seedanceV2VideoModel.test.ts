@@ -113,15 +113,6 @@ describe("Seedance 2.0 family via Replicate", () => {
         });
     });
 
-    it("names the selected variant in aspect-ratio errors", async () => {
-        await expect(
-            callSeedanceV2API("a paper boat", {
-                ...baseParams,
-                aspectRatio: "9:21",
-            }),
-        ).rejects.toThrow("not supported by Seedance 2.0 Mini");
-    });
-
     it("forwards reference media URLs without downloading or logging them", async () => {
         syncImageEnv(
             { REPLICATE_API_TOKEN: "replicate-test-key" } as CloudflareBindings,

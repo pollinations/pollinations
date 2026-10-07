@@ -605,6 +605,93 @@ describe("Pollinations server-owned defaults", () => {
         const request = fetchMock.mock.calls[0][1] as RequestInit;
         expect((request.body as FormData).has("model")).toBe(false);
     });
+
+    // Azure's gpt-transcribe rejects a WAV upload named audio.mp3.
+    it("keeps an uploaded file's name for transcription", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(makeResponse({ text: "hello" }));
+
+        await client.transcribe(
+            new File([new Uint8Array(8)], "clip.wav", { type: "audio/wav" }),
+        );
+        await client.transcribe(new ArrayBuffer(8));
+
+        const files = fetchMock.mock.calls.map(
+            ([, request]) =>
+                ((request as RequestInit).body as FormData).get("file") as File,
+        );
+        expect(files.map((file) => file.name)).toEqual([
+            "clip.wav",
+            "audio.mp3",
+        ]);
+    });
+});
+
+describe("Pollinations video reference media", () => {
+    it.each([
+        false,
+        true,
+    ])("sends guidance URLs (arrays: %s)", async (arrays) => {
+        const urls = [
+            "https://media.example/ref,one?size=large&tag=a b",
+            "https://media.example/ref-two",
+        ];
+        const references = arrays ? urls : urls[0];
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { kind: "binary", contentType: "video/mp4" }),
+        );
+
+        await newClient().video("a guided scene", {
+            referenceImages: references,
+            referenceVideos: references,
+            referenceAudios: references,
+            referenceImage: "https://media.example/start.png",
+        });
+
+        const [requestUrl] = fetchMock.mock.calls[0];
+        const url = new URL(requestUrl as string);
+        const expected = arrays ? urls.join("|") : urls[0];
+        for (const name of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ]) {
+            expect(url.searchParams.get(name)).toBe(expected);
+        }
+        expect(url.searchParams.get("image")).toBe(
+            "https://media.example/start.png",
+        );
+        expect([...url.searchParams.keys()].sort()).toEqual([
+            "image",
+            "key",
+            "reference_audios",
+            "reference_images",
+            "reference_videos",
+        ]);
+    });
+
+    it.each([
+        undefined,
+        "https://media.example/start.png",
+        ["https://media.example/start.png", "https://media.example/end.png"],
+    ])("omits guidance and preserves frame images: %s", async (referenceImage) => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        await newClient().video("a scene", { referenceImage });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("image")).toBe(
+            Array.isArray(referenceImage)
+                ? referenceImage.join(",")
+                : (referenceImage ?? null),
+        );
+        for (const name of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ]) {
+            expect(url.searchParams.has(name)).toBe(false);
+        }
+    });
 });
 
 describe("Pollinations seed handling", () => {
@@ -1567,6 +1654,54 @@ describe("Pollinations model discovery", () => {
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/models",
         );
+    });
+});
+
+describe("Pollinations.authorizeDevice", () => {
+    const deviceCode = {
+        device_code: "dev",
+        user_code: "ABCD",
+        verification_uri_complete: "https://example.test/device",
+        expires_in: 60,
+        interval: 5,
+    };
+
+    async function pollWith(...tokenResponses: Response[]) {
+        vi.useFakeTimers();
+        fetchMock.mockResolvedValueOnce(Response.json(deviceCode));
+        for (const res of tokenResponses) fetchMock.mockResolvedValueOnce(res);
+        const auth = await Pollinations.authorizeDevice();
+        const result = auth.poll();
+        result.catch(() => {});
+        await vi.advanceTimersByTimeAsync(5000 * tokenResponses.length);
+        return result;
+    }
+
+    it.each([
+        [
+            new Response("Service Unavailable", { status: 503 }),
+            503,
+            "DEVICE_FLOW_ERROR",
+        ],
+        [
+            Response.json({ error: "access_denied" }, { status: 400 }),
+            400,
+            "access_denied",
+        ],
+    ])("keeps the token endpoint status (%#)", async (res, status, code) => {
+        await expect(pollWith(res)).rejects.toMatchObject({ status, code });
+    });
+
+    it("keeps polling while pending and returns the token", async () => {
+        await expect(
+            pollWith(
+                Response.json(
+                    { error: "authorization_pending" },
+                    { status: 400 },
+                ),
+                Response.json({ access_token: "sk_device" }),
+            ),
+        ).resolves.toBe("sk_device");
     });
 });
 

@@ -6,7 +6,8 @@ import {
     useRouter,
 } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
-import { authClient } from "../auth.ts";
+import { accountClient } from "../api.ts";
+import { readError } from "../components/community-endpoints/types.ts";
 import {
     type ApiKey,
     ApiKeyList,
@@ -53,28 +54,18 @@ function KeysPage() {
     async function handleCreateApiKey(
         formState: CreateApiKey,
     ): Promise<CreateApiKeyResponse> {
-        const keyType = formState.keyType || "secret";
-        const isPublishable = keyType === "publishable";
         const created = await createKeyWithPermissions({
             name: formState.name,
-            prefix: isPublishable ? "pk" : "sk",
+            prefix: formState.keyType === "publishable" ? "pk" : "sk",
             expiryDays: formState.expiryDays,
-            metadata: {
-                description: formState.description,
-                keyType,
-                ...(isPublishable && formState.redirectUris?.length
-                    ? { redirectUris: formState.redirectUris }
-                    : {}),
-                ...(isPublishable
-                    ? { earningsEnabled: formState.earningsEnabled === true }
-                    : {}),
-            },
+            description: formState.description,
+            redirectUris: formState.redirectUris,
+            earningsEnabled: formState.earningsEnabled,
             permissions: {
                 allowedModels: formState.allowedModels,
                 pollenBudget: formState.pollenBudget,
-                accountPermissions: formState.accountPermissions?.length
-                    ? formState.accountPermissions
-                    : undefined,
+                accountPermissions: formState.accountPermissions,
+                questPollenOnly: formState.questPollenOnly,
             },
         });
 
@@ -87,9 +78,10 @@ function KeysPage() {
     }
 
     async function handleDeleteApiKey(id: string): Promise<void> {
-        const result = await authClient.apiKey.delete({ keyId: id });
-        if (result.error)
-            throw new Error(result.error.message || "Request failed");
+        const response = await accountClient.keys[":id"].$delete({
+            param: { id },
+        });
+        if (!response.ok) throw new Error(await readError(response));
         await refreshKeys();
     }
 

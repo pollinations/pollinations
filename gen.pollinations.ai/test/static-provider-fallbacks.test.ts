@@ -95,9 +95,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
-        "google-vertex/eu",
+        "google-ai-studio",
     ],
     [
         "google/gemini-3.5-flash-lite:openrouter:vertex-global",
@@ -173,6 +173,38 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("lets OpenRouter recover GLM Flash across independent providers", () => {
+        const model = "z-ai/glm-5.3-flash";
+        const route = `${model}:openrouter`;
+        expect(TEXT_SERVICES[model].provider).toBe("fireworks");
+        expect(TEXT_SERVICES[model].fallbacks).toEqual([route]);
+        expect(findModelByName(route)?.config()).toMatchObject({
+            provider: "openrouter",
+            model,
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: [
+                        "together",
+                        "baseten/fp8",
+                        "modal/nvfp4",
+                        "crusoe/fp4",
+                        "friendli",
+                        "digitalocean",
+                        "parasail/fp4",
+                        "venice",
+                    ],
+                    allow_fallbacks: true,
+                },
+            },
+        });
+        expect(TEXT_SERVICES[route].cost).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.03 / 1_000_000) * 1.055,
+            completionTextTokens: (0.5 / 1_000_000) * 1.055,
+        });
+    });
+
     it.each([
         "qwen/qwen3.7-flash",
         "qwen/qwen3.8-flash",
@@ -422,11 +454,28 @@ describe("static provider fallbacks", () => {
             provider: "openrouter",
             fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
         });
+        const lite = IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite"];
+        const liteFallback =
+            IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite:openrouter"];
+        expect(lite).toMatchObject({
+            provider: "xai",
+            aliases: [],
+            fallbacks: ["x-ai/grok-imagine-video-1.5-lite:openrouter"],
+        });
+        expect(liteFallback.provider).toBe("openrouter");
+        expect(liteFallback.cost).toEqual({
+            promptImageTokens: 0.01 * 1.055,
+            completionVideoSeconds: 0.03 * 1.055,
+        });
     });
 
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
-        const parent: ModelDefinition = TEXT_SERVICES[parentId];
+        const parent: ModelDefinition = {
+            ...TEXT_SERVICES[parentId],
+            // Isolate the synthetic pair from this model's live fallback list.
+            fallbacks: undefined,
+        };
         const studioId = `${parentId}:openrouter:ai-studio`;
         const vertexId = `${parentId}:openrouter:vertex`;
         const services = mergeFallbacks(
@@ -476,6 +525,81 @@ describe("static provider fallbacks", () => {
         expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
         expect(services[undatedId].retirementDate).toBeUndefined();
         expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
+    });
+
+    it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
+        const primary = TEXT_SERVICES["liquid/d1"];
+        const fallback = TEXT_SERVICES["liquid/d1:vercel"];
+        expect(primary.fallbacks).toEqual(["liquid/d1:vercel"]);
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(findModelByName("liquid/d1:vercel")?.config()).toMatchObject({
+            model: "liquid/d1",
+            provider: "openai",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        const billing = calculateUsageBilling({
+            model: "liquid/d1",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
+    });
+
+    it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
+        const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "moonshotai/kimi-k3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.005985, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0063, 8);
+        expect(
+            findModelByName("moonshotai/kimi-k3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K3",
+        });
+    });
+
+    it("keeps the MiniMax M3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["minimax/minimax-m3"];
+        const fallback = TEXT_SERVICES["minimax/minimax-m3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-m3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.000556, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0006, 8);
+        expect(
+            findModelByName("minimax/minimax-m3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "MiniMaxAI/MiniMax-M3",
+        });
     });
 
     it("registers exact text routes as fallback-only inherited models", () => {
@@ -862,10 +986,30 @@ describe("static provider fallbacks", () => {
         ).toBeUndefined();
     });
 
-    it("routes Ling fallback through Vercel Novita with launch pricing", () => {
+    it("orders Ling gateways behind direct Novita and keeps fallback costs separate", () => {
         const primary = "inclusionai/ling-3.1-flash";
         const route = `${primary}:vercel:novita`;
-        expect(TEXT_SERVICES[primary].fallbacks).toEqual([route]);
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([
+            `${primary}:openrouter:novita`,
+            route,
+        ]);
+        expect(TEXT_SERVICES[`${primary}:openrouter:novita`]).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            cost: {
+                promptTextTokens:
+                    TEXT_SERVICES[primary].cost.promptTextTokens * 1.055,
+                promptCachedTokens:
+                    TEXT_SERVICES[primary].cost.promptCachedTokens * 1.055,
+                completionTextTokens:
+                    TEXT_SERVICES[primary].cost.completionTextTokens * 1.055,
+            },
+        });
+        expect(getVisibleTextModels()).not.toContain(
+            `${primary}:openrouter:novita`,
+        );
         expect(TEXT_SERVICES[route]).toMatchObject({
             provider: "vercel",
             hidden: true,
@@ -885,6 +1029,14 @@ describe("static provider fallbacks", () => {
             },
         });
         expect(getVisibleTextModels()).not.toContain(route);
+        const billed = calculateUsageBilling({
+            model: primary,
+            usage: { promptTextTokens: 1000, completionTextTokens: 100 },
+            servedBy: TEXT_SERVICES[`${primary}:openrouter:novita`],
+            quotedBy: TEXT_SERVICES[primary],
+        });
+        expect(billed.cost.totalCost).toBe(0);
+        expect(billed.price.totalPrice).toBe(0);
     });
 
     it("uses the same primary and single fallback for both API formats", () => {

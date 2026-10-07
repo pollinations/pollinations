@@ -1,3 +1,4 @@
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isRetryableFallbackError } from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
@@ -8,6 +9,112 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it.each([
+        false,
+        true,
+    ])("returns reusable assistant messages when optional provider fields are null (tools=%s)", async (tools) => {
+        const message = {
+            role: "assistant",
+            content: tools ? null : "hello",
+            name: null,
+            tool_calls: tools
+                ? [
+                      {
+                          id: "call_1",
+                          type: "function",
+                          function: {
+                              name: "get_temperature",
+                              arguments: '{"city":"Berlin"}',
+                          },
+                      },
+                  ]
+                : null,
+        };
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    Response.json({
+                        choices: [{ message, finish_reason: "stop" }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+            },
+        );
+        const returned = completion.choices?.[0]?.message;
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                model: "provider-model",
+                messages: [returned],
+            }).success,
+        ).toBe(true);
+        expect(returned?.content).toBe(message.content);
+        expect(returned).not.toHaveProperty("name");
+        if (tools) expect(returned?.tool_calls).toEqual(message.tool_calls);
+        else expect(returned).not.toHaveProperty("tool_calls");
+    });
+
+    it.each([
+        [false, { reasoning: { enabled: true, exclude: true } }],
+        [true, { reasoning: { enabled: true, exclude: true } }],
+        [false, { include_reasoning: false }],
+        [true, { include_reasoning: false }],
+    ] as const)("hides excluded reasoning without changing usage (stream=%s, controls=%j)", async (stream, controls) => {
+        const usage = {
+            prompt_tokens: 2,
+            completion_tokens: 7,
+            total_tokens: 9,
+        };
+        const message = {
+            role: "assistant",
+            content: "answer",
+            reasoning_content: "private",
+            reasoning: "private",
+            reasoning_details: [{ text: "private" }],
+        };
+        const payload = {
+            choices: [
+                {
+                    index: 0,
+                    [stream ? "delta" : "message"]: message,
+                    finish_reason: "stop",
+                },
+            ],
+            usage,
+        };
+        const response = stream
+            ? new Response(`id: 1\ndata: ${JSON.stringify(payload)}`)
+            : Response.json(payload);
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hi" }],
+            {
+                model: "test",
+                stream,
+                ...controls,
+            },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () => response,
+            },
+        );
+        const body = stream
+            ? await new Response(completion.responseStream).text()
+            : JSON.stringify(completion);
+        expect(body).toContain("answer");
+        expect(body).not.toContain("private");
+        expect(body).not.toContain('"reasoning_content"');
+        if (stream) {
+            expect(body).toContain("id: 1");
+            expect(body).toContain("[DONE]");
+            expect(body).toContain(JSON.stringify(usage));
+        } else expect(completion.usage).toEqual(usage);
+    });
+
     it("keeps an embedded quota error retryable when diagnostics echo moderation words", async () => {
         const responseBody = JSON.stringify({
             error: {

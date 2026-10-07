@@ -18,6 +18,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
     DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
@@ -343,7 +345,14 @@ export class Pollinations {
             if (value === undefined || value === null) continue;
 
             if (Array.isArray(value)) {
-                searchParams.set(key, value.join(","));
+                const separator = [
+                    "reference_images",
+                    "reference_videos",
+                    "reference_audios",
+                ].includes(key)
+                    ? "|"
+                    : ",";
+                searchParams.set(key, value.join(separator));
             } else if (typeof value === "boolean") {
                 searchParams.set(key, value ? "true" : "false");
             } else {
@@ -533,11 +542,8 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Generate image(s) via the OpenAI-compatible POST endpoint.
-     * Supports multi-image requests (`n > 1`) and both `url` / `b64_json`
-     * response formats.
-     *
-     * Returns a single `ImageResponse` when `n === 1`, or an array otherwise.
+     * Generate an image via the OpenAI-compatible POST endpoint.
+     * Supports both `url` / `b64_json` response formats.
      *
      * @example
      * ```ts
@@ -546,15 +552,12 @@ export class Pollinations {
      *   size: '1024x1024',
      *   model: 'flux',
      * });
-     *
-     * // Multiple images
-     * const imgs = await pollinations.imageGenerate('A cute robot', { n: 3 });
      * ```
      */
     async imageGenerate(
         prompt: string,
         options: ImageGenerateV1Options = {},
-    ): Promise<ImageResponse | ImageResponse[]> {
+    ): Promise<ImageResponse> {
         if (!prompt || typeof prompt !== "string") {
             throw new PollinationsError(
                 "Prompt is required and must be a string",
@@ -574,7 +577,6 @@ export class Pollinations {
             model: options.model,
         };
         if (size) body.size = size;
-        if (options.n !== undefined) body.n = options.n;
         if (options.responseFormat)
             body.response_format = options.responseFormat;
         if (options.reasoning !== undefined) body.reasoning = options.reasoning;
@@ -599,8 +601,8 @@ export class Pollinations {
             },
         );
 
-        const items = json.data || [];
-        if (items.length === 0) {
+        const [item] = json.data || [];
+        if (!item) {
             throw new PollinationsError(
                 "No image data in response",
                 "NO_IMAGE",
@@ -608,16 +610,7 @@ export class Pollinations {
             );
         }
 
-        const results = await Promise.all(
-            items.map((item) => this.resolveImageItem(item, options.signal)),
-        );
-
-        // Unwrap when a single image was produced (most common case)
-        if (results.length === 1) {
-            const [single] = results;
-            if (single) return single;
-        }
-        return results;
+        return this.resolveImageItem(item, options.signal);
     }
 
     /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
@@ -680,6 +673,9 @@ export class Pollinations {
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
+            reference_images: options.referenceImages,
+            reference_videos: options.referenceVideos,
+            reference_audios: options.referenceAudios,
             safe: options.safe,
         };
 
@@ -1188,7 +1184,13 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        formData.append("file", blob, "audio.mp3");
+        // Some providers read the format from the extension, so a File keeps
+        // its own name.
+        formData.append(
+            "file",
+            blob,
+            (blob as Partial<File>).name || "audio.mp3",
+        );
         if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);
@@ -1283,6 +1285,48 @@ export class Pollinations {
                 }
 
                 return response.json() as Promise<EmbeddingsResponse>;
+            },
+        );
+    }
+
+    // ============================================================================
+    // Decisions (TypeSafe / Jev)
+    // ============================================================================
+
+    /**
+     * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.decision({
+     *   state: "My payouts have been failing for 3 days.",
+     *   questions: {
+     *     is_urgent: { type: "noul", instructions: "Does this convey urgency?" }
+     *   }
+     * });
+     * console.log(result.answers.is_urgent.noul);
+     * ```
+     */
+    async decision({
+        state,
+        questions,
+        model,
+        signal,
+    }: DecisionOptions): Promise<DecisionResponse> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/alpha/decisions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({ state, questions, model }),
+            },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return response.json() as Promise<DecisionResponse>;
             },
         );
     }
@@ -1488,7 +1532,7 @@ export class Pollinations {
                         body.error ||
                         "Device flow failed",
                     body.error || "DEVICE_FLOW_ERROR",
-                    400,
+                    tokenRes.status,
                 );
             }
             throw new PollinationsError(
@@ -1737,6 +1781,8 @@ export class Pollinations {
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
             body.accountPermissions = options.accountPermissions;
+        if (options.questPollenOnly !== undefined)
+            body.questPollenOnly = options.questPollenOnly;
         if (options.redirectUris) body.redirectUris = options.redirectUris;
         if (options.earningsEnabled !== undefined)
             body.earningsEnabled = options.earningsEnabled;

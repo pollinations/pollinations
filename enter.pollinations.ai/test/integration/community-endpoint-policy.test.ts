@@ -2,7 +2,6 @@ import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -22,7 +21,7 @@ async function approveCommunityModels(): Promise<void> {
 }
 
 async function postModel(
-    sessionToken: string,
+    accountToken: string,
     path: string,
     body: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
@@ -30,7 +29,7 @@ async function postModel(
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Cookie: `better-auth.session_token=${sessionToken}`,
+            Authorization: `Bearer ${accountToken}`,
         },
         body: JSON.stringify(body),
     });
@@ -50,16 +49,16 @@ async function advancePendingPastDelay(id: string): Promise<void> {
 }
 
 async function publishPendingModel(
-    sessionToken: string,
+    accountToken: string,
     id: string,
 ): Promise<Record<string, unknown>> {
     await advancePendingPastDelay(id);
-    return postModel(sessionToken, `/${id}/update`, {});
+    return postModel(accountToken, `/${id}/update`, {});
 }
 
 describe("community endpoint configuration policy", () => {
     test("creates, reads and edits endpoint-agent modalities without losing unrelated settings", async ({
-        sessionToken,
+        accountToken,
     }) => {
         const payload = {
             api: "chat_completions",
@@ -74,7 +73,7 @@ describe("community endpoint configuration policy", () => {
                 "embedding",
             ],
         };
-        const created = await postModel(sessionToken, "/endpoint-agents", {
+        const created = await postModel(accountToken, "/endpoint-agents", {
             name: "multimodal-agent",
             title: "Multimodal agent",
             url: "https://agent.example.com/v1/chat/completions",
@@ -82,14 +81,14 @@ describe("community endpoint configuration policy", () => {
         });
         expect(created).toMatchObject(payload);
         const listed = await SELF.fetch(endpointUrl, {
-            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+            headers: { Authorization: `Bearer ${accountToken}` },
         });
         expect(listed.status).toBe(200);
         expect(await listed.json()).toMatchObject({
             data: [expect.objectContaining({ id: created.id, ...payload })],
         });
         const rateUpdated = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id}/update`,
             {
                 perUserRpm: 7,
@@ -97,7 +96,7 @@ describe("community endpoint configuration policy", () => {
         );
         expect(rateUpdated).toMatchObject({ ...payload, perUserRpm: 7 });
         const outputUpdated = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id}/update`,
             {
                 outputModalities: ["text", "3d"],
@@ -109,7 +108,7 @@ describe("community endpoint configuration policy", () => {
             outputModalities: ["text", "3d"],
         });
         const inputUpdated = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id}/update`,
             {
                 inputModalities: ["text", "image"],
@@ -137,7 +136,7 @@ describe("community endpoint configuration policy", () => {
     });
 
     test("rejects exact bundled ID collisions without reserving the publisher namespace", async ({
-        sessionToken,
+        accountToken,
     }) => {
         await drizzle(env.DB)
             .update(schema.user)
@@ -148,7 +147,7 @@ describe("community endpoint configuration policy", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     name,
@@ -171,7 +170,7 @@ describe("community endpoint configuration policy", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({ name: "s2.1-pro" }),
             },
@@ -182,9 +181,9 @@ describe("community endpoint configuration policy", () => {
         );
     });
     test("creates a private endpoint agent without proxy credentials or pricing", async ({
-        sessionToken,
+        accountToken,
     }) => {
-        const created = await postModel(sessionToken, "/endpoint-agents", {
+        const created = await postModel(accountToken, "/endpoint-agents", {
             name: "external-agent",
             title: "External agent",
             description: "Runs on its owner's server",
@@ -230,7 +229,7 @@ describe("community endpoint configuration policy", () => {
         });
 
         const updated = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { requiredSafetyFeatures: ["violence"] },
         );
@@ -241,14 +240,14 @@ describe("community endpoint configuration policy", () => {
     });
 
     test("rejects proxy-only fields and unapproved public endpoint agents", async ({
-        sessionToken,
+        accountToken,
     }) => {
         const request = (body: Record<string, unknown>) =>
             SELF.fetch(`${endpointUrl}/endpoint-agents`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify(body),
             });
@@ -283,14 +282,14 @@ describe("community endpoint configuration policy", () => {
     });
 
     test("accepts descriptions up to the limit and names it when rejecting", async ({
-        sessionToken,
+        accountToken,
     }) => {
         const request = (description: string) =>
             SELF.fetch("http://localhost:3000/api/account/agents", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     name: "long-description-agent",
@@ -336,10 +335,10 @@ describe("community endpoint configuration policy", () => {
     });
 
     test("derives image pricing transitions and private visibility", async ({
-        sessionToken,
+        accountToken,
     }) => {
         await approveCommunityModels();
-        const created = await postModel(sessionToken, "", {
+        const created = await postModel(accountToken, "", {
             name: "image-policy",
             title: "Image policy",
             visibility: "public",
@@ -354,7 +353,7 @@ describe("community endpoint configuration policy", () => {
             completionImagePrice: 0.2,
         });
         const published = await publishPendingModel(
-            sessionToken,
+            accountToken,
             created.id as string,
         );
 
@@ -369,7 +368,7 @@ describe("community endpoint configuration policy", () => {
         });
 
         const tokenPriced = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             {
                 imagePricing: "tokens",
@@ -391,14 +390,14 @@ describe("community endpoint configuration policy", () => {
         });
 
         const safetyDisabled = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { requiredSafetyFeatures: [] },
         );
         expect(safetyDisabled.requiredSafetyFeatures).toEqual([]);
 
         const privateModel = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { visibility: "private" },
         );
@@ -406,18 +405,18 @@ describe("community endpoint configuration policy", () => {
             visibility: "private",
             inputModalities: ["text", "image"],
             perUserRpm: 2.5,
-            paidOnly: false,
+            paidOnly: true,
+            imagePricing: "tokens",
+            promptImagePrice: 0.000001,
+            completionImagePrice: 0,
         });
-        for (const { key } of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-            expect(privateModel[key]).toBe(0);
-        }
     });
 
     test("keeps fallback writes and candidate discovery aligned", async ({
-        sessionToken,
+        accountToken,
     }) => {
         await approveCommunityModels();
-        const cheaper = await postModel(sessionToken, "", {
+        const cheaper = await postModel(accountToken, "", {
             name: "cheaper-fallback",
             title: "Cheaper fallback",
             visibility: "public",
@@ -427,7 +426,7 @@ describe("community endpoint configuration policy", () => {
             promptTextPrice: 0.000001,
         });
         await advancePendingPastDelay(cheaper.id as string);
-        const expensive = await postModel(sessionToken, "", {
+        const expensive = await postModel(accountToken, "", {
             name: "expensive-fallback",
             title: "Expensive fallback",
             visibility: "public",
@@ -436,10 +435,10 @@ describe("community endpoint configuration policy", () => {
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000003,
         });
-        await publishPendingModel(sessionToken, expensive.id as string);
+        await publishPendingModel(accountToken, expensive.id as string);
         const cheaperModelId = cheaper.modelId as string;
         const expensiveModelId = expensive.modelId as string;
-        const primary = await postModel(sessionToken, "", {
+        const primary = await postModel(accountToken, "", {
             name: "primary-with-fallback",
             title: "Primary with fallback",
             visibility: "public",
@@ -450,13 +449,13 @@ describe("community endpoint configuration policy", () => {
             fallbacks: [cheaperModelId],
         });
         const resaved = await postModel(
-            sessionToken,
+            accountToken,
             `/${primary.id as string}/update`,
             { visibility: "public", fallbacks: [cheaperModelId] },
         );
         expect(resaved.pending).toMatchObject({ visibility: "public" });
         const publishedPrimary = await publishPendingModel(
-            sessionToken,
+            accountToken,
             primary.id as string,
         );
 
@@ -466,7 +465,7 @@ describe("community endpoint configuration policy", () => {
             `${endpointUrl}/${primary.id as string}/fallback-candidates`,
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
             },
         );
@@ -478,10 +477,10 @@ describe("community endpoint configuration policy", () => {
     });
 
     test("clears advertised metadata without rewriting payload for listing-only changes", async ({
-        sessionToken,
+        accountToken,
     }) => {
         await approveCommunityModels();
-        const created = await postModel(sessionToken, "", {
+        const created = await postModel(accountToken, "", {
             name: "text-policy",
             title: "Text policy",
             visibility: "public",
@@ -496,10 +495,10 @@ describe("community endpoint configuration policy", () => {
             },
             promptTextPrice: 0.000001,
         });
-        await publishPendingModel(sessionToken, created.id as string);
+        await publishPendingModel(accountToken, created.id as string);
 
         const cleared = await postModel(
-            sessionToken,
+            accountToken,
             `/${created.id as string}/update`,
             { advertised: {}, perUserRpm: null },
         );
@@ -509,7 +508,7 @@ describe("community endpoint configuration policy", () => {
         const before = await db.query.communityEndpoint.findFirst({
             where: eq(schema.communityEndpoint.id, created.id as string),
         });
-        await postModel(sessionToken, `/${created.id as string}/update`, {
+        await postModel(accountToken, `/${created.id as string}/update`, {
             title: "Renamed listing",
         });
         const after = await db.query.communityEndpoint.findFirst({

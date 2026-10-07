@@ -1,5 +1,6 @@
 import {
     Button,
+    CardIcon,
     cn,
     InlineLink,
     Switch,
@@ -55,19 +56,22 @@ type TopUpPanelProps = {
     initialPack?: PollenPackKey;
 };
 
-const buyLabel = (pack: PollenPack | null) =>
-    pack ? `Buy ${formatPollenPackValue(pack.amountUsd)} pollen` : "Buy now";
 // The second line under "Auto top-up": the pack, or what it needs.
 const refillLabel = (amountUsd: number | null) =>
     amountUsd
         ? `${formatPollenPackValue(amountUsd)} pollen`
         : `From ${formatPollenPackValue(AUTO_TOP_UP_PACK_MIN_USD)} pollen`;
 // Every text each label can show, so it keeps the widest one's size.
-const BUY_LABELS = [null, ...POLLEN_PACKS].map(buyLabel);
 const REFILL_LABELS = [
     null,
     ...POLLEN_PACKS.filter(isAutoTopUpPack).map((pack) => pack.amountUsd),
 ].map(refillLabel);
+const buyLabel = (amountUsd: number | undefined) =>
+    amountUsd ? `Buy ${formatPollenPackValue(amountUsd)} pollen` : "Buy pollen";
+const BUY_LABELS = [
+    undefined,
+    ...POLLEN_PACKS.map((pack) => pack.amountUsd),
+].map(buyLabel);
 
 /**
  * Text that changes without moving anything: every option is stacked in one
@@ -83,7 +87,9 @@ const StableLabel: FC<{
     <span
         className={cn(
             "inline-grid",
-            align === "center" ? "justify-items-center" : "justify-items-end",
+            align === "center"
+                ? "justify-items-center"
+                : "justify-items-start sm:justify-items-end",
         )}
     >
         {options.map((option) => (
@@ -112,7 +118,7 @@ const StableSlot: FC<{
     active: string;
     items: Record<string, ReactNode>;
 }> = ({ active, items }) => (
-    <span className="inline-grid justify-items-end">
+    <span className="inline-grid justify-items-start sm:justify-items-end">
         {Object.entries(items).map(([key, node]) => (
             <span
                 key={key}
@@ -166,6 +172,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (returnToTopUp.redirect)
             checkoutParams.set("redirect", returnToTopUp.redirect);
     }
+    const cryptoCheckoutParams = new URLSearchParams(checkoutParams);
+    cryptoCheckoutParams.set("payment_method", "crypto");
     const status = billing ? autoTopUpStatus(billing) : null;
     const selectedPack =
         chosenPack ??
@@ -283,26 +291,48 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                     onSelect={setChosenPack}
                 />
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-3">
-                    {/* Filled: Buy only opens the checkout; its Confirm
-                        (or Stripe's page) is the write. */}
-                    <Button
-                        size="lg"
-                        disabled={!selectedPack}
-                        onClick={startCheckout}
-                    >
-                        <span className="font-bold">
+                    {/* Both choices open checkout for the selected pack. */}
+                    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
+                        <Button
+                            size="lg"
+                            intent="brand"
+                            className="shrink-0 whitespace-nowrap"
+                            icon={<CardIcon />}
+                            disabled={!selectedPack}
+                            onClick={startCheckout}
+                        >
                             <StableLabel
-                                text={buyLabel(selectedPack)}
+                                text={buyLabel(selectedPack?.amountUsd)}
                                 options={BUY_LABELS}
                             />
-                        </span>
-                    </Button>
-                    {/* A settings row: the label, then the switch flush with
-                        the grid's right edge. The second line is the one
+                        </Button>
+                        {selectedPack && (
+                            <Tooltip
+                                triggerAs="span"
+                                content="Secure payment via Stripe"
+                                className="shrink-0"
+                            >
+                                <InlineLink
+                                    href={hostedCheckoutHref(
+                                        selectedPack.packKey,
+                                        cryptoCheckoutParams.toString(),
+                                    )}
+                                    external
+                                    target="_self"
+                                    size="sm"
+                                    className="inline-flex items-center gap-1 whitespace-nowrap font-semibold"
+                                >
+                                    Pay with Crypto
+                                </InlineLink>
+                            </Tooltip>
+                        )}
+                    </div>
+                    {/* The switch leads on mobile; desktop keeps it after
+                        the label. The second line is the one
                         status slot (pack, problem, saving), sized for its
                         widest content, so the switch never moves. */}
-                    <div className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-theme-text-strong">
-                        <span className="flex flex-col items-end leading-tight">
+                    <div className="inline-flex flex-row-reverse items-center gap-2 text-sm font-semibold text-theme-text-strong sm:flex-row">
+                        <span className="flex flex-col items-start leading-tight sm:items-end">
                             <span>Auto top-up</span>
                             {/* It buys paid Pollen: the Paid card's icon and
                                 colour while on, greyed while off. Same weight

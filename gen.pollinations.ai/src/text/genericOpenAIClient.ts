@@ -1,5 +1,6 @@
 import { collectUpstreamHeaders } from "@shared/error.ts";
 import debug from "debug";
+import { createParser } from "eventsource-parser";
 import { apiErrorStatus } from "./errors.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
@@ -58,6 +59,60 @@ function ensureOpenAISseDone(
                 if (!seenDone) {
                     controller.enqueue(encoder.encode("data: [DONE]\n\n"));
                 }
+            },
+        }),
+    );
+}
+
+function removeReasoning(completion: Pick<ChatCompletion, "choices">): void {
+    for (const choice of completion.choices ?? []) {
+        for (const message of [choice.message, choice.delta]) {
+            if (!message) continue;
+            delete message.reasoning;
+            delete message.reasoning_content;
+            delete message.reasoning_details;
+        }
+    }
+}
+
+function hideStreamReasoning(
+    source: ReadableStream<Uint8Array>,
+): ReadableStream<Uint8Array> {
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let parser: ReturnType<typeof createParser>;
+    return source.pipeThrough(
+        new TransformStream({
+            start(controller) {
+                parser = createParser({
+                    onEvent(event) {
+                        let data = event.data;
+                        if (data.trim() !== "[DONE]") {
+                            const completion = JSON.parse(
+                                data,
+                            ) as ChatCompletion;
+                            removeReasoning(completion);
+                            data = JSON.stringify(completion);
+                        }
+                        const fields: string[] = [];
+                        if (event.event !== undefined)
+                            fields.push(`event: ${event.event}`);
+                        if (event.id !== undefined)
+                            fields.push(`id: ${event.id}`);
+                        for (const line of data.split("\n"))
+                            fields.push(`data: ${line}`);
+                        controller.enqueue(
+                            encoder.encode(`${fields.join("\n")}\n\n`),
+                        );
+                    },
+                });
+            },
+            transform(chunk) {
+                parser.feed(decoder.decode(chunk, { stream: true }));
+            },
+            flush() {
+                parser.feed(`${decoder.decode()}\n\n`);
+                parser.reset({ consume: true });
             },
         }),
     );
@@ -165,6 +220,10 @@ export async function genericOpenAIClient(
     const { endpoint, additionalHeaders = {}, fetcher = fetch } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
+    const hideReasoning =
+        options.include_reasoning === false ||
+        (options.reasoning as { exclude?: boolean } | undefined)?.exclude ===
+            true;
     let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
@@ -267,7 +326,11 @@ export async function genericOpenAIClient(
                     requestUrl,
                 );
             }
-            const streamToReturn = ensureOpenAISseDone(response.body);
+            const streamToReturn = ensureOpenAISseDone(
+                hideReasoning
+                    ? hideStreamReasoning(response.body)
+                    : response.body,
+            );
             return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,
@@ -300,6 +363,7 @@ export async function genericOpenAIClient(
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);
             throw error;
         }
+        if (hideReasoning) removeReasoning(data);
         const responseError = responseBodyError(data);
         if (responseError) {
             const errorDetails =
@@ -333,6 +397,14 @@ export async function genericOpenAIClient(
         const choices = (data.choices?.length ? data.choices : [{}]).map(
             (choice): CompletionChoice => {
                 const formattedChoice = { ...choice };
+                if (formattedChoice.message) {
+                    const message = { ...formattedChoice.message };
+                    // DeepInfra returns null for optional fields that Chat
+                    // request messages require to be absent rather than null.
+                    if (message.name === null) delete message.name;
+                    if (message.tool_calls === null) delete message.tool_calls;
+                    formattedChoice.message = message;
+                }
                 // Some providers report "stop" even when they returned a tool
                 // call. Keep the compatibility fix without dropping choices.
                 if (formattedChoice.message?.tool_calls?.length) {

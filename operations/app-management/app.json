@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "SoloForge AI",
+    "url": "https://soloforge-ai-web.onrender.com",
+    "description": "SoloForge AI is an AI Creator OS that turns content ideas into generated assets, review queues, and automated publishing workflows. It uses Pollinations for AI image generation, authenticated AI sessi",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "soloforge-ai",
+    "githubUserId": "304932313",
+    "repositoryUrl": "https://github.com/soloforge-ai/SoloForge-AI",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-30",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15915",
+    "approvedDate": "2026-10-07",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "Pollinations Quest Starter",
     "url": "https://elite-surely-machine-enemies.trycloudflare.com",

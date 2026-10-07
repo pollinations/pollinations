@@ -26,14 +26,13 @@ from common import (
     get_repo_root,
     call_pollinations_api,
     generate_image,
-    commit_image_to_branch,
+    upload_image,
     validate_gist,
     apply_publish_tier_rules,
     commit_gist,
     parse_json_response,
     github_api_request,
     GITHUB_API_BASE,
-    GISTS_BRANCH,
     MODEL,
 )
 
@@ -244,8 +243,7 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
 
 # ── Step 2: Image generation ────────────────────────────────────────
 
-def generate_gist_image(gist: Dict, pollinations_token: str,
-                        github_token: str, owner: str, repo: str) -> Optional[str]:
+def generate_gist_image(gist: Dict, pollinations_token: str) -> Optional[str]:
     """Generate pixel art image for a gist. Returns image URL or None."""
     image_prompt = gist["image"].get("prompt", "")
     if not image_prompt:
@@ -259,15 +257,7 @@ def generate_gist_image(gist: Dict, pollinations_token: str,
         print("  FATAL: Image generation failed")
         return None
 
-    # Commit image to repo on news branch
-    date_str = gist["merged_at"][:10]
-    image_path = f"operations/social/news/gists/{date_str}/PR-{gist['pr_number']}.jpg"
-    image_url = commit_image_to_branch(
-        image_bytes, image_path, GISTS_BRANCH,
-        github_token, owner, repo,
-    )
-
-    return image_url
+    return upload_image(image_bytes, pollinations_token)
 
 
 # ── Main ─────────────────────────────────────────────────────────────
@@ -310,9 +300,9 @@ def main():
 
     # ── Step 2: Generate image → update gist ─────────────────────────
     print(f"\n[2/2] Generating image...")
-    image_url = generate_gist_image(gist, pollinations_token, github_token, owner, repo)
+    image_url = generate_gist_image(gist, pollinations_token)
     if not image_url:
-        print("  FATAL: Could not generate or commit gist image")
+        print("  FATAL: Could not generate or upload gist image")
         sys.exit(1)
 
     gist["image"]["url"] = image_url

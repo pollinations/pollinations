@@ -6,6 +6,17 @@ export type AccountBalance = {
     packBalance: number;
 };
 
+export async function fetchAccountBalance(): Promise<AccountBalance> {
+    const response = await apiClient.account.balance.$get();
+    if (!response.ok) throw new Error("Failed to load wallet");
+    const data = await response.json();
+    if (!("accountBalance" in data)) throw new Error("Failed to load wallet");
+    return {
+        tierBalance: data.accountBalance.tier,
+        packBalance: data.accountBalance.paid,
+    };
+}
+
 export function useAccountBalance(
     enabled: boolean,
 ): AccountBalance | undefined {
@@ -18,12 +29,7 @@ export function useAccountBalance(
         }
         let canceled = false;
         const load = () =>
-            apiClient.customer.balance
-                .$get()
-                .then((response) => {
-                    if (!response.ok) throw new Error("Failed to load wallet");
-                    return response.json();
-                })
+            fetchAccountBalance()
                 .then((data) => {
                     if (!canceled) setBalance(data);
                 })

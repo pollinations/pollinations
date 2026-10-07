@@ -18,6 +18,7 @@ export interface Model {
     hasVideoOutput: boolean;
     inputModalities?: string[];
     outputModalities?: string[];
+    supportedEndpoints?: string[];
     voices?: string[];
     paid_only?: boolean;
     community?: boolean;
@@ -35,7 +36,7 @@ interface UseModelListReturn {
     allModels: Model[];
 }
 
-const CACHE_KEY_PREFIX = "pollinations:modelList:v2:";
+const CACHE_KEY_PREFIX = "pollinations:modelList:v3:";
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 type RawModel =
@@ -47,6 +48,7 @@ type RawModel =
           description?: string;
           input_modalities?: string[];
           output_modalities?: string[];
+          supported_endpoints?: string[];
           voices?: string[];
           paid_only?: boolean;
           community?: boolean;
@@ -74,6 +76,82 @@ function extractIds(
 
 function hasAudioOutput(m: RawModel): boolean {
     return typeof m !== "string" && !!m.output_modalities?.includes("audio");
+}
+
+export type AudioGenerationEndpoint =
+    | "/v1/audio/speech"
+    | "/v1/chat/completions";
+
+export function getAudioGenerationEndpoint(
+    model:
+        | {
+              inputModalities?: readonly string[];
+              outputModalities?: readonly string[];
+              supportedEndpoints?: readonly string[];
+          }
+        | undefined,
+): AudioGenerationEndpoint | undefined {
+    if (
+        !model?.inputModalities?.includes("text") ||
+        !model.outputModalities?.includes("audio")
+    ) {
+        return undefined;
+    }
+
+    if (model.supportedEndpoints?.includes("/v1/audio/speech")) {
+        return "/v1/audio/speech";
+    }
+    if (model.supportedEndpoints?.includes("/v1/chat/completions")) {
+        return "/v1/chat/completions";
+    }
+    return undefined;
+}
+
+export function sendAudioGenerationRequest(
+    currentModel: Model,
+    selectedModel: string,
+    prompt: string,
+    voice: string,
+    apiKey: string,
+): Promise<Response> {
+    const endpoint = getAudioGenerationEndpoint(currentModel);
+    if (!endpoint) {
+        throw new Error(
+            `Model "${currentModel.id}" has no supported audio endpoint`,
+        );
+    }
+
+    const body =
+        endpoint === "/v1/audio/speech"
+            ? {
+                  model: selectedModel,
+                  input: prompt,
+                  ...(voice ? { voice } : {}),
+              }
+            : {
+                  model: selectedModel,
+                  modalities: ["text", "audio"],
+                  audio: { voice: voice || "alloy", format: "wav" },
+                  messages: [{ role: "user", content: prompt }],
+              };
+
+    return fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+    });
+}
+
+function audioGenerationEndpoint(model: RawModel) {
+    if (typeof model === "string") return undefined;
+    return getAudioGenerationEndpoint({
+        inputModalities: model.input_modalities,
+        outputModalities: model.output_modalities,
+        supportedEndpoints: model.supported_endpoints,
+    });
 }
 
 function modelId(model: RawModel): string {
@@ -108,6 +186,7 @@ function apiModelToModel(model: RawModel, type: Model["type"]): Model | null {
         hasVideoOutput: model.output_modalities?.includes("video") || false,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
+        supportedEndpoints: model.supported_endpoints,
         voices: model.voices,
         paid_only: model.paid_only,
         community: model.community === true,
@@ -122,7 +201,7 @@ async function fetchJson(url: string, headers?: Record<string, string>) {
     return (await response.json()) as RawModel[];
 }
 
-async function fetchCatalogModels(): Promise<{
+export async function fetchCatalogModels(): Promise<{
     imageModels: Model[];
     textModels: Model[];
     audioModels: Model[];
@@ -142,9 +221,11 @@ async function fetchCatalogModels(): Promise<{
         .filter((model): model is Model => Boolean(model));
     const audioModels = [
         ...textList
-            .filter((model) => hasAudioOutput(model))
+            .filter((model) => audioGenerationEndpoint(model))
             .map((model) => apiModelToModel(model, "audio")),
-        ...audioList.map((model) => apiModelToModel(model, "audio")),
+        ...audioList
+            .filter((model) => audioGenerationEndpoint(model))
+            .map((model) => apiModelToModel(model, "audio")),
     ].filter((model): model is Model => Boolean(model));
 
     return { imageModels, textModels, audioModels };

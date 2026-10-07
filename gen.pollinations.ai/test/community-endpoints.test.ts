@@ -3072,7 +3072,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
 }
 
 fixtureTest(
-    "routes Chat through an exact community URL with its saved token and rejects Responses",
+    "routes Chat through an exact community URL with its saved token and adapts Responses onto it",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
@@ -3228,13 +3228,29 @@ fixtureTest(
                     Authorization: `Bearer ${apiKey}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ model: modelId, input: "hello" }),
+                body: JSON.stringify({
+                    model: modelId,
+                    input: "hello",
+                    max_output_tokens: 5,
+                }),
             }),
         );
-        expect(responses.status).toBe(400);
-        expect(await responses.text()).toContain(
-            "does not support the stateless Responses API",
+        expect(responses.status).toBe(200);
+        expect(responses.headers.get("x-model-used")).toBe(modelId);
+        expect(responses.headers.get("x-usage-completion-text-tokens")).toBe(
+            "3",
         );
+        expect(await responses.json()).toMatchObject({
+            object: "response",
+            status: "completed",
+            output: [
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "ok" }],
+                },
+            ],
+            usage: { input_tokens: 2, output_tokens: 3, total_tokens: 5 },
+        });
         const models = (await (
             await fetchGen("https://gen.pollinations.ai/v1/models")
         ).json()) as { data: { id: string; supported_endpoints?: string[] }[] };
@@ -3242,12 +3258,12 @@ fixtureTest(
             (model) => model.id === modelId,
         )?.supported_endpoints;
         expect(supportedEndpoints).toContain("/v1/chat/completions");
-        expect(supportedEndpoints).not.toContain("/v1/responses");
+        expect(supportedEndpoints).toContain("/v1/responses");
 
         const upstreamCalls = fetchMock.mock.calls.filter(
             ([input, init]) => new Request(input, init).url === chatUrl,
         );
-        expect(upstreamCalls).toHaveLength(3);
+        expect(upstreamCalls).toHaveLength(4);
     },
 );
 
@@ -4614,6 +4630,483 @@ fixtureTest(
             },
         ]);
     },
+);
+
+function chatOnlyUpstream({
+    usage = { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 },
+    status = 200,
+    seen = [],
+}: {
+    usage?: Record<string, number> | null;
+    status?: number;
+    seen?: Record<string, unknown>[];
+} = {}) {
+    return async (request: Request) => {
+        const body = (await request.json()) as Record<string, unknown>;
+        seen.push(body);
+        if (status !== 200) {
+            return Response.json(
+                { error: { message: "temporarily unavailable" } },
+                { status },
+            );
+        }
+        if (body.stream) {
+            const chunk = (delta: object, finish?: string) =>
+                `data: ${JSON.stringify({
+                    id: "chatcmpl_stream",
+                    object: "chat.completion.chunk",
+                    model: "plain-chat-model",
+                    choices: [
+                        { index: 0, delta, finish_reason: finish ?? null },
+                    ],
+                })}\n\n`;
+            return new Response(
+                [
+                    chunk({ role: "assistant", content: "He" }),
+                    chunk({ content: "llo" }),
+                    chunk(
+                        {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "call_1",
+                                    type: "function",
+                                    function: {
+                                        name: "lookup",
+                                        arguments: '{"q":"x"}',
+                                    },
+                                },
+                            ],
+                        },
+                        "tool_calls",
+                    ),
+                    ...(usage
+                        ? [
+                              `data: ${JSON.stringify({
+                                  id: "chatcmpl_stream",
+                                  object: "chat.completion.chunk",
+                                  model: "plain-chat-model",
+                                  choices: [],
+                                  usage,
+                              })}\n\n`,
+                          ]
+                        : []),
+                    "data: [DONE]\n\n",
+                ].join(""),
+                { headers: { "Content-Type": "text/event-stream" } },
+            );
+        }
+        return Response.json({
+            id: "chatcmpl_test",
+            object: "chat.completion",
+            model: "plain-chat-model",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "Hello" },
+                    finish_reason: "stop",
+                },
+            ],
+            ...(usage ? { usage } : {}),
+        });
+    };
+}
+
+fixtureTest(
+    "serves a chat-only community model on Responses with the same billing as Chat",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `chatonly-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const chatUrl = "https://chatonly.example/v1/chat/completions";
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            api: "chat_completions",
+            baseUrl: chatUrl,
+            upstreamModel: "plain-chat-model",
+            bearerTokenCiphertext: await encryptSecret(
+                "chat-token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const seen: Record<string, unknown>[] = [];
+        let upstream = chatOnlyUpstream({ seen });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === chatUrl) return upstream(request);
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+        const post = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ model: modelId, ...body }),
+                }),
+            );
+        const usageHeaders = (response: Response) =>
+            [...response.headers]
+                .filter(([name]) => name.startsWith("x-usage-"))
+                .sort();
+
+        // Same upstream usage on both APIs: identical usage headers, one call each.
+        const chat = await post("/v1/chat/completions", {
+            messages: [{ role: "user", content: "hi" }],
+        });
+        const responses = await post("/v1/responses", { input: "hi" });
+        expect(chat.status).toBe(200);
+        expect(responses.status).toBe(200);
+        expect(usageHeaders(responses)).toEqual(usageHeaders(chat));
+        expect(usageHeaders(responses).length).toBeGreaterThan(0);
+        expect(responses.headers.get("x-model-used")).toBe(modelId);
+        expect(await responses.json()).toMatchObject({
+            status: "completed",
+            output: [
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "Hello" }],
+                },
+            ],
+            usage: { input_tokens: 2, output_tokens: 3, total_tokens: 5 },
+        });
+        expect(seen).toHaveLength(2);
+
+        // Streaming: semantic events, the tool call, and terminal usage.
+        const streamed = await post("/v1/responses", {
+            input: "hi",
+            stream: true,
+            tools: [{ type: "function", name: "lookup", parameters: {} }],
+        });
+        expect(streamed.status).toBe(200);
+        expect(streamed.headers.get("content-type")).toContain(
+            "text/event-stream",
+        );
+        const stream = await streamed.text();
+        for (const type of [
+            "response.created",
+            "response.output_text.delta",
+            "response.function_call_arguments.done",
+            "response.completed",
+        ]) {
+            expect(stream).toContain(`event: ${type}`);
+        }
+        expect(stream).toContain('"arguments":"{\\"q\\":\\"x\\"}"');
+        expect(stream).toContain('"input_tokens":2');
+        expect(seen.at(-1)).toMatchObject({
+            stream: true,
+            stream_options: { include_usage: true },
+            tools: [{ type: "function", function: { name: "lookup" } }],
+        });
+
+        // History and tool results reach the provider as chat messages.
+        const followUp = await post("/v1/responses", {
+            input: [
+                { role: "user", content: "hi" },
+                {
+                    type: "function_call",
+                    call_id: "call_1",
+                    name: "lookup",
+                    arguments: '{"q":"x"}',
+                },
+                {
+                    type: "function_call_output",
+                    call_id: "call_1",
+                    output: "found",
+                },
+            ],
+        });
+        expect(followUp.status).toBe(200);
+        expect(seen.at(-1)?.messages).toEqual([
+            { role: "user", content: "hi" },
+            {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                    {
+                        id: "call_1",
+                        type: "function",
+                        function: { name: "lookup", arguments: '{"q":"x"}' },
+                    },
+                ],
+            },
+            { role: "tool", tool_call_id: "call_1", content: "found" },
+        ]);
+
+        // A provider that omits usage fails the request instead of going unbilled.
+        upstream = chatOnlyUpstream({ usage: null });
+        const missing = await post("/v1/responses", { input: "no usage" });
+        expect(missing.status).toBe(502);
+        const missingStream = await post("/v1/responses", {
+            input: "no usage",
+            stream: true,
+        });
+        const missingEvents = await missingStream.text();
+        expect(missingEvents).toContain("event: response.failed");
+        expect(missingEvents).not.toContain("event: response.completed");
+
+        // Requests chat cannot express fail before any provider call.
+        const calls = seen.length;
+        const rejected = await post("/v1/responses", {
+            input: "hi",
+            top_logprobs: 2,
+        });
+        expect(rejected.status).toBe(400);
+        expect(seen).toHaveLength(calls);
+    },
+    20_000,
+);
+
+fixtureTest(
+    "falls back between native Responses and chat-only community models in both directions",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const names = {
+            nativeFirst: `native-first-${crypto.randomUUID().slice(0, 8)}`,
+            chatFirst: `chat-first-${crypto.randomUUID().slice(0, 8)}`,
+            native: `native-${crypto.randomUUID().slice(0, 8)}`,
+            chat: `chat-${crypto.randomUUID().slice(0, 8)}`,
+        };
+        const id = (name: string) =>
+            communityModelId(ownerGithubUsername, name);
+        const urls = {
+            nativeFirst: "https://native-first.example/v1/responses",
+            chatFirst: "https://chat-first.example/v1/chat/completions",
+            native: "https://native.example/v1/responses",
+            chat: "https://chat.example/v1/chat/completions",
+        };
+        const row = async (
+            key: keyof typeof names,
+            api: "responses" | "chat_completions",
+            fallbacks: string[] = [],
+        ) => ({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public" as const,
+            name: names[key],
+            api,
+            baseUrl: urls[key],
+            upstreamModel: `${key}-upstream`,
+            bearerTokenCiphertext: await encryptSecret(
+                `${key}-token`,
+                env.BETTER_AUTH_SECRET,
+            ),
+            fallbacks,
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        await insertCommunityEndpoints([
+            await row("native", "responses"),
+            await row("chat", "chat_completions"),
+            await row("nativeFirst", "responses", [id(names.chat)]),
+            await row("chatFirst", "chat_completions", [id(names.native)]),
+        ]);
+        const calls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === urls.nativeFirst) {
+                    calls.push("nativeFirst");
+                    return Response.json(
+                        { error: { message: "down" } },
+                        { status: 503 },
+                    );
+                }
+                if (request.url === urls.chatFirst) {
+                    calls.push("chatFirst");
+                    return Response.json(
+                        { error: { message: "down" } },
+                        { status: 503 },
+                    );
+                }
+                if (request.url === urls.chat) {
+                    calls.push("chat");
+                    return chatOnlyUpstream()(request);
+                }
+                if (request.url === urls.native) {
+                    calls.push("native");
+                    return Response.json({
+                        id: "resp_native",
+                        object: "response",
+                        model: "native-upstream",
+                        status: "completed",
+                        output: [
+                            {
+                                type: "message",
+                                role: "assistant",
+                                content: [
+                                    { type: "output_text", text: "native" },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+        const post = (model: string, body: Record<string, unknown> = {}) =>
+            fetchGen(
+                new Request("https://gen.pollinations.ai/v1/responses", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ model, input: "hi", ...body }),
+                }),
+            );
+
+        // Native primary, chat-only fallback.
+        const toChat = await post(id(names.nativeFirst));
+        expect(toChat.status).toBe(200);
+        expect(toChat.headers.get("x-model-used")).toBe(id(names.chat));
+        expect(toChat.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        expect(await toChat.json()).toMatchObject({
+            output: [{ content: [{ text: "Hello" }] }],
+        });
+        expect(calls).toEqual(["nativeFirst", "chat"]);
+
+        // Chat-only primary, native fallback.
+        calls.length = 0;
+        const toNative = await post(id(names.chatFirst));
+        expect(toNative.status).toBe(200);
+        expect(toNative.headers.get("x-model-used")).toBe(id(names.native));
+        expect(await toNative.json()).toMatchObject({
+            output: [{ content: [{ text: "native" }] }],
+        });
+        expect(calls).toEqual(["chatFirst", "native"]);
+
+        // A request chat cannot express skips the chat-only fallback.
+        calls.length = 0;
+        const unsupported = await post(id(names.nativeFirst), {
+            top_logprobs: 2,
+        });
+        expect(unsupported.status).toBe(503);
+        expect(calls).toEqual(["nativeFirst"]);
+    },
+    20_000,
+);
+
+fixtureTest(
+    "serves built-in chat-only Claude and Gemini models on Responses and charges what Chat charges",
+    async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                const body = (await request.json()) as Record<string, unknown>;
+                return Response.json({
+                    id: "chatcmpl_static",
+                    object: "chat.completion",
+                    model: String(body.model),
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Hello" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2000,
+                        completion_tokens: 3000,
+                        total_tokens: 5000,
+                    },
+                });
+            }),
+        );
+        const post = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                }),
+            );
+        const usageHeaders = (response: Response) =>
+            [...response.headers]
+                .filter(([name]) => name.startsWith("x-usage-"))
+                .sort();
+
+        for (const model of [
+            "anthropic/claude-haiku-4.5",
+            "google/gemini-3.8-flash",
+        ]) {
+            const start = await getUserBalance(db, caller.userId);
+            const chat = await post("/v1/chat/completions", {
+                model,
+                messages: [{ role: "user", content: `chat ${model}` }],
+            });
+            const afterChat = await getUserBalance(db, caller.userId);
+            const responses = await post("/v1/responses", {
+                model,
+                instructions: "Be brief.",
+                input: `responses ${model}`,
+            });
+            const afterResponses = await getUserBalance(db, caller.userId);
+
+            expect(chat.status, model).toBe(200);
+            expect(responses.status, model).toBe(200);
+            expect(responses.headers.get("x-model-used")).toBe(model);
+            expect(usageHeaders(responses)).toEqual(usageHeaders(chat));
+            expect(await responses.json()).toMatchObject({
+                object: "response",
+                status: "completed",
+                output: [
+                    {
+                        type: "message",
+                        content: [{ type: "output_text", text: "Hello" }],
+                    },
+                ],
+                usage: { input_tokens: 2000, output_tokens: 3000 },
+            });
+            // One request, one charge: the same as Chat for the same usage.
+            const chatCost = start.packBalance - afterChat.packBalance;
+            const responsesCost =
+                afterChat.packBalance - afterResponses.packBalance;
+            expect(chatCost).toBeGreaterThan(0);
+            expect(responsesCost).toBeCloseTo(chatCost, 10);
+        }
+    },
+    20_000,
 );
 
 fixtureTest(

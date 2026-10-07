@@ -509,7 +509,7 @@ function responseUsage(output: AgentOutput): ResponseUsage {
     });
 }
 
-function responseConfiguration(
+export function responseConfiguration(
     request: CreateResponseRequest,
     callerTools: ReadonlySet<string>,
 ) {

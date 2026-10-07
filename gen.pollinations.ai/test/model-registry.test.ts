@@ -103,13 +103,13 @@ describe("getGenerationModelRegistry", () => {
         expect(model?.definition.provider).toBe("aws");
         expect(model?.definition.paidOnly).toBe(true);
         expect(model?.definition.fallbacks ?? []).toEqual([]);
-        expect(model?.supportedEndpoints).not.toContain("/v1/responses");
+        expect(model?.supportedEndpoints).toContain("/v1/responses");
         for (const parameter of ["seed", "logprobs", "stop"]) {
             expect(model?.info.supported_parameters).not.toContain(parameter);
         }
     });
 
-    it("advertises every configured direct Responses model", async () => {
+    it("advertises /v1/responses for every chat text model and every direct Responses model", async () => {
         const registry = await getGenerationModelRegistry(env);
         const configured = availableModels
             .filter(
@@ -132,7 +132,19 @@ describe("getGenerationModelRegistry", () => {
             .map((entry) => entry.id)
             .sort();
 
-        expect(advertised).toEqual(configured);
+        expect(advertised).toEqual(expect.arrayContaining(configured));
+        const chatModels = registry
+            .visibleEntries()
+            .filter(
+                (entry) =>
+                    entry.definition.category === "text" &&
+                    entry.supportedEndpoints.includes("/v1/chat/completions"),
+            )
+            .map((entry) => entry.id);
+        expect(chatModels.length).toBeGreaterThan(0);
+        for (const model of chatModels) {
+            expect(advertised).toContain(model);
+        }
         for (const model of advertised) {
             expect(registry.resolve(model)?.info.supported_endpoints).toContain(
                 "/v1/responses",

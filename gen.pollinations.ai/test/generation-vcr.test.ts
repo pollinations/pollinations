@@ -1946,31 +1946,124 @@ test("direct Responses returns 400 for reusable input state", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(0);
 });
 
-test("Responses rejects models without a direct endpoint without calling Chat", async ({
+test("Responses runs a chat-only model through Chat and bills it like Chat", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
-    const { response, wait } = await fetchWorker("/v1/responses", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "stepfun/step-3.7-flash",
-            input: "must not adapt to chat",
-        }),
+    await mocks.enable("tinybird", "portkeyDirect");
+    const model = "stepfun/step-3.7-flash";
+    const call = (path: string, body: Record<string, unknown>) =>
+        fetchWorker(path, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({ model, ...body }),
+        });
+    const billing = (event: Record<string, unknown>) =>
+        Object.fromEntries(
+            Object.entries(event).filter(([key]) =>
+                /^tokenCount|Cost$|Price$|^isBilledUsage$|^modelUsed$|^responseStatus$/.test(
+                    key,
+                ),
+            ),
+        );
+
+    const chat = await call("/v1/chat/completions", {
+        messages: [{ role: "user", content: "vcr simple text" }],
+    });
+    await chat.response.text();
+    await chat.wait();
+    const responses = await call("/v1/responses", {
+        input: "vcr simple text",
+    });
+    await responses.wait();
+
+    expect(responses.response.status).toBe(200);
+    expect(responses.response.headers.get("x-model-used")).toBe(model);
+    await expect(responses.response.json()).resolves.toMatchObject({
+        object: "response",
+        status: "completed",
+        output: [
+            {
+                type: "message",
+                content: [
+                    { type: "output_text", text: "snapshot text response" },
+                ],
+            },
+        ],
+        usage: { input_tokens: 6, output_tokens: 4, total_tokens: 10 },
+    });
+    // One upstream call and one billed event per request, priced the same.
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    const events = mocks.tinybird.state.events;
+    expect(events).toHaveLength(2);
+    expect(billing(events[1])).toEqual(billing(events[0]));
+    expect(events[1]).toMatchObject({ isBilledUsage: true });
+
+    const streamed = await call("/v1/responses", {
+        input: "vcr stream",
+        stream: true,
+    });
+    const streamBody = await streamed.response.text();
+    await streamed.wait();
+    expect(streamed.response.status).toBe(200);
+    expect(streamBody).toContain("event: response.output_text.delta");
+    expect(streamBody).toContain("event: response.completed");
+    expect(streamBody).toContain('"input_tokens":7');
+    expect(mocks.tinybird.state.events).toHaveLength(3);
+    expect(mocks.tinybird.state.events[2]).toMatchObject({
+        isBilledUsage: true,
+        modelUsed: model,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+});
+
+test("Responses on a chat-only model fails without provider usage and is not billed", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const call = (body: Record<string, unknown>) =>
+        fetchWorker("/v1/responses", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({ model: "stepfun/step-3.7-flash", ...body }),
+        });
+
+    const missing = await call({ input: "vcr missing chat usage" });
+    await missing.response.text();
+    await missing.wait();
+    expect(missing.response.status).toBe(502);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
     });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-        error: {
-            message: expect.stringContaining("stateless Responses API"),
-        },
+    const missingStream = await call({
+        input: "vcr missing chat stream usage",
+        stream: true,
     });
-    await wait();
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+    const body = await missingStream.response.text();
+    await missingStream.wait();
+    expect(body).toContain("event: response.failed");
+    expect(body).not.toContain("event: response.completed");
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        isBilledUsage: false,
+    });
+
+    // A request Chat cannot express never reaches the provider.
+    const upstreamCalls = mocks.portkeyDirect.state.requests.length;
+    const rejected = await call({ input: "hi", top_logprobs: 2 });
+    await rejected.response.text();
+    await rejected.wait();
+    expect(rejected.response.status).toBe(400);
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(upstreamCalls);
 });
 
 test("canonical model headers preserve provider-reported payload models", async ({

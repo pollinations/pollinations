@@ -136,6 +136,24 @@ async function gatewayContext(
     };
 }
 
+/** One provider call for one candidate; shared by Chat and adapted Responses. */
+export async function generateChatAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    const result = await generateTextPortkey(
+        requestData.messages,
+        await gatewayContext(c, requestData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!requestData.stream) {
+        requireChatCompletionUsage(result);
+    }
+    return result;
+}
+
 function withGatewayContext(c: TextContext, requestData: RequestData) {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
@@ -354,7 +372,6 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
                 ...candidate,
@@ -370,19 +387,7 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            async (attempt) => {
-                const result = await generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
-                    portkey
-                        ? (input, init) => portkey.fetch(input, init)
-                        : undefined,
-                );
-                if (!requestData.stream) {
-                    requireChatCompletionUsage(result);
-                }
-                return result;
-            },
+            (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );

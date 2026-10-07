@@ -776,7 +776,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
                 "JSON request bodies may be up to 32 MiB, including inline images.",
                 "",
-                "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.",
+                "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Every other text model, including community models registered with Chat Completions, runs through the Chat pipeline with the same billing, key permissions, safety, rate limits, caching and fallback as `/v1/chat/completions`; its request and answer are translated, and `top_logprobs`, `max_tool_calls` and `truncation: auto` are rejected.",
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",

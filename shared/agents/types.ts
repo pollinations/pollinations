@@ -32,7 +32,8 @@ export type AgentPart =
           TextStreamPart<ToolSet>,
           { type: "tool-call" | "tool-result" | "tool-error" }
       >
-    | { type: "text-delta"; text: string };
+    | { type: "text-delta"; text: string }
+    | { type: "reasoning-delta"; text: string };
 
 export type AgentGenerationSettings = Partial<
     Pick<

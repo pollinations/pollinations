@@ -216,8 +216,15 @@ function buildRegistry(
               ]
             : entry.eventType === "generate.text" &&
                 entry.supportedEndpoints.includes("/v1/chat/completions")
-              ? // /v1/messages runs as a chat request.
-                [...entry.supportedEndpoints, "/v1/messages"]
+              ? // /v1/messages always runs as a chat request; /v1/responses does
+                // when the model has no Responses upstream of its own.
+                [
+                    ...new Set([
+                        ...entry.supportedEndpoints,
+                        "/v1/responses",
+                        "/v1/messages",
+                    ]),
+                ]
               : entry.supportedEndpoints;
         // Refresh official metadata once per registry build so dated prices
         // update within the existing cache TTL without getters on every read.

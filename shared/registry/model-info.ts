@@ -17,6 +17,7 @@ import {
     MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelName,
+    PRICE_UNITS,
     type PriceDefinition,
     VIDEO_CAPABILITIES,
 } from "./registry";
@@ -39,16 +40,16 @@ export const ModelHealthSchema = z
         }),
         success_rate: z.number().min(0).max(100).nullable().meta({
             description:
-                "Successful requests as a percentage over the last 24h; null with no measured requests.",
+                "Success across the last 50 eligible final requests within seven days for community proxies, or the last 24 hours for other models; null with no measured requests.",
         }),
         requests: z.number().int().nonnegative().meta({
             description:
-                "Measured final responses over the last 24h — also a rough popularity signal.",
+                "Number of eligible final responses in the health sample (at most 50 for community proxies).",
         }),
     })
     .meta({
         description:
-            "Recent gateway reliability over a rolling 24h window, refreshed roughly every 60s. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health.",
+            "Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health.",
     });
 
 export type ModelHealth = z.infer<typeof ModelHealthSchema>;
@@ -93,6 +94,20 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     pricing_default_label: z.string().optional(),
+    pricing_dimensions: z
+        .array(
+            z.object({
+                key: z.string(),
+                label: z.string(),
+                unit: z.string().optional(),
+                values: z
+                    .record(z.string(), z.string())
+                    .describe(
+                        "Display values keyed by pricing variant name; the empty key is base pricing.",
+                    ),
+            }),
+        )
+        .optional(),
     pricing_adjustments: z
         .array(
             z.object({
@@ -110,6 +125,9 @@ export const ModelInfoSchema = z.object({
                         value: z.string(),
                         label: z.string(),
                         default: z.boolean().optional(),
+                        groupLabel: z.string().optional(),
+                        valueLabel: z.string().optional(),
+                        unit: z.string().optional(),
                     })
                     .optional(),
             }),
@@ -156,7 +174,7 @@ export const ModelInfoSchema = z.object({
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
-    paid_only: z.boolean().optional(),
+    paid_only: z.boolean(),
     pending_change: z
         .object({
             effective_at: z.string().datetime(),
@@ -168,6 +186,22 @@ export const ModelInfoSchema = z.object({
         .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
+    pricing_units: z
+        .record(
+            z.string(),
+            z.object({
+                unit: z.enum(PRICE_UNITS),
+                quantity: z
+                    .number()
+                    .positive()
+                    .optional()
+                    .describe("Usage units in one billed unit; defaults to 1."),
+            }),
+        )
+        .optional()
+        .describe(
+            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel.",
+        ),
     added_date: z.number().optional(),
     health: ModelHealthSchema.optional(),
 });
@@ -248,6 +282,7 @@ export function modelInfoFromDefinition(
                   )
                 : undefined,
         pricing_default_label: service.defaultCostVariantLabel,
+        pricing_dimensions: service.pricingDimensions,
         pricing_adjustments: service.billing?.adjustments?.map((rule) =>
             pricingAdjustmentInfoFromRule(rule, service),
         ),
@@ -285,6 +320,7 @@ export function modelInfoFromDefinition(
             (service.category === "image"
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
+        pricing_units: service.priceUnits,
         added_date: service.addedDate,
     };
 }

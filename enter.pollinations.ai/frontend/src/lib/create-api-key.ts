@@ -1,10 +1,12 @@
 import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
 import { apiClient } from "../api.ts";
+import { readError } from "../components/community-endpoints/types.ts";
 
 type Permissions = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
+    questPollenOnly?: boolean;
 };
 
 type CreateKeyInput = {
@@ -43,6 +45,7 @@ export async function createKeyWithPermissions({
         allowedModels: permissions?.allowedModels,
         pollenBudget: permissions?.pollenBudget,
         accountPermissions: permissions?.accountPermissions,
+        questPollenOnly: permissions?.questPollenOnly,
     };
 
     const response = await apiClient["api-keys"].$post({
@@ -50,13 +53,7 @@ export async function createKeyWithPermissions({
     });
 
     if (!response.ok) {
-        const err = (await response.json().catch(() => null)) as {
-            message?: string;
-            error?: { message?: string };
-        } | null;
-        throw new Error(
-            err?.message || err?.error?.message || "Failed to create API key",
-        );
+        throw new Error(await readError(response));
     }
 
     const data = (await response.json()) as {

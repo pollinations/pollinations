@@ -6,7 +6,6 @@ const path = require("node:path");
 const test = require("node:test");
 const {
     buildApp,
-    inferPlatform,
     parseSubmission,
     validateSubmission,
 } = require("./submission.js");
@@ -26,18 +25,97 @@ https://github.com/example/sunflower
 ### App Category
 image
 
+### Platform
+web
+
 ### App Language
 en
 
+### Screenshot
+![Image](https://github.com/user-attachments/assets/0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0)
+
 ### Discord Username
 sunflower`;
+
+// validate-submission.js downloads the screenshot; serve a valid one locally.
+function screenshotStub(dir) {
+    const stub = path.join(dir, "fetch-stub.js");
+    fs.writeFileSync(
+        stub,
+        `const sharp = require(${JSON.stringify(require.resolve("sharp"))});
+globalThis.fetch = async () => new Response(await sharp({ create: { width: 1920, height: 1080, channels: 3, background: "#fff" } }).png().toBuffer());
+`,
+    );
+    return ["--require", stub];
+}
 
 test("parses and validates the issue form", () => {
     const submission = parseSubmission(BODY);
     assert.equal(submission.name, "Sunflower Studio");
     assert.equal(submission.appUrl, "https://example.com/app");
     assert.equal(submission.category, "image");
+    assert.equal(submission.platform, "web");
+    assert.equal(
+        submission.screenshotUrl,
+        "https://github.com/user-attachments/assets/0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0",
+    );
     assert.deepEqual(validateSubmission(submission), []);
+});
+
+test("requires a screenshot hosted by GitHub", () => {
+    const withScreenshot = (value) =>
+        parseSubmission(
+            BODY.replace(/### Screenshot\n.*\n/, `### Screenshot\n${value}\n`),
+        );
+    assert.equal(
+        withScreenshot(
+            '<img width="1920" alt="app" src="https://github.com/user-attachments/assets/abc-123" />',
+        ).screenshotUrl,
+        "https://github.com/user-attachments/assets/abc-123",
+    );
+    for (const value of ["_No response_", "https://imgur.com/app.png"]) {
+        assert.deepEqual(validateSubmission(withScreenshot(value)), [
+            "Screenshot is required: upload an image of the app in the Screenshot field.",
+        ]);
+    }
+});
+
+test("requires a platform from the form", () => {
+    for (const value of ["_No response_", "plugin"]) {
+        assert.deepEqual(
+            validateSubmission(
+                parseSubmission(
+                    BODY.replace("### Platform\nweb", `### Platform\n${value}`),
+                ),
+            ),
+            ["Platform must be selected from the submission form."],
+        );
+    }
+});
+
+test("accepts an app URL, a repository, or both", () => {
+    const repoOnly = parseSubmission(
+        BODY.replace("https://example.com/app", "_No response_"),
+    );
+    assert.deepEqual(validateSubmission(repoOnly), []);
+    assert.equal(buildApp(repoOnly, {}).url, null);
+    assert.equal(
+        buildApp(repoOnly, {}).repositoryUrl,
+        "https://github.com/example/sunflower",
+    );
+    const appOnly = parseSubmission(
+        BODY.replace("https://github.com/example/sunflower", "_No response_"),
+    );
+    assert.deepEqual(validateSubmission(appOnly), []);
+    const neither = parseSubmission(
+        BODY.replace("https://example.com/app", "_No response_").replace(
+            "https://github.com/example/sunflower",
+            "_No response_",
+        ),
+    );
+    assert.deepEqual(validateSubmission(neither), [
+        "Provide a valid public App URL, a GitHub Repository URL, or both.",
+    ]);
 });
 
 test("preserves multiline textarea content", () => {
@@ -54,12 +132,15 @@ test("preserves multiline textarea content", () => {
     assert.deepEqual(validateSubmission(submission), []);
 });
 
-test("infers known distribution platforms", () => {
-    assert.equal(
-        inferPlatform("Example", "https://play.google.com/store/apps/x", ""),
-        "android",
-    );
-    assert.equal(inferPlatform("Example CLI", "", "command-line tool"), "cli");
+test("parses the optional quest reference", () => {
+    const withQuest = (value) =>
+        parseSubmission(`${BODY}\n\n### Quest\n${value}`);
+    assert.equal(withQuest("#15600").quest, "15600");
+    assert.equal(withQuest("15600").quest, "15600");
+    assert.equal(withQuest("_No response_").quest, "");
+    assert.deepEqual(validateSubmission(withQuest("the Krita one")), [
+        "Quest must be a quest issue number such as #15600.",
+    ]);
 });
 
 test("builds the canonical catalog app", () => {
@@ -104,7 +185,10 @@ if (args[0] === "issue" && args[1] === "list") {
 
     const result = spawnSync(
         process.execPath,
-        [path.join(__dirname, "validate-submission.js")],
+        [
+            ...screenshotStub(fakeBin),
+            path.join(__dirname, "validate-submission.js"),
+        ],
         {
             encoding: "utf8",
             env: {
@@ -147,4 +231,56 @@ if (args[0] === "issue" && args[1] === "list") {
         byop: false,
         requests24h: 0,
     });
+});
+
+test("a named quest must be an open POLLEN-QUEST issue", () => {
+    const fakeBin = fs.mkdtempSync(path.join(os.tmpdir(), "app-validator-"));
+    fs.writeFileSync(
+        path.join(fakeBin, "gh"),
+        `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "issue" && args[1] === "view") {
+    console.log(JSON.stringify({ state: process.env.QUEST_STATE, labels: [{ name: "POLLEN-QUEST" }] }));
+} else if (args[0] === "issue" && args[1] === "list") {
+    console.log("[]");
+} else if (args[0] === "api") {
+    console.log('{"id":123}');
+} else {
+    process.exit(91);
+}
+`,
+        { mode: 0o755 },
+    );
+    const validate = (questState) =>
+        spawnSync(
+            process.execPath,
+            [
+                ...screenshotStub(fakeBin),
+                path.join(__dirname, "validate-submission.js"),
+            ],
+            {
+                encoding: "utf8",
+                env: {
+                    ...process.env,
+                    PATH: `${fakeBin}:${process.env.PATH}`,
+                    QUEST_STATE: questState,
+                    ISSUE_NUMBER: "1",
+                    ISSUE_AUTHOR: "example",
+                    ISSUE_BODY: `${BODY}\n\n### Quest\n#15600`,
+                    ISSUE_CREATED_AT: "2026-07-01T00:00:00Z",
+                    ISSUE_URL:
+                        "https://github.com/pollinations/pollinations/issues/1",
+                },
+            },
+        );
+    const open = validate("OPEN");
+    const closed = validate("CLOSED");
+    fs.rmSync(fakeBin, { recursive: true, force: true });
+
+    assert.equal(open.status, 0, open.stderr || open.stdout);
+    assert.equal(JSON.parse(open.stdout).submission.quest, "15600");
+    assert.equal(closed.status, 2, closed.stderr || closed.stdout);
+    assert.deepEqual(JSON.parse(closed.stdout).errors, [
+        "Quest #15600 is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.",
+    ]);
 });

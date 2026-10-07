@@ -259,7 +259,7 @@ test("creates a hosted connection link with the current session contract", async
     });
 });
 
-test("includes toolkit names and logos with connected accounts", async () => {
+test("includes toolkit descriptions with connected accounts", async () => {
     const requests = [];
     const worker = createWorker({
         fetchImpl: async (url, init) => {
@@ -284,6 +284,7 @@ test("includes toolkit names and logos with connected accounts", async () => {
                             slug: "github",
                             name: "GitHub",
                             meta: {
+                                description: "Code hosting",
                                 logo: "https://logos.composio.test/github",
                             },
                         },
@@ -308,6 +309,7 @@ test("includes toolkit names and logos with connected accounts", async () => {
                 id: "ca_github",
                 toolkit: "github",
                 name: "GitHub",
+                description: "Code hosting",
                 logo: "https://logos.composio.test/github",
                 alias: "octocat",
                 status: "ACTIVE",

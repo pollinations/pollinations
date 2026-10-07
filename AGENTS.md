@@ -8,7 +8,11 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Catalog fields are defined in `operations/app-management/app.js`; categories and platform detection in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
+The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
+
+New submissions must credit Pollinations with the badge (`packages/ui/src/brand/badge-made-with.svg`) in the README, or on the app page when there is no repository, and upload a 16:9 screenshot (PNG/JPEG/WebP, ≤5 MB, ≥1280×720). Publishing converts it to WebP 1280×720 on `media.pollinations.ai` and sets `screenshotUrl`.
+
+Catalog fields are defined in `operations/app-management/app.js`; categories and platforms in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 ## Discord
 
@@ -40,6 +44,10 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
   collection skill (`.claude/skills/economics-provider-collection/`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Bill from the usage the provider reports: a usage block, or a billing header
+  such as fal's `x-fal-billable-units`. Do not rebuild the provider's price
+  formula from request parameters. Derive usage from the request only when the
+  provider reports none, and check it against the provider's billing records.
 - Successful billable text responses must contain valid provider usage. Reject
   non-stream responses without it; streamed protocols must contain terminal
   usage and fail the stream otherwise.
@@ -69,6 +77,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Coding Principles — Simplicity & Radical YAGNI (CRITICAL)
 
+- For coding and code reviews, read and use the repo-wide [Ponytail skill](.agents/skills/ponytail/SKILL.md) to look for the smallest correct solution. Its brevity advice does not override explicit requests or this repository's safety, testing, and design-decision requirements.
 - Code is debt: implement only what's needed now. Prefer deleting or reusing code over adding it; avoid speculative abstractions, configuration, and helpers.
 - Use plain data and small functions. No classes or inheritance; compose functions and keep side effects at the edges where practical.
 - Prefer declarative tables, configuration, and data transformations when they make behavior clearer. Keep control flow easy to follow; fewer lines do not justify clever or dense code.
@@ -93,7 +102,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
 - Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
-- Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
 - Never synchronize production secrets from an unmerged commit or a branch other than `production`.
 - For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.
 
@@ -154,6 +162,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ### Commands & Files
 
+- Maintain project skills in `.claude/skills/`. Expose them to Codex through
+  relative directory links in `.agents/skills/`; keep command adapters as
+  pointers to their maintained instructions, never copied workflows.
+
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
 - Always use absolute paths.
@@ -161,6 +173,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Search targeted paths.
 - Keep scratch files clearly labeled in `temp/`.
 - `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
+- `packages/sdk`, `packages/ui` and `packages/polli-cli` publish to npm from `main` only when their `version` changes; CI skips a version already on npm. A PR that changes what one of them ships bumps that version (prereleases take the next number on the same tag, e.g. `5.1.0-alpha.8`), including the package's own `package-lock.json` where it has one. SDK changes also get a `CHANGELOG.md` entry.
 
 ## Testing
 
@@ -201,6 +214,13 @@ npx vitest run test/file.test.ts
 - After a correction, check whether existing guidance already covers it. Propose a narrow update for a repeated pattern or material safety failure; keep one-off product decisions in the relevant issue/PR. Replace superseded guidance instead of adding another rule.
 - Fix reported bugs and failing CI; use logs, errors, or failing tests as evidence.
 
+### Design Questions
+
+- Before committing to a design, surface unresolved choices that could materially change the user outcome, scope, UX, constraints, or architecture. Ask even when the request is executable if the answer could improve it.
+- Investigate facts available in the codebase or documentation yourself. Ask the user about intent and tradeoffs. Prefer one consequential question at a time; group up to three only when their answers are independent. Give a recommendation and its tradeoff, while allowing another answer.
+- Use each answer to revise the design and subsequent questions. Stop when consequential choices are settled; handle routine, reversible details autonomously. Briefly reflect the resulting design before building.
+- Avoid repeating answered questions or asking for permission already given. Existing safety approval requirements still apply.
+
 ## Compact Instructions
 
 Preserve during compaction: modified files/lines, code/diffs/implementation details, test and command results/errors, plan/progress/pending work, user preferences/corrections, and architectural decisions/rationale.
@@ -234,9 +254,9 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 - Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
 - Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
-## GitHub Labels
+## GitHub Project Manager
 
-Query current repository labels when needed; use established names rather than creating new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

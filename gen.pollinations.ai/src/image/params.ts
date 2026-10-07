@@ -135,7 +135,8 @@ export const ImageParamsSchema = z
                 "adaptive",
             ])
             .optional(),
-        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Unset when omitted, so each model applies its own audio default.
+        audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {
@@ -210,7 +211,10 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "minimax/minimax-h3-max-turbo") {
+        if (
+            data.model === "minimax/minimax-h3-max" ||
+            data.model === "minimax/minimax-h3-max-turbo"
+        ) {
             if (
                 data.duration !== undefined &&
                 ![5, 10, 15].includes(data.duration)
@@ -218,8 +222,7 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["duration"],
-                    message:
-                        "minimax/minimax-h3-max-turbo supports 5, 10, or 15 seconds.",
+                    message: `${data.model} supports 5, 10, or 15 seconds.`,
                 });
             }
             if (
@@ -231,16 +234,14 @@ export const ImageParamsSchema = z
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["aspectRatio"],
-                    message:
-                        "minimax/minimax-h3-max-turbo supports 21:9, 16:9, 4:3, 1:1, 3:4, or 9:16.",
+                    message: `${data.model} supports 21:9, 16:9, 4:3, 1:1, 3:4, or 9:16.`,
                 });
             }
             if (data.fps !== undefined && data.fps !== 24) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
-                    message:
-                        "minimax/minimax-h3-max-turbo outputs video at 24 FPS.",
+                    message: `${data.model} outputs video at 24 FPS.`,
                 });
             }
         }

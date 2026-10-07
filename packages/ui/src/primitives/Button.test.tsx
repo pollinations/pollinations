@@ -59,6 +59,23 @@ describe("Button appearances", () => {
         expect(footer).toContain(standalone);
     });
 
+    test("keeps primary footer actions pill-shaped and outlined", () => {
+        const button = (
+            <Button intent="commit" type="submit">
+                Save changes
+            </Button>
+        );
+        const standalone = renderToStaticMarkup(button);
+        const footer = renderToStaticMarkup(
+            <DialogFooter>{button}</DialogFooter>,
+        );
+
+        expect(footer).toContain(standalone);
+        expect(standalone).toContain("polli:rounded-full");
+        expect(standalone).toContain("polli:border-theme-text-soft");
+        expect(standalone).toContain('type="submit"');
+    });
+
     test("makes disabled polymorphic links inert", () => {
         const element = Button({
             as: "a",

@@ -4,6 +4,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { Buffer } from "node:buffer";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
@@ -114,6 +115,90 @@ import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.t
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
+
+fixtureTest(
+    "official agent ownership transfer changes callable model IDs",
+    async () => {
+        const sourceUserId = await createTestUser({
+            githubId: 240205932,
+            githubUsername: "pollinations-router",
+        });
+        const destinationUserId = await createTestUser({
+            githubId: 314960022,
+            githubUsername: "pollinations-ai",
+        });
+        const listings = [
+            ["e1363e66-54b8-49c3-a897-08d99629885f", "floret"],
+            ["9a0db868-29cb-4e78-9d44-ba2be6551337", "midijourney"],
+            ["3ba66897-e040-41b5-8cf5-7c561ee5c52f", "polli"],
+        ] as const;
+        await insertCommunityEndpoints(
+            listings.map(([id, name]) => ({
+                id,
+                ownerUserId: sourceUserId,
+                name,
+                title: name,
+                description: null,
+                type:
+                    name === "midijourney" ? "prompt_agent" : "endpoint_agent",
+                visibility: "public",
+                baseUrl:
+                    name === "midijourney"
+                        ? PROMPT_AGENT_BASE_URL_PLACEHOLDER
+                        : `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name === "midijourney" ? id : name,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const oldPolli = communityModelId("pollinations-router", "polli");
+        const newPolli = communityModelId("pollinations-ai", "polli");
+        const oldKey = await createTestApiKey({ allowedModels: [oldPolli] });
+
+        const catalogIdsFor = async (key: string) => {
+            const response = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/models", {
+                    headers: { Authorization: `Bearer ${key}` },
+                }),
+            );
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as { data: { id: string }[] };
+            return body.data.map((model) => model.id);
+        };
+
+        await resetGenerationModelRegistryCache(env);
+        expect(await catalogIdsFor(oldKey.key)).toContain(oldPolli);
+        await db
+            .update(communityEndpointTable)
+            .set({ ownerUserId: destinationUserId })
+            .where(eq(communityEndpointTable.ownerUserId, sourceUserId));
+        await resetGenerationModelRegistryCache(env);
+        const registry = await getGenerationModelRegistry(env);
+        for (const [, name] of listings) {
+            expect(
+                registry.resolve(communityModelId("pollinations-router", name)),
+            ).toBeNull();
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-router", name),
+                ),
+            ).toBeNull();
+            const current = registry.resolve(
+                communityModelId("pollinations-ai", name),
+            );
+            expect(current?.communityEndpoint?.ownerUserId).toBe(
+                destinationUserId,
+            );
+            expect(
+                registry.resolve(
+                    legacyCommunityModelId("pollinations-ai", name),
+                ),
+            ).toBe(current);
+        }
+        // Keys hold categories, so a text key keeps the agent under its new ID.
+        expect(await catalogIdsFor(oldKey.key)).toContain(newPolli);
+    },
+);
 
 fixtureTest(
     "banned owners' public models and agents leave the registry",
@@ -247,6 +332,7 @@ function insertCommunityEndpoints(
                         outputModalities,
                     }
                   : {
+                        paidOnly: false,
                         bearerTokenCiphertext:
                             bearerTokenCiphertext ?? "test-ciphertext",
                         api,
@@ -309,7 +395,7 @@ const TEST_MP4_BYTES = [
 ];
 
 function isChatCompletionsRequest(request: Request): boolean {
-    return new URL(request.url).pathname === "/v1/chat/completions";
+    return new URL(request.url).pathname.endsWith("/v1/chat/completions");
 }
 
 function isCommunityImageGenerationsRequest(request: Request): boolean {
@@ -653,6 +739,7 @@ describe("community endpoint helpers", () => {
             "proxy",
             JSON.stringify({
                 bearerTokenCiphertext: "ciphertext",
+                paidOnly: false,
                 modality: "image",
                 api,
                 imagePricing: "request",
@@ -683,6 +770,7 @@ describe("community endpoint helpers", () => {
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
             bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
             modality: "text",
             imagePricing: "request",
             inputModalities: ["text"],
@@ -702,6 +790,16 @@ describe("community endpoint helpers", () => {
                 }),
             ),
         ).toMatchObject({ api: "chat_completions" });
+        const { paidOnly: _, ...withoutPaidOnly } = textPayload;
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    ...withoutPaidOnly,
+                    api: "chat_completions",
+                }),
+            ),
+        ).toBeNull();
         expect(parseListingPayload("proxy", "not json")).toBeNull();
         expect(
             parseListingPayload("proxy", JSON.stringify({ prices: {} })),
@@ -740,6 +838,7 @@ describe("community endpoint helpers", () => {
             parseListingPayload(
                 "proxy",
                 JSON.stringify({
+                    paidOnly: false,
                     bearerTokenCiphertext: "ciphertext",
                     modality: "image",
                     imagePricing: "request",
@@ -898,6 +997,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/transcription",
             title: "Transcription",
             description: null,
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({}),
         });
@@ -920,6 +1020,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/speech",
             title: "Speech",
             description: null,
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({}),
         });
@@ -957,6 +1058,7 @@ describe("community endpoint helpers", () => {
             modelId: "community/voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -978,6 +1080,7 @@ describe("community endpoint helpers", () => {
                 modelId: "voodoohop/openai",
                 title: "OpenAI",
                 description: null,
+                paidOnly: false,
                 ...prices,
             }).paidOnly,
         ).toBe(false);
@@ -998,6 +1101,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({ promptTextPrice: 0.1 }),
         });
 
@@ -1013,6 +1117,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
             description: null,
+            paidOnly: false,
             providerName: "Example AI",
             providerUrl: "https://example.com/",
             ...communityEndpointPrices({}),
@@ -1028,6 +1133,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Image",
             description: "Community image model",
+            paidOnly: false,
             modality: "image",
             ...communityEndpointPrices({
                 promptTextPrice: 0.2,
@@ -1066,6 +1172,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "GPT Image",
             description: "Token-priced image model",
+            paidOnly: false,
             modality: "image",
             imagePricing: "tokens",
             inputModalities: ["text", "image"],
@@ -1105,6 +1212,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Video",
             description: "Community video model",
+            paidOnly: false,
             modality: "video",
             inputModalities: ["text", "image", "audio", "video"],
             ...communityEndpointPrices({ completionVideoPrice: 0.08 }),
@@ -1132,6 +1240,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Embedding",
             description: "Community embedding model",
+            paidOnly: false,
             modality: "embedding",
             ...communityEndpointPrices({
                 promptTextPrice: 0.00001,
@@ -1184,6 +1293,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
                 completionTextPrice: 0.1,
@@ -1198,6 +1308,7 @@ describe("community endpoint helpers", () => {
             modelId: "marcosfrgames08/glm-4.6v-flash",
             title: "GLM Vision",
             description: "Vision model",
+            paidOnly: false,
             inputModalities: ["image", "video"],
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,
@@ -1213,6 +1324,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
+            paidOnly: false,
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
                 contextLength: 128000,
@@ -1232,6 +1344,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             advertised: {
                 capabilities: ["tool_calling", "reasoning"],
@@ -1250,6 +1363,7 @@ describe("community endpoint helpers", () => {
             modelId: "voodoohop/gptimage",
             title: "GPT Image",
             description: "Image model",
+            paidOnly: false,
             modality: "image",
             inputModalities: ["text", "audio"],
             ...communityEndpointPrices({
@@ -1267,6 +1381,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Transcription",
             description: "Community transcription model",
+            paidOnly: false,
             modality: "transcription",
             ...communityEndpointPrices({ promptAudioPrice: 0.0000445 }),
         });
@@ -1317,6 +1432,7 @@ describe("community endpoint helpers", () => {
             modelId,
             title: "Community Speech",
             description: "Community speech model",
+            paidOnly: false,
             modality: "speech",
             ...communityEndpointPrices({ completionAudioPrice: 0.00002 }),
         });
@@ -1438,8 +1554,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1630,8 +1744,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -1940,8 +2052,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2304,8 +2414,6 @@ describe("community endpoint helpers", () => {
                 paidOnly: false,
                 perUserRpm: null,
                 fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
                 bearerTokenCiphertext: await encryptSecret(
                     "sk_saved_token",
                     secret,
@@ -2492,8 +2600,6 @@ describe("community endpoint helpers", () => {
             paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
-            hiddenAt: null,
-            hiddenReason: null,
             bearerTokenCiphertext: await encryptSecret(
                 "sk_saved_token",
                 secret,
@@ -2557,8 +2663,6 @@ describe("community endpoint helpers", () => {
                 visibility: "public",
                 paidOnly: false,
                 perUserRpm: null,
-                hiddenAt: null,
-                hiddenReason: null,
                 fallbacks: [],
                 ...communityEndpointPrices({}),
                 ...overrides,
@@ -3481,6 +3585,345 @@ fixtureTest(
             models.data.find((model) => model.id === modelId)
                 ?.supported_endpoints,
         ).toContain("/v1/responses");
+    },
+);
+
+fixtureTest(
+    "rejects image input for text-only community models on Chat and Responses",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const listings = [
+            { name: "text-only", type: "proxy" as const },
+            {
+                name: "vision",
+                type: "proxy" as const,
+                inputModalities: ["text", "image"] as ModelInputModality[],
+            },
+            { name: "agent", type: "endpoint_agent" as const },
+        ].map((listing) => ({
+            ...listing,
+            modelId: communityModelId(ownerGithubUsername, listing.name),
+            url: `https://${listing.name}.example.com/v1/responses`,
+        }));
+        const bearerTokenCiphertext = await encryptSecret(
+            "Bearer image-token",
+            env.BETTER_AUTH_SECRET,
+        );
+        await insertCommunityEndpoints(
+            listings.map(({ modelId: _modelId, url, ...listing }) => ({
+                ...listing,
+                bearerTokenCiphertext,
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                api: "responses",
+                baseUrl: url,
+                upstreamModel: "provider-model",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+
+        const upstreamUrls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (listings.some((listing) => listing.url === request.url)) {
+                    upstreamUrls.push(request.url);
+                    return Response.json({
+                        id: "resp_image",
+                        object: "response",
+                        created_at: 1,
+                        model: "provider-model",
+                        status: "completed",
+                        output: [
+                            {
+                                id: "msg_image",
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "green",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const image = `data:image/png;base64,${TEST_PNG_BASE64}`;
+        const post = (path: string, body: Record<string, unknown>) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(body),
+                }),
+            );
+        for (const listing of listings) {
+            const responses = [
+                await post("/v1/chat/completions", {
+                    model: listing.modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: "What color?" },
+                                {
+                                    type: "image_url",
+                                    image_url: { url: image },
+                                },
+                            ],
+                        },
+                    ],
+                }),
+                await post("/v1/responses", {
+                    model: listing.modelId,
+                    input: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "input_text", text: "What color?" },
+                                { type: "input_image", image_url: image },
+                            ],
+                        },
+                    ],
+                }),
+            ];
+            for (const response of responses) {
+                const body = await response.text();
+                if (listing.name === "text-only") {
+                    expect(response.status, body).toBe(400);
+                    expect(body).toContain(
+                        "This model does not support image input",
+                    );
+                } else {
+                    expect(response.status, body).toBe(200);
+                }
+            }
+        }
+        expect(upstreamUrls.sort()).toEqual(
+            [
+                listings[1].url,
+                listings[1].url,
+                listings[2].url,
+                listings[2].url,
+            ].sort(),
+        );
+    },
+);
+
+fixtureTest(
+    "stores large inline chat media once per user and sends their URLs upstream",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `vision-${crypto.randomUUID().slice(0, 8)}`;
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            }),
+            visibility: "public",
+            name: modelName,
+            inputModalities: ["text", "image", "video"],
+            baseUrl: "https://vision.example.com/v1",
+            upstreamModel: "vision-upstream",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1,
+            completionTextPrice: 0.1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        type Part = {
+            type: string;
+            image_url?: { url: string };
+            video_url?: { url: string };
+            file?: { file_url?: string };
+        };
+        const upstreamMediaUrls: string[][] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isChatCompletionsRequest(request)) {
+                    const { messages } = (await request.json()) as {
+                        messages: { content: string | Part[] }[];
+                    };
+                    upstreamMediaUrls.push(
+                        messages.flatMap(({ content }) =>
+                            typeof content === "string"
+                                ? []
+                                : content.flatMap(
+                                      (part) =>
+                                          part.image_url?.url ??
+                                          part.video_url?.url ??
+                                          part.file?.file_url ??
+                                          [],
+                                  ),
+                        ),
+                    );
+                    return Response.json({
+                        id: "chatcmpl_images",
+                        object: "chat.completion",
+                        model: "vision-upstream",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const media = env.MEDIA;
+        const uploads: string[] = [];
+        const bindings = withInlineGenerationCoordinator({
+            ...env,
+            MEDIA: {
+                has: (id: string) => media.has(id),
+                get: (id: string) => media.get(id),
+                upload: async (...args: Parameters<typeof media.upload>) => {
+                    const result = await media.upload(...args);
+                    uploads.push(result.id);
+                    return result;
+                },
+            } as unknown as typeof media,
+        });
+        const send = async (body: string, contentLength = body.length) => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                        "Content-Length": String(contentLength),
+                    },
+                    body,
+                }),
+                bindings,
+                ctx,
+            );
+            const text = await response.text();
+            await waitOnExecutionContext(ctx);
+            return { status: response.status, text };
+        };
+
+        const first = new Uint8Array(9 * 1024 * 1024).fill(1);
+        const second = new Uint8Array(9 * 1024 * 1024).fill(2);
+        const image = (bytes: Uint8Array) => ({
+            type: "image_url",
+            image_url: {
+                url: `data:image/png;base64,${Buffer.from(bytes).toString("base64")}`,
+            },
+        });
+        const video = {
+            type: "video_url",
+            video_url: { url: "data:video/mp4;base64,AQID" },
+        };
+        const file = {
+            type: "file",
+            file: { file_url: "data:application/pdf;base64,JVBERg==" },
+        };
+        const turn = {
+            role: "user",
+            content: [
+                { type: "text", text: "Compare these" },
+                image(first),
+                image(second),
+                image(first),
+                video,
+                file,
+            ],
+        };
+        const model = communityModelId(ownerGithubUsername, modelName);
+        // Each body is above the 32 MiB text limit; the next turn re-sends
+        // the same images, as chat clients do.
+        const conversations = [
+            [turn],
+            [
+                turn,
+                { role: "assistant", content: "ok" },
+                { role: "user", content: "And the second one?" },
+            ],
+        ];
+        for (const messages of conversations) {
+            const body = JSON.stringify({ model, messages });
+            expect(body.length).toBeGreaterThan(32 * 1024 * 1024);
+            const response = await send(body);
+            expect(response.status, response.text).toBe(200);
+        }
+
+        const repeated = await send(
+            JSON.stringify({ model, messages: conversations[1] }),
+        );
+        expect(repeated.status, repeated.text).toBe(200);
+
+        expect(uploads).toHaveLength(4);
+        const [firstUrl, secondUrl, videoUrl, fileUrl] = uploads.map(
+            (id) => `https://media.pollinations.ai/${id}`,
+        );
+        expect(upstreamMediaUrls).toEqual([
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
+            [firstUrl, secondUrl, firstUrl, videoUrl, fileUrl],
+        ]);
+        const stored = await media.get(uploads[0]);
+        expect(stored?.headers.get("content-type")).toBe("image/png");
+        const storedBytes = Buffer.from(
+            await (stored as Response).arrayBuffer(),
+        );
+        expect(storedBytes.equals(first)).toBe(true);
+        for (const [index, contentType] of [
+            "video/mp4",
+            "application/pdf",
+        ].entries()) {
+            const response = await media.get(uploads[index + 2]);
+            expect(response?.headers.get("content-type")).toBe(contentType);
+            await response?.arrayBuffer();
+        }
+
+        const oversized = await send("{}", 100 * 1024 * 1024 + 1);
+        expect(oversized.status).toBe(413);
+        expect(oversized.text).toContain(
+            "Request body exceeds the 100 MiB limit",
+        );
     },
 );
 
@@ -4633,7 +5076,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "excludes a hidden community model from public model catalogs",
+    "ignores legacy hide metadata for public model catalogs",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-${crypto.randomUUID().slice(0, 8)}`;
@@ -4682,11 +5125,11 @@ fixtureTest(
         for (const models of [textModels, allModels]) {
             expect(
                 models.find((model) => model.name === modelId),
-            ).toBeUndefined();
+            ).toBeDefined();
         }
         expect(
             openaiModels.data.find((model) => model.id === modelId),
-        ).toBeUndefined();
+        ).toBeDefined();
     },
 );
 
@@ -4879,7 +5322,156 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes canonical and aliased calls to a hidden community model with a canonical-only key",
+    "searches and narrows model catalogs with query, capabilities, agent and limit",
+    async () => {
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const owner = `search-${suffix}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: owner,
+        });
+        const { key: ownerKey } = await createTestApiKey({
+            userId: ownerUserId,
+        });
+        const agentPayload = JSON.stringify({
+            prompt: "Test",
+            baseModel: DEFAULT_TEXT_MODEL,
+            mcpServers: [],
+        });
+        const [proxyName, agentName, privateAgentName] = [
+            "proxy",
+            "agent",
+            "hidden",
+        ].map((kind) => `qs-${kind}-${suffix}`);
+        await insertCommunityEndpoints([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: proxyName,
+                description: `Narwhal ${suffix} proxy`,
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "gpt-4.1-mini",
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            ...[
+                [agentName, "public"],
+                [privateAgentName, "private"],
+            ].map(([name, visibility]) => {
+                const id = `endpoint-${crypto.randomUUID()}`;
+                return {
+                    id,
+                    ownerUserId,
+                    visibility: visibility as "public" | "private",
+                    name,
+                    description: `Narwhal ${suffix} agent`,
+                    type: "prompt_agent" as const,
+                    baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    payload: agentPayload,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+            }),
+        ]);
+        const [proxyId, agentId, privateAgentId] = [
+            proxyName,
+            agentName,
+            privateAgentName,
+        ].map((name) => communityModelId(owner, name));
+
+        const names = async (path: string, key?: string) => {
+            const response = await SELF.fetch(
+                `https://gen.pollinations.ai${path}`,
+                key ? { headers: { Authorization: `Bearer ${key}` } } : {},
+            );
+            expect(response.status, path).toBe(200);
+            return ((await response.json()) as { name: string }[])
+                .map((model) => model.name)
+                .sort();
+        };
+
+        // query: case-insensitive, every word must match, hidden stays hidden.
+        const both = [proxyId, agentId].sort();
+        expect(await names(`/models?query=${suffix}`)).toEqual(both);
+        expect(await names(`/models?query=NARWHAL+${suffix}`)).toEqual(both);
+        expect(await names(`/models?query=narwhal+nomatch-${suffix}`)).toEqual(
+            [],
+        );
+
+        // agent: only agents, or everything but agents.
+        expect(await names(`/models?query=${suffix}&agent=true`)).toEqual([
+            agentId,
+        ]);
+        expect(await names(`/models?query=${suffix}&agent=0`)).toEqual([
+            proxyId,
+        ]);
+
+        // capabilities: a model needs all of them.
+        expect(
+            await names(
+                `/models?query=${suffix}&capabilities=reasoning,tool_calling`,
+            ),
+        ).toEqual([agentId]);
+        expect(
+            await names(
+                `/models?query=${suffix}&capabilities=reasoning,web_search`,
+            ),
+        ).toEqual([]);
+
+        // limit: keeps catalog order and runs after every other filter.
+        const catalog = (await (
+            await SELF.fetch("https://gen.pollinations.ai/models")
+        ).json()) as { name: string }[];
+        const limited = (await (
+            await SELF.fetch("https://gen.pollinations.ai/models?limit=3")
+        ).json()) as { name: string }[];
+        expect(limited.map((model) => model.name)).toEqual(
+            catalog.slice(0, 3).map((model) => model.name),
+        );
+        expect(
+            await names(`/text/models?query=${suffix}&limit=1`),
+        ).toHaveLength(1);
+
+        // The owner's private agent is listed for the owner only, and a
+        // limit does not cut it before visibility has been applied.
+        expect(
+            await names(`/models?query=${suffix}&agent=true`, ownerKey),
+        ).toEqual([agentId, privateAgentId].sort());
+        expect(
+            await names(`/models?query=${suffix}&agent=true&limit=2`, ownerKey),
+        ).toEqual([agentId, privateAgentId].sort());
+        expect(await names(`/models?query=${suffix}&agent=true`)).not.toContain(
+            privateAgentId,
+        );
+
+        // Every list route validates the same parameters.
+        for (const path of ["/models", "/text/models", "/v1/models"]) {
+            for (const bad of [
+                "limit=0",
+                "limit=501",
+                "limit=abc",
+                "agent=maybe",
+                "capabilities=bogus",
+            ]) {
+                const response = await SELF.fetch(
+                    `https://gen.pollinations.ai${path}?${bad}`,
+                );
+                expect(response.status, `${path}?${bad}`).toBe(400);
+            }
+        }
+    },
+);
+
+fixtureTest(
+    "routes canonical and aliased calls despite legacy hide metadata",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -5403,8 +5995,8 @@ fixtureTest(
             url: "https://gen.pollinations.ai/v1/chat/completions",
             upstreamModel: "openai",
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0.00001,
@@ -5678,7 +6270,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1/images/generations?version=1",
             upstreamModel: "gpt-image-1",
             promptTextPrice: 0,
-            completionImagePrice: 0,
+            completionImagePrice: 0.03,
             pending: {
                 visibility: "public",
                 promptTextPrice: 0,
@@ -6148,7 +6740,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
         expect(registered).toMatchObject({
             modelId: communityModelId(ownerGithubUsername, modelName),
             modality: "video",
-            completionVideoPrice: 0,
+            completionVideoPrice: 0.08,
         });
         await maturePendingCommunityEndpoint(registered.id);
 
@@ -6528,7 +7120,7 @@ fixtureTest(
             inputModalities: ["audio"],
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "whisper-1",
-            promptAudioPrice: 0,
+            promptAudioPrice: 0.0000445,
             pending: {
                 visibility: "public",
                 promptAudioPrice: 0.0000445,
@@ -7025,9 +7617,6 @@ fixtureTest(
             perUserRpm: 0.5,
             promptTextPrice: 0,
             completionTextPrice: 0,
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
@@ -7059,15 +7648,6 @@ fixtureTest(
             unknown
         >;
         expect(typeof secondCreated.id).toBe("string");
-        await db
-            .update(communityEndpointTable)
-            .set({
-                hiddenAt: new Date(),
-                hiddenReason: "was failing",
-                hiddenBy: "monitor",
-            })
-            .where(eq(communityEndpointTable.id, createdId));
-
         const updateResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7103,8 +7683,6 @@ fixtureTest(
                 promptTextPrice: 0.00001,
                 completionTextPrice: 0.00002,
             },
-            hidden: true,
-            hiddenReason: "was failing",
         });
         const elapsedDelayAt = new Date(
             Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
@@ -7113,32 +7691,10 @@ fixtureTest(
             .update(communityEndpointTable)
             .set({
                 pendingAt: elapsedDelayAt,
-                hiddenAt: elapsedDelayAt,
             })
             .where(eq(communityEndpointTable.id, createdId));
 
-        const relistResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/account/my-models/${createdId}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${key}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ hidden: false }),
-                },
-            ),
-        );
-        expect(relistResponse.status).toBe(200);
-        await expect(relistResponse.json()).resolves.toMatchObject({
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
-        });
-
-        const hideResponse = await fetchEnterApi(
+        const hiddenUpdateResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 `http://localhost:3000/api/account/my-models/${createdId}/update`,
@@ -7152,11 +7708,7 @@ fixtureTest(
                 },
             ),
         );
-        expect(hideResponse.status).toBe(200);
-        await expect(hideResponse.json()).resolves.toMatchObject({
-            hidden: true,
-            hiddenReason: "Hidden by owner",
-        });
+        expect(hiddenUpdateResponse.status).toBe(400);
         await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
@@ -7249,9 +7801,8 @@ fixtureTest(
             expect.any(String),
         );
 
-        // Making the model private clears all owner-set prices, and with them
-        // the paid-only choice: a free listing that still demanded paid balance
-        // would only gate the owner out of their own model.
+        // Going private keeps the queued settings for later republication.
+        // Private calls are free but still try their (free) fallbacks.
         const privatizeResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7264,6 +7815,7 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         visibility: "private",
+                        fallbacks: [secondCreated.modelId],
                     }),
                 },
             ),
@@ -7271,13 +7823,25 @@ fixtureTest(
         expect(privatizeResponse.status).toBe(200);
         await expect(privatizeResponse.json()).resolves.toMatchObject({
             visibility: "private",
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
+            fallbacks: [secondCreated.modelId],
+        });
+        await resetGenerationModelRegistryCache(env);
+        const privateEntry = (await getCommunityModelRegistryEntries(env)).find(
+            (entry) => entry.id === created.modelId,
+        );
+        expect(privateEntry?.communityEndpoint).toMatchObject({
+            visibility: "private",
             paidOnly: false,
+            fallbacks: [secondCreated.modelId],
             promptTextPrice: 0,
             completionTextPrice: 0,
         });
 
-        // Republishing remains free, but becomes visible after the notice
-        // period rather than immediately.
+        // Republishing retains the configured price and paid-only choice,
+        // but becomes visible after the notice period rather than immediately.
         const republishResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -7297,8 +7861,9 @@ fixtureTest(
         expect(republishResponse.status).toBe(200);
         await expect(republishResponse.json()).resolves.toMatchObject({
             visibility: "private",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
+            paidOnly: true,
+            promptTextPrice: 0.00003,
+            completionTextPrice: 0.00002,
             pending: { visibility: "public" },
         });
 
@@ -7308,9 +7873,6 @@ fixtureTest(
                 visibility: "public",
                 pendingVisibility: null,
                 pendingAt: null,
-                hiddenAt: null,
-                hiddenReason: null,
-                hiddenBy: null,
             })
             .where(eq(communityEndpointTable.id, createdId));
         await db
@@ -8187,6 +8749,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             tools?: boolean;
             reasoning?: boolean;
             context_length?: number;
+            tags?: { name: string }[];
             supported_endpoints?: string[];
         }[];
     };
@@ -8222,6 +8785,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(openaiBaseModel).toBeDefined();
     expect(openaiAgentModel).toMatchObject({
         agent: true,
+        tags: [{ name: "text" }, { name: "community" }, { name: "agent" }],
         base_model: promptAgent.baseModel,
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
@@ -8471,11 +9035,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         ),
         enterEnv,
     );
-    expect(hideResponse.status).toBe(200);
-    await expect(hideResponse.json()).resolves.toMatchObject({
-        hidden: true,
-        description: stored.description,
-    });
+    expect(hideResponse.status).toBe(400);
     const noOpResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -8496,9 +9056,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         description: stored.description,
         payload: stored.payload,
         requiredSafetyFeatures: ["violence"],
-        hiddenAt: expect.any(Date),
-        hiddenReason: "Hidden by owner",
-        hiddenBy: "owner",
     });
     expect(deploymentFetch).toHaveBeenCalledTimes(4);
 
@@ -8811,15 +9368,13 @@ fixtureTest("validates community fallback targets on write", async () => {
         `${primaryName}-other-disabled`,
         communityModelId(otherOwnerGithubUsername, targetNames.otherDisabled),
     );
-    expect(otherDisabledTarget.status).toBe(400);
-    expect(await otherDisabledTarget.text()).toContain("does not exist");
+    expect(otherDisabledTarget.status).toBe(200);
 
     const disabledTarget = await createWithFallback(
         `${primaryName}-disabled`,
         communityModelId(ownerGithubUsername, targetNames.disabled),
     );
-    expect(disabledTarget.status).toBe(400);
-    expect(await disabledTarget.text()).toContain("must be listed");
+    expect(disabledTarget.status).toBe(200);
 
     const delegatingTarget = await createWithFallback(
         `${primaryName}-delegating`,
@@ -8894,12 +9449,14 @@ fixtureTest("validates community fallback targets on write", async () => {
     expect(eligible).toContain(
         communityModelId(ownerGithubUsername, targetNames.priv),
     );
+    expect(eligible).toContain(
+        communityModelId(ownerGithubUsername, targetNames.disabled),
+    );
     // Never itself, and never a target the write path would reject.
     expect(eligible).not.toContain(created.modelId);
     for (const rejected of [
         targetNames.image,
         targetNames.pricey,
-        targetNames.disabled,
         targetNames.delegating,
     ]) {
         expect(eligible).not.toContain(
@@ -9076,7 +9633,9 @@ fixtureTest(
             registry.resolve(model)?.fallbackEntries?.map((e) => e.id);
 
         expect(fallbackIds(id("valid-primary"))).toEqual([id("valid-target")]);
-        expect(fallbackIds(id("disabled-primary"))).toBeUndefined();
+        expect(fallbackIds(id("disabled-primary"))).toEqual([
+            id("disabled-target"),
+        ]);
         expect(fallbackIds(id("deleted-primary"))).toBeUndefined();
         expect(fallbackIds(id("repriced-primary"))).toBeUndefined();
         expect(fallbackIds(id("delegating-primary"))).toBeUndefined();
@@ -9110,7 +9669,7 @@ fixtureTest(
 
 fixtureTest(
     "uses the served model's transform for a registry fallback",
-    async ({ apiKey }) => {
+    async ({ paidApiKey }) => {
         const suffix = crypto.randomUUID().slice(0, 8);
         const ownerGithubUsername = `transform-owner-${suffix}`;
         const ownerUserId = await createTestUser({
@@ -9139,9 +9698,7 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const source = getRegistryModelDefinition(
-            "qwen/qwen3-coder-30b-a3b-instruct",
-        );
+        const source = getRegistryModelDefinition("qwen/qwen3-coder-next");
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];
@@ -9199,11 +9756,11 @@ fixtureTest(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${apiKey}`,
+                        Authorization: `Bearer ${paidApiKey}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        model: "qwen-coder",
+                        model: "qwen3-coder-next",
                         messages: [{ role: "user", content: "hello" }],
                     }),
                 }),
@@ -9684,97 +10241,6 @@ fixtureTest(
         const moderationRefusal = await generate();
         expect(moderationRefusal.status).toBe(422);
         expect(upstreamHosts).toEqual([primaryHostname]);
-    },
-);
-
-fixtureTest(
-    "does not serve a fallback the API key is not allowed to use",
-    async () => {
-        const { primaryModelId, fallbackModelId, primaryHost } =
-            await createCommunityFallbackPair({
-                prefix: "scoped",
-            });
-
-        // Scoped to the primary only — calling the fallback directly is a 403.
-        const { key } = await createTestApiKey({
-            allowedModels: [primaryModelId],
-            user: { tierBalance: 100 },
-        });
-
-        const gatewayCalls: {
-            config: string | null;
-            provider: string | null;
-            url: string;
-        }[] = [];
-        const fetchMock = vi.fn(async (input, init) => {
-            const request = new Request(input, init);
-            if (isChatCompletionsRequest(request)) {
-                gatewayCalls.push({
-                    config: request.headers.get("x-portkey-config"),
-                    provider: request.headers.get("x-portkey-provider"),
-                    url: request.url,
-                });
-                return Response.json({
-                    id: "chatcmpl_primary",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                    usage: {
-                        prompt_tokens: 2,
-                        completion_tokens: 3,
-                        total_tokens: 5,
-                    },
-                });
-            }
-            if (isBillingFetch(request)) return Response.json({ data: [] });
-            throw new Error(`Unexpected fetch: ${request.url}`);
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        const response = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: primaryModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-
-        expect(response.status).toBe(200);
-        expect(gatewayCalls).toHaveLength(1);
-        // No strategy/targets config: the request runs against the primary
-        // alone, so the key can never be served the model it cannot call.
-        expect(gatewayCalls[0].config).toBeNull();
-        expect(gatewayCalls[0].provider).toBeNull();
-        expect(gatewayCalls[0].url).toBe(
-            communityChatCompletionsUrl(primaryHost),
-        );
-
-        // The same key calling the fallback directly is refused.
-        const direct = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${key}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: fallbackModelId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-        );
-        expect(direct.status).toBe(403);
     },
 );
 

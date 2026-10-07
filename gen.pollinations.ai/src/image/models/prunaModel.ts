@@ -33,9 +33,6 @@ const DEEPINFRA_IMAGE_MODELS = {
         "black-forest-labs/FLUX-1-schnell",
 } as const;
 
-// p-image-edit / p-video accept up to this many reference images.
-const MAX_EDIT_IMAGES = 5;
-
 // Supported dimensions for prunaai/p-image (custom aspect_ratio mode).
 const SUPPORTED_DIMENSIONS = [
     [1024, 1024],
@@ -151,8 +148,6 @@ async function generateDeepInfraImage(
     });
     return {
         buffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel,
             usage: {
@@ -270,11 +265,6 @@ export async function callPrunaImageEditAPI(
         throw UpstreamError.fromProvider(400, {
             message:
                 "p-image-edit requires at least one input image. Provide one via the image parameter.",
-        });
-    }
-    if (images.length > MAX_EDIT_IMAGES) {
-        throw UpstreamError.fromProvider(400, {
-            message: `p-image-edit supports at most ${MAX_EDIT_IMAGES} input images (received ${images.length}).`,
         });
     }
 

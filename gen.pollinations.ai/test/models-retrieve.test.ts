@@ -1,33 +1,385 @@
 import {
     createExecutionContext,
-    SELF,
+    env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { communityEndpoint } from "@shared/db/better-auth.ts";
+import type { ModelHealthRow } from "@shared/model-health.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
+    createTestApiKey,
+    createTestUser,
+    RESTRICTED_TEST_CATEGORIES,
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
-import { afterEach, expect, vi } from "vitest";
+import { drizzle } from "drizzle-orm/d1";
+import { afterEach, beforeEach, expect, vi } from "vitest";
+import {
+    getGenerationModelRegistry,
+    resetGenerationModelRegistryCache,
+} from "../src/model-registry.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
-    return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
-}
-
-async function fetchWorkerWithMock(path: string, init: RequestInit = {}) {
     const { default: worker } = await import("../src/index.ts");
     const context = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        { ENVIRONMENT: "test" } as CloudflareBindings,
+        { ...env, ENVIRONMENT: "test" } as CloudflareBindings,
         context,
     );
     await waitOnExecutionContext(context);
     return response;
 }
 
-afterEach(() => {
+beforeEach(() => {
+    mockCatalogHealth([]);
+});
+
+afterEach(async () => {
+    await resetGenerationModelRegistryCache(env);
     vi.restoreAllMocks();
-    vi.resetModules();
+});
+
+function mockCatalogHealth(
+    rows: ModelHealthRow[],
+    status = 200,
+    officialRows = rows,
+) {
+    vi.restoreAllMocks();
+    const originalFetch = globalThis.fetch;
+    return vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input, init) => {
+            const url = new URL(
+                input instanceof Request ? input.url : String(input),
+            );
+            if (
+                url.pathname === "/v0/pipes/model_catalog_health.json" ||
+                url.pathname === "/v0/pipes/model_health_24h.json"
+            ) {
+                return Response.json(
+                    {
+                        data:
+                            url.pathname ===
+                            "/v0/pipes/model_catalog_health.json"
+                                ? rows
+                                : officialRows,
+                    },
+                    { status },
+                );
+            }
+            return originalFetch(input, init);
+        });
+}
+
+test("official models stay discoverable across every list regardless of reliability", async () => {
+    const registry = await getGenerationModelRegistry(env);
+    const categories = ["text", "image", "video", "3d", "audio", "embedding"];
+    const failing = categories.map((category) => {
+        const entry = registry
+            .visibleEntries()
+            .find((entry) => entry.info.category === category);
+        if (!entry) throw new Error(`Missing test category ${category}`);
+        return entry;
+    });
+    mockCatalogHealth(
+        failing.map((entry) => ({
+            model: entry.id,
+            event_type: entry.eventType,
+            is_rollup: 1,
+            status_2xx: 0,
+            errors_5xx: 50,
+        })),
+    );
+
+    for (const path of [
+        "/models",
+        "/v1/models",
+        ...categories.map(
+            (category) =>
+                `/${category === "embedding" ? "embeddings" : category}/models`,
+        ),
+    ]) {
+        const response = await fetchWorker(path);
+        expect(response.status, path).toBe(200);
+        const body = (await response.json()) as
+            | { data: { id: string }[] }
+            | { name: string }[];
+        const ids = Array.isArray(body)
+            ? body.map((row) => row.name)
+            : body.data.map((row) => row.id);
+        expect(
+            ids.some((id) => failing.some((entry) => entry.id === id)),
+            path,
+        ).toBe(true);
+    }
+    for (const [query, headers] of [
+        ["?reliability=all", {}],
+        ["", { "Pollinations-Model-Reliability": "all" }],
+        ["?reliability=all", { "Pollinations-Model-Reliability": "reliable" }],
+    ] as const) {
+        const response = await fetchWorker(`/models${query}`, {
+            headers,
+        });
+        const models = (await response.json()) as { name: string }[];
+        for (const entry of failing)
+            expect(models.some((model) => model.name === entry.id)).toBe(true);
+    }
+    const overridden = await fetchWorker("/models?reliability=reliable", {
+        headers: { "Pollinations-Model-Reliability": "all" },
+    });
+    expect(
+        ((await overridden.json()) as { name: string }[]).some(
+            (model) => model.name === failing[0].id,
+        ),
+    ).toBe(true);
+    const exact = await fetchWorker(
+        `/v1/models/${encodeURIComponent(failing[0].id)}`,
+    );
+    expect(exact.status).toBe(200);
+    expect(await exact.json()).toMatchObject({
+        id: failing[0].id,
+        health: { success_rate: 0, requests: 50 },
+    });
+    // Discovery filtering never mutates the registry used for generation/fallbacks.
+    expect(registry.resolve(failing[0].id)).toBe(failing[0]);
+});
+
+test("counts final fallback rescues, retains unknown models and fails open on unavailable analytics", async () => {
+    const id = "openai/gpt-5-nano";
+    mockCatalogHealth(
+        [
+            {
+                model: id,
+                event_type: "generate.text",
+                is_rollup: 1,
+                status_2xx: 0,
+                errors_5xx: 50,
+            },
+        ],
+        200,
+        [
+            {
+                model: id,
+                event_type: "generate.text",
+                is_rollup: 0,
+                status_2xx: 0,
+                errors_5xx: 50,
+            },
+            {
+                model: id,
+                event_type: "generate.text",
+                is_rollup: 1,
+                status_2xx: 46,
+                errors_5xx: 4,
+            },
+        ],
+    );
+    const response = await fetchWorker("/text/models");
+    const models = (await response.json()) as {
+        name: string;
+        health: { success_rate: number | null };
+    }[];
+    expect(models.find((model) => model.name === id)?.health.success_rate).toBe(
+        92,
+    );
+    expect(models.some((model) => model.health.success_rate === null)).toBe(
+        true,
+    );
+    vi.restoreAllMocks();
+    mockCatalogHealth([], 503);
+    const unavailable = await fetchWorker("/text/models");
+    expect(unavailable.status).toBe(200);
+    const all = (await unavailable.json()) as {
+        name: string;
+        health: { status: string };
+    }[];
+    expect(all.some((model) => model.name === id)).toBe(true);
+    expect(all.every((model) => model.health.status === "unknown")).toBe(true);
+});
+
+test("show all does not bypass key permissions or paid access", async ({
+    restrictedApiKey,
+    apiKey,
+}) => {
+    mockCatalogHealth([]);
+    const restricted = await fetchWorker("/models?reliability=all", {
+        headers: { Authorization: `Bearer ${restrictedApiKey}` },
+    });
+    expect(
+        new Set(
+            ((await restricted.json()) as { category: string }[]).map(
+                (model) => model.category,
+            ),
+        ),
+    ).toEqual(new Set(RESTRICTED_TEST_CATEGORIES));
+    const unpaid = await fetchWorker("/models?reliability=all", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    expect(
+        ((await unpaid.json()) as { paid_only?: boolean }[]).some(
+            (model) => model.paid_only,
+        ),
+    ).toBe(false);
+});
+
+test("every catalog entry states paid_only as a boolean", async () => {
+    const response = await fetchWorker("/models?reliability=all");
+    const models = (await response.json()) as ModelInfo[];
+
+    expect(models.length).toBeGreaterThan(0);
+    for (const model of models) {
+        expect(typeof model.paid_only, model.name).toBe("boolean");
+    }
+});
+
+test("community reliability is discovery-only and legacy hide metadata no longer filters public models", async () => {
+    const owner = `catalog-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({ githubUsername: owner });
+    const { key: ownerKey } = await createTestApiKey({ userId: ownerUserId });
+    await drizzle(env.DB)
+        .insert(communityEndpoint)
+        .values(
+            ["public", "passing", "private", "hidden"].map((name) => ({
+                id: crypto.randomUUID(),
+                ownerUserId,
+                name,
+                title: name,
+                type: "proxy" as const,
+                baseUrl: "https://provider.example/v1/chat/completions",
+                upstreamModel: "test",
+                visibility:
+                    name === "private"
+                        ? ("private" as const)
+                        : ("public" as const),
+                hiddenAt: name === "hidden" ? new Date() : null,
+                hiddenBy: name === "hidden" ? "owner" : null,
+                payload: JSON.stringify({
+                    paidOnly: false,
+                    bearerTokenCiphertext:
+                        "test-placeholder-not-used-for-generation",
+                    api: "chat_completions",
+                    modality: "text",
+                    imagePricing: "request",
+                    inputModalities: ["text"],
+                    perUserRpm: null,
+                    fallbacks: [],
+                    prices: {},
+                }),
+            })),
+        );
+    await resetGenerationModelRegistryCache(env);
+    const id = `community/${owner}/public`;
+    const passingId = `community/${owner}/passing`;
+    const privateId = `community/${owner}/private`;
+    const legacyHiddenId = `community/${owner}/hidden`;
+    mockCatalogHealth([
+        {
+            model: id,
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 40,
+            errors_5xx: 10,
+        },
+        {
+            model: passingId,
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 41,
+            errors_5xx: 9,
+        },
+        {
+            model: privateId,
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 0,
+            errors_5xx: 10,
+        },
+    ]);
+    const normal = await fetchWorker("/models?source=community");
+    const normalModels = (await normal.json()) as { name: string }[];
+    expect(normalModels.some((model) => model.name === id)).toBe(false);
+    expect(normalModels.some((model) => model.name === passingId)).toBe(true);
+    expect(normalModels.some((model) => model.name === legacyHiddenId)).toBe(
+        true,
+    );
+    const ownerList = await fetchWorker("/models?source=community", {
+        headers: { Authorization: `Bearer ${ownerKey}` },
+    });
+    expect(
+        ((await ownerList.json()) as { name: string }[]).some(
+            (model) => model.name === privateId,
+        ),
+    ).toBe(true);
+    const unfiltered = await fetchWorker(
+        "/models?source=community&reliability=all",
+    );
+    expect(
+        ((await unfiltered.json()) as { name: string }[])
+            .filter((model) => model.name.startsWith(`community/${owner}/`))
+            .map((model) => model.name)
+            .sort(),
+    ).toEqual([passingId, id, legacyHiddenId].sort());
+    expect(
+        (await fetchWorker(`/v1/models/${encodeURIComponent(id)}`)).status,
+    ).toBe(200);
+    const registry = await getGenerationModelRegistry(env);
+    expect(registry.resolve(id)?.visible).toBe(true);
+});
+
+test("FLUX.3 launch pricing refreshes within the warm catalog cache TTL", async () => {
+    type CatalogPrice = Pick<ModelInfo, "pricing" | "pricing_variants"> & {
+        name?: string;
+        id?: string;
+    };
+    const model = "black-forest-labs/flux-3-image";
+    const cutoff = Date.parse("2026-10-08T15:00:00Z");
+    const now = vi.spyOn(Date, "now").mockReturnValue(cutoff - 1);
+    const registry = await getGenerationModelRegistry(env);
+    for (const [time, rate, twoK] of [
+        [cutoff - 1, 0.024, 0.05],
+        [cutoff, 0.024, 0.05],
+        [cutoff + 60_000, 0.048, 0.1],
+    ]) {
+        now.mockReturnValue(time);
+        const currentRegistry = await getGenerationModelRegistry(env);
+        if (time < cutoff + 60_000) {
+            expect(currentRegistry).toBe(registry);
+        } else {
+            expect(currentRegistry).not.toBe(registry);
+        }
+        for (const path of [
+            "/models",
+            "/image/models",
+            "/v1/models",
+            `/v1/models/${encodeURIComponent(model)}`,
+        ]) {
+            const response = await fetchWorker(path);
+            expect(response.status).toBe(200);
+            const body = await response.json<
+                CatalogPrice[] | CatalogPrice | { data: CatalogPrice[] }
+            >();
+            const info = Array.isArray(body)
+                ? body.find((info) => info.name === model)
+                : "data" in body
+                  ? body.data.find((info) => info.id === model)
+                  : body;
+            expect(Number(info?.pricing.completionImageTokens)).toBeCloseTo(
+                rate * 1.055,
+                10,
+            );
+            if (Array.isArray(body)) {
+                expect(
+                    Number(
+                        info?.pricing_variants?.find(
+                            (variant) => variant.name === "2k",
+                        )?.pricing.completionImageTokens,
+                    ),
+                ).toBeCloseTo(twoK * 1.055, 10);
+            }
+        }
+    }
 });
 
 test("retrieves a model by canonical ID", async () => {
@@ -48,6 +400,7 @@ test("retrieves a model by canonical ID", async () => {
         aliases: expect.any(Array),
         category: "text",
         community: false,
+        tags: [{ name: "text" }],
         title: expect.any(String),
     });
 });
@@ -118,6 +471,10 @@ test("accepts client-safe model filter headers", async () => {
 test("rejects invalid discovery filters", async () => {
     const responses = await Promise.all([
         fetchWorker("/models?source=other"),
+        fetchWorker("/models?reliability=other"),
+        fetchWorker("/models", {
+            headers: { "Pollinations-Model-Reliability": "other" },
+        }),
         fetchWorker("/models", {
             headers: { "Pollinations-Model-Source": "other" },
         }),
@@ -211,10 +568,73 @@ test("returns 404 for an unknown model", async () => {
     expect(response.status).toBe(404);
 });
 
+test("retired Nova models and aliases disappear from catalogs and cannot generate", async ({
+    paidApiKey,
+}) => {
+    const retiredModels = [
+        {
+            category: "image",
+            ids: ["amazon/nova-canvas-v1", "amazon-nova-canvas", "nova-canvas"],
+        },
+        {
+            category: "video",
+            ids: ["amazon/nova-reel-v1", "amazon-nova-reel", "nova-reel"],
+        },
+    ] as const;
+
+    for (const path of [
+        "/models",
+        "/image/models",
+        "/video/models",
+        "/v1/models",
+    ]) {
+        const response = await fetchWorker(path);
+        expect(response.status, path).toBe(200);
+        const body = (await response.json()) as
+            | { data: { id: string }[] }
+            | { name: string }[];
+        const ids = Array.isArray(body)
+            ? body.map((model) => model.name)
+            : body.data.map((model) => model.id);
+        for (const retired of retiredModels) {
+            for (const id of retired.ids) {
+                expect(ids, path).not.toContain(id);
+            }
+        }
+    }
+
+    for (const retired of retiredModels) {
+        for (const id of retired.ids) {
+            const lookup = await fetchWorker(
+                `/v1/models/${encodeURIComponent(id)}`,
+            );
+            expect(lookup.status, id).toBe(404);
+
+            const generation = await fetchWorker(
+                `/${retired.category}/retired-model?model=${encodeURIComponent(id)}`,
+                { headers: { Authorization: `Bearer ${paidApiKey}` } },
+            );
+            expect(generation.status, id).toBe(400);
+            expect(await generation.text()).toContain("Invalid model or alias");
+
+            const compatible = await fetchWorker("/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${paidApiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ model: id, prompt: "retired model" }),
+            });
+            expect(compatible.status, id).toBe(400);
+            expect(await compatible.text()).toContain("Invalid model or alias");
+        }
+    }
+});
+
 test("returns 404 when API key permissions exclude the model", async ({
     restrictedApiKey,
 }) => {
-    const excluded = await fetchWorker("/v1/models/krea", {
+    const excluded = await fetchWorker("/v1/models/whisper-1", {
         headers: { Authorization: `Bearer ${restrictedApiKey}` },
     });
     expect(excluded.status).toBe(404);

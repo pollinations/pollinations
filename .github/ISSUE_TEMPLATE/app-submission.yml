@@ -6,9 +6,23 @@ body:
   - type: markdown
     attributes:
       value: |
-        Submit a working app that uses Pollinations. An automated pre-review checks the live app and optional repository, then a maintainer reviews it before publication.
+        ## Submit your app
 
-        The app must work, visibly use Pollinations, have a clear purpose, credit Pollinations, and avoid spam, scams, or deceptive behavior.
+        - **App:** working, with a clear purpose and visible use of Pollinations.
+
+        - **Access:** a public app URL, repository, or both.
+
+        - **Screenshot:** your app's real screen; see the upload requirements below.
+
+        - **Credit:** add the badge or site link as described at the end of this form.
+
+        - **Content:** no spam, scams, or deceptive behavior.
+
+        <br>
+
+        Automated pre-review → maintainer review → community catalog.
+
+        <br>
 
   - type: input
     id: app-name
@@ -31,17 +45,31 @@ body:
     id: app-url
     attributes:
       label: App URL
-      description: Public URL where reviewers can try the app.
+      description: Public URL where people can try the app. Leave empty when the repository is the app, such as a plugin or library.
       placeholder: https://example.com
-    validations:
-      required: true
 
   - type: input
     id: github-repo
     attributes:
       label: GitHub Repository URL
-      description: Optional public source repository.
+      description: Public source repository. Required when there is no App URL.
       placeholder: https://github.com/username/repository
+
+  - type: markdown
+    attributes:
+      value: |
+        <br>
+
+        ### Catalog listing
+
+  - type: upload
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: "The app's real screen, not a logo or banner. PNG, JPEG, or WebP, at most 5 MB, 16:9 landscape, at least 1280×720. Keep the key content in the top half; the catalog crops from the top. Mobile apps: place the phone screen on a 16:9 canvas."
+    validations:
+      required: true
+      accept: ".png,.jpg,.jpeg,.webp"
 
   - type: dropdown
     id: app-category
@@ -60,6 +88,25 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: app-platform
+    attributes:
+      label: Platform
+      description: Where people use the app. Windows and macOS apps, and plugins for desktop software such as Krita or Obsidian, are desktop.
+      options:
+        - web
+        - android
+        - ios
+        - desktop
+        - cli
+        - discord
+        - telegram
+        - browser-ext
+        - library
+        - api
+    validations:
+      required: true
+
   - type: input
     id: app-language
     attributes:
@@ -69,8 +116,56 @@ body:
     validations:
       required: true
 
+  - type: markdown
+    attributes:
+      value: |
+        <br>
+
+        ### Optional details
+
   - type: input
     id: discord-contact
     attributes:
       label: Discord Username
       description: Optional contact username.
+
+  - type: input
+    id: quest
+    attributes:
+      label: Quest
+      description: Leave empty unless you built this app for a POLLEN-QUEST issue. Enter the quest number; approving the app completes the quest and pays you its reward.
+      placeholder: "#15600"
+
+  - type: markdown
+    attributes:
+      value: |
+        <br>
+
+        ## Credit Pollinations
+
+        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/123ed07456106a4f752c0a22c584e8cadd2db6a8/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+
+        - **With a repository:** add the badge to your README.
+
+        - **Without a repository:** show the badge or a visible [pollinations.ai](https://pollinations.ai) link on the app page.
+
+        <br>
+
+        **README — copy this Markdown:**
+
+        ```markdown
+        [![Made with pollinations.ai](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai/?ref=badge)
+        ```
+
+        <br>
+
+        **App page — copy this HTML:**
+
+        ```html
+        <a href="https://pollinations.ai/?ref=badge">
+          <img
+            src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg"
+            alt="Made with pollinations.ai"
+          >
+        </a>
+        ```

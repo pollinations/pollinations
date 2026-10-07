@@ -87,16 +87,25 @@ describe("getGenerationModelRegistry", () => {
             ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
             ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
             ["perplexity/sonar", "search_domain_filter", true],
-            [
-                "perplexity/sonar:openrouter:perplexity",
-                "search_domain_filter",
-                false,
-            ],
         ] as const) {
             const parameters = registry.resolve(id)?.info.supported_parameters;
             expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(
                 supported,
             );
+        }
+    });
+
+    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const model = registry.resolve("qwen-coder");
+
+        expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
+        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.paidOnly).toBe(true);
+        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        expect(model?.supportedEndpoints).not.toContain("/v1/responses");
+        for (const parameter of ["seed", "logprobs", "stop"]) {
+            expect(model?.info.supported_parameters).not.toContain(parameter);
         }
     });
 

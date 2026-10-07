@@ -1,4 +1,10 @@
+import {
+    type CommunityEndpointRuntime,
+    usesAgentRunToken,
+} from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
+
+import { isGoogleSearchTool } from "./transforms/createGeminiToolsTransform.ts";
 
 function forcesToolChoice(toolChoice: unknown): boolean {
     if (toolChoice === "required") return true;
@@ -63,12 +69,28 @@ function requestsStructuredOutput(format: unknown): boolean {
     );
 }
 
+function requestsJsonMode(format: unknown): boolean {
+    return (
+        !!format &&
+        typeof format === "object" &&
+        "type" in format &&
+        format.type === "json_object"
+    );
+}
+
 /** Validate declared text capabilities before any provider attempt. */
 export function textCapabilityError(
     definition: ModelDefinition | undefined,
     request: Record<string, unknown>,
+    communityEndpoint?: CommunityEndpointRuntime,
 ): string | undefined {
     if (!definition) return;
+    if (
+        definition.search === false &&
+        Array.isArray(request.tools) &&
+        request.tools.some(isGoogleSearchTool)
+    )
+        return "This model does not support web search; choose a model with web_search capability";
     if (
         definition.tools === false &&
         ((Array.isArray(request.tools) && request.tools.length > 0) ||
@@ -88,13 +110,27 @@ export function textCapabilityError(
     )
         return "This model does not support structured output; use text format";
     if (
+        definition.supportsJsonMode === false &&
+        (requestsJsonMode(request.response_format) ||
+            requestsJsonMode(text?.format))
+    )
+        return "This model does not support JSON mode; use a json_schema response format";
+    if (
         definition.maxCompletionTokens !== undefined &&
         requestedCompletionTokens(request) > definition.maxCompletionTokens
     )
         return `This model supports at most ${definition.maxCompletionTokens} output tokens`;
+    const referenceImages = countReferenceImages(request);
+    // Agents hand images to their own base model or code, which decides.
+    if (
+        !(communityEndpoint && usesAgentRunToken(communityEndpoint)) &&
+        referenceImages > 0 &&
+        definition.inputModalities?.includes("image") === false
+    )
+        return "This model does not support image input";
     if (
         definition.maxReferenceImages !== undefined &&
-        countReferenceImages(request) > definition.maxReferenceImages
+        referenceImages > definition.maxReferenceImages
     )
         return `This model supports at most ${definition.maxReferenceImages} reference images`;
 }

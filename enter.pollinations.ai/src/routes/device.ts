@@ -1,3 +1,4 @@
+import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
@@ -17,7 +18,6 @@ type AuthedContext = Context<{
 
 const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
-const USER_CODE_LENGTH = 8;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
 type DeviceStatus = "pending" | "approved" | "denied";
@@ -182,6 +182,7 @@ export const deviceRoutes = new Hono<Env>()
                     `device-key:${device.deviceCode}`,
                     JSON.stringify({
                         key: body.apiKey,
+                        keyId: body.apiKeyId,
                         expiresIn: body.expiresIn ?? null,
                         // Granted scope — may be narrower than what the row
                         // stored at issuance ("" = narrowed to zero)
@@ -314,6 +315,7 @@ export async function exchangeDeviceCode(
                 "json",
             )) as {
                 key: string;
+                keyId?: string;
                 expiresIn: number | null;
                 scope?: string | null;
             } | null;
@@ -332,6 +334,7 @@ export async function exchangeDeviceCode(
             captureFromRequest(c, "device_token_issued", device.userId ?? "", {
                 flow_id: device.id,
                 client_id: device.clientId ?? "",
+                key_id: stored.keyId ?? "",
             });
 
             return c.json({

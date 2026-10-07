@@ -4,11 +4,67 @@ name: CI / Pull request checks
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
 # HEAD is the pull request merge commit. With fetch-depth 2 its first parent
 # (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
 # request diff without fetching the full repository history.
 
 jobs:
+  project-manager:
+    name: Test project manager
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Check for project manager changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- operations/github .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v6
+        if: steps.changes.outputs.changed == 'true'
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: pip install requests
+      - name: Test PR classification and project updates
+        if: steps.changes.outputs.changed == 'true'
+        run: python3 -m unittest operations/github/test_project_manager.py
+
+  gpu-tunnels:
+    name: Test GPU tunnel recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check for GPU or workflow changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- operations/infrastructure/gpu .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check GPU setup shell syntax
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          for script in operations/infrastructure/gpu/watch-tunnel.sh operations/infrastructure/gpu/*/setup-vast.sh; do
+            bash -n "$script" || exit
+          done
+
+      - name: Test tunnel watchdog thresholds and process isolation
+        if: steps.changes.outputs.changed == 'true'
+        run: python3 -m unittest operations/infrastructure/gpu/test_tunnel_watchdog.py
+
   lint:
     name: Lint and build
     runs-on: ubuntu-latest
@@ -61,7 +117,7 @@ jobs:
         run: |
           echo "Running Biome on changed files:"
           echo "${{ steps.changed-files.outputs.files }}"
-          echo "${{ steps.changed-files.outputs.files }}" | xargs npx biome check --write
+          echo "${{ steps.changed-files.outputs.files }}" | xargs npx biome check --write --no-errors-on-unmatched
 
       - name: Check for formatting changes
         if: steps.changed-files.outputs.any_changed == 'true'
@@ -77,15 +133,21 @@ jobs:
       - name: Test SDK
         run: npm test --workspace @pollinations/sdk
 
+      - name: Test UI
+        run: npm test --workspace @pollinations/ui
+
       - name: Test maintenance scripts
         run: >-
           node --test
           .github/scripts/*.test.mjs
           enter.pollinations.ai/scripts/*.test.mjs
+          enter.pollinations.ai/observability/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js
           operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
+          operations/model-evals/*.test.js
+          operations/model-monitor/src/*.test.js
 
       - name: Test model catalog and accounting compatibility
         run: npx vitest run --config apps/model-compatibility.vitest.config.ts
@@ -225,13 +287,55 @@ jobs:
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm run typecheck --workspace pollinations-gen
 
+  website:
+    name: Build pollinations.ai
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files that affect the website
+        id: website-files
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(pollinations.ai/|packages/(sdk|ui)/)'; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        if: steps.website-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.website-files.outputs.any_changed == 'true'
+        run: |
+          npm ci
+          npm ci --prefix pollinations.ai
+
+      # Builds packages/sdk and packages/ui first, then typechecks and bundles.
+      - name: Build pollinations.ai
+        if: steps.website-files.outputs.any_changed == 'true'
+        working-directory: pollinations.ai
+        run: npm run build
+
+      - name: Test pollinations.ai
+        if: steps.website-files.outputs.any_changed == 'true'
+        run: npm test --prefix pollinations.ai
+
   # Carries the status-check name required by the main branch ruleset so the
-  # three jobs above gate merges without a ruleset change.
+  # jobs above gate merges without a ruleset change.
   gate:
     name: Check formatting and linting
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, enter, gen]
+    needs: [lint, enter, gen, website]
     if: always()
 
     steps:

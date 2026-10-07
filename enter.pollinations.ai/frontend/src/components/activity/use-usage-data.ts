@@ -19,6 +19,7 @@ type UsageModelBreakdown = ModelBreakdown & {
 
 type UsageDataResult = {
     loading: boolean;
+    refreshing: boolean;
     error: string | null;
     fetchUsage: () => void;
     usedModels: { id: string; label: string }[];
@@ -37,49 +38,56 @@ type UsageDataResult = {
     };
 };
 
+const EMPTY_USAGE: DailyUsageRecord[] = [];
+
 export function useUsageData(filters: FilterState): UsageDataResult {
-    const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
-    const [loading, setLoading] = useState(true);
-    const request = useRef<AbortController | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const { granularity, period } = filters.period;
+    const requestKey = `${granularity}:${period}`;
+    const [result, setResult] = useState<{
+        key: string;
+        rows: DailyUsageRecord[];
+    } | null>(null);
+    const [status, setStatus] = useState({
+        key: requestKey,
+        pending: true,
+        error: null as string | null,
+    });
+    const request = useRef<AbortController | null>(null);
+    const hasLoaded = result?.key === requestKey;
+    const dailyUsage = hasLoaded ? result.rows : EMPTY_USAGE;
+    const pending = status.key !== requestKey || status.pending;
+    const loading = pending && !hasLoaded;
+    const refreshing = pending && hasLoaded;
+    const error = status.key === requestKey ? status.error : null;
 
     const fetchUsage = useCallback(() => {
         request.current?.abort();
         const controller = new AbortController();
         request.current = controller;
-        setDailyUsage([]);
-        setLoading(true);
-        setError(null);
-
-        const query: {
-            granularity: string;
-            period: string;
-        } = {
-            granularity,
-            period,
-        };
-
-        apiClient.account.usage.daily
-            .$get({ query }, { init: { signal: controller.signal } })
+        setStatus({ key: requestKey, pending: true, error: null });
+        return apiClient.account.usage.daily
+            .$get(
+                { query: { granularity, period } },
+                { init: { signal: controller.signal } },
+            )
             .then((r) => {
-                if (!r.ok)
-                    throw new Error(`Failed to fetch usage data: ${r.status}`);
+                if (!r.ok) throw new Error(`Failed to load usage: ${r.status}`);
                 return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
-                if (!controller.signal.aborted) setDailyUsage(data.usage);
+                if (controller.signal.aborted) return;
+                setResult({ key: requestKey, rows: data.usage });
+                setStatus({ key: requestKey, pending: false, error: null });
             })
             .catch((err) => {
-                if (controller.signal.aborted) return;
-                console.error("Usage fetch error:", err);
-                setError(err.message || "Failed to load usage data");
-                setDailyUsage([]);
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setLoading(false);
+                if (!controller.signal.aborted)
+                    setStatus({
+                        key: requestKey,
+                        pending: false,
+                        error: err.message || "Couldn’t load usage.",
+                    });
             });
-    }, [granularity, period]);
+    }, [granularity, period, requestKey]);
 
     useEffect(() => {
         fetchUsage();
@@ -208,7 +216,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 0,
             );
         const paidPollen = selectedRows
-            .filter((r) => r.meter_source !== "tier")
+            .filter((r) => r.meter_source === "pack")
             .reduce(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
@@ -239,7 +247,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             if (r.meter_source === "tier") {
                 cur.tierPollen += r.cost_usd || 0;
                 cur.tierRequests += r.requests || 0;
-            } else {
+            } else if (r.meter_source === "pack") {
                 cur.paidPollen += r.cost_usd || 0;
                 cur.paidRequests += r.requests || 0;
             }
@@ -260,7 +268,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 paidPollen,
                 paidRequests: selectedRows.reduce(
                     (sum, row) =>
-                        sum + (row.meter_source !== "tier" ? row.requests : 0),
+                        sum + (row.meter_source === "pack" ? row.requests : 0),
                     0,
                 ),
                 tierRequests: selectedRows.reduce(
@@ -281,6 +289,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
 
     return {
         loading,
+        refreshing,
         error,
         fetchUsage,
         usedModels,

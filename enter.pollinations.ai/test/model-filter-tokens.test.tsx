@@ -28,7 +28,7 @@ describe("catalog filter dropdowns", () => {
             "status",
             "all",
             "status:all source:community llama",
-            ["all", "healthy"],
+            ["all", "healthy", "reliable"],
         ],
     ])("changes %s without editing its other tokens", (initial, key, choice, expected, values) => {
         let query = initial;
@@ -55,8 +55,11 @@ describe("catalog filter dropdowns", () => {
             )
             .find(
                 ({ props }) =>
-                    (props.trigger(false) as ReactElement<{ label: string }>)
-                        .props.label === label,
+                    (
+                        props.trigger(false) as ReactElement<{
+                            label: string;
+                        }>
+                    ).props.label === label,
             );
         assert(dropdown);
         const renderOptions = dropdown.props.children as (

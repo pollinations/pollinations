@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { execFileSync } = require("node:child_process");
+const { downloadScreenshot, screenshotErrors } = require("./screenshot.js");
 const {
     buildApp,
     findCatalogDuplicate,
@@ -15,7 +16,30 @@ function gh(args) {
     return execFileSync("gh", args, { encoding: "utf8" }).trim();
 }
 
-function main() {
+function isOpenQuest(number) {
+    let issue;
+    try {
+        issue = JSON.parse(
+            gh([
+                "issue",
+                "view",
+                number,
+                "--repo",
+                "pollinations/pollinations",
+                "--json",
+                "state,labels",
+            ]),
+        );
+    } catch {
+        return false;
+    }
+    return (
+        issue.state === "OPEN" &&
+        issue.labels.some((label) => label.name === "POLLEN-QUEST")
+    );
+}
+
+async function main() {
     if (!/^\d+$/.test(ISSUE_NUMBER || ""))
         throw new Error("ISSUE_NUMBER must be numeric");
     if (!/^[A-Za-z0-9-]+$/.test(ISSUE_AUTHOR || ""))
@@ -46,6 +70,19 @@ function main() {
         throw new Error("Issue snapshot metadata is incomplete");
     const submission = parseSubmission(issue.body);
     const errors = validateSubmission(submission);
+    if (submission.screenshotUrl) {
+        try {
+            errors.push(
+                ...(await screenshotErrors(
+                    await downloadScreenshot(submission.screenshotUrl),
+                )),
+            );
+        } catch {
+            errors.push(
+                "Screenshot could not be downloaded; upload it again in the Screenshot field.",
+            );
+        }
+    }
     const duplicate = findCatalogDuplicate(
         submission,
         undefined,
@@ -94,6 +131,12 @@ function main() {
         );
     }
 
+    if (/^\d+$/.test(submission.quest) && !isOpenQuest(submission.quest)) {
+        errors.push(
+            `Quest #${submission.quest} is not an open POLLEN-QUEST issue. Enter an open quest or leave the Quest field empty.`,
+        );
+    }
+
     const approvedDate =
         process.env.APPROVED_DATE || new Date().toISOString().slice(0, 10);
     const metadata = {
@@ -115,11 +158,9 @@ function main() {
     if (!result.valid) process.exitCode = 2;
 }
 
-try {
-    main();
-} catch (error) {
+main().catch((error) => {
     process.stdout.write(
         `${JSON.stringify({ valid: false, system_error: error.message })}\n`,
     );
     process.exitCode = 1;
-}
+});

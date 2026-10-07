@@ -72,7 +72,7 @@ test("admin grant records one claimable reward per user and campaign", async ({
         claimedAt: null,
     });
 
-    const listed = await SELF.fetch(`${baseUrl}/quests/rewards`, {
+    const listed = await SELF.fetch(`${baseUrl}/account/quests/rewards`, {
         headers: {
             Cookie: `better-auth.session_token=${sessionToken}`,
         },
@@ -130,7 +130,7 @@ test("a pack grant credits paid pollen when claimed", async ({
     expect(reward).toMatchObject({ balanceBucket: "pack", claimedAt: null });
 
     const claim = await SELF.fetch(
-        `${baseUrl}/quests/rewards/${reward?.id}/claim`,
+        `${baseUrl}/account/quests/rewards/${reward?.id}/claim`,
         {
             method: "POST",
             headers: { Cookie: `better-auth.session_token=${sessionToken}` },

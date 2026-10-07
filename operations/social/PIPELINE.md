@@ -169,7 +169,7 @@ Existing AI categories, text, images, and publish-tier rules remain available to
 
 `gist_context()` passes the same facts to realtime Discord, daily, weekly and highlights: summary, selection metadata, Area/Type/Source, app links and model announcements. Platform prose is generated downstream. Existing archive summaries remain readable without a backfill. Optional metadata backfills are prepared locally and preserve existing text, images and publishing flags. `gist.category` remains during classification migration. Highlights remain until README and dashboard consumers move to the index.
 
-Important user-facing price increases, balance restrictions and removals are eligible for daily and weekly recaps. Posts are curated, but selected changes are stated neutrally with known units and before/after values. Public gists and posts omit unresolved vulnerability details, user complaints and churn narratives; factual descriptions of product fixes remain appropriate.
+Important user-facing price increases, balance restrictions and removals are eligible for daily and weekly recaps. Posts are curated, but selected changes are stated neutrally with known units and before/after values. Unconfirmed deployment stays in metadata; public copy describes merged changes without routine deployment disclaimers and includes known effective dates when relevant. Public gists and posts omit unresolved vulnerability details, user complaints and churn narratives; factual descriptions of product fixes remain appropriate.
 
 **Importance is binary:**
 

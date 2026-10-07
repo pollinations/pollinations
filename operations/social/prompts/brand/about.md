@@ -40,6 +40,6 @@ Earn Pollen by completing useful actions — onboarding, using models, growing a
 
 ## Public Content
 
-- Unconfirmed deployment means availability is unknown. Say "deployment unconfirmed"; do not claim a change is live, inactive or awaiting activation unless the source confirms that status.
+- Keep unconfirmed deployment status in metadata, not public copy. Describe merged work as "added" or "merged" without routine deployment disclaimers. Include known effective dates when relevant; do not claim a change is live, inactive or awaiting activation without evidence.
 - Gists and generated posts are public. Omit details of unresolved security vulnerabilities; a merge alone does not prove a fix is live.
 - Omit user complaints and churn narratives. Describe the resulting product fixes and their practical effects factually.

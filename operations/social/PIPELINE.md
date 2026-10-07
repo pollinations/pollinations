@@ -32,7 +32,8 @@ TIER 3: WEEKLY (Sunday 06:00 UTC)
 ### Branch Strategy
 
 - **`main` branch** — source code only. No generated content. README "Latest News" section updated via small automated PRs.
-- **`news` branch** — all generated content: gists, daily posts, weekly posts, highlights, images. Unprotected (direct commits). Content is reviewed here before cron publishes it.
+- **Images** — permanent uploads on `media.pollinations.ai` (`p_` ids). Images generated before this change stay on the `news` branch.
+- **`news` branch** — all generated content: gists, daily posts, weekly posts, highlights. Unprotected (direct commits). Content is reviewed here before cron publishes it.
 
 ### Data Flow
 
@@ -299,7 +300,7 @@ Step 1: AI analysis → validate schema
   └── Any failure: fail the workflow run
       (no minimal gist is committed, no Discord post is attempted)
 
-Step 2: Image generation → commit image → commit gist to news branch
+Step 2: Image generation → permanent media upload → commit gist to news branch
   ├── Success: done (gist fully committed)
   └── Any failure: fail the workflow run
       (prevents partial gists or text-only realtime posts)

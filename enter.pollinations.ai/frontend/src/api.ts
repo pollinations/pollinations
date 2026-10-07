@@ -34,6 +34,11 @@ function sessionToken(): Promise<string> {
     return current.token;
 }
 
+/** Drops the cached token, so the next account call follows the current cookie. */
+export function forgetSessionToken(): void {
+    session = null;
+}
+
 /**
  * The public account API on gen.pollinations.ai, called with a short-lived
  * token minted from the dashboard session. Apps and agents call the same

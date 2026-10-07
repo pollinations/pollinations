@@ -6,7 +6,7 @@ import {
     useRouter,
 } from "@tanstack/react-router";
 import { Suspense, useDeferredValue, useState } from "react";
-import { accountClient } from "../api.ts";
+import { accountClient, forgetSessionToken } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
 import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
@@ -52,7 +52,11 @@ export const Route = createFileRoute("/_dashboard")({
             if (lastDashboardSession) return lastDashboardSession;
             throw new Error("Authentication failed.");
         }
-        lastDashboardSession = { user: result.data?.user ?? null };
+        const user = result.data?.user ?? null;
+        // Another tab may have switched accounts: stop calling the account API
+        // with the previous account's token.
+        if (user?.id !== lastDashboardSession?.user?.id) forgetSessionToken();
+        lastDashboardSession = { user };
         return lastDashboardSession;
     },
     loader: ({ context }) => {

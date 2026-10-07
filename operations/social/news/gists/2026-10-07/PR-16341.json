@@ -1,0 +1,134 @@
+{
+  "pr_number": 16341,
+  "title": "feat: add Nex N2.5 Mini via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16341",
+  "merged_at": "2026-10-07T21:25:38Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added paid-only Nex N2.5 Mini (`nex-agi/nex-n2.5-mini`) with a 262,144-token context, text and image input, reasoning, structured output, and streaming; it has no aliases or tool support. Input, cached input, and output are priced in Pollen per million tokens. Requests use OpenRouter’s `nex-agi/bf16` route with provider fallback disabled and no approved Pollinations fallback. Guarded image conversion across Chat, Responses, and Messages returns HTTP 400 for invalid URLs or HTML returned in place of an image.",
+    "keywords": [
+      "Nex N2.5 Mini",
+      "OpenRouter",
+      "text models",
+      "vision",
+      "reasoning",
+      "image conversion"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16341.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, a tiny server labeled 'N2.5 Mini' sits beside a retro terminal and blooming code-plants, its screen showing a small picture and text. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and carefully connects the server to the terminal. She is small-to-medium sized within the scene and never oversized or dominating; strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, warm lighting, retro gaming vibes, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-07T21:28:54.828220+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "55a9ba4f980a48e27bbafc6fb21d6d9ace9f33d4",
+  "announcements": [
+    {
+      "id": "pr-16341:nex-agi/nex-n2.5-mini",
+      "model_id": "nex-agi/nex-n2.5-mini",
+      "title": "Nex N2.5 Mini",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000026375",
+            "promptCachedTokens": "0.000000002638",
+            "completionTextTokens": "0.0000001055"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "stream",
+            "structured_outputs",
+            "temperature",
+            "top_p",
+            "top_k",
+            "logprobs",
+            "top_logprobs",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": false
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "55a9ba4f980a48e27bbafc6fb21d6d9ace9f33d4^1",
+    "after_ref": "55a9ba4f980a48e27bbafc6fb21d6d9ace9f33d4"
+  }
+}

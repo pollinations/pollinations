@@ -96,8 +96,7 @@ type PlaygroundModel = MediaModelMetadata & {
     supportedEndpoints: string[];
     voices: string[];
     paidOnly: boolean;
-    /** Requests in the last 24 hours, from the catalog health field. */
-    requests: number;
+    publisher?: string;
 };
 
 // Groups the audio model list; the first group holds the default model.
@@ -115,12 +114,6 @@ const AUDIO_GROUP_LABEL: Record<AudioTask, string> = {
     "audio-processing": "Voice & cleanup",
     transcription: "Transcription",
 };
-
-/** `health` is a catalog field the SDK passes through untyped. */
-function recentRequests(model: ModelInfo): number {
-    const health = model.health as { requests?: unknown } | undefined;
-    return typeof health?.requests === "number" ? health.requests : 0;
-}
 
 function playgroundModel(model: ModelInfo): PlaygroundModel | null {
     const id = model.id ?? model.name;
@@ -145,7 +138,7 @@ function playgroundModel(model: ModelInfo): PlaygroundModel | null {
         voices: model.voices ?? [],
         // Gen treats a missing flag as not paid-only.
         paidOnly: model.paid_only ?? false,
-        requests: recentRequests(model),
+        publisher: model.publisher,
     };
 }
 
@@ -273,7 +266,7 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
 }
 
 /**
- * One model list per tab, most requested first. Audio models are grouped by
+ * One alphabetical model list per tab. Audio models are grouped by
  * what they do, then sorted within each group.
  */
 function modelsInCategory(
@@ -286,7 +279,14 @@ function modelsInCategory(
             : 0;
     return models
         .filter((model) => model.category === category)
-        .sort((a, b) => group(a) - group(b) || b.requests - a.requests);
+        .sort(
+            (a, b) =>
+                group(a) - group(b) ||
+                a.title.localeCompare(b.title, "en", {
+                    numeric: true,
+                    sensitivity: "base",
+                }),
+        );
 }
 
 /** The catalog lists each tab's configured default model first. */

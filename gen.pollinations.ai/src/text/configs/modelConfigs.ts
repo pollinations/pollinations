@@ -372,6 +372,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         )(),
         requiresBase64ImageUrls: true,
     }),
+    "nex-agi/nex-n2.5-pro": () => ({
+        ...createPinnedOpenRouterConfig(
+            "nex-agi/nex-n2.5-pro",
+            "nex-agi/fp8",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",

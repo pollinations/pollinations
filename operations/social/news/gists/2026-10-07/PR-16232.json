@@ -1,0 +1,34 @@
+{
+  "pr_number": 16232,
+  "title": "feat: require badge, screenshot, and platform for new app submissions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16232",
+  "merged_at": "2026-10-07T10:19:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a \"Made with pollinations.ai\" badge (`packages/ui/src/brand/badge-made-with.svg`) linking to `pollinations.ai/?ref=badge`; the form shows Markdown and HTML snippets\n- Pre-review checks credit: a badge link in the README when a repo is given, otherwise a pollinations.ai link on the app page. Code blocks and comments don't count. Missing credit → `APP-NEEDS-INFO` with the snippet; the maintainer confirms the badge is visible before approving\n- Adds a required screenshot upload (PNG/JPEG/WebP, ≤5 MB, 16:9, ≥1280×720), checked with sharp at pre-review and publish. Publishing converts it to WebP 1280×720, uploads it to media.pollinations.ai and sets `screenshotUrl`, replacing the manual screenshot step\n- Replaces platform guessing with a required Platform dropdown (10 values from the site's filter)\n- Accepts an app URL, a GitHub repo, or both; repo-only apps get `url: null`\n- New submissions only; open submissions missing the new fields go back to `APP-NEEDS-INFO` when approved\n\nAddresses #16001",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A proper place in the garden",
+    "blurb": "App submissions get a clearer path into the garden: add a badge, choose a platform, and bring a screenshot. The publishing flow handles the image resizing, which is one less tiny chore for everyone.",
+    "summary": "New app submissions require pollinations.ai credit, a platform chosen from 10 options, and a 16:9 PNG, JPEG, or WebP screenshot of at least 1280×720 and no more than 5 MB; publishing converts the screenshot to WebP, uploads it, and sets screenshotUrl.",
+    "impact": "App makers can submit an app URL, a GitHub repo, or both, while the review flow checks credit and prepares a consistent 1280×720 screenshot without a manual publishing step.",
+    "keywords": [
+      "app submissions",
+      "badge",
+      "screenshots",
+      "platform",
+      "review",
+      "community"
+    ],
+    "visual_concept": "Depict an app-submission desk in a cozy garden: Polli helps a maker arrange a small “Made with pollinations.ai” badge, a landscape screenshot, and a platform selector beside a retro computer. A code-plant represents the app; a friendly monitor robot can hold the finished picture. The badge is the project's own mark, not a new mascot.",
+    "image_prompt": "In a cozy pixel art garden workspace, Polli helps a friendly CRT monitor robot place a landscape screenshot and a small “Made with pollinations.ai” badge beside a blooming code-plant; a retro screen shows a simple platform selector. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny curator's beret, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16232.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli helps a friendly CRT monitor robot place a landscape screenshot and a small “Made with pollinations.ai” badge beside a blooming code-plant; a retro screen shows a simple platform selector. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny curator's beret, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-07T10:20:49.880561+00:00"
+}

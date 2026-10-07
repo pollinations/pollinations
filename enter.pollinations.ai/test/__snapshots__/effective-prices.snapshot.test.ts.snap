@@ -1380,6 +1380,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.000012,
     },
   },
+  "google/gemini-nano-banana-2.1": {
+    "cost": {
+      "completionImageTokens": 0.00003165,
+      "completionTextTokens": 0.0000079125,
+      "promptImageTokens": 0.0000015825,
+      "promptTextTokens": 0.0000015825,
+    },
+    "price": {
+      "completionImageTokens": 0.00003339075,
+      "completionTextTokens": 0.0000083476875,
+      "promptImageTokens": 0.0000016695375,
+      "promptTextTokens": 0.0000016695375,
+    },
+  },
   "google/gemini-omni-1.1-flash": {
     "cost": {
       "completionTextTokens": 0.000009,
@@ -1933,6 +1947,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
+  "minimax/minimax-m3:deepinfra": {
+    "cost": {
+      "completionTextTokens": 0.0000011,
+      "promptCachedTokens": 0.000000056,
+      "promptTextTokens": 0.00000028,
+    },
+    "price": {
+      "completionTextTokens": 0.0000011,
+      "promptCachedTokens": 0.000000056,
+      "promptTextTokens": 0.00000028,
+    },
+  },
   "mistralai/mistral-large-3": {
     "cost": {
       "completionTextTokens": 0.0000015,
@@ -2089,6 +2115,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.000015,
       "promptCachedTokens": 0.0000003,
       "promptTextTokens": 0.000003,
+    },
+  },
+  "moonshotai/kimi-k3:deepinfra": {
+    "cost": {
+      "completionTextTokens": 0.00001425,
+      "promptCachedTokens": 0.000000285,
+      "promptTextTokens": 0.00000285,
+    },
+    "price": {
+      "completionTextTokens": 0.00001425,
+      "promptCachedTokens": 0.000000285,
+      "promptTextTokens": 0.00000285,
     },
   },
   "nvidia/asset-harvester": {
@@ -3723,6 +3761,42 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionVideoSeconds": 0.1477,
+      "promptImageTokens": 0.01055,
+    },
+  },
+  "x-ai/grok-imagine-video-1.5-lite": {
+    "cost": {
+      "completionVideoSeconds": 0.03,
+      "promptImageTokens": 0.01,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.14,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.02,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.03,
+      "promptImageTokens": 0.01,
+    },
+  },
+  "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+    "cost": {
+      "completionVideoSeconds": 0.03165,
+      "promptImageTokens": 0.01055,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.1477,
+      },
+      "480p": {
+        "completionVideoSeconds": 0.0211,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.03165,
       "promptImageTokens": 0.01055,
     },
   },

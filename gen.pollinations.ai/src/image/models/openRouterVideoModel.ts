@@ -19,6 +19,9 @@ const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const HEYGEN_VIDEO_MODEL = "heygen/heygen-video-1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
 const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
+const GROK_VIDEO_15_LITE_MODEL = "x-ai/grok-imagine-video-1.5-lite";
+const GROK_VIDEO_15_LITE_FALLBACK =
+    "x-ai/grok-imagine-video-1.5-lite:openrouter";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -217,10 +220,15 @@ export async function callOpenRouterGrokVideoAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = resolveGrokDuration(safeParams.duration);
-    const isVersion15 = safeParams.model === "x-ai/grok-imagine-video-1.5";
+    const isLite = safeParams.model === GROK_VIDEO_15_LITE_FALLBACK;
+    const isVersion15 = isLite || safeParams.model === GROK_VIDEO_15_MODEL;
     const resolution = isVersion15 ? (safeParams.resolution ?? "720p") : "720p";
     const requestBody: Record<string, unknown> = {
-        model: isVersion15 ? GROK_VIDEO_15_MODEL : GROK_VIDEO_MODEL,
+        model: isLite
+            ? GROK_VIDEO_15_LITE_MODEL
+            : isVersion15
+              ? GROK_VIDEO_15_MODEL
+              : GROK_VIDEO_MODEL,
         prompt,
         resolution,
         duration,

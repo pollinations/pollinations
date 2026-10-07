@@ -9,14 +9,12 @@ import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import { CheckoutConfirmation } from "../components/pollen/checkout-confirmation.tsx";
+import {
+    type AccountBalance,
+    fetchAccountBalance,
+} from "../hooks/use-account-balance.ts";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
-
 import { validateTopUpSearch } from "../lib/top-up-search.ts";
-
-type WalletState = {
-    tierBalance: number;
-    packBalance: number;
-};
 
 /**
  * Standalone top-up: the wallet and top-up sections of the pollen page on
@@ -30,19 +28,6 @@ export const Route = createFileRoute("/top-up")({
     component: TopUpPage,
 });
 
-function fetchWallet(): Promise<WalletState> {
-    return apiClient.customer.balance
-        .$get()
-        .then((r) => {
-            if (!r.ok) throw new Error("Failed to load wallet");
-            return r.json();
-        })
-        .then((data) => ({
-            tierBalance: data.tierBalance ?? 0,
-            packBalance: data.packBalance ?? 0,
-        }));
-}
-
 function fetchBilling(): Promise<BillingState | null> {
     return apiClient.stripe.billing
         .$get()
@@ -55,7 +40,7 @@ function TopUpPage() {
     const navigate = useNavigate({ from: "/top-up" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
-    const [wallet, setWallet] = useState<WalletState | null>(null);
+    const [wallet, setWallet] = useState<AccountBalance | null>(null);
     const [walletError, setWalletError] = useState(false);
     const [loadAttempt, setLoadAttempt] = useState(0);
     const [billing, setBilling] = useState<BillingState | null | undefined>(
@@ -94,7 +79,7 @@ function TopUpPage() {
         setWalletError(false);
         setBilling(undefined);
 
-        fetchWallet()
+        fetchAccountBalance()
             .then((data) => {
                 if (!canceled) setWallet(data);
             })
@@ -111,7 +96,7 @@ function TopUpPage() {
 
     // After a credit: update in place, so the open checkout stays mounted.
     function refreshWallet(): void {
-        fetchWallet()
+        fetchAccountBalance()
             .then(setWallet)
             .catch(() => {});
         fetchBilling().then((data) => {

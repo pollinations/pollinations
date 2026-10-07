@@ -247,6 +247,25 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Mistral Large 4 to Mistral direct", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-large-4",
+        });
+
+        expect(result.options.model).toBe("mistral-large-4");
+    });
+
+    it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-large-4:vercel",
+        });
+
+        expect(result.options.model).toBe("mistral/mistral-large-4");
+        expect(result.options.providerOptions).toEqual({
+            gateway: { only: ["mistral"] },
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",

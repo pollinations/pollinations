@@ -628,7 +628,6 @@ def gist_context(gist: Dict) -> Dict:
         **{key: ai.get(key) for key in (
             "summary", "category", "importance", "user_facing", "keywords"
         )},
-        "announcements": gist.get("announcements", []),
     }
 
 

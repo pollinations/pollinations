@@ -1,4 +1,10 @@
-import { CheckIcon, ClipboardIcon, CopyButton, Text } from "@pollinations/ui";
+import {
+    CheckIcon,
+    ClipboardIcon,
+    CopyButton,
+    Text,
+    Tooltip,
+} from "@pollinations/ui";
 
 const SECTION_STYLE = {
     base: "text-theme-text-strong",
@@ -24,9 +30,23 @@ export function ApiUrlCard({
 
     return (
         <section aria-label="API request" className="min-w-0 space-y-2">
-            <Text size="sm" weight="bold">
-                API URL
-            </Text>
+            <div className="flex items-center gap-2">
+                <Text size="sm" weight="bold">
+                    API URL
+                </Text>
+                <Tooltip
+                    ariaLabel="About API URL"
+                    tapEnabled
+                    content={
+                        fields
+                            ? "Use this endpoint with the POST fields shown below to generate or process media with Pollinations. Provide your API key in the Authorization header."
+                            : "Open this URL to generate or retrieve this media with Pollinations. Replace YOUR_API_KEY with your own API key in the URL. After generation, the URL includes the inputs used for that result."
+                    }
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-theme-border text-xs text-theme-text-muted"
+                >
+                    ?
+                </Tooltip>
+            </div>
             <CopyButton
                 value={url}
                 tooltip={null}

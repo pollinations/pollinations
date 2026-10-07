@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Audio",
+    "url": "https://dwikatmahmoud87-source.github.io/Gtdcg",
+    "description": "Update: The TTS feature is implemented and gated behind login, which is standard for a BYOP app — an unauthenticated reviewer can only see the sign-in screen, since the feature lives inside a hidden d",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "dwikatmahmoud87-source",
+    "githubUserId": "307534574",
+    "repositoryUrl": "https://github.com/dwikatmahmoud87-source/Gtdcg",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-07",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16655",
+    "approvedDate": "2026-10-07",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "SoloForge AI",
     "url": "https://soloforge-ai-web.onrender.com",

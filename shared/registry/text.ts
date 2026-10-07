@@ -7,6 +7,7 @@ import {
 import {
     GEMINI_3_SEARCH_BILLING,
     openRouterGeminiBilling,
+    reportedTextCost,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
@@ -1464,10 +1465,13 @@ const TEXT_BASE_SERVICES = {
             promptVideoTokens: perMillion(0.1) * 1.055,
             completionTextTokens: perMillion(0.4) * 1.055,
         },
-        billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 7 * 1.055,
-            storageCostPerMillionTokenHours: 1 * 1.055,
-        }),
+        billing: {
+            ...openRouterGeminiBilling({
+                searchCostPerThousandRequests: 7 * 1.055,
+                storageCostPerMillionTokenHours: 1 * 1.055,
+            }),
+            resolveTotalCost: reportedTextCost(1.055),
+        },
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
@@ -2185,6 +2189,7 @@ const TEXT_BASE_SERVICES = {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],
         provider: "novita",
+        perUserRpm: 8,
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
@@ -2201,6 +2206,58 @@ const TEXT_BASE_SERVICES = {
         description:
             "Hybrid reasoning mixture-of-experts for agentic workflows with tool use and long context",
         inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.025) * 1.055,
+            promptCachedTokens: perMillion(0.0025) * 1.055,
+            completionTextTokens: perMillion(0.1) * 1.055,
+        },
+        title: "Nex N2.5 Mini",
+        description:
+            "Compact agentic coding model with image input and switchable reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexPro,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            completionTextTokens: perMillion(0.25) * 1.055,
+        },
+        title: "Nex N2.5 Pro",
+        description:
+            "Agentic coding model with a visual feedback loop for multi-file changes, tool use and image input",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -2902,7 +2959,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-large-4": {
-        supportedParameters: CHAT_PARAMETERS.mistralLarge,
+        supportedParameters: CHAT_PARAMETERS.mistralLarge4,
         aliases: [],
         provider: "mistral",
         publisher: "Mistral",
@@ -2924,7 +2981,7 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
-        reasoning: false,
+        reasoning: true,
         contextLength: 524288,
         isSpecialized: false,
     },

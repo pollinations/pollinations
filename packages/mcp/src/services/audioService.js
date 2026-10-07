@@ -155,7 +155,7 @@ export const audioTools = [
                 .boolean()
                 .optional()
                 .describe("Generate instrumental music where supported"),
-            instruct: z
+            instructions: z
                 .string()
                 .optional()
                 .describe("Emotion or style instruction where supported"),

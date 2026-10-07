@@ -1,5 +1,4 @@
 import { env, SELF } from "cloudflare:test";
-import { apiKeyClient } from "@better-auth/api-key/client";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
@@ -21,7 +20,7 @@ const createAuthClientInstance = () =>
     createAuthClient({
         baseURL: "http://localhost:3000",
         basePath: "/api/auth",
-        plugins: [apiKeyClient(), adminClient()],
+        plugins: [adminClient()],
         fetchOptions: {
             customFetchImpl: (input, init) => SELF.fetch(input, init),
         },
@@ -67,6 +66,7 @@ export const createApiKeyViaApi = async (
         name: string;
         type?: "secret" | "publishable";
         allowedModels?: string[];
+        pollenBudget?: number | null;
         accountPermissions?: string[];
         questPollenOnly?: boolean;
     },
@@ -193,103 +193,28 @@ export const test = base.extend<Fixtures>({
         expect(pubApiKey.startsWith("pk_")).toBe(true);
         await use(pubApiKey);
     },
-    /**
-     * Creates an API key restricted to only ["openai/gpt-5-nano", "black-forest-labs/flux.1-schnell"] models.
-     * Uses the /api/api-keys/:id/update endpoint to set permissions.
-     */
     restrictedApiKey: async ({ sessionToken }, use) => {
         const created = await createApiKeyViaApi(sessionToken, {
             name: "restricted-test-key",
+            allowedModels: [
+                "openai/gpt-5-nano",
+                "black-forest-labs/flux.1-schnell",
+            ],
         });
-
-        // Update permissions via the API endpoint (same flow as production)
-        const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${created.id}/update`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({
-                    allowedModels: [
-                        "openai/gpt-5-nano",
-                        "black-forest-labs/flux.1-schnell",
-                    ],
-                }),
-            },
-        );
-        if (!updateResponse.ok) {
-            throw new Error(
-                `Failed to set API key permissions: ${await updateResponse.text()}`,
-            );
-        }
-
         await use(created.key);
     },
-    /**
-     * Creates an API key with zero pollen budget (exhausted).
-     * Uses the /api/api-keys/:id/update endpoint to set pollenBudget to 0.
-     */
     exhaustedBudgetApiKey: async ({ sessionToken }, use) => {
         const created = await createApiKeyViaApi(sessionToken, {
             name: "exhausted-budget-key",
+            pollenBudget: 0,
         });
-
-        // Set pollenBudget to 0 via the API endpoint
-        const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${created.id}/update`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({
-                    pollenBudget: 0,
-                }),
-            },
-        );
-        if (!updateResponse.ok) {
-            throw new Error(
-                `Failed to set API key budget: ${await updateResponse.text()}`,
-            );
-        }
-
         await use(created.key);
     },
-    /**
-     * Creates an API key with 100 pollen budget for testing decrement.
-     * Returns both key and id so tests can verify balance changes.
-     */
     budgetedApiKey: async ({ sessionToken }, use) => {
-        const created = await createApiKeyViaApi(sessionToken, {
+        const { key, id } = await createApiKeyViaApi(sessionToken, {
             name: "budgeted-test-key",
+            pollenBudget: 100,
         });
-
-        // Set pollenBudget to 100 via the API endpoint
-        const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${created.id}/update`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
-                },
-                body: JSON.stringify({
-                    pollenBudget: 100,
-                }),
-            },
-        );
-        if (!updateResponse.ok) {
-            throw new Error(
-                `Failed to set API key budget: ${await updateResponse.text()}`,
-            );
-        }
-
-        await use({
-            key: created.key,
-            id: created.id,
-        });
+        await use({ key, id });
     },
 });

@@ -295,7 +295,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         await mocks.enable("tinybird", "github");
 
         // Register the OAuth client: a pk_ App Key with a redirect allowlist
-        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+        const createRes = await SELF.fetch(`${BASE}/api/account/keys`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -308,9 +308,9 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(client.key.startsWith("pk_")).toBe(true);
 
         const metaRes = await SELF.fetch(
-            `${BASE}/api/api-keys/${client.id}/metadata`,
+            `${BASE}/api/account/keys/${client.id}`,
             {
-                method: "POST",
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: `better-auth.session_token=${sessionToken}`,
@@ -383,7 +383,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     }) => {
         await mocks.enable("tinybird", "github");
 
-        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+        const createRes = await SELF.fetch(`${BASE}/api/account/keys`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -417,7 +417,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     }) => {
         await mocks.enable("tinybird", "github");
 
-        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+        const createRes = await SELF.fetch(`${BASE}/api/account/keys`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -426,8 +426,8 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             body: JSON.stringify({ name: "alp-test", type: "publishable" }),
         });
         const client = (await createRes.json()) as { id: string; key: string };
-        await SELF.fetch(`${BASE}/api/api-keys/${client.id}/metadata`, {
-            method: "POST",
+        await SELF.fetch(`${BASE}/api/account/keys/${client.id}`, {
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 Cookie: `better-auth.session_token=${sessionToken}`,
@@ -501,7 +501,7 @@ describe("GET /api/oauth/userinfo", () => {
     }) => {
         await mocks.enable("tinybird", "github");
         const mint = async (accountPermissions?: string[]) => {
-            const res = await SELF.fetch(`${BASE}/api/api-keys`, {
+            const res = await SELF.fetch(`${BASE}/api/account/keys`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

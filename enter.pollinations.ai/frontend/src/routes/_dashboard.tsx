@@ -8,6 +8,7 @@ import {
 import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient, type User } from "../auth.ts";
+import type { DeveloperEarningsRow } from "../components/activity/use-earnings-data.ts";
 import { DashboardSignInBanner } from "../components/auth/dashboard-sign-in-banner.tsx";
 import type { ApiKey } from "../components/keys";
 import {
@@ -17,6 +18,7 @@ import {
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
+import { fetchAccountBalance } from "../hooks/use-account-balance.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
@@ -56,7 +58,7 @@ export const Route = createFileRoute("/_dashboard")({
     loader: ({ context }) => {
         const user = context.user;
         const apiKeys = user
-            ? apiClient["api-keys"]
+            ? apiClient.account.keys
                   .$get()
                   .then(async (r) =>
                       r.ok ? ((await r.json()).data as ApiKey[]) : null,
@@ -64,10 +66,7 @@ export const Route = createFileRoute("/_dashboard")({
                   .catch(() => null)
             : Promise.resolve([] as ApiKey[]);
         const balance = user
-            ? apiClient.customer.balance
-                  .$get()
-                  .then((r) => (r.ok ? r.json() : null))
-                  .catch(() => null)
+            ? fetchAccountBalance().catch(() => null)
             : Promise.resolve(null);
         const profile = user
             ? apiClient.account.profile
@@ -75,10 +74,24 @@ export const Route = createFileRoute("/_dashboard")({
                   .then((r) => (r.ok ? r.json() : null))
                   .catch(() => null)
             : Promise.resolve(null);
+        // Developer earnings over the last 7 days, split by which balance
+        // the spending users paid from.
         const earnings = user
-            ? apiClient.customer.balance.today
-                  .$get()
-                  .then((r) => (r.ok ? r.json() : null))
+            ? apiClient.account.earnings
+                  .$get({ query: { days: "7" } })
+                  .then(async (r) => {
+                      if (!r.ok) return null;
+                      const { perEntity } = (await r.json()) as {
+                          perEntity: DeveloperEarningsRow[];
+                      };
+                      return perEntity.reduce(
+                          (week, row) => ({
+                              paidWeek: week.paidWeek + row.paid_earned,
+                              tierWeek: week.tierWeek + row.tier_earned,
+                          }),
+                          { paidWeek: 0, tierWeek: 0 },
+                      );
+                  })
                   .catch(() => null)
             : Promise.resolve(null);
         const sessionUser = user as typeof user & {
@@ -134,6 +147,7 @@ function DashboardLayout() {
             accountArea={data.user ? undefined : <SignedOutAccountArea />}
             showFooterLinks={Boolean(data.user)}
             showQuestStatus={Boolean(data.user)}
+            signInBanner={data.user ? undefined : <DashboardSignInBanner />}
             walletArea={
                 data.user ? (
                     // Await adds no boundary for a null fallback; without this
@@ -169,7 +183,6 @@ function DashboardLayout() {
                 ) : undefined
             }
         >
-            {!data.user && <DashboardSignInBanner />}
             <Outlet />
         </DashboardShell>
     );

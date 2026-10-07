@@ -20,6 +20,8 @@ export interface ApiKeyUpdateParams {
     accountPermissions?: string[] | null;
     questPollenOnly?: boolean;
     expiresAt?: Date | null;
+    redirectUris?: string[];
+    earningsEnabled?: boolean;
 }
 
 export interface ApiKeyManagerProps {

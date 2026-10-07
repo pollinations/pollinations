@@ -7,7 +7,7 @@ export async function updateApiKey(
     id: string,
     updates: ApiKeyUpdateParams,
 ): Promise<void> {
-    const response = await apiClient["api-keys"][":id"].update.$post({
+    const response = await apiClient.account.keys[":id"].$patch({
         param: { id },
         json: {
             ...updates,

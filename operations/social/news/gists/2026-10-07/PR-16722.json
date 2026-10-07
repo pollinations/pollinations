@@ -1,0 +1,37 @@
+{
+  "pr_number": 16722,
+  "title": "fix: keep pricing off X, Reddit, LinkedIn and Instagram",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16722",
+  "merged_at": "2026-10-07T22:55:45Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "The social pipeline now routes price, Pollen balance, and Quest/Paid eligibility changes to per-PR Discord posts and Enter model news, not X, Reddit, LinkedIn, or Instagram. Daily and weekly recaps no longer receive model announcements; per-PR Discord posts retain the exact model values. PRs that only change pricing or eligibility are marked publish_tier: none and stay out of recaps.",
+    "keywords": [
+      "social pipeline",
+      "model announcements",
+      "pricing",
+      "eligibility",
+      "Discord",
+      "recaps"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16722.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli wears a tiny editor's visor and sorts little model-news cards toward a glowing Discord terminal and an Enter noticeboard, while recap pages rest beside a lime green (#ecf874) code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, with consistent rounded proportions, strictly pixel art and never realistic, against soft pastel gradients and warm lighting in a cozy pixel art, 8-bit aesthetic with retro gaming vibes."
+  },
+  "generated_at": "2026-10-07T22:56:47.881871+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "0937d76c964d760d99dd9250103f8260014c583f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

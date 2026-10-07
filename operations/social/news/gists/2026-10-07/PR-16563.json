@@ -1,0 +1,49 @@
+{
+  "pr_number": 16563,
+  "title": "feat: dashboard calls Gen's account API with a session token",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16563",
+  "merged_at": "2026-10-07T14:31:56Z",
+  "labels": [
+    "API"
+  ],
+  "pr_body_excerpt": "The dashboard calls Gen's public account API with a short-lived token, so everything it can do, apps and agents can do with API keys. The account API cleanup it needed shipped separately in #16678.\n\n- Enter mints a 15-minute `sess_` token from the dashboard cookie (`POST /api/session-token`). The dashboard calls `gen.pollinations.ai/account/*` with it\n- The dashboard caches the token and drops it when its session check sees a different user, so an account switch in another tab is followed as with the cookie\n- Enter's account routes become bearer-only: an API key or a `sess_` token, no cookie\n- Account permission checks move to `shared/`, so Gen machines (`/alpha/e2b`) accept the token as the account owner and a dashboard machines page needs no Enter routes\n- The usage CSV download fetches with the token instead of following a link\n- Tests use an `accountToken` fixture; `session-token.test.ts` covers minting, cookie refusal, and expired, forged or banned-user tokens\n\n**Decisions**\n\n- `account:keys` is account admin and is granted rarely. Moving polli and sandbox logins off it is #16648\n- A `sess_` token also works for generation, as the owner. Accepted for now\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_018tvvRGa1XJWY6p5K4438dC\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One account API, many hands",
+    "blurb": "The dashboard and API clients take the same path to account data. Enter hands the dashboard a short-lived token; Gen handles the account requests.",
+    "summary": "Enter adds POST /api/session-token to mint a 15-minute sess_ token from the dashboard cookie, letting the dashboard call Gen's public /account/* API while Enter's account routes accept bearer tokens instead of cookies.",
+    "impact": "Apps and agents can use API keys for the account operations the dashboard uses, while dashboard account switches follow the new user when the session check changes.",
+    "keywords": [
+      "account API",
+      "session tokens",
+      "dashboard",
+      "API keys",
+      "Gen",
+      "authentication"
+    ],
+    "visual_concept": "Show the dashboard and an app sharing a path to Gen's account API: Polli carries a small token marked '15m' from a cozy Enter terminal across a garden bridge, while a friendly monitor robot holds an API key on the neighboring path. Code-plants and flowers make the shared route legible without implying the token and API key are identical.",
+    "image_prompt": "In a cozy pixel art garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny messenger goggles and carries a '15m' token from an Enter terminal toward a glowing Gen account terminal, alongside a cute chunky CRT monitor robot carrying an API key on a parallel path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants and flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16563.jpg",
+    "prompt": "In a cozy pixel art garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny messenger goggles and carries a '15m' token from an Enter terminal toward a glowing Gen account terminal, alongside a cute chunky CRT monitor robot carrying an API key on a parallel path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants and flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-07T14:34:01.102164+00:00",
+  "area": "Accounts & keys",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "8325b06a9e2f3ea525a2e8ab888a541117592939",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "8325b06a9e2f3ea525a2e8ab888a541117592939^1",
+    "after_ref": "8325b06a9e2f3ea525a2e8ab888a541117592939"
+  }
+}

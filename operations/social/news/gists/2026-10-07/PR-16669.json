@@ -1,0 +1,34 @@
+{
+  "pr_number": 16669,
+  "title": "docs: update README — 2026-10-07",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16669",
+  "merged_at": "2026-10-07T07:29:54Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A little README gardening",
+    "blurb": "The README gets its daily tending: fresh Latest News and updated star-history charts for light and dark themes.",
+    "summary": "The daily README update refreshes Latest News and updates the light- and dark-theme star-history SVGs.",
+    "impact": "README readers get fresher project news and updated star-history charts in either theme.",
+    "keywords": [
+      "README",
+      "documentation",
+      "latest news",
+      "star history"
+    ],
+    "visual_concept": "Depict the README as a garden journal beside two small star-history charts, one light and one dark. Polli tends the charts like growing plants, reflecting a routine update rather than a new feature.",
+    "image_prompt": "In a cozy pixel art garden shed, Polli wears tiny gardening gloves and tends two star-shaped code-plants beside an open README journal, with one chart on a light page and one on a dark page. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with consistent rounded proportions, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518)."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16669.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny gardening gloves and tends two star-shaped code-plants beside an open README journal, with one chart on a light page and one on a dark page. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with consistent rounded proportions, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518)."
+  },
+  "generated_at": "2026-10-07T07:31:58.467817+00:00"
+}

@@ -119,9 +119,9 @@ PR gist:
 {gist}
 
 Deploy status: merged to main; ships to users with the next production release (not live yet)
-Use exact model values from announcements when present, including units and before/after. A scheduled change has not happened yet. Missing values are unknown; do not invent them.
+Use exact model values from announcements when present, and the summary for billing context. A field ending in `Tokens` can represent one image or character; use explicit units from the catalog or summary, and omit a rate if its unit is unknown. A scheduled change has not happened yet. Missing values are unknown; do not invent them.
 
-- 150-400 characters total
+- 150-400 characters total, hard maximum 400. Pick the key change and at most two supporting details; do not list everything.
 - Start with a one-line summary of what changed
 - Bullet points with emojis if needed
 - Written for people who use the tools — skip internal details

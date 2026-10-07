@@ -802,12 +802,12 @@ def generate_platform_post(
     """
     voice = load_prompt(f"tone/{platform}")
     pr_summary = summary.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in summary.get("arcs", [])])
+    arcs = json.dumps(summary.get("arcs", []), indent=2)
     pr_count = summary.get("pr_count", 0)
 
-    task = f"{preamble}\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
+    task = f"{preamble}\n\n{pr_summary}\n\nSelected updates with factual detail:\n{arcs}"
     if pr_count:
-        task += f"\nTotal PRs merged: {pr_count}"
+        task += f"\nPRs selected for this recap: {pr_count}. This is not the total number of merges."
     task += "\n\n" + load_format(platform)
     if extra_context:
         task += extra_context

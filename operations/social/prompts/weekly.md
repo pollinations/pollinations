@@ -62,3 +62,4 @@ Since this covers a full week, the image should carry more info:
 - Keep the cozy 8-bit pixel art style — info woven into the pixel world, not on top of it
 - Think retro RPG inventory screen, quest log, or achievement board
 - Keep text chunky and readable, never tiny or cramped
+- Specify the exact short headings as the only text; use visual icons inside panels, never invented body copy or tiny bullet lists.

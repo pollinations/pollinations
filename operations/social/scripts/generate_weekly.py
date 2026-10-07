@@ -251,13 +251,13 @@ def generate_discord_post(
     """Generate weekly discord.json (special: uses date_str substitution in format)."""
     voice = load_prompt("tone/discord")
     pr_summary = digest.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
+    arcs = json.dumps(digest.get("arcs", []), indent=2)
     pr_count = digest.get("pr_count", 0)
 
     fmt = load_format("discord").replace("{date_str}", publish_date)
-    task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
+    task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nSelected updates with factual detail:\n{arcs}"
     if pr_count:
-        task += f"\nTotal PRs merged: {pr_count}"
+        task += f"\nPRs selected for this recap: {pr_count}. This is not the total number of merges."
     task += "\n\n" + fmt + _weekly_image_context()
 
     response = call_pollinations_api(voice, task, token, temperature=0.7)

@@ -84,7 +84,7 @@ Binary classification:
 - `"minor"` — everything else. Chore, deps, infra, small fixes, internal tooling.
 
 ### `summary`
-Exact model changes are supplied separately in `announcements` and already stored in the gist. Do not repeat those values in `summary`. Briefly identify the model change, then cover other meaningful changes from the PR. When model enrichment is unavailable, preserve the model facts given in the PR context.
+Exact model changes are supplied separately in `announcements` and already stored in the gist. Do not repeat their price amounts or before/after values in `summary`, even after converting units. For every announced price whose unit is not declared in the catalog, the summary MUST retain its billing basis from the PR (e.g. per start-frame image or per Unicode character), without the amount. Names ending in `Tokens` do not prove token billing. Briefly identify the model change, then cover other meaningful changes from the PR. When model enrichment is unavailable, preserve the model facts given in the PR context.
 
 The factual account of this PR alongside `announcements`, written for a technical audience. Together they must cover every meaningful change in the supplied context and its practical effect, including changes that will not be selected for social posts. Use as many short sentences or bullet lines as needed; do not force a multi-change PR into one sentence. Keep it neutral and specific. Headlines, playful blurbs and platform wording are generated later by consumers.
 

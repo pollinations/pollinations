@@ -8,10 +8,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import filter_daily_gists, validate_gist
+from common import filter_daily_gists, generate_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from generate_daily import generate_summary
-from generate_weekly import generate_digest
+from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import model_changes, pr_comparison_refs
 
@@ -153,6 +153,26 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertIn("missing image.prompt", validate_gist(broken))
         broken["gist"]["summary"] = ""
         self.assertIn("gist.summary must be non-empty text", validate_gist(broken))
+
+    def test_platform_posts_keep_arc_facts_and_distinguish_selected_counts(self):
+        digest = {
+            "pr_count": 1,
+            "pr_summary": "#1: Larger media inputs",
+            "arcs": [{
+                "headline": "Larger uploads",
+                "summary": "Uploads increase from 32 MiB to 100 MiB.",
+            }],
+        }
+        for module, generate in (
+            ("common", lambda: generate_platform_post("twitter", digest, "test", "Write a recap")),
+            ("generate_weekly", lambda: generate_discord_post(digest, "test", "2026-10-04")),
+        ):
+            with patch(f"{module}.call_pollinations_api", return_value='{"message": "Recap"}') as api:
+                generate()
+                task = api.call_args.args[1]
+            self.assertIn("32 MiB to 100 MiB", task)
+            self.assertIn("PRs selected for this recap: 1", task)
+            self.assertNotIn("Total PRs merged:", task)
 
     def test_squash_after_syncing_main_excludes_unrelated_changes(self):
         with tempfile.TemporaryDirectory() as directory:

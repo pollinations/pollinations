@@ -755,29 +755,6 @@ def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> 
     return None
 
 
-def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[str]:
-    """Read a text file from the news branch (local overlay first, GitHub API fallback)."""
-    # Try local first (workflow overlay)
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return f.read()
-        except OSError:
-            pass
-
-    # Fall back to GitHub API
-    import base64 as _b64
-    headers = _github_headers(github_token)
-    resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
-        headers=headers,
-    )
-    if resp.status_code == 200:
-        return _b64.b64decode(resp.json()["content"]).decode()
-    return None
-
-
 def generate_platform_post(
     platform: str,
     summary: Dict,

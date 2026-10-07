@@ -35,5 +35,14 @@
   },
   "generated_at": "2026-09-29T09:59:31.067607+00:00",
   "app_name": "Roleplay AI",
-  "app_url": "https://arpitgoswami.github.io/roleplay-app"
+  "app_url": "https://arpitgoswami.github.io/roleplay-app",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "37178fb05c383f504f9b989c455282b96e324099",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

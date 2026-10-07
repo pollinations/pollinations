@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15082.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, gently editing a glowing filter token on a retro CRT dashboard while a code-flower suggestion labeled \"community\" blooms beside it. Lime green (#ecf874) glows prominently among warm cream, mint, and lavender garden vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-25T00:03:09.217079+00:00"
+  "generated_at": "2026-09-25T00:03:09.217079+00:00",
+  "area": "Dashboard",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "8ff8e3e9a6ac2554252f40ad16d9ac2423fbfe54",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

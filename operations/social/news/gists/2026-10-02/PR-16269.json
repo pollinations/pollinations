@@ -29,5 +29,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16269.jpg",
     "prompt": "In a cozy garden workshop, Polli checks a fixed quest-issue card with a tiny clipboard while two separate Pollen tokens rest beside blooming code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or elongated, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients over a prominent lime green (#ecf874) and warm cream background, dark purple (#110518) outlines, warm lighting, retro gaming vibes; nostalgic and emotionally warm."
   },
-  "generated_at": "2026-10-02T18:58:24.470551+00:00"
+  "generated_at": "2026-10-02T18:58:24.470551+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "f34ec31c60836f2876ebdb47223f9e4502161065",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

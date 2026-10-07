@@ -32,5 +32,195 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15486.jpg",
     "prompt": "In a cozy pixel art model-library garden, Polli wears a tiny librarian hat and gently files cards labeled 'NOVA CANVAS' and 'NOVA REEL' into an archive box beside a shelf of model cards and flowering code-plants; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a prominent lime green (#ecf874) and warm cream background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-09-30T09:52:24.844654+00:00"
+  "generated_at": "2026-09-30T09:52:24.844654+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "00f8432bc7f585b71201226fd8cc0ed5bbc133a2",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15486:amazon/nova-canvas-v1",
+      "model_id": "amazon/nova-canvas-v1",
+      "title": "Nova Canvas",
+      "action": "RETIRE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "amazon-nova-canvas",
+            "nova-canvas"
+          ],
+          "after": null
+        },
+        "capabilities": {
+          "before": [],
+          "after": null
+        },
+        "category": {
+          "before": "image",
+          "after": null
+        },
+        "flat_rate": {
+          "before": true,
+          "after": null
+        },
+        "input_modalities": {
+          "before": [
+            "text",
+            "image"
+          ],
+          "after": null
+        },
+        "max_reference_images": {
+          "before": 1,
+          "after": null
+        },
+        "output_modalities": {
+          "before": [
+            "image"
+          ],
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionImageTokens": "0.04"
+          },
+          "after": null
+        },
+        "pricing_default_label": {
+          "before": "1024 tier",
+          "after": null
+        },
+        "pricing_dimensions": {
+          "before": [
+            {
+              "key": "image_size",
+              "label": "Max side",
+              "unit": "px",
+              "values": {
+                "2048": ">1024",
+                "": "≤1024"
+              }
+            }
+          ],
+          "after": null
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "2048",
+              "label": "2048 tier",
+              "description": "Applies when either output dimension exceeds 1024 pixels.",
+              "pricing": {
+                "currency": "pollen",
+                "completionImageTokens": "0.06"
+              }
+            }
+          ],
+          "after": null
+        },
+        "availability": {
+          "before": "Available",
+          "after": "Retired"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15486:amazon/nova-reel-v1",
+      "model_id": "amazon/nova-reel-v1",
+      "title": "Nova Reel",
+      "action": "RETIRE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "amazon-nova-reel",
+            "nova-reel"
+          ],
+          "after": null
+        },
+        "capabilities": {
+          "before": [],
+          "after": null
+        },
+        "category": {
+          "before": "video",
+          "after": null
+        },
+        "default_duration": {
+          "before": 6,
+          "after": null
+        },
+        "duration_step": {
+          "before": 6,
+          "after": null
+        },
+        "input_modalities": {
+          "before": [
+            "text",
+            "image"
+          ],
+          "after": null
+        },
+        "max_duration": {
+          "before": 120,
+          "after": null
+        },
+        "max_reference_images": {
+          "before": 1,
+          "after": null
+        },
+        "min_duration": {
+          "before": 6,
+          "after": null
+        },
+        "output_modalities": {
+          "before": [
+            "video"
+          ],
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.08"
+          },
+          "after": null
+        },
+        "video_capabilities": {
+          "before": [
+            "start_frame"
+          ],
+          "after": null
+        },
+        "availability": {
+          "before": "Available",
+          "after": "Retired"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "00f8432bc7f585b71201226fd8cc0ed5bbc133a2^1",
+    "after_ref": "00f8432bc7f585b71201226fd8cc0ed5bbc133a2"
+  }
 }

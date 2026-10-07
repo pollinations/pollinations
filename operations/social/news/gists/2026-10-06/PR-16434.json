@@ -29,5 +29,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16434.jpg",
     "prompt": "In a cozy pixel art reading nook, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wearing tiny librarian glasses as she tidies fenced code on a retro CLI screen beside a sprouting code-plant. The screen shows `/v1/models` and `/v1/chat/completions`; use a prominent lime green (#ecf874) glow, dark purple (#110518) text, soft pastel gradients and gentle CRT scanlines — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-10-06T12:19:45.530210+00:00"
+  "generated_at": "2026-10-06T12:19:45.530210+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "e98cd1e76855dccb157a6f649352de395bcce8df",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

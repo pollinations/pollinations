@@ -29,5 +29,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-14683.jpg",
     "prompt": "At a cozy pixel-art garden workbench, Polli clips a tiny locked file to a feature PR page while a friendly approval gate stands beside a flowering code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the frame with the workbench. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
   },
-  "generated_at": "2026-10-01T22:59:43.988872+00:00"
+  "generated_at": "2026-10-01T22:59:43.988872+00:00",
+  "area": "Internal automation",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "3dae6a71eb8d389ae87709175ae5f9b6d9a3468c",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

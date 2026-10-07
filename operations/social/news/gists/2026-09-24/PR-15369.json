@@ -33,5 +33,1350 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15369.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she organizes a lime green (#ecf874) garden-market price board into clean labeled sections; beside her, a chunky CRT monitor robot happily checks rounded health bars while code-plants and pastel flowers grow from tidy pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, subtle CRT glow, pixel-font text: \"MODEL GARDEN\"."
   },
-  "generated_at": "2026-09-24T12:31:46.120588+00:00"
+  "generated_at": "2026-09-24T12:31:46.120588+00:00",
+  "area": "Dashboard",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "ea913a54f0c057ff7d1ee6f8b503f54517450318",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15369:alibaba/wan-2.7",
+      "model_id": "alibaba/wan-2.7",
+      "title": "Wan 2.7",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "1080p": "1080p",
+                "1080p_image": "1080p"
+              }
+            },
+            {
+              "key": "input",
+              "label": "Input",
+              "values": {
+                "": "Any",
+                "1080p": "Text/video",
+                "1080p_image": "Image"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:alibaba/wan-3.0",
+      "model_id": "alibaba/wan-3.0",
+      "title": "Wan 3.0",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "480p",
+                "720p": "720p",
+                "1080p": "1080p"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:amazon/nova-canvas-v1",
+      "model_id": "amazon/nova-canvas-v1",
+      "title": "Nova Canvas",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "image_size",
+              "label": "Max side",
+              "unit": "px",
+              "values": {
+                "2048": ">1024",
+                "": "≤1024"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:assemblyai/universal-2",
+      "model_id": "assemblyai/universal-2",
+      "title": "AssemblyAI Universal-2",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "diarization",
+              "label": "Speakers",
+              "values": {
+                "": "Standard",
+                "diarization": "Identify"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:assemblyai/universal-3.5-pro",
+      "model_id": "assemblyai/universal-3.5-pro",
+      "title": "AssemblyAI Universal-3.5 Pro",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "prompting",
+              "label": "Prompting",
+              "values": {
+                "": "Off",
+                "prompting": "On",
+                "diarization": "Off",
+                "prompting_diarization": "On"
+              }
+            },
+            {
+              "key": "diarization",
+              "label": "Speakers",
+              "values": {
+                "": "Standard",
+                "prompting": "Standard",
+                "diarization": "Identify",
+                "prompting_diarization": "Identify"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:bytedance/seedance-1-pro-fast",
+      "model_id": "bytedance/seedance-1-pro-fast",
+      "title": "Seedance 1.0 Pro Fast",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "480p": "480p",
+                "1080p": "1080p"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:bytedance/seedance-2.0",
+      "model_id": "bytedance/seedance-2.0",
+      "title": "Seedance 2.0",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "video_in": "720p"
+              }
+            },
+            {
+              "key": "reference_video",
+              "label": "Video input",
+              "values": {
+                "": "No",
+                "video_in": "Yes"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:bytedance/seedance-2.0-mini",
+      "model_id": "bytedance/seedance-2.0-mini",
+      "title": "Seedance 2.0 Mini",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "480p": "480p"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:bytedance/seedance-2.5",
+      "model_id": "bytedance/seedance-2.5",
+      "title": "Seedance 2.5",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "480p",
+                "720p": "720p",
+                "video_in_480p": "480p",
+                "video_in_720p": "720p"
+              }
+            },
+            {
+              "key": "reference_video",
+              "label": "Video input",
+              "values": {
+                "": "No",
+                "720p": "No",
+                "video_in_480p": "Yes",
+                "video_in_720p": "Yes"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:google/gemini-3.1-pro-preview",
+      "model_id": "google/gemini-3.1-pro-preview",
+      "title": "Gemini 3.1 Pro Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "<200K",
+                "long_context": "≥200K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:google/veo-3.1-fast",
+      "model_id": "google/veo-3.1-fast",
+      "title": "Veo 3.1 Fast",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "1080p": "1080p"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:microsoft/trellis-2",
+      "model_id": "microsoft/trellis-2",
+      "title": "Trellis 2",
+      "action": "UPDATE",
+      "category": "3d",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "Low",
+                "medium": "Medium",
+                "high": "High"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:minimax/minimax-h3",
+      "model_id": "minimax/minimax-h3",
+      "title": "MiniMax H3",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "480p",
+                "768p": "768p",
+                "2k": "2K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:minimax/minimax-h3-max-turbo",
+      "model_id": "minimax/minimax-h3-max-turbo",
+      "title": "MiniMax H3 Max Turbo",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "480p",
+                "768p": "768p",
+                "1080p": "1080p"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-5.4",
+      "model_id": "openai/gpt-5.4",
+      "title": "GPT-5.4",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-5.5",
+      "model_id": "openai/gpt-5.5",
+      "title": "GPT-5.5",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-5.6-luna",
+      "model_id": "openai/gpt-5.6-luna",
+      "title": "GPT-5.6 Luna",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-5.6-sol",
+      "model_id": "openai/gpt-5.6-sol",
+      "title": "GPT-5.6 Sol",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-5.6-terra",
+      "model_id": "openai/gpt-5.6-terra",
+      "title": "GPT-5.6 Terra",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-6-astra",
+      "model_id": "openai/gpt-6-astra",
+      "title": "GPT-6 Astra",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-6-luna",
+      "model_id": "openai/gpt-6-luna",
+      "title": "GPT-6 Luna",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:openai/gpt-6-sol",
+      "model_id": "openai/gpt-6-sol",
+      "title": "GPT-6 Sol",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:perplexity/sonar",
+      "model_id": "perplexity/sonar",
+      "title": "Perplexity Sonar Fast Search",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "perplexity.sonar_low.search_request.v1",
+              "kind": "search_request",
+              "price": "5",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "low",
+                "label": "Low search context",
+                "default": true
+              }
+            },
+            {
+              "name": "perplexity.sonar_medium.search_request.v1",
+              "kind": "search_request",
+              "price": "8",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "medium",
+                "label": "Medium search context"
+              }
+            },
+            {
+              "name": "perplexity.sonar_high.search_request.v1",
+              "kind": "search_request",
+              "price": "12",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "high",
+                "label": "High search context"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "perplexity.sonar_low.search_request.v1",
+              "kind": "search_request",
+              "price": "5",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "Low",
+                "value": "low",
+                "label": "Low search context",
+                "default": true
+              }
+            },
+            {
+              "name": "perplexity.sonar_medium.search_request.v1",
+              "kind": "search_request",
+              "price": "8",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "Medium",
+                "value": "medium",
+                "label": "Medium search context"
+              }
+            },
+            {
+              "name": "perplexity.sonar_high.search_request.v1",
+              "kind": "search_request",
+              "price": "12",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "High",
+                "value": "high",
+                "label": "High search context"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:perplexity/sonar-pro",
+      "model_id": "perplexity/sonar-pro",
+      "title": "Perplexity Sonar Pro",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "perplexity.sonar_pro_low.search_request.v1",
+              "kind": "search_request",
+              "price": "6",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "low",
+                "label": "Low search context",
+                "default": true
+              }
+            },
+            {
+              "name": "perplexity.sonar_pro_medium.search_request.v1",
+              "kind": "search_request",
+              "price": "10",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "medium",
+                "label": "Medium search context"
+              }
+            },
+            {
+              "name": "perplexity.sonar_pro_high.search_request.v1",
+              "kind": "search_request",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "high",
+                "label": "High search context"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "perplexity.sonar_pro_low.search_request.v1",
+              "kind": "search_request",
+              "price": "6",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "Low",
+                "value": "low",
+                "label": "Low search context",
+                "default": true
+              }
+            },
+            {
+              "name": "perplexity.sonar_pro_medium.search_request.v1",
+              "kind": "search_request",
+              "price": "10",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "Medium",
+                "value": "medium",
+                "label": "Medium search context"
+              }
+            },
+            {
+              "name": "perplexity.sonar_pro_high.search_request.v1",
+              "kind": "search_request",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "High",
+                "value": "high",
+                "label": "High search context"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:perplexity/sonar-reasoning-pro",
+      "model_id": "perplexity/sonar-reasoning-pro",
+      "title": "Perplexity Sonar Reasoning Pro",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "perplexity.sonar_reasoning_low.search_request.v1",
+              "kind": "search_request",
+              "price": "6",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "low",
+                "label": "Low search context",
+                "default": true
+              }
+            },
+            {
+              "name": "perplexity.sonar_reasoning_medium.search_request.v1",
+              "kind": "search_request",
+              "price": "10",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "medium",
+                "label": "Medium search context"
+              }
+            },
+            {
+              "name": "perplexity.sonar_reasoning_high.search_request.v1",
+              "kind": "search_request",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "value": "high",
+                "label": "High search context"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "perplexity.sonar_reasoning_low.search_request.v1",
+              "kind": "search_request",
+              "price": "6",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "Low",
+                "value": "low",
+                "label": "Low search context",
+                "default": true
+              }
+            },
+            {
+              "name": "perplexity.sonar_reasoning_medium.search_request.v1",
+              "kind": "search_request",
+              "price": "10",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "Medium",
+                "value": "medium",
+                "label": "Medium search context"
+              }
+            },
+            {
+              "name": "perplexity.sonar_reasoning_high.search_request.v1",
+              "kind": "search_request",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "requests",
+              "option": {
+                "group": "search_context",
+                "groupLabel": "Search context",
+                "valueLabel": "High",
+                "value": "high",
+                "label": "High search context"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:pollinations/midijourney-large",
+      "model_id": "pollinations/midijourney-large",
+      "title": "MIDIjourney Large",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:prunaai/p-video",
+      "model_id": "prunaai/p-video",
+      "title": "Pruna p-video",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "1080p": "1080p"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:qwen/qwen-image",
+      "model_id": "qwen/qwen-image",
+      "title": "Qwen Image",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "operation",
+              "label": "Operation",
+              "values": {
+                "": "Generation",
+                "edit": "Editing"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:qwen/qwen-image-3",
+      "model_id": "qwen/qwen-image-3",
+      "title": "Qwen Image 3",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "1K",
+                "2k": "2K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:qwen/qwen3.7-flash",
+      "model_id": "qwen/qwen3.7-flash",
+      "title": "Qwen3.7 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤32K",
+                "context_32k": ">32K–256K",
+                "context_256k": ">256K",
+                "explicit_cache": "≤32K",
+                "context_32k_explicit_cache": ">32K–256K",
+                "context_256k_explicit_cache": ">256K"
+              }
+            },
+            {
+              "key": "cache",
+              "label": "Cache",
+              "values": {
+                "": "Default",
+                "context_32k": "Default",
+                "context_256k": "Default",
+                "explicit_cache": "Explicit",
+                "context_32k_explicit_cache": "Explicit",
+                "context_256k_explicit_cache": "Explicit"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:qwen/qwen3.7-plus",
+      "model_id": "qwen/qwen3.7-plus",
+      "title": "Qwen3.7 Plus",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "<256K",
+                "long_context": "≥256K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:x-ai/grok-4.7",
+      "model_id": "x-ai/grok-4.7",
+      "title": "Grok 4.7",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "<200K",
+                "long_context": "≥200K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:x-ai/grok-imagine-image-2.0",
+      "model_id": "x-ai/grok-imagine-image-2.0",
+      "title": "Grok Imagine Image 2.0",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "quality",
+              "label": "Quality",
+              "values": {
+                "": "Medium",
+                "low_1k": "Low",
+                "low_2k": "Low",
+                "medium_2k": "Medium"
+              }
+            },
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "1K",
+                "low_1k": "1K",
+                "low_2k": "2K",
+                "medium_2k": "2K"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15369:x-ai/grok-imagine-video-1.5",
+      "model_id": "x-ai/grok-imagine-video-1.5",
+      "title": "Grok Imagine Video 1.5",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "480p": "480p",
+                "1080p": "1080p"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "ea913a54f0c057ff7d1ee6f8b503f54517450318^1",
+    "after_ref": "ea913a54f0c057ff7d1ee6f8b503f54517450318"
+  }
 }

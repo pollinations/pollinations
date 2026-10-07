@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15673.jpg",
     "prompt": "In a cozy pixel art garden shed, Polli presses a lime green (#ecf874) manual deploy button beside two little cache boxes marked 'IMAGE' and 'TEXT,' with checked test cards and a vine-lined path from an old 'master' code shelf to a glowing terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, is small-to-medium sized within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a warm cream background, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
   },
-  "generated_at": "2026-09-28T18:59:34.460140+00:00"
+  "generated_at": "2026-09-28T18:59:34.460140+00:00",
+  "area": "CI & releases",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "8eb570118e508ef7daad347d09287b2fbc30ebdd",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

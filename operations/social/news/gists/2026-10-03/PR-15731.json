@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-15731.jpg",
     "prompt": "In a cozy pixel art garden shed, Polli and a curious CRT monitor robot explore six little drawers labeled 'USAGE', 'EARNINGS', 'QUESTS', 'KEYS', 'NEW KEY', and 'REVOKE', beside a glowing terminal and code-plants; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny tool belt, small-to-medium in the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a prominent soft lime green (#ecf874) glow against warm cream and pastel lavender, with dark purple (#110518) outlines; nostalgic and emotionally warm like Stardew Valley or A Short Hike."
   },
-  "generated_at": "2026-10-03T02:12:34.639865+00:00"
+  "generated_at": "2026-10-03T02:12:34.639865+00:00",
+  "area": "Developer tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "18a160f17f89d3b874a2f3e297e0e8f31d84d8ef",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

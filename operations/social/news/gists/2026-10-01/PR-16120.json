@@ -35,5 +35,14 @@
   },
   "generated_at": "2026-10-01T08:04:14.446358+00:00",
   "app_name": "Pollinations for Figma - AI Image Studio",
-  "app_url": "https://guest453.github.io/pollinations-figma/"
+  "app_url": "https://guest453.github.io/pollinations-figma/",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "fdfedad768f72489250c9c67f4a4b0a1035744ae",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

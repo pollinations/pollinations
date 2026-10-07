@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15419.jpg",
     "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny round reviewer glasses as she compares a handwritten maths proof with a retro CRT terminal showing a command and a matching result; a stamped pixel note reads “REVIEW,” with code-plants, flowers, and an append-only stack of notebooks growing around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-25T14:20:17.692000+00:00"
+  "generated_at": "2026-09-25T14:20:17.692000+00:00",
+  "area": "Community models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "8c597bfce4e2cf117c2c281e23242874dcd86eee",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

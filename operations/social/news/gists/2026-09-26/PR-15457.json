@@ -33,5 +33,217 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15457.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and watering three glowing code-plants labeled “ASTRA”, “SOL”, and “LUNA” from a Pollen coin watering can; each plant is fed by an equal “1×” pipe from a friendly pastel cloud server, with flowers and a small retro fallback terminal nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-26T13:33:51.289876+00:00"
+  "generated_at": "2026-09-26T13:33:51.289876+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "43adb669e4086165678ae2a88dcba93d31f46b24",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15457:openai/gpt-6-astra",
+      "model_id": "openai/gpt-6-astra",
+      "title": "GPT-6 Astra",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000075",
+            "promptCachedTokens": "0.00000075",
+            "promptCacheWriteTokens": "0.000009375",
+            "completionTextTokens": "0.0000375"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00001",
+            "promptCachedTokens": "0.000001",
+            "promptCacheWriteTokens": "0.0000125",
+            "completionTextTokens": "0.00005"
+          }
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000015",
+                "promptCachedTokens": "0.0000015",
+                "promptCacheWriteTokens": "0.00001875",
+                "completionTextTokens": "0.00005625"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.00002",
+                "promptCachedTokens": "0.000002",
+                "promptCacheWriteTokens": "0.000025",
+                "completionTextTokens": "0.000075"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15457:openai/gpt-6-luna",
+      "model_id": "openai/gpt-6-luna",
+      "title": "GPT-6 Luna",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "completionTextTokens": "0.0000005"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "promptImageTokens": "0.0000001",
+            "completionTextTokens": "0.0000005"
+          }
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000002",
+                "promptCachedTokens": "0.00000002",
+                "promptCacheWriteTokens": "0.00000025",
+                "completionTextTokens": "0.00000075"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000002",
+                "promptCachedTokens": "0.00000002",
+                "promptCacheWriteTokens": "0.00000025",
+                "promptImageTokens": "0.0000002",
+                "completionTextTokens": "0.00000075"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15457:openai/gpt-6-sol",
+      "model_id": "openai/gpt-6-sol",
+      "title": "GPT-6 Sol",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.00001"
+          }
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000004",
+                "promptCachedTokens": "0.0000004",
+                "promptCacheWriteTokens": "0.000005",
+                "completionTextTokens": "0.000015"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000004",
+                "promptCachedTokens": "0.0000004",
+                "promptCacheWriteTokens": "0.000005",
+                "promptImageTokens": "0.000004",
+                "completionTextTokens": "0.000015"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "43adb669e4086165678ae2a88dcba93d31f46b24^1",
+    "after_ref": "43adb669e4086165678ae2a88dcba93d31f46b24"
+  }
 }

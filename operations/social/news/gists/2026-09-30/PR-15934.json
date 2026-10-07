@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15934.jpg",
     "prompt": "At a cozy garden polling station, Polli welcomes a visitor carrying a Pollen jar beside a small sign reading 'HONEY CENSUS', a lime-green reward token, and blooming question-mark flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny census-taker visor and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and mint surroundings, and dark purple #110518 outlines."
   },
-  "generated_at": "2026-09-30T13:38:52.612144+00:00"
+  "generated_at": "2026-09-30T13:38:52.612144+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "3b515cd890cdd40cc1caf07383da428908121861",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

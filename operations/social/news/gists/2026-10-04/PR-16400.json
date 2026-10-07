@@ -31,5 +31,14 @@
   },
   "generated_at": "2026-10-04T09:13:29.057422+00:00",
   "app_name": "Ink or Engine",
-  "app_url": "https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site"
+  "app_url": "https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "c74ac0de8f8f13cd15f70d14d5d34cbfc40a3f72",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

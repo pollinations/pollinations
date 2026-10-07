@@ -34,5 +34,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15454.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with blue wings, pink cheek blush, and tiny librarian glasses, carefully counting two glowing pollen jars beside a retro terminal receipt reading “2 MP”; a 1024×1536 pixel image tile and small code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-25T15:39:06.905550+00:00"
+  "generated_at": "2026-09-25T15:39:06.905550+00:00",
+  "area": "Data & insights",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "3857ee6fffcec3d0ef1e3f124a2f72c35e477a62",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "3857ee6fffcec3d0ef1e3f124a2f72c35e477a62^1",
+    "after_ref": "3857ee6fffcec3d0ef1e3f124a2f72c35e477a62"
+  }
 }

@@ -33,5 +33,201 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15395.jpg",
     "prompt": "In a cozy pixel art garden studio, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and listens as a CRT monitor robot turns text on a screen into gentle sound waves and blooming flowers. She is small-to-medium sized, sharing the scene with the robot and a microphone, never oversized or elongated; strictly pixel art, never realistic, with prominent lime green (#ecf874), warm cream, soft pastel gradients, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, warm lighting, and retro gaming vibes."
   },
-  "generated_at": "2026-09-26T15:36:07.467701+00:00"
+  "generated_at": "2026-09-26T15:36:07.467701+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "32d6d7b7d4edf567088d22fde8f0a960eb1f6685",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15395:google/gemini-3.8-flash-lite-tts",
+      "model_id": "google/gemini-3.8-flash-lite-tts",
+      "title": "Gemini 3.8 Flash Lite TTS",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "completionAudioTokens": "0.000006"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "Zephyr",
+            "Puck",
+            "Charon",
+            "Kore",
+            "Fenrir",
+            "Leda",
+            "Orus",
+            "Aoede",
+            "Callirrhoe",
+            "Autonoe",
+            "Enceladus",
+            "Iapetus",
+            "Umbriel",
+            "Algieba",
+            "Despina",
+            "Erinome",
+            "Algenib",
+            "Rasalgethi",
+            "Laomedeia",
+            "Achernar",
+            "Alnilam",
+            "Schedar",
+            "Gacrux",
+            "Pulcherrima",
+            "Achird",
+            "Zubenelgenubi",
+            "Vindemiatrix",
+            "Sadachbia",
+            "Sadaltager",
+            "Sulafat"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15395:google/gemini-3.8-flash-tts",
+      "model_id": "google/gemini-3.8-flash-tts",
+      "title": "Gemini 3.8 Flash TTS",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "completionAudioTokens": "0.000009"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "Zephyr",
+            "Puck",
+            "Charon",
+            "Kore",
+            "Fenrir",
+            "Leda",
+            "Orus",
+            "Aoede",
+            "Callirrhoe",
+            "Autonoe",
+            "Enceladus",
+            "Iapetus",
+            "Umbriel",
+            "Algieba",
+            "Despina",
+            "Erinome",
+            "Algenib",
+            "Rasalgethi",
+            "Laomedeia",
+            "Achernar",
+            "Alnilam",
+            "Schedar",
+            "Gacrux",
+            "Pulcherrima",
+            "Achird",
+            "Zubenelgenubi",
+            "Vindemiatrix",
+            "Sadachbia",
+            "Sadaltager",
+            "Sulafat"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "32d6d7b7d4edf567088d22fde8f0a960eb1f6685^1",
+    "after_ref": "32d6d7b7d4edf567088d22fde8f0a960eb1f6685"
+  }
 }

@@ -36,5 +36,14 @@
   },
   "generated_at": "2026-09-30T04:36:38.295258+00:00",
   "app_name": "Mmm",
-  "app_url": "https://dwakatmahmoud-cmd.github.io/Mahmoud"
+  "app_url": "https://dwakatmahmoud-cmd.github.io/Mahmoud",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "9115cb34c0c8990b4aea4f41784f0f5c3813af09",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

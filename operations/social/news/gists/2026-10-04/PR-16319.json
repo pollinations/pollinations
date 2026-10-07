@@ -30,5 +30,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16319.jpg",
     "prompt": "In a cozy pixel art garden workspace, Polli in tiny reading glasses points to a retro terminal showing `--limit 0` and one pixel-font message: `positive integer`; a code-plant grows beside it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, dark purple (#110518) text, and warm lighting — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-10-04T10:39:28.455657+00:00"
+  "generated_at": "2026-10-04T10:39:28.455657+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "27b2a97566c1d81839287ffd45cc3fcf0fc2375b",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

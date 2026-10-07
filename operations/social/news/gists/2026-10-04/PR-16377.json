@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T06:33:06.509741+00:00",
   "app_name": "Whodunnit - a voice murder mystery",
-  "app_url": "https://guest453.github.io/whodunnit"
+  "app_url": "https://guest453.github.io/whodunnit",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "41b299b17957ca196067c83a4ba5cad91d6d6ad6",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

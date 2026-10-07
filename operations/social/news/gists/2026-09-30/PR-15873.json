@@ -36,5 +36,14 @@
   },
   "generated_at": "2026-09-30T04:31:44.187955+00:00",
   "app_name": "Aizen",
-  "app_url": "https://aizensuske718-ctrl.github.io/Aizen"
+  "app_url": "https://aizensuske718-ctrl.github.io/Aizen",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "79a562498f4656b62dcbf4b159d54ae34fef2fa8",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

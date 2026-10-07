@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15649.jpg",
     "prompt": "A cozy pixel art scene shows a phone-shaped dashboard with visible card titles and a single small pixel-font 'Loading…' pill floating below the cards; a code-plant grows beside it against a prominent lime green (#ecf874) and soft pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wearing tiny reading glasses and warmly watching the dashboard fill in, strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-09-28T15:49:24.408534+00:00"
+  "generated_at": "2026-09-28T15:49:24.408534+00:00",
+  "area": "Dashboard",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "c14fef3ebe6ae9e86c690828bebf7178e8d65465",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

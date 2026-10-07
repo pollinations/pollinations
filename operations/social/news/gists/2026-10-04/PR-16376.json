@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T06:29:21.485361+00:00",
   "app_name": "Alibi",
-  "app_url": "https://tomdacatto.github.io/pollinations-alibi"
+  "app_url": "https://tomdacatto.github.io/pollinations-alibi",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "2966116c9042e8bf3fd84af07827377ee4820643",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

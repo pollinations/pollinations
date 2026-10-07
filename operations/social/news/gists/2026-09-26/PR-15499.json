@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15499.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny locksmith tool belt, carefully carrying a glowing key to two small garden-server sheds labeled in simple pixel text “STAGING” and “PROD”; a retro terminal beside them shows a dark purple encrypted lock, with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, emotionally warm and secure."
   },
-  "generated_at": "2026-09-26T13:12:33.266243+00:00"
+  "generated_at": "2026-09-26T13:12:33.266243+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "a652e6421f45fd19a311cd583e3bbb1f755f9085",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

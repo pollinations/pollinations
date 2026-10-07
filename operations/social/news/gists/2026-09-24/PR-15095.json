@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15095.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blushes, light blue translucent wings, and a tiny accountant visor, opening a large honey-colored ledger marked “365 DAYS” beside a lime green (#ecf874) retro terminal showing a simple earnings chart; a small “90 DAYS” usage notebook, flowering code-plants, and seasonal garden calendar sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-09-24T22:56:59.453532+00:00"
+  "generated_at": "2026-09-24T22:56:59.453532+00:00",
+  "area": "Billing & payments",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "86b558aad1cc5d5eea7b0f9887ca4b683ddab618",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

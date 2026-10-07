@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15399.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny surveyor hat, carefully placing signs on two garden data streams: an old wooden bridge labeled “LEGACY” and a flourishing lime green (#ecf874) path labeled “EVERYTHING ELSE”; a friendly CRT monitor robot watches two separate glowing counters beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-24T15:12:22.135443+00:00"
+  "generated_at": "2026-09-24T15:12:22.135443+00:00",
+  "area": "Data & insights",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "fe3538691467e52af8784076cb6dc7459fd702ad",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

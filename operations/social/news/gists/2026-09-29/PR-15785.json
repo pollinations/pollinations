@@ -36,5 +36,14 @@
   },
   "generated_at": "2026-09-29T13:16:38.843531+00:00",
   "app_name": "Pollinations for Figma",
-  "app_url": "https://github.com/xiaotian1171/pollinations-figma"
+  "app_url": "https://github.com/xiaotian1171/pollinations-figma",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "7b50f9f6295a94aa9e5a17e3c9a4e6c15acc1135",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

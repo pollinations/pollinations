@@ -34,5 +34,14 @@
   },
   "generated_at": "2026-09-29T09:00:50.704255+00:00",
   "app_name": "Calibrated Decisions",
-  "app_url": "https://jonakss--calibrated-decisions-app-page.modal.run"
+  "app_url": "https://jonakss--calibrated-decisions-app-page.modal.run",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "ebd9d9c02d9c9b0f2dcb9a8e80956bb2b855bd57",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

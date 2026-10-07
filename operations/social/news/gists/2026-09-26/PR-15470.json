@@ -35,5 +35,14 @@
   },
   "generated_at": "2026-09-26T06:38:08.081952+00:00",
   "app_name": "TTA",
-  "app_url": "https://mahmoudtracy641-hub.github.io/GLM234"
+  "app_url": "https://mahmoudtracy641-hub.github.io/GLM234",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "1cd809c0afe88f612163aaa7b7671224ceec182e",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

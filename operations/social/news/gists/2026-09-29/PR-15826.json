@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15826.jpg",
     "prompt": "In a cozy pixel art garden, a small bee mascot in tiny reading glasses holds a clipboard beside a friendly Bee Census form with empty answer cards; flowers and a prominent lime green (#ecf874) glow frame the scene. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
   },
-  "generated_at": "2026-09-29T19:02:53.688455+00:00"
+  "generated_at": "2026-09-29T19:02:53.688455+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "ebcff7d34833dcc9e8cb26ada9cb05e2507ae572",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

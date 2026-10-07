@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-02T08:35:38.962559+00:00",
   "app_name": "Pollinations for Krita",
-  "app_url": "https://github.com/xiaotian1171/pollinations-krita"
+  "app_url": "https://github.com/xiaotian1171/pollinations-krita",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "e820218752c754aa28a0a1a485deacdcda6e6e4a",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-07T05:44:34.729456+00:00",
   "app_name": "Audio",
-  "app_url": "https://dwikatmahmoud87-source.github.io/Gtdcg"
+  "app_url": "https://dwikatmahmoud87-source.github.io/Gtdcg",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "97b378a5ce371c961dce0066e13c02498714ff51",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

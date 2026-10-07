@@ -33,5 +33,125 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15327.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny video-editor headphones as she feeds a chunky film strip into a glowing retro terminal; the screen shows simple pixel-font text \"VIDEO INPUT\" and a small jar of video tokens, with flowering code-plants nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-24T23:24:32.723364+00:00"
+  "generated_at": "2026-09-24T23:24:32.723364+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "783eb010d287938390a9bbc78ff811fa2b769f81",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15327:inclusionai/ling-3.0-flash-vl",
+      "model_id": "inclusionai/ling-3.0-flash-vl",
+      "title": "Ling 3.0 Flash VL",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 131072
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "video"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "max_reference_videos": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000633",
+            "promptCachedTokens": "0.00000001266",
+            "promptImageTokens": "0.0000000633",
+            "promptVideoTokens": "0.0000000633",
+            "completionTextTokens": "0.0000001899"
+          }
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "structured_outputs",
+            "temperature",
+            "top_p",
+            "top_k",
+            "min_p",
+            "frequency_penalty",
+            "presence_penalty",
+            "repetition_penalty",
+            "logit_bias",
+            "stop",
+            "seed",
+            "reasoning",
+            "include_reasoning"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "783eb010d287938390a9bbc78ff811fa2b769f81^1",
+    "after_ref": "783eb010d287938390a9bbc78ff811fa2b769f81"
+  }
 }

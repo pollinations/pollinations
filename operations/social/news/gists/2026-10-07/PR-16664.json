@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-07T05:40:34.054691+00:00",
   "app_name": "SoloForge AI",
-  "app_url": "https://soloforge-ai-web.onrender.com"
+  "app_url": "https://soloforge-ai-web.onrender.com",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "a5d3a6b4b231af2d411baf7d017920f08a0d5abc",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

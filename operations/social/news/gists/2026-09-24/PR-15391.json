@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15391.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny inspector glasses as she checks a token ledger beside a calm CRT monitor robot; large seed piles labeled \"235\" and \"247\" sit neatly accounted for, while one genuinely mismatched page gets a small alert marker. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers around the monitoring desk, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text: \"CHECKED\"."
   },
-  "generated_at": "2026-09-24T11:26:18.598146+00:00"
+  "generated_at": "2026-09-24T11:26:18.598146+00:00",
+  "area": "Community models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "59707ea53f1318d49b47c9348a710a2f50daba99",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

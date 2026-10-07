@@ -31,5 +31,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16601.jpg",
     "prompt": "In a cozy pixel art garden workspace, Polli wears tiny detective glasses and points a magnifying glass at glowing JSON braces growing from a lime green (#ecf874) code-plant between two friendly retro terminals labeled 'Exa' and 'Vercel'; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium sized and sharing the frame, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a warm cream background, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-10-06T17:33:48.137585+00:00"
+  "generated_at": "2026-10-06T17:33:48.137585+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "a0dd4a1de7c6f896a0a3801e2e97d325d7fc7772",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "a0dd4a1de7c6f896a0a3801e2e97d325d7fc7772^1",
+    "after_ref": "a0dd4a1de7c6f896a0a3801e2e97d325d7fc7772"
+  }
 }

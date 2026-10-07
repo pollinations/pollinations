@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15160.jpg",
     "prompt": "In a cozy pixel art writing nook, Polli offers an enchanted pen the top sheet of a numbered manuscript while earlier pages rest closed in a drawer and a little flower sprouts from the fresh page; she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and tiny writer's glasses, small-to-medium in the scene and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream and lavender surroundings, dark purple (#110518) outlines, and an emotionally warm lo-fi feel like Stardew Valley."
   },
-  "generated_at": "2026-10-01T14:19:53.142634+00:00"
+  "generated_at": "2026-10-01T14:19:53.142634+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "93a1aecab9ba511c60e795c6cbf789772843d385",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

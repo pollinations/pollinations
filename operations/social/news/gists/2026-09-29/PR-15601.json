@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15601.jpg",
     "prompt": "In a cozy pixel art garden workspace, a friendly retro Hermes Agent terminal with a tiny winged-envelope badge sits beside six lime green (#ecf874) MCP server pots sprouting little tool icons, while a chunky CRT-head monitor robot watches with curious square eyes. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wearing a tiny tool belt and gently connecting a pot to the terminal, strictly pixel art and never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi warmth like Stardew Valley or A Short Hike, and a nostalgic, emotionally warm feel."
   },
-  "generated_at": "2026-09-29T06:34:32.518504+00:00"
+  "generated_at": "2026-09-29T06:34:32.518504+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "7df5bf80ace49ab52b53b9a1ed9bd5e0b4e408ce",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

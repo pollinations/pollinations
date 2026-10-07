@@ -35,5 +35,14 @@
   },
   "generated_at": "2026-09-29T09:05:39.160337+00:00",
   "app_name": "GAANA BANANA",
-  "app_url": "https://gaana.namansoni.in"
+  "app_url": "https://gaana.namansoni.in",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "0f54e39fc2aae5e27c5fe79a6a279acd6990707d",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

@@ -36,5 +36,14 @@
   },
   "generated_at": "2026-09-29T12:41:34.768237+00:00",
   "app_name": "Pollinations for Obsidian",
-  "app_url": "https://github.com/tomdacatto/pollinations-obsidian"
+  "app_url": "https://github.com/tomdacatto/pollinations-obsidian",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "b99e6b2109900d2a0610cb7a25060c00c82c82b9",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

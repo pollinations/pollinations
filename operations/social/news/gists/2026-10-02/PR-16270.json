@@ -29,5 +29,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16270.jpg",
     "prompt": "In a cozy pixel art garden workstation, a retro screen shows a key permission card labeled “MACHINES” beside a tiny hosted sandbox, while lime green (#ecf874) code-plants sprout around it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Wearing a tiny tool belt, she points warmly to the card; cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
   },
-  "generated_at": "2026-10-02T19:02:58.882037+00:00"
+  "generated_at": "2026-10-02T19:02:58.882037+00:00",
+  "area": "Accounts & keys",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "a68d0f4f3f4fed0d94aed1f945bb3cc7488cb182",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "a68d0f4f3f4fed0d94aed1f945bb3cc7488cb182^1",
+    "after_ref": "a68d0f4f3f4fed0d94aed1f945bb3cc7488cb182"
+  }
 }

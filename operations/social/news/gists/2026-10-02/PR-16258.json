@@ -33,5 +33,14 @@
   },
   "generated_at": "2026-10-02T17:31:20.443579+00:00",
   "app_name": "Pollinations for Unity",
-  "app_url": "https://github.com/Marcus-Mok-GH/pollinations-unity"
+  "app_url": "https://github.com/Marcus-Mok-GH/pollinations-unity",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "01209666f66c654e34e1a085fb2483bd3025f97d",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15372.jpg",
     "prompt": "In a cozy pixel-art garden workshop, Polli—the cute yellow bee mascot with dark brown horizontal stripes, black oval eyes, bright pink rectangular cheek blush, light blue rounded wings, and a tiny gardener tool belt—pins an issue note beside a repaired code-plant blooming with a glowing \"3 POLLEN\" flower, while a chunky CRT monitor robot proudly holds a merged code printout. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream soil, lavender and peach flowers, subtle CRT glow, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike; pixel-font text: \"FIXED\" and \"3 POLLEN\", nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-25T02:10:43.672996+00:00"
+  "generated_at": "2026-09-25T02:10:43.672996+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "3d464f142d8ef36812551c63e4f18106927c89db",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

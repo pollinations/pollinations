@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-02/PR-16180.jpg",
     "prompt": "In a cozy pixel art garden café, Polli in a tiny shopkeeper apron arranges payment-symbol tiles beside a little map and a separate checkout terminal, with code-plants, warm cream surroundings, prominent lime green (#ecf874) accents, and dark purple (#110518) outlines. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, in strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-10-02T14:34:00.248082+00:00"
+  "generated_at": "2026-10-02T14:34:00.248082+00:00",
+  "area": "Billing & payments",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "df6a4cda9f3278260baccba881fbfcb24480fe12",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

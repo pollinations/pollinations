@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15451.jpg",
     "prompt": "A cozy pixel art Quest garden where the cute Polli bee mascot—yellow body with dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, happy smile, light blue translucent wings—wears a tiny librarian visor and uses a magnifying glass to find five golden winner flowers among a long row of 26 pull-request seed packets; a chunky CRT monitor robot eagerly holds an expanded glowing ledger. Prominent lime green (#ecf874) code-plants and Pollen tokens glow among warm cream, mint, lavender, and peach flowers, with subtle pixel text \"ALL WINNERS FOUND\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-25T14:34:35.492273+00:00"
+  "generated_at": "2026-09-25T14:34:35.492273+00:00",
+  "area": "Quests & rewards",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "40c4dd571cb516254812f25b2583d8786b9a041a",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

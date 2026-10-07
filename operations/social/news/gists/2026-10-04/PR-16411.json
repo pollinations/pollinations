@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T10:41:05.341503+00:00",
   "app_name": "Liar's Supper",
-  "app_url": "https://xiaotian1171.github.io/liars-supper"
+  "app_url": "https://xiaotian1171.github.io/liars-supper",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "2367492109d45328ec68a2f06d633d3e6cc2283b",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

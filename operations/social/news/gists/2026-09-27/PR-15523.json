@@ -33,5 +33,14 @@
   },
   "generated_at": "2026-09-27T03:42:04.707871+00:00",
   "app_name": "Simple Image Generator",
-  "app_url": "https://xzeyrix.github.io/Simple-Image-Generator"
+  "app_url": "https://xzeyrix.github.io/Simple-Image-Generator",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "ddc4c4d5249d8dec26dd6fc257e6411a6e7dcac7",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

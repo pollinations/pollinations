@@ -30,5 +30,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16023.jpg",
     "prompt": "In a cozy pixel art garden studio, Polli adjusts a retro monitor showing a wide 16:9 meadow video, while an unselected music-note button and a fresh film frame sit beside it among small flowers and vines. Polli is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, rounded light blue translucent wings, and tiny director’s headphones; chunky retro sprites, prominent lime green (#ecf874), dark purple (#110518) details, a warm cream and soft pastel gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-10-05T09:39:39.843529+00:00"
+  "generated_at": "2026-10-05T09:39:39.843529+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "b7a1ff12de8df69bfd7b834fc40a154837e941e8",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "b7a1ff12de8df69bfd7b834fc40a154837e941e8^1",
+    "after_ref": "b7a1ff12de8df69bfd7b834fc40a154837e941e8"
+  }
 }

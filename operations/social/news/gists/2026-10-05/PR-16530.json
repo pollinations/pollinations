@@ -29,5 +29,44 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16530.jpg",
     "prompt": "In a cozy pixel art garden workspace, Polli wears tiny headphones and connects two audio cassettes labeled `gpt-4o-transcribe` and `GPT Transcribe` to one glowing transcription terminal, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, prominent lime green (#ecf874), warm cream and dark purple (#110518) details, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-10-05T17:44:09.968004+00:00"
+  "generated_at": "2026-10-05T17:44:09.968004+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "4275a31cd6c3b20c1c0af72095661e95d81bed8f",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-16530:openai/gpt-transcribe",
+      "model_id": "openai/gpt-transcribe",
+      "title": "GPT Transcribe",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "gpt-transcribe"
+          ],
+          "after": [
+            "gpt-transcribe",
+            "gpt-4o-transcribe"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "4275a31cd6c3b20c1c0af72095661e95d81bed8f^1",
+    "after_ref": "4275a31cd6c3b20c1c0af72095661e95d81bed8f"
+  }
 }

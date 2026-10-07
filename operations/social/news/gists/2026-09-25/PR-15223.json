@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15223.jpg",
     "prompt": "A cozy shared garden-studio scene with a chunky 32×16 ASCII mosaic wall, where a small friendly pixel painting agent carefully adds a tiny `~~/~~` wave only into clearly empty tiles while old `XXXX` fragments remain untouched. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny painter's beret and holds a coordinate clipboard beside the painter, with code-plants and flowers growing around the wall. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"4 HONEST TILES\", nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-25T14:27:30.912236+00:00"
+  "generated_at": "2026-09-25T14:27:30.912236+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "2a6dcacb359f42eb383c241d30a594af5660a224",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

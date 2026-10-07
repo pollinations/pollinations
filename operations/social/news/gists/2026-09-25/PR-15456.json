@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15456.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she gently files harmless token-count alert papers into a compost bin beside a retro CRT monitoring terminal; one healthy code-flower labeled \"PROTOCOL\" is carefully watched in a lime green (#ecf874) garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) pixel outlines, nostalgic but emotionally warm."
   },
-  "generated_at": "2026-09-25T16:00:05.619543+00:00"
+  "generated_at": "2026-09-25T16:00:05.619543+00:00",
+  "area": "Community models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "2901ec1a17fb59cec5b67ddc029ad85c9bc1eab1",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

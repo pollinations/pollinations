@@ -31,5 +31,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15436.jpg",
     "prompt": "A cozy pixel art garden-hackerspace dashboard where account cards, charts, keys, and Pollen panels gently bloom open one by one from code-plants, with no cluttered loading signs; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener's hat and watching warmly beside a retro CRT terminal with a lime green (#ecf874) glow and a small pixel checkmark for saved actions. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-25T12:09:13.684279+00:00"
+  "generated_at": "2026-09-25T12:09:13.684279+00:00",
+  "area": "Dashboard",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "4fa964187b769ad0d59f228a61249ecee3443674",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15778.jpg",
     "prompt": "In a cozy pixel art garden workspace, a retro monitor shows two simple star-count graph lines beside a lime green (#ecf874) code-plant; Polli, wearing a tiny analyst's visor, notes both arriving and departing stars on her clipboard. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
   },
-  "generated_at": "2026-09-29T13:43:55.840607+00:00"
+  "generated_at": "2026-09-29T13:43:55.840607+00:00",
+  "area": "Data & insights",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "34caefefda11feb6aab0b381d2bab8cc2b460484",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

@@ -31,5 +31,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15414.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, carefully counting exactly ten glowing PR scrolls beside a retro terminal and a pot of code-flowers; a few closed scrolls are neatly stacked aside. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with small pixel-font text: '10 PRs'."
   },
-  "generated_at": "2026-09-24T23:42:09.561936+00:00"
+  "generated_at": "2026-09-24T23:42:09.561936+00:00",
+  "area": "Quests & rewards",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "3a8c8084574a47df813d0a4d7d7a46fdb7a26e0d",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

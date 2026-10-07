@@ -31,5 +31,14 @@
   },
   "generated_at": "2026-10-03T03:00:03.223078+00:00",
   "app_name": "Jev Assembler",
-  "app_url": "https://tomdacatto.github.io/pollinations-jev-assembler"
+  "app_url": "https://tomdacatto.github.io/pollinations-jev-assembler",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "d77455639fbcb964582b6bf55a19bf47e316ed84",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

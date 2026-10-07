@@ -37,5 +37,14 @@
   },
   "generated_at": "2026-09-30T13:08:54.437701+00:00",
   "app_name": "Pollinations for Godot 4",
-  "app_url": "https://github.com/davealan74/godot-pollinations"
+  "app_url": "https://github.com/davealan74/godot-pollinations",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "6e061c0fd5c2e797e510b84bca061c49842a36e1",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

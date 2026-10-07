@@ -34,5 +34,14 @@
   },
   "generated_at": "2026-09-27T03:38:33.219096+00:00",
   "app_name": "image2gpt",
-  "app_url": "https://image2gpt.vercel.app"
+  "app_url": "https://image2gpt.vercel.app",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "5deeb1d86d2e7892925377b2ffa78814828c09e1",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

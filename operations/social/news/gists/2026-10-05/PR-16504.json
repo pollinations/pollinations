@@ -30,5 +30,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-05/PR-16504.jpg",
     "prompt": "In a cozy pixel art garden workstation, Polli places matching seed packets marked '42' beside one glowing picture frame while a portrait-shaped frame sits intact on the editing desk, with lime green (#ecf874) code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny gardener's apron, and shares the frame with the objects. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky sprites, and a nostalgic, emotionally warm feel."
   },
-  "generated_at": "2026-10-05T13:08:31.965295+00:00"
+  "generated_at": "2026-10-05T13:08:31.965295+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "7170c8534b460829eb0a3d4457a907c1a28b02b3",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

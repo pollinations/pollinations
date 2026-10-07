@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15485.jpg",
     "prompt": "In a cozy pixel-art garden desk scene, Polli gently flips a lime green (#ecf874) auto top-up switch to Off beside a payment card and a little pot of Pollen-coin flowers; a retro screen reads “LAST CHARGE FAILED.” The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny bookkeeper visor, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) details, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-27T18:54:40.349370+00:00"
+  "generated_at": "2026-09-27T18:54:40.349370+00:00",
+  "area": "Billing & payments",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "8a6fcad4aa640a30e7601213ff524fbcfcab9f5e",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

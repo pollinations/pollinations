@@ -29,5 +29,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-03/PR-16312.jpg",
     "prompt": "In a cozy pixel art garden, Polli hands a tiny key to a sign marked '@murderszn' beside a gate with a friendly three-headed dog emblem and agent cards beyond it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener's hat and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and chunky sprites."
   },
-  "generated_at": "2026-10-03T09:05:23.942511+00:00"
+  "generated_at": "2026-10-03T09:05:23.942511+00:00",
+  "area": "Community models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "52680a6e1a78732e1ba311d5e708aa6a99f2ac2a",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "52680a6e1a78732e1ba311d5e708aa6a99f2ac2a^1",
+    "after_ref": "52680a6e1a78732e1ba311d5e708aa6a99f2ac2a"
+  }
 }

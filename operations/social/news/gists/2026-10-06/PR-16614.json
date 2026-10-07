@@ -29,5 +29,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16614.jpg",
     "prompt": "In a cozy pixel art garden workspace, Polli fits a sealed key into a retro Gen terminal beside a little path marked “Novita,” with lime green (#ecf874) code-plants growing along it; she is a small cute pixel bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, rounded light blue translucent wings, and a tiny tool belt. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a warm cream and lime green (#ecf874) backdrop, and dark purple (#110518) outlines."
   },
-  "generated_at": "2026-10-06T18:03:10.253780+00:00"
+  "generated_at": "2026-10-06T18:03:10.253780+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "12885a051f45f2cb4222d251fa60962e1f454a60",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

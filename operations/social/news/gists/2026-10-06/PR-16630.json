@@ -29,5 +29,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16630.jpg",
     "prompt": "In a cozy pixel art garden workspace, Polli wears tiny programmer glasses and gently places one generated picture into a frame beside a lime green (#ecf874) retro terminal and a sprouting code-plant; she is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings. Cozy 8-bit pixel art aesthetic, soft pastel gradients over warm cream, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley; dark purple (#110518) outlines and a prominent soft lime green (#ecf874) glow make the scene nostalgic and emotionally warm."
   },
-  "generated_at": "2026-10-06T18:52:19.741083+00:00"
+  "generated_at": "2026-10-06T18:52:19.741083+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "85f3ce9a579ee85b9c3b615a9fb6e8f778cb6e23",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

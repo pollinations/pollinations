@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15766.jpg",
     "prompt": "Polli, a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wears a tiny pencil behind one antenna as she writes in an open field on a Bee Census form beside a garden of varied flowers. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) outlines."
   },
-  "generated_at": "2026-09-29T12:09:27.189898+00:00"
+  "generated_at": "2026-09-29T12:09:27.189898+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "98a43f1586b0adbd42f347dd07522e75e03d327a",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

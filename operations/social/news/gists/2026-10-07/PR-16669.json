@@ -30,5 +30,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-07/PR-16669.jpg",
     "prompt": "In a cozy pixel art garden shed, Polli wears tiny gardening gloves and tends two star-shaped code-plants beside an open README journal, with one chart on a light page and one on a dark page. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with consistent rounded proportions, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518)."
   },
-  "generated_at": "2026-10-07T07:31:58.467817+00:00"
+  "generated_at": "2026-10-07T07:31:58.467817+00:00",
+  "area": "App catalog & showcase",
+  "type": "Task",
+  "source": "Agent",
+  "merge_commit_sha": "108d91795111c584f00cc10ecd44a83a5929c660",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

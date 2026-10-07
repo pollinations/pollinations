@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-14690.jpg",
     "prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute Polli bee mascot with her yellow body, dark brown stripes, pink blush, light blue wings, and a tiny tool belt plugs a lime green (#ecf874) provider-key cable into a retro terminal labeled `tgpt: ON`, while a cheerful CRT Monitor Robot holds a neatly rolled backup config scroll beside sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
   },
-  "generated_at": "2026-09-25T01:40:36.205676+00:00"
+  "generated_at": "2026-09-25T01:40:36.205676+00:00",
+  "area": "Developer tools",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "54509352d30c0a98839b522990b9310d20cc76a5",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

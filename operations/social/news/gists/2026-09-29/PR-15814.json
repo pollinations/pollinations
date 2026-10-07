@@ -33,5 +33,165 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15814.jpg",
     "prompt": "In a cozy pixel art speech studio, two lime green (#ecf874) code-flowers labeled 'tts-1' and 'tts-1-hd' send gentle musical notes toward a retro microphone while a friendly CRT monitor robot listens beside Polli, who wears tiny headphones. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-09-29T18:32:07.140008+00:00"
+  "generated_at": "2026-09-29T18:32:07.140008+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "630e55055d7c2ba0b15332055527c27b89db1ff7",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15814:openai/tts-1",
+      "model_id": "openai/tts-1",
+      "title": "OpenAI TTS",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000015"
+          }
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/audio/{text}",
+            "/v1/audio/speech"
+          ]
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15814:openai/tts-1-hd",
+      "model_id": "openai/tts-1-hd",
+      "title": "OpenAI TTS HD",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00003"
+          }
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/audio/{text}",
+            "/v1/audio/speech"
+          ]
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "630e55055d7c2ba0b15332055527c27b89db1ff7^1",
+    "after_ref": "630e55055d7c2ba0b15332055527c27b89db1ff7"
+  }
 }

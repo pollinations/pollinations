@@ -33,5 +33,14 @@
   },
   "generated_at": "2026-10-04T09:03:28.461464+00:00",
   "app_name": "Spot the Fake",
-  "app_url": "https://tomdacatto.github.io/pollinations-spot-the-fake"
+  "app_url": "https://tomdacatto.github.io/pollinations-spot-the-fake",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "006644ed31093c0bd145262bd408c5b40066176e",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

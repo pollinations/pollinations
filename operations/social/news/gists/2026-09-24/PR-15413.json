@@ -34,5 +34,87 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15413.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny accountant visor while updating three neat price tags beside glowing video-film plants labeled 480p, 768p, and 1080p; a cute chunky CRT monitor robot holds a rate card among flowers and code-vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"LIST RATES\", nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-24T23:33:47.729784+00:00"
+  "generated_at": "2026-09-24T23:33:47.729784+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "c1a88b51ba2a7d83de37df43821a9986a65167e7",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15413:minimax/minimax-h3-max-turbo",
+      "model_id": "minimax/minimax-h3-max-turbo",
+      "title": "MiniMax H3 Max Turbo",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.00625"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.025"
+          }
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "768p",
+              "label": "768p",
+              "description": "Applies when the requested video resolution is 768p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.01"
+              }
+            },
+            {
+              "name": "1080p",
+              "label": "1080p",
+              "description": "Applies when the requested video resolution is 1080p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.02"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "768p",
+              "label": "768p",
+              "description": "Applies when the requested video resolution is 768p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.04"
+              }
+            },
+            {
+              "name": "1080p",
+              "label": "1080p",
+              "description": "Applies when the requested video resolution is 1080p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.08"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "c1a88b51ba2a7d83de37df43821a9986a65167e7^1",
+    "after_ref": "c1a88b51ba2a7d83de37df43821a9986a65167e7"
+  }
 }

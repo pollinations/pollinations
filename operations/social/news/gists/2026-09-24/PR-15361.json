@@ -34,5 +34,573 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15361.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carries model seed packets from a small retiring server shed to two warm greenhouse terminals labeled “AZURE” and “DEEPINFRA”; a cute CRT-monitor robot helps beside blooming code-plants and lime green (#ecf874) vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-24T11:36:50.342690+00:00"
+  "generated_at": "2026-09-24T11:36:50.342690+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "727fe1730baa713aeee69fe1ccca4a737cb65af7",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-flash",
+      "model_id": "deepseek/deepseek-v4-flash",
+      "title": "DeepSeek V4 Flash 0731",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000022",
+            "promptCachedTokens": "0.000000007",
+            "completionTextTokens": "0.00000066"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000033",
+            "promptCachedTokens": "0.0000000105",
+            "completionTextTokens": "0.00000099"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "reasoning_effort"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-flash:retirement",
+      "model_id": "deepseek/deepseek-v4-flash",
+      "title": "DeepSeek V4 Flash 0731",
+      "action": "RETIRE",
+      "changes": {
+        "availability": {
+          "before": "Available",
+          "after": "Retired"
+        }
+      },
+      "effective_at": "2026-12-03T00:00:00.000Z",
+      "effective_status": "scheduled",
+      "official": true
+    },
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-flash-vision-exp",
+      "model_id": "deepseek/deepseek-v4-flash-vision-exp",
+      "title": "DeepSeek V4 Flash Vision Exp",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000022",
+            "promptCachedTokens": "0.000000007",
+            "promptImageTokens": "0.00000022",
+            "completionTextTokens": "0.00000066"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002156",
+            "promptCachedTokens": "0.0000000069",
+            "promptImageTokens": "0.0000002156",
+            "completionTextTokens": "0.0000006468"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "n"
+          ]
+        },
+        "retirement_at": {
+          "before": "2026-09-25T00:00:00.000Z",
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-pro",
+      "model_id": "deepseek/deepseek-v4-pro",
+      "title": "DeepSeek V4 Pro 0813",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "context_length": {
+          "before": 1048576,
+          "after": 1000000
+        },
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000132",
+            "promptCachedTokens": "0.000000044",
+            "completionTextTokens": "0.00000396"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000118371",
+            "promptCachedTokens": "0.000000118371",
+            "completionTextTokens": "0.00000355113"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort",
+            "seed",
+            "structured_outputs",
+            "top_k"
+          ]
+        },
+        "retirement_at": {
+          "before": "2026-09-25T00:00:00.000Z",
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15361:meta/muse-glimmer-30b",
+      "model_id": "meta/muse-glimmer-30b",
+      "title": "Muse Glimmer 30B",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000035",
+            "promptCachedTokens": "0.00000004",
+            "promptImageTokens": "0.00000035",
+            "completionTextTokens": "0.0000015"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000004",
+            "promptImageTokens": "0.0000003",
+            "completionTextTokens": "0.0000012"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "n"
+          ]
+        },
+        "retirement_at": {
+          "before": "2026-09-25T00:00:00.000Z",
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15361:moonshotai/kimi-k2.6",
+      "model_id": "moonshotai/kimi-k2.6",
+      "title": "Moonshot Kimi K2.6",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "reasoning_effort"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15361:moonshotai/kimi-k2.6:retirement",
+      "model_id": "moonshotai/kimi-k2.6",
+      "title": "Moonshot Kimi K2.6",
+      "action": "RETIRE",
+      "changes": {
+        "availability": {
+          "before": "Available",
+          "after": "Retired"
+        }
+      },
+      "effective_at": "2027-04-16T00:00:00.000Z",
+      "effective_status": "scheduled",
+      "official": true
+    },
+    {
+      "id": "pr-15361:moonshotai/kimi-k2.7-code",
+      "model_id": "moonshotai/kimi-k2.7-code",
+      "title": "Moonshot Kimi K2.7 Code",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000095",
+            "promptCachedTokens": "0.00000019",
+            "promptCacheWriteTokens": "0.00000095",
+            "promptImageTokens": "0.00000095",
+            "completionTextTokens": "0.000004"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000100225",
+            "promptCachedTokens": "0.00000020045",
+            "promptCacheWriteTokens": "0.00000100225",
+            "promptImageTokens": "0.00000100225",
+            "completionTextTokens": "0.00000422"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "frequency_penalty",
+            "presence_penalty",
+            "reasoning",
+            "include_reasoning",
+            "stop",
+            "structured_outputs"
+          ]
+        },
+        "retirement_at": {
+          "before": "2026-09-25T00:00:00.000Z",
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15361:z-ai/glm-5.2",
+      "model_id": "z-ai/glm-5.2",
+      "title": "Z.ai GLM-5.2",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000014",
+            "promptCachedTokens": "0.00000014",
+            "completionTextTokens": "0.0000044"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001477",
+            "promptCachedTokens": "0.0000002743",
+            "completionTextTokens": "0.000004642"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "top_k",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort"
+          ]
+        },
+        "retirement_at": {
+          "before": "2026-09-25T00:00:00.000Z",
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "727fe1730baa713aeee69fe1ccca4a737cb65af7^1",
+    "after_ref": "727fe1730baa713aeee69fe1ccca4a737cb65af7"
+  }
 }

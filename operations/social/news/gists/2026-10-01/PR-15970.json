@@ -34,5 +34,98 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15970.jpg",
     "prompt": "In a cozy pixel garden, Polli hands a plain-string `noul` question to a little Respan decision terminal beside two branching paths and a sprouting code-plant; a prominent lime green (#ecf874) glow lights the warm cream and pastel surroundings. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses, stays small within the scene, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-10-01T10:30:58.641949+00:00"
+  "generated_at": "2026-10-01T10:30:58.641949+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "297126ac249020a072f506d77dca1c6c1e1978fb",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15970:respan/span-01-lite",
+      "model_id": "respan/span-01-lite",
+      "title": "Span-01 Lite",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": true
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": false
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/alpha/decisions",
+            "/v1/chat/completions"
+          ]
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "stream"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": false
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "297126ac249020a072f506d77dca1c6c1e1978fb^1",
+    "after_ref": "297126ac249020a072f506d77dca1c6c1e1978fb"
+  }
 }

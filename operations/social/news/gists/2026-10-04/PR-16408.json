@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T10:15:35.452986+00:00",
   "app_name": "Mole Party",
-  "app_url": "https://tomdacatto.github.io/pollinations-mole-party"
+  "app_url": "https://tomdacatto.github.io/pollinations-mole-party",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "7d2c56125dd0e9ce15e5aa1b581589a8043c0620",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

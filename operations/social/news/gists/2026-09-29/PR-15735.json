@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15735.jpg",
     "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and fills out a Bee Census form beside a retro terminal showing a GitHub issue, while three Pollen tokens rest among flowers and lime green (#ecf874) code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions and strictly pixel art styling. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, dark purple (#110518) outlines, and a soft lime green (#ecf874) and pastel gradient background."
   },
-  "generated_at": "2026-09-29T09:22:57.845058+00:00"
+  "generated_at": "2026-09-29T09:22:57.845058+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "a3965f5a4580c1ee9a3d90e4bfca0aacb1c15669",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

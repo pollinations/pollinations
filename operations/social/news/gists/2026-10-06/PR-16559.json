@@ -31,5 +31,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16559.jpg",
     "prompt": "Polli, a cute small pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and rounded light blue translucent wings, wears a tiny editor's cap as she pins a news sheet beside two star charts on a flower-covered garden noticeboard. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over a prominent lime green (#ecf874) and warm cream background, warm lighting, retro gaming vibes, chunky sprites, and dark purple (#110518) outlines."
   },
-  "generated_at": "2026-10-06T07:32:05.748516+00:00"
+  "generated_at": "2026-10-06T07:32:05.748516+00:00",
+  "area": "App catalog & showcase",
+  "type": "Task",
+  "source": "Agent",
+  "merge_commit_sha": "77038b48d12bb382304ad6288315b938388d61ff",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

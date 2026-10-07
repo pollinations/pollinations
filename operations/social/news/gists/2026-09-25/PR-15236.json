@@ -34,5 +34,156 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15236.jpg",
     "prompt": "Cozy pixel art scene in a warm garden art studio: Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny painter's beret while arranging ten little reference-image cards beside a chunky retro terminal labeled in simple pixel text “QWEN 2.1”; the terminal paints a lush image from two signposted paths, “TEXT” and “EDIT,” amid code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-25T15:54:30.049309+00:00"
+  "generated_at": "2026-09-25T15:54:30.049309+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "7483d5b40e0a1da2d522145e9bf5c88f8b67ae20",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15236:qwen/qwen-image-2.1",
+      "model_id": "qwen/qwen-image-2.1",
+      "title": "Qwen Image 2.1",
+      "action": "NEW",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "image"
+        },
+        "flat_rate": {
+          "before": null,
+          "after": true
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.00000002"
+          }
+        },
+        "pricing_default_label": {
+          "before": null,
+          "after": "Image generation"
+        },
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "operation",
+              "label": "Operation",
+              "values": {
+                "": "Generation",
+                "edit": "Editing"
+              }
+            }
+          ]
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "edit",
+              "label": "Image editing",
+              "description": "Applies when the request includes one or more input images.",
+              "pricing": {
+                "currency": "pollen",
+                "completionImageTokens": "0.000000036667"
+              }
+            }
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15236:qwen/qwen-image-3",
+      "model_id": "qwen/qwen-image-3",
+      "title": "Qwen Image 3",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "2k",
+              "label": "2K",
+              "description": "Applies when the requested output exceeds 1536×1536 total pixels.",
+              "pricing": {
+                "currency": "pollen",
+                "promptImageTokens": "0.003",
+                "completionImageTokens": "0.075"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "2k",
+              "label": "2K",
+              "description": "Applies when the requested output exceeds 2,250,000 total pixels (about 1500×1500).",
+              "pricing": {
+                "currency": "pollen",
+                "promptImageTokens": "0.003",
+                "completionImageTokens": "0.075"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "7483d5b40e0a1da2d522145e9bf5c88f8b67ae20^1",
+    "after_ref": "7483d5b40e0a1da2d522145e9bf5c88f8b67ae20"
+  }
 }

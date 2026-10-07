@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15846.jpg",
     "prompt": "In a cozy pixel art workspace, Polli uses a tiny magnifying glass to inspect matching lotus icons on a row of browser tabs, while a lotus flower grows beside the monitor against a prominent lime green (#ecf874) and soft pastel gradient background. Polli is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-09-30T01:15:17.423943+00:00"
+  "generated_at": "2026-09-30T01:15:17.423943+00:00",
+  "area": "Brand & news",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "7851d688a1ef4c680d437b3b93f4a35c596d2a0e",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

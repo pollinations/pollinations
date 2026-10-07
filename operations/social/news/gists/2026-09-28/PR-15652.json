@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-28/PR-15652.jpg",
     "prompt": "In a cozy pixel garden, a little doorway labeled 'old.pollinations.ai' opens onto a lime green (#ecf874) path marked '301' leading to a warmly lit cottage labeled 'pollinations.ai'. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wears a tiny guide's hat, and points visitors toward the cottage. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, and dark purple (#110518) pixel lettering; nostalgic and emotionally warm."
   },
-  "generated_at": "2026-09-28T15:15:58.866678+00:00"
+  "generated_at": "2026-09-28T15:15:58.866678+00:00",
+  "area": "Brand & news",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "3c7d9868a0794c1282ab96f4fd4b80577dc568d1",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

@@ -33,5 +33,111 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-29/PR-15497.jpg",
     "prompt": "In a cozy pixel art music garden, one waveform on a retro terminal branches into six little audio tracks and a ZIP parcel while Polli, wearing tiny headphones, listens beside lime green (#ecf874) flowers and code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, never realistic—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, dark purple (#110518) outlines, chunky sprites, and a soft lime green (#ecf874) glow."
   },
-  "generated_at": "2026-09-29T12:20:27.065950+00:00"
+  "generated_at": "2026-09-29T12:20:27.065950+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "e76a62b7d4974c634f2b885d58a779f7d185221e",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15497:elevenlabs/stem-separation",
+      "model_id": "elevenlabs/stem-separation",
+      "title": "ElevenLabs Stem Separation",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.005"
+          }
+        },
+        "pricing_default_label": {
+          "before": null,
+          "after": "Six stems"
+        },
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "stem_variation_id",
+              "label": "Stems",
+              "values": {
+                "": "Six",
+                "two_stems_v1": "Two"
+              }
+            }
+          ]
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "two_stems_v1",
+              "label": "Two stems",
+              "description": "Vocals and instrumental; stem_variation_id=two_stems_v1.",
+              "pricing": {
+                "currency": "pollen",
+                "promptAudioSeconds": "0.0025"
+              }
+            }
+          ]
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/alpha/audio/stem-separation"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "e76a62b7d4974c634f2b885d58a779f7d185221e^1",
+    "after_ref": "e76a62b7d4974c634f2b885d58a779f7d185221e"
+  }
 }

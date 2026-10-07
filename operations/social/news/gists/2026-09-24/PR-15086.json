@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15086.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, checking her identity at a chunky retro CRT terminal glowing prominently lime green (#ecf874); the screen shows simple pixel text: 'WHOAMI?' and a small verified profile card. Code-plants and pastel flowers curl around the desk in a warm cream, mint, and lavender room. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-24T21:27:03.792443+00:00"
+  "generated_at": "2026-09-24T21:27:03.792443+00:00",
+  "area": "Developer tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "a809fb9ae0aada2922f85dd453d2a07e6f2457ab",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

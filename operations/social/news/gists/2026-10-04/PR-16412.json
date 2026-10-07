@@ -31,5 +31,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-16412.jpg",
     "prompt": "A cozy pixel art garden path winds past chunky quest-category signposts to a small chest labeled 'BONUS' at the end, with prominent lime green (#ecf874) flowers, soft pastel gradients, warm lighting, and dark purple (#110518) outlines. Polli wears a tiny explorer hat and points down the path: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or insect-like, in strictly pixel art style—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-10-04T12:11:04.540001+00:00"
+  "generated_at": "2026-10-04T12:11:04.540001+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "4cfae6dddd76bdd218f15eb0e612ae5645a116a9",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

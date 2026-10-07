@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T12:29:18.807405+00:00",
   "app_name": "Tunemory",
-  "app_url": "https://tomdacatto.github.io/pollinations-tunemory"
+  "app_url": "https://tomdacatto.github.io/pollinations-tunemory",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "e02c3ef414531ab886699582d8c62102046dcd50",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

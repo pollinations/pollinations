@@ -34,5 +34,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-27/PR-15520.jpg",
     "prompt": "In a cozy pixel-art garden, three little stations—a flower, a music player, and a chat terminal—are being moved beside a sign reading 'pollinations-ai'; a chunky CRT robot carries their history ledger. Polli, a small cute pixel-art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded translucent light-blue wings, wears a tiny moving cap and carries a box beside them. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream, and dark purple #110518 details."
   },
-  "generated_at": "2026-09-27T16:06:20.298344+00:00"
+  "generated_at": "2026-09-27T16:06:20.298344+00:00",
+  "area": "Community models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "ab6216d476a5e3f0cc85b1eb539ca06c87f3c2c0",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "ab6216d476a5e3f0cc85b1eb539ca06c87f3c2c0^1",
+    "after_ref": "ab6216d476a5e3f0cc85b1eb539ca06c87f3c2c0"
+  }
 }

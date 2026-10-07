@@ -31,5 +31,14 @@
   },
   "generated_at": "2026-10-03T03:09:04.376464+00:00",
   "app_name": "Whichever",
-  "app_url": "https://kreggscode.github.io/whichever"
+  "app_url": "https://kreggscode.github.io/whichever",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "1741bbcf35729fb71ac5891129d18697d4ea2527",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

@@ -34,5 +34,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15432.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny accountant visor while checking a retro calendar marked “30 DAYS” and placing two glowing Pollen seeds beside qualifying code-plant issue cards; a friendly CRT monitor robot holds a small Quest ledger labeled “PENDING REWARD.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden desk, flowers and vines, warm lighting, retro gaming vibes, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-25T09:21:28.719378+00:00"
+  "generated_at": "2026-09-25T09:21:28.719378+00:00",
+  "area": "Quests & rewards",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "67b16183ab11782715a1d54775ce40a9f079dbdf",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

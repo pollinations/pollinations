@@ -32,5 +32,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-24/PR-15121.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny inspector glasses while carefully placing a glowing pixel note labeled \"error message\" from a retro terminal into a tracking jar; small code-plants and flowers grow around it, with lime green (#ecf874) prominently glowing on the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-09-24T22:01:02.523677+00:00"
+  "generated_at": "2026-09-24T22:01:02.523677+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Quests",
+  "merge_commit_sha": "f870ef57108ad38e3d6768e34868c776233f6a6b",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

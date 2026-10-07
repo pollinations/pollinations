@@ -35,5 +35,14 @@
   },
   "generated_at": "2026-09-30T04:40:27.160996+00:00",
   "app_name": "STT",
-  "app_url": "https://fantasyreincarnation1-bit.github.io/my-pollinations-ap"
+  "app_url": "https://fantasyreincarnation1-bit.github.io/my-pollinations-ap",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "faa7f0c69ddbb44a2187a1823648e294dc521166",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

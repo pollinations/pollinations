@@ -35,5 +35,14 @@
   },
   "generated_at": "2026-09-24T13:15:28.619516+00:00",
   "app_name": "GATEKEEPER",
-  "app_url": "https://khuzaima3232.github.io/gatekeeper"
+  "app_url": "https://khuzaima3232.github.io/gatekeeper",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "2dc848eca0d3c8157ee769de1200ad18d5d749d2",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

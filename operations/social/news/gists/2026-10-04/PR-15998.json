@@ -32,5 +32,96 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-04/PR-15998.jpg",
     "prompt": "In a cozy pixel garden, a retro terminal labeled 'NEMOTRON 3 ULTRA' sits among code-vines branching toward a softly sparkling Fireworks sign and a smaller DeepInfra backup sign, with prominent lime green (#ecf874) foliage against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny route-planner scarf and gently guides a vine toward the two paths, small-to-medium sized in the scene, strictly pixel art, never realistic, with chunky retro sprites, warm lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-10-04T15:30:53.660894+00:00"
+  "generated_at": "2026-10-04T15:30:53.660894+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "6d192d5f719f182891aab7a46a9ed0a643172649",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15998:nvidia/nemotron-3-ultra",
+      "model_id": "nvidia/nemotron-3-ultra",
+      "title": "NVIDIA Nemotron 3 Ultra",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.0000001",
+            "completionTextTokens": "0.0000022"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000006",
+            "promptCachedTokens": "0.00000012",
+            "completionTextTokens": "0.0000024"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "n"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "6d192d5f719f182891aab7a46a9ed0a643172649^1",
+    "after_ref": "6d192d5f719f182891aab7a46a9ed0a643172649"
+  }
 }

@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-05T02:18:07.219341+00:00",
   "app_name": "Pollinations Quest Starter",
-  "app_url": "https://elite-surely-machine-enemies.trycloudflare.com"
+  "app_url": "https://elite-surely-machine-enemies.trycloudflare.com",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "c61f6359d7650b007410e07183588b50e0b0193a",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

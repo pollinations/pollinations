@@ -34,5 +34,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-26/PR-15483.jpg",
     "prompt": "Cozy pixel art scene in a warm garden video workshop: Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, and a tiny accountant visor, compares a finished pixel film reel marked \"GENERATED\" with a small Pollen token to an unopened prompt envelope marked \"FREE\" beside a lime green (#ecf874) CRT terminal; code-plants and small flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm."
   },
-  "generated_at": "2026-09-26T11:30:11.037310+00:00"
+  "generated_at": "2026-09-26T11:30:11.037310+00:00",
+  "area": "Billing & payments",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "1b7e62106623946fae1f9f454946cef73aa3f481",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "1b7e62106623946fae1f9f454946cef73aa3f481^1",
+    "after_ref": "1b7e62106623946fae1f9f454946cef73aa3f481"
+  }
 }

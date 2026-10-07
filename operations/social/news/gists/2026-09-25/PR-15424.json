@@ -36,5 +36,14 @@
   },
   "generated_at": "2026-09-25T03:53:57.556272+00:00",
   "app_name": "What TTS",
-  "app_url": "https://bloodtubes6-cmyk.github.io/Blood"
+  "app_url": "https://bloodtubes6-cmyk.github.io/Blood",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "97122bc5893a0e627d8867787ba9da5e298ba145",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

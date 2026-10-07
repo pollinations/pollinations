@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T12:43:16.237719+00:00",
   "app_name": "Chorus",
-  "app_url": "https://xiaotian1171.github.io/chorus"
+  "app_url": "https://xiaotian1171.github.io/chorus",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "15b69fe3d0c3153021fd2728dea9ad1163fd8eaf",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

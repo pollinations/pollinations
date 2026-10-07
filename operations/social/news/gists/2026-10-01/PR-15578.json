@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-15578.jpg",
     "prompt": "In a cozy Krita painting studio, a fresh landscape blooms on a separate canvas layer while the original sketch stays visible beneath it; lime green (#ecf874) flowers and code-plants grow beside a warm pastel-lit monitor. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny painter's beret, and holds a brush beside the canvas in strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
   },
-  "generated_at": "2026-10-01T00:15:02.069120+00:00"
+  "generated_at": "2026-10-01T00:15:02.069120+00:00",
+  "area": "Developer tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "e9b6e435a2758c813849cc8eb1cd6ca3d8d22645",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

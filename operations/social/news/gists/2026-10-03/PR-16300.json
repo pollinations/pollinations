@@ -31,5 +31,14 @@
   },
   "generated_at": "2026-10-03T03:04:08.985557+00:00",
   "app_name": "Jev Triage Desk",
-  "app_url": "https://mhmdrizzzki.github.io/jev-triage-desk"
+  "app_url": "https://mhmdrizzzki.github.io/jev-triage-desk",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "e624aa98efa7684a222c507f98aa3ce7e7fa8854",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

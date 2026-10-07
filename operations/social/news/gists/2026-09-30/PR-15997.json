@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15997.jpg",
     "prompt": "In a cozy pixel art app garden, the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener's hat and points to category, platform, and Pollen Pay filter signs beside a search box, while a warm spotlight illuminates popular app-shaped flower pots. Strictly pixel art, with Polli small-to-medium in the scene, a prominent lime green (#ecf874) garden, soft pastel gradients, dark purple (#110518) details, and gentle CRT glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-09-30T16:48:46.931338+00:00"
+  "generated_at": "2026-09-30T16:48:46.931338+00:00",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "864c1e398b4a895d619976d6725eddeb6e11dd4c",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

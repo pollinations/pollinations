@@ -30,5 +30,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-01/PR-16115.jpg",
     "prompt": "In a cozy pixel art garden workshop, Polli gently stops a request envelope before it reaches a retro terminal, while a small CRT robot watches beside a code-plant; lime green (#ecf874) glows prominently against a warm cream and pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny traffic-director hat, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-10-01T22:12:36.152916+00:00"
+  "generated_at": "2026-10-01T22:12:36.152916+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "f7f9fff80f9ebe07f8a5f94c1bc515a0ab26238a",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

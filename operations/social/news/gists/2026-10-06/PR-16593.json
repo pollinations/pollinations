@@ -30,5 +30,210 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16593.jpg",
     "prompt": "In a cozy pixel garden, Polli wears a tiny map-reader's cap and guides a glowing Gemini star along a lime green (#ecf874) path past a Vercel triangle and an OpenRouter junction, while a separate path leads to an Exa magnifying glass among code-plants; The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and gentle CRT glow."
   },
-  "generated_at": "2026-10-06T14:00:32.157334+00:00"
+  "generated_at": "2026-10-06T14:00:32.157334+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "22fa2e9fa39e5c0ee1719395067bf5960bbb821e",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-16593:google/gemini-2.5-flash-lite",
+      "model_id": "google/gemini-2.5-flash-lite",
+      "title": "Gemini 2.5 Flash Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling",
+            "web_search"
+          ],
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptCachedTokens": "0.00000001055",
+            "promptCacheWriteTokens": "0.0000001055",
+            "promptAudioTokens": "0.0000003165",
+            "promptImageTokens": "0.0000001055",
+            "promptVideoTokens": "0.0000001055",
+            "completionTextTokens": "0.000000422"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000001",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "completionTextTokens": "0.0000004"
+          }
+        },
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "google.gemini_2.grounded_prompt.v1",
+              "kind": "grounded_prompt",
+              "price": "36.925",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "grounded prompts"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1.055",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ],
+          "after": null
+        },
+        "retirement_at": {
+          "before": "2026-10-20T00:00:00.000Z",
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-16593:google/gemini-2.5-flash-lite:search",
+      "model_id": "google/gemini-2.5-flash-lite:search",
+      "title": "Google Gemini 2.5 Flash Lite Search",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "completionTextTokens": "0.0000004"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptCachedTokens": "0.00000001055",
+            "promptCacheWriteTokens": "0.0000001055",
+            "promptAudioTokens": "0.0000003165",
+            "promptImageTokens": "0.0000001055",
+            "promptVideoTokens": "0.0000001055",
+            "completionTextTokens": "0.000000422"
+          }
+        },
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "google.gemini_2.grounded_prompt.v1",
+              "kind": "grounded_prompt",
+              "price": "35",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "grounded prompts"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ],
+          "after": [
+            {
+              "name": "openrouter.google.web_search.v1",
+              "kind": "search_request",
+              "price": "7.385",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search requests"
+            },
+            {
+              "name": "openrouter.google.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.087916666667",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "5 min"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "seed",
+            "reasoning_effort"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "reasoning",
+            "include_reasoning",
+            "seed",
+            "reasoning_effort"
+          ]
+        },
+        "retirement_at": {
+          "before": "2026-10-20T00:00:00.000Z",
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "22fa2e9fa39e5c0ee1719395067bf5960bbb821e^1",
+    "after_ref": "22fa2e9fa39e5c0ee1719395067bf5960bbb821e"
+  }
 }

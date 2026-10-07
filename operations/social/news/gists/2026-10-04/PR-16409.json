@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T10:19:18.228766+00:00",
   "app_name": "Whisperwick",
-  "app_url": "https://kreggscode.github.io/whisperwick"
+  "app_url": "https://kreggscode.github.io/whisperwick",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "b29c8be00d09ab5c651f6a916e021d95975c9d16",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

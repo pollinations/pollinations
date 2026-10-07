@@ -32,5 +32,14 @@
   },
   "generated_at": "2026-10-04T09:08:18.775628+00:00",
   "app_name": "Real or AI? — Spot the Synthetic",
-  "app_url": "https://spot-the-ai.edgeone.dev"
+  "app_url": "https://spot-the-ai.edgeone.dev",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "3867475cac7ee7593bf5b87ca7c8184e3531456d",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

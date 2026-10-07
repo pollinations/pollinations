@@ -33,5 +33,14 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15973.jpg",
     "prompt": "In a cozy pixel art garden, a retro homepage noticeboard glows with a GitHub star counter and a small group of friendly sprites representing people online in Discord, while lime-green (#ecf874) code-plants grow around it. Polli wears tiny gardener's gloves and adjusts the board: the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-09-30T15:37:25.037090+00:00"
+  "generated_at": "2026-09-30T15:37:25.037090+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "4ad476c2de44f3b5b9e2db77bd9c8b57d2e2a6d4",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

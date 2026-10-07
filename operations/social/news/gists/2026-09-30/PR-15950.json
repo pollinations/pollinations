@@ -32,5 +32,129 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-30/PR-15950.jpg",
     "prompt": "In a cozy pixel art garden workspace, five tiny video screens glow beside a code-plant, four labeled '720p' and one '480p'; a friendly chunky CRT monitor robot holds the labels while Polli helps attach them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She wears a tiny tool belt and is small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Soft lime green (#ecf874) features prominently against a warm cream and pastel gradient background, with dark purple (#110518) outlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
   },
-  "generated_at": "2026-09-30T16:36:47.890188+00:00"
+  "generated_at": "2026-09-30T16:36:47.890188+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "0fba40605c8737e5a6f00ace5d5a39b24dc1f6f9",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-15950:alibaba/happyhorse-1.1",
+      "model_id": "alibaba/happyhorse-1.1",
+      "title": "HappyHorse 1.1",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "resolutions": {
+          "before": null,
+          "after": [
+            "720p"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15950:alibaba/wan-2.2-fast",
+      "model_id": "alibaba/wan-2.2-fast",
+      "title": "Wan 2.2",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "resolutions": {
+          "before": null,
+          "after": [
+            "480p"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15950:alibaba/wan-2.6",
+      "model_id": "alibaba/wan-2.6",
+      "title": "Wan 2.6",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "resolutions": {
+          "before": null,
+          "after": [
+            "720p"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15950:bytedance/seedance-2.0",
+      "model_id": "bytedance/seedance-2.0",
+      "title": "Seedance 2.0",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "resolutions": {
+          "before": null,
+          "after": [
+            "720p"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15950:x-ai/grok-imagine-video",
+      "model_id": "x-ai/grok-imagine-video",
+      "title": "Grok Video Pro",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "resolutions": {
+          "before": null,
+          "after": [
+            "720p"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "0fba40605c8737e5a6f00ace5d5a39b24dc1f6f9^1",
+    "after_ref": "0fba40605c8737e5a6f00ace5d5a39b24dc1f6f9"
+  }
 }

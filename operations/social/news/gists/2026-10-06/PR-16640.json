@@ -30,5 +30,149 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-06/PR-16640.jpg",
     "prompt": "In a cozy pixel art garden studio, a picture frame sprouts into a short filmstrip beside a helpful CRT monitor robot with square pixel eyes, while lime green (#ecf874) code-plants and flowers glow against a warm cream and soft lavender-to-mint pastel background. Polli wears a tiny director's beret and gently guides the frames: she is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art, never realistic—cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, and dark purple (#110518) outlines."
   },
-  "generated_at": "2026-10-06T20:23:20.759225+00:00"
+  "generated_at": "2026-10-06T20:23:20.759225+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "0b8d2307c0bf02652b1a8d5d03475579d4e5d0d2",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [
+    {
+      "id": "pr-16640:x-ai/grok-imagine-video-1.5-lite",
+      "model_id": "x-ai/grok-imagine-video-1.5-lite",
+      "title": "Grok Imagine Video 1.5 Lite",
+      "action": "NEW",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "video"
+        },
+        "default_duration": {
+          "before": null,
+          "after": 5
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_duration": {
+          "before": null,
+          "after": 15
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "min_duration": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01",
+            "completionVideoSeconds": "0.03"
+          }
+        },
+        "pricing_default_label": {
+          "before": null,
+          "after": "720p"
+        },
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "resolution",
+              "label": "Resolution",
+              "values": {
+                "": "720p",
+                "480p": "480p",
+                "1080p": "1080p"
+              }
+            }
+          ]
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "480p",
+              "label": "480p",
+              "description": "Applies when the requested video resolution is 480p.",
+              "pricing": {
+                "currency": "pollen",
+                "promptImageTokens": "0.01",
+                "completionVideoSeconds": "0.02"
+              }
+            },
+            {
+              "name": "1080p",
+              "label": "1080p",
+              "description": "Applies when the requested video resolution is 1080p.",
+              "pricing": {
+                "currency": "pollen",
+                "promptImageTokens": "0.01",
+                "completionVideoSeconds": "0.14"
+              }
+            }
+          ]
+        },
+        "resolutions": {
+          "before": null,
+          "after": [
+            "720p",
+            "480p",
+            "1080p"
+          ]
+        },
+        "video_capabilities": {
+          "before": null,
+          "after": [
+            "start_frame"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "0b8d2307c0bf02652b1a8d5d03475579d4e5d0d2^1",
+    "after_ref": "0b8d2307c0bf02652b1a8d5d03475579d4e5d0d2"
+  }
 }

@@ -36,5 +36,14 @@
   },
   "generated_at": "2026-09-29T12:46:11.084444+00:00",
   "app_name": "Pollinations for Obsidian",
-  "app_url": "https://github.com/xiaotian1171/pollinations-obsidian"
+  "app_url": "https://github.com/xiaotian1171/pollinations-obsidian",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "0d7a7e827e6ac9c810a2d1acb4381d5c2d80675e",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": []
 }

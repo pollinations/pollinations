@@ -32,5 +32,18 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-25/PR-15445.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular blushes, light-blue translucent wings, and a tiny librarian scarf, placing a garden sign reading `/mcp/ask-jev` beside a friendly retro terminal among code-flowers; a chunky CRT-monitor robot points excitedly at the newly mapped path. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, with a small pixel-font label: `HOSTED MCP`."
   },
-  "generated_at": "2026-09-25T11:00:30.271734+00:00"
+  "generated_at": "2026-09-25T11:00:30.271734+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "6e3f3c8af10b41be75a199e2c8132b421d90c065",
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "6e3f3c8af10b41be75a199e2c8132b421d90c065^1",
+    "after_ref": "6e3f3c8af10b41be75a199e2c8132b421d90c065"
+  }
 }

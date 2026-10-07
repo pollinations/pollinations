@@ -102,8 +102,9 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     }
 }
 
-// Permanent files are never billed or expired, so only an admin's own secret
-// key may create them — not a publishable key or one minted for a BYOP app.
+// Internal, unbilled and undocumented in the public API until storage billing
+// exists: only an admin's own secret key may create files that never expire —
+// not a publishable key or one minted for a BYOP app.
 async function canUploadPermanently(
     db: D1Database,
     auth: AuthResult,
@@ -321,17 +322,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old. Approved accounts can pass `permanent=true` with their own secret (`sk_`) key to store a file without expiry; its id starts with `p_`.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
-        parameters: [
-            {
-                name: "permanent",
-                in: "query",
-                required: false,
-                description:
-                    "`true` stores the file without expiry. Requires an approved account's own secret (`sk_`) key.",
-                schema: { type: "string", enum: ["true"] },
-            },
-        ],
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -386,13 +377,6 @@ api.post(
             },
             401: {
                 description: "Missing or invalid API key",
-                content: {
-                    "application/json": { schema: resolver(ErrorSchema) },
-                },
-            },
-            403: {
-                description:
-                    "`permanent=true` without an approved account's own secret key",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -934,7 +918,7 @@ api.on(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention. Permanent files (`p_` ids) never expire.",
+            "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
         security: [],
         responses: {
             200: {

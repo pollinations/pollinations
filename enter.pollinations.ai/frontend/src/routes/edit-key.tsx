@@ -87,7 +87,7 @@ function EditKeyPage() {
 
     useEffect(() => {
         if (!user || !id) return;
-        apiClient["api-keys"]
+        apiClient.account.keys
             .$get()
             .then((response) => (response.ok ? response.json() : null))
             .then((result) => {

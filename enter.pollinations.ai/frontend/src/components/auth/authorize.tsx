@@ -323,7 +323,7 @@ export function Authorize() {
                     : attribution?.appName || redirectHostname,
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
-                metadata: {
+                consent: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
                     ...(app_key &&
                         (!isDeviceMode || attribution?.found) && {
@@ -399,7 +399,9 @@ export function Authorize() {
                     if (!res || !res.ok) {
                         // The key was minted but can't be delivered — don't
                         // leave an active orphan in the account.
-                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
+                        apiClient.account.keys[":id"]
+                            .$delete({ param: { id } })
+                            .catch(() => {});
                         const data = (await res?.json().catch(() => null)) as {
                             message?: string;
                             error?: { message?: string };

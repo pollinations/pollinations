@@ -6,15 +6,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 IGNORED = {"health", "pending_change", "name", "title", "description", "publisher",
-           "brand_url", "brand_icon_url", "added_date", "community", "agent", "aliases", "retirement_at"}
+           "brand_url", "brand_icon_url", "added_date", "community", "agent", "retirement_at"}
 
 
 def model_changes(before, after, pr):
     old = {m["name"]: m for m in before if not m.get("community")}
     new = {m["name"]: m for m in after if not m.get("community")}
+    aliases = {alias for model in new.values() for alias in model.get("aliases", [])}
+    removed = old.keys() - new.keys()
+    renamed = {name: next((alias for alias in model.get("aliases", []) if alias in removed), None)
+               for name, model in new.items() if name not in old}
     events = []
     for name in sorted(old.keys() | new.keys()):
-        previous, current = old.get(name), new.get(name)
+        if name in removed and name in aliases:
+            continue  # This ID still works through an alias; it is not retired.
+        previous, current = old.get(renamed.get(name) or name), new.get(name)
         changes = {}
         for field in sorted((previous or {}).keys() | (current or {}).keys()):
             if field in IGNORED:
@@ -24,6 +30,8 @@ def model_changes(before, after, pr):
                 a, b = bool(a), bool(b)
             if a != b:
                 changes[field] = {"before": a, "after": b}
+        if renamed.get(name):
+            changes["model_id"] = {"before": renamed[name], "after": name}
         if previous is None or current is None:
             changes["availability"] = {"before": "Available" if previous else "Unavailable",
                                        "after": "Available" if current else "Retired"}
@@ -70,13 +78,21 @@ def pr_comparison_refs(pr, root=ROOT):
         if not originals or len(originals) != count:
             raise ValueError("Multi-commit PR requires its commit list to distinguish squash from rebase")
         merged = subprocess.run(["git", "rev-list", f"--max-count={count}", sha], cwd=root, check=True, capture_output=True, text=True).stdout.splitlines()[::-1]
-        def patch_id(commit):
-            patch = subprocess.run(["git", "show", "--pretty=format:", "--no-ext-diff", commit], cwd=root, check=True, capture_output=True).stdout
+        def patch_id(*refs):
+            command = (["git", "diff", "--no-ext-diff", *refs] if len(refs) == 2
+                       else ["git", "show", "--pretty=format:", "--no-ext-diff", refs[0]])
+            patch = subprocess.run(command, cwd=root, check=True, capture_output=True).stdout
             result = subprocess.run(["git", "patch-id", "--stable"], input=patch, check=True, capture_output=True).stdout.decode().split()
             return result[0] if result else None
         expected = [patch_id(commit) for commit in originals]
         if all(expected) and expected == [patch_id(commit) for commit in merged]:
             before = f"{sha}~{count}"
+        else:
+            source_base = subprocess.run(["git", "merge-base", before, originals[-1]], cwd=root,
+                                         check=True, capture_output=True, text=True).stdout.strip()
+            combined = patch_id(source_base, originals[-1])
+            if not combined or combined != patch_id(before, sha):
+                raise ValueError("Cannot verify the full PR range as a rebase or squash")
     return before, sha
 
 

@@ -86,7 +86,6 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
     return summary, filenames
 
 
-
 def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
     """Keep social publication independent of classification/catalog failures."""
     root = Path(get_repo_root())
@@ -110,6 +109,8 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
     try:
         from model_announcements import announcements_for_pr, pr_comparison_refs
         if any(path.startswith("shared/") for path in files):
+            if not (root / "node_modules/tsx").is_dir():
+                subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
             # Rebase detection needs original commits as well as the merged history.
             if pr.get("commits", 1) > 1:
                 commits = []

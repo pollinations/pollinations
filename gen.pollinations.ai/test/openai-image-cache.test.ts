@@ -379,6 +379,7 @@ describe("OpenAI image cache", () => {
             {
                 MEDIA: new MediaUpload(ctx, {
                     MEDIA_BUCKET: bucket,
+                    PERMANENT_BUCKET: createTestR2Bucket(),
                     MAX_FILE_SIZE: "104857600",
                 }),
             } as unknown as CloudflareBindings,

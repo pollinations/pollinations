@@ -53,17 +53,13 @@ const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
     muted,
 }) =>
     label === "Balance" ? (
-        <span className="inline-flex items-center gap-1 font-medium text-theme-text-strong">
+        <span className="inline-flex items-center gap-1 text-theme-text-base">
             <WalletKindIcon kind={value === "paid" ? "paid" : "tier"} />
             {value === "paid" ? "Paid" : "Quest"}
         </span>
     ) : (
         <span
-            className={
-                muted
-                    ? "text-theme-text-muted"
-                    : "font-medium text-theme-text-strong"
-            }
+            className={muted ? "text-theme-text-muted" : "text-theme-text-base"}
         >
             {value}
         </span>
@@ -128,7 +124,14 @@ const ChangeRow: FC<{ item: ChangeItem; showDate: boolean }> = ({
     item,
     showDate,
 }) => (
-    <li className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 first:border-t-0 sm:grid-cols-[3.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <li
+        className={`grid grid-cols-[3.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 py-2 sm:grid-cols-[3.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)] ${
+            showDate
+                ? "border-t border-theme-text-strong/10 first:border-t-0"
+                : // Same day: the line starts at the name column, so a day reads as one block.
+                  "relative before:absolute before:top-0 before:right-0 before:left-[4.25rem] before:h-px before:bg-theme-text-strong/10"
+        }`}
+    >
         <time
             dateTime={item.date}
             className="whitespace-nowrap text-theme-text-muted"
@@ -163,7 +166,7 @@ const ChangeRow: FC<{ item: ChangeItem; showDate: boolean }> = ({
                         key={`${label}:${before}`}
                         className="flex max-w-full items-baseline gap-2"
                     >
-                        <dt className="w-16 shrink-0 font-semibold text-theme-text-base">
+                        <dt className="w-16 shrink-0 text-theme-text-muted">
                             {item.details[i - 1]?.label === label ? "" : label}
                         </dt>
                         <dd className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">

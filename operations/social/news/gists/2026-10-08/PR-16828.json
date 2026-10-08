@@ -1,0 +1,37 @@
+{
+  "pr_number": 16828,
+  "title": "feat: news page with changes from the index",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16828",
+  "merged_at": "2026-10-08T22:16:52Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Replaced Enter’s hand-written Announcements list with an index.json-backed Changelog covering new and updated models, retirements, replacements, and API changes. Entries appear newest first under day headings, with Today separating upcoming from past changes. Rows show only the changed details—such as prices, Paid/Quest balance eligibility, capabilities, voices, replacement models, or API fields—and link to model pages or relevant API documentation while those links apply. Moved retirement dates show the old and new dates; withdrawn retirements show “Not retiring.” The list includes all upcoming changes and the latest 10 past changes, with “Show older” loading 10 more at a time up to 30 days back. News now shows daily highlights from the same index as one-line rows, excluding PRs already represented in the Changelog.",
+    "keywords": [
+      "Enter",
+      "news",
+      "changelog",
+      "models",
+      "retirements",
+      "API changes"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16828.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli sorts a glowing lime green (#ecf874) changelog into dated rows beside a retro monitor, with little code-plants growing around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny editor’s glasses and stays small within the scene, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender tones and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T22:18:11.037066+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "dff9995a4a55b5badaed6d136ec2bed980dbac67",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

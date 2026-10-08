@@ -1,0 +1,37 @@
+{
+  "pr_number": 16725,
+  "title": "feat: one news index for Enter and the README",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16725",
+  "merged_at": "2026-10-08T00:36:23Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added a shared news-branch index.json for Enter’s /news page and the README’s Latest News section. Built after each gist and daily summary run, it combines model announcements from registry diffs with the latest daily highlights. Enter’s model cards show changed Price, Balance and Capability values with PR links for announcements from 7 days ago through 30 days ahead; infrastructure cards remain hand-pinned. The daily summary now selects 0–5 highlights in the same generation call, removing the separate highlights call, prompt and highlights.md readers. A separate data migration will move 711 historical highlights.md lines into their daily summary.json files without changing existing fields. Registry-based news excludes the cancelled Gemini 2.5 Flash Lite retirement and treats the Qwen3 VL change as a route change, not a retirement. Grok Imagine Pro’s November 2 change has no registry entry and is not included in this index change.",
+    "keywords": [
+      "news index",
+      "Enter",
+      "README",
+      "model announcements",
+      "daily highlights",
+      "registry diffs"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16725.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli the bee in a tiny editor’s visor helps a cheerful CRT monitor robot arrange model notices and daily highlights on one lime green (#ecf874) index board, with code-plants growing around their desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T00:37:34.798505+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "422ca2dea74c186f97fe388ee2c0bea4b3a301fd",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

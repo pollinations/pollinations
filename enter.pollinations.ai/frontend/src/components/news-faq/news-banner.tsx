@@ -26,7 +26,7 @@ function changeChip(
 ) {
     const upcoming = date > today;
     if (status === "cancelled") {
-        return { label: "No longer retiring", intent: "info" } as const;
+        return { label: "Not retiring", intent: "info" } as const;
     }
     // Same ID, different model behind it: check voices and behavior.
     if (changes.model_id)
@@ -121,25 +121,25 @@ const apiChange = (news: ApiNews): ChangeItem => {
 };
 
 const ChangeRow: FC<{ item: ChangeItem }> = ({ item }) => (
-    <li className="grid items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="min-w-0">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <Chip size="sm" intent={item.chip.intent}>
-                    {item.chip.label}
-                </Chip>
-                <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={`PR #${item.pr}`}
-                    className="min-w-0 hover:underline"
-                >
-                    {item.name}
-                </a>
-            </div>
-        </div>
+    <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[5.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <Chip
+            size="sm"
+            intent={item.chip.intent}
+            className="justify-self-start"
+        >
+            {item.chip.label}
+        </Chip>
+        <a
+            href={item.url}
+            target="_blank"
+            rel="noreferrer"
+            title={`PR #${item.pr}`}
+            className="min-w-0 hover:underline sm:border-l sm:border-theme-text-strong/15 sm:pl-3"
+        >
+            {item.name}
+        </a>
         {item.details.length > 0 && (
-            <dl className="grid gap-y-0.5 text-xs leading-5">
+            <dl className="col-start-2 grid gap-y-0.5 text-xs leading-5 sm:col-start-3 sm:border-l sm:border-theme-text-strong/15 sm:pl-3">
                 {item.details.map(({ label, before, after }, i) => (
                     <div
                         key={`${label}:${before}`}

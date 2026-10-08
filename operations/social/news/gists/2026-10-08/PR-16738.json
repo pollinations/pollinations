@@ -1,0 +1,36 @@
+{
+  "pr_number": 16738,
+  "title": "fix(cli): name gen image output after the response content-type",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16738",
+  "merged_at": "2026-10-08T22:05:41Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Fixed `polli gen image` saving JPEG responses as `image.png` when `--output` is omitted. The CLI now chooses `image.jpg`, `image.png`, `image.webp`, or `image.svg` from the response Content-Type, ignoring case and parameters; unknown types still default to `image.png`. An explicit `--output` remains unchanged, including creation of its parent folder before the request. Human and `--json` output report the path actually written, help text describes extension inference, and the CLI skill documents the expected default filename. Added tests for JPEG output, parameterized PNG Content-Type, and an explicit output path.",
+    "keywords": [
+      "polli-cli",
+      "image generation",
+      "Content-Type",
+      "file extension",
+      "output path"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16738.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears a tiny photographer’s beret and labels a freshly printed picture `image.jpg` beside a lime green (#ecf874) code-plant, while a small CRT monitor robot checks the file label. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream background with soft lime green (#ecf874) glow and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T22:06:57.101548+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "84780c33f7c7319c4cb1c02cae9556f6cb0d9307",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

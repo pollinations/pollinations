@@ -1,7 +1,2854 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-08T15:44:09.213471+00:00",
+  "generated_at": "2026-10-08T16:37:58.210795+00:00",
   "models": [
+    {
+      "id": "pr-14589:openai/gpt-image-2.5-flare",
+      "model_id": "openai/gpt-image-2.5-flare",
+      "title": "GPT Image 2.5 Flare",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-08",
+      "pr": 14589,
+      "url": "https://github.com/pollinations/pollinations/pull/14589",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 16
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14589:openai/gpt-image-2.5-sunburst",
+      "model_id": "openai/gpt-image-2.5-sunburst",
+      "title": "GPT Image 2.5 Sunburst",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-08",
+      "pr": 14589,
+      "url": "https://github.com/pollinations/pollinations/pull/14589",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 16
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14556:nvidia/asset-harvester",
+      "model_id": "nvidia/asset-harvester",
+      "title": "NVIDIA Asset Harvester",
+      "action": "NEW",
+      "category": "3d",
+      "date": "2026-09-09",
+      "pr": 14556,
+      "url": "https://github.com/pollinations/pollinations/pull/14556",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "3d"
+          ]
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.07"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14627:nvidia/asset-harvester",
+      "model_id": "nvidia/asset-harvester",
+      "title": "NVIDIA Asset Harvester",
+      "action": "UPDATE",
+      "category": "3d",
+      "date": "2026-09-09",
+      "pr": 14627,
+      "url": "https://github.com/pollinations/pollinations/pull/14627",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
+    },
+    {
+      "id": "pr-14736:deepseek/deepseek-v4.1-flash",
+      "model_id": "deepseek/deepseek-v4.1-flash",
+      "title": "DeepSeek V4.1 Flash",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-12",
+      "pr": 14736,
+      "url": "https://github.com/pollinations/pollinations/pull/14736",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 60
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000022",
+            "promptCachedTokens": "0.000000007",
+            "completionTextTokens": "0.00000066"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14890:openai/gpt-image-2.5-flare",
+      "model_id": "openai/gpt-image-2.5-flare",
+      "title": "GPT Image 2.5 Flare",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-14",
+      "pr": 14890,
+      "url": "https://github.com/pollinations/pollinations/pull/14890",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": null,
+          "after": 12
+        }
+      }
+    },
+    {
+      "id": "pr-14890:openai/gpt-image-2.5-sunburst",
+      "model_id": "openai/gpt-image-2.5-sunburst",
+      "title": "GPT Image 2.5 Sunburst",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-14",
+      "pr": 14890,
+      "url": "https://github.com/pollinations/pollinations/pull/14890",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": null,
+          "after": 12
+        }
+      }
+    },
+    {
+      "id": "pr-14895:fish-audio/s2.1-pro",
+      "model_id": "fish-audio/s2.1-pro",
+      "title": "Fish Audio S2.1 Pro",
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000015"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000015825"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-2.5-flash-lite",
+      "model_id": "google/gemini-2.5-flash-lite",
+      "title": "Gemini 2.5 Flash Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "completionTextTokens": "0.0000004"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptCachedTokens": "0.00000001055",
+            "promptCacheWriteTokens": "0.0000001055",
+            "promptAudioTokens": "0.0000003165",
+            "promptImageTokens": "0.0000001055",
+            "promptVideoTokens": "0.0000001055",
+            "completionTextTokens": "0.000000422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3-flash-preview",
+      "model_id": "google/gemini-3-flash-preview",
+      "title": "Gemini 3 Flash Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.00000005",
+            "promptCacheWriteTokens": "0.0000005",
+            "promptAudioTokens": "0.000001",
+            "promptImageTokens": "0.0000005",
+            "promptVideoTokens": "0.0000005",
+            "completionTextTokens": "0.000003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005275",
+            "promptCachedTokens": "0.00000005275",
+            "promptCacheWriteTokens": "0.0000005275",
+            "promptAudioTokens": "0.000001055",
+            "promptImageTokens": "0.0000005275",
+            "promptVideoTokens": "0.0000005275",
+            "completionTextTokens": "0.000003165"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3.1-pro-preview",
+      "model_id": "google/gemini-3.1-pro-preview",
+      "title": "Gemini 3.1 Pro Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000002",
+            "promptAudioTokens": "0.000002",
+            "promptImageTokens": "0.000002",
+            "promptVideoTokens": "0.000002",
+            "completionTextTokens": "0.000012"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000211",
+            "promptCachedTokens": "0.000000211",
+            "promptCacheWriteTokens": "0.00000211",
+            "promptAudioTokens": "0.00000211",
+            "promptImageTokens": "0.00000211",
+            "promptVideoTokens": "0.00000211",
+            "completionTextTokens": "0.00001266"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3.5-flash-lite",
+      "model_id": "google/gemini-3.5-flash-lite",
+      "title": "Gemini 3.5 Flash Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000003",
+            "promptCacheWriteTokens": "0.0000003",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000003",
+            "promptVideoTokens": "0.0000003",
+            "completionTextTokens": "0.0000025"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003165",
+            "promptCachedTokens": "0.00000003165",
+            "promptCacheWriteTokens": "0.0000003165",
+            "promptAudioTokens": "0.0000003165",
+            "promptImageTokens": "0.0000003165",
+            "promptVideoTokens": "0.0000003165",
+            "completionTextTokens": "0.0000026375"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3.7-flash",
+      "model_id": "google/gemini-3.7-flash",
+      "title": "Gemini 3.7 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000075",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.00000075",
+            "promptAudioTokens": "0.00000075",
+            "promptImageTokens": "0.00000075",
+            "promptVideoTokens": "0.00000075",
+            "completionTextTokens": "0.00000375"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000079125",
+            "promptCachedTokens": "0.000000079125",
+            "promptCacheWriteTokens": "0.00000079125",
+            "promptAudioTokens": "0.00000079125",
+            "promptImageTokens": "0.00000079125",
+            "promptVideoTokens": "0.00000079125",
+            "completionTextTokens": "0.00000395625"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3.8-flash",
+      "model_id": "google/gemini-3.8-flash",
+      "title": "Gemini 3.8 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000075",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.00000075",
+            "promptAudioTokens": "0.00000075",
+            "promptImageTokens": "0.00000075",
+            "promptVideoTokens": "0.00000075",
+            "completionTextTokens": "0.00000375"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000079125",
+            "promptCachedTokens": "0.000000079125",
+            "promptCacheWriteTokens": "0.00000079125",
+            "promptAudioTokens": "0.00000079125",
+            "promptImageTokens": "0.00000079125",
+            "promptVideoTokens": "0.00000079125",
+            "completionTextTokens": "0.00000395625"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemma-4-26b-a4b-it",
+      "model_id": "google/gemma-4-26b-a4b-it",
+      "title": "Gemma 4 26B A4B",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000013",
+            "promptImageTokens": "0.00000013",
+            "completionTextTokens": "0.0000004"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000013715",
+            "promptImageTokens": "0.00000013715",
+            "completionTextTokens": "0.000000422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemma-4-31b-it",
+      "model_id": "google/gemma-4-31b-it",
+      "title": "Gemma 4 31B",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000014",
+            "promptImageTokens": "0.00000014",
+            "completionTextTokens": "0.0000004"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001477",
+            "promptImageTokens": "0.0000001477",
+            "completionTextTokens": "0.000000422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:x-ai/grok-imagine-image-2.0",
+      "model_id": "x-ai/grok-imagine-image-2.0",
+      "title": "Grok Imagine Image 2.0",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01",
+            "completionImageTokens": "0.06"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01055",
+            "completionImageTokens": "0.0633"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:x-ai/grok-imagine-image-quality",
+      "model_id": "x-ai/grok-imagine-image-quality",
+      "title": "Grok Imagine Pro",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01",
+            "completionImageTokens": "0.05"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01055",
+            "completionImageTokens": "0.05275"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:x-ai/grok-imagine-video-1.5",
+      "model_id": "x-ai/grok-imagine-video-1.5",
+      "title": "Grok Imagine Video 1.5",
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01",
+            "completionVideoSeconds": "0.14"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01055",
+            "completionVideoSeconds": "0.1477"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:alibaba/happyhorse-1.1",
+      "model_id": "alibaba/happyhorse-1.1",
+      "title": "HappyHorse 1.1",
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.0988"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.104234"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:thinkingmachines/inkling-small",
+      "model_id": "thinkingmachines/inkling-small",
+      "title": "Inkling Small",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.0000001",
+            "completionTextTokens": "0.0000012"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005275",
+            "promptCachedTokens": "0.0000001055",
+            "completionTextTokens": "0.000001266"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:poolside/laguna-s-2.1",
+      "model_id": "poolside/laguna-s-2.1",
+      "title": "Laguna S 2.1",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000009",
+            "promptCachedTokens": "0.000000009",
+            "completionTextTokens": "0.00000018"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000009495",
+            "promptCachedTokens": "0.000000009495",
+            "completionTextTokens": "0.0000001899"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:meituan/longcat-2.0",
+      "model_id": "meituan/longcat-2.0",
+      "title": "LongCat 2.0",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.0000012"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003165",
+            "promptCachedTokens": "0.00000000633",
+            "completionTextTokens": "0.000001266"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:inception/mercury-2",
+      "model_id": "inception/mercury-2",
+      "title": "Mercury 2",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000025",
+            "promptCachedTokens": "0.000000025",
+            "completionTextTokens": "0.00000075"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000026375",
+            "promptCachedTokens": "0.000000026375",
+            "completionTextTokens": "0.00000079125"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:inception/mercury-2.5-preview",
+      "model_id": "inception/mercury-2.5-preview",
+      "title": "Mercury 2.5 Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000004",
+            "promptCachedTokens": "0.000000004",
+            "completionTextTokens": "0.00000015"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000422",
+            "promptCachedTokens": "0.00000000422",
+            "completionTextTokens": "0.00000015825"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:meta/llama-4-scout",
+      "model_id": "meta/llama-4-scout",
+      "title": "Meta Llama 4 Scout",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptImageTokens": "0.0000001",
+            "completionTextTokens": "0.0000003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptImageTokens": "0.0000001055",
+            "completionTextTokens": "0.0000003165"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14927:meta/llama-4-scout",
+      "model_id": "meta/llama-4-scout",
+      "title": "Meta Llama 4 Scout",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14927,
+      "url": "https://github.com/pollinations/pollinations/pull/14927",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": []
+        },
+        "context_length": {
+          "before": 327680,
+          "after": 131072
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptImageTokens": "0.0000001055",
+            "completionTextTokens": "0.0000003165"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptImageTokens": "0.0000001",
+            "completionTextTokens": "0.0000003"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:xiaomi/mimo-v2.5",
+      "model_id": "xiaomi/mimo-v2.5",
+      "title": "MiMo V2.5",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000014",
+            "promptCachedTokens": "0.0000000028",
+            "completionTextTokens": "0.00000028"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001477",
+            "promptCachedTokens": "0.000000002954",
+            "completionTextTokens": "0.0000002954"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:xiaomi/mimo-v2.5-pro",
+      "model_id": "xiaomi/mimo-v2.5-pro",
+      "title": "MiMo V2.5 Pro",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000435",
+            "promptCachedTokens": "0.0000000036",
+            "completionTextTokens": "0.00000087"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000458925",
+            "promptCachedTokens": "0.000000003798",
+            "completionTextTokens": "0.00000091785"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:minimax/minimax-m2.7",
+      "model_id": "minimax/minimax-m2.7",
+      "title": "MiniMax M2.7",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000025",
+            "promptCachedTokens": "0.00000005",
+            "completionTextTokens": "0.000001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000026375",
+            "promptCachedTokens": "0.00000005275",
+            "completionTextTokens": "0.000001055"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:mistralai/mistral-small-3.2",
+      "model_id": "mistralai/mistral-small-3.2",
+      "title": "Mistral Small 3.2",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000075",
+            "completionTextTokens": "0.0000002"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000079125",
+            "completionTextTokens": "0.000000211"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:mistralai/mistral-small-4",
+      "model_id": "mistralai/mistral-small-4",
+      "title": "Mistral Small 4",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000015",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "promptCachedTokens": "0.000000015825",
+            "promptImageTokens": "0.00000015825",
+            "completionTextTokens": "0.000000633"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-2.5-flash-image",
+      "model_id": "google/gemini-2.5-flash-image",
+      "title": "Nano Banana",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptImageTokens": "0.0000003",
+            "completionTextTokens": "0.0000025",
+            "completionImageTokens": "0.00003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003165",
+            "promptImageTokens": "0.0000003165",
+            "completionTextTokens": "0.0000026375",
+            "completionImageTokens": "0.00003165"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3.1-flash-image",
+      "model_id": "google/gemini-3.1-flash-image",
+      "title": "Nano Banana 2",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptImageTokens": "0.0000005",
+            "completionTextTokens": "0.000003",
+            "completionImageTokens": "0.00006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005275",
+            "promptImageTokens": "0.0000005275",
+            "completionTextTokens": "0.000003165",
+            "completionImageTokens": "0.0000633"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3.1-flash-lite-image",
+      "model_id": "google/gemini-3.1-flash-lite-image",
+      "title": "Nano Banana 2 Lite",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000025",
+            "promptImageTokens": "0.00000025",
+            "completionTextTokens": "0.0000015",
+            "completionImageTokens": "0.00003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000026375",
+            "promptImageTokens": "0.00000026375",
+            "completionTextTokens": "0.0000015825",
+            "completionImageTokens": "0.00003165"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:google/gemini-3-pro-image",
+      "model_id": "google/gemini-3-pro-image",
+      "title": "Nano Banana Pro",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.000012",
+            "completionImageTokens": "0.00012"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000211",
+            "promptImageTokens": "0.00000211",
+            "completionTextTokens": "0.00001266",
+            "completionImageTokens": "0.0001266"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3-coder-next",
+      "model_id": "qwen/qwen3-coder-next",
+      "title": "Qwen3 Coder Next",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000012",
+            "promptCachedTokens": "0.00000007",
+            "completionTextTokens": "0.0000008"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001266",
+            "promptCachedTokens": "0.00000007385",
+            "completionTextTokens": "0.000000844"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3-vl-30b-a3b-instruct",
+      "model_id": "qwen/qwen3-vl-30b-a3b-instruct",
+      "title": "Qwen3 VL 30B A3B Instruct",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000013",
+            "completionTextTokens": "0.00000052"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000013715",
+            "completionTextTokens": "0.0000005486"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3.7-flash",
+      "model_id": "qwen/qwen3.7-flash",
+      "title": "Qwen3.7 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003",
+            "promptCachedTokens": "0.000000006",
+            "promptCacheWriteTokens": "0.000000038",
+            "promptImageTokens": "0.00000003",
+            "promptVideoTokens": "0.00000003",
+            "completionTextTokens": "0.00000013"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003165",
+            "promptCachedTokens": "0.00000000633",
+            "promptCacheWriteTokens": "0.00000004009",
+            "promptImageTokens": "0.00000003165",
+            "promptVideoTokens": "0.00000003165",
+            "completionTextTokens": "0.00000013715"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3.7-max",
+      "model_id": "qwen/qwen3.7-max",
+      "title": "Qwen3.7 Max",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001475",
+            "promptCachedTokens": "0.000000295",
+            "promptCacheWriteTokens": "0.00000184375",
+            "completionTextTokens": "0.000004425"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001556125",
+            "promptCachedTokens": "0.000000311225",
+            "promptCacheWriteTokens": "0.000001945156",
+            "completionTextTokens": "0.000004668375"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3.7-plus",
+      "model_id": "qwen/qwen3.7-plus",
+      "title": "Qwen3.7 Plus",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000032",
+            "promptCachedTokens": "0.000000064",
+            "promptCacheWriteTokens": "0.0000004",
+            "completionTextTokens": "0.00000128"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003376",
+            "promptCachedTokens": "0.00000006752",
+            "promptCacheWriteTokens": "0.000000422",
+            "completionTextTokens": "0.0000013504"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3.8-27b",
+      "model_id": "qwen/qwen3.8-27b",
+      "title": "Qwen3.8 27B",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000032",
+            "promptCachedTokens": "0.000000032",
+            "promptImageTokens": "0.00000032",
+            "promptVideoTokens": "0.00000032",
+            "completionTextTokens": "0.0000025"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003376",
+            "promptCachedTokens": "0.00000003376",
+            "promptImageTokens": "0.0000003376",
+            "promptVideoTokens": "0.0000003376",
+            "completionTextTokens": "0.0000026375"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3.8-flash",
+      "model_id": "qwen/qwen3.8-flash",
+      "title": "Qwen3.8 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000016",
+            "promptCacheWriteTokens": "0.0000002",
+            "promptImageTokens": "0.00000015",
+            "promptVideoTokens": "0.00000015",
+            "completionTextTokens": "0.00000047"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "promptCachedTokens": "0.00000001688",
+            "promptCacheWriteTokens": "0.000000211",
+            "promptImageTokens": "0.00000015825",
+            "promptVideoTokens": "0.00000015825",
+            "completionTextTokens": "0.00000049585"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:qwen/qwen3.8-max",
+      "model_id": "qwen/qwen3.8-max",
+      "title": "Qwen3.8 Max",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.00000025",
+            "promptCacheWriteTokens": "0.0000025",
+            "promptImageTokens": "0.000002",
+            "promptVideoTokens": "0.000002",
+            "completionTextTokens": "0.000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000211",
+            "promptCachedTokens": "0.00000026375",
+            "promptCacheWriteTokens": "0.0000026375",
+            "promptImageTokens": "0.00000211",
+            "promptVideoTokens": "0.00000211",
+            "completionTextTokens": "0.00000633"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:recraft/recraft-v4.1-vector",
+      "model_id": "recraft/recraft-v4.1-vector",
+      "title": "Recraft V4.1 Vector",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionImageTokens": "0.08"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.0844"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:bytedance/seedream-4.5",
+      "model_id": "bytedance/seedream-4.5",
+      "title": "Seedream 4.5",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionImageTokens": "0.04"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.0422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14895:stepfun/step-3.5-flash",
+      "model_id": "stepfun/step-3.5-flash",
+      "title": "StepFun Step 3.5 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-15",
+      "pr": 14895,
+      "url": "https://github.com/pollinations/pollinations/pull/14895",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "completionTextTokens": "0.0000003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "completionTextTokens": "0.0000003165"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15042:elevenlabs/music-v2.5",
+      "model_id": "elevenlabs/music-v2.5",
+      "title": "ElevenLabs Music v2.5",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-16",
+      "pr": 15042,
+      "url": "https://github.com/pollinations/pollinations/pull/15042",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.0025",
+            "completionAudioSeconds": "0.0025"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14811:black-forest-labs/flux.2-max",
+      "model_id": "black-forest-labs/flux.2-max",
+      "title": "FLUX.2 Max",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-18",
+      "pr": 14811,
+      "url": "https://github.com/pollinations/pollinations/pull/14811",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 8
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.03",
+            "completionImageTokens": "0.03"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14791:openai/gpt-4o-mini",
+      "model_id": "openai/gpt-4o-mini",
+      "title": "GPT-4o Mini",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-18",
+      "pr": 14791,
+      "url": "https://github.com/pollinations/pollinations/pull/14791",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 128000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000075",
+            "completionTextTokens": "0.0000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14812:tencent/hy3",
+      "model_id": "tencent/hy3",
+      "title": "Hy3",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-18",
+      "pr": 14812,
+      "url": "https://github.com/pollinations/pollinations/pull/14812",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001477",
+            "promptCachedTokens": "0.000000036925",
+            "completionTextTokens": "0.0000006119"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14798:tencent/hy4-preview",
+      "model_id": "tencent/hy4-preview",
+      "title": "Hy4 Preview",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-18",
+      "pr": 14798,
+      "url": "https://github.com/pollinations/pollinations/pull/14798",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000087987",
+            "promptCachedTokens": "0.00000004431",
+            "completionTextTokens": "0.000002638555"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15111:typesafe/jev",
+      "model_id": "typesafe/jev",
+      "title": "Jev",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-18",
+      "pr": 15111,
+      "url": "https://github.com/pollinations/pollinations/pull/15111",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 64000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000004431"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15210:mistralai/mistral-small-4",
+      "model_id": "mistralai/mistral-small-4",
+      "title": "Mistral Small 4",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-20",
+      "pr": 15210,
+      "url": "https://github.com/pollinations/pollinations/pull/15210",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "promptCachedTokens": "0.000000015825",
+            "promptImageTokens": "0.00000015825",
+            "completionTextTokens": "0.000000633"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000015",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15267:openai/gpt-4o-mini",
+      "model_id": "openai/gpt-4o-mini",
+      "title": "GPT-4o Mini",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-21",
+      "pr": 15267,
+      "url": "https://github.com/pollinations/pollinations/pull/15267",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000075",
+            "completionTextTokens": "0.0000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "promptCachedTokens": "0.000000079125",
+            "completionTextTokens": "0.000000633"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15190:openai/gpt-5-nano",
+      "model_id": "openai/gpt-5-nano",
+      "title": "GPT-5 Nano",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-21",
+      "pr": 15190,
+      "url": "https://github.com/pollinations/pollinations/pull/15190",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-15190:openai/gpt-5.4-mini",
+      "model_id": "openai/gpt-5.4-mini",
+      "title": "GPT-5.4 Mini",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-21",
+      "pr": 15190,
+      "url": "https://github.com/pollinations/pollinations/pull/15190",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-15190:openai/gpt-5.4-nano",
+      "model_id": "openai/gpt-5.4-nano",
+      "title": "GPT-5.4 Nano",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-21",
+      "pr": 15190,
+      "url": "https://github.com/pollinations/pollinations/pull/15190",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-15278:x-ai/grok-4.7",
+      "model_id": "x-ai/grok-4.7",
+      "title": "Grok 4.7",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-21",
+      "pr": 15278,
+      "url": "https://github.com/pollinations/pollinations/pull/15278",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 500000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001688",
+            "promptCachedTokens": "0.000000422",
+            "completionTextTokens": "0.000005064"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15267:qwen/qwen3.8-27b",
+      "model_id": "qwen/qwen3.8-27b",
+      "title": "Qwen3.8 27B",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-21",
+      "pr": 15267,
+      "url": "https://github.com/pollinations/pollinations/pull/15267",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003376",
+            "promptCachedTokens": "0.00000003376",
+            "promptImageTokens": "0.0000003376",
+            "promptVideoTokens": "0.0000003376",
+            "completionTextTokens": "0.0000026375"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002532",
+            "promptCachedTokens": "0.00000002532",
+            "promptImageTokens": "0.0000002532",
+            "promptVideoTokens": "0.0000002532",
+            "completionTextTokens": "0.000002321"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15309:anthropic/claude-opus-5.5",
+      "model_id": "anthropic/claude-opus-5.5",
+      "title": "Claude Opus 5.5",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-22",
+      "pr": 15309,
+      "url": "https://github.com/pollinations/pollinations/pull/15309",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 20
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000005",
+            "completionTextTokens": "0.00002"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15312:openai/gpt-6-luna",
+      "model_id": "openai/gpt-6-luna",
+      "title": "GPT-6 Luna",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-22",
+      "pr": 15312,
+      "url": "https://github.com/pollinations/pollinations/pull/15312",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "completionTextTokens": "0.0000005"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15312:openai/gpt-6-sol",
+      "model_id": "openai/gpt-6-sol",
+      "title": "GPT-6 Sol",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-22",
+      "pr": 15312,
+      "url": "https://github.com/pollinations/pollinations/pull/15312",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15291:qwen/qwen3.7-flash",
+      "model_id": "qwen/qwen3.7-flash",
+      "title": "Qwen3.7 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-22",
+      "pr": 15291,
+      "url": "https://github.com/pollinations/pollinations/pull/15291",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003165",
+            "promptCachedTokens": "0.00000000633",
+            "promptCacheWriteTokens": "0.00000004009",
+            "promptImageTokens": "0.00000003165",
+            "promptVideoTokens": "0.00000003165",
+            "completionTextTokens": "0.00000013715"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003",
+            "promptCachedTokens": "0.000000006",
+            "promptCacheWriteTokens": "0.000000038",
+            "promptImageTokens": "0.00000003",
+            "promptVideoTokens": "0.00000003",
+            "completionTextTokens": "0.00000013"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15291:qwen/qwen3.8-flash",
+      "model_id": "qwen/qwen3.8-flash",
+      "title": "Qwen3.8 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-22",
+      "pr": 15291,
+      "url": "https://github.com/pollinations/pollinations/pull/15291",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "promptCachedTokens": "0.00000001688",
+            "promptCacheWriteTokens": "0.000000211",
+            "promptImageTokens": "0.00000015825",
+            "promptVideoTokens": "0.00000015825",
+            "completionTextTokens": "0.00000049585"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000016",
+            "promptCacheWriteTokens": "0.0000002",
+            "promptImageTokens": "0.00000015",
+            "promptVideoTokens": "0.00000015",
+            "completionTextTokens": "0.00000047"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15291:qwen/qwen3.8-max",
+      "model_id": "qwen/qwen3.8-max",
+      "title": "Qwen3.8 Max",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-22",
+      "pr": 15291,
+      "url": "https://github.com/pollinations/pollinations/pull/15291",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000211",
+            "promptCachedTokens": "0.00000026375",
+            "promptCacheWriteTokens": "0.0000026375",
+            "promptImageTokens": "0.00000211",
+            "promptVideoTokens": "0.00000211",
+            "completionTextTokens": "0.00000633"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.00000025",
+            "promptCacheWriteTokens": "0.0000025",
+            "promptImageTokens": "0.000002",
+            "promptVideoTokens": "0.000002",
+            "completionTextTokens": "0.000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15291:alibaba/wan-3.0",
+      "model_id": "alibaba/wan-3.0",
+      "title": "Wan 3.0",
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-09-22",
+      "pr": 15291,
+      "url": "https://github.com/pollinations/pollinations/pull/15291",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.068"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptVideoSeconds": "0.068",
+            "completionVideoSeconds": "0.068"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15178:z-ai/glm-5.3-flashx",
+      "model_id": "z-ai/glm-5.3-flashx",
+      "title": "Z.ai GLM-5.3 FlashX",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-22",
+      "pr": 15178,
+      "url": "https://github.com/pollinations/pollinations/pull/15178",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.000000079125",
+            "completionTextTokens": "0.00000131875"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15333:black-forest-labs/flux.1.1-pro",
+      "model_id": "black-forest-labs/flux.1.1-pro",
+      "title": "FLUX 1.1 Pro",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-23",
+      "pr": 15333,
+      "url": "https://github.com/pollinations/pollinations/pull/15333",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.03"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15339:openai/gpt-image-2",
+      "model_id": "openai/gpt-image-2",
+      "title": "GPT Image 2",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-23",
+      "pr": 15339,
+      "url": "https://github.com/pollinations/pollinations/pull/15339",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": 6,
+          "after": null
+        }
+      }
+    },
+    {
+      "id": "pr-15339:openai/gpt-image-2.5-flare",
+      "model_id": "openai/gpt-image-2.5-flare",
+      "title": "GPT Image 2.5 Flare",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-23",
+      "pr": 15339,
+      "url": "https://github.com/pollinations/pollinations/pull/15339",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": 12,
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptCachedTokens": "0.0000009375",
+            "promptImageTokens": "0.000006",
+            "completionImageTokens": "0.0000225"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15339:openai/gpt-image-2.5-sunburst",
+      "model_id": "openai/gpt-image-2.5-sunburst",
+      "title": "GPT Image 2.5 Sunburst",
+      "action": "UPDATE",
+      "category": "image",
+      "date": "2026-09-23",
+      "pr": 15339,
+      "url": "https://github.com/pollinations/pollinations/pull/15339",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": 12,
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptCachedTokens": "0.0000009375",
+            "promptImageTokens": "0.000006",
+            "completionImageTokens": "0.0000225"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15304:openai/gpt-5.3-codex",
+      "model_id": "openai/gpt-5.3-codex",
+      "title": "GPT-5.3 Codex",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-23",
+      "pr": 15304,
+      "url": "https://github.com/pollinations/pollinations/pull/15304",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 400000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000013125",
+            "promptCachedTokens": "0.00000013125",
+            "promptCacheWriteTokens": "0.0000013125",
+            "completionTextTokens": "0.0000105"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15331:microsoft/mai-image-2.6",
+      "model_id": "microsoft/mai-image-2.6",
+      "title": "MAI Image 2.6",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-23",
+      "pr": 15331,
+      "url": "https://github.com/pollinations/pollinations/pull/15331",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 12
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptImageTokens": "0.000006",
+            "completionImageTokens": "0.0000285"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15320:microsoft/mai-image-2.6-flash",
+      "model_id": "microsoft/mai-image-2.6-flash",
+      "title": "MAI Image 2.6 Flash",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-23",
+      "pr": 15320,
+      "url": "https://github.com/pollinations/pollinations/pull/15320",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 12
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000013125",
+            "promptImageTokens": "0.000001875",
+            "completionImageTokens": "0.00001425"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15311:xiaomi/mimo-v2.6-flash",
+      "model_id": "xiaomi/mimo-v2.6-flash",
+      "title": "MiMo V2.6 Flash",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-23",
+      "pr": 15311,
+      "url": "https://github.com/pollinations/pollinations/pull/15311",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001477",
+            "promptCachedTokens": "0.000000002954",
+            "completionTextTokens": "0.0000002954"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15311:xiaomi/mimo-v2.6-pro",
+      "model_id": "xiaomi/mimo-v2.6-pro",
+      "title": "MiMo V2.6 Pro",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-23",
+      "pr": 15311,
+      "url": "https://github.com/pollinations/pollinations/pull/15311",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000458925",
+            "promptCachedTokens": "0.000000003798",
+            "completionTextTokens": "0.00000091785"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15338:minimax/minimax-m2.7",
+      "model_id": "minimax/minimax-m2.7",
+      "title": "MiniMax M2.7",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-23",
+      "pr": 15338,
+      "url": "https://github.com/pollinations/pollinations/pull/15338",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000026375",
+            "promptCachedTokens": "0.00000005275",
+            "completionTextTokens": "0.000001055"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000028485",
+            "promptCachedTokens": "0.00000005697",
+            "completionTextTokens": "0.0000011394"
+          }
+        }
+      }
+    },
     {
       "id": "pr-15361:deepseek/deepseek-v4-flash",
       "model_id": "deepseek/deepseek-v4-flash",

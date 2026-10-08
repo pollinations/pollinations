@@ -51,7 +51,11 @@ function clean(value, maxLength = 200) {
 
 function section(body, label) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = String(body || "").match(
+    const match = String(body || "")
+        // HTML comments are not content. A trailing <!-- ... --> would
+        // otherwise leak into the field and break parsing (#16820).
+        .replace(/<!--[\s\S]*?-->/g, "")
+        .match(
         new RegExp(
             `(?:^|\\n)### ${escaped}\\s*\\n([\\s\\S]*?)(?=\\n### |$)`,
             "i",

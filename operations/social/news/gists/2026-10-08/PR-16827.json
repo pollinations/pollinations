@@ -1,0 +1,37 @@
+{
+  "pr_number": 16827,
+  "title": "feat: record API changes and model replacements for news",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16827",
+  "merged_at": "2026-10-08T19:30:56Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "The news gist job now compares regenerated APIDOCS.md from post-deploy docs PRs to record added or removed endpoints and breaking parameter or body-field changes: removals, newly required fields, and narrowed types. It skips bodies documented on only one side and types shown as `any`, treating them as documentation gaps. The news index now has an `api` list alongside `models` and records model replacements through their alias (`model_id`, `previous_title`) as well as voice changes. The same code has backfilled the last 30 days on the news branch, including the `/models` status-filter change in #15059 and the voice-changer `audio` → `file` change in #16537.",
+    "keywords": [
+      "news index",
+      "API changes",
+      "APIDOCS.md",
+      "breaking changes",
+      "model replacements",
+      "voice changes"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16827.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli wears tiny editor glasses and sorts API change notes beside a lime green (#ecf874) glowing news index, with code-plants growing around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, sharing the frame, never oversized or dominating, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T19:32:18.717092+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "475e105f8737a0907fa149069c554f7335ede234",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

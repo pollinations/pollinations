@@ -17,7 +17,7 @@ describe("CodeMode", () => {
             LOADER,
         });
         const code = await codemode.tool({
-            search: {
+            mcp__exa__search: {
                 description: "Search the web",
                 inputSchema: {
                     type: "object",
@@ -47,6 +47,7 @@ describe("CodeMode", () => {
             },
         });
 
+        expect(code.description).toContain("exa");
         expect(code.description).toContain("search");
         expect(code.description).toContain("Search the web");
         expect(code.inputSchema).toMatchObject({
@@ -54,7 +55,7 @@ describe("CodeMode", () => {
         });
         const result = await code.execute({
             code: `async () => {
-                const pages = await Promise.all(["a", "b"].map((query) => codemode.search({ query })));
+                const pages = await Promise.all(["a", "b"].map((query) => exa.search({ query })));
                 return { pages, sum: await codemode.add({ a: 2, b: 3 }) };
             }`,
         });

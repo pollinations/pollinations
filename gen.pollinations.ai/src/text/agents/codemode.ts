@@ -72,21 +72,29 @@ type CodeAgentTool = {
  */
 export class CodeMode extends WorkerEntrypoint<CloudflareBindings> {
     async tool(tools: Record<string, CodeAgentTool>) {
-        const code = createCodemodeTool(this.env.LOADER, [
-            {
-                tools: Object.fromEntries(
-                    Object.entries(tools).map(([name, agentTool]) => [
-                        name,
-                        tool({
-                            description: agentTool.description,
-                            inputSchema: jsonSchema(agentTool.inputSchema),
-                            execute: async (input) =>
-                                codeValue(await agentTool.execute(input)),
-                        }),
-                    ]),
-                ),
-            },
-        ]);
+        // `mcp.tools()` names tools mcp__<server>__<tool>. Like prompt agents,
+        // each server becomes a namespace (pollinations.listModels); other
+        // tools stay under codemode.
+        const namespaces: Record<string, ToolProvider["tools"]> = {};
+        for (const [key, agentTool] of Object.entries(tools)) {
+            const [, server = "codemode", name = key] =
+                key.match(/^mcp__(.+?)__(.+)$/) ?? [];
+            const namespace = server.replaceAll("-", "_");
+            namespaces[namespace] ??= {};
+            namespaces[namespace][name] = tool({
+                description: agentTool.description,
+                inputSchema: jsonSchema(agentTool.inputSchema),
+                execute: async (input) =>
+                    codeValue(await agentTool.execute(input)),
+            });
+        }
+        const code = createCodemodeTool(
+            this.env.LOADER,
+            Object.entries(namespaces).map(([name, namespaceTools]) => ({
+                name,
+                tools: namespaceTools,
+            })),
+        );
         return {
             description: code.description ?? "",
             inputSchema: await asSchema(code.inputSchema).jsonSchema,

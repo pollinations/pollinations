@@ -4,6 +4,59 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.13] - 2026-10-07
+
+### Added
+- `referenceImages`, `referenceVideos`, and `referenceAudios` on video options
+  accept a URL or an array of URLs for guidance. `referenceImage` continues
+  to control first/last frames separately.
+
+## [5.1.0-alpha.12] - 2026-10-06
+
+### Removed
+- `imageGenerate()` no longer takes `n` and always returns one image. The API
+  generates one image per request and rejects `n` above 1.
+
+## [5.1.0-alpha.11] - 2026-10-06
+
+### Fixed
+- `transcribe()` keeps an uploaded `File`'s name instead of always sending
+  `audio.mp3`. Providers that read the format from the extension, such as
+  `openai/gpt-transcribe`, rejected WAV and other non-MP3 uploads.
+
+## [5.1.0-alpha.10] - 2026-10-06
+
+### Fixed
+- `authorizeDevice().poll()` errors keep the token endpoint's HTTP status
+  instead of always reporting 400.
+
+## [5.1.0-alpha.9] - 2026-10-06
+
+### Added
+- `questPollenOnly` on `createKey()` options and on `KeyInfo`, `AccountKey`
+  and `CreatedKey`: the key never spends paid Pollen, and requests stop when
+  Quest Pollen runs out.
+
+### Changed
+- `allowedModels` restricts a key to model categories (text, image, video,
+  audio, 3d, embedding, realtime). A model ID allows its whole category.
+
+## [5.1.0-alpha.8] - 2026-10-04
+
+### Added
+- `embeddings()` for `/v1/embeddings`, with the `Embedding*` types.
+- `audioTransform()` for voice-changer and voice-isolator, and `referenceAudio`
+  on speech options.
+
+### Fixed
+- `generateText({ raw: true })` sends `systemPrompt` and `json` like the
+  non-raw path.
+- Base64 images keep the media type the API sends instead of always PNG.
+- Cancellation stays active while a response body is read, and an
+  already-aborted signal rejects before the request is sent.
+- `PolliProvider` validates restored keys, recovers from browser auth failures,
+  and keeps the saved key when a re-login fails.
+
 ## [5.1.0-alpha.7] - 2026-09-05
 
 ### Added

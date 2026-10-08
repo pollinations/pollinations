@@ -554,7 +554,7 @@ _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
 
 # Required keys inside gist.gist (the AI-generated analysis)
 _GIST_AI_KEYS = {"category", "user_facing", "publish_tier", "importance",
-                 "headline", "blurb", "summary", "impact", "keywords", "image_prompt"}
+                 "summary", "keywords"}
 
 VALID_CATEGORIES = {"feature", "bug_fix", "improvement", "docs", "infrastructure", "community"}
 VALID_PUBLISH_TIERS = {"none", "discord_only", "daily"}
@@ -589,7 +589,46 @@ def validate_gist(gist: Dict) -> List[str]:
     if "keywords" in ai and not isinstance(ai["keywords"], list):
         errors.append("keywords must be a list")
 
+    if not isinstance(ai.get("summary"), str) or not ai["summary"].strip():
+        errors.append("gist.summary must be non-empty text")
+    if not gist.get("image", {}).get("prompt"):
+        errors.append("missing image.prompt")
+
+    if "enrichment" in gist:
+        for field in ("classification", "models"):
+            if gist["enrichment"].get(field) not in {"complete", "failed"}:
+                errors.append(f"invalid enrichment.{field}")
+        if gist["enrichment"].get("classification") == "complete":
+            sys.path.insert(0, get_repo_root())
+            from operations.github.project_manager import area_names, read_brief, PR_TYPES, SOURCES
+            if gist.get("area") not in [None, *area_names(read_brief())]:
+                errors.append("invalid area")
+            if gist.get("type") not in ([None] if gist.get("area") is None else PR_TYPES):
+                errors.append("invalid type")
+            if gist.get("source") not in SOURCES:
+                errors.append("invalid source")
+        for event in gist.get("announcements", []):
+            if event.get("action") not in {"NEW", "UPDATE", "RETIRE"}:
+                errors.append("invalid announcement action")
+            if not event.get("model_id") or not isinstance(event.get("changes"), dict):
+                errors.append("announcement requires model_id and changes")
+            if event.get("effective_status") not in {"unconfirmed", "scheduled"}:
+                errors.append("invalid announcement effective_status")
+
     return errors
+
+
+def gist_context(gist: Dict) -> Dict:
+    """The shared factual input for realtime, daily, weekly and highlights."""
+    ai = gist.get("gist", {})
+    return {
+        **{key: gist.get(key) for key in (
+            "pr_number", "title", "author", "url", "area", "type", "source", "app_name", "app_url"
+        )},
+        **{key: ai.get(key) for key in (
+            "summary", "category", "importance", "user_facing", "keywords"
+        )},
+    }
 
 
 def apply_publish_tier_rules(gist: Dict) -> str:
@@ -716,29 +755,6 @@ def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> 
     return None
 
 
-def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[str]:
-    """Read a text file from the news branch (local overlay first, GitHub API fallback)."""
-    # Try local first (workflow overlay)
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return f.read()
-        except OSError:
-            pass
-
-    # Fall back to GitHub API
-    import base64 as _b64
-    headers = _github_headers(github_token)
-    resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
-        headers=headers,
-    )
-    if resp.status_code == 200:
-        return _b64.b64decode(resp.json()["content"]).decode()
-    return None
-
-
 def generate_platform_post(
     platform: str,
     summary: Dict,
@@ -762,12 +778,12 @@ def generate_platform_post(
     """
     voice = load_prompt(f"tone/{platform}")
     pr_summary = summary.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in summary.get("arcs", [])])
+    arcs = json.dumps(summary.get("arcs", []), indent=2)
     pr_count = summary.get("pr_count", 0)
 
-    task = f"{preamble}\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
+    task = f"{preamble}\n\n{pr_summary}\n\nSelected updates with factual detail:\n{arcs}"
     if pr_count:
-        task += f"\nTotal PRs merged: {pr_count}"
+        task += f"\nPRs selected for this recap: {pr_count}. This is not the total number of merges."
     task += "\n\n" + load_format(platform)
     if extra_context:
         task += extra_context
@@ -955,8 +971,8 @@ def commit_files_to_branch(
     owner: str,
     repo: str,
     label: str = "",
-) -> None:
-    """Commit JSON files to a branch.
+) -> bool:
+    """Commit JSON files to a branch. Returns False if any file failed.
 
     Args:
         files: list of (file_path, data_dict) tuples
@@ -966,6 +982,7 @@ def commit_files_to_branch(
 
     headers = _github_headers(github_token)
 
+    ok = True
     for file_path, data in files:
         if data is None:
             continue
@@ -998,6 +1015,8 @@ def commit_files_to_branch(
             print(f"  Committed {file_path}")
         else:
             print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
+            ok = False
+    return ok
 
 
 # ── VPS deployment ───────────────────────────────────────────────────

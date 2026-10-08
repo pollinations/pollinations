@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
-import { validateModelPermissionIds } from "../registry/visible-model-ids.ts";
+import { toModelCategories } from "../registry/model-permissions.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
 import { isUserBanned } from "./ban.ts";
@@ -32,6 +32,7 @@ type CreateApiKeyForUserInput = {
     expiresIn?: number;
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
+    questPollenOnly?: boolean;
     accountPermissions?: string[] | null;
     metadata?: CallerMetadata;
     defaultCreatedVia: string;
@@ -109,14 +110,15 @@ function rejectInvalidClientId(): never {
 
 // Caller-provided metadata is restricted to a typed allowlist. Server-controlled
 // fields like keyType / createdVia / plaintextKey / app attribution can never
-// be set or overridden by callers, even via /api/api-keys metadata patches.
+// be set or overridden by callers, even via /account/keys metadata patches.
 function pickCallerMetadata(
     metadata: CallerMetadata | undefined,
     isPublishable: boolean,
 ): Record<string, unknown> {
     const out: Record<string, unknown> = {};
-    if (Array.isArray(metadata?.redirectUris)) {
-        out.redirectUris = cleanRedirectUris(metadata.redirectUris);
+    const redirectUris = cleanRedirectUris(metadata?.redirectUris ?? []);
+    if (isPublishable && redirectUris.length > 0) {
+        out.redirectUris = redirectUris;
     }
     if (typeof metadata?.redirectOrigin === "string")
         out.redirectOrigin = metadata.redirectOrigin;
@@ -137,11 +139,6 @@ async function validateClientRedirectBinding(
 ): Promise<VerifiedClientAttribution | null> {
     if (!metadata) return null;
     const requestedClientId = metadata.requestedClientId;
-
-    if (typeof (metadata as Record<string, unknown>).clientId === "string") {
-        rejectInvalidClientId();
-    }
-
     if (typeof requestedClientId !== "string") {
         return null;
     }
@@ -219,6 +216,7 @@ export async function createApiKeyForUser({
     expiresIn,
     allowedModels,
     pollenBudget,
+    questPollenOnly = false,
     accountPermissions,
     metadata,
     defaultCreatedVia,
@@ -251,10 +249,7 @@ export async function createApiKeyForUser({
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {
-        permissions.models = await validateModelPermissionIds(
-            dbBinding,
-            allowedModels,
-        );
+        permissions.models = await toModelCategories(dbBinding, allowedModels);
     }
     if (safeAccountPerms && safeAccountPerms.length > 0) {
         permissions.account = safeAccountPerms;
@@ -298,6 +293,7 @@ export async function createApiKeyForUser({
     if (effectivePollenBudget != null) {
         d1Updates.pollenBalance = effectivePollenBudget;
     }
+    if (questPollenOnly) d1Updates.questPollenOnly = true;
     if (!isPublishable && attribution) {
         d1Updates.byopClientKeyId = attribution.clientId;
     }
@@ -318,6 +314,7 @@ export async function createApiKeyForUser({
         expiresIn,
         permissions: Object.keys(permissions).length > 0 ? permissions : null,
         pollenBudget: effectivePollenBudget ?? null,
+        questPollenOnly,
         byopClientKeyId:
             !isPublishable && attribution ? attribution.clientId : null,
         metadata: finalMetadata,

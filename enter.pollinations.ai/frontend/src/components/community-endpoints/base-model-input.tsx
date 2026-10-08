@@ -1,7 +1,7 @@
 import { EditableCombobox } from "@pollinations/ui";
 import { useMemo } from "react";
 import { getModelPricesFromCatalog } from "../models/model-catalog.ts";
-import { useModelCategories } from "../models/use-model-categories.ts";
+import { useModelCatalog } from "../models/use-model-catalog.ts";
 import { useModelQuerySearch } from "../models/use-model-query-search.tsx";
 
 /** Text models only; the same filters as the permission picker, one pick. */
@@ -14,7 +14,7 @@ export function BaseModelInput({
     disabled: boolean;
     onChange: (value: string) => void;
 }) {
-    const { catalog } = useModelCategories();
+    const catalog = useModelCatalog();
     const textModels = useMemo(
         () =>
             getModelPricesFromCatalog(catalog).filter(

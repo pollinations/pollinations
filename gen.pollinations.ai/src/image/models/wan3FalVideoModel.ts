@@ -91,7 +91,7 @@ export async function callWan3FalAPI(
                   WAN_3_ASPECT_RATIOS,
               ),
         duration,
-        audio: safeParams.audio,
+        audio: safeParams.audio ?? true,
         enable_prompt_expansion: true,
         enable_safety_checker: true,
         seed: safeParams.seed,

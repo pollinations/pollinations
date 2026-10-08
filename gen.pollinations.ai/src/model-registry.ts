@@ -219,10 +219,15 @@ function buildRegistry(
               ? // /v1/messages runs as a chat request.
                 [...entry.supportedEndpoints, "/v1/messages"]
               : entry.supportedEndpoints;
+        // Refresh official metadata once per registry build so dated prices
+        // update within the existing cache TTL without getters on every read.
+        const info = entry.communityEndpoint
+            ? entry.info
+            : modelInfoFromDefinition(entry.id, entry.definition);
         return {
             ...entry,
             supportedEndpoints,
-            info: { ...entry.info, supported_endpoints: supportedEndpoints },
+            info: { ...info, supported_endpoints: supportedEndpoints },
         };
     });
     // Build lookup keys before presentation sorting so duplicate aliases keep

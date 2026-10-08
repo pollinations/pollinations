@@ -12,6 +12,7 @@ import { TOP_UP_QUEST_IDS } from "../services/quests/groups/account-setup.ts";
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const LEADERBOARD_CACHE_TTL = 60;
 const LEADERBOARD_LIMIT = 50;
+const EXCLUDED_GITHUB_LOGIN = "voodoohop";
 
 const leaderboardEntrySchema = z.object({
     githubLogin: z.string(),
@@ -100,7 +101,7 @@ async function buildQuestLeaderboard(
 
     const contributors = rows
         .flatMap((row) =>
-            row.githubLogin
+            row.githubLogin && row.githubLogin !== EXCLUDED_GITHUB_LOGIN
                 ? [
                       {
                           githubLogin: row.githubLogin,
@@ -201,7 +202,11 @@ export async function buildQuestStandings(
             githubLogin: row.githubLogin,
             totalPollen: roundPollenLedgerAmount(row.totalPollen),
         }))
-        .filter((row) => row.totalPollen > 0)
+        .filter(
+            (row) =>
+                row.totalPollen > 0 &&
+                row.githubLogin !== EXCLUDED_GITHUB_LOGIN,
+        )
         .sort(
             (a, b) =>
                 b.totalPollen - a.totalPollen ||
@@ -251,12 +256,13 @@ export async function buildQuestStandings(
             ...row,
             supporter: supporters.has(row.githubLogin),
         })),
-        you: viewer
-            ? {
-                  githubLogin: viewer,
-                  rank: viewerIndex >= 0 ? viewerIndex + 1 : null,
-                  totalPollen: ranking[viewerIndex]?.totalPollen ?? 0,
-              }
-            : null,
+        you:
+            viewer && viewer !== EXCLUDED_GITHUB_LOGIN
+                ? {
+                      githubLogin: viewer,
+                      rank: viewerIndex >= 0 ? viewerIndex + 1 : null,
+                      totalPollen: ranking[viewerIndex]?.totalPollen ?? 0,
+                  }
+                : null,
     };
 }

@@ -4,8 +4,6 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
-## [5.1.0-alpha.15] - 2026-10-08
-
 ### Added
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.

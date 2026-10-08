@@ -140,6 +140,27 @@ describe("getGenerationModelRegistry", () => {
         }
         // Chat-only models join through the shared adapter (#16674).
         expect(advertised).toContain("anthropic/claude-sonnet-4.6");
+        // The advertisement rule, pinned exactly: default-endpoint text
+        // models advertise Responses; explicit endpoint lists are respected.
+        for (const entry of registry.visibleEntries()) {
+            if (
+                entry.communityEndpoint ||
+                entry.definition.category !== "text"
+            ) {
+                continue;
+            }
+            const explicit = entry.definition.supportedEndpoints;
+            if (
+                explicit !== undefined &&
+                !explicit.includes("/v1/responses")
+            ) {
+                expect(entry.supportedEndpoints).not.toContain(
+                    "/v1/responses",
+                );
+            } else {
+                expect(entry.supportedEndpoints).toContain("/v1/responses");
+            }
+        }
         // Decision-only contracts opt out: explicit endpoint lists without
         // /v1/responses are respected.
         expect(advertised).not.toContain("typesafe/jev-1.13");

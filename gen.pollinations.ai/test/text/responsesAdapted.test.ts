@@ -106,9 +106,9 @@ describe("adapted Responses over Chat (#16674)", () => {
     });
 
     it("serves non-streaming Responses through the Chat pipeline", async () => {
-        const seen: string[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-            seen.push(String(url));
+        const bodies: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+            bodies.push(String(init?.body ?? ""));
             return chatJsonResponse();
         });
         const response = await post(false);
@@ -123,7 +123,9 @@ describe("adapted Responses over Chat (#16674)", () => {
         expect(body.status).toBe("completed");
         expect(JSON.stringify(body.output)).toContain("Hi from Claude");
         expect(body.usage.input_tokens).toBe(10);
-        expect(seen.length).toBeGreaterThan(0);
+        // The uphill mapping really reached upstream with the user input.
+        expect(bodies.length).toBeGreaterThan(0);
+        expect(bodies.some((b) => b.includes("Hello"))).toBe(true);
     });
 
     it("serves streaming Responses through the Chat pipeline", async () => {

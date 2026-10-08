@@ -1946,11 +1946,11 @@ test("direct Responses returns 400 for reusable input state", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(0);
 });
 
-test("Responses rejects models without a direct endpoint without calling Chat", async ({
+test("Responses serves chat-only models through the Chat adapter", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
+    await mocks.enable("tinybird", "portkeyDirect");
     const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
@@ -1959,18 +1959,27 @@ test("Responses rejects models without a direct endpoint without calling Chat", 
         },
         body: JSON.stringify({
             model: "stepfun/step-3.7-flash",
-            input: "must not adapt to chat",
+            input: "served through the chat adapter",
         }),
     });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-        error: {
-            message: expect.stringContaining("stateless Responses API"),
-        },
-    });
+    expect(response.status, await response.clone().text()).toBe(200);
+    await response.text();
     await wait();
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+
+    // The chat-only model was served through the Chat pipeline: the upstream
+    // chat call really happened (#16674).
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        messages: expect.arrayContaining([
+            expect.objectContaining({
+                role: "user",
+                content: expect.stringContaining(
+                    "served through the chat adapter",
+                ),
+            }),
+        ]),
+    });
 });
 
 test("canonical model headers preserve provider-reported payload models", async ({

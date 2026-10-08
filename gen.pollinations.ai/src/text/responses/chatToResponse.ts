@@ -347,7 +347,14 @@ function slotKey(raw: JsonObject, calls: Map<string, AccumulatedCall>): string {
     // split across name/arguments chunks stays one call; genuinely parallel
     // open slots get a fresh solo slot and are resolved by the caller.
     if (typeof raw.index === "number") return `idx:${raw.index}`;
-    if (typeof raw.id === "string" && raw.id) return `id:${raw.id}`;
+    if (typeof raw.id === "string" && raw.id) {
+        // An id-only continuation chunk (no index) rejoins the slot that
+        // already stored this id instead of opening a phantom nameless slot.
+        for (const [key, call] of calls) {
+            if (call.id === raw.id) return key;
+        }
+        return `id:${raw.id}`;
+    }
     if (calls.size === 1) return [...calls.keys()][0];
     return `solo:${calls.size}`;
 }

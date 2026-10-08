@@ -412,6 +412,14 @@ export function responsesToChatRequest(request: CreateResponseRequest): {
                     ? prev.reasoning_content
                     : `${prev.reasoning_content}\n${message.reasoning_content}`;
             merged.push(message);
+        } else if (reasoningOnly(message) && prev && mergeTarget(prev)) {
+            // A later reasoning-only item joins the previous assistant message
+            // (text, calls, or earlier reasoning) instead of starting a
+            // consecutive assistant message that strict providers reject.
+            prev.reasoning_content =
+                prev.reasoning_content == null
+                    ? message.reasoning_content
+                    : `${prev.reasoning_content}\n${message.reasoning_content}`;
         } else {
             merged.push(message);
         }

@@ -342,6 +342,28 @@ describe("responsesToChatRequest", () => {
         ).toHaveLength(1);
     });
 
+    it("folds later reasoning into the previous assistant message", () => {
+        const { messages } = responsesToChatRequest(
+            req({
+                input: [
+                    {
+                        type: "message",
+                        role: "assistant",
+                        content: [{ type: "output_text", text: "Calling." }],
+                    },
+                    { type: "reasoning", summary: [{ text: "thinking" }] },
+                    { type: "reasoning", summary: [{ text: "more" }] },
+                ],
+            }),
+        );
+        // No consecutive assistant messages for strict providers.
+        expect(messages).toHaveLength(1);
+        expect(messages[0].role).toBe("assistant");
+        expect(messages[0].reasoning_content).toContain("thinking");
+        expect(messages[0].reasoning_content).toContain("more");
+        expect(JSON.stringify(messages[0].content)).toContain("Calling.");
+    });
+
     it("rejects unknown input item types", () => {
         expect(() =>
             responsesToChatRequest(

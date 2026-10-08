@@ -814,6 +814,58 @@ describe("chatToResponsesStream", () => {
         expect(out).toContain('"type":"function_call"');
     });
 
+    it("rejoins id-only continuations with their indexed slot", async () => {
+        const out = await collect(
+            chatToResponsesStream(
+                sse([
+                    JSON.stringify({
+                        choices: [
+                            {
+                                index: 0,
+                                delta: {
+                                    tool_calls: [
+                                        {
+                                            index: 0,
+                                            id: "c1",
+                                            type: "function",
+                                            function: { name: "f" },
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                    }),
+                    JSON.stringify({
+                        choices: [
+                            {
+                                index: 0,
+                                delta: {
+                                    tool_calls: [
+                                        {
+                                            id: "c1",
+                                            function: { arguments: "{}" },
+                                        },
+                                    ],
+                                },
+                                finish_reason: "tool_calls",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 5,
+                            completion_tokens: 5,
+                            total_tokens: 10,
+                        },
+                    }),
+                ]),
+                "m",
+            ),
+        );
+        // No phantom nameless slot: one call, completed, not failed.
+        expect(out).toContain("response.completed");
+        expect(out).not.toContain('"type":"error"');
+        expect(out).toContain('"name":"f"');
+    });
+
     it("maps server web-search usage back and forth", () => {
         const r = chatUsageToResponsesUsage({
             prompt_tokens: 10,

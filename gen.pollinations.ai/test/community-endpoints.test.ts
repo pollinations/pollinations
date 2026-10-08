@@ -3102,6 +3102,7 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
+        const adaptedUpstreamCalls: unknown[] = [];
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
 
@@ -3115,20 +3116,19 @@ fixtureTest(
                     messages?: Array<{ role?: string; content?: unknown }>;
                     max_tokens?: unknown;
                 };
-                // Adapted Responses requests carry content parts instead of a
-                // plain string and no caller max_tokens (#16674). Plain Chat
-                // callers send string content with max_tokens.
-                if (
-                    Array.isArray(chatBody.messages?.[0]?.content) ||
-                    chatBody.max_tokens === undefined
-                ) {
+                // Adapted Responses requests carry no caller max_tokens and
+                // normalized text content (#16674). Plain Chat callers send
+                // string content with max_tokens. Pin each shape separately so
+                // neither path can regress into the other undetected.
+                if (chatBody.max_tokens === undefined) {
                     await expect(
                         Promise.resolve(chatBody),
                     ).resolves.toMatchObject({
                         model: "gpt-4.1-mini",
-                        messages: [{ role: "user" }],
+                        messages: [{ role: "user", content: "hello" }],
                         stream: false,
                     });
+                    adaptedUpstreamCalls.push(chatBody);
                 } else {
                     await expect(
                         Promise.resolve(chatBody),
@@ -3278,6 +3278,9 @@ fixtureTest(
             ([input, init]) => new Request(input, init).url === chatUrl,
         );
         expect(upstreamCalls).toHaveLength(4);
+        // The adapted Responses request really went upstream (not just the
+        // three plain Chat calls).
+        expect(adaptedUpstreamCalls.length).toBeGreaterThan(0);
     },
 );
 

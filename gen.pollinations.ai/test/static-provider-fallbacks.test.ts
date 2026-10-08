@@ -554,6 +554,36 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("prices Claude Haiku 5.5 on Vercel exactly as on Bedrock, including the long-context tier", () => {
+        const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];
+        expect(primary).toMatchObject({
+            provider: "aws",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["anthropic/claude-haiku-5.5:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        for (const [promptTextTokens, expected] of [
+            [1000, (1000 * 0.1 + 1000 * 0.5) / 1e6],
+            [100_001, (100_001 * 0.5 + 1000 * 2.5) / 1e6],
+        ] as const) {
+            const billing = calculateUsageBilling({
+                model: "anthropic/claude-haiku-5.5",
+                usage: { promptTextTokens, completionTextTokens: 1000 },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(expected, 9);
+        }
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];

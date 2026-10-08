@@ -1,6 +1,6 @@
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { describe, expect, it } from "vitest";
-import { mcpCardRoutes } from "@/routes/mcp-card.ts";
+import { mcpCardRoutes } from "../src/routes/mcp-card.ts";
 
 const CARD_MEDIA_TYPE = "application/mcp-server-card+json";
 

@@ -986,7 +986,9 @@ describe("prompt-agent runtime", () => {
                             content: [
                                 {
                                     type: "text",
-                                    text: `found ${body.params?.arguments?.query}`,
+                                    text: JSON.stringify({
+                                        title: `found ${body.params?.arguments?.query}`,
+                                    }),
                                 },
                             ],
                         },
@@ -1008,7 +1010,9 @@ describe("prompt-agent runtime", () => {
                                             function: {
                                                 name: "mcp__codemode__execute",
                                                 arguments: JSON.stringify({
-                                                    code: 'async () => Promise.all(["a", "b"].map((query) => exa.search({ query })))',
+                                                    // JSON text arrives parsed; the trailing `;`
+                                                    // is how models often end the function.
+                                                    code: 'async () => (await Promise.all(["a", "b"].map((query) => exa.search({ query })))).map((page) => page.title);',
                                                 }),
                                             },
                                         },

@@ -51,7 +51,38 @@ function nudge(
         : `${target}.`;
 }
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+/** Places moved since the start of today (UTC): ↑3, ↓1, or "new". */
+function Movement({ movement }: { movement: number | null }) {
+    if (movement === 0) return null;
+    const [label, text, className] =
+        movement === null
+            ? ["New on the board today", "new", "text-theme-text-muted"]
+            : movement > 0
+              ? [
+                    `Up ${movement} since yesterday`,
+                    `↑${movement}`,
+                    "text-outcome-positive-text",
+                ]
+              : [
+                    `Down ${-movement} since yesterday`,
+                    `↓${-movement}`,
+                    "text-outcome-negative-text",
+                ];
+    return (
+        <span
+            title={label}
+            className={`shrink-0 text-xs font-semibold tabular-nums ${className}`}
+        >
+            <span aria-hidden="true">{text}</span>
+            <span className="sr-only">{label}</span>
+        </span>
+    );
+}
+
 function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
+    const medal = MEDALS[row.rank - 1];
     return (
         <li
             className={`flex items-center gap-3 rounded-xl px-3 py-2 ${
@@ -59,7 +90,13 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
             }`}
         >
             <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-theme-text-muted">
-                {row.rank}
+                {medal ? (
+                    <span role="img" aria-label={`Rank ${row.rank}`}>
+                        {medal}
+                    </span>
+                ) : (
+                    row.rank
+                )}
             </span>
             <img
                 src={`https://github.com/${encodeURIComponent(row.githubLogin)}.png?size=64`}
@@ -87,14 +124,17 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
                     <span className="sr-only">Pollen supporter</span>
                 </span>
             )}
-            <Text
-                as="span"
-                weight="semibold"
-                tone="strong"
-                className="ml-auto shrink-0 tabular-nums"
-            >
-                {formatPollen(row.totalPollen)}
-            </Text>
+            <span className="ml-auto flex shrink-0 items-center gap-2">
+                <Movement movement={row.movement} />
+                <Text
+                    as="span"
+                    weight="semibold"
+                    tone="strong"
+                    className="tabular-nums"
+                >
+                    {formatPollen(row.totalPollen)}
+                </Text>
+            </span>
         </li>
     );
 }

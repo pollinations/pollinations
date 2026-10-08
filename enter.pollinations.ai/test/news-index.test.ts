@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    apiDetails,
     cardDetails,
     type ModelNews,
     visibleModelNews,
@@ -183,6 +184,22 @@ describe("model news cards", () => {
             { label: "Price", after: "Text in $0.68/M" },
             { label: "Balance", after: "paid" },
         ]);
+    });
+
+    it("starts API rows with the endpoint summary", () => {
+        expect(
+            apiDetails({
+                id: "pr-1:GET /models/stats",
+                endpoint: "GET /models/stats",
+                summary: "Model Usage Stats",
+                action: "ADD",
+                breaking: false,
+                changes: [],
+                date: "2026-10-08",
+                pr: 1,
+                url: "https://github.com/pollinations/pollinations/pull/1",
+            }),
+        ).toEqual([{ label: "Endpoint", after: "Model Usage Stats" }]);
     });
 
     it("shows retirements without details", () => {

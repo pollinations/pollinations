@@ -62,26 +62,41 @@
   "generated_at": "2026-09-18T06:29:30.834688+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "Your key has a pulse",
-      "text": "Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)"
-    },
-    {
-      "emoji": "📱",
-      "title": "Model status, minus the weather report",
-      "text": "Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)"
+      "emoji": "💡",
+      "title": "Describe it, get code",
+      "text": "[Try Regexly](https://fadyabohamza-netizen.github.io/regexly) for regex with flavor-specific explanations, [Try SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) for database queries, or [Try Codeverter](https://fadyabohamza-netizen.github.io/codeverter) to translate between programming languages.",
+      "prs": [
+        15092,
+        15101,
+        15104
+      ],
+      "app": true
     },
     {
       "emoji": "🤖",
-      "title": "DCORE joins the garden",
-      "text": "Generate Pollinations images from a Discord–Telegram bot already tending 16 servers. [Try it](https://bot.dtempest.online)",
+      "title": "Tests and API blueprints",
+      "text": "Paste source code into [TestMine](https://fadyabohamza-netizen.github.io/testmine) to generate unit tests, or describe an API to [ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) for REST or GraphQL endpoint blueprints.",
+      "prs": [
+        15106,
+        15107
+      ],
       "app": true
     },
     {
-      "emoji": "💡",
-      "title": "A small pile of developer shortcuts",
-      "text": "New community tools turn plain English into regexes, SQL, API blueprints, converted code, or unit tests. [Try it](https://fadyabohamza-netizen.github.io/regexly) [Try it](https://fadyabohamza-netizen.github.io/sqlcraft) [Try it](https://fadyabohamza-netizen.github.io/apiscribe) [Try it](https://fadyabohamza-netizen.github.io/codeverter) [Try it](https://fadyabohamza-netizen.github.io/testmine)",
-      "app": true
+      "emoji": "✨",
+      "title": "A clearer account menu",
+      "text": "See your display name and current key and account Pollen status together in the updated account and app menus. [Open Enter](https://enter.pollinations.ai/keys).",
+      "prs": [
+        14951
+      ]
+    },
+    {
+      "emoji": "🔗",
+      "title": "Model health, separate from models",
+      "text": "Check model health at [`/models/status`](https://gen.pollinations.ai/models/status). Health data has moved out of `/models`, so model listings and status checks now have separate endpoints.",
+      "prs": [
+        15052
+      ]
     }
   ]
 }

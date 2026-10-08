@@ -127,23 +127,37 @@
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Wan video gets more routes",
-      "text": "`wan-pro` and `wan-3.0` now handle text, image, and reference-to-video workflows; Wan 3.0 can also use a second image as the end frame. [Try the API](https://gen.pollinations.ai/docs)"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Mercury 2.5 Preview",
-      "text": "A new model for reasoning, tool use, structured output, multi-turn chat, and streaming—available as `inception/mercury-2.5-preview`. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "title": "More ways into Wan video",
+      "text": "Use `wan-pro` or `wan-3.0` for text-, image-, or reference-to-video requests. `wan-3.0` also accepts a second image as an end frame. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14229
+      ]
     },
     {
       "emoji": "🤖",
-      "title": "DeepSeek V4 Flash Vision",
-      "text": "Send text and images to `deepseek/deepseek-v4-flash-vision-exp` for fast multimodal prompts through the unified API. [Try the API](https://gen.pollinations.ai/v1/chat/completions)"
+      "title": "Three models join the roster",
+      "text": "Try `inception/mercury-2.5-preview` for text, `deepseek/deepseek-v4-flash-vision-exp` for text and image input, or `anthropic/claude-fable-5.1` for long-context work. [See available models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        14312,
+        14319,
+        14320
+      ]
     },
     {
-      "emoji": "✨",
-      "title": "Claude Fable 5.1",
-      "text": "Long-context multimodal Claude arrives with adaptive reasoning, automatic tools, prompt caching, and up to 1M tokens of context. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "emoji": "🔗",
+      "title": "Prime Agent meets Polli",
+      "text": "Configure Prime Agent with Pollinations models using `polli harness prime on|off|status`. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14176
+      ]
+    },
+    {
+      "emoji": "💡",
+      "title": "Model health in Play",
+      "text": "Community models in Play now have a dot showing their 24-hour uptime, so you can check model health before choosing one. [Open Play](https://pollinations.ai/play).",
+      "prs": [
+        13675
+      ]
     }
   ]
 }

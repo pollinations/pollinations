@@ -82,26 +82,47 @@
   "generated_at": "2026-09-04T06:29:46.366930+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Qwen3.8 Max 0902",
-      "text": "The exact Qwen checkpoint is now available for chat and Responses API calls, with streaming, tool use, image/video input, structured output, and prompt caching. [API Docs](https://gen.pollinations.ai/docs)"
+      "emoji": "🤖",
+      "title": "Open WebUI for Pollinations",
+      "text": "Chat with Pollinations text models in Open WebUI, with image, video, and audio tools available through MCP. [Try it](https://openwebui.pollinations.ai).",
+      "prs": [
+        14372,
+        14417
+      ],
+      "app": true
     },
     {
       "emoji": "✨",
-      "title": "Open WebUI for Pollinations",
-      "text": "A full chat workspace with every Pollinations text model and MCP-powered image, video, and audio tools—without leaving the conversation. [Try it](https://openwebui.pollinations.ai)",
+      "title": "Qwen3.8 Max joins",
+      "text": "Use the paid-only `qwen/qwen3.8-max-0902` text model through the [Pollinations API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        14383
+      ]
+    },
+    {
+      "emoji": "🔗",
+      "title": "OpenClaw meets Polli",
+      "text": "Configure OpenClaw with `polli harness openclaw on`, choose a default model with `--model`, and use the managed Polli media-generation skill. [Explore the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14343
+      ]
+    },
+    {
+      "emoji": "🎯",
+      "title": "Homework Solver joins learn",
+      "text": "Work through multiple-choice, short-answer, true/false, and fill-in-the-blank questions with a Pollinations-powered app. [Try it](https://zizoisu.github.io/ai-homework-solver).",
+      "prs": [
+        14377
+      ],
       "app": true
     },
     {
       "emoji": "🔗",
-      "title": "Polli joins OpenClaw",
-      "text": "Run `polli harness openclaw on` to wire Pollinations models and managed media-generation skills into OpenClaw. The claw has access to pixels now."
-    },
-    {
-      "emoji": "🎯",
-      "title": "AI Homework Solver",
-      "text": "A Pollinations-powered study helper for multiple-choice, short-answer, true/false, and fill-in-the-blank questions joined the learn collection. [Try it](https://zizoisu.github.io/ai-homework-solver)",
-      "app": true
+      "title": "OSAII Swarm on Discord",
+      "text": "The community agent gained Discord commands to connect, ask questions, check status, and disconnect.",
+      "prs": [
+        14325
+      ]
     }
   ]
 }

@@ -54,24 +54,45 @@
   "generated_at": "2026-09-12T06:26:29.349394+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "Managed Code Agents",
-      "text": "Publish commit-pinned TypeScript agents from a public GitHub repo with the dashboard or Polli CLI—models, MCP tools, and AI SDK helpers included. [API Docs](https://gen.pollinations.ai/docs)"
+      "emoji": "🤖",
+      "title": "Managed code agents",
+      "text": "Create a managed code agent from a public GitHub repository’s root `agent.ts`, with a commit-pinned runtime and caller-funded AI SDK helpers.",
+      "prs": [
+        14622
+      ]
     },
     {
-      "emoji": "✨",
-      "title": "Model Parameters, Visible",
-      "text": "Every public chat model now declares which request parameters it supports, so your app can inspect the knobs before turning them. [View models](https://gen.pollinations.ai/v1/models)"
+      "emoji": "🎯",
+      "title": "Check model parameter support",
+      "text": "Chat model listings now show verified `supported_parameters`, so you can check a model’s options before sending a request. [Browse models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        14640
+      ]
     },
     {
       "emoji": "🎨",
       "title": "Polli Visual Studio",
-      "text": "Discord communities can request richer page renders with full-page capture while Polli routes tasks to models by complexity."
+      "text": "Polli gained Visual Studio rendering, complexity-based model routing, and full-page image capture.",
+      "prs": [
+        14722
+      ]
     },
     {
-      "emoji": "🤖",
-      "title": "NewEra AI Agent",
-      "text": "Turn a plain-English app idea into a planned, coded, built, and deployed application from chat. [Try it](https://newera.namansoni.in)",
+      "emoji": "📱",
+      "title": "Build apps with NewEra",
+      "text": "Turn a plain-English app idea into a planned, coded, built, and deployed application with NewEra AI Agent. [Try it](https://newera.namansoni.in).",
+      "prs": [
+        14724
+      ],
+      "app": true
+    },
+    {
+      "emoji": "✨",
+      "title": "Explore looks with Ziban",
+      "text": "Use AI to visualize how fashion items might fit your personal style before buying. [Try it](https://ziban.pages.dev).",
+      "prs": [
+        14733
+      ],
       "app": true
     }
   ]

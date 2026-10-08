@@ -158,26 +158,49 @@
   "generated_at": "2026-10-05T06:45:05.004316+00:00",
   "highlights": [
     {
-      "emoji": "🌟",
-      "title": "New Quests for video and community models",
-      "text": "Earn Pollen for trying a video or community model; model publishers can earn it when others use their models."
-    },
-    {
-      "emoji": "🔗",
-      "title": "Claude Code connects directly",
-      "text": "Polli CLI can connect Claude Code to Pollinations’ `/v1/messages` endpoint, with model aliases and a separate config that leaves your Claude settings alone. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli)."
+      "emoji": "🎯",
+      "title": "Quests for curious model users",
+      "text": "Try a video model or a community model to earn 0.25 Pollen for each Setup Quest. Community-model publishers can earn 2 Pollen when others spend more than 0.5 Paid Pollen across their models.",
+      "prs": [
+        15732
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "Explore a painted world",
-      "text": "In Postcard Worlds, enter a place, then step through doors and paths in AI-painted scenes that carry the view forward. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds)",
+      "title": "Walk through generated postcards",
+      "text": "Enter a place in [Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds), then click doors, paths, or windows to generate the next matching view. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds).",
+      "prs": [
+        16425
+      ],
       "app": true
     },
     {
       "emoji": "🎵",
-      "title": "Turn study notes into songs",
-      "text": "Tunemory makes short songs from facts, formulas, or word lists and checks the lyrics for missing details. [Try it](https://tomdacatto.github.io/pollinations-tunemory)",
+      "title": "Turn notes into songs",
+      "text": "Paste facts into [Tunemory](https://tomdacatto.github.io/pollinations-tunemory) for a short song that checks its lyrics against your notes, or choose a style for your study song in [Chorus](https://xiaotian1171.github.io/chorus). [Try Tunemory](https://tomdacatto.github.io/pollinations-tunemory) or [try Chorus](https://xiaotian1171.github.io/chorus).",
+      "prs": [
+        16417,
+        16418
+      ],
       "app": true
+    },
+    {
+      "emoji": "🎵",
+      "title": "Question the suspects",
+      "text": "Interrogate four voiced AI suspects and track contradictions in [Alibi](https://tomdacatto.github.io/pollinations-alibi), or investigate a 3D mansion by speaking to five suspects in [Whodunnit](https://guest453.github.io/whodunnit). [Try Alibi](https://tomdacatto.github.io/pollinations-alibi) or [try Whodunnit](https://guest453.github.io/whodunnit).",
+      "prs": [
+        16376,
+        16377
+      ],
+      "app": true
+    },
+    {
+      "emoji": "🔗",
+      "title": "Claude Code connects directly",
+      "text": "Polli’s Claude Code setup now connects directly to Gen’s `/v1/messages` instead of using Claude Code Router. See the [Polli CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        16311
+      ]
     }
   ]
 }

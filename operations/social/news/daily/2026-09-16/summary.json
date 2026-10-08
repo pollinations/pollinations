@@ -160,22 +160,45 @@
     {
       "emoji": "🎵",
       "title": "ElevenLabs Music v2.5",
-      "text": "Generate and inpaint music with the newer `elevenlabs/music-v2.5` model through the audio API. [API Docs](https://gen.pollinations.ai/docs)"
+      "text": "Generate music with `elevenlabs/music-v2.5`, including reference-plan extraction and inpainting. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15042
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "CatGPT Has Opinions",
-      "text": "Call `Creatneworld/catgpt-comic` through chat to get a sarcastic cat answer and an inline single-panel comic in one Markdown response."
-    },
-    {
-      "emoji": "💡",
-      "title": "The bees remember now",
-      "text": "Computer MCP agents can now share Git-backed collective memory—read, commit, and build on notes without handing shell access any credentials. [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+      "title": "CatGPT draws the punchline",
+      "text": "The `community/Creatneworld/catgpt-comic` agent turns a chat message into a sarcastic reply and an inline single-panel comic.",
+      "prs": [
+        14869,
+        14957
+      ]
     },
     {
       "emoji": "🤖",
-      "title": "A fox remembers",
-      "text": "Chat with Moko, a desert-fox NPC that keeps the facts you ask it to remember between conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com)",
+      "title": "Meet Moko the fox",
+      "text": "Chat with a desert fox NPC that can remember facts you ask it to keep across conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com).",
+      "prs": [
+        14945
+      ],
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Stories, split into panels",
+      "text": "Give ComicStyles a one-line premise and get a written comic story divided into panels. [Try it](https://comicstyles.com).",
+      "prs": [
+        14947
+      ],
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "GitMuse helps with git",
+      "text": "Turn diffs into Conventional Commit messages, unpack stack traces, and draft pull request descriptions. [Try it](https://fadyabohamza-netizen.github.io/gitmuse).",
+      "prs": [
+        14972
+      ],
       "app": true
     }
   ]

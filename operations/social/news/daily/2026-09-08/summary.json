@@ -71,23 +71,29 @@
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "GPT Image 2.5 arrives",
-      "text": "Paid users can generate and edit with `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`, including native quality controls and PNG transparency. [Try it](https://pollinations.ai/play)"
-    },
-    {
-      "emoji": "✨",
-      "title": "Generated media gets permanent-ish homes",
-      "text": "Images, video, audio, edits, and 3D outputs now return stable Media links instead of accidentally starting another generation when revisited. Old cached creations can be recovered too. [API Docs](https://gen.pollinations.ai/docs)"
+      "title": "Two GPT Image 2.5 models",
+      "text": "Generate or edit images with the paid-only `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst` models. They support quality options, custom edit dimensions, and PNG transparency. [Explore image models](https://gen.pollinations.ai/image/models).",
+      "prs": [
+        14589
+      ]
     },
     {
       "emoji": "📱",
-      "title": "Activity charts grew little handles",
-      "text": "Usage and Earnings now have independent date ranges, filters, CSV exports, and clickable chart bars that drill into the matching table. The Pollen ledger is becoming legible."
+      "title": "Explore your account activity",
+      "text": "Inspect usage and earnings in separate, filterable views with breakdown tables, selectable chart bars, and CSV exports. Chart selections update the matching table, totals, and shares.",
+      "prs": [
+        12790,
+        14584
+      ]
     },
     {
-      "emoji": "🚀",
-      "title": "More routes around broken things",
-      "text": "Expanded fallbacks keep text, embeddings, Veo, and Grok video generation moving when a provider takes an unplanned nap—without changing model IDs or prices."
+      "emoji": "🔗",
+      "title": "Generated media, one home",
+      "text": "Generated images, video, audio, and 3D files now share Media storage and consistent URL or base64 responses. Matching files in the older cache can be retrieved without generating them again. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14587,
+        14601
+      ]
     }
   ]
 }

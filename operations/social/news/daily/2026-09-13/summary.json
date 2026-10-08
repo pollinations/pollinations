@@ -54,24 +54,20 @@
   "generated_at": "2026-09-14T06:39:02.992318+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "Polli gets two brains",
-      "text": "Ask Polli now runs on GPT-5.6 Terra, while write workflows use GPT-6 Astra—specialized routing without changing your existing Gen auth or endpoint setup. [Try it](https://pollinations.ai/play)"
-    },
-    {
       "emoji": "✨",
-      "title": "Agents declare their senses",
-      "text": "Endpoint agents can now publish input and output modalities—including multiple outputs and 3D—through the standard [model listings](https://gen.pollinations.ai/v1/models)."
+      "title": "Agents describe their modalities",
+      "text": "Endpoint agents can declare supported inputs and multiple outputs, including 3D. Those capabilities appear in [model listings](https://gen.pollinations.ai/v1/models), making agents easier to discover by what they handle.",
+      "prs": [
+        14800
+      ]
     },
     {
-      "emoji": "📱",
-      "title": "Agent and MCP KPIs land in the dashboard",
-      "text": "Inspect weekly requests, unique users, and MCP calls separately, then export the numbers as CSV. Software has begun counting its own pollen. [Open your dashboard](https://enter.pollinations.ai/keys)"
-    },
-    {
-      "emoji": "🎨",
-      "title": "Floret knows her toolkit",
-      "text": "Floret now clearly identifies herself and can point you toward image editing, voice changes, and background-noise removal when you need them. [Try it](https://pollinations.ai/play)"
+      "emoji": "🤖",
+      "title": "Choose an agent's brain",
+      "text": "Gen endpoint agents now accept an optional `agent_model`, letting an agent use a different underlying model while callers keep using the same agent model ID. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14799
+      ]
     }
   ]
 }

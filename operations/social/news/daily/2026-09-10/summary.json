@@ -50,27 +50,39 @@
   "generated_at": "2026-09-11T06:29:09.448987+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "StoryCraft AI",
-      "text": "Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations)",
-      "app": true
-    },
-    {
       "emoji": "🎨",
-      "title": "Men’s Fashion Pins",
-      "text": "Generate polished Pinterest artwork for men’s fashion with `gpt-image-2`. Pocket squares now have an API. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html)",
+      "title": "Illustrated stories with StoryCraft",
+      "text": "Make multi-chapter stories with generated scene illustrations in StoryCraft AI. [Try it](https://khushalkks.github.io/pollinations).",
+      "prs": [
+        14669
+      ],
       "app": true
     },
     {
-      "emoji": "💡",
-      "title": "YouTube Transcription AI",
-      "text": "Turn YouTube transcripts into structured summaries, English translations, and concept-cover images. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations)",
+      "emoji": "🎯",
+      "title": "YouTube transcripts, reworked",
+      "text": "MrPaloma’s YouTube Transcription AI turns video transcripts into structured summaries, English translations, and generated concept covers. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations).",
+      "prs": [
+        14694
+      ],
       "app": true
     },
     {
       "emoji": "🔗",
-      "title": "Bloom harness for Polli CLI",
-      "text": "Connect Bloom CLI to Pollinations text models with `polli harness bloom on`, then inspect or remove the setup without disturbing the rest of your `.env`."
+      "title": "Pollinations meets Bloom CLI",
+      "text": "Use `polli harness bloom on|status|off` for reversible Pollinations setup in Bloom CLI. [See the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14670
+      ]
+    },
+    {
+      "emoji": "🎨",
+      "title": "Fashion images for Pinterest",
+      "text": "Men’s Fashion Pins uses `gpt-image-2` to create Pinterest images for men’s fashion. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html).",
+      "prs": [
+        14677
+      ],
+      "app": true
     }
   ]
 }

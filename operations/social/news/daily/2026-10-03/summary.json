@@ -58,25 +58,46 @@
   "generated_at": "2026-10-04T08:09:39.264830+00:00",
   "highlights": [
     {
-      "emoji": "🔗",
-      "title": "More tools for MCP clients",
-      "text": "Check usage and earnings, browse quests, and manage API keys from your MCP client. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)."
-    },
-    {
-      "emoji": "📱",
-      "title": "Sandboxes from `polli`",
-      "text": "Create, list, and stop sandboxes from the CLI, then generate SSH configuration to connect. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli)."
-    },
-    {
       "emoji": "✨",
-      "title": "PDFs and audio in chat requests",
-      "text": "Send inline PDFs to OpenRouter models or base64 audio to Inkling; Gen handles the media transfer behind the scenes. [API docs](https://gen.pollinations.ai/docs)."
+      "title": "PDFs and audio in chat",
+      "text": "Send inline PDF data to OpenRouter chat models or base64 audio to `thinkingmachines/inkling`; large inputs are stored and forwarded as media URLs within the existing size limits. [See the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16308
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "Sixteen design decisions from one sentence",
-      "text": "Jev Assembler turns a page description into choices for layout, typography, palette, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler)",
+      "title": "Design from one sentence",
+      "text": "Jev Assembler turns a short page description into decisions about palette, typography, layout, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler).",
+      "prs": [
+        16299
+      ],
       "app": true
+    },
+    {
+      "emoji": "🎯",
+      "title": "Choose your story lens",
+      "text": "In Whichever, pick a starting point and a preset lens—or write your own—for Jev to use when choosing the next branch. [Try it](https://kreggscode.github.io/whichever).",
+      "prs": [
+        16301
+      ],
+      "app": true
+    },
+    {
+      "emoji": "🔗",
+      "title": "Account tools for MCP",
+      "text": "MCP clients can now request usage, earnings, and quests, or list, create, and revoke API keys. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        15731
+      ]
+    },
+    {
+      "emoji": "🚀",
+      "title": "Sandboxes from polli",
+      "text": "`polli` 0.1.23 includes commands to create, list, and terminate sandboxes, plus SSH configuration. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        16296
+      ]
     }
   ]
 }

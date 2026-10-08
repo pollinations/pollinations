@@ -67,18 +67,44 @@
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "MiniMax H3 Max makes longer videos",
-      "text": "Generate 5-, 10-, or 15-second clips up to 1080p, with synchronized audio and options for start/end frames or reference media. [Explore the API](https://gen.pollinations.ai/docs)."
+      "title": "MiniMax video, more inputs",
+      "text": "`minimax/minimax-h3-max` was added for video generation from text, start and end frames, or reference media, with synchronized audio. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15392
+      ]
     },
     {
       "emoji": "🎵",
-      "title": "Gemini 3.8 finds its voice",
-      "text": "Generate WAV or PCM speech in 30 voices, with style instructions, using Flash or Flash Lite through the [audio API](https://gen.pollinations.ai/docs)."
+      "title": "Two Gemini speech models",
+      "text": "Generate speech with `google/gemini-3.8-flash-tts` or `google/gemini-3.8-flash-lite-tts`. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15395
+      ]
+    },
+    {
+      "emoji": "🎵",
+      "title": "Lyria 3.5 for songs",
+      "text": "`google/lyria-3.5` was added for song generation through the audio API. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15491
+      ]
     },
     {
       "emoji": "🤖",
-      "title": "GPT-6 Sol and Luna join the lineup",
-      "text": "Use both alongside Astra for vision, tools, structured output, streaming, and reasoning. Quest Pollen works too. [See available models](https://gen.pollinations.ai/v1/models)."
+      "title": "GPT-6 Sol and Luna",
+      "text": "`openai/gpt-6-sol` and `openai/gpt-6-luna` were added for text and image-input requests through the unified API. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        15457
+      ]
+    },
+    {
+      "emoji": "📱",
+      "title": "TTA joins the catalog",
+      "text": "TTA joined the video and audio app catalog with Pollinations account connection. [Try it](https://mahmoudtracy641-hub.github.io/GLM234).",
+      "prs": [
+        15470
+      ],
+      "app": true
     }
   ]
 }

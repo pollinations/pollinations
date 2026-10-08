@@ -78,29 +78,44 @@
   "generated_at": "2026-09-13T06:31:17.380329+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "DeepSeek V4.1 Flash",
-      "text": "is now on the unified text API: reasoning, tool use, and a 1M-token context window under `deepseek/deepseek-v4.1-flash`. [Try it](https://pollinations.ai/play)"
-    },
-    {
       "emoji": "🤖",
-      "title": "A computer for every bee",
-      "text": "Agents now get a private persistent `/workspace`, Bash, asset publishing, and the ability to push finished work to your own repos via `/mcp/computer`. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+      "title": "DeepSeek V4.1 Flash",
+      "text": "Try `deepseek/deepseek-v4.1-flash` for reasoning and tool use, with a 1,048,576-token context window. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        14736
+      ]
     },
     {
-      "emoji": "🎨",
-      "title": "1080p MiniMax video",
-      "text": "Generate 5-, 10-, or 15-second 1080p clips with `minimax/minimax-h3-max-turbo`, including first/last-frame image-to-video. [API docs](https://gen.pollinations.ai/docs)"
+      "emoji": "🔗",
+      "title": "Choose your model fallbacks",
+      "text": "List up to four models in a comma-separated `model` parameter, such as `?model=a,b`, to give generation requests an ordered fallback chain. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14784
+      ]
     },
     {
       "emoji": "💡",
-      "title": "Bring your own backup bees",
-      "text": "Send up to four comma-separated models such as `?model=a,b,c` on any generation endpoint; Pollinations tries your fallback chain when a provider gets dramatic. [API docs](https://gen.pollinations.ai/docs)"
+      "title": "A computer for agents",
+      "text": "The built-in `/mcp/computer` server gives agents a private persistent filesystem and a bash tool for working across files. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        14741
+      ]
     },
     {
-      "emoji": "✨",
-      "title": "A friendly chat flower",
-      "text": "Pollination_chatbot is a Pollinations-powered chat interface for OpenAI, Mistral, and Gemini models, with Login with Pollinations. [Try it](https://pollinations-chatbot.vercel.app)",
+      "emoji": "🎨",
+      "title": "Minimax video in 1080p",
+      "text": "Generate 1080p video with `minimax/minimax-h3-max-turbo` from text or first and last frames. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14747
+      ]
+    },
+    {
+      "emoji": "📱",
+      "title": "Pollination_chatbot joins the garden",
+      "text": "Chat with Pollinations text models, including OpenAI, Mistral, and Gemini options. [Try it](https://pollinations-chatbot.vercel.app).",
+      "prs": [
+        14750
+      ],
       "app": true
     }
   ]

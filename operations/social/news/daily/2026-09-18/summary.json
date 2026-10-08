@@ -50,24 +50,38 @@
   "generated_at": "2026-09-19T06:26:50.531194+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "FLUX.2 Max",
-      "text": "High-end image generation and editing now supports up to eight reference images via `black-forest-labs/flux.2-max`. [Try the image API](https://gen.pollinations.ai/image/{prompt})"
+      "emoji": "🎨",
+      "title": "FLUX.2 Max with references",
+      "text": "Generate images with `black-forest-labs/flux.2-max` using up to eight reference images. It’s a paid-only model in the [image API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14811
+      ]
     },
     {
       "emoji": "🤖",
-      "title": "Tencent HY3 and HY4 Preview",
-      "text": "Two large-context text models joined the API: `tencent/hy3` for high-reasoning workloads and `tencent/hy4-preview` with a 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "title": "More room for text",
+      "text": "The paid-only `tencent/hy4-preview` joins the text models with a 1,048,576-token context window. `tencent/hy3` and `openai/gpt-4o-mini` were added too; see the [text models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        14791,
+        14798,
+        14812
+      ]
+    },
+    {
+      "emoji": "🎯",
+      "title": "Structured decisions with Jev",
+      "text": "Use `typesafe/jev` in Chat Completions for decisions expressed as `state` and `questions`, or call `jev_decide` through the new MCP server. See the [API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15111
+      ]
     },
     {
       "emoji": "💡",
-      "title": "Typed decisions with Jev",
-      "text": "Call `typesafe/jev` (or `jev`) through Chat Completions for structured answers with calibrated confidence, or use `jev_decide` through MCP. [Check the API docs](https://gen.pollinations.ai/docs)"
-    },
-    {
-      "emoji": "🚀",
-      "title": "GPT-4o mini",
-      "text": "`openai/gpt-4o-mini` is now available through the unified text API, with a 128K context window and pinned provider routing. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "title": "Slice CLI usage reports",
+      "text": "Filter `polli usage --history` and `--daily` by key, model, or day range, then export the results as CSV. Less scrolling, more answers.",
+      "prs": [
+        15045
+      ]
     }
   ]
 }

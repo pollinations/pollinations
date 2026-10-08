@@ -62,31 +62,46 @@
   "generated_at": "2026-09-15T06:30:50.869953+00:00",
   "highlights": [
     {
-      "emoji": "🤖",
-      "title": "The hive speaks LLM",
-      "text": "Install `llm-pollinations` to use Pollinations chat models in LLM’s CLI and Python—streaming, vision, tool calls, reasoning, and multi-turn chat included. [View repo](https://github.com/pollinations/pollinations)"
+      "emoji": "🎨",
+      "title": "Make a webtoon",
+      "text": "Manhwa Studio brings character profiles, scene planning, generated panels, dialogue bubbles, and a vertical comic canvas into one workspace. [Try it](https://manhwa-studio-320488177521.asia-southeast1.run.app).",
+      "prs": [
+        14874
+      ],
+      "app": true
     },
     {
-      "emoji": "🎯",
-      "title": "Agents, meet the quest garden",
-      "text": "Use a qualifying agent to earn 0.25 Pollen, or create an agent somebody uses to earn 2 Pollen. The bees have started keeping score."
+      "emoji": "🎨",
+      "title": "Explore contracts as graphs",
+      "text": "Paste an EVM contract address into Co-Eco-Graph to explore its subgraphs, entities, and event handlers as an interactive graph with AI fantasy illustration. [Try it](https://ceg-wine.vercel.app).",
+      "prs": [
+        14871
+      ],
+      "app": true
+    },
+    {
+      "emoji": "🔗",
+      "title": "Pollinations in LLM",
+      "text": "Install `llm-pollinations` to use chat-capable Pollinations models in LLM 0.35 as `pollinations/<model-id>`, with catalog-driven vision, tool, and reasoning support.",
+      "prs": [
+        14808
+      ]
     },
     {
       "emoji": "✨",
-      "title": "Media stays in the garden",
-      "text": "Apps using the shared UI can now render generated images, audio, and video inline in Markdown, alongside readable code blocks with one-click copy."
+      "title": "Media right in Markdown",
+      "text": "The shared UI now displays images, audio, and video inline—even when generated-media URLs have no file extension. Code blocks are labelled, wrap long lines, and can be copied.",
+      "prs": [
+        14843
+      ]
     },
     {
-      "emoji": "🎨",
-      "title": "Follow the contract vines",
-      "text": "Explore an EVM contract’s The Graph entities and event handlers as an interactive, AI-illustrated ecosystem map. [Try it](https://ceg-wine.vercel.app)",
-      "app": true
-    },
-    {
-      "emoji": "🎨",
-      "title": "Panels in the pollen",
-      "text": "Plan scenes, generate art, add dialogue, and assemble a vertical webtoon in one comic-making workspace. [Try it](https://manhwa-studio-320488177521.asia-southeast1.run.app)",
-      "app": true
+      "emoji": "🎯",
+      "title": "Agent quests earn Pollen",
+      "text": "Use a qualifying agent for a one-time 0.25 Pollen quest, or create an agent that gets used to qualify for a 2 Pollen quest.",
+      "prs": [
+        14841
+      ]
     }
   ]
 }

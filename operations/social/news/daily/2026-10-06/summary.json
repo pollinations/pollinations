@@ -183,23 +183,36 @@
   "highlights": [
     {
       "emoji": "🎵",
-      "title": "Eleven v4 speech arrives",
-      "text": "Generate speech with `elevenlabs/eleven-v4` or the faster `elevenlabs/eleven-v4-turbo`, including word timestamps. [Try the audio API](https://gen.pollinations.ai/docs)."
+      "title": "Eleven v4 speech models",
+      "text": "Generate speech with `elevenlabs/eleven-v4` or `elevenlabs/eleven-v4-turbo`, including timestamped output. [Explore the audio API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16581,
+        16582
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "Nano Banana 2.1",
-      "text": "Create images at 1K or 2K, or edit them using up to 14 reference images with `google/gemini-nano-banana-2.1`. [See image models](https://gen.pollinations.ai/image/models)."
+      "title": "Nano Banana 2.1 images",
+      "text": "Generate or edit images with `google/gemini-nano-banana-2.1`, using up to 14 reference images. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16609
+      ]
     },
     {
-      "emoji": "🎬",
-      "title": "Grok Imagine Video 1.5 Lite",
-      "text": "Turn a prompt or starting image into a 1–15 second clip at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs)."
+      "emoji": "🎨",
+      "title": "Grok Imagine video",
+      "text": "Create 1–15 second clips from text or a starting image with `x-ai/grok-imagine-video-1.5-lite`, at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16640
+      ]
     },
     {
       "emoji": "🔗",
-      "title": "API keys get model categories",
-      "text": "Give a key access to text, image, audio, video, or other categories instead of selecting models one by one; new models in that category are included automatically. [Manage keys](https://enter.pollinations.ai/keys)."
+      "title": "Keys that follow model categories",
+      "text": "Give an API key access to a category such as image or audio instead of updating its model list whenever a new model is added. [Manage API keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        16462
+      ]
     }
   ]
 }

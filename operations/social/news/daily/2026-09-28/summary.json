@@ -71,23 +71,35 @@
   "highlights": [
     {
       "emoji": "🤖",
-      "title": "Frugal code-agent routing",
-      "text": "Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools."
-    },
-    {
-      "emoji": "🎯",
-      "title": "Code reviews with Prism",
-      "text": "`cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget."
+      "title": "Prompt agents can call your tools",
+      "text": "Give prompt agents caller-defined function tools alongside server-side MCP tools. Client-executed calls and their results can flow through Responses or Chat Completions using the existing SDK loop. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15655
+      ]
     },
     {
       "emoji": "🔗",
-      "title": "Polli connects to Codex and Claude Code",
-      "text": "Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login."
+      "title": "Codex and Claude Code harnesses",
+      "text": "Use `polli harness codex` or `polli harness claude-code` to connect those coding tools to Pollinations and choose a model. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        15289
+      ]
     },
     {
-      "emoji": "✨",
-      "title": "Prompt agents can call your tools",
-      "text": "Give agents client-side functions alongside server-side MCP tools, then send the results back to continue the conversation. [API docs](https://gen.pollinations.ai/docs)"
+      "emoji": "🎯",
+      "title": "A cost-conscious coding agent",
+      "text": "The community agent `community/fadyabohamza-netizen/frugal` ranks models for coding requests by estimated cost, recent health, and conversation needs. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        15213
+      ]
+    },
+    {
+      "emoji": "🤖",
+      "title": "Code review model routing",
+      "text": "`cesus-agent/prism-code-review-router` sorts review requests into fast, balanced, or deep tiers, then chooses a compatible model using health data and a wallet-based spend cap. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        15226
+      ]
     }
   ]
 }

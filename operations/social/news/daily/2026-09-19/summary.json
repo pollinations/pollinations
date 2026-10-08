@@ -50,27 +50,39 @@
   "generated_at": "2026-09-20T06:26:53.012936+00:00",
   "highlights": [
     {
-      "emoji": "💡",
-      "title": "Model discovery now includes vitals",
-      "text": "`/v1/models` and `/models` return each model’s recent health, success rate, and request volume—so choosing a model involves slightly less divination. [Browse models](https://gen.pollinations.ai/v1/models)"
-    },
-    {
       "emoji": "🎨",
-      "title": "PersonaMorph turns photos into personas",
-      "text": "Connect a Pollinations wallet and use image edits to remake portraits as artistic identities. [Try it](https://personamorph-ai-production.up.railway.app)",
+      "title": "Photos become artistic personas",
+      "text": "PersonaMorph uses image edits to transform photos into artistic personas. [Try it](https://personamorph-ai-production.up.railway.app).",
+      "prs": [
+        15194
+      ],
       "app": true
     },
     {
       "emoji": "✨",
-      "title": "Oracle Mystique deals three illustrated cards",
-      "text": "Ask the AI tarot reader for a Past, Present, and Future spread, with generated card art and BYOP OAuth2. [Try it](https://oracle-mystique.up.railway.app)",
+      "title": "An illustrated tarot reading",
+      "text": "Oracle Mystique draws and illustrates Past, Present, and Future cards. [Try it](https://oracle-mystique.up.railway.app).",
+      "prs": [
+        15196
+      ],
       "app": true
     },
     {
       "emoji": "🎵",
-      "title": "Arabic browser-only text-to-speech",
-      "text": "An RTL app lets Arabic-speaking makers sign in with BYOP PKCE and generate speech without maintaining a backend. [Try it](https://thinglover21-ux.github.io/My-app-mod)",
+      "title": "Arabic text-to-speech app",
+      "text": "Text to speech brings an Arabic RTL interface to the community app directory. [Try it](https://thinglover21-ux.github.io/My-app-mod).",
+      "prs": [
+        15198
+      ],
       "app": true
+    },
+    {
+      "emoji": "🤖",
+      "title": "Model health in listings",
+      "text": "Model discovery responses now include 24-hour status, success rate, and request count by default. Check the [available text models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        15157
+      ]
     }
   ]
 }

@@ -122,25 +122,46 @@
   "generated_at": "2026-10-01T06:32:47.090824+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "GPT-6.1 Sol is here",
-      "text": "Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions)."
+      "emoji": "🤖",
+      "title": "GPT-6.1 Sol added",
+      "text": "Use `openai/gpt-6.1-sol` for text and chat, including with Quest Pollen. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        15960
+      ]
     },
     {
       "emoji": "🎵",
-      "title": "Audio tools in the SDK",
-      "text": "Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk)."
+      "title": "Transform audio with the SDK",
+      "text": "The SDK adds `audioTransform()` for voice-changing and voice-isolation requests. Speech requests also accept duration, seed, and reference audio. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        15917
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "A new home for apps",
-      "text": "The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters."
+      "title": "Find your next app",
+      "text": "The rebuilt Apps page has a searchable directory, URL-persistent category and platform filters, and a weekly-ranked Pollen Pay spotlight. [Explore apps](https://pollinations.ai).",
+      "prs": [
+        15997,
+        15919
+      ]
     },
     {
-      "emoji": "🎮",
+      "emoji": "🎯",
       "title": "Pollinations for Godot 4",
-      "text": "Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations)",
+      "text": "Add text, image, and speech generation to a Godot 4 project with a global Pollinations node. [View repo](https://github.com/davealan74/godot-pollinations).",
+      "prs": [
+        15931
+      ],
       "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "The Honey Census Quest",
+      "text": "Eligible Pollen buyers can answer a survey about purchases and usage for a 10 Quest Pollen reward. The Bee Census is paused.",
+      "prs": [
+        15934
+      ]
     }
   ]
 }

@@ -86,41 +86,48 @@
   "generated_at": "2026-10-03T06:30:38.168168+00:00",
   "highlights": [
     {
-      "emoji": "🚀",
-      "title": "A little room to compute",
-      "text": "Create E2B-compatible sandboxes through the gen API or `polli sandbox`, then connect over SSH. The coding-agent template comes with five agents ready to use. [API Docs](https://gen.pollinations.ai/docs)"
-    },
-    {
       "emoji": "🤖",
-      "title": "The models meet Alice",
-      "text": "Compare official and community models on weekly puzzle evals, with past runs and uncertainty shown alongside the scores. [See the rankings](https://model-monitor.pollinations.ai)"
+      "title": "Hosted coding sandboxes",
+      "text": "Use E2B-compatible sandboxes through `/alpha/e2b`, or manage them with `polli sandbox` and SSH into a template with five coding agents.",
+      "prs": [
+        15656
+      ]
     },
     {
       "emoji": "✨",
-      "title": "A bigger picture fits",
-      "text": "Send chat requests up to 100 MiB with inline images; large image, video, and file data URLs can be uploaded and reused across turns. [API Docs](https://gen.pollinations.ai/docs)"
+      "title": "Larger media-rich chats",
+      "text": "Send chat requests up to 100 MiB with inline images. Large image, video, and file data URIs can use reusable account-scoped uploads through the [chat API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        16199,
+        16267
+      ]
+    },
+    {
+      "emoji": "🎯",
+      "title": "Weekly model puzzle rankings",
+      "text": "Compare official and community models on seeded puzzle evaluations, browse past runs, and see margins of error in [Model Monitor](https://model-monitor.pollinations.ai).",
+      "prs": [
+        15674,
+        16251
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "A new layer of pollen",
-      "text": "Generate and edit images directly in Krita, with results placed on new layers. [View repo](https://github.com/xiaotian1171/pollinations-krita)",
+      "title": "Pollinations for Krita",
+      "text": "Generate images on new Krita layers and edit images with this community-made plugin. [View repo](https://github.com/xiaotian1171/pollinations-krita).",
+      "prs": [
+        16211
+      ],
       "app": true
     },
     {
-      "emoji": "🎵",
-      "title": "A bee enters Unity",
-      "text": "Add Pollinations-powered chat, image generation, and speech to Unity games with an async C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity)",
+      "emoji": "🎨",
+      "title": "Pollinations for Unity",
+      "text": "Add chat, image generation, and speech generation to Unity projects with a dependency-free C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity).",
+      "prs": [
+        16258
+      ],
       "app": true
-    },
-    {
-      "emoji": "🔗",
-      "title": "Pi gets a proper plug",
-      "text": "Run `polli mcp install pi` to add Pollinations to Pi’s native MCP config without disturbing your other servers. [Polli CLI](https://www.npmjs.com/package/@pollinations/cli)"
-    },
-    {
-      "emoji": "🌟",
-      "title": "The garden gets a gathering place",
-      "text": "The Community page now shows live project activity, open votes, and Quest rankings in one place. [Visit the community](https://pollinations.ai)"
     }
   ]
 }

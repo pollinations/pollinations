@@ -79,23 +79,46 @@
   "highlights": [
     {
       "emoji": "🚀",
-      "title": "Responses API, direct from providers",
-      "text": "Send stateless OpenAI-compatible requests to `/v1/responses` across 56 supported models, with native SSE streaming plus Pollinations safety, caching, and billing. [API Docs](https://gen.pollinations.ai/docs)"
-    },
-    {
-      "emoji": "🔗",
-      "title": "Agents can connect to the outside world",
-      "text": "The new Composio MCP connector lets agents use caller-owned Gmail, Slack, GitHub, Drive, and hundreds more services—without lending public agents anyone’s credentials. [MCP Docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
-    },
-    {
-      "emoji": "✨",
-      "title": "Backup wings for official models",
-      "text": "42 text, image, video, audio, and 3D models can now continue through verified providers when an upstream has a bad day. Same requested model; fewer dead ends."
+      "title": "Stateless Responses API",
+      "text": "Use `/v1/responses` with 56 supported models, including JSON and streaming responses. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14239
+      ]
     },
     {
       "emoji": "🤖",
-      "title": "Gemini 3.8 Flash is live",
-      "text": "Call `google/gemini-3.8-flash` for fast multimodal chat, streaming, structured output, tools, reasoning, search, and caching. [See available models](https://gen.pollinations.ai/v1/models)"
+      "title": "Gemini 3.8 Flash",
+      "text": "Try `google/gemini-3.8-flash` for chat, streaming, structured output, tools, reasoning, and multimodal input. [Explore available models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        14362
+      ]
+    },
+    {
+      "emoji": "🔗",
+      "title": "More apps for agents",
+      "text": "Connect agents to Gmail, Slack, GitHub, Drive, and other apps through the new Composio MCP connector. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        14249,
+        14355
+      ]
+    },
+    {
+      "emoji": "🎨",
+      "title": "Alternate history, illustrated",
+      "text": "¿Y si…? turns Spanish-language historical “what if” prompts into generated scenes with four visual presets. [Try it](https://jecxolab.github.io/y-si-historia).",
+      "prs": [
+        14331
+      ],
+      "app": true
+    },
+    {
+      "emoji": "📱",
+      "title": "Meet Genie AI Companion",
+      "text": "Genie AI Companion brings multimodal chat, web answers, document analysis, and summarization to the app directory. [Try it](https://play.google.com/store/apps/details?id=com.genie.aiassistant).",
+      "prs": [
+        14330
+      ],
+      "app": true
     }
   ]
 }

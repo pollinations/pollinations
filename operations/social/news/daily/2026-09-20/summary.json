@@ -31,19 +31,20 @@
   "highlights": [
     {
       "emoji": "🎨",
-      "title": "Atelier Image Studio",
-      "text": "Generate and refine images with reference photos, live model selection, and English/简体中文 controls. [Try it](https://image.xt1171.eu.org)",
+      "title": "Atelier image studio",
+      "text": "Make images with live model selection and reference-image editing in English or Simplified Chinese. [Try it](https://image.xt1171.eu.org).",
+      "prs": [
+        15207
+      ],
       "app": true
     },
     {
-      "emoji": "✨",
-      "title": "Jev Decisions API",
-      "text": "Ask Jev structured questions through `POST /alpha/decisions`—typed requests and native answers, no JSON folded into chat prompts. [API Docs](https://gen.pollinations.ai/docs)"
-    },
-    {
       "emoji": "🤖",
-      "title": "Jev 1.13",
-      "text": "`typesafe/jev-1.13` is now the canonical Jev model name, while `jev` and `typesafe/jev` keep working because breaking people’s code is not a feature. [Available models](https://gen.pollinations.ai/v1/models)"
+      "title": "Typed decisions with Jev",
+      "text": "Send typed state and questions to `POST /alpha/decisions` and get answers with token usage. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        15217
+      ]
     }
   ]
 }

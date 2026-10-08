@@ -83,19 +83,28 @@
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "Apps can complete Quests",
-      "text": "Submit an app with an open Quest number. If the app is approved, the Quest closes and you can claim its Pollen reward."
+      "title": "Build an app for a Quest",
+      "text": "Include a Quest number when submitting an app. If the app is approved, the Quest closes and its reward is attributed to you.",
+      "prs": [
+        15566
+      ]
     },
     {
       "emoji": "🎨",
       "title": "Try image2gpt",
-      "text": "Prompt `openai/gpt-image-2` from a web app using your Pollinations account and Pollen. [Try it](https://image2gpt.vercel.app)",
+      "text": "Sign in with Pollinations to generate images using `openai/gpt-image-2`. [Try it](https://image2gpt.vercel.app).",
+      "prs": [
+        15522
+      ],
       "app": true
     },
     {
       "emoji": "✨",
       "title": "Generate images in your browser",
-      "text": "Simple Image Generator lets you sign in with Pollinations and create images using your Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator)",
+      "text": "Simple Image Generator is a client-side app that uses your Pollinations sign-in and Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator).",
+      "prs": [
+        15523
+      ],
       "app": true
     }
   ]

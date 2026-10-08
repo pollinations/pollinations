@@ -55,23 +55,19 @@
   "highlights": [
     {
       "emoji": "🎯",
-      "title": "Video input for Ling 3.0 Flash VL",
-      "text": "Send `video_url` alongside text and images to `inclusionai/ling-3.0-flash-vl`. The hive watches clips now. [API Docs](https://gen.pollinations.ai/docs)"
+      "title": "Video input for Ling",
+      "text": "Send `video_url` content to the paid-only `inclusionai/ling-3.0-flash-vl` model through the [Text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        15327
+      ]
     },
     {
-      "emoji": "✨",
-      "title": "`polli whoami`",
-      "text": "Check which Polli identity your CLI is using with one small, script-friendly command: `polli whoami`."
-    },
-    {
-      "emoji": "🚀",
-      "title": "Seven models, same IDs",
-      "text": "Fireworks-backed models moved before the shutdown, keeping existing calls alive; Kimi K2.6 can now accept up to 30 images per request."
-    },
-    {
-      "emoji": "🎮",
-      "title": "GATEKEEPER",
-      "text": "A 60-second arcade arena where an AI writes each run’s survival rules. Fixed rulebooks were apparently too stable. [Try it](https://khuzaima3232.github.io/gatekeeper)",
+      "emoji": "🎨",
+      "title": "Play GATEKEEPER",
+      "text": "Survive a 60-second arcade arena where a language model chooses the safe and fatal colours for each run. [Try it](https://khuzaima3232.github.io/gatekeeper).",
+      "prs": [
+        15398
+      ],
       "app": true
     }
   ]

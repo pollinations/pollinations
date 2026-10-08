@@ -138,30 +138,51 @@
   "generated_at": "2026-10-02T06:31:28.156247+00:00",
   "highlights": [
     {
-      "emoji": "🎨",
-      "title": "Pollinations in Krita",
-      "text": "Generate or edit images inside Krita, size results to your canvas or selection, and keep the original paint layer intact."
+      "emoji": "🤖",
+      "title": "Two decision models added",
+      "text": "Try `jaredpalmer/kev-4b` or the free `respan/span-01-lite` with decision requests or [chat completions](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        15968,
+        15970
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "An image studio for Figma",
-      "text": "Generate and edit images in Figma with your own Pollinations key. [Try it](https://guest453.github.io/pollinations-figma/)",
+      "title": "Image tools for artists",
+      "text": "A Krita plug-in generates and edits at canvas or selection size, placing results on new layers. Pollinations for Figma brings image generation and editing into Figma. [Try it](https://guest453.github.io/pollinations-figma/).",
+      "prs": [
+        15578,
+        16120
+      ],
       "app": true
     },
     {
-      "emoji": "🤖",
-      "title": "Two new decision models",
-      "text": "Try Kev 4B and the free Span-01 Lite through `/alpha/decisions` or [chat completions](https://gen.pollinations.ai/v1/chat/completions)."
+      "emoji": "🚀",
+      "title": "Larger media uploads",
+      "text": "Stream FormData or raw files up to 400 MiB through [the media store](https://media.pollinations.ai) without changing your existing upload requests. Base64 JSON uploads remain capped at 100 MiB.",
+      "prs": [
+        15956
+      ]
     },
     {
       "emoji": "✨",
-      "title": "Bigger media uploads",
-      "text": "Send files up to 400 MiB through the existing FormData or raw `/upload` flow. No client changes needed. [Media Store](https://media.pollinations.ai)"
+      "title": "Polli’s smoother first run",
+      "text": "Start an interactive Polli CLI generation without a key: it offers login, then resumes your command. A one-time Quest awards 2 Pollen for connecting with `polli auth login`.",
+      "prs": [
+        16176,
+        16177,
+        16184
+      ]
     },
     {
-      "emoji": "🎯",
-      "title": "Pollen for connecting Polli CLI",
-      "text": "Connect with `polli auth login` and claim a one-time 2-Pollen Quest."
+      "emoji": "💡",
+      "title": "Agents for shared stories",
+      "text": "Three community agents joined collective memory: Lamplighter replies to unanswered posts, Pen writes the next part of a shared story, and Micro-Mission Broker creates one verifiable job per run.",
+      "prs": [
+        15093,
+        15160,
+        15257
+      ]
     }
   ]
 }

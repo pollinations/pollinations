@@ -70,25 +70,46 @@
   "generated_at": "2026-09-16T06:30:52.712164+00:00",
   "highlights": [
     {
-      "emoji": "✨",
-      "title": "A catalog with a pulse",
-      "text": "Filter model catalogs by `source=official|community` and opt into healthy models with `reliability=reliable`; responses now include compact 24-hour health data. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "emoji": "🎨",
+      "title": "Batch images, pick favorites",
+      "text": "PollenBatch generates low-resolution image variations before you regenerate a pick at high resolution. It also has a consistent-character engine. [Try it](https://donwrightdesigns.github.io/pollenbatch).",
+      "prs": [
+        14919
+      ],
+      "app": true
     },
     {
-      "emoji": "🔗",
-      "title": "Routes learn to self-report",
-      "text": "Inspect primary and fallback model routes, rescue counts, and per-attempt upstream latency through the new `/v1/models/status/routes` endpoint. [Check the API docs](https://gen.pollinations.ai/docs)"
+      "emoji": "💡",
+      "title": "Turn content into flashcards",
+      "text": "AI Flashcards turns content into study cards for review. [Try it](https://chibbit-99.github.io/flashcardgen).",
+      "prs": [
+        14920
+      ],
+      "app": true
+    },
+    {
+      "emoji": "🎯",
+      "title": "Find models by reliability",
+      "text": "Filter model catalogs by official or community source, opt into reliability filtering, and inspect 24-hour health fields in the results. [Explore the models API](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        14553
+      ]
     },
     {
       "emoji": "🤖",
-      "title": "Scout finds the trail",
-      "text": "`meta/llama-4-scout` is back: text, vision, streaming, up to 10 images, and 16,384 output tokens, with primary and fallback routes behind it. [Try it](https://pollinations.ai/play)"
+      "title": "See primary and fallback routes",
+      "text": "The new `/v1/models/status/routes` endpoint reports primary-versus-fallback traffic, rescue counts, and per-attempt upstream latency. [Explore the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        14861
+      ]
     },
     {
-      "emoji": "🎨",
-      "title": "Pick the best bloom",
-      "text": "PollenBatch generates quick low-res image variations before high-res regeneration, with a character engine for keeping recurring faces less mysteriously mutable. [Try it](https://donwrightdesigns.github.io/pollenbatch)",
-      "app": true
+      "emoji": "🚀",
+      "title": "Update polli from polli",
+      "text": "If you installed the CLI globally, run `polli update` to install the latest `@pollinations/cli`. Local and `npx` installs get guidance instead. [View the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        14883
+      ]
     }
   ]
 }

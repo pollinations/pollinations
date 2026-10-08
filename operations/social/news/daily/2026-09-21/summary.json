@@ -78,25 +78,48 @@
   "generated_at": "2026-09-22T06:30:12.955487+00:00",
   "highlights": [
     {
-      "emoji": "🔗",
-      "title": "MCP moves into the workshop",
-      "text": "`polli mcp` can discover, install, inspect, and remove Pollinations MCP servers across 13 coding agents—without eating anyone else’s config. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
-    },
-    {
       "emoji": "🤖",
-      "title": "The router checks the weather",
-      "text": "Three new callable routing agents choose the cheapest healthy model that fits the job, using live pricing, latency, context, capability, and modality data. [Try the API](https://gen.pollinations.ai/v1/chat/completions)"
+      "title": "Grok 4.7 added",
+      "text": "Try paid-only `x-ai/grok-4.7` with image input, reasoning, tools, structured outputs, and a 500K context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        15278
+      ]
     },
     {
-      "emoji": "🚀",
-      "title": "A Grok joins the garden",
-      "text": "`x-ai/grok-4.7` is now available with reasoning, tools, structured output, image input, and a 500K context window. [Browse models](https://gen.pollinations.ai/v1/models)"
+      "emoji": "🎯",
+      "title": "Three community model routers",
+      "text": "Try `afanasevmylife/polyrouter`, `community/xiaotian1171/triage-router`, or `community/tomdacatto/tiered-health-router` to route requests using complexity and recent model health, with different cost, latency, and capability checks.",
+      "prs": [
+        15041,
+        15069,
+        15141
+      ]
+    },
+    {
+      "emoji": "🔗",
+      "title": "MCP setup with `polli`",
+      "text": "Use `polli mcp` to discover, install, check, and remove MCP servers across 13 coding clients. [Find the CLI](https://www.npmjs.com/package/@pollinations/cli).",
+      "prs": [
+        15032
+      ]
     },
     {
       "emoji": "🎨",
-      "title": "A garden for generated pixels",
-      "text": "Bees Pollination is a simple browser-based prompt-to-image generator connected to your Pollinations account. [Try it](https://halimyassine.github.io/bees-pollination-app)",
+      "title": "Bees Pollination image app",
+      "text": "Connect your Pollinations account, enter a prompt, and generate an image in your browser. [Try it](https://halimyassine.github.io/bees-pollination-app).",
+      "prs": [
+        15246
+      ],
       "app": true
+    },
+    {
+      "emoji": "✨",
+      "title": "Easier catalog browsing",
+      "text": "Search and filter models, agents, and MCP servers in Enter, with five sort options and model health information to help narrow the field.",
+      "prs": [
+        15270,
+        15286
+      ]
     }
   ]
 }

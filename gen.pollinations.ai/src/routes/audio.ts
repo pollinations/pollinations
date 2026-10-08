@@ -53,6 +53,7 @@ import {
     callCommunityTranscriptionEndpoint,
 } from "../audio/communityEndpoint.ts";
 import { generateLyria35 } from "../audio/lyria.ts";
+import { transcribeMai } from "../audio/mai-transcription.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -3806,6 +3807,22 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 },
                 c.env.BETTER_AUTH_SECRET,
             );
+        }
+        if (
+            candidate.id === "microsoft/mai-transcribe-2" ||
+            candidate.id === "microsoft/mai-transcribe-2:vercel"
+        ) {
+            return transcribeMai({
+                file,
+                language,
+                prompt,
+                responseFormat,
+                temperature,
+                modelId: candidate.id,
+                apiKey: candidate.id.endsWith(":vercel")
+                    ? (c.env.AI_GATEWAY_API_KEY ?? "")
+                    : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            });
         }
         if (candidate.id === "x-ai/grok-transcribe") {
             return transcribeWithXai({

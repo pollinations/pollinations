@@ -1,3 +1,4 @@
+import { exports } from "cloudflare:workers";
 import type { CodeAgentCommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
@@ -22,9 +23,16 @@ export function createCodeAgentResponsesClient(
         error.status = 503;
         throw error;
     }
+    // The imported ctx.exports also works inside the generation coordinator,
+    // whose execution context has no exports.
+    const { CodeMode } = exports as unknown as {
+        CodeMode: (options: object) => Fetcher;
+    };
     const worker = namespace.get(
         endpoint.id,
-        {},
+        // A capability for the agent's `codemode()` helper; it runs code in
+        // Gen's Dynamic Worker loader and is valid for this request only.
+        { props: { CODEMODE: CodeMode({}) } },
         {
             // Guards against runaway code, not normal use: an agent with every
             // hosted MCP server, eight steps and sixteen tool calls makes ~30

@@ -38,6 +38,7 @@ import { stemSeparationRoutes } from "./routes/stem-separation.ts";
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
 export { PollenRateLimiter } from "./durable-objects/PollenRateLimiter.ts";
+export { CodeMode } from "./text/agents/codemode.ts";
 
 const app = new Hono<Env>();
 

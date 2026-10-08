@@ -9,7 +9,9 @@ compatibility_flags = [
     "nodejs_compat",
     "nodejs_als",
     "global_fetch_strictly_public",
-    "unhandled_rejection_after_microtask_checkpoint"
+    "unhandled_rejection_after_microtask_checkpoint",
+    # Code agents receive a CodeMode stub created through ctx.exports.
+    "enable_ctx_exports"
 ]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 

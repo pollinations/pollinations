@@ -47,7 +47,7 @@ describe("code agent Responses client", () => {
 
         expect(get).toHaveBeenCalledWith(
             "agent-id",
-            {},
+            { props: { CODEMODE: expect.anything() } },
             {
                 limits: { cpuMs: 5_000, subRequests: 64 },
                 outbound: {

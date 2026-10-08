@@ -1,7 +1,9 @@
 """Exact official model changes from merged registry revisions."""
 import json
+import re
 import subprocess
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -88,9 +90,58 @@ def pr_comparison_refs(pr, root=ROOT):
     return before, sha
 
 
+# A RETIRE row of the model-change table in a PR description (model-management skill):
+# | `model` | RETIRE | Availability | Available | Retired | 2026-11-02 00:00 UTC |
+RETIRE_ROW = re.compile(r"^\|\s*`?([\w./:-]+)`?\s*\|\s*RETIRE\s*\|(?:[^|\n]*\|){3}\s*([^|\n]*?)\s*\|\s*$",
+                        re.MULTILINE | re.IGNORECASE)
+WHEN = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?\s*(UTC|Z|[+-]\d{2}:\d{2})?")
+
+
+def announces_retirement(pr):
+    return bool(RETIRE_ROW.search(pr.get("body") or ""))
+
+
+def announced_retirements(pr, catalog):
+    """Dated or cancelled retirements a merged PR announces in its model-change table.
+
+    A RETIRE row whose Effective cell is a future date schedules a retirement; "Cancelled"
+    withdraws one. Rows without a date (the removal itself) and unknown or removed model IDs
+    are skipped: the removal is reported by the registry diff.
+    """
+    models = {model["name"]: model for model in catalog}
+    merged_at = datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00"))
+    events = []
+    for model_id, effective in RETIRE_ROW.findall(pr.get("body") or ""):
+        model = models.get(model_id)
+        when = WHEN.search(effective)
+        if not model:
+            continue
+        if effective.lower() == "cancelled":
+            status, effective_at = "cancelled", None
+        elif when:
+            zone = (when[3] or "UTC").replace("UTC", "+00:00").replace("Z", "+00:00")
+            at = datetime.fromisoformat(f"{when[1]}T{when[2] or '00:00'}{zone}").astimezone(timezone.utc)
+            if at <= merged_at:
+                continue
+            status, effective_at = "scheduled", at.strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            continue
+        events.append({"id": f"pr-{pr['number']}:{model_id}:retirement", "model_id": model_id,
+                       "title": model.get("title", model_id), "action": "RETIRE",
+                       "category": model.get("category"),
+                       "changes": {"availability": {"before": "Available", "after": "Retired"}},
+                       "effective_at": effective_at, "effective_status": status, "official": True,
+                       "source": "pr_description"})
+    return events
+
+
 def announcements_for_pr(pr, files, root=ROOT, refs=None):
-    if not any(path.startswith("shared/") for path in files):
+    changed = any(path.startswith("shared/") for path in files)
+    if not changed and not announces_retirement(pr):
         return []
-    before, after = refs or pr_comparison_refs(pr, root)
-    return model_changes(export_at(before, root), export_at(after, root), pr)
+    # Announcement-only PRs need just the merged catalog to check the model IDs.
+    before, after = (refs or pr_comparison_refs(pr, root)) if changed else (None, pr["merge_commit_sha"])
+    catalog = export_at(after, root)
+    events = model_changes(export_at(before, root), catalog, pr) if changed else []
+    return events + announced_retirements(pr, catalog)
 

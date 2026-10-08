@@ -53,8 +53,13 @@ const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
     muted,
 }) =>
     label === "Balance" ? (
-        <span className="inline-flex items-center gap-1 text-theme-text-base">
-            <WalletKindIcon kind={value === "paid" ? "paid" : "tier"} />
+        <span
+            className={`inline-flex items-center gap-1 ${muted ? "text-theme-text-muted" : "text-theme-text-base"}`}
+        >
+            <WalletKindIcon
+                kind={value === "paid" ? "paid" : "tier"}
+                className={muted ? "opacity-50" : undefined}
+            />
             {value === "paid" ? "Paid" : "Quest"}
         </span>
     ) : (

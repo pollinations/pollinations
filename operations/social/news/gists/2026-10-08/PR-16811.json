@@ -1,0 +1,37 @@
+{
+  "pr_number": 16811,
+  "title": "feat: serve every Chat text model on /v1/responses",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16811",
+  "merged_at": "2026-10-08T23:26:15Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Every text model listed for /v1/chat/completions now also lists and serves /v1/responses. Models with a native Responses upstream use it directly; Claude, Gemini, Chat-registered community models, and chat-only agents such as Floret run through the existing Chat pipeline, with their answers converted to Responses JSON or SSE. The adapter handles instructions, messages, images, files, parallel function calls and outputs, tools, response formatting, reasoning effort, sampling, prompt caching, and user identifiers. Native and adapted candidates can fall back to each other with per-attempt rate limits. Requests that cannot be expressed in Chat, such as those using max_tool_calls, return 400 for an adapted primary and skip adapted fallbacks. Adapted requests use Chat's existing gateway context, credentials, usage checks, and billing path while charging once. Missing usage returns a 502 for JSON requests; SSE emits an error and response.failed without a charge. Model registry and documentation were updated to reflect the expanded endpoint support.",
+    "keywords": [
+      "Responses API",
+      "Chat Completions",
+      "text models",
+      "model fallback",
+      "streaming",
+      "billing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16811.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny translator glasses and guides a glowing lime green (#ecf874) request from a retro Chat terminal to a Responses terminal, while a small code-plant grows between them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T23:27:30.823703+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "688fb4af652fb01addfc8c92e6791663206e1fca",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

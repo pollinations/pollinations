@@ -971,8 +971,8 @@ def commit_files_to_branch(
     owner: str,
     repo: str,
     label: str = "",
-) -> None:
-    """Commit JSON files to a branch.
+) -> bool:
+    """Commit JSON files to a branch. Returns False if any file failed.
 
     Args:
         files: list of (file_path, data_dict) tuples
@@ -982,6 +982,7 @@ def commit_files_to_branch(
 
     headers = _github_headers(github_token)
 
+    ok = True
     for file_path, data in files:
         if data is None:
             continue
@@ -1014,6 +1015,8 @@ def commit_files_to_branch(
             print(f"  Committed {file_path}")
         else:
             print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
+            ok = False
+    return ok
 
 
 # ── VPS deployment ───────────────────────────────────────────────────

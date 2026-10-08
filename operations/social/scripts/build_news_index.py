@@ -13,6 +13,7 @@ to the news branch.
 
 import argparse
 import json
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
@@ -56,7 +57,8 @@ def model_entries(gists: List[Dict], since: str) -> List[Dict]:
     entries = []
     for event in events:
         event["changes"] = {k: v for k, v in event["changes"].items() if k in CARD_FIELDS}
-        if event["date"] < since or (event["scheduled"] and settled[event["model_id"]] != event["id"]):
+        superseded = settled.get(event["model_id"], event["id"]) != event["id"]
+        if event["date"] < since or (event["scheduled"] and superseded):
             continue
         # Updates that change nothing a card shows (descriptions, routes, aliases) stay in the gist.
         if event["action"] == "UPDATE" and not event["changes"]:
@@ -103,7 +105,8 @@ def main():
         return
     index_file.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     if args.publish:
-        commit_files_to_branch([(INDEX_PATH, index)], GISTS_BRANCH, get_env("GITHUB_TOKEN"), OWNER, REPO)
+        if not commit_files_to_branch([(INDEX_PATH, index)], GISTS_BRANCH, get_env("GITHUB_TOKEN"), OWNER, REPO):
+            sys.exit(1)
 
 
 if __name__ == "__main__":

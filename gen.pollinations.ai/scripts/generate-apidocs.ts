@@ -971,6 +971,7 @@ const CURATED_BODIES: Record<string, Json> = {
         ],
         pollenBudget: 100,
     },
+    patchAccountKeysById: { name: "my-renamed-key" },
     postV1AudioSpeech: {
         input: "Hello world",
         voice: "nova",

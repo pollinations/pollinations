@@ -55,17 +55,23 @@ describe("gen embeddings", () => {
         expect(output.join("")).toBe("[0.1]\n[0.2]\n");
     });
 
-    it("reads one input per stdin line when no arguments are given", async () => {
+    it("reads one input per stdin line without trimming whitespace", async () => {
         const { requests } = prepare(false);
         const { Readable } = await import("node:stream");
         const originalStdin = process.stdin;
         Object.defineProperty(process, "stdin", {
             configurable: true,
-            value: Readable.from([Buffer.from("first\nsecond\n")]),
+            value: Readable.from([
+                Buffer.from("  indented code\ntrailing spaces  \n"),
+            ]),
         });
         try {
             await createEmbeddingsCommand().parseAsync([], { from: "user" });
-            expect(requests[0].input).toEqual(["first", "second"]);
+            // Only line separators delimit texts; spaces are part of each input.
+            expect(requests[0].input).toEqual([
+                "  indented code",
+                "trailing spaces  ",
+            ]);
         } finally {
             Object.defineProperty(process, "stdin", {
                 configurable: true,

@@ -103,7 +103,8 @@ describe("getGenerationModelRegistry", () => {
         expect(model?.definition.provider).toBe("aws");
         expect(model?.definition.paidOnly).toBe(true);
         expect(model?.definition.fallbacks ?? []).toEqual([]);
-        expect(model?.supportedEndpoints).not.toContain("/v1/responses");
+        // Chat-capable models serve /v1/responses through the chat adapter.
+        expect(model?.supportedEndpoints).toContain("/v1/responses");
         for (const parameter of ["seed", "logprobs", "stop"]) {
             expect(model?.info.supported_parameters).not.toContain(parameter);
         }
@@ -121,6 +122,19 @@ describe("getGenerationModelRegistry", () => {
             .map((model) => model.name)
             .sort();
 
+        // Every visible static text model with a chat endpoint advertises
+        // /v1/responses - natively when configured, chat-adapted otherwise.
+        const chatCapable = registry
+            .visibleEntries()
+            .filter(
+                (entry) =>
+                    !entry.communityEndpoint &&
+                    entry.definition.category === "text" &&
+                    entry.supportedEndpoints.includes("/v1/chat/completions"),
+            )
+            .map((entry) => entry.id)
+            .sort();
+
         const advertised = registry
             .visibleEntries()
             .filter(
@@ -132,7 +146,10 @@ describe("getGenerationModelRegistry", () => {
             .map((entry) => entry.id)
             .sort();
 
-        expect(advertised).toEqual(configured);
+        expect(advertised).toEqual(chatCapable);
+        for (const model of configured) {
+            expect(advertised).toContain(model);
+        }
         for (const model of advertised) {
             expect(registry.resolve(model)?.info.supported_endpoints).toContain(
                 "/v1/responses",

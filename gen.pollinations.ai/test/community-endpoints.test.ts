@@ -3072,7 +3072,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
 }
 
 fixtureTest(
-    "routes Chat through an exact community URL with its saved token and rejects Responses",
+    "routes Chat through an exact community URL with its saved token and adapts Responses",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
@@ -3111,12 +3111,22 @@ fixtureTest(
                 );
                 expect(request.headers.has("x-portkey-provider")).toBe(false);
                 expect(request.redirect).toBe("manual");
-                await expect(request.json()).resolves.toMatchObject({
+                const upstreamBody = (await request.json()) as Record<
+                    string,
+                    unknown
+                >;
+                expect(upstreamBody).toMatchObject({
                     model: "gpt-4.1-mini",
                     messages: [{ role: "user", content: "hello" }],
-                    max_tokens: 5,
-                    stream: false,
                 });
+                // Chat calls from this test pin max_tokens; the adapted
+                // /v1/responses call below sends no token limit.
+                if (upstreamBody.max_tokens !== undefined) {
+                    expect(upstreamBody).toMatchObject({
+                        max_tokens: 5,
+                        stream: false,
+                    });
+                }
 
                 return Response.json({
                     id: "chatcmpl_test",
@@ -3231,10 +3241,20 @@ fixtureTest(
                 body: JSON.stringify({ model: modelId, input: "hello" }),
             }),
         );
-        expect(responses.status).toBe(400);
-        expect(await responses.text()).toContain(
-            "does not support the stateless Responses API",
-        );
+        // A chat-completions community endpoint serves /v1/responses through
+        // the chat adapter.
+        expect(responses.status).toBe(200);
+        const responsesBody = (await responses.json()) as Record<string, any>;
+        expect(responsesBody).toMatchObject({
+            object: "response",
+            model: modelId,
+            status: "completed",
+            usage: { input_tokens: 2, output_tokens: 3, total_tokens: 5 },
+        });
+        expect(responsesBody.output[0]).toMatchObject({
+            type: "message",
+            role: "assistant",
+        });
         const models = (await (
             await fetchGen("https://gen.pollinations.ai/v1/models")
         ).json()) as { data: { id: string; supported_endpoints?: string[] }[] };
@@ -3242,12 +3262,12 @@ fixtureTest(
             (model) => model.id === modelId,
         )?.supported_endpoints;
         expect(supportedEndpoints).toContain("/v1/chat/completions");
-        expect(supportedEndpoints).not.toContain("/v1/responses");
+        expect(supportedEndpoints).toContain("/v1/responses");
 
         const upstreamCalls = fetchMock.mock.calls.filter(
             ([input, init]) => new Request(input, init).url === chatUrl,
         );
-        expect(upstreamCalls).toHaveLength(3);
+        expect(upstreamCalls).toHaveLength(4);
     },
 );
 

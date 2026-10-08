@@ -13,7 +13,9 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 
 ### Responses API
 
-Use `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) to find models that advertise `/v1/responses`. This includes configured built-in providers, community text models with an exact Responses URL, external endpoint agents with an exact Responses URL, and managed prompt agents.
+Every text model that works on `/v1/chat/completions` also works on `/v1/responses`. Models whose provider speaks the Responses API are called directly; every other text model — including Claude, Gemini chat models, and all chat community models — is served through the shared stateless adapter, which translates the request, runs the same chat pipeline (billing, rate limits, cache, fallback), and converts the completion back to the Responses shape. Use `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) to confirm.
+
+On adapted models, `instructions` becomes a system message, message/function_call/function_call_output input items map to chat messages and tool calls, `max_output_tokens` maps to the provider's token limit, and `reasoning.effort` maps to `reasoning_effort`. Streaming emits the Responses event sequence (`response.created` → `response.output_item.added` → `response.output_text.delta` → … → `response.completed`) with a trailing `data: [DONE]`. Parameters with no chat equivalent — `max_tool_calls`, `top_logprobs`, `input_file`/`input_audio`/`input_video` parts, and `item_reference` — return HTTP 400.
 
 ```bash
 curl https://gen.pollinations.ai/v1/responses \
@@ -30,7 +32,7 @@ The endpoint is deliberately stateless. `store` must be `false`; `previous_respo
 
 The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
 
-Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+Community text models and endpoint agents declare one upstream API and one exact URL, and accept both public APIs either way: a Responses registration serves Responses requests directly and Chat Completions requests through the shared stateless adapter, while a Chat Completions registration serves Chat requests directly and Responses requests through the adapter. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
 
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 

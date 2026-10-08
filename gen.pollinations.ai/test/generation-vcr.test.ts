@@ -1946,11 +1946,11 @@ test("direct Responses returns 400 for reusable input state", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(0);
 });
 
-test("Responses rejects models without a direct endpoint without calling Chat", async ({
+test("Responses serves chat-only models through the chat adapter", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
+    await mocks.enable("tinybird", "portkeyDirect");
     const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
@@ -1959,18 +1959,32 @@ test("Responses rejects models without a direct endpoint without calling Chat", 
         },
         body: JSON.stringify({
             model: "stepfun/step-3.7-flash",
-            input: "must not adapt to chat",
+            input: "adapt me to chat",
         }),
     });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-        error: {
-            message: expect.stringContaining("stateless Responses API"),
-        },
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, any>;
+    expect(body).toMatchObject({
+        object: "response",
+        model: "stepfun/step-3.7-flash",
+        status: "completed",
+    });
+    expect(body.usage).toMatchObject({
+        input_tokens: expect.any(Number),
+        output_tokens: expect.any(Number),
+        total_tokens: expect.any(Number),
+    });
+    expect(body.output[0]).toMatchObject({
+        type: "message",
+        role: "assistant",
     });
     await wait();
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+    // The chat-only model was called through its Chat Completions upstream.
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        messages: [{ role: "user", content: "adapt me to chat" }],
+    });
 });
 
 test("canonical model headers preserve provider-reported payload models", async ({

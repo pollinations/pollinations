@@ -120,8 +120,13 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const baseEndpoints =
         definition.supportedEndpoints ??
         supportedEndpointsForEventType(eventType);
+    // Every text model reachable through chat also answers /v1/responses:
+    // native when the provider speaks Responses, chat-adapted otherwise.
     const supportedEndpoints =
-        eventType === "generate.text" && supportsDirectResponses(modelName)
+        eventType === "generate.text" &&
+        (supportsDirectResponses(modelName) ||
+            baseEndpoints.includes("/v1/chat/completions")) &&
+        !baseEndpoints.includes("/v1/responses")
             ? [...baseEndpoints, "/v1/responses"]
             : baseEndpoints;
     const info = modelInfoFromDefinition(modelName, definition);
@@ -144,9 +149,11 @@ function communityEntryToGenerationEntry(
         entry.communityEndpoint.modality,
         entry.definition.inputModalities ?? [],
     );
+    // All text community endpoints serve /v1/responses - natively when the
+    // upstream speaks Responses, otherwise through the chat adapter.
     if (
         entry.communityEndpoint.modality === "text" &&
-        entry.communityEndpoint.api === "responses"
+        !supportedEndpoints.includes("/v1/responses")
     ) {
         supportedEndpoints.push("/v1/responses");
     }

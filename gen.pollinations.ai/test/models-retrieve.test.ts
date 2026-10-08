@@ -555,7 +555,15 @@ test("advertises direct Responses support through supported_endpoints", async ()
         supported_endpoints: expect.arrayContaining(["/v1/responses"]),
     });
 
-    const unsupported = await fetchWorker("/v1/models/claude");
+    // Chat-only text models advertise /v1/responses too (chat-adapted).
+    const adapted = await fetchWorker("/v1/models/claude");
+    expect(adapted.status).toBe(200);
+    await expect(adapted.json()).resolves.toMatchObject({
+        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
+    });
+
+    // Non-text models never do.
+    const unsupported = await fetchWorker("/v1/models/embedding-small");
     expect(unsupported.status).toBe(200);
     const unsupportedBody = (await unsupported.json()) as {
         supported_endpoints?: string[];

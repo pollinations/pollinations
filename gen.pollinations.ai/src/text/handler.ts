@@ -339,6 +339,29 @@ function base64ToArrayBuffer(value: string): ArrayBuffer {
     return bytes.buffer;
 }
 
+/**
+ * One chat completion attempt against one fallback candidate: gateway context,
+ * Portkey call, and (for non-streaming) the usage guarantee billing relies on.
+ * Exported so the Responses adapter runs the exact same attempt body through
+ * its own candidate loop - the attempt is the single execution boundary.
+ */
+export async function runChatCompletionAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    const result = await generateTextPortkey(
+        requestData.messages,
+        await gatewayContext(c, requestData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!requestData.stream) {
+        requireChatCompletionUsage(result);
+    }
+    return result;
+}
+
 async function generateTextResponse(
     c: TextContext,
     requestData: RequestData,
@@ -354,7 +377,6 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
                 ...candidate,
@@ -370,19 +392,7 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            async (attempt) => {
-                const result = await generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
-                    portkey
-                        ? (input, init) => portkey.fetch(input, init)
-                        : undefined,
-                );
-                if (!requestData.stream) {
-                    requireChatCompletionUsage(result);
-                }
-                return result;
-            },
+            (attempt) => runChatCompletionAttempt(c, requestData, attempt),
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );

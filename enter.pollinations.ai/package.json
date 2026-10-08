@@ -71,7 +71,7 @@
         "react-dom": "^19.2.0",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
-        "stripe": "20.2.0",
+        "stripe": "22.6.2",
         "sucrase": "^3.35.1",
         "tailwind-merge": "^3.4.0",
         "tailwindcss": "^4.1.12",

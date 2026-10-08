@@ -5,7 +5,7 @@ import Stripe from "stripe";
  */
 export const createStripeClient = (env: CloudflareBindings): Stripe => {
     return new Stripe(env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-12-15.clover",
+        apiVersion: "2026-08-26.dahlia",
     });
 };
 

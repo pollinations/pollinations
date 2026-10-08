@@ -87,8 +87,23 @@ export type BillingTaxId = {
     type: string;
     value: string;
     /** Stripe's check against the tax authority (EU VAT: VIES). */
-    verification: "pending" | "verified" | "unverified" | "unavailable" | null;
+    verification: TaxIdVerification | null;
 };
+
+const TAX_ID_VERIFICATIONS = [
+    "pending",
+    "verified",
+    "unverified",
+    "unavailable",
+] as const;
+type TaxIdVerification = (typeof TAX_ID_VERIFICATIONS)[number];
+
+/** Stripe's open enum narrowed to the statuses we show; others read as none. */
+export function toTaxIdVerification(
+    status: string | null | undefined,
+): TaxIdVerification | null {
+    return TAX_ID_VERIFICATIONS.find((known) => known === status) ?? null;
+}
 
 export type AutoTopUpProcessResult =
     | { status: "skipped"; reason: string }

@@ -3,6 +3,7 @@ import {
     apiDetails,
     cardDetails,
     type ModelNews,
+    newsHighlights,
     visibleModelNews,
 } from "../frontend/src/components/news-faq/news-index.ts";
 
@@ -200,6 +201,27 @@ describe("model news cards", () => {
                 url: "https://github.com/pollinations/pollinations/pull/1",
             }),
         ).toEqual([{ label: "Endpoint", after: "Model Usage Stats" }]);
+    });
+
+    it("leaves highlights the Changelog already lists out of News", () => {
+        const highlight = (title: string, extra = {}) => ({
+            date: "2026-10-07",
+            title,
+            text: "",
+            ...extra,
+        });
+        expect(
+            newsHighlights({
+                models: [news({ pr: 10 })],
+                api: [],
+                highlights: [
+                    highlight("model launch", { prs: [10] }),
+                    highlight("feature", { prs: [11] }),
+                    highlight("app", { prs: [12], app: true }),
+                    highlight("older, no PR numbers"),
+                ],
+            }).map(({ title }) => title),
+        ).toEqual(["feature", "older, no PR numbers"]);
     });
 
     it("shows retirements without details", () => {

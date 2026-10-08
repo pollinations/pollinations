@@ -20,6 +20,7 @@ import {
     formatNewsDate,
     type Highlight,
     type ModelNews,
+    newsHighlights,
     useNewsIndex,
     visibleModelNews,
 } from "./news-index.ts";
@@ -262,9 +263,9 @@ export const Changelog: FC = () => {
 /** The latest highlights picked by the daily summaries; apps are listed in the README only. */
 export const NewsBanner: FC = () => {
     const index = useNewsIndex();
-    const highlights = (index?.highlights ?? [])
-        .filter((item) => !item.app)
-        .slice(0, DYNAMIC_NEWS_COUNT);
+    const highlights = index
+        ? newsHighlights(index).slice(0, DYNAMIC_NEWS_COUNT)
+        : [];
     if (highlights.length === 0) return null;
     return (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

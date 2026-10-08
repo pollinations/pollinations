@@ -50,7 +50,19 @@ export type Highlight = {
     title: string;
     text: string;
     app?: boolean;
+    /** PRs the highlight comes from; older backfilled highlights have none. */
+    prs?: number[];
 };
+
+/** Highlights for News: not apps (README only) and not PRs the Changelog already lists. */
+export function newsHighlights(index: NewsIndex): Highlight[] {
+    const listed = new Set(
+        [...index.models, ...(index.api ?? [])].map(({ pr }) => pr),
+    );
+    return index.highlights.filter(
+        ({ app, prs }) => !app && !prs?.some((pr) => listed.has(pr)),
+    );
+}
 
 export type ApiField = { type: string; required: boolean };
 

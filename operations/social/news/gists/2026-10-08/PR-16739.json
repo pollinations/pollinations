@@ -1,0 +1,36 @@
+{
+  "pr_number": 16739,
+  "title": "fix: Gemini tool arrays without items no longer fail with 400",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16739",
+  "merged_at": "2026-10-08T03:56:45Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed Gemini tool calls returning a 400 error when a function parameter declares an array without `items`. The Vertex tool-schema sanitizer now adds `items: {}` to those arrays, allowing any item type; OpenAI already accepts that schema. Added a regression test for the missing-`items` case.",
+    "keywords": [
+      "Gemini",
+      "tool calls",
+      "JSON Schema",
+      "Vertex",
+      "API reliability"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16739.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli uses a tiny tool belt to place an empty `items` box beside an array-shaped code plant while a CRT monitor robot watches the tool call bloom; lime green (#ecf874) glows prominently among warm cream, mint, and lavender pastels. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and shares the frame, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T03:58:01.115166+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "3a1a8417990cf2d3a67b30ccde14bd9f89215f86",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

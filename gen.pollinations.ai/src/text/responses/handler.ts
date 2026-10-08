@@ -21,6 +21,7 @@ import {
     formatFallbackTarget,
     withModelFallback,
 } from "../../fallback.ts";
+import { textResponseStream } from "../../media/response-output.ts";
 import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
@@ -218,16 +219,21 @@ async function handleDirectResponse(
                 if (attempt.adapted && chatRequest) {
                     return callAdaptedChat(c, request, chatRequest, attempt);
                 }
+                // An upstream without SSE is asked for JSON, then its answer
+                // is replayed as a stream.
+                const buffered =
+                    request.stream &&
+                    attempt.definition?.supportsStreaming === false;
                 const responsesClient = await responsesClientForAttempt(
                     c,
                     attempt,
                 );
                 const result = await callDirectResponses(
-                    request,
+                    buffered ? { ...request, stream: false } : request,
                     responsesClient.target,
                     responsesClient.fetcher,
                 );
-                if (request.stream) {
+                if (request.stream && !buffered) {
                     assertStreamContentType(
                         c,
                         result.response,
@@ -264,6 +270,14 @@ async function handleDirectResponse(
                             "Responses provider returned a non-terminal response",
                         requestUrl: result.requestUrl,
                     });
+                }
+                if (buffered) {
+                    // Billing reads usage from the replayed terminal event.
+                    const response = new Response(
+                        textResponseStream(parsed.data),
+                        { headers: { "Content-Type": "text/event-stream" } },
+                    );
+                    return { ...result, response, usage: null };
                 }
                 return { ...result, usage: parsed.data.usage };
             },

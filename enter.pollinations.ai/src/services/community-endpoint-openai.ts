@@ -59,6 +59,10 @@ export type CommunityEndpointTestResult = {
     inputModalities?: ModelInputModality[];
     /** Image tests only: editing failed, but generation remains usable. */
     imageEditError?: string;
+    /** Text tests only: false when the endpoint answers JSON but not SSE. */
+    streaming?: false;
+    /** Text tests only: why the streaming request found no SSE. */
+    streamingError?: string;
 };
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
@@ -98,13 +102,19 @@ async function fetchText(
         () => new Error("Endpoint response is too large"),
     );
     if (!response.ok) {
-        throw new Error(endpointErrorMessage(response.status, parseJson(text)));
+        throw Object.assign(
+            new Error(endpointErrorMessage(response.status, parseJson(text))),
+            { status: response.status },
+        );
     }
     if (
         streaming &&
         !response.headers.get("content-type")?.includes("text/event-stream")
     ) {
-        throw new Error("Endpoint did not return a text/event-stream response");
+        throw Object.assign(
+            new Error("Endpoint did not return a text/event-stream response"),
+            { jsonReply: parseJson(text) !== null },
+        );
     }
     return text;
 }
@@ -223,20 +233,34 @@ export async function testCommunityEndpoint({
         };
     }
 
-    const stream = await fetchText(
-        url,
-        {
-            ...init,
-            body: JSON.stringify({
-                ...request,
-                stream: true,
-                ...(api === "chat_completions"
-                    ? { stream_options: { include_usage: true } }
-                    : {}),
-            }),
-        },
-        true,
-    );
+    // An endpoint without SSE either answers `stream: true` with JSON or
+    // rejects it with a 400/422. Like image edits, that is a missing optional
+    // capability, not a failed registration. A body that is SSE, even with the
+    // wrong content type, still has to report usage below.
+    let stream: string;
+    try {
+        stream = await fetchText(
+            url,
+            {
+                ...init,
+                body: JSON.stringify({
+                    ...request,
+                    stream: true,
+                    ...(api === "chat_completions"
+                        ? { stream_options: { include_usage: true } }
+                        : {}),
+                }),
+            },
+            true,
+        );
+    } catch (error) {
+        const { status, jsonReply, message } = error as Error & {
+            status?: number;
+            jsonReply?: boolean;
+        };
+        if (!jsonReply && status !== 400 && status !== 422) throw error;
+        return { ...result, streaming: false, streamingError: message };
+    }
     let hasUsage = false;
     const parser = createParser({
         onEvent(event) {

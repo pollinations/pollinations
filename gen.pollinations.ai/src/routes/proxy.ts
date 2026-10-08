@@ -377,6 +377,9 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.supports_streaming === false && {
+            supports_streaming: false,
+        }),
         ...(entry.info.context_length && {
             context_length: entry.info.context_length,
         }),

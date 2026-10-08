@@ -8,12 +8,12 @@ const CODE_TOOL_DESCRIPTION = `Run JavaScript that calls your tools. Use it to c
 Available:
 {{types}}
 
-Write an async arrow function in plain JavaScript (no TypeScript) and return the result. A tool function returns the tool's text, or its structured JSON when the tool provides it, and throws when the tool fails. console.log output is returned with the result. The code has no network access.
+Write an async arrow function in plain JavaScript (no TypeScript) and return the result. A tool function returns the tool's structured content, or its text (parsed when it is JSON), and throws when the tool fails. console.log output is returned with the result. The code has no network access.
 
-Example: async () => { const pages = await Promise.all(["a", "b"].map((query) => server.search({ query }))); return pages.map((page) => page.slice(0, 1000)); }`;
+Example: async () => { const [a, b] = await Promise.all([server.search({ query: "a" }), server.search({ query: "b" })]); return { a, b }; }`;
 
-// Code receives what a reader would: structured content when an MCP server
-// sends it, otherwise the text. Tool errors throw so the code can catch them.
+// Follows @cloudflare/codemode's own (unexported) MCP unwrapping: tool errors
+// throw, structured content wins, and text is parsed when it is JSON.
 // Results that are not MCP-shaped pass through unchanged.
 export function codeValue(result: unknown): unknown {
     const output = result as {
@@ -26,7 +26,13 @@ export function codeValue(result: unknown): unknown {
         ? output.content.map((part) => part.text).join("\n")
         : undefined;
     if (output.isError) throw new Error(text || "Tool call failed");
-    return output.structuredContent ?? text ?? output.content;
+    if (output.structuredContent != null) return output.structuredContent;
+    if (text === undefined) return result;
+    try {
+        return JSON.parse(text);
+    } catch {
+        return text;
+    }
 }
 
 // One tool that runs model-written JavaScript in a Dynamic Worker with no
@@ -36,9 +42,19 @@ export function createCodemodeTool(
     loader: WorkerLoader,
     providers: ToolProvider[],
 ) {
+    const sandbox = new DynamicWorkerExecutor({ loader, globalOutbound: null });
     return createCodeTool({
         tools: providers,
-        executor: new DynamicWorkerExecutor({ loader, globalOutbound: null }),
+        executor: {
+            // codemode 0.5.3 keeps the `;` of `async () => {...};`, which
+            // then fails to parse when the sandbox calls the function.
+            execute: (source, providerList, options) =>
+                sandbox.execute(
+                    source.replace(/;\s*$/, ""),
+                    providerList,
+                    options,
+                ),
+        },
         description: CODE_TOOL_DESCRIPTION,
     });
 }

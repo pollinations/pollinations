@@ -19,6 +19,7 @@ interface UsageRecord {
     api_key_id: string | null;
     input_text_tokens?: number | null;
     input_cached_tokens?: number | null;
+    input_cache_write_tokens?: number | null;
     input_audio_tokens?: number | null;
     input_image_tokens?: number | null;
     output_text_tokens?: number | null;
@@ -99,6 +100,7 @@ export function tokensIn(r: UsageRecord): number {
     return (
         (r.input_text_tokens ?? 0) +
         (r.input_cached_tokens ?? 0) +
+        (r.input_cache_write_tokens ?? 0) +
         (r.input_audio_tokens ?? 0) +
         (r.input_image_tokens ?? 0)
     );

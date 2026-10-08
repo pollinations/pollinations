@@ -1,0 +1,39 @@
+{
+  "pr_number": 16663,
+  "title": "[COMMUNITY PUBLISHER ACCESS] Add samueltargino0567-ux , Derlifed to the list",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/16663",
+  "merged_at": "2026-10-08T04:21:53Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Added samueltargino0567-ux and Derlifed to the GitHub allowlist for community model publishers, granting those accounts publishing access. Closes #16608 and #16645.",
+    "keywords": [
+      "community models",
+      "publisher access",
+      "GitHub",
+      "allowlist"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16663.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears a tiny librarian hat and places two GitHub account cards beside a community model publishing terminal, with code-plants growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, never oversized, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) accents."
+  },
+  "generated_at": "2026-10-08T04:23:30.531643+00:00",
+  "area": "Community models",
+  "type": "Task",
+  "source": "Community",
+  "merge_commit_sha": "ef07e983d5eb593211a742ea1c00770340ddd300",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "ef07e983d5eb593211a742ea1c00770340ddd300^1",
+    "after_ref": "ef07e983d5eb593211a742ea1c00770340ddd300"
+  }
+}

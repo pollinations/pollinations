@@ -296,6 +296,16 @@ export function visibleModelNews<T extends { date: string }>(
     return models.filter(({ date }) => date >= from && date <= to);
 }
 
+export const API_DOCS_URL =
+    "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md";
+
+/** GitHub's anchor for the APIDOCS.md heading "`POST` `/account/keys` — Create API Key". */
+export const apiDocsAnchor = ({ endpoint, summary }: ApiNews) =>
+    `${endpoint} — ${summary}`
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s_-]/gu, "")
+        .replace(/\s/g, "-");
+
 const describeField = (field: ApiField) =>
     [field.type, field.required && "required"].filter(Boolean).join(", ");
 

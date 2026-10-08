@@ -3,8 +3,10 @@ import { Markdown } from "@pollinations/ui/markdown";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { type FC, Fragment, type ReactNode, useState } from "react";
 import {
+    API_DOCS_URL,
     type ApiNews,
     apiDetails,
+    apiDocsAnchor,
     type CardDetail,
     cardDetails,
     formatNewsDate,
@@ -69,8 +71,8 @@ type ChangeItem = {
     date: string;
     chip: { label: string; intent: "danger" | "info" | "success" | "warning" };
     name: ReactNode;
-    pr: number;
-    url: string;
+    /** Where the change lives now; none once it is gone. */
+    href?: string;
     details: CardDetail[];
 };
 
@@ -78,9 +80,13 @@ const modelChange = (news: ModelNews, today: string): ChangeItem => ({
     key: news.id,
     date: news.date,
     chip: changeChip(news, today),
-    name: <strong className="text-theme-text-strong">{news.title}</strong>,
-    pr: news.pr,
-    url: news.url,
+    name: <strong>{news.title}</strong>,
+    href:
+        news.action === "RETIRE" &&
+        news.status !== "cancelled" &&
+        news.date <= today
+            ? undefined
+            : `/models?q=${encodeURIComponent(news.model_id)}`,
     details: cardDetails(news),
 });
 
@@ -106,12 +112,14 @@ const apiChange = (news: ApiNews): ChangeItem => {
                       : "info",
         },
         name: (
-            <code className="font-mono text-xs text-theme-text-strong">
+            <code className="font-mono text-xs">
                 <span className="font-semibold">{method}</span> {path}
             </code>
         ),
-        pr: news.pr,
-        url: news.url,
+        href:
+            news.action === "REMOVE"
+                ? undefined
+                : `${API_DOCS_URL}#${apiDocsAnchor(news)}`,
         details: apiDetails(news),
     };
 };
@@ -125,15 +133,13 @@ const ChangeRow: FC<{ item: ChangeItem }> = ({ item }) => (
         >
             {item.chip.label}
         </Chip>
-        <a
-            href={item.url}
-            target="_blank"
-            rel="noreferrer"
-            title={`PR #${item.pr}`}
-            className="min-w-0 hover:underline sm:border-l sm:border-theme-text-strong/15 sm:pl-3"
-        >
-            {item.name}
-        </a>
+        <div className="min-w-0 text-theme-text-strong sm:border-l sm:border-theme-text-strong/15 sm:pl-3">
+            {item.href ? (
+                <InlineLink href={item.href}>{item.name}</InlineLink>
+            ) : (
+                item.name
+            )}
+        </div>
         {item.details.length > 0 && (
             <dl className="col-start-2 grid gap-y-0.5 text-xs leading-5 sm:col-start-3 sm:border-l sm:border-theme-text-strong/15 sm:pl-3">
                 {item.details.map(({ label, before, after }, i) => (

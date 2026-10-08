@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     apiDetails,
+    apiDocsAnchor,
     cardDetails,
     type ModelNews,
     newsHighlights,
@@ -221,6 +222,31 @@ describe("model news cards", () => {
                 url: "https://github.com/pollinations/pollinations/pull/1",
             }),
         ).toEqual([{ label: "Summary", after: "Model Usage Stats" }]);
+    });
+
+    it("links an endpoint to its APIDOCS.md heading the way GitHub anchors it", () => {
+        const endpoint = (endpoint: string, summary: string) =>
+            apiDocsAnchor({
+                id: "",
+                endpoint,
+                summary,
+                action: "ADD",
+                breaking: false,
+                changes: [],
+                date: "",
+                pr: 1,
+                url: "",
+            });
+        // Anchors copied from the rendered APIDOCS.md on GitHub.
+        expect(endpoint("PATCH /account/keys/{id}", "Update API Key")).toBe(
+            "patch-accountkeysid--update-api-key",
+        );
+        expect(
+            endpoint(
+                "POST /v1/messages",
+                "Create message (Anthropic-compatible)",
+            ),
+        ).toBe("post-v1messages--create-message-anthropic-compatible");
     });
 
     it("shows retirements without details", () => {

@@ -627,6 +627,73 @@ describe("Pollinations server-owned defaults", () => {
     });
 });
 
+describe("Pollinations video reference media", () => {
+    it.each([
+        false,
+        true,
+    ])("sends guidance URLs (arrays: %s)", async (arrays) => {
+        const urls = [
+            "https://media.example/ref,one?size=large&tag=a b",
+            "https://media.example/ref-two",
+        ];
+        const references = arrays ? urls : urls[0];
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { kind: "binary", contentType: "video/mp4" }),
+        );
+
+        await newClient().video("a guided scene", {
+            referenceImages: references,
+            referenceVideos: references,
+            referenceAudios: references,
+            referenceImage: "https://media.example/start.png",
+        });
+
+        const [requestUrl] = fetchMock.mock.calls[0];
+        const url = new URL(requestUrl as string);
+        const expected = arrays ? urls.join("|") : urls[0];
+        for (const name of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ]) {
+            expect(url.searchParams.get(name)).toBe(expected);
+        }
+        expect(url.searchParams.get("image")).toBe(
+            "https://media.example/start.png",
+        );
+        expect([...url.searchParams.keys()].sort()).toEqual([
+            "image",
+            "key",
+            "reference_audios",
+            "reference_images",
+            "reference_videos",
+        ]);
+    });
+
+    it.each([
+        undefined,
+        "https://media.example/start.png",
+        ["https://media.example/start.png", "https://media.example/end.png"],
+    ])("omits guidance and preserves frame images: %s", async (referenceImage) => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        await newClient().video("a scene", { referenceImage });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("image")).toBe(
+            Array.isArray(referenceImage)
+                ? referenceImage.join(",")
+                : (referenceImage ?? null),
+        );
+        for (const name of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ]) {
+            expect(url.searchParams.has(name)).toBe(false);
+        }
+    });
+});
+
 describe("Pollinations seed handling", () => {
     it("passes seed and model-specific video duration through URL requests", async () => {
         const client = newClient();

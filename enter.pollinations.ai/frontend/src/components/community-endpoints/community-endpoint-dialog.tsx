@@ -22,7 +22,7 @@ import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
@@ -125,7 +125,7 @@ export function CommunityEndpointDialog({
         let active = true;
         void (async () => {
             try {
-                const response = await apiClient.account["my-models"][":id"][
+                const response = await accountClient["my-models"][":id"][
                     "fallback-candidates"
                 ].$get({ param: { id: endpointId } });
                 if (!response.ok) return;
@@ -172,7 +172,7 @@ export function CommunityEndpointDialog({
     async function handleFetchModels(): Promise<void> {
         setModelListState({ status: "loading", message: "Fetching models…" });
         try {
-            const response = await apiClient.account["my-models"].models.$post({
+            const response = await accountClient["my-models"].models.$post({
                 json: {
                     baseUrl: form.url,
                     ...tokenForRequest,
@@ -202,7 +202,7 @@ export function CommunityEndpointDialog({
     async function handleTest(): Promise<void> {
         setTestState({ status: "loading", message: "Testing endpoint…" });
         try {
-            const response = await apiClient.account["my-models"].test.$post({
+            const response = await accountClient["my-models"].test.$post({
                 json:
                     form.modality === "text"
                         ? {

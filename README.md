@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [✍️ Keigo Formatter](https://ucalis-uma.github.io/keigo-formatter) | Rough Japanese memos to polite business Japanese. Single-page static app (no build, GitHub Pages). Uses Pollinations text API ( POST /v1/chat/completions , default deepseek/deepseek-v4.1-flash ). BYOP | [@ucalis-uma](https://github.com/ucalis-uma) |
 | [🎬 Audio](https://dwikatmahmoud87-source.github.io/Gtdcg) | Update: The TTS feature is implemented and gated behind login, which is standard for a BYOP app — an unauthenticated reviewer can only see the sign-in screen, since the feature lives inside a hidden d | [@dwikatmahmoud87-source](https://github.com/dwikatmahmoud87-source) |
 | [🛠️ SoloForge AI](https://soloforge-ai-web.onrender.com) | SoloForge AI is an AI Creator OS that turns content ideas into generated assets, review queues, and automated publishing workflows. It uses Pollinations for AI image generation, authenticated AI sessi | [@soloforge-ai](https://github.com/soloforge-ai) |
 | [📚 Pollinations Quest Starter](https://elite-surely-machine-enemies.trycloudflare.com) | A zero-backend web app that walks a brand-new Pollinations user through the seven setup quests on one page. You paste your API key (kept only in browser localStorage - no server, no data collection) a | [@lingt11](https://github.com/lingt11) |
@@ -37,7 +38,6 @@
 | [🎮 Liar's Supper](https://xiaotian1171.github.io/liars-supper) | A party deduction game for one device passed around the table. The host sets a scene, deals every player a secret role, narrates three twists while the table argues on a timer, then takes a private vo | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
 | [🎮 Mole Party](https://tomdacatto.github.io/pollinations-mole-party) | Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

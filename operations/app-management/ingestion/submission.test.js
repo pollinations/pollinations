@@ -143,6 +143,13 @@ test("parses the optional quest reference", () => {
     ]);
 });
 
+test("ignores html comments inside a field", () => {
+    const withComment = (value) =>
+        parseSubmission(`${BODY}\n\n### Quest\n${value}\n\n<!-- re-run pre-review -->`);
+    assert.equal(withComment("#15600").quest, "15600");
+    assert.deepEqual(validateSubmission(withComment("#15600")), []);
+});
+
 test("builds the canonical catalog app", () => {
     const app = buildApp(parseSubmission(BODY), {
         githubUsername: "example",

@@ -3027,6 +3027,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.02,
     },
   },
+  "qwen/qwen-audio-3.0-tts-flash": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
   "qwen/qwen-image": {
     "cost": {
       "completionImageTokens": 0.025,
@@ -3157,14 +3165,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionAudioTokens": 0.00001,
-    },
-  },
-  "qwen/qwen3-tts-instruct-flash": {
-    "cost": {
-      "completionAudioTokens": 0.0000115,
-    },
-    "price": {
-      "completionAudioTokens": 0.0000115,
     },
   },
   "qwen/qwen3-vl-235b-a22b-thinking": {

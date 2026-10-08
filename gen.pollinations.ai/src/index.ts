@@ -28,6 +28,7 @@ import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
+import { consoleLog, runSandboxKeepAlive } from "./routes/e2b-keep-alive.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
@@ -212,4 +213,10 @@ app.onError(handleError);
 
 export default {
     fetch: app.fetch,
+    // Cron: maintain the leases of keep-alive sandboxes (see e2b-keep-alive).
+    scheduled: (
+        _event: ScheduledEvent,
+        env: CloudflareBindings,
+        ctx: ExecutionContext,
+    ) => ctx.waitUntil(runSandboxKeepAlive(env, consoleLog)),
 };

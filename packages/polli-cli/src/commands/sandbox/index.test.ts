@@ -140,3 +140,78 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         );
     });
 });
+
+describe("sandbox keep-alive", () => {
+    async function prepare(response: Response) {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        setKeyOverride("sk_test");
+        let stdout = "";
+        let stderr = "";
+        vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+            stdout += String(value);
+            return true;
+        });
+        vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+            stderr += String(value);
+            return true;
+        });
+        const fetch = vi.fn(async () => response);
+        vi.stubGlobal("fetch", fetch);
+        const { sandboxCommand } = await import("./index.js");
+        return {
+            run: (args: string[]) =>
+                sandboxCommand.parseAsync(args, { from: "user" }),
+            output: () => ({ stdout, stderr }),
+            fetch,
+        };
+    }
+
+    it("enables keep-alive and explains account-balance billing", async () => {
+        const command = await prepare(
+            Response.json({
+                sandboxId: "sbx1",
+                keepAlive: true,
+                endAt: new Date(Date.now() + 6 * 3600 * 1000).toISOString(),
+            }),
+        );
+
+        await command.run(["keep-alive", "sbx1", "on"]);
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes/sbx1/keep-alive"),
+            expect.objectContaining({
+                method: "POST",
+                body: JSON.stringify({ enabled: true }),
+            }),
+        );
+        const { stdout, stderr } = command.output();
+        expect(stdout).toContain("sbx1");
+        expect(stdout + stderr).toContain("account balance");
+    });
+
+    it("disables keep-alive", async () => {
+        const command = await prepare(
+            Response.json({ sandboxId: "sbx1", keepAlive: false }),
+        );
+
+        await command.run(["keep-alive", "sbx1", "off"]);
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes/sbx1/keep-alive"),
+            expect.objectContaining({
+                body: JSON.stringify({ enabled: false }),
+            }),
+        );
+        const { stdout, stderr } = command.output();
+        expect(stdout + stderr).toContain("off");
+    });
+
+    it("rejects anything but on or off", async () => {
+        const command = await prepare(Response.json({}));
+
+        await expect(
+            command.run(["keep-alive", "sbx1", "maybe"]),
+        ).rejects.toThrow();
+        expect(command.fetch).not.toHaveBeenCalled();
+    });
+});

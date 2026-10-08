@@ -16,6 +16,7 @@ import {
     type LogEntry,
     listSandboxes,
     sandboxLogs,
+    setSandboxKeepAlive,
 } from "./e2b.js";
 import { proxy, setupSsh } from "./ssh.js";
 
@@ -146,6 +147,38 @@ export const sandboxCommand = new Command("sandbox")
                     }
                 } catch (err) {
                     fail(`Failed to get the logs of sandbox ${id}`, err);
+                }
+            }),
+    )
+    .addCommand(
+        new Command("keep-alive")
+            .description(
+                "Keep a sandbox running: a cron maintains its lease, billed per second (best effort, no SLA)",
+            )
+            .argument("<id>")
+            .argument("<state>", "on or off")
+            .action(async (id: string, state: string) => {
+                requireKey();
+                if (state !== "on" && state !== "off") {
+                    throw new InvalidArgumentError("Give on or off.");
+                }
+                try {
+                    const result = await setSandboxKeepAlive(
+                        id,
+                        state === "on",
+                    );
+                    if (result.keepAlive) {
+                        printSuccess(
+                            `Sandbox ${id} runs until ${new Date(result.endAt ?? Date.now()).toLocaleString()}; a cron then maintains the lease. Recurring leases bill your account balance (key budgets apply only now).`,
+                        );
+                    } else {
+                        printSuccess(
+                            `Keep-alive for sandbox ${id} off. One lease already in flight may still be charged.`,
+                        );
+                    }
+                    printResult(result);
+                } catch (err) {
+                    fail(`Failed to set keep-alive of sandbox ${id}`, err);
                 }
             }),
     )

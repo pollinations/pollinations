@@ -3,6 +3,7 @@ import { extractApiKey } from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { sandboxKeepAlive } from "@shared/db/sandbox-keep-alive.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
@@ -10,6 +11,7 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -19,6 +21,7 @@ import { auth, keyPermissionsLink } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireFunds } from "@/utils/generation-access.ts";
+import { KEEP_ALIVE_LEASE_SECONDS } from "./e2b-keep-alive.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -419,6 +422,90 @@ export const e2bRoutes = new Hono<Env>()
         const sandbox = await ownedSandbox(c);
         const { timeout } = await readJson<{ timeout: number }>(c);
         return extendLease(c, sandbox, timeout);
+    })
+    // Keep-alive: opt a sandbox into cron-maintained leases. Enabling pays a
+    // synchronous 6h lease through the same billing path as timeout/connect,
+    // then the ticker maintains the lease best-effort. Recurring ticks bill
+    // the account balance; key budgets and quest-Pollen-only restrictions
+    // apply here, at enable time, not per tick. Disabling stops all future
+    // charges; a tick already in flight may finish one agreed lease.
+    .post("/sandboxes/:id/keep-alive", async (c) => {
+        const sandbox = await ownedSandbox(c);
+        const { enabled } = await readJson<{ enabled: boolean }>(c);
+        if (typeof enabled !== "boolean") {
+            throw new HTTPException(400, {
+                message: "enabled must be a boolean",
+            });
+        }
+        const db = drizzle(c.env.DB);
+        if (!enabled) {
+            await db
+                .delete(sandboxKeepAlive)
+                .where(eq(sandboxKeepAlive.sandboxId, sandbox.sandboxID));
+            return c.json({ sandboxId: sandbox.sandboxID, keepAlive: false });
+        }
+        if (sandbox.state === "paused") await requireCapacity(c);
+        const startTime = new Date();
+        const now = startTime.getTime();
+        const paidUntil =
+            sandbox.state === "running"
+                ? Math.max(Date.parse(sandbox.endAt), now)
+                : now;
+        const endAt = now + KEEP_ALIVE_LEASE_SECONDS * 1000;
+        const seconds = Math.max(0, endAt - paidUntil) / 1000;
+        const bill = lease(sandbox, seconds);
+        if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
+        // Never shorten an already-paid longer lease: only mutate E2B when
+        // the target actually extends the current deadline.
+        if (seconds > 0) {
+            const action = sandbox.state === "paused" ? "connect" : "timeout";
+            const response = await e2b(
+                c,
+                `/sandboxes/${sandbox.sandboxID}/${action}`,
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        timeout: KEEP_ALIVE_LEASE_SECONDS,
+                    }),
+                },
+            );
+            if (!response.ok) throw await upstreamError(response);
+            if (bill.price > 0) await charge(c, bill, startTime);
+        }
+        try {
+            await db
+                .insert(sandboxKeepAlive)
+                .values({
+                    sandboxId: sandbox.sandboxID,
+                    userId: c.var.auth.requireUser().id,
+                    generation: crypto.randomUUID(),
+                    chargedUntil: Math.floor(endAt / 1000),
+                    enabledAt: startTime,
+                })
+                .onConflictDoUpdate({
+                    target: sandboxKeepAlive.sandboxId,
+                    set: {
+                        userId: c.var.auth.requireUser().id,
+                        generation: crypto.randomUUID(),
+                        chargedUntil: Math.floor(endAt / 1000),
+                        claimedAt: null,
+                        claimToken: null,
+                        enabledAt: startTime,
+                    },
+                });
+        } catch (error) {
+            // The lease was already extended and paid; say so plainly rather
+            // than implying keep-alive is active.
+            throw new HTTPException(502, {
+                message: `The lease was extended, but keep-alive could not be enabled: ${error instanceof Error ? error.message : String(error)}`,
+            });
+        }
+        return c.json({
+            sandboxId: sandbox.sandboxID,
+            keepAlive: true,
+            endAt: new Date(endAt).toISOString(),
+        });
     })
     .on(
         "POST",

@@ -57,3 +57,11 @@ export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
 // E2B's system log: sandbox start, and each process started through it.
 export const sandboxLogs = (id: string) =>
     gen<{ logEntries: LogEntry[] }>(`${E2B_PATH}/sandboxes/${id}/logs`);
+
+// Opts a sandbox into (or out of) cron-maintained leases. Enabling pays a
+// 6h lease now; recurring ticks bill the account balance, not the key.
+export const setSandboxKeepAlive = (id: string, enabled: boolean) =>
+    gen<{ sandboxId: string; keepAlive: boolean; endAt?: string }>(
+        `${E2B_PATH}/sandboxes/${id}/keep-alive`,
+        { method: "POST", body: { enabled } },
+    );

@@ -38,6 +38,12 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
+# Sandbox keep-alive cron (see src/routes/e2b-keep-alive.ts).
+# Explicitly empty elsewhere: deleting the block leaves deployed crons
+# attached; only `crons = []` detaches them.
+[triggers]
+crons = []
+
 [[r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
@@ -152,6 +158,10 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
+# Sandbox keep-alive: maintain flagged leases every 30 minutes.
+[env.production.triggers]
+crons = ["*/30 * * * *"]
+
 [[env.production.services]]
 binding = "MEDIA"
 service = "pollinations-media-prod"
@@ -261,6 +271,12 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
+# Sandbox keep-alive cron (see src/routes/e2b-keep-alive.ts).
+# Explicitly empty elsewhere: deleting the block leaves deployed crons
+# attached; only `crons = []` detaches them.
+[env.staging.triggers]
+crons = []
+
 [[env.staging.services]]
 binding = "MEDIA"
 service = "pollinations-media-staging"
@@ -353,6 +369,12 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 [[env.test.kv_namespaces]]
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
+
+# Sandbox keep-alive cron (see src/routes/e2b-keep-alive.ts).
+# Explicitly empty elsewhere: deleting the block leaves deployed crons
+# attached; only `crons = []` detaches them.
+[env.test.triggers]
+crons = []
 
 [[env.test.services]]
 binding = "MEDIA"

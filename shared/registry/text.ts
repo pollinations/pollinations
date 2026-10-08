@@ -1643,6 +1643,14 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "≤272K context",
+            [
+                {
+                    key: "context",
+                    label: "Context",
+                    unit: "tokens",
+                    values: { "": "≤272K", long_context: ">272K" },
+                },
+            ],
         ),
         title: "GPT-6 Luna Decisions",
         description:

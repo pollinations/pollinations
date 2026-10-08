@@ -20,10 +20,8 @@ describe("code agent Responses client", () => {
             Response.json({ ok: true }),
         );
         const get = vi.fn(() => ({ fetch: workerFetch }));
-        const codemode = {};
         const c = {
             env: { CODE_AGENTS: { get } },
-            executionCtx: { exports: { CodeMode: () => codemode } },
             req: { url: "https://gen.pollinations.ai/v1/responses" },
         } as unknown as Context<Env>;
 
@@ -49,7 +47,7 @@ describe("code agent Responses client", () => {
 
         expect(get).toHaveBeenCalledWith(
             "agent-id",
-            { props: { CODEMODE: codemode } },
+            { props: { CODEMODE: expect.anything() } },
             {
                 limits: { cpuMs: 5_000, subRequests: 64 },
                 outbound: {
@@ -100,7 +98,6 @@ describe("code agent Responses client", () => {
         );
         const c = {
             env: { CODE_AGENTS: { get: () => ({ fetch: workerFetch }) } },
-            executionCtx: { exports: { CodeMode: () => ({}) } },
             req: { url: "https://gen.pollinations.ai/v1/chat/completions" },
         } as unknown as Context<Env>;
         const client = createCodeAgentResponsesClient(c, endpoint, "ag_run");

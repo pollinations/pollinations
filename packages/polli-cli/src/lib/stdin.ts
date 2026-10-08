@@ -4,8 +4,9 @@ import { printInfo } from "./output.js";
  * Read piped stdin until EOF. With `waitMs`, stdin is optional: if no data
  * arrives within that time, stop reading and return "". Some callers (Node's
  * `exec`/`spawn`, agent harnesses) leave stdin open without writing to it.
+ * Set `trim` to false to preserve whitespace in the input.
  */
-export async function readStdin(waitMs?: number): Promise<string> {
+export async function readStdin(waitMs?: number, trim = true): Promise<string> {
     if (process.stdin.isTTY) return "";
     const chunks: Buffer[] = [];
     return new Promise((resolve, reject) => {
@@ -26,7 +27,8 @@ export async function readStdin(waitMs?: number): Promise<string> {
             })
             .once("end", () => {
                 clearTimeout(timer);
-                resolve(Buffer.concat(chunks).toString("utf-8").trim());
+                const input = Buffer.concat(chunks).toString("utf-8");
+                resolve(trim ? input.trim() : input);
             })
             .once("error", reject);
     });

@@ -1,0 +1,33 @@
+{
+    "status": "blocked_pending_provider_confirmation",
+    "runtime_change": false,
+    "currency": "USD",
+    "price_multiplier": 1,
+    "merge_policy": "Keep draft. Confirm effective date, timezone, serving-route rates and billing evidence; add registry changes and validate before merging.",
+    "service": "tako-search",
+    "current_price": null,
+    "next_price": {
+        "search_instant_per_1000_requests": 7,
+        "search_fast_per_1000_requests": 7,
+        "search_deep_per_1000_requests": 12,
+        "contents_per_1000_results": 1,
+        "structured_data_export": "Variable; reconcile provider-reported charges"
+    },
+    "merge_on": "2026-10-16",
+    "merge_date_confirmed": false,
+    "unknowns": [
+        "Email says free through October 15; public Vercel announcement still says September 30",
+        "Gateway-specific post-promotion charges",
+        "Effective cutoff timezone",
+        "Integration and public API approval"
+    ],
+    "sources": [
+        "https://vercel.com/changelog/tako-search-is-free-on-ai-gateway-through-september-30th",
+        "https://tako.com/pricing/"
+    ],
+    "required_changes": [
+        "Confirm promotion extension before treating calls as free",
+        "Meter provider-reported search and export charges; account separately for any model tokens",
+        "Apply confirmed paid rates only after integration is approved and tested"
+    ]
+}

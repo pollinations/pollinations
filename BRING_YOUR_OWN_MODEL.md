@@ -8,7 +8,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 
 | Model family | Required upstream endpoint | Pollinations endpoint |
 |---|---|---|
-| Text: Chat Completions | One exact Chat Completions endpoint URL | `POST /v1/chat/completions` |
+| Text: Chat Completions | One exact Chat Completions endpoint URL | `POST /v1/chat/completions` and `POST /v1/responses` |
 | Text: Responses | One exact Responses endpoint URL | `POST /v1/responses` and `POST /v1/chat/completions` |
 | Image | `POST /v1/images/generations` | `GET /image/{prompt}` or `POST /v1/images/generations` |
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
@@ -144,7 +144,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
 
 Authenticated model-list requests include your own private models. Public discovery endpoints accept `community=true` to return only community models.
 
-Each text registration declares one upstream API with `{ "api": "responses" | "chat_completions", "url": "https://…" }`. A Responses model advertises both `/v1/responses` and `/v1/chat/completions` in `supported_endpoints`. Responses calls go to the registered URL; Chat Completions calls use that same upstream through Pollinations' stateless adapter. A Chat Completions registration advertises only Chat Completions. Both paths require valid terminal usage for billing; missing or malformed usage fails the request and produces no charge for that model request.
+Each text registration declares one upstream API with `{ "api": "responses" | "chat_completions", "url": "https://…" }`. A Responses model advertises both `/v1/responses` and `/v1/chat/completions` in `supported_endpoints`. Responses calls go to the registered URL; Chat Completions calls use that same upstream through Pollinations' stateless adapter. A Chat Completions registration also advertises both: Responses calls run through its Chat Completions URL and are translated back. Both paths require valid terminal usage for billing; missing or malformed usage fails the request and produces no charge for that model request.
 
 ### Endpoints without streaming
 

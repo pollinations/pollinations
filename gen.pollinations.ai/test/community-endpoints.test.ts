@@ -3072,7 +3072,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
 }
 
 fixtureTest(
-    "routes Chat through an exact community URL with its saved token and rejects Responses",
+    "routes Chat and adapted Responses through an exact community Chat URL with its saved token",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
@@ -3228,13 +3228,30 @@ fixtureTest(
                     Authorization: `Bearer ${apiKey}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ model: modelId, input: "hello" }),
+                body: JSON.stringify({
+                    model: modelId,
+                    input: "hello",
+                    max_output_tokens: 5,
+                }),
             }),
         );
-        expect(responses.status).toBe(400);
-        expect(await responses.text()).toContain(
-            "does not support the stateless Responses API",
-        );
+        // The Chat-registered endpoint answers Responses through Chat.
+        expect(responses.status).toBe(200);
+        expect(responses.headers.get("x-model-used")).toBe(modelId);
+        expect(responses.headers.get("x-usage-prompt-text-tokens")).toBe("2");
+        await expect(responses.json()).resolves.toMatchObject({
+            object: "response",
+            status: "completed",
+            model: modelId,
+            output: [
+                {
+                    type: "message",
+                    role: "assistant",
+                    content: [{ type: "output_text", text: "ok" }],
+                },
+            ],
+            usage: { input_tokens: 2, output_tokens: 3, total_tokens: 5 },
+        });
         const models = (await (
             await fetchGen("https://gen.pollinations.ai/v1/models")
         ).json()) as { data: { id: string; supported_endpoints?: string[] }[] };
@@ -3242,12 +3259,12 @@ fixtureTest(
             (model) => model.id === modelId,
         )?.supported_endpoints;
         expect(supportedEndpoints).toContain("/v1/chat/completions");
-        expect(supportedEndpoints).not.toContain("/v1/responses");
+        expect(supportedEndpoints).toContain("/v1/responses");
 
         const upstreamCalls = fetchMock.mock.calls.filter(
             ([input, init]) => new Request(input, init).url === chatUrl,
         );
-        expect(upstreamCalls).toHaveLength(3);
+        expect(upstreamCalls).toHaveLength(4);
     },
 );
 

@@ -137,6 +137,30 @@ async function gatewayContext(
     };
 }
 
+/** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
+export async function generateChatAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    // An upstream without SSE is asked for JSON, then its answer is replayed
+    // as a stream.
+    const buffered =
+        requestData.stream === true &&
+        candidate.definition?.supportsStreaming === false;
+    const attemptData = buffered
+        ? { ...requestData, stream: false }
+        : requestData;
+    const result = await generateTextPortkey(
+        attemptData.messages,
+        await gatewayContext(c, attemptData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!attemptData.stream) requireChatCompletionUsage(result);
+    return buffered ? completionToChatStream(result) : result;
+}
+
 function withGatewayContext(c: TextContext, requestData: RequestData) {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
@@ -355,7 +379,6 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
                 ...candidate,
@@ -371,27 +394,7 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            async (attempt) => {
-                // An upstream without SSE is asked for JSON, then its answer
-                // is replayed as a stream.
-                const buffered =
-                    requestData.stream === true &&
-                    attempt.definition?.supportsStreaming === false;
-                const attemptData = buffered
-                    ? { ...requestData, stream: false }
-                    : requestData;
-                const result = await generateTextPortkey(
-                    attemptData.messages,
-                    await gatewayContext(c, attemptData, attempt),
-                    portkey
-                        ? (input, init) => portkey.fetch(input, init)
-                        : undefined,
-                );
-                if (!attemptData.stream) {
-                    requireChatCompletionUsage(result);
-                }
-                return buffered ? completionToChatStream(result) : result;
-            },
+            (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );

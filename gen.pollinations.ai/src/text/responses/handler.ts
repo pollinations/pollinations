@@ -26,6 +26,7 @@ import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
 import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
+import { requireChatStreamUsage } from "../chat/usage.js";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
@@ -33,7 +34,13 @@ import {
     supportsTextFallbackRequest,
     textCapabilityError,
 } from "../fallbackCompatibility.js";
-import type { ServiceError } from "../types.js";
+import { generateChatAttempt } from "../handler.ts";
+import type { RequestData, ServiceError } from "../types.js";
+import {
+    chatCompletionToResponse,
+    chatStreamToResponsesStream,
+    responsesToChatRequest,
+} from "./adaptedChat.js";
 import {
     callDirectResponses,
     type DirectResponsesTarget,
@@ -51,24 +58,21 @@ type ResponsesContext = Context<Env>;
 
 type DirectResponsesCandidate = FallbackCandidate & {
     responsesTarget?: DirectResponsesTarget;
+    /** No Responses upstream: served through the Chat pipeline. */
+    adapted?: true;
     originalIndex: number;
 };
 
 type DirectResponsesResult = Awaited<ReturnType<typeof callDirectResponses>> & {
     usage: ResponseUsage | null;
+    /** Chat-shaped body for billing, exactly what Chat would track. */
+    trackingBody?: ReadableStream | string;
 };
 
 function directResponsesCandidates(
     c: ResponsesContext,
     request: CreateResponseRequest,
 ): DirectResponsesCandidate[] {
-    const candidates = fallbackCandidates(c.var.model);
-    const primary = candidates[0];
-    if (!primary) {
-        throw new ResponsesInvalidRequestError(
-            `Model ${request.model} does not support the stateless Responses API`,
-        );
-    }
     const targetFor = (
         candidate: FallbackCandidate,
     ): DirectResponsesTarget | null | undefined => {
@@ -79,30 +83,21 @@ function directResponsesCandidates(
             ? undefined
             : null;
     };
-    const primaryTarget = targetFor(primary);
-    if (primaryTarget === null) {
-        throw new ResponsesInvalidRequestError(
-            `Model ${request.model} does not support the stateless Responses API`,
-        );
-    }
-
-    const supported: DirectResponsesCandidate[] = [
-        {
-            ...primary,
-            ...(primaryTarget ? { responsesTarget: primaryTarget } : {}),
-            originalIndex: 0,
-        },
-    ];
-    for (let index = 1; index < candidates.length; index += 1) {
-        const candidate = candidates[index];
-        if (!supportsTextFallbackRequest(candidate.definition, request)) {
+    const supported: DirectResponsesCandidate[] = [];
+    for (const [index, candidate] of fallbackCandidates(
+        c.var.model,
+    ).entries()) {
+        if (
+            index > 0 &&
+            !supportsTextFallbackRequest(candidate.definition, request)
+        ) {
             continue;
         }
         const target = targetFor(candidate);
-        if (target === null) continue;
         supported.push({
             ...candidate,
             ...(target ? { responsesTarget: target } : {}),
+            ...(target === null ? { adapted: true as const } : {}),
             originalIndex: index,
         });
     }
@@ -144,6 +139,46 @@ async function responsesClientForAttempt(
     return { target };
 }
 
+/**
+ * Run one candidate through the Chat pipeline. Billing reads the validated
+ * Chat output, exactly as on /v1/chat/completions; the client gets Responses.
+ */
+async function callAdaptedChat(
+    c: ResponsesContext,
+    request: CreateResponseRequest,
+    chatRequest: RequestData,
+    attempt: DirectResponsesCandidate,
+): Promise<DirectResponsesResult> {
+    const completion = await generateChatAttempt(c, chatRequest, attempt);
+    const requestUrl = completion.upstreamRequestUrl ?? new URL(c.req.url);
+    if (request.stream) {
+        if (!completion.responseStream) {
+            throw new UpstreamError(502, {
+                message: "Text model returned an empty stream",
+                requestUrl,
+            });
+        }
+        const [client, tracking] = requireChatStreamUsage(
+            completion.responseStream,
+        ).tee();
+        return {
+            response: new Response(
+                chatStreamToResponsesStream(client, request, attempt.id),
+            ),
+            requestUrl,
+            usage: null,
+            trackingBody: tracking,
+        };
+    }
+    const data = chatCompletionToResponse(request, attempt.id, completion);
+    return {
+        response: Response.json(data),
+        requestUrl,
+        usage: data.usage,
+        trackingBody: JSON.stringify(completion),
+    };
+}
+
 async function handleDirectResponse(
     c: ResponsesContext,
     request: CreateResponseRequest,
@@ -159,9 +194,31 @@ async function handleDirectResponse(
         if (capabilityError)
             throw new ResponsesInvalidRequestError(capabilityError);
         validateDirectResponsesRequest(request);
+        let candidates = directResponsesCandidates(c, request);
+        let chatRequest: RequestData | undefined;
+        if (candidates.some((candidate) => candidate.adapted)) {
+            try {
+                chatRequest = responsesToChatRequest(request);
+            } catch (error) {
+                // Chat cannot express this request: it fails on an adapted
+                // primary and only skips adapted fallbacks.
+                if (
+                    !(error instanceof ResponsesInvalidRequestError) ||
+                    candidates[0]?.adapted
+                ) {
+                    throw error;
+                }
+                candidates = candidates.filter(
+                    (candidate) => !candidate.adapted,
+                );
+            }
+        }
         const { result, candidate } = await withModelFallback(
-            directResponsesCandidates(c, request),
+            candidates,
             async (attempt): Promise<DirectResponsesResult> => {
+                if (attempt.adapted && chatRequest) {
+                    return callAdaptedChat(c, request, chatRequest, attempt);
+                }
                 // An upstream without SSE is asked for JSON, then its answer
                 // is replayed as a stream.
                 const buffered =
@@ -258,8 +315,10 @@ async function handleDirectResponse(
         }
 
         let responseBody = result.response.body;
-        let trackingResponse: Response | undefined;
-        if (request.stream && responseBody) {
+        let trackingResponse = result.trackingBody
+            ? new Response(result.trackingBody, { headers })
+            : undefined;
+        if (request.stream && responseBody && !trackingResponse) {
             // Client and billing must see the same validation errors.
             const [clientBody, trackingBody] =
                 requireResponsesStreamUsage(responseBody).tee();

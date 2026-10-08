@@ -1,4 +1,4 @@
-import { Button, Chip, InlineLink, Section, Surface } from "@pollinations/ui";
+import { Button, Chip, InlineLink, Section } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { type FC, Fragment, type ReactNode, useState } from "react";
@@ -8,7 +8,6 @@ import {
     type CardDetail,
     cardDetails,
     formatNewsDate,
-    type Highlight,
     type ModelNews,
     newsHighlights,
     useNewsIndex,
@@ -18,8 +17,7 @@ import {
 export const NEWS_MORE_URL =
     "https://github.com/pollinations/pollinations#-latest-news";
 
-const DYNAMIC_NEWS_COUNT = 6;
-/** Past changes shown at first and added per "Show older". */
+/** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
 
 function changeChip(
@@ -172,6 +170,19 @@ const ChangeRow: FC<{ item: ChangeItem }> = ({ item }) => (
     </li>
 );
 
+/** Adds PAGE_SIZE more rows, back to the 30 days the index keeps. */
+const ShowOlder: FC<{ hidden: boolean; onClick: () => void }> = ({
+    hidden,
+    onClick,
+}) =>
+    hidden ? null : (
+        <div className="mt-4 flex justify-end">
+            <Button as="button" onClick={onClick}>
+                Show older
+            </Button>
+        </div>
+    );
+
 /** Starts each day; the row after it needs no top border. */
 const DayLine: FC<{ label: string }> = ({ label }) => (
     <li className="flex items-center gap-2 py-1 text-[11px] [&+li]:border-t-0 font-semibold uppercase tracking-wider text-theme-text-muted">
@@ -234,54 +245,56 @@ export const Changelog: FC = () => {
                     );
                 })}
             </ul>
-            {visiblePast < past.length && (
-                <div className="mt-4 flex justify-end">
-                    <Button
-                        as="button"
-                        onClick={() =>
-                            setVisiblePast((count) => count + PAGE_SIZE)
-                        }
-                    >
-                        Show older
-                    </Button>
-                </div>
-            )}
+            <ShowOlder
+                hidden={visiblePast >= past.length}
+                onClick={() => setVisiblePast((count) => count + PAGE_SIZE)}
+            />
         </Section>
     );
 };
 
-/** The latest highlights picked by the daily summaries; apps are listed in the README only. */
+/** The latest highlights picked by the daily summaries, laid out like the Changelog. */
 export const NewsBanner: FC = () => {
     const index = useNewsIndex();
-    const highlights = index
-        ? newsHighlights(index).slice(0, DYNAMIC_NEWS_COUNT)
-        : [];
+    const [visible, setVisible] = useState(PAGE_SIZE);
+    const all = index ? newsHighlights(index) : [];
+    const highlights = all.slice(0, visible);
     if (highlights.length === 0) return null;
+    const today = new Date().toISOString().slice(0, 10);
     return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {highlights.map((item) => (
-                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
-            ))}
-        </div>
+        <>
+            <ul className="text-sm text-theme-text-base">
+                {highlights.map((item, i) => (
+                    <Fragment key={`${item.date}-${item.title}`}>
+                        {item.date !== highlights[i - 1]?.date && (
+                            <DayLine
+                                label={
+                                    item.date === today
+                                        ? "Today"
+                                        : formatNewsDate(item.date)
+                                }
+                            />
+                        )}
+                        <li className="grid items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                            <strong className="text-theme-text-strong">
+                                {item.emoji && (
+                                    <span aria-hidden="true" className="mr-2">
+                                        {item.emoji}
+                                    </span>
+                                )}
+                                {item.title}
+                            </strong>
+                            <Markdown className="text-xs leading-5 text-theme-text-base">
+                                {item.text}
+                            </Markdown>
+                        </li>
+                    </Fragment>
+                ))}
+            </ul>
+            <ShowOlder
+                hidden={visible >= all.length}
+                onClick={() => setVisible((count) => count + PAGE_SIZE)}
+            />
+        </>
     );
 };
-
-const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="text-sm leading-relaxed">
-        <time
-            dateTime={item.date}
-            className="mb-1 block text-xs font-medium text-theme-text-muted"
-        >
-            {formatNewsDate(item.date)}
-        </time>
-        <div className="flex items-start gap-2 font-semibold text-ink-900">
-            {item.emoji && (
-                <span aria-hidden="true" className="shrink-0 text-base">
-                    {item.emoji}
-                </span>
-            )}
-            <div className="min-w-0">{item.title}</div>
-        </div>
-        <Markdown className="mt-1 text-ink-700">{item.text}</Markdown>
-    </Surface>
-);

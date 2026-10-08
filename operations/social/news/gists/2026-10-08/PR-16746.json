@@ -1,0 +1,37 @@
+{
+  "pr_number": 16746,
+  "title": "fix: give API key PATCH docs a request body",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16746",
+  "merged_at": "2026-10-08T06:56:18Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The API docs generator now supplies a curated request body for the Update API Key PATCH example. Write-example validation is unchanged. The generated APIDOCS.md passed static validation against the live OpenAPI schema, but the generated file is not included in this PR.",
+    "keywords": [
+      "API docs",
+      "API keys",
+      "PATCH",
+      "request body",
+      "OpenAPI",
+      "docs generator"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16746.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli points to a request body appearing beside an API key PATCH example on a small CRT, with lime green (#ecf874) code-plants growing around the desk. Polli is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, rounded light blue translucent wings, and tiny reading glasses; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T06:57:29.225362+00:00",
+  "area": "Docs & support",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "5ce460e76ed509b729dbf22659198ae32d06bf87",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

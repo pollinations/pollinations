@@ -10,7 +10,7 @@ import { getUserBalance } from "@shared/billing/balance.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import type { GenerationJobHead } from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 
@@ -247,6 +247,186 @@ describe("GenerationCoordinator", () => {
         );
         expect(remaining).toEqual([]);
     }, 60_000);
+    it("isolates a 38 MiB upload once for concurrent identical requests", async () => {
+        const { key, userId } = await createTestApiKey({
+            user: { packBalance: 100 },
+        });
+        // Restored afterwards so live-provider tests elsewhere stay skipped.
+        const liveKey = env.ELEVENLABS_API_KEY;
+        onTestFinished(() => {
+            env.ELEVENLABS_API_KEY = liveKey;
+        });
+        env.ELEVENLABS_API_KEY = "not-a-secret-workers-test-only";
+        const tinybird = createMockTinybird();
+        // Larger than the 38 MiB WAV that failed with a 503 in the issue.
+        const seconds = 1250;
+        const dataSize = 32_000 * seconds;
+        const wav = new Uint8Array(44 + dataSize);
+        const view = new DataView(wav.buffer);
+        wav.set(new TextEncoder().encode("RIFF"), 0);
+        view.setUint32(4, 36 + dataSize, true);
+        wav.set(new TextEncoder().encode("WAVEfmt "), 8);
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, 16_000, true);
+        view.setUint32(28, 32_000, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        wav.set(new TextEncoder().encode("data"), 36);
+        view.setUint32(40, dataSize, true);
+        for (let index = 44; index < wav.length; index += 4093) {
+            wav[index] = index % 251;
+        }
+        expect(wav.byteLength).toBeGreaterThan(38 * 1024 * 1024);
+
+        let executions = 0;
+        let receivedDigest: ArrayBuffer | undefined;
+        let release!: () => void;
+        const providerWaiting = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let started!: () => void;
+        const providerStarted = new Promise<void>((resolve) => {
+            started = resolve;
+        });
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = new URL(
+                    input instanceof Request ? input.url : String(input),
+                );
+                if (url.host === "api.elevenlabs.io") {
+                    expect(url.pathname).toBe("/v1/audio-isolation");
+                    executions++;
+                    const audio = (init?.body as FormData).get("audio");
+                    if (!(audio instanceof File)) {
+                        throw new Error("Provider request has no audio file");
+                    }
+                    receivedDigest = await crypto.subtle.digest(
+                        "SHA-256",
+                        await audio.arrayBuffer(),
+                    );
+                    started();
+                    await providerWaiting;
+                    return new Response(new Uint8Array(2048), {
+                        headers: {
+                            "content-type": "audio/mpeg",
+                            "character-cost": String(seconds * 12),
+                        },
+                    });
+                }
+                if (url.pathname === "/v0/pipes/public_model_stats.json") {
+                    return Response.json({ data: [] });
+                }
+                const handler = tinybird.handlerMap[url.host];
+                if (handler) return handler(new Request(input, init));
+                throw new Error(
+                    `Unexpected outbound request: ${url.host}${url.pathname}`,
+                );
+            },
+        );
+        const request = () => {
+            const form = new FormData();
+            form.set("model", "voice-isolator");
+            form.set(
+                "file",
+                new File([wav], "large.wav", { type: "audio/wav" }),
+            );
+            return new Request(
+                "https://gen.pollinations.ai/v1/audio/voice-isolator",
+                {
+                    method: "POST",
+                    headers: { authorization: `Bearer ${key}` },
+                    body: form,
+                },
+            );
+        };
+        const before = await getUserBalance(drizzle(env.DB), userId);
+        const firstContext = createExecutionContext();
+        const first = Promise.resolve(
+            worker.fetch(request(), env, firstContext),
+        );
+        await Promise.race([
+            providerStarted,
+            first.then(async (response) => {
+                if (executions === 0)
+                    throw new Error(
+                        `Owner returned before provider: ${response.status} ${await response.text()}`,
+                    );
+            }),
+        ]);
+        let stub: DurableObjectStub | undefined;
+        for (const id of await listDurableObjectIds(
+            env.GENERATION_COORDINATOR,
+        )) {
+            const candidate = env.GENERATION_COORDINATOR.get(id);
+            const stored = await runInDurableObject(
+                candidate,
+                async (_coordinator, state) =>
+                    state.storage.get<{ bodyChunks: number }>("job"),
+            );
+            if (stored) {
+                // The 38 MiB body is persisted as 1 MB storage values.
+                expect(stored.bodyChunks).toBe(Math.ceil(wav.length / 1e6));
+                stub = candidate;
+            }
+        }
+        if (!stub) throw new Error("Generation job was not persisted");
+        const secondContext = createExecutionContext();
+        const second = worker.fetch(request(), env, secondContext);
+        try {
+            await vi.waitFor(
+                async () =>
+                    expect(
+                        await runInDurableObject(
+                            stub,
+                            (coordinator) =>
+                                Reflect.get(coordinator, "waiters").size,
+                        ),
+                    ).toBe(2),
+                { timeout: 10_000 },
+            );
+        } finally {
+            release();
+        }
+        const responses = await Promise.all([first, second]);
+        for (const response of responses) {
+            const bytes = await response.arrayBuffer();
+            expect(
+                response.status,
+                new TextDecoder().decode(bytes.slice(0, 500)),
+            ).toBe(200);
+            expect(response.headers.get("content-type")).toContain(
+                "audio/mpeg",
+            );
+            expect(bytes.byteLength).toBe(2048);
+        }
+        await Promise.all([
+            waitOnExecutionContext(firstContext),
+            waitOnExecutionContext(secondContext),
+        ]);
+
+        expect(executions).toBe(1);
+        expect(receivedDigest).toEqual(
+            await crypto.subtle.digest("SHA-256", wav),
+        );
+        const billed = tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed).toHaveLength(1);
+        expect(billed[0].totalPrice).toBeGreaterThan(0);
+        const after = await getUserBalance(drizzle(env.DB), userId);
+        expect(before.packBalance - after.packBalance).toBeCloseTo(
+            billed[0].totalPrice,
+            8,
+        );
+        expect(
+            await runInDurableObject(stub, async (_coordinator, state) => [
+                ...(await state.storage.list()).keys(),
+            ]),
+        ).toEqual([]);
+    }, 90_000);
+
     it("finds completed media through the real storage RPC service", async () => {
         const key = "d".repeat(64);
         await env.MEDIA.put(

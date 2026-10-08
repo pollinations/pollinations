@@ -80,12 +80,19 @@ export class CodeMode extends WorkerEntrypoint<CloudflareBindings> {
             const [, server = "codemode", name = key] =
                 key.match(/^mcp__(.+?)__(.+)$/) ?? [];
             const namespace = server.replaceAll("-", "_");
+            // RPC disposes stubs passed as parameters when tool() returns;
+            // keep each callback until the agent's request ends.
+            const execute =
+                (
+                    agentTool.execute as {
+                        dup?: () => CodeAgentTool["execute"];
+                    }
+                ).dup?.() ?? agentTool.execute;
             namespaces[namespace] ??= {};
             namespaces[namespace][name] = tool({
                 description: agentTool.description,
                 inputSchema: jsonSchema(agentTool.inputSchema),
-                execute: async (input) =>
-                    codeValue(await agentTool.execute(input)),
+                execute: async (input) => codeValue(await execute(input)),
             });
         }
         const code = createCodemodeTool(

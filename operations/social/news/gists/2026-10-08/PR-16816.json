@@ -1,0 +1,40 @@
+{
+  "pr_number": 16816,
+  "title": "chore: remove retirementDate from the model registry",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16816",
+  "merged_at": "2026-10-08T15:41:41Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Removed the `retirementDate` field and its 44 values from the model registry. Provider route deadlines remain as code comments beside their source notes, as the model-management skill now specifies. Removed the field’s fallback non-inheritance rule and test. The catalog export and model announcements no longer produce scheduled retirements, and the news index ignores retirement entries in older gists. A model is marked retired when the PR removing it merges. API and runtime behavior are unchanged.",
+    "keywords": [
+      "model registry",
+      "retirement dates",
+      "provider routes",
+      "model news",
+      "catalog export"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16816.jpg",
+    "prompt": "In a cozy pixel art garden-shed archive, Polli wears a tiny librarian hat and files provider deadline notes beside code-plants while a friendly CRT robot clears outdated retirement notices from a terminal; lime green (#ecf874) glows against warm cream and soft pastel gradients, with warm lighting, an 8-bit aesthetic, and retro gaming vibes. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings."
+  },
+  "generated_at": "2026-10-08T15:43:30.652125+00:00",
+  "area": "Models",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "09c43e6e392470641f8b5a5611edf4dee6f56433",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "09c43e6e392470641f8b5a5611edf4dee6f56433^1",
+    "after_ref": "09c43e6e392470641f8b5a5611edf4dee6f56433"
+  }
+}

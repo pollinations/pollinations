@@ -72,7 +72,7 @@ const connectPolliCliQuest: QuestDefinition = {
         "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`.",
     category: "setup",
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 0.5,
     balanceBucket: "tier",
 };
 

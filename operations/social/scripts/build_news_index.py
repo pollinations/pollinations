@@ -26,7 +26,7 @@ RECENT_DAYS = 30
 README_ITEMS = 10
 # Announcement changes the model cards show; everything else stays in the gist.
 CARD_FIELDS = ("pricing", "paid_only", "capabilities", "input_modalities", "output_modalities",
-               "context_length", "per_user_rpm", "max_reference_images")
+               "context_length", "per_user_rpm", "max_reference_images", "model_id", "voices")
 
 
 def read_json(paths) -> List[Dict]:
@@ -49,6 +49,7 @@ def model_entries(gists: List[Dict], since: str) -> List[Dict]:
                 "id": item["id"],
                 "model_id": item["model_id"],
                 "title": item.get("title") or item["model_id"],
+                "previous_title": item.get("previous_title"),
                 "action": item["action"],
                 "category": item.get("category"),
                 "date": date,

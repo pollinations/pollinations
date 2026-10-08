@@ -31,6 +31,7 @@ def model_changes(before, after, pr):
             if a != b:
                 changes[field] = {"before": a, "after": b}
         if renamed.get(name):
+            # The old ID keeps working as an alias, but the model behind it changed.
             changes["model_id"] = {"before": renamed[name], "after": name}
         if previous is None or current is None:
             changes["availability"] = {"before": "Available" if previous else "Unavailable",
@@ -41,7 +42,8 @@ def model_changes(before, after, pr):
                            "title": (current or previous).get("title", name), "action": {"added": "NEW", "removed": "RETIRE", "changed": "UPDATE"}[kind],
                            "category": (current or previous).get("category"),
                            "pricing_units": {"before": (previous or {}).get("pricing_units"), "after": (current or {}).get("pricing_units")},
-                           "changes": changes, "effective_at": None, "effective_status": "unconfirmed", "official": True})
+                           "changes": changes, "effective_at": None, "effective_status": "unconfirmed", "official": True,
+                           **({"previous_title": previous.get("title", renamed[name])} if renamed.get(name) else {})})
     return events
 
 

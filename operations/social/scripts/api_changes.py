@@ -15,7 +15,8 @@ def _types(field: Optional[Dict]) -> set:
 
 def _field_change(name: str, before: Optional[Dict], after: Optional[Dict]) -> Optional[Dict]:
     """One parameter or body field; None when nothing a client relies on changed."""
-    if before == after:
+    # "any" means the docs lost the schema: the change is unknown, not a change.
+    if before == after or "any" in _types(before) | _types(after):
         return None
     breaking = (
         (before is not None and after is None)  # removed
@@ -37,6 +38,9 @@ def api_changes(before: Dict, after: Dict, pr: Dict) -> List[Dict]:
             action = "REMOVE"
         else:
             for kind in ("parameters", "body"):
+                # A body documented on one side only is a documentation gap, not an API change.
+                if kind == "body" and (not old[kind] or not new[kind]):
+                    continue
                 for name in sorted(old[kind].keys() | new[kind].keys()):
                     change = _field_change(f"{kind}:{name}", old[kind].get(name), new[kind].get(name))
                     if change:

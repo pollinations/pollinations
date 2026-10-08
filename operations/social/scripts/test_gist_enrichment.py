@@ -45,7 +45,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(removed["action"], "RETIRE")
 
     def test_rename_keeps_old_id_available_and_preserves_other_changes(self):
-        old = {"name": "kimi", "aliases": [], "paid_only": False,
+        old = {"name": "kimi", "title": "Kimi", "aliases": [], "paid_only": False,
                "pricing": {"currency": "pollen", "promptTextTokens": "0.000001"}}
         new = {**old, "name": "moonshot/kimi-k3", "aliases": ["kimi"], "paid_only": True}
         events = model_changes([old], [new], {"number": 1})
@@ -55,6 +55,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(events[0]["changes"]["model_id"], {"before": "kimi", "after": "moonshot/kimi-k3"})
         self.assertEqual(events[0]["changes"]["paid_only"], {"before": False, "after": True})
         self.assertNotIn("availability", events[0]["changes"])
+        self.assertEqual(events[0]["previous_title"], "Kimi")
         # Moving an ID onto an existing canonical model also preserves access.
         existing = {**new, "aliases": []}
         events = model_changes([old, existing], [new], {"number": 2})
@@ -186,10 +187,15 @@ class GistEnrichmentTest(unittest.TestCase):
                  event("removed", "RETIRE", retire),
                  event("routed", "UPDATE", {"supported_endpoints": {"before": [], "after": ["/v1"]}}),
                  event("priced", "UPDATE", {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}},
-                                            "voices": {"before": [], "after": ["alloy"]}})),
+                                            "supported_endpoints": {"before": [], "after": ["/v1"]}}),
+                 {**event("replaced", "UPDATE", {"model_id": {"before": "old/id", "after": "replaced"},
+                                                 "voices": {"before": ["a"], "after": ["b"]}}),
+                  "previous_title": "Old"}),
         ]
         entries = model_entries(gists, "2026-09-08")
-        self.assertEqual([e["model_id"] for e in entries], ["priced", "removed"])
+        self.assertEqual([e["model_id"] for e in entries], ["priced", "removed", "replaced"])
+        self.assertEqual(set(entries[2]["changes"]), {"model_id", "voices"})
+        self.assertEqual(entries[2]["previous_title"], "Old")
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
         self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
 
@@ -217,6 +223,14 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(chat, {"parameters:query:debug": True, "body:model": True,
                                 "body:seed": False, "body:tools": False})
         self.assertEqual(events["GET /new"]["id"], "pr-7:GET /new")
+        # Documentation gaps: an undocumented body on one side, or a type lost to "any".
+        gap = api_changes(
+            {"POST /x": {"parameters": {}, "body": {"a": field("string", True)}},
+             "POST /y": {"parameters": {}, "body": {"b": field("string", True)}}},
+            {"POST /x": {"parameters": {}, "body": {}},
+             "POST /y": {"parameters": {}, "body": {"b": field("any")}}},
+            {"number": 8})
+        self.assertEqual(gap, [])
 
     def test_docs_pr_reports_api_changes_only_against_an_earlier_surface(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -405,6 +405,13 @@ test("retrieves a model by canonical ID", async () => {
     });
 });
 
+test("retrieves a canonical ID with an unencoded slash", async () => {
+    const response = await fetchWorker("/v1/models/openai/gpt-5-nano");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe("openai/gpt-5-nano");
+});
+
 test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {
     const model = "z-ai/glm-5.3-flash";
     const response = await fetchWorker(

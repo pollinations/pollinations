@@ -55,3 +55,35 @@
     padding-inline: 0.75rem;
     gap: 0.25rem;
 }
+
+/* Quest leaderboard podium medals and day-over-day movement chips. */
+.quest-medal-gold {
+    background-color: #fbbf24;
+    color: #451a03;
+}
+
+.quest-medal-silver {
+    background-color: #d6d3d1;
+    color: #292524;
+}
+
+.quest-medal-bronze {
+    background-color: #b45309;
+    color: #fffbeb;
+}
+
+.quest-move-up {
+    color: #16a34a;
+}
+
+.quest-move-down {
+    color: #ef4444;
+}
+
+.dark .quest-move-up {
+    color: #4ade80;
+}
+
+.dark .quest-move-down {
+    color: #f87171;
+}

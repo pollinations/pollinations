@@ -319,14 +319,27 @@ test("rendered standings point the viewer at the quest that passes the next row"
         endsAt: "2026-11-01T00:00:00.000Z",
         participants: 12,
         rows: [
-            { rank: 1, githubLogin: "alice", totalPollen: 40, supporter: true },
+            {
+                rank: 1,
+                githubLogin: "alice",
+                totalPollen: 40,
+                supporter: true,
+                previousRank: null,
+            },
             {
                 rank: 11,
                 githubLogin: "bob",
                 totalPollen: 5.5,
                 supporter: false,
+                previousRank: null,
             },
-            { rank: 12, githubLogin: "me", totalPollen: 4.5, supporter: false },
+            {
+                rank: 12,
+                githubLogin: "me",
+                totalPollen: 4.5,
+                supporter: false,
+                previousRank: null,
+            },
         ],
         you: { githubLogin: "me", rank: 12, totalPollen: 4.5 },
     };
@@ -362,8 +375,15 @@ test("rendered standings show the minimum increment for a tied row", () => {
                 githubLogin: "alice",
                 totalPollen: 4.5,
                 supporter: true,
+                previousRank: null,
             },
-            { rank: 2, githubLogin: "me", totalPollen: 4.5, supporter: false },
+            {
+                rank: 2,
+                githubLogin: "me",
+                totalPollen: 4.5,
+                supporter: false,
+                previousRank: null,
+            },
         ],
         you: { githubLogin: "me", rank: 2, totalPollen: 4.5 },
     };
@@ -378,4 +398,208 @@ test("rendered standings show the minimum increment for a tied row", () => {
     expect(html).toContain(
         "0.25 Pollen to pass @alice — “Use a text model” is +0.25.",
     );
+});
+
+test("standings compare against today's UTC-midnight snapshot", async () => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date("2026-10-09T12:00:00.000Z");
+    const users = ["move-alice", "move-bob", "move-carol", "move-dawn"].map(
+        (login, index) => ({
+            id: `move-user-${index}`,
+            name: login,
+            email: `${login}@example.com`,
+            githubId: 9_000_000 + index,
+            githubUsername: login,
+        }),
+    );
+    await db.insert(schema.user).values(users);
+    const move = (
+        id: string,
+        userIndex: number,
+        pollenAmount: number,
+        earnedAt: string,
+    ) => ({
+        id,
+        idempotencyKey: id,
+        userId: `move-user-${userIndex}`,
+        questId: "merged_pr",
+        title: id,
+        pollenAmount,
+        balanceBucket: "tier",
+        earnedAt: new Date(earnedAt),
+    });
+    await db.insert(schema.rewards).values([
+        // Yesterday: alice 10 leads, bob 5 is second.
+        move("move-a1", 0, 10, "2026-10-08T12:00:00.000Z"),
+        move("move-b1", 1, 5, "2026-10-08T12:00:00.000Z"),
+        // Today bob overtakes alice.
+        move("move-b2", 1, 10, "2026-10-09T06:00:00.000Z"),
+        // A reward at exactly UTC midnight counts today, not yesterday.
+        move("move-d1", 3, 3, "2026-10-09T00:00:00.000Z"),
+        // Carol is brand new today.
+        move("move-c1", 2, 1, "2026-10-09T08:00:00.000Z"),
+    ]);
+
+    const standings = await buildQuestStandings(env, "move-carol", now);
+    expect(
+        standings.rows.map((row) => [
+            row.rank,
+            row.githubLogin,
+            row.totalPollen,
+            row.previousRank,
+        ]),
+    ).toEqual([
+        [1, "move-bob", 15, 2],
+        [2, "move-alice", 10, 1],
+        [3, "move-dawn", 3, null],
+        [4, "move-carol", 1, null],
+    ]);
+});
+
+test("on the first UTC day of the month every rank is new", async () => {
+    const db = drizzle(env.DB, { schema });
+    await db.insert(schema.user).values({
+        id: "firstday-user",
+        name: "firstday",
+        email: "firstday@example.com",
+        githubId: 9_100_000,
+        githubUsername: "firstday",
+    });
+    await db.insert(schema.rewards).values([
+        {
+            id: "firstday-old",
+            idempotencyKey: "firstday-old",
+            userId: "firstday-user",
+            questId: "merged_pr",
+            title: "firstday-old",
+            pollenAmount: 50,
+            balanceBucket: "tier",
+            // Last month: outside the race and outside yesterday's snapshot.
+            earnedAt: new Date("2026-09-30T23:59:59.000Z"),
+        },
+        {
+            id: "firstday-new",
+            idempotencyKey: "firstday-new",
+            userId: "firstday-user",
+            questId: "merged_pr",
+            title: "firstday-new",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+            earnedAt: new Date("2026-10-01T05:00:00.000Z"),
+        },
+    ]);
+
+    const standings = await buildQuestStandings(
+        env,
+        "firstday",
+        new Date("2026-10-01T06:00:00.000Z"),
+    );
+    expect(standings.rows).toEqual([
+        {
+            rank: 1,
+            githubLogin: "firstday",
+            totalPollen: 10,
+            supporter: false,
+            previousRank: null,
+        },
+    ]);
+});
+
+test("rendered standings show podium medals and day-over-day movement", () => {
+    const row = (
+        rank: number,
+        githubLogin: string,
+        previousRank: number | null,
+    ) => ({
+        rank,
+        githubLogin,
+        totalPollen: 10,
+        supporter: false,
+        previousRank,
+    });
+    const standings: QuestStandingsResponse = {
+        month: "2026-10",
+        endsAt: "2026-11-01T00:00:00.000Z",
+        participants: 4,
+        rows: [
+            row(1, "alice", 3),
+            row(2, "bob", 1),
+            row(3, "carol", null),
+            row(4, "dave", 4),
+        ],
+        you: null,
+    };
+    const html = renderToStaticMarkup(
+        createElement(QuestStandings, {
+            standings,
+            openQuests: [],
+            now: Date.parse("2026-10-21T12:00:00.000Z"),
+        }),
+    );
+
+    // Medal classes render for exactly the podium ranks.
+    expect(html).toContain("quest-medal-gold");
+    expect(html).toContain("quest-medal-silver");
+    expect(html).toContain("quest-medal-bronze");
+    expect(html.match(/quest-medal-/g)).toHaveLength(3);
+    expect(html).toContain("quest-move-up");
+    expect(html).toContain("quest-move-down");
+    // Movement chips: up, down, newcomer; an unchanged rank shows nothing.
+    expect(html).toContain("↑2");
+    expect(html).toContain('aria-label="up 2 since yesterday"');
+    expect(html).toContain("↓1");
+    expect(html).toContain('aria-label="down 1 since yesterday"');
+    expect(html).toContain(">new</span>");
+    expect(html.match(/since yesterday/g)).toHaveLength(2);
+});
+test("the midnight snapshot ranks ties and exclusions like the live board", async () => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date("2026-10-09T12:00:00.000Z");
+    const users = ["snap-ann", "snap-zed", "voodoohop"].map((login, index) => ({
+        id: `snap-user-${index}`,
+        name: login,
+        email: `${login}@example.com`,
+        githubId: 9_200_000 + index,
+        githubUsername: login,
+    }));
+    await db.insert(schema.user).values(users);
+    const snap = (
+        id: string,
+        userIndex: number,
+        pollenAmount: number,
+        earnedAt: string,
+    ) => ({
+        id,
+        idempotencyKey: id,
+        userId: `snap-user-${userIndex}`,
+        questId: "merged_pr",
+        title: id,
+        pollenAmount,
+        balanceBucket: "tier",
+        earnedAt: new Date(earnedAt),
+    });
+    await db.insert(schema.rewards).values([
+        // Yesterday: an exact tie, ann first on the login tiebreak; the
+        // excluded login leads but never gets a rank.
+        snap("snap-a1", 0, 10.004, "2026-10-08T12:00:00.000Z"),
+        snap("snap-z1", 1, 10.004, "2026-10-08T12:00:00.000Z"),
+        snap("snap-x1", 2, 99, "2026-10-08T12:00:00.000Z"),
+        // Today zed pulls ahead.
+        snap("snap-z2", 1, 5, "2026-10-09T06:00:00.000Z"),
+    ]);
+
+    // Yesterday's tie puts ann ahead of zed on the login tiebreak in both
+    // rankings; voodoohop is excluded from the board entirely.
+    const standings = await buildQuestStandings(env, "snap-ann", now);
+    expect(
+        standings.rows.map((row) => [
+            row.rank,
+            row.githubLogin,
+            row.totalPollen,
+            row.previousRank,
+        ]),
+    ).toEqual([
+        [1, "snap-zed", 15.004, 2],
+        [2, "snap-ann", 10.004, 1],
+    ]);
 });

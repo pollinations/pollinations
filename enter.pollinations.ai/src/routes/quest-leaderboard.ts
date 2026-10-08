@@ -1,7 +1,7 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { and, eq, gte, inArray, isNotNull, like, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, like, lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
@@ -142,6 +142,8 @@ export const questStandingRowSchema = z.object({
     githubLogin: z.string(),
     totalPollen: z.number().nonnegative(),
     supporter: z.boolean(),
+    // The rank this login held at today's UTC midnight; null for newcomers.
+    previousRank: z.number().int().positive().nullable(),
 });
 
 export const questStandingsResponseSchema = z.object({
@@ -163,6 +165,25 @@ export type QuestStandingsResponse = z.infer<
 >;
 
 /**
+ * Ranks raw login/total rows: positive totals only, the excluded login
+ * dropped, highest total first, logins alphabetical on ties.
+ */
+function rankStandings(rows: { githubLogin: string; totalPollen: number }[]) {
+    return rows
+        .filter(
+            (row) =>
+                row.totalPollen > 0 &&
+                row.githubLogin !== EXCLUDED_GITHUB_LOGIN,
+        )
+        .sort(
+            (a, b) =>
+                b.totalPollen - a.totalPollen ||
+                a.githubLogin.localeCompare(b.githubLogin),
+        )
+        .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+/**
  * This calendar month's (UTC) Quest Pollen race, cut down to what one viewer
  * needs: the podium plus the rows just above and below them. Every quest
  * reward counts. Supporters are earners of a top-up quest at any time.
@@ -178,45 +199,57 @@ export async function buildQuestStandings(
     const monthEnd = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
     );
+    const todayStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
     const db = drizzle(env.DB);
     const githubLogin = sql<string>`lower(${schema.user.githubUsername})`;
-    const rows = await db
-        .select({
-            githubLogin,
-            totalPollen: sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(
-                Number,
-            ),
-        })
-        .from(rewardsTable)
-        .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
-        .where(
-            and(
-                gte(rewardsTable.earnedAt, monthStart),
-                isNotNull(schema.user.githubUsername),
-            ),
-        )
-        .groupBy(githubLogin);
+    const selectTotals = (earnedBefore?: Date) =>
+        db
+            .select({
+                githubLogin,
+                totalPollen:
+                    sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(
+                        Number,
+                    ),
+            })
+            .from(rewardsTable)
+            .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
+            .where(
+                and(
+                    gte(rewardsTable.earnedAt, monthStart),
+                    earnedBefore
+                        ? lt(rewardsTable.earnedAt, earnedBefore)
+                        : undefined,
+                    isNotNull(schema.user.githubUsername),
+                ),
+            )
+            .groupBy(githubLogin);
 
-    const ranking = rows
-        .map((row) => ({
+    const ranking = rankStandings(
+        (await selectTotals()).map((row) => ({
             githubLogin: row.githubLogin,
             totalPollen: roundPollenLedgerAmount(row.totalPollen),
-        }))
-        .filter(
-            (row) =>
-                row.totalPollen > 0 &&
-                row.githubLogin !== EXCLUDED_GITHUB_LOGIN,
-        )
-        .sort(
-            (a, b) =>
-                b.totalPollen - a.totalPollen ||
-                a.githubLogin.localeCompare(b.githubLogin),
-        );
+        })),
+    );
+    // The same race as it stood at today's UTC midnight, so the UI can show
+    // how far each login moved since yesterday.
+    const previousRankByLogin = new Map(
+        rankStandings(
+            (await selectTotals(todayStart)).map((row) => ({
+                githubLogin: row.githubLogin,
+                totalPollen: roundPollenLedgerAmount(row.totalPollen),
+            })),
+        ).map((row) => [row.githubLogin, row.rank]),
+    );
 
     const viewer = viewerGithubLogin?.toLowerCase() ?? null;
     const viewerIndex = ranking.findIndex((row) => row.githubLogin === viewer);
     const shown = ranking
-        .map((row, index) => ({ ...row, rank: index + 1 }))
+        .map((row) => ({
+            ...row,
+            previousRank: previousRankByLogin.get(row.githubLogin) ?? null,
+        }))
         .filter(
             ({ rank }) =>
                 rank <= STANDINGS_PODIUM ||

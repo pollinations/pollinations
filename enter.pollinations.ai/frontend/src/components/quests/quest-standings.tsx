@@ -51,6 +51,50 @@ function nudge(
         : `${target}.`;
 }
 
+// Local classes in style.css: the design system disables Tailwind's default
+// palette (`--color-*: initial`), so medal colors are plain CSS.
+const MEDAL_CLASS: Record<number, string> = {
+    1: "quest-medal-gold",
+    2: "quest-medal-silver",
+    3: "quest-medal-bronze",
+};
+
+/** Rank movement since today's UTC midnight. */
+function MovementChip({
+    previousRank,
+    rank,
+}: {
+    previousRank: number | null;
+    rank: number;
+}) {
+    if (previousRank === null) {
+        return (
+            <span
+                role="img"
+                aria-label="new to the leaderboard"
+                className="shrink-0 rounded-full bg-theme-bg-subtle px-1.5 py-0.5 font-semibold text-[10px] uppercase text-theme-text-muted"
+            >
+                new
+            </span>
+        );
+    }
+    const delta = previousRank - rank;
+    if (delta === 0) return null;
+    const up = delta > 0;
+    return (
+        <span
+            role="img"
+            aria-label={`${up ? "up" : "down"} ${Math.abs(delta)} since yesterday`}
+            className={`shrink-0 font-semibold text-xs tabular-nums ${
+                up ? "quest-move-up" : "quest-move-down"
+            }`}
+        >
+            {up ? "↑" : "↓"}
+            {Math.abs(delta)}
+        </span>
+    );
+}
+
 function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
     return (
         <li
@@ -58,9 +102,22 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
                 isYou ? "bg-theme-bg-active" : ""
             }`}
         >
-            <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-theme-text-muted">
-                {row.rank}
-            </span>
+            {row.rank <= 3 ? (
+                <span
+                    role="img"
+                    aria-label={`rank ${row.rank}`}
+                    className={`flex size-6 shrink-0 items-center justify-center rounded-full font-bold text-xs tabular-nums ${
+                        MEDAL_CLASS[row.rank]
+                    }`}
+                >
+                    {row.rank}
+                </span>
+            ) : (
+                <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-theme-text-muted">
+                    {row.rank}
+                </span>
+            )}
+            <MovementChip previousRank={row.previousRank} rank={row.rank} />
             <img
                 src={`https://github.com/${encodeURIComponent(row.githubLogin)}.png?size=64`}
                 alt=""

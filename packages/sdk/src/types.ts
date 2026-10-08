@@ -103,6 +103,12 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
+    /** Public image URL(s) for visual guidance, separate from first/last frames. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceImages?: string | string[];
+    /** Public video URL(s) for motion or style guidance. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceVideos?: string | string[];
+    /** Public audio URL(s) for audio-driven generation. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceAudios?: string | string[];
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -278,7 +284,10 @@ export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (server default: 'openai') */
     model?: TextModel;
-    /** Per-capability downstream model overrides for router models. */
+    /**
+     * Per-capability downstream model overrides for router models. Sent as
+     * `metadata`, with `text` as `metadata.model`.
+     */
     routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;

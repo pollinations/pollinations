@@ -350,3 +350,32 @@ test("rendered standings point the viewer at the quest that passes the next row"
         "1 Pollen to pass @bob — “Contribute a pull request” is +5.",
     );
 });
+
+test("rendered standings show the minimum increment for a tied row", () => {
+    const standings: QuestStandingsResponse = {
+        month: "2026-10",
+        endsAt: "2026-11-01T00:00:00.000Z",
+        participants: 2,
+        rows: [
+            {
+                rank: 1,
+                githubLogin: "alice",
+                totalPollen: 4.5,
+                supporter: true,
+            },
+            { rank: 2, githubLogin: "me", totalPollen: 4.5, supporter: false },
+        ],
+        you: { githubLogin: "me", rank: 2, totalPollen: 4.5 },
+    };
+    const html = renderToStaticMarkup(
+        createElement(QuestStandings, {
+            standings,
+            openQuests: [{ title: "Use a text model", reward: 0.25 }],
+            now: Date.parse("2026-10-21T12:00:00.000Z"),
+        }),
+    );
+
+    expect(html).toContain(
+        "0.25 Pollen to pass @alice — “Use a text model” is +0.25.",
+    );
+});

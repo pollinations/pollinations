@@ -2,12 +2,12 @@ import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
 
-const authHeaders = (sessionToken: string) => ({
-    Cookie: `better-auth.session_token=${sessionToken}`,
+const authHeaders = (accountToken: string) => ({
+    Authorization: `Bearer ${accountToken}`,
 });
 
 test("mixed historical and canonical usage stays separate in daily JSON and CSV", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -28,7 +28,7 @@ test("mixed historical and canonical usage stays separate in daily JSON and CSV"
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?days=30",
         {
-            headers: authHeaders(sessionToken),
+            headers: authHeaders(accountToken),
         },
     );
     expect(response.status).toBe(200);
@@ -41,7 +41,7 @@ test("mixed historical and canonical usage stays separate in daily JSON and CSV"
     const csvResponse = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?days=30&format=csv",
         {
-            headers: authHeaders(sessionToken),
+            headers: authHeaders(accountToken),
         },
     );
     expect(csvResponse.status).toBe(200);
@@ -51,7 +51,7 @@ test("mixed historical and canonical usage stays separate in daily JSON and CSV"
 });
 
 test("activity filters, cursors and exports keep the exact recorded model ID", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -87,7 +87,7 @@ test("activity filters, cursors and exports keep the exact recorded model ID", a
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30",
         {
-            headers: authHeaders(sessionToken),
+            headers: authHeaders(accountToken),
         },
     );
     expect(response.status).toBe(200);
@@ -108,7 +108,7 @@ test("activity filters, cursors and exports keep the exact recorded model ID", a
         });
         const filtered = await SELF.fetch(
             `http://localhost:3000/api/account/usage?${query}`,
-            { headers: authHeaders(sessionToken) },
+            { headers: authHeaders(accountToken) },
         );
         expect(filtered.status).toBe(200);
         const call = mocks.tinybird.state.pipeCalls.at(-1);
@@ -117,7 +117,7 @@ test("activity filters, cursors and exports keep the exact recorded model ID", a
     }
     const csvResponse = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&format=csv",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(csvResponse.status).toBe(200);
     const csv = await csvResponse.text();
@@ -125,8 +125,8 @@ test("activity filters, cursors and exports keep the exact recorded model ID", a
     expect(csv.trim().split("\n")).toHaveLength(5);
 });
 
-async function createUsageApiKey(sessionToken: string) {
-    const created = await createApiKeyViaApi(sessionToken, {
+async function createUsageApiKey(accountToken: string) {
+    const created = await createApiKeyViaApi(accountToken, {
         name: "usage-read-key",
         accountPermissions: ["usage"],
     });
@@ -134,7 +134,7 @@ async function createUsageApiKey(sessionToken: string) {
 }
 
 test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -153,7 +153,7 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
 
     const unfiltered = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?days=30",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(unfiltered.status).toBe(200);
     const unfilteredBody = (await unfiltered.json()) as {
@@ -165,13 +165,13 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
 
     const filteredSingle = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?days=30&api_key_ids=key_abc123",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(filteredSingle.status).toBe(200);
 
     const filteredMulti = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?days=30&api_key_ids=key_def456,key_abc123",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(filteredMulti.status).toBe(200);
 
@@ -189,7 +189,7 @@ test("GET /api/account/usage/daily forwards api_key_ids filter to the pipe", asy
 });
 
 test("GET /api/account/usage/daily?format=csv includes API key columns", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -208,7 +208,7 @@ test("GET /api/account/usage/daily?format=csv includes API key columns", async (
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?days=30&format=csv",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("text/csv");
@@ -225,26 +225,26 @@ test("GET /api/account/usage/daily?format=csv includes API key columns", async (
 });
 
 test("GET /api/account/usage/daily maps selected periods to exact windows", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
 
     const day = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-04-24",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(day.status).toBe(200);
 
     const week = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?granularity=week&period=2026-W17",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(week.status).toBe(200);
 
     const month = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?granularity=month&period=2026-04",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(month.status).toBe(200);
 
@@ -264,20 +264,20 @@ test("GET /api/account/usage/daily maps selected periods to exact windows", asyn
 });
 
 test("GET /api/account/usage/daily derives pipe grain from selected period", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
 
     const day = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?granularity=day&period=2026-04-24",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(day.status).toBe(200);
 
     const monthWithIgnoredGrain = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?granularity=month&period=2026-04&grain=hour",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(monthWithIgnoredGrain.status).toBe(200);
 
@@ -290,14 +290,14 @@ test("GET /api/account/usage/daily derives pipe grain from selected period", asy
 });
 
 test("GET /api/account/usage/daily rejects periods outside supported bounds", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
 
     const beforeUsage = await SELF.fetch(
         "http://localhost:3000/api/account/usage/daily?granularity=day&period=2025-12-31",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(beforeUsage.status).toBe(400);
 
@@ -306,13 +306,13 @@ test("GET /api/account/usage/daily rejects periods outside supported bounds", as
     const futurePeriod = tomorrow.toISOString().slice(0, 10);
     const future = await SELF.fetch(
         `http://localhost:3000/api/account/usage/daily?granularity=day&period=${futurePeriod}`,
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(future.status).toBe(400);
 });
 
 test("GET /api/account/usage forwards stable cursor and returns event cursor", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -345,7 +345,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&limit=25&before=2026-04-14%2012%3A10%3A00&before_event_id=event-1",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
 
     expect(response.status).toBe(200);
@@ -366,7 +366,7 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
     // rejects, so it must reach the pipe as "YYYY-MM-DD HH:MM:SS".
     const isoCursor = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&limit=25&before=2026-04-14T12%3A10%3A00.000Z&before_event_id=event-1",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(isoCursor.status).toBe(200);
     expect(mocks.tinybird.state.pipeCalls.at(-1)?.query.before).toBe(
@@ -375,13 +375,13 @@ test("GET /api/account/usage forwards stable cursor and returns event cursor", a
 
     const invalidCursor = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&before=not-a-date",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(invalidCursor.status).toBe(400);
 });
 
 test("GET /api/account/usage accepts account usage permission", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -411,7 +411,7 @@ test("GET /api/account/usage accepts account usage permission", async ({
         },
     ];
 
-    const usageKey = await createUsageApiKey(sessionToken);
+    const usageKey = await createUsageApiKey(accountToken);
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&limit=1",
         {
@@ -429,14 +429,14 @@ test("GET /api/account/usage accepts account usage permission", async ({
 });
 
 test("GET /api/account/usage forwards table filters to the pipe", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&limit=15&api_key_ids=key_b,key_a,key_a&models=gpt-b,gpt-a,gpt-a",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
 
     expect(response.status).toBe(200);
@@ -451,7 +451,7 @@ test("GET /api/account/usage forwards table filters to the pipe", async ({
 });
 
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -484,7 +484,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?format=csv&days=30&limit=50000",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
 
     expect(response.status).toBe(200);
@@ -506,7 +506,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
 
     const jsonResponse = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(jsonResponse.status).toBe(200);
     const body = (await jsonResponse.json()) as {
@@ -523,7 +523,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
 });
 
 test("GET /api/account/usage?format=csv neutralizes spreadsheet formulas", async ({
-    sessionToken,
+    accountToken,
     mocks,
 }) => {
     await mocks.enable("tinybird");
@@ -556,7 +556,7 @@ test("GET /api/account/usage?format=csv neutralizes spreadsheet formulas", async
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?format=csv&days=30",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
 
     expect(response.status).toBe(200);

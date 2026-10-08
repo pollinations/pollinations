@@ -66,10 +66,16 @@ describe("CreateChatCompletionRequestSchema", () => {
             ],
         });
 
-        expect(result.messages[0].tool_calls?.[0].function).toEqual({
-            name: "emit",
-            arguments: "{}",
-            thought_signature: "opaque-signature",
+        expect(result.messages[0]).toMatchObject({
+            tool_calls: [
+                {
+                    function: {
+                        name: "emit",
+                        arguments: "{}",
+                        thought_signature: "opaque-signature",
+                    },
+                },
+            ],
         });
     });
 

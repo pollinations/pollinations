@@ -98,6 +98,7 @@ export function createChatCommand() {
                         const hint = await budgetHint(res.status, errText);
                         if (hint) {
                             printError(hint);
+                            stopped = true;
                             rl.close();
                             // Set the code and let the loop unwind: an
                             // immediate process.exit() aborts libuv on
@@ -167,13 +168,16 @@ export function createChatCommand() {
             };
 
             let closed = false;
+            let stopped = false;
+            let pending: Promise<void> | undefined;
 
             rl.prompt();
 
-            rl.on("line", async (line) => {
+            const handleLine = async (line: string) => {
+                if (stopped) return;
                 const input = line.trim();
                 if (!input) {
-                    rl.prompt();
+                    if (!closed) rl.prompt();
                     return;
                 }
 
@@ -186,6 +190,7 @@ export function createChatCommand() {
                             ),
                         );
                     }
+                    stopped = true;
                     rl.close();
                     return;
                 }
@@ -201,26 +206,44 @@ export function createChatCommand() {
                             chalk.dim("Conversation cleared.\n\n"),
                         );
                     }
-                    rl.prompt();
+                    if (!closed) rl.prompt();
                     return;
                 }
 
                 if (input.startsWith("/save")) {
                     const path = input.slice(5).trim() || "chat.txt";
                     saveTranscript(path);
-                    rl.prompt();
+                    if (!closed) rl.prompt();
                     return;
                 }
 
                 await sendMessage(input);
                 // A fatal API error or EOF may have closed readline mid-turn.
                 if (!closed) rl.prompt();
+            };
+
+            rl.on("line", (line) => {
+                // Readline does not await handlers; serialize history changes.
+                const turn = (
+                    pending
+                        ? pending.then(() => handleLine(line))
+                        : handleLine(line)
+                ).finally(() => {
+                    if (pending === turn) pending = undefined;
+                });
+                pending = turn;
+                return turn;
             });
 
             rl.on("close", () => {
                 closed = true;
-                if (opts.save) saveTranscript(opts.save);
-                process.exitCode ??= 0;
+                const finish = () => {
+                    if (opts.save) saveTranscript(opts.save);
+                    process.exitCode ??= 0;
+                };
+                // EOF closes input, not the conversation: drain accepted turns.
+                if (pending && !stopped) void pending.then(finish);
+                else finish();
             });
         });
 }

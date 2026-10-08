@@ -11,7 +11,10 @@ import type {
     ServiceError,
     TransformOptions,
 } from "./types.js";
-import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
+import {
+    cleanNullAndUndefined,
+    isPlainObject,
+} from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
@@ -64,6 +67,47 @@ function ensureOpenAISseDone(
     );
 }
 
+/** Translate Mistral thinking chunks into the existing OpenAI response fields. */
+function normalizeMistralContent(
+    completion: Pick<ChatCompletion, "choices">,
+): void {
+    for (const choice of completion.choices ?? []) {
+        for (const message of [choice.message, choice.delta]) {
+            if (!message || !Array.isArray(message.content)) continue;
+            const parts = message.content;
+            if (
+                !parts.every(
+                    (part) =>
+                        isPlainObject(part) &&
+                        (part.type === "text" || part.type === "thinking"),
+                )
+            )
+                continue;
+            let text = "";
+            let reasoning = "";
+            for (const part of parts) {
+                if (!isPlainObject(part)) continue;
+                if (part.type === "text" && typeof part.text === "string") {
+                    text += part.text;
+                } else if (
+                    part.type === "thinking" &&
+                    Array.isArray(part.thinking)
+                ) {
+                    for (const chunk of part.thinking) {
+                        if (
+                            isPlainObject(chunk) &&
+                            typeof chunk.text === "string"
+                        )
+                            reasoning += chunk.text;
+                    }
+                }
+            }
+            message.content = text;
+            if (reasoning) message.reasoning_content = reasoning;
+        }
+    }
+}
+
 function removeReasoning(completion: Pick<ChatCompletion, "choices">): void {
     for (const choice of completion.choices ?? []) {
         for (const message of [choice.message, choice.delta]) {
@@ -75,8 +119,9 @@ function removeReasoning(completion: Pick<ChatCompletion, "choices">): void {
     }
 }
 
-function hideStreamReasoning(
+function transformStreamCompletions(
     source: ReadableStream<Uint8Array>,
+    transform: (completion: ChatCompletion) => void,
 ): ReadableStream<Uint8Array> {
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
@@ -91,7 +136,7 @@ function hideStreamReasoning(
                             const completion = JSON.parse(
                                 data,
                             ) as ChatCompletion;
-                            removeReasoning(completion);
+                            transform(completion);
                             data = JSON.stringify(completion);
                         }
                         const fields: string[] = [];
@@ -224,6 +269,11 @@ export async function genericOpenAIClient(
         options.include_reasoning === false ||
         (options.reasoning as { exclude?: boolean } | undefined)?.exclude ===
             true;
+    const normalizeContent = options.modelConfig?.useMistralChatFormat === true;
+    const transformCompletion = (completion: ChatCompletion) => {
+        if (normalizeContent) normalizeMistralContent(completion);
+        if (hideReasoning) removeReasoning(completion);
+    };
     let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
@@ -261,6 +311,25 @@ export async function genericOpenAIClient(
             messages: preparedMessages,
             ...cleanedOptions,
         });
+
+        if (normalizeContent && isPlainObject(requestBody)) {
+            if (requestBody.seed !== undefined) {
+                requestBody.random_seed = requestBody.seed;
+                delete requestBody.seed;
+            }
+            const reasoning = requestBody.reasoning;
+            if (
+                requestBody.reasoning_effort === undefined &&
+                isPlainObject(reasoning)
+            ) {
+                if (reasoning.enabled === false)
+                    requestBody.reasoning_effort = "none";
+                else if (typeof reasoning.effort === "string")
+                    requestBody.reasoning_effort = reasoning.effort;
+            }
+            delete requestBody.reasoning;
+            delete requestBody.include_reasoning;
+        }
 
         log(`[${requestId}] Request body prepared`, {
             model: modelName,
@@ -327,8 +396,11 @@ export async function genericOpenAIClient(
                 );
             }
             const streamToReturn = ensureOpenAISseDone(
-                hideReasoning
-                    ? hideStreamReasoning(response.body)
+                hideReasoning || normalizeContent
+                    ? transformStreamCompletions(
+                          response.body,
+                          transformCompletion,
+                      )
                     : response.body,
             );
             return withUpstreamRequestUrl(
@@ -363,7 +435,7 @@ export async function genericOpenAIClient(
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);
             throw error;
         }
-        if (hideReasoning) removeReasoning(data);
+        transformCompletion(data);
         const responseError = responseBodyError(data);
         if (responseError) {
             const errorDetails =

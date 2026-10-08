@@ -1,5 +1,5 @@
 import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 import { readError } from "../components/community-endpoints/types.ts";
 
 type Permissions = {
@@ -45,7 +45,7 @@ export async function createKeyWithPermissions({
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
     const type = prefix === "pk" ? "publishable" : "secret";
 
-    const response = await apiClient.account.keys.$post({
+    const response = await accountClient.keys.$post({
         json: { ...fields, ...permissions, type, expiresIn },
     });
 

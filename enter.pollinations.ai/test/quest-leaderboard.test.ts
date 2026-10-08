@@ -319,14 +319,27 @@ test("rendered standings point the viewer at the quest that passes the next row"
         endsAt: "2026-11-01T00:00:00.000Z",
         participants: 12,
         rows: [
-            { rank: 1, githubLogin: "alice", totalPollen: 40, supporter: true },
+            {
+                rank: 1,
+                githubLogin: "alice",
+                totalPollen: 40,
+                supporter: true,
+                movement: 0,
+            },
             {
                 rank: 11,
                 githubLogin: "bob",
                 totalPollen: 5.5,
                 supporter: false,
+                movement: 0,
             },
-            { rank: 12, githubLogin: "me", totalPollen: 4.5, supporter: false },
+            {
+                rank: 12,
+                githubLogin: "me",
+                totalPollen: 4.5,
+                supporter: false,
+                movement: 0,
+            },
         ],
         you: { githubLogin: "me", rank: 12, totalPollen: 4.5 },
     };
@@ -362,8 +375,15 @@ test("rendered standings show the minimum increment for a tied row", () => {
                 githubLogin: "alice",
                 totalPollen: 4.5,
                 supporter: true,
+                movement: 0,
             },
-            { rank: 2, githubLogin: "me", totalPollen: 4.5, supporter: false },
+            {
+                rank: 2,
+                githubLogin: "me",
+                totalPollen: 4.5,
+                supporter: false,
+                movement: 0,
+            },
         ],
         you: { githubLogin: "me", rank: 2, totalPollen: 4.5 },
     };
@@ -378,4 +398,116 @@ test("rendered standings show the minimum increment for a tied row", () => {
     expect(html).toContain(
         "0.25 Pollen to pass @alice — “Use a text model” is +0.25.",
     );
+});
+
+test("monthly standings show movement since the start of today from the ledger", async () => {
+    const db = drizzle(env.DB, { schema });
+    const now = new Date("2030-03-15T12:00:00.000Z");
+    const day = (date: string) => new Date(`${date}T08:00:00.000Z`);
+    const names = ["alice", "bob", "carol", "dave"];
+    await db.insert(schema.user).values(
+        names.map((name, index) => ({
+            id: `movement-${name}`,
+            name,
+            email: `movement-${name}@example.com`,
+            githubId: 7_000_000 + index,
+            githubUsername: `movement-${name}`,
+        })),
+    );
+    const reward = (id: string, name: string, pollen: number, at: Date) => ({
+        id: `movement-${id}`,
+        idempotencyKey: `movement-${id}`,
+        userId: `movement-${name}`,
+        questId: "merged_pr",
+        title: id,
+        pollenAmount: pollen,
+        balanceBucket: "tier",
+        earnedAt: at,
+    });
+    await db.insert(schema.rewards).values([
+        // Before today: alice 10, bob 8, carol 5.
+        reward("alice-1", "alice", 10, day("2030-03-03")),
+        reward("bob-1", "bob", 8, day("2030-03-05")),
+        reward("carol-1", "carol", 5, day("2030-03-10")),
+        // Last month never counts, so it cannot fake an old rank.
+        reward("dave-old", "dave", 50, day("2030-02-20")),
+        // Today: carol jumps to the top and dave joins the race.
+        reward("carol-2", "carol", 6, day("2030-03-15")),
+        reward("dave-1", "dave", 3, day("2030-03-15")),
+    ]);
+
+    const standings = await buildQuestStandings(env, "Movement-Dave", now);
+    expect(
+        standings.rows.map((row) => [row.rank, row.githubLogin, row.movement]),
+    ).toEqual([
+        [1, "movement-carol", 2],
+        [2, "movement-alice", -1],
+        [3, "movement-bob", -1],
+        [4, "movement-dave", null],
+    ]);
+    // The board still exposes only logins and Quest Pollen totals.
+    expect(Object.keys(standings.rows[0]).sort()).toEqual([
+        "githubLogin",
+        "movement",
+        "rank",
+        "supporter",
+        "totalPollen",
+    ]);
+});
+
+test("rendered standings give the podium medals and show movement", () => {
+    const standings: QuestStandingsResponse = {
+        month: "2026-10",
+        endsAt: "2026-11-01T00:00:00.000Z",
+        participants: 5,
+        rows: [
+            {
+                rank: 1,
+                githubLogin: "carol",
+                totalPollen: 11,
+                supporter: false,
+                movement: 2,
+            },
+            {
+                rank: 2,
+                githubLogin: "alice",
+                totalPollen: 10,
+                supporter: false,
+                movement: -1,
+            },
+            {
+                rank: 3,
+                githubLogin: "bob",
+                totalPollen: 8,
+                supporter: false,
+                movement: 0,
+            },
+            {
+                rank: 4,
+                githubLogin: "me",
+                totalPollen: 3,
+                supporter: false,
+                movement: null,
+            },
+        ],
+        you: { githubLogin: "me", rank: 4, totalPollen: 3 },
+    };
+    const html = renderToStaticMarkup(
+        createElement(QuestStandings, {
+            standings,
+            openQuests: [],
+            now: Date.parse("2026-10-21T12:00:00.000Z"),
+        }),
+    );
+
+    expect(html).toMatch(/aria-label="Rank 1"[^>]*>🥇</);
+    expect(html).toMatch(/aria-label="Rank 2"[^>]*>🥈</);
+    expect(html).toMatch(/aria-label="Rank 3"[^>]*>🥉</);
+    expect(html).toContain("↑2");
+    expect(html).toContain("Up 2 since yesterday");
+    expect(html).toContain("↓1");
+    expect(html).toContain("Down 1 since yesterday");
+    expect(html).toContain("New on the board today");
+    // An unchanged rank stays quiet.
+    expect(html.match(/title="(Up|Down) /g)).toHaveLength(2);
 });

@@ -1164,6 +1164,30 @@ describe("static provider fallbacks", () => {
             model: "mistralai/mistral-small-2603",
             defaultOptions: { max_tokens: 64000 },
         });
+        expect(
+            findModelByName("mistralai/mistral-large-4")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-large-4",
+        });
+        expect(
+            findModelByName("mistralai/mistral-large-4:vercel")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            model: "mistral/mistral-large-4",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["mistral"] } },
+            },
+        });
+        for (const [unit, cost] of Object.entries(
+            TEXT_SERVICES["mistralai/mistral-large-4"].cost,
+        )) {
+            expect(
+                TEXT_SERVICES["mistralai/mistral-large-4:vercel"].cost[
+                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-large-4"]["cost"]
+                ],
+            ).toBeCloseTo(cost, 15);
+        }
         for (const [unit, cost] of Object.entries(
             TEXT_SERVICES["mistralai/mistral-small-4"].cost,
         )) {

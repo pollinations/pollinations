@@ -356,6 +356,14 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "mistralai/mistral-large-4": {
+        // Both routes use Mistral infrastructure; this covers gateway failures.
+        "mistralai/mistral-large-4:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
+            provider: "vercel",
+            addedDate: new Date("2026-10-06").getTime(),
+        },
+    },
     "mistralai/mistral-small-3.2": {
         "mistralai/mistral-small-3.2:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfra,

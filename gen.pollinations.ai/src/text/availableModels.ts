@@ -989,6 +989,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.1-flash:openrouter:novita"],
     },
     {
+        name: "nex-agi/nex-n2.5-mini",
+        config: portkeyConfig["nex-agi/nex-n2.5-mini"],
+    },
+    {
+        name: "nex-agi/nex-n2.5-pro",
+        config: portkeyConfig["nex-agi/nex-n2.5-pro"],
+    },
+    {
         name: "inclusionai/ling-3.0-flash-vl",
         config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },
@@ -1046,6 +1054,14 @@ const models: ModelDefinition[] = [
         name: "meta/llama-4-scout:openrouter:novita-bf16",
         config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,
+    },
+    {
+        name: "mistralai/mistral-large-4",
+        config: portkeyConfig["mistral-large-4"],
+    },
+    {
+        name: "mistralai/mistral-large-4:vercel",
+        config: portkeyConfig["mistral-large-4-vercel"],
     },
     {
         name: "mistralai/mistral-large-3",

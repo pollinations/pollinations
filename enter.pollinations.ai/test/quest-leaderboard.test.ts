@@ -350,3 +350,66 @@ test("rendered standings point the viewer at the quest that passes the next row"
         "1 Pollen to pass @bob — “Contribute a pull request” is +5.",
     );
 });
+
+function renderNudge(
+    youPollen: number,
+    abovePollen: number,
+    openQuests: { title: string; reward: number }[],
+): string {
+    const standings: QuestStandingsResponse = {
+        month: "2026-10",
+        endsAt: "2026-11-01T00:00:00.000Z",
+        participants: 2,
+        rows: [
+            {
+                rank: 1,
+                githubLogin: "alice",
+                totalPollen: abovePollen,
+                supporter: false,
+            },
+            {
+                rank: 2,
+                githubLogin: "me",
+                totalPollen: youPollen,
+                supporter: false,
+            },
+        ],
+        you: { githubLogin: "me", rank: 2, totalPollen: youPollen },
+    };
+    return renderToStaticMarkup(
+        createElement(QuestStandings, {
+            standings,
+            openQuests,
+            now: Date.parse("2026-10-21T12:00:00.000Z"),
+        }),
+    );
+}
+
+test("rendered standings never show 0 Pollen to pass a tied row", () => {
+    // A tie ranks the viewer below, so the cheapest open quest is the gap.
+    const tied = renderNudge(4.5, 4.5, [
+        { title: "Join the Discord", reward: 1 },
+        { title: "Use a text model", reward: 0.25 },
+    ]);
+    expect(tied).not.toContain(">0 Pollen to pass");
+    expect(tied).toContain(
+        "0.25 Pollen to pass @alice — “Use a text model” is +0.25.",
+    );
+
+    // Without an open quest there is no honest amount to show.
+    const noQuests = renderNudge(4.5, 4.5, []);
+    expect(noQuests).toContain("Tied with @alice.");
+    expect(noQuests).not.toContain("Pollen to pass");
+});
+
+test("rendered standings ignore float noise in the gap", () => {
+    // 0.35 - 0.1 is 0.24999999999999997 in floating point. The real gap is
+    // 0.25, so a 0.25 quest only ties and the 1 Pollen quest is suggested.
+    const html = renderNudge(0.1, 0.35, [
+        { title: "Join the Discord", reward: 1 },
+        { title: "Use a text model", reward: 0.25 },
+    ]);
+    expect(html).toContain(
+        "0.25 Pollen to pass @alice — “Join the Discord” is +1.",
+    );
+});

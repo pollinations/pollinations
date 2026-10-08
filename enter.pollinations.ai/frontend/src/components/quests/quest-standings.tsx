@@ -1,5 +1,6 @@
 import { CardIcon, Section, Surface, TargetIcon, Text } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
+import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { Fragment } from "react";
 import type { QuestStandingsResponse } from "../../backend-types.ts";
 
@@ -42,9 +43,13 @@ function nudge(
     if (rank === 1) return `You're leading ${monthName(standings.month)}.`;
     const above = rows.find((row) => row.rank === rank - 1);
     if (!above) return null;
-    const gap = above.totalPollen - you.totalPollen;
+    // Round away float noise (0.3 - 0.2) so the gap and quest pick stay exact.
+    const gap = roundPollenLedgerAmount(above.totalPollen - you.totalPollen);
     const pass = byReward.find((quest) => quest.reward > gap);
-    const target = `${formatPollen(gap)} Pollen to pass @${above.githubLogin}`;
+    // A tie still ranks the viewer below, so passing takes the cheapest reward.
+    const needed = gap > 0 ? gap : pass?.reward;
+    if (needed === undefined) return `Tied with @${above.githubLogin}.`;
+    const target = `${formatPollen(needed)} Pollen to pass @${above.githubLogin}`;
     return pass
         ? `${target} — “${pass.title}” is +${formatPollen(pass.reward)}.`
         : `${target}.`;

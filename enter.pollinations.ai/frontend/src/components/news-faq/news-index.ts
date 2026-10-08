@@ -304,32 +304,40 @@ const describeField = (field: ApiField) =>
 /** One row per changed parameter or body field: "Body  seed: integer|null → integer". */
 /** One row per changed parameter or body field: "Body  seed: integer|null → integer". */
 export function apiDetails(news: ApiNews): CardDetail[] {
-    return news.changes.map(({ field, before, after }) => {
-        const [kind, location, ...rest] = field.split(":");
-        const label =
-            kind === "body"
-                ? "Body"
-                : `${location[0].toUpperCase()}${location.slice(1)}`;
-        const name =
-            kind === "body" ? [location, ...rest].join(":") : rest.join(":");
-        if (!before && after) {
+    const summary = news.summary
+        ? [{ label: "Summary", after: news.summary }]
+        : [];
+    return [
+        ...summary,
+        ...news.changes.map(({ field, before, after }) => {
+            const [kind, location, ...rest] = field.split(":");
+            const label =
+                kind === "body"
+                    ? "Body"
+                    : `${location[0].toUpperCase()}${location.slice(1)}`;
+            const name =
+                kind === "body"
+                    ? [location, ...rest].join(":")
+                    : rest.join(":");
+            if (!before && after) {
+                return {
+                    label,
+                    before: name,
+                    after: `added · ${describeField(after)}`,
+                };
+            }
+            if (before && !after) {
+                return {
+                    label,
+                    before: `${name}: ${describeField(before)}`,
+                    after: "removed",
+                };
+            }
             return {
                 label,
-                before: name,
-                after: `added · ${describeField(after)}`,
+                before: `${name}: ${describeField(before as ApiField)}`,
+                after: describeField(after as ApiField),
             };
-        }
-        if (before && !after) {
-            return {
-                label,
-                before: `${name}: ${describeField(before)}`,
-                after: "removed",
-            };
-        }
-        return {
-            label,
-            before: `${name}: ${describeField(before as ApiField)}`,
-            after: describeField(after as ApiField),
-        };
-    });
+        }),
+    ];
 }

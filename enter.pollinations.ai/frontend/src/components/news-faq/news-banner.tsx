@@ -70,8 +70,6 @@ type ChangeItem = {
     date: string;
     chip: { label: string; intent: "danger" | "info" | "success" | "warning" };
     name: ReactNode;
-    /** Muted line under the name, e.g. an endpoint's summary. */
-    note?: string;
     pr: number;
     url: string;
     details: CardDetail[];
@@ -113,7 +111,6 @@ const apiChange = (news: ApiNews): ChangeItem => {
                 <span className="font-semibold">{method}</span> {path}
             </code>
         ),
-        note: news.summary,
         pr: news.pr,
         url: news.url,
         details: apiDetails(news),
@@ -153,11 +150,6 @@ const ChangeRow: FC<{ item: ChangeItem; showDate: boolean }> = ({
                     {item.name}
                 </a>
             </div>
-            {item.note && (
-                <div className="mt-0.5 text-xs text-theme-text-muted">
-                    {item.note}
-                </div>
-            )}
         </div>
         {item.details.length > 0 && (
             <dl className="col-start-2 grid gap-y-0.5 text-xs leading-5 sm:col-start-auto">

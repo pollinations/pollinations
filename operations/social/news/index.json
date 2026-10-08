@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-08T16:39:51.670934+00:00",
+  "generated_at": "2026-10-08T19:31:39.833594+00:00",
   "models": [
     {
       "id": "pr-14589:openai/gpt-image-2.5-flare",
       "model_id": "openai/gpt-image-2.5-flare",
       "title": "GPT Image 2.5 Flare",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-08",
@@ -57,6 +58,7 @@
       "id": "pr-14589:openai/gpt-image-2.5-sunburst",
       "model_id": "openai/gpt-image-2.5-sunburst",
       "title": "GPT Image 2.5 Sunburst",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-08",
@@ -108,6 +110,7 @@
       "id": "pr-14556:nvidia/asset-harvester",
       "model_id": "nvidia/asset-harvester",
       "title": "NVIDIA Asset Harvester",
+      "previous_title": null,
       "action": "NEW",
       "category": "3d",
       "date": "2026-09-09",
@@ -151,6 +154,7 @@
       "id": "pr-14627:nvidia/asset-harvester",
       "model_id": "nvidia/asset-harvester",
       "title": "NVIDIA Asset Harvester",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "3d",
       "date": "2026-09-09",
@@ -171,6 +175,7 @@
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
       "model_id": "deepseek/deepseek-v4.1-flash",
       "title": "DeepSeek V4.1 Flash",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-12",
@@ -224,6 +229,7 @@
       "id": "pr-14890:openai/gpt-image-2.5-flare",
       "model_id": "openai/gpt-image-2.5-flare",
       "title": "GPT Image 2.5 Flare",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-14",
@@ -244,6 +250,7 @@
       "id": "pr-14890:openai/gpt-image-2.5-sunburst",
       "model_id": "openai/gpt-image-2.5-sunburst",
       "title": "GPT Image 2.5 Sunburst",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-14",
@@ -264,6 +271,7 @@
       "id": "pr-14895:fish-audio/s2.1-pro",
       "model_id": "fish-audio/s2.1-pro",
       "title": "Fish Audio S2.1 Pro",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "audio",
       "date": "2026-09-15",
@@ -290,6 +298,7 @@
       "id": "pr-14895:google/gemini-2.5-flash-lite",
       "model_id": "google/gemini-2.5-flash-lite",
       "title": "Gemini 2.5 Flash Lite",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -328,6 +337,7 @@
       "id": "pr-14895:google/gemini-3-flash-preview",
       "model_id": "google/gemini-3-flash-preview",
       "title": "Gemini 3 Flash Preview",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -366,6 +376,7 @@
       "id": "pr-14895:google/gemini-3.1-pro-preview",
       "model_id": "google/gemini-3.1-pro-preview",
       "title": "Gemini 3.1 Pro Preview",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -404,6 +415,7 @@
       "id": "pr-14895:google/gemini-3.5-flash-lite",
       "model_id": "google/gemini-3.5-flash-lite",
       "title": "Gemini 3.5 Flash Lite",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -442,6 +454,7 @@
       "id": "pr-14895:google/gemini-3.7-flash",
       "model_id": "google/gemini-3.7-flash",
       "title": "Gemini 3.7 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -480,6 +493,7 @@
       "id": "pr-14895:google/gemini-3.8-flash",
       "model_id": "google/gemini-3.8-flash",
       "title": "Gemini 3.8 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -518,6 +532,7 @@
       "id": "pr-14895:google/gemma-4-26b-a4b-it",
       "model_id": "google/gemma-4-26b-a4b-it",
       "title": "Gemma 4 26B A4B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -548,6 +563,7 @@
       "id": "pr-14895:google/gemma-4-31b-it",
       "model_id": "google/gemma-4-31b-it",
       "title": "Gemma 4 31B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -578,6 +594,7 @@
       "id": "pr-14895:x-ai/grok-imagine-image-2.0",
       "model_id": "x-ai/grok-imagine-image-2.0",
       "title": "Grok Imagine Image 2.0",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -606,6 +623,7 @@
       "id": "pr-14895:x-ai/grok-imagine-image-quality",
       "model_id": "x-ai/grok-imagine-image-quality",
       "title": "Grok Imagine Pro",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -634,6 +652,7 @@
       "id": "pr-14895:x-ai/grok-imagine-video-1.5",
       "model_id": "x-ai/grok-imagine-video-1.5",
       "title": "Grok Imagine Video 1.5",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "video",
       "date": "2026-09-15",
@@ -662,6 +681,7 @@
       "id": "pr-14895:alibaba/happyhorse-1.1",
       "model_id": "alibaba/happyhorse-1.1",
       "title": "HappyHorse 1.1",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "video",
       "date": "2026-09-15",
@@ -688,6 +708,7 @@
       "id": "pr-14895:thinkingmachines/inkling-small",
       "model_id": "thinkingmachines/inkling-small",
       "title": "Inkling Small",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -718,6 +739,7 @@
       "id": "pr-14895:poolside/laguna-s-2.1",
       "model_id": "poolside/laguna-s-2.1",
       "title": "Laguna S 2.1",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -748,6 +770,7 @@
       "id": "pr-14895:meituan/longcat-2.0",
       "model_id": "meituan/longcat-2.0",
       "title": "LongCat 2.0",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -778,6 +801,7 @@
       "id": "pr-14895:inception/mercury-2",
       "model_id": "inception/mercury-2",
       "title": "Mercury 2",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -808,6 +832,7 @@
       "id": "pr-14895:inception/mercury-2.5-preview",
       "model_id": "inception/mercury-2.5-preview",
       "title": "Mercury 2.5 Preview",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -838,6 +863,7 @@
       "id": "pr-14895:meta/llama-4-scout",
       "model_id": "meta/llama-4-scout",
       "title": "Meta Llama 4 Scout",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -868,6 +894,7 @@
       "id": "pr-14927:meta/llama-4-scout",
       "model_id": "meta/llama-4-scout",
       "title": "Meta Llama 4 Scout",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -908,6 +935,7 @@
       "id": "pr-14895:xiaomi/mimo-v2.5",
       "model_id": "xiaomi/mimo-v2.5",
       "title": "MiMo V2.5",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -938,6 +966,7 @@
       "id": "pr-14895:xiaomi/mimo-v2.5-pro",
       "model_id": "xiaomi/mimo-v2.5-pro",
       "title": "MiMo V2.5 Pro",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -968,6 +997,7 @@
       "id": "pr-14895:minimax/minimax-m2.7",
       "model_id": "minimax/minimax-m2.7",
       "title": "MiniMax M2.7",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -998,6 +1028,7 @@
       "id": "pr-14895:mistralai/mistral-small-3.2",
       "model_id": "mistralai/mistral-small-3.2",
       "title": "Mistral Small 3.2",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1026,6 +1057,7 @@
       "id": "pr-14895:mistralai/mistral-small-4",
       "model_id": "mistralai/mistral-small-4",
       "title": "Mistral Small 4",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1058,6 +1090,7 @@
       "id": "pr-14895:google/gemini-2.5-flash-image",
       "model_id": "google/gemini-2.5-flash-image",
       "title": "Nano Banana",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -1090,6 +1123,7 @@
       "id": "pr-14895:google/gemini-3.1-flash-image",
       "model_id": "google/gemini-3.1-flash-image",
       "title": "Nano Banana 2",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -1122,6 +1156,7 @@
       "id": "pr-14895:google/gemini-3.1-flash-lite-image",
       "model_id": "google/gemini-3.1-flash-lite-image",
       "title": "Nano Banana 2 Lite",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -1154,6 +1189,7 @@
       "id": "pr-14895:google/gemini-3-pro-image",
       "model_id": "google/gemini-3-pro-image",
       "title": "Nano Banana Pro",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -1186,6 +1222,7 @@
       "id": "pr-14895:qwen/qwen3-coder-next",
       "model_id": "qwen/qwen3-coder-next",
       "title": "Qwen3 Coder Next",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1216,6 +1253,7 @@
       "id": "pr-14895:qwen/qwen3-vl-30b-a3b-instruct",
       "model_id": "qwen/qwen3-vl-30b-a3b-instruct",
       "title": "Qwen3 VL 30B A3B Instruct",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1244,6 +1282,7 @@
       "id": "pr-14895:qwen/qwen3.7-flash",
       "model_id": "qwen/qwen3.7-flash",
       "title": "Qwen3.7 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1280,6 +1319,7 @@
       "id": "pr-14895:qwen/qwen3.7-max",
       "model_id": "qwen/qwen3.7-max",
       "title": "Qwen3.7 Max",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1312,6 +1352,7 @@
       "id": "pr-14895:qwen/qwen3.7-plus",
       "model_id": "qwen/qwen3.7-plus",
       "title": "Qwen3.7 Plus",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1344,6 +1385,7 @@
       "id": "pr-14895:qwen/qwen3.8-27b",
       "model_id": "qwen/qwen3.8-27b",
       "title": "Qwen3.8 27B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1378,6 +1420,7 @@
       "id": "pr-14895:qwen/qwen3.8-flash",
       "model_id": "qwen/qwen3.8-flash",
       "title": "Qwen3.8 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1414,6 +1457,7 @@
       "id": "pr-14895:qwen/qwen3.8-max",
       "model_id": "qwen/qwen3.8-max",
       "title": "Qwen3.8 Max",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1450,6 +1494,7 @@
       "id": "pr-14895:recraft/recraft-v4.1-vector",
       "model_id": "recraft/recraft-v4.1-vector",
       "title": "Recraft V4.1 Vector",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -1476,6 +1521,7 @@
       "id": "pr-14895:bytedance/seedream-4.5",
       "model_id": "bytedance/seedream-4.5",
       "title": "Seedream 4.5",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-15",
@@ -1502,6 +1548,7 @@
       "id": "pr-14895:stepfun/step-3.5-flash",
       "model_id": "stepfun/step-3.5-flash",
       "title": "StepFun Step 3.5 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-15",
@@ -1530,6 +1577,7 @@
       "id": "pr-15042:elevenlabs/music-v2.5",
       "model_id": "elevenlabs/music-v2.5",
       "title": "ElevenLabs Music v2.5",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-16",
@@ -1575,6 +1623,7 @@
       "id": "pr-14811:black-forest-labs/flux.2-max",
       "model_id": "black-forest-labs/flux.2-max",
       "title": "FLUX.2 Max",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-18",
@@ -1624,6 +1673,7 @@
       "id": "pr-14791:openai/gpt-4o-mini",
       "model_id": "openai/gpt-4o-mini",
       "title": "GPT-4o Mini",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-18",
@@ -1680,6 +1730,7 @@
       "id": "pr-14812:tencent/hy3",
       "model_id": "tencent/hy3",
       "title": "Hy3",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-18",
@@ -1732,6 +1783,7 @@
       "id": "pr-14798:tencent/hy4-preview",
       "model_id": "tencent/hy4-preview",
       "title": "Hy4 Preview",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-18",
@@ -1784,6 +1836,7 @@
       "id": "pr-15111:typesafe/jev",
       "model_id": "typesafe/jev",
       "title": "Jev",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-18",
@@ -1828,9 +1881,31 @@
       }
     },
     {
+      "id": "pr-15243:typesafe/jev-1.13",
+      "model_id": "typesafe/jev-1.13",
+      "title": "Jev",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-20",
+      "pr": 15243,
+      "url": "https://github.com/pollinations/pollinations/pull/15243",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "model_id": {
+          "before": "typesafe/jev",
+          "after": "typesafe/jev-1.13"
+        }
+      }
+    },
+    {
       "id": "pr-15210:mistralai/mistral-small-4",
       "model_id": "mistralai/mistral-small-4",
       "title": "Mistral Small 4",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-20",
@@ -1863,6 +1938,7 @@
       "id": "pr-15267:openai/gpt-4o-mini",
       "model_id": "openai/gpt-4o-mini",
       "title": "GPT-4o Mini",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-21",
@@ -1893,6 +1969,7 @@
       "id": "pr-15190:openai/gpt-5-nano",
       "model_id": "openai/gpt-5-nano",
       "title": "GPT-5 Nano",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-21",
@@ -1918,6 +1995,7 @@
       "id": "pr-15190:openai/gpt-5.4-mini",
       "model_id": "openai/gpt-5.4-mini",
       "title": "GPT-5.4 Mini",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-21",
@@ -1943,6 +2021,7 @@
       "id": "pr-15190:openai/gpt-5.4-nano",
       "model_id": "openai/gpt-5.4-nano",
       "title": "GPT-5.4 Nano",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-21",
@@ -1968,6 +2047,7 @@
       "id": "pr-15278:x-ai/grok-4.7",
       "model_id": "x-ai/grok-4.7",
       "title": "Grok 4.7",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-21",
@@ -2025,6 +2105,7 @@
       "id": "pr-15267:qwen/qwen3.8-27b",
       "model_id": "qwen/qwen3.8-27b",
       "title": "Qwen3.8 27B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-21",
@@ -2059,6 +2140,7 @@
       "id": "pr-15309:anthropic/claude-opus-5.5",
       "model_id": "anthropic/claude-opus-5.5",
       "title": "Claude Opus 5.5",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-22",
@@ -2116,6 +2198,7 @@
       "id": "pr-15312:openai/gpt-6-luna",
       "model_id": "openai/gpt-6-luna",
       "title": "GPT-6 Luna",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-22",
@@ -2170,6 +2253,7 @@
       "id": "pr-15312:openai/gpt-6-sol",
       "model_id": "openai/gpt-6-sol",
       "title": "GPT-6 Sol",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-22",
@@ -2224,6 +2308,7 @@
       "id": "pr-15291:qwen/qwen3.7-flash",
       "model_id": "qwen/qwen3.7-flash",
       "title": "Qwen3.7 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-22",
@@ -2260,6 +2345,7 @@
       "id": "pr-15291:qwen/qwen3.8-flash",
       "model_id": "qwen/qwen3.8-flash",
       "title": "Qwen3.8 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-22",
@@ -2296,6 +2382,7 @@
       "id": "pr-15291:qwen/qwen3.8-max",
       "model_id": "qwen/qwen3.8-max",
       "title": "Qwen3.8 Max",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-22",
@@ -2332,6 +2419,7 @@
       "id": "pr-15291:alibaba/wan-3.0",
       "model_id": "alibaba/wan-3.0",
       "title": "Wan 3.0",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "video",
       "date": "2026-09-22",
@@ -2359,6 +2447,7 @@
       "id": "pr-15178:z-ai/glm-5.3-flashx",
       "model_id": "z-ai/glm-5.3-flashx",
       "title": "Z.ai GLM-5.3 FlashX",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-22",
@@ -2416,6 +2505,7 @@
       "id": "pr-15333:black-forest-labs/flux.1.1-pro",
       "model_id": "black-forest-labs/flux.1.1-pro",
       "title": "FLUX 1.1 Pro",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-23",
@@ -2459,6 +2549,7 @@
       "id": "pr-15339:openai/gpt-image-2",
       "model_id": "openai/gpt-image-2",
       "title": "GPT Image 2",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-23",
@@ -2479,6 +2570,7 @@
       "id": "pr-15339:openai/gpt-image-2.5-flare",
       "model_id": "openai/gpt-image-2.5-flare",
       "title": "GPT Image 2.5 Flare",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-23",
@@ -2515,6 +2607,7 @@
       "id": "pr-15339:openai/gpt-image-2.5-sunburst",
       "model_id": "openai/gpt-image-2.5-sunburst",
       "title": "GPT Image 2.5 Sunburst",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "image",
       "date": "2026-09-23",
@@ -2551,6 +2644,7 @@
       "id": "pr-15304:openai/gpt-5.3-codex",
       "model_id": "openai/gpt-5.3-codex",
       "title": "GPT-5.3 Codex",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-23",
@@ -2605,6 +2699,7 @@
       "id": "pr-15331:microsoft/mai-image-2.6",
       "model_id": "microsoft/mai-image-2.6",
       "title": "MAI Image 2.6",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-23",
@@ -2659,6 +2754,7 @@
       "id": "pr-15320:microsoft/mai-image-2.6-flash",
       "model_id": "microsoft/mai-image-2.6-flash",
       "title": "MAI Image 2.6 Flash",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-23",
@@ -2713,6 +2809,7 @@
       "id": "pr-15311:xiaomi/mimo-v2.6-flash",
       "model_id": "xiaomi/mimo-v2.6-flash",
       "title": "MiMo V2.6 Flash",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-23",
@@ -2770,6 +2867,7 @@
       "id": "pr-15311:xiaomi/mimo-v2.6-pro",
       "model_id": "xiaomi/mimo-v2.6-pro",
       "title": "MiMo V2.6 Pro",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-23",
@@ -2823,6 +2921,7 @@
       "id": "pr-15338:minimax/minimax-m2.7",
       "model_id": "minimax/minimax-m2.7",
       "title": "MiniMax M2.7",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-23",
@@ -2853,6 +2952,7 @@
       "id": "pr-15361:deepseek/deepseek-v4-flash",
       "model_id": "deepseek/deepseek-v4-flash",
       "title": "DeepSeek V4 Flash 0731",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-24",
@@ -2883,6 +2983,7 @@
       "id": "pr-15361:deepseek/deepseek-v4-flash-vision-exp",
       "model_id": "deepseek/deepseek-v4-flash-vision-exp",
       "title": "DeepSeek V4 Flash Vision Exp",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-24",
@@ -2919,6 +3020,7 @@
       "id": "pr-15361:deepseek/deepseek-v4-pro",
       "model_id": "deepseek/deepseek-v4-pro",
       "title": "DeepSeek V4 Pro 0813",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-24",
@@ -2957,6 +3059,7 @@
       "id": "pr-15327:inclusionai/ling-3.0-flash-vl",
       "model_id": "inclusionai/ling-3.0-flash-vl",
       "title": "Ling 3.0 Flash VL",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-24",
@@ -3016,6 +3119,7 @@
       "id": "pr-15413:minimax/minimax-h3-max-turbo",
       "model_id": "minimax/minimax-h3-max-turbo",
       "title": "MiniMax H3 Max Turbo",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "video",
       "date": "2026-09-24",
@@ -3042,6 +3146,7 @@
       "id": "pr-15361:moonshotai/kimi-k2.7-code",
       "model_id": "moonshotai/kimi-k2.7-code",
       "title": "Moonshot Kimi K2.7 Code",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-24",
@@ -3080,6 +3185,7 @@
       "id": "pr-15361:meta/muse-glimmer-30b",
       "model_id": "meta/muse-glimmer-30b",
       "title": "Muse Glimmer 30B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-24",
@@ -3116,6 +3222,7 @@
       "id": "pr-15361:z-ai/glm-5.2",
       "model_id": "z-ai/glm-5.2",
       "title": "Z.ai GLM-5.2",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-24",
@@ -3150,6 +3257,7 @@
       "id": "pr-15362:perplexity/sonar",
       "model_id": "perplexity/sonar",
       "title": "Perplexity Sonar Fast Search",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-25",
@@ -3184,6 +3292,7 @@
       "id": "pr-15236:qwen/qwen-image-2.1",
       "model_id": "qwen/qwen-image-2.1",
       "title": "Qwen Image 2.1",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-25",
@@ -3232,6 +3341,7 @@
       "id": "pr-15357:recraft/recraft-v4.1-flash",
       "model_id": "recraft/recraft-v4.1-flash",
       "title": "Recraft V4.1 Flash",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-25",
@@ -3275,6 +3385,7 @@
       "id": "pr-15457:openai/gpt-6-astra",
       "model_id": "openai/gpt-6-astra",
       "title": "GPT-6 Astra",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-26",
@@ -3307,6 +3418,7 @@
       "id": "pr-15457:openai/gpt-6-luna",
       "model_id": "openai/gpt-6-luna",
       "title": "GPT-6 Luna",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-26",
@@ -3344,6 +3456,7 @@
       "id": "pr-15457:openai/gpt-6-sol",
       "model_id": "openai/gpt-6-sol",
       "title": "GPT-6 Sol",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-26",
@@ -3381,6 +3494,7 @@
       "id": "pr-15395:google/gemini-3.8-flash-lite-tts",
       "model_id": "google/gemini-3.8-flash-lite-tts",
       "title": "Gemini 3.8 Flash Lite TTS",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-26",
@@ -3418,6 +3532,41 @@
             "promptTextTokens": "0.0000005",
             "completionAudioTokens": "0.000006"
           }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "Zephyr",
+            "Puck",
+            "Charon",
+            "Kore",
+            "Fenrir",
+            "Leda",
+            "Orus",
+            "Aoede",
+            "Callirrhoe",
+            "Autonoe",
+            "Enceladus",
+            "Iapetus",
+            "Umbriel",
+            "Algieba",
+            "Despina",
+            "Erinome",
+            "Algenib",
+            "Rasalgethi",
+            "Laomedeia",
+            "Achernar",
+            "Alnilam",
+            "Schedar",
+            "Gacrux",
+            "Pulcherrima",
+            "Achird",
+            "Zubenelgenubi",
+            "Vindemiatrix",
+            "Sadachbia",
+            "Sadaltager",
+            "Sulafat"
+          ]
         }
       }
     },
@@ -3425,6 +3574,7 @@
       "id": "pr-15395:google/gemini-3.8-flash-tts",
       "model_id": "google/gemini-3.8-flash-tts",
       "title": "Gemini 3.8 Flash TTS",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-26",
@@ -3462,6 +3612,41 @@
             "promptTextTokens": "0.0000005",
             "completionAudioTokens": "0.000009"
           }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "Zephyr",
+            "Puck",
+            "Charon",
+            "Kore",
+            "Fenrir",
+            "Leda",
+            "Orus",
+            "Aoede",
+            "Callirrhoe",
+            "Autonoe",
+            "Enceladus",
+            "Iapetus",
+            "Umbriel",
+            "Algieba",
+            "Despina",
+            "Erinome",
+            "Algenib",
+            "Rasalgethi",
+            "Laomedeia",
+            "Achernar",
+            "Alnilam",
+            "Schedar",
+            "Gacrux",
+            "Pulcherrima",
+            "Achird",
+            "Zubenelgenubi",
+            "Vindemiatrix",
+            "Sadachbia",
+            "Sadaltager",
+            "Sulafat"
+          ]
         }
       }
     },
@@ -3469,6 +3654,7 @@
       "id": "pr-15491:google/lyria-3.5",
       "model_id": "google/lyria-3.5",
       "title": "Lyria 3.5",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-26",
@@ -3512,6 +3698,7 @@
       "id": "pr-15392:minimax/minimax-h3-max",
       "model_id": "minimax/minimax-h3-max",
       "title": "MiniMax H3 Max",
+      "previous_title": null,
       "action": "NEW",
       "category": "video",
       "date": "2026-09-26",
@@ -3562,6 +3749,7 @@
       "id": "pr-15550:minimax/minimax-h3-max-turbo",
       "model_id": "minimax/minimax-h3-max-turbo",
       "title": "MiniMax H3 Max Turbo",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "video",
       "date": "2026-09-27",
@@ -3588,6 +3776,7 @@
       "id": "pr-15671:anthropic/claude-sonnet-5.5",
       "model_id": "anthropic/claude-sonnet-5.5",
       "title": "Claude Sonnet 5.5",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-29",
@@ -3646,6 +3835,7 @@
       "id": "pr-15497:elevenlabs/stem-separation",
       "model_id": "elevenlabs/stem-separation",
       "title": "ElevenLabs Stem Separation",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-29",
@@ -3689,6 +3879,7 @@
       "id": "pr-15512:google/gemini-3.5-transcribe",
       "model_id": "google/gemini-3.5-transcribe",
       "title": "Gemini 3.5 Transcribe",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-29",
@@ -3733,6 +3924,7 @@
       "id": "pr-14797:inferenceport-ai/lightning-image-turbo",
       "model_id": "inferenceport-ai/lightning-image-turbo",
       "title": "Lightning Image Turbo",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-09-29",
@@ -3785,6 +3977,7 @@
       "id": "pr-15690:pollinations/midijourney",
       "model_id": "pollinations/midijourney",
       "title": "MIDIjourney",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-29",
@@ -3810,6 +4003,7 @@
       "id": "pr-15690:pollinations/midijourney-large",
       "model_id": "pollinations/midijourney-large",
       "title": "MIDIjourney Large",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-29",
@@ -3835,6 +4029,7 @@
       "id": "pr-15814:openai/tts-1",
       "model_id": "openai/tts-1",
       "title": "OpenAI TTS",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-29",
@@ -3871,6 +4066,17 @@
             "currency": "pollen",
             "completionAudioTokens": "0.000015"
           }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer"
+          ]
         }
       }
     },
@@ -3878,6 +4084,7 @@
       "id": "pr-15814:openai/tts-1-hd",
       "model_id": "openai/tts-1-hd",
       "title": "OpenAI TTS HD",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-09-29",
@@ -3914,6 +4121,17 @@
             "currency": "pollen",
             "completionAudioTokens": "0.00003"
           }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer"
+          ]
         }
       }
     },
@@ -3921,6 +4139,7 @@
       "id": "pr-15690:qwen/qwen3.8-2.4t-a95b",
       "model_id": "qwen/qwen3.8-2.4t-a95b",
       "title": "Qwen3.8 2.4T A95B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-09-29",
@@ -3946,6 +4165,7 @@
       "id": "pr-15960:openai/gpt-6.1-sol",
       "model_id": "openai/gpt-6.1-sol",
       "title": "GPT-6.1 Sol",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-09-30",
@@ -4001,6 +4221,7 @@
       "id": "pr-15555:minimax/minimax-h3-max-turbo",
       "model_id": "minimax/minimax-h3-max-turbo",
       "title": "MiniMax H3 Max Turbo",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "video",
       "date": "2026-09-30",
@@ -4027,6 +4248,7 @@
       "id": "pr-15486:amazon/nova-canvas-v1",
       "model_id": "amazon/nova-canvas-v1",
       "title": "Nova Canvas",
+      "previous_title": null,
       "action": "RETIRE",
       "category": "image",
       "date": "2026-09-30",
@@ -4071,6 +4293,7 @@
       "id": "pr-15486:amazon/nova-reel-v1",
       "model_id": "amazon/nova-reel-v1",
       "title": "Nova Reel",
+      "previous_title": null,
       "action": "RETIRE",
       "category": "video",
       "date": "2026-09-30",
@@ -4115,6 +4338,7 @@
       "id": "pr-15968:jaredpalmer/kev-4b",
       "model_id": "jaredpalmer/kev-4b",
       "title": "Kev 4B",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-01",
@@ -4162,6 +4386,7 @@
       "id": "pr-15970:respan/span-01-lite",
       "model_id": "respan/span-01-lite",
       "title": "Span-01 Lite",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-01",
@@ -4204,6 +4429,7 @@
       "id": "pr-15998:nvidia/nemotron-3-ultra",
       "model_id": "nvidia/nemotron-3-ultra",
       "title": "NVIDIA Nemotron 3 Ultra",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-10-04",
@@ -4238,6 +4464,7 @@
       "id": "pr-16245:black-forest-labs/flux-3-image",
       "model_id": "black-forest-labs/flux-3-image",
       "title": "FLUX.3 Image",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-10-05",
@@ -4286,6 +4513,7 @@
       "id": "pr-16250:inclusionai/ling-3.1-flash",
       "model_id": "inclusionai/ling-3.1-flash",
       "title": "Ling 3.1 Flash",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-05",
@@ -4335,6 +4563,7 @@
       "id": "pr-16244:liquid/d1",
       "model_id": "liquid/d1",
       "title": "Liquid D1",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-05",
@@ -4382,6 +4611,7 @@
       "id": "pr-15510:qwen/qwen3-coder-30b-a3b-instruct",
       "model_id": "qwen/qwen3-coder-30b-a3b-instruct",
       "title": "Qwen3 Coder 30B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-10-05",
@@ -4414,6 +4644,7 @@
       "id": "pr-16248:bytedance/seedream-5.0-flash",
       "model_id": "bytedance/seedream-5.0-flash",
       "title": "Seedream 5.0 Flash",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-10-05",
@@ -4462,6 +4693,7 @@
       "id": "pr-16581:elevenlabs/eleven-v4",
       "model_id": "elevenlabs/eleven-v4",
       "title": "ElevenLabs v4",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-10-06",
@@ -4498,6 +4730,46 @@
             "currency": "pollen",
             "completionAudioTokens": "0.000022"
           }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ]
         }
       }
     },
@@ -4505,6 +4777,7 @@
       "id": "pr-16582:elevenlabs/eleven-v4-turbo",
       "model_id": "elevenlabs/eleven-v4-turbo",
       "title": "ElevenLabs v4 Turbo",
+      "previous_title": null,
       "action": "NEW",
       "category": "audio",
       "date": "2026-10-06",
@@ -4541,6 +4814,46 @@
             "currency": "pollen",
             "completionAudioTokens": "0.000011"
           }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "alloy",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "shimmer",
+            "ash",
+            "ballad",
+            "coral",
+            "sage",
+            "verse",
+            "rachel",
+            "domi",
+            "bella",
+            "elli",
+            "charlotte",
+            "dorothy",
+            "sarah",
+            "emily",
+            "lily",
+            "matilda",
+            "adam",
+            "antoni",
+            "arnold",
+            "josh",
+            "sam",
+            "daniel",
+            "charlie",
+            "james",
+            "fin",
+            "callum",
+            "liam",
+            "george",
+            "brian",
+            "bill"
+          ]
         }
       }
     },
@@ -4548,6 +4861,7 @@
       "id": "pr-16593:google/gemini-2.5-flash-lite",
       "model_id": "google/gemini-2.5-flash-lite",
       "title": "Gemini 2.5 Flash Lite",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-10-06",
@@ -4595,6 +4909,7 @@
       "id": "pr-16593:google/gemini-2.5-flash-lite:search",
       "model_id": "google/gemini-2.5-flash-lite:search",
       "title": "Google Gemini 2.5 Flash Lite Search",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-10-06",
@@ -4633,6 +4948,7 @@
       "id": "pr-16640:x-ai/grok-imagine-video-1.5-lite",
       "model_id": "x-ai/grok-imagine-video-1.5-lite",
       "title": "Grok Imagine Video 1.5 Lite",
+      "previous_title": null,
       "action": "NEW",
       "category": "video",
       "date": "2026-10-06",
@@ -4682,6 +4998,7 @@
       "id": "pr-16609:google/gemini-nano-banana-2.1",
       "model_id": "google/gemini-nano-banana-2.1",
       "title": "Nano Banana 2.1",
+      "previous_title": null,
       "action": "NEW",
       "category": "image",
       "date": "2026-10-06",
@@ -4733,6 +5050,7 @@
       "id": "pr-16605:qwen/qwen3-embedding-8b",
       "model_id": "qwen/qwen3-embedding-8b",
       "title": "Qwen3 Embedding 8B",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "embedding",
       "date": "2026-10-06",
@@ -4763,6 +5081,7 @@
       "id": "pr-16691:inclusionai/ling-3.1-flash",
       "model_id": "inclusionai/ling-3.1-flash",
       "title": "Ling 3.1 Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "text",
       "date": "2026-10-07",
@@ -4783,6 +5102,7 @@
       "id": "pr-16606:mistralai/mistral-large-4",
       "model_id": "mistralai/mistral-large-4",
       "title": "Mistral Large 4",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-07",
@@ -4836,6 +5156,7 @@
       "id": "pr-16341:nex-agi/nex-n2.5-mini",
       "model_id": "nex-agi/nex-n2.5-mini",
       "title": "Nex N2.5 Mini",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-07",
@@ -4888,6 +5209,7 @@
       "id": "pr-16340:nex-agi/nex-n2.5-pro",
       "model_id": "nex-agi/nex-n2.5-pro",
       "title": "Nex N2.5 Pro",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-07",
@@ -4941,6 +5263,7 @@
       "id": "pr-16713:anthropic/claude-haiku-5.5",
       "model_id": "anthropic/claude-haiku-5.5",
       "title": "Claude Haiku 5.5",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-08",
@@ -4999,6 +5322,7 @@
       "id": "pr-16821:qwen/qwen-audio-3.0-tts-flash",
       "model_id": "qwen/qwen-audio-3.0-tts-flash",
       "title": "Qwen-Audio 3.0 TTS Flash",
+      "previous_title": null,
       "action": "UPDATE",
       "category": "audio",
       "date": "2026-10-08",
@@ -5018,6 +5342,27 @@
             "currency": "pollen",
             "completionAudioTokens": "0.000015"
           }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "loongeva_v3.6",
+            "loongjohn",
+            "loongmary",
+            "longanfengyue",
+            "longanyuanfei",
+            "longanlingxi",
+            "longanxiaoxin",
+            "longanhuan_v3.6",
+            "longjielidou_v3.6",
+            "longpaopao_v3.6",
+            "longhuohuo_v3.6",
+            "longchuanshu_v3.6"
+          ]
+        },
+        "model_id": {
+          "before": "qwen/qwen3-tts-instruct-flash",
+          "after": "qwen/qwen-audio-3.0-tts-flash"
         }
       }
     },
@@ -5025,6 +5370,7 @@
       "id": "pr-16796:stepfun/step-5-preview",
       "model_id": "stepfun/step-5-preview",
       "title": "StepFun Step 5 Preview",
+      "previous_title": null,
       "action": "NEW",
       "category": "text",
       "date": "2026-10-08",
@@ -5073,6 +5419,1751 @@
           }
         }
       }
+    }
+  ],
+  "api": [
+    {
+      "id": "pr-14566:POST /upload",
+      "endpoint": "POST /upload",
+      "summary": "Upload media",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:id",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-08",
+      "pr": 14566,
+      "url": "https://github.com/pollinations/pollinations/pull/14566"
+    },
+    {
+      "id": "pr-14901:GET /v1/models/status/routes",
+      "endpoint": "GET /v1/models/status/routes",
+      "summary": "Model Route Health Status",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-09-15",
+      "pr": 14901,
+      "url": "https://github.com/pollinations/pollinations/pull/14901"
+    },
+    {
+      "id": "pr-14901:POST /account/agents/{id}/sync",
+      "endpoint": "POST /account/agents/{id}/sync",
+      "summary": "Sync Code Agent",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-09-15",
+      "pr": 14901,
+      "url": "https://github.com/pollinations/pollinations/pull/14901"
+    },
+    {
+      "id": "pr-14901:POST /account/my-models/endpoint-agents",
+      "endpoint": "POST /account/my-models/endpoint-agents",
+      "summary": "Create Endpoint Agent",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:inputModalities",
+          "before": null,
+          "after": {
+            "type": "\"text\"|\"image\"|\"audio\"|\"video\"[]",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:outputModalities",
+          "before": null,
+          "after": {
+            "type": "enum",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-15",
+      "pr": 14901,
+      "url": "https://github.com/pollinations/pollinations/pull/14901"
+    },
+    {
+      "id": "pr-14901:POST /account/my-models/{id}/update",
+      "endpoint": "POST /account/my-models/{id}/update",
+      "summary": "Update My Model",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:outputModalities",
+          "before": null,
+          "after": {
+            "type": "enum",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-15",
+      "pr": 14901,
+      "url": "https://github.com/pollinations/pollinations/pull/14901"
+    },
+    {
+      "id": "pr-14901:POST /text",
+      "endpoint": "POST /text",
+      "summary": "Text Generation With Messages",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:metadata",
+          "before": null,
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-15",
+      "pr": 14901,
+      "url": "https://github.com/pollinations/pollinations/pull/14901"
+    },
+    {
+      "id": "pr-14901:POST /v1/chat/completions",
+      "endpoint": "POST /v1/chat/completions",
+      "summary": "Chat Completions",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:metadata",
+          "before": null,
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-15",
+      "pr": 14901,
+      "url": "https://github.com/pollinations/pollinations/pull/14901"
+    },
+    {
+      "id": "pr-14901:POST /v1/responses",
+      "endpoint": "POST /v1/responses",
+      "summary": "Create Response",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:metadata",
+          "before": {
+            "type": "object",
+            "required": false
+          },
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-15",
+      "pr": 14901,
+      "url": "https://github.com/pollinations/pollinations/pull/14901"
+    },
+    {
+      "id": "pr-14956:GET /3d/models",
+      "endpoint": "GET /3d/models",
+      "summary": "List 3D Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-14956:GET /audio/models",
+      "endpoint": "GET /audio/models",
+      "summary": "List Audio Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-14956:GET /embeddings/models",
+      "endpoint": "GET /embeddings/models",
+      "summary": "List Embedding Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-14956:GET /image/models",
+      "endpoint": "GET /image/models",
+      "summary": "List Image & Video Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-14956:GET /models",
+      "endpoint": "GET /models",
+      "summary": "List Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-14956:GET /text/models",
+      "endpoint": "GET /text/models",
+      "summary": "List Text Models (Detailed)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-14956:GET /v1/models",
+      "endpoint": "GET /v1/models",
+      "summary": "List Models (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-14956:GET /video/models",
+      "endpoint": "GET /video/models",
+      "summary": "List Video Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-16",
+      "pr": 14956,
+      "url": "https://github.com/pollinations/pollinations/pull/14956"
+    },
+    {
+      "id": "pr-15059:GET /3d/models",
+      "endpoint": "GET /3d/models",
+      "summary": "List 3D Models",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /audio/models",
+      "endpoint": "GET /audio/models",
+      "summary": "List Audio Models",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /embeddings/models",
+      "endpoint": "GET /embeddings/models",
+      "summary": "List Embedding Models",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /image/models",
+      "endpoint": "GET /image/models",
+      "summary": "List Image & Video Models",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /models",
+      "endpoint": "GET /models",
+      "summary": "List Models",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /models/status",
+      "endpoint": "GET /models/status",
+      "summary": "Model Health Status",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /text/models",
+      "endpoint": "GET /text/models",
+      "summary": "List Text Models (Detailed)",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /v1/models",
+      "endpoint": "GET /v1/models",
+      "summary": "List Models (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /v1/models/status",
+      "endpoint": "GET /v1/models/status",
+      "summary": "Model Health Status",
+      "action": "REMOVE",
+      "breaking": true,
+      "changes": [],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /v1/models/status/routes",
+      "endpoint": "GET /v1/models/status/routes",
+      "summary": "Model Route Health Status",
+      "action": "REMOVE",
+      "breaking": true,
+      "changes": [],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15059:GET /video/models",
+      "endpoint": "GET /video/models",
+      "summary": "List Video Models",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "parameters:query:status",
+          "before": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-09-17",
+      "pr": 15059,
+      "url": "https://github.com/pollinations/pollinations/pull/15059"
+    },
+    {
+      "id": "pr-15258:POST /alpha/decisions",
+      "endpoint": "POST /alpha/decisions",
+      "summary": "Create Decision",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-09-21",
+      "pr": 15258,
+      "url": "https://github.com/pollinations/pollinations/pull/15258"
+    },
+    {
+      "id": "pr-15346:GET /3d/models",
+      "endpoint": "GET /3d/models",
+      "summary": "List 3D Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15346:GET /audio/models",
+      "endpoint": "GET /audio/models",
+      "summary": "List Audio Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15346:GET /embeddings/models",
+      "endpoint": "GET /embeddings/models",
+      "summary": "List Embedding Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15346:GET /image/models",
+      "endpoint": "GET /image/models",
+      "summary": "List Image & Video Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15346:GET /models",
+      "endpoint": "GET /models",
+      "summary": "List Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15346:GET /text/models",
+      "endpoint": "GET /text/models",
+      "summary": "List Text Models (Detailed)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15346:GET /v1/models",
+      "endpoint": "GET /v1/models",
+      "summary": "List Models (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15346:GET /video/models",
+      "endpoint": "GET /video/models",
+      "summary": "List Video Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-23",
+      "pr": 15346,
+      "url": "https://github.com/pollinations/pollinations/pull/15346"
+    },
+    {
+      "id": "pr-15756:POST /alpha/audio/stem-separation",
+      "endpoint": "POST /alpha/audio/stem-separation",
+      "summary": "Separate Audio Stems",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-09-29",
+      "pr": 15756,
+      "url": "https://github.com/pollinations/pollinations/pull/15756"
+    },
+    {
+      "id": "pr-15756:POST /v1/messages",
+      "endpoint": "POST /v1/messages",
+      "summary": "Create Message (Anthropic-compatible)",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-09-29",
+      "pr": 15756,
+      "url": "https://github.com/pollinations/pollinations/pull/15756"
+    },
+    {
+      "id": "pr-15986:GET /models/status",
+      "endpoint": "GET /models/status",
+      "summary": "Model Health Status",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:traffic",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"regular\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-09-30",
+      "pr": 15986,
+      "url": "https://github.com/pollinations/pollinations/pull/15986"
+    },
+    {
+      "id": "pr-16262:POST /account/polli/harness-on",
+      "endpoint": "POST /account/polli/harness-on",
+      "summary": "postAccountPolliHarnessOn",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-02",
+      "pr": 16262,
+      "url": "https://github.com/pollinations/pollinations/pull/16262"
+    },
+    {
+      "id": "pr-16488:GET /3d/models",
+      "endpoint": "GET /3d/models",
+      "summary": "List 3D Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16537:GET /account/key/usage",
+      "endpoint": "GET /account/key/usage",
+      "summary": "Get API Key Usage",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:before",
+          "before": {
+            "type": "string",
+            "required": false
+          },
+          "after": {
+            "type": "string|string · date-time",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16537,
+      "url": "https://github.com/pollinations/pollinations/pull/16537"
+    },
+    {
+      "id": "pr-16537:GET /account/usage",
+      "endpoint": "GET /account/usage",
+      "summary": "Get Usage History",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:before",
+          "before": {
+            "type": "string",
+            "required": false
+          },
+          "after": {
+            "type": "string|string · date-time",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16537,
+      "url": "https://github.com/pollinations/pollinations/pull/16537"
+    },
+    {
+      "id": "pr-16488:GET /audio/models",
+      "endpoint": "GET /audio/models",
+      "summary": "List Audio Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16488:GET /embeddings/models",
+      "endpoint": "GET /embeddings/models",
+      "summary": "List Embedding Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16488:GET /image/models",
+      "endpoint": "GET /image/models",
+      "summary": "List Image & Video Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16488:GET /models",
+      "endpoint": "GET /models",
+      "summary": "List Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16488:GET /text/models",
+      "endpoint": "GET /text/models",
+      "summary": "List Text Models (Detailed)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16488:GET /v1/models",
+      "endpoint": "GET /v1/models",
+      "summary": "List Models (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16488:GET /video/models",
+      "endpoint": "GET /video/models",
+      "summary": "List Video Models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16488,
+      "url": "https://github.com/pollinations/pollinations/pull/16488"
+    },
+    {
+      "id": "pr-16537:POST /account/my-models/{id}/update",
+      "endpoint": "POST /account/my-models/{id}/update",
+      "summary": "Update My Model",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:hidden",
+          "before": {
+            "type": "boolean",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16537,
+      "url": "https://github.com/pollinations/pollinations/pull/16537"
+    },
+    {
+      "id": "pr-16537:POST /v1/audio/voice-changer",
+      "endpoint": "POST /v1/audio/voice-changer",
+      "summary": "Transform a Voice",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:audio",
+          "before": {
+            "type": "string · binary",
+            "required": true
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "body:file",
+          "before": null,
+          "after": {
+            "type": "string · binary",
+            "required": true
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16537,
+      "url": "https://github.com/pollinations/pollinations/pull/16537"
+    },
+    {
+      "id": "pr-16537:POST /v1/audio/voice-isolator",
+      "endpoint": "POST /v1/audio/voice-isolator",
+      "summary": "Isolate Speech",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:audio",
+          "before": {
+            "type": "string · binary",
+            "required": true
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "body:file",
+          "before": null,
+          "after": {
+            "type": "string · binary",
+            "required": true
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-05",
+      "pr": 16537,
+      "url": "https://github.com/pollinations/pollinations/pull/16537"
+    },
+    {
+      "id": "pr-16569:POST /account/keys",
+      "endpoint": "POST /account/keys",
+      "summary": "Create API Key",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:questPollenOnly",
+          "before": null,
+          "after": {
+            "type": "boolean",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-06",
+      "pr": 16569,
+      "url": "https://github.com/pollinations/pollinations/pull/16569"
+    },
+    {
+      "id": "pr-16638:POST /v1/audio/speech/with-timestamps",
+      "endpoint": "POST /v1/audio/speech/with-timestamps",
+      "summary": "Generate Speech with Timestamps",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:model",
+          "before": {
+            "type": "\"elevenlabs/eleven-v3\"|\"elevenlabs/eleven-flash-v2.5\"|\"elevenlabs/eleven-multilingual-v2\"",
+            "required": false
+          },
+          "after": {
+            "type": "\"elevenlabs/eleven-v4\"|\"elevenlabs/eleven-v4-turbo\"|\"elevenlabs/eleven-v3\"|\"elevenlabs/eleven-flash-v2.5\"|\"elevenlabs/eleven-multilingual-v2\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-06",
+      "pr": 16638,
+      "url": "https://github.com/pollinations/pollinations/pull/16638"
+    },
+    {
+      "id": "pr-16809:GET /account/quests/rewards",
+      "endpoint": "GET /account/quests/rewards",
+      "summary": "Get Quest Rewards",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-08",
+      "pr": 16809,
+      "url": "https://github.com/pollinations/pollinations/pull/16809"
+    },
+    {
+      "id": "pr-16809:GET /models/stats",
+      "endpoint": "GET /models/stats",
+      "summary": "Model Usage Stats",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-08",
+      "pr": 16809,
+      "url": "https://github.com/pollinations/pollinations/pull/16809"
+    },
+    {
+      "id": "pr-16809:PATCH /account/keys/{id}",
+      "endpoint": "PATCH /account/keys/{id}",
+      "summary": "Update API Key",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-08",
+      "pr": 16809,
+      "url": "https://github.com/pollinations/pollinations/pull/16809"
+    },
+    {
+      "id": "pr-16809:POST /account/keys",
+      "endpoint": "POST /account/keys",
+      "summary": "Create API Key",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:consent",
+          "before": null,
+          "after": {
+            "type": "object",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:description",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-08",
+      "pr": 16809,
+      "url": "https://github.com/pollinations/pollinations/pull/16809"
     }
   ],
   "highlights": [

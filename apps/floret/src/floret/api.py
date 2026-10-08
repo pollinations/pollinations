@@ -17,7 +17,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from floret.agent import run_agent, run_agent_events
 from floret.config import _api_key_override, settings
@@ -65,7 +65,16 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     stream: bool = False
     stream_options: dict[str, Any] | None = None
-    routing: RoutingInput | None = None
+    metadata: RoutingInput | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_routing(cls, value: Any) -> Any:
+        if isinstance(value, dict) and "routing" in value:
+            raise ValueError(
+                "routing moved to metadata; send routing.text as metadata.model"
+            )
+        return value
 
 
 def _files_dir() -> str:
@@ -366,7 +375,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
 
     token = _api_key_override.set(api_key or None)
     try:
-        routing = await validate_routing(request.routing)
+        routing = await validate_routing(request.metadata)
     except RoutingValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -445,8 +454,8 @@ async def chat_completions_get() -> dict[str, Any]:
                 "model": "floret",
                 "messages": [{"role": "user", "content": "Hi!"}],
                 "stream": True,
-                "routing": {
-                    "text": "auto",
+                "metadata": {
+                    "model": "auto",
                     "web_search": "auto",
                     "image_generation": "auto",
                     "image_editing": "auto",

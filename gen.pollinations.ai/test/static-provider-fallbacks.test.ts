@@ -454,6 +454,19 @@ describe("static provider fallbacks", () => {
             provider: "openrouter",
             fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
         });
+        const lite = IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite"];
+        const liteFallback =
+            IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite:openrouter"];
+        expect(lite).toMatchObject({
+            provider: "xai",
+            aliases: [],
+            fallbacks: ["x-ai/grok-imagine-video-1.5-lite:openrouter"],
+        });
+        expect(liteFallback.provider).toBe("openrouter");
+        expect(liteFallback.cost).toEqual({
+            promptImageTokens: 0.01 * 1.055,
+            completionVideoSeconds: 0.03 * 1.055,
+        });
     });
 
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
@@ -539,6 +552,84 @@ describe("static provider fallbacks", () => {
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
+    });
+
+    it("prices Claude Haiku 5.5 on Vercel exactly as on Bedrock, including the long-context tier", () => {
+        const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];
+        expect(primary).toMatchObject({
+            provider: "aws",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["anthropic/claude-haiku-5.5:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        for (const [promptTextTokens, expected] of [
+            [1000, (1000 * 0.1 + 1000 * 0.5) / 1e6],
+            [100_001, (100_001 * 0.5 + 1000 * 2.5) / 1e6],
+        ] as const) {
+            const billing = calculateUsageBilling({
+                model: "anthropic/claude-haiku-5.5",
+                usage: { promptTextTokens, completionTextTokens: 1000 },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(expected, 9);
+        }
+    });
+
+    it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
+        const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "moonshotai/kimi-k3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.005985, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0063, 8);
+        expect(
+            findModelByName("moonshotai/kimi-k3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K3",
+        });
+    });
+
+    it("keeps the MiniMax M3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["minimax/minimax-m3"];
+        const fallback = TEXT_SERVICES["minimax/minimax-m3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-m3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.000556, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0006, 8);
+        expect(
+            findModelByName("minimax/minimax-m3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "MiniMaxAI/MiniMax-M3",
+        });
     });
 
     it("registers exact text routes as fallback-only inherited models", () => {
@@ -1073,6 +1164,30 @@ describe("static provider fallbacks", () => {
             model: "mistralai/mistral-small-2603",
             defaultOptions: { max_tokens: 64000 },
         });
+        expect(
+            findModelByName("mistralai/mistral-large-4")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-large-4",
+        });
+        expect(
+            findModelByName("mistralai/mistral-large-4:vercel")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            model: "mistral/mistral-large-4",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["mistral"] } },
+            },
+        });
+        for (const [unit, cost] of Object.entries(
+            TEXT_SERVICES["mistralai/mistral-large-4"].cost,
+        )) {
+            expect(
+                TEXT_SERVICES["mistralai/mistral-large-4:vercel"].cost[
+                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-large-4"]["cost"]
+                ],
+            ).toBeCloseTo(cost, 15);
+        }
         for (const [unit, cost] of Object.entries(
             TEXT_SERVICES["mistralai/mistral-small-4"].cost,
         )) {

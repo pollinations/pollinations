@@ -1715,6 +1715,66 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
+    "anthropic/claude-haiku-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global standard rates (prompts up to 100K tokens);
+            // 5-minute cache writes.
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        // Prompts over 100K tokens bill every token of the request at 5x
+        // input and cache rates and 5x output.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.5),
+                    promptCachedTokens: perMillion(0.05),
+                    promptCacheWriteTokens: perMillion(0.625),
+                    completionTextTokens: perMillion(2.5),
+                },
+            },
+            longContextAbove(100_000),
+            {
+                long_context: {
+                    label: "Long context (>100K)",
+                    description:
+                        "More than 100,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+            "≤100K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤100K",
+                        "long_context": ">100K",
+                    },
+                },
+            ],
+        ),
+        title: "Claude Haiku 5.5",
+        description:
+            "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-sonnet-4.6": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
         aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],
@@ -2189,6 +2249,7 @@ const TEXT_BASE_SERVICES = {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],
         provider: "novita",
+        perUserRpm: 8,
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
@@ -2205,6 +2266,58 @@ const TEXT_BASE_SERVICES = {
         description:
             "Hybrid reasoning mixture-of-experts for agentic workflows with tool use and long context",
         inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.025) * 1.055,
+            promptCachedTokens: perMillion(0.0025) * 1.055,
+            completionTextTokens: perMillion(0.1) * 1.055,
+        },
+        title: "Nex N2.5 Mini",
+        description:
+            "Compact agentic coding model with image input and switchable reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexPro,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            completionTextTokens: perMillion(0.25) * 1.055,
+        },
+        title: "Nex N2.5 Pro",
+        description:
+            "Agentic coding model with a visual feedback loop for multi-file changes, tool use and image input",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -2903,6 +3016,33 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "mistralai/mistral-large-4": {
+        supportedParameters: CHAT_PARAMETERS.mistralLarge4,
+        aliases: [],
+        provider: "mistral",
+        publisher: "Mistral",
+        category: "text",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Mistral direct API launch rates (docs.mistral.ai, 2026-10-06):
+            // list price is $1.36 / $0.14 cached / $4.18 per million, shown
+            // at half until the discount ends.
+            promptTextTokens: perMillion(0.68),
+            promptCachedTokens: perMillion(0.07),
+            completionTextTokens: perMillion(2.09),
+        },
+        title: "Mistral Large 4",
+        description:
+            "Frontier multimodal model for reasoning, coding and agentic workloads with a 512K context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 524288,
         isSpecialized: false,
     },
     "mistralai/mistral-large-3": {

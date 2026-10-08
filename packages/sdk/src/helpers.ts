@@ -168,26 +168,20 @@ export async function editImage(
 }
 
 /**
- * Generate image(s) via the OpenAI-compatible POST /v1/images/generations endpoint.
+ * Generate an image via the OpenAI-compatible POST /v1/images/generations endpoint.
  *
  * @example
  * ```ts
  * // Single image, OpenAI-style size string
  * const img = await imageGenerate('A robot', { size: '1024x1024' });
  * await img.saveToFile('robot.png');
- *
- * // Multiple images
- * const imgs = await imageGenerate('A robot', { n: 3 });
  * ```
  */
 export async function imageGenerate(
     prompt: string,
     options?: ImageGenerateV1Options,
-): Promise<ImageResponseExt | ImageResponseExt[]> {
-    const response = await getClient().imageGenerate(prompt, options);
-    return Array.isArray(response)
-        ? response.map(wrapImageResponse)
-        : wrapImageResponse(response);
+): Promise<ImageResponseExt> {
+    return wrapImageResponse(await getClient().imageGenerate(prompt, options));
 }
 
 // ============================================================================

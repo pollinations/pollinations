@@ -1,4 +1,5 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
@@ -108,6 +109,8 @@ export function createAudioCommand() {
                 throw new ExitSignal(1);
             }
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            mkdirSync(dirname(output), { recursive: true });
             if (isHuman) printInfo("Generating audio...");
 
             try {

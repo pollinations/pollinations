@@ -14,6 +14,9 @@ import json
 import os
 import re
 import sys
+import subprocess
+import tempfile
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
@@ -63,8 +66,7 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
     while True:
         url = f"{GITHUB_API_BASE}/repos/{repo}/pulls/{pr_number}/files?per_page=100&page={page}"
         resp = github_api_request("GET", url, headers=headers)
-        if resp.status_code != 200:
-            break
+        resp.raise_for_status()
         files = resp.json()
         if not files:
             break
@@ -83,6 +85,57 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
     summary = "\n".join(lines) if lines else "(no files changed)"
     return summary, filenames
 
+
+def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
+    """Keep social publication independent of classification/catalog failures."""
+    root = Path(get_repo_root())
+    gist.update({"area": None, "type": None, "source": None,
+                 "merge_commit_sha": pr["merge_commit_sha"], "announcements": []})
+    status = gist["enrichment"] = {}
+    try:
+        with tempfile.TemporaryDirectory(prefix="gist-classification-") as directory:
+            output = Path(directory) / "classification.json"
+            subprocess.run(
+                [sys.executable, str(root / "operations/github/project_manager.py")],
+                env={**os.environ, "GITHUB_TOKEN": token,
+                     "GITHUB_EVENT": json.dumps({"action": "closed", "pull_request": pr}),
+                     "CLASSIFICATION_OUTPUT": str(output)}, check=True,
+            )
+            gist.update(json.loads(output.read_text()))
+        status["classification"] = "complete"
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        print("  WARNING: Merge-time classification failed; gist classification remains unknown")
+        status["classification"] = "failed"
+    try:
+        from model_announcements import announcements_for_pr, pr_comparison_refs
+        if any(path.startswith("shared/") for path in files):
+            if not (root / "node_modules/tsx").is_dir():
+                subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
+            # Rebase detection needs original commits as well as the merged history.
+            if pr.get("commits", 1) > 1:
+                commits = []
+                page = 1
+                while True:
+                    response = github_api_request("GET",
+                        f"{GITHUB_API_BASE}/repos/{os.environ['REPO_FULL_NAME']}/pulls/{pr['number']}/commits",
+                        headers={"Authorization": f"Bearer {token}"},
+                        params={"per_page": 100, "page": page})
+                    response.raise_for_status()
+                    batch = response.json()
+                    commits.extend(commit["sha"] for commit in batch)
+                    if len(batch) < 100:
+                        break
+                    page += 1
+                pr = {**pr, "_commit_shas": commits}
+                subprocess.run(["git", "fetch", "origin", f"pull/{pr['number']}/head"], cwd=root, check=True)
+            before, after = pr_comparison_refs(pr, root)
+            gist["announcements"] = announcements_for_pr(pr, files, root, (before, after))
+            gist["announcement_evidence"] = {"before_ref": before, "after_ref": after}
+        status["models"] = "complete"
+    except Exception as error:
+        # Preserve the established social pipeline, with a visible retryable gap.
+        print(f"  WARNING: Model enrichment failed ({type(error).__name__}); values remain unknown")
+        status["models"] = "failed"
 
 # ── App catalog lookup ──────────────────────────────────────────────
 
@@ -119,7 +172,7 @@ def lookup_newest_app() -> Optional[Dict]:
 
 # ── Step 1: AI analysis ─────────────────────────────────────────────
 
-def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
+def analyze_pr(pr_data: Dict, files_summary: str, token: str, enrichment: Dict) -> Optional[Dict]:
     """Call AI to analyze a PR and return structured gist JSON."""
     system_prompt = load_prompt("gist")
 
@@ -128,18 +181,21 @@ def analyze_pr(pr_data: Dict, files_summary: str, token: str) -> Optional[Dict]:
     # not arbitrary user input. Truncated to 2000 chars as a size guard.
     labels = [l["name"] for l in pr_data.get("labels", [])]
     body = pr_data.get("body") or ""
+    context = {key: enrichment.get(key) for key in ("area", "type", "source", "announcements")}
     user_prompt = f"""PR #{pr_data['number']}: {pr_data['title']}
 
 Author: {pr_data.get('user', {}).get('login', 'unknown')}
 Labels: {', '.join(labels) if labels else 'none'}
 Branch: {pr_data.get('head', {}).get('ref', 'unknown')} → {pr_data.get('base', {}).get('ref', 'main')}
-Deploy status: merged to {pr_data.get('base', {}).get('ref', 'main')}; ships to users with the next production release (not live yet)
 
 Description:
 {body[:2000] if body else 'No description provided.'}
 
 Changed files:
-{files_summary}"""
+{files_summary}
+
+Classification and exact model changes already recorded:
+{json.dumps(context, indent=2)}"""
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
@@ -154,9 +210,8 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
     labels = [l["name"] for l in pr_data.get("labels", [])]
     author = pr_data.get("user", {}).get("login", "unknown")
 
-    # Preserve a PR body excerpt so downstream realtime/Discord generation can
-    # quote concrete numbers/names that the AI-distilled summary may abstract away.
-    pr_body_excerpt = (pr_data.get("body") or "")[:2000]
+    analysis = dict(ai_analysis)
+    image_prompt = analysis.pop("image_prompt", None)
 
     gist = {
         "pr_number": pr_data["number"],
@@ -165,9 +220,8 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
         "url": pr_data["html_url"],
         "merged_at": pr_data.get("merged_at", datetime.now(timezone.utc).isoformat()),
         "labels": labels,
-        "pr_body_excerpt": pr_body_excerpt,
-        "gist": ai_analysis,
-        "image": {"url": None, "prompt": None},
+        "gist": analysis,
+        "image": {"url": None, "prompt": image_prompt},
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -193,7 +247,7 @@ def build_full_gist(pr_data: Dict, ai_analysis: Dict, changed_files: list) -> Di
 def generate_gist_image(gist: Dict, pollinations_token: str,
                         github_token: str, owner: str, repo: str) -> Optional[str]:
     """Generate pixel art image for a gist. Returns image URL or None."""
-    image_prompt = gist["gist"].get("image_prompt", "")
+    image_prompt = gist["image"].get("prompt", "")
     if not image_prompt:
         print("  FATAL: No image prompt in gist")
         return None
@@ -234,13 +288,17 @@ def main():
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
     files_summary, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
 
-    # ── Step 1: AI analysis → gist JSON → commit ────────────────────
-    ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token)
+    # ── Step 1: Enrichment + AI analysis → gist JSON ─────────────────
+    enrichment = {}
+    enrich_gist(enrichment, pr_data, changed_files, github_token)
+    ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token, enrichment)
     if not ai_analysis:
         print(f"  FATAL: PR analysis failed with model {MODEL}")
         sys.exit(1)
 
     gist = build_full_gist(pr_data, ai_analysis, changed_files)
+
+    gist.update(enrichment)
 
     errors = validate_gist(gist)
     if errors:
@@ -258,7 +316,6 @@ def main():
         sys.exit(1)
 
     gist["image"]["url"] = image_url
-    gist["image"]["prompt"] = gist["gist"].get("image_prompt")
 
     if not commit_gist(gist, github_token, owner, repo):
         print("  FATAL: Could not commit gist to news branch")

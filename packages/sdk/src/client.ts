@@ -345,7 +345,14 @@ export class Pollinations {
             if (value === undefined || value === null) continue;
 
             if (Array.isArray(value)) {
-                searchParams.set(key, value.join(","));
+                const separator = [
+                    "reference_images",
+                    "reference_videos",
+                    "reference_audios",
+                ].includes(key)
+                    ? "|"
+                    : ",";
+                searchParams.set(key, value.join(separator));
             } else if (typeof value === "boolean") {
                 searchParams.set(key, value ? "true" : "false");
             } else {
@@ -666,6 +673,9 @@ export class Pollinations {
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
+            reference_images: options.referenceImages,
+            reference_videos: options.referenceVideos,
+            reference_audios: options.referenceAudios,
             safe: options.safe,
         };
 

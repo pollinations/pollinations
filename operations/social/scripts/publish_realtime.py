@@ -17,6 +17,7 @@ from typing import Dict, Optional
 
 import requests
 from common import (
+    gist_context,
     DISCORD_CHAR_LIMIT,
     post_discord_webhook,
     GISTS_BRANCH,
@@ -85,6 +86,14 @@ def fetch_pr_merged_at(repo_full: str, pr_number: str, github_token: str) -> str
     return ""
 
 
+def generate_snippet(gist: Dict, token: str) -> Optional[str]:
+    """Generate announcement text without publishing it."""
+    # Discord may state exact model prices; other platforms never receive announcements.
+    context = {**gist_context(gist), "announcements": gist.get("announcements", [])}
+    task = load_format("realtime").replace("{gist}", json.dumps(context, indent=2))
+    return call_pollinations_api(load_prompt("tone/discord"), task, token, temperature=0.7)
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 
@@ -118,29 +127,7 @@ def main():
     # ── Generate Discord message ──────────────────────────────────────
     print("\n[2/2] Generating Discord message...")
 
-    ai = gist.get("gist", {})
-    summary = ai.get("summary", gist["title"])
-    impact = ai.get("impact", "")
-    keywords = ", ".join(ai.get("keywords", []))
-    # Trust boundary: PR body comes from merged PRs (requires repo write access),
-    # not arbitrary user input. Already truncated to 2000 chars upstream.
-    if "pr_body_excerpt" not in gist:
-        print("  WARN: gist has no pr_body_excerpt field — older gist format, specifics may be lost")
-    pr_excerpt = gist.get("pr_body_excerpt") or "(no PR body)"
-
-    # Voice = platform tone (system prompt), Task = format with data (user prompt)
-    voice = load_prompt("tone/discord")
-    task = (
-        load_format("realtime")
-        .replace("{summary}", summary)
-        .replace("{impact}", impact)
-        .replace("{keywords}", keywords)
-        .replace("{pr_excerpt}", pr_excerpt)
-    )
-
-    snippet = call_pollinations_api(
-        voice, task, pollinations_token, temperature=0.7
-    )
+    snippet = generate_snippet(gist, pollinations_token)
     if not snippet:
         print("  FATAL: Discord snippet generation failed")
         sys.exit(1)

@@ -81,6 +81,7 @@ describe("community endpoint per-user RPM input", () => {
             baseModel: "openai",
             requiredSafetyFeatures: [],
             mcpServers: ["pollinations"],
+            codemode: false,
         });
     });
 

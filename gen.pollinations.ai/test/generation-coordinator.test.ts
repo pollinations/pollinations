@@ -11,19 +11,16 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
+import type { GenerationJobHead } from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 
-function testJob(key: string, body?: string): GenerationJob {
+function testJob(key: string, method = "GET"): GenerationJobHead {
     return {
         cache: { storage: "text", key },
         request: {
             url: "https://gen.pollinations.ai/robots.txt",
-            method: body === undefined ? "GET" : "POST",
+            method,
             headers: [],
-            ...(body !== undefined && {
-                body: new TextEncoder().encode(body),
-            }),
         },
         auth: {
             user: { id: "user-1", tier: "seed" },
@@ -163,7 +160,7 @@ describe("GenerationCoordinator", () => {
                 state.storage.get<{
                     bodyChunks: number;
                     started: boolean;
-                    cache: GenerationJob["cache"];
+                    cache: GenerationJobHead["cache"];
                 }>("job"),
         );
         if (!stored) throw new Error("Generation job was not persisted");
@@ -363,6 +360,70 @@ describe("GenerationCoordinator", () => {
         expect(await env.TEXT_BUCKET.head(key)).toBeNull();
     });
 
+    it("streams request bodies above the 32 MiB RPC limit into storage", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `test-${crypto.randomUUID()}`,
+        );
+        const job = testJob(`upload-${crypto.randomUUID()}`, "POST");
+        const upload = new Uint8Array(40 * 1024 * 1024);
+        for (let index = 0; index < upload.length; index += 4093) {
+            upload[index] = index % 251;
+        }
+        // Real RPC through the stub, as the middleware calls it.
+        const owner = stub.startAndWait(
+            job,
+            new Response(upload).body ?? undefined,
+        );
+        // A joiner's body is discarded; it shares the owner's stored copy.
+        const joiner = stub.startAndWait(
+            job,
+            new Response(new Uint8Array(1024 * 1024)).body ?? undefined,
+        );
+        const persisted = await vi.waitFor(
+            () =>
+                runInDurableObject(stub, async (coordinator, state) => {
+                    const waiters = Reflect.get(coordinator, "waiters").size;
+                    if (waiters !== 2) throw new Error("Callers not joined");
+                    const stored = await state.storage.get<{
+                        bodyChunks: number;
+                    }>("job");
+                    if (!stored) throw new Error("Job not persisted");
+                    const restored = await Reflect.get(
+                        coordinator,
+                        "restore",
+                    ).call(coordinator, stored);
+                    return {
+                        bodyChunks: stored.bodyChunks,
+                        digest: await crypto.subtle.digest(
+                            "SHA-256",
+                            restored.request.body,
+                        ),
+                    };
+                }),
+            { timeout: 20_000 },
+        );
+        expect(persisted.bodyChunks).toBe(Math.ceil(upload.length / 1e6));
+        expect(persisted.digest).toEqual(
+            await crypto.subtle.digest("SHA-256", upload),
+        );
+
+        await runInDurableObject(stub, async (coordinator, state) => {
+            await coordinator.alarm();
+            await state.storage.deleteAlarm();
+        });
+        const results = await Promise.all([owner, joiner]);
+        expect(results.map((result) => result.status)).toEqual([
+            "failed",
+            "failed",
+        ]);
+        expect(
+            await runInDurableObject(stub, async (_coordinator, state) => [
+                ...(await state.storage.list()).keys(),
+            ]),
+        ).toEqual([]);
+    }, 60_000);
+
     it("persists request bodies larger than one storage value", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(
@@ -373,10 +434,8 @@ describe("GenerationCoordinator", () => {
             async (coordinator, state) => {
                 await state.storage.put("sentinel", "keep");
                 const result = coordinator.startAndWait(
-                    testJob(
-                        `large-${crypto.randomUUID()}`,
-                        "x".repeat(2_100_000),
-                    ),
+                    testJob(`large-${crypto.randomUUID()}`, "POST"),
+                    new Response("x".repeat(2_100_000)).body ?? undefined,
                 );
                 await waitForAlarm(state);
                 await coordinator.alarm();

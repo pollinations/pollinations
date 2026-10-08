@@ -740,6 +740,22 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "stealth/glyph-cluster",
+        config: portkeyConfig["stealth/glyph-cluster"],
+        transform: (messages, options) => {
+            const { reasoning_effort, ...rest } = options;
+            return {
+                messages,
+                options: {
+                    ...rest,
+                    ...(reasoning_effort === undefined
+                        ? {}
+                        : { reasoning: { effort: reasoning_effort } }),
+                },
+            };
+        },
+    },
+    {
         name: "liquid/d1",
         config: portkeyConfig["liquid-d1"],
         useSystemOneApi: true,

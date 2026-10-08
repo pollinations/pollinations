@@ -1,0 +1,37 @@
+{
+  "pr_number": 16748,
+  "title": "docs: update README — 2026-10-08",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16748",
+  "merged_at": "2026-10-08T07:31:18Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The automated October 8, 2026 README update refreshed Latest News and the light and dark star-history charts. Recent Apps is refreshed separately when an app is published.",
+    "keywords": [
+      "README",
+      "Latest News",
+      "star history",
+      "documentation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16748.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli updates a little README noticeboard beside two star-history charts and a potted code-plant. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, wearing tiny reading glasses, with chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, warm lighting, and retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T07:32:29.498694+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Agent",
+  "merge_commit_sha": "88c3fe5835fce62e46b79d01bfe003963898f477",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

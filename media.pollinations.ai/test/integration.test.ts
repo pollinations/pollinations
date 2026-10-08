@@ -214,78 +214,69 @@ describe("media.pollinations.ai", () => {
         "video/mp4",
         "model/gltf-binary",
         "image/svg+xml",
-    ])(
-        "stores generated %s once and serves its ID publicly",
-        async (contentType) => {
-            const id = "a".repeat(64);
-            const ctx = createExecutionContext();
-            const storage = new MediaUpload(ctx, env);
-            expect(await storage.has(id)).toBe(false);
-            await storage.put(
-                id,
-                new Response(TINY_PNG, {
-                    headers: {
-                        "Content-Type": contentType,
-                        "X-Model-Used": "test-model",
-                        "X-Usage-Completion-Audio-Tokens": "10",
-                        "Content-Security-Policy":
-                            "default-src 'none'; sandbox",
-                        "X-Custom-File-Metadata": "caller-selected",
-                    },
-                }),
-            );
-            expect(await storage.has(id)).toBe(true);
-            const response = await SELF.fetch(
-                `https://media.pollinations.ai/${id}`,
-            );
-            expect(response.status).toBe(200);
-            expect(response.headers.get("content-type")).toBe(contentType);
-            expect(response.headers.get("Link")).toBe(
-                `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
-            );
-            expect(response.headers.has("X-Media-URL")).toBe(false);
-            expect(
-                response.headers.get("Access-Control-Expose-Headers"),
-            ).toContain("Link");
-            expect(response.headers.get("cache-control")).toBe(
-                "public, max-age=31536000, immutable",
-            );
-            expect(response.headers.get("content-security-policy")).toBe(
-                "default-src 'none'; sandbox",
-            );
-            expect(response.headers.get("x-custom-file-metadata")).toBe(
-                "caller-selected",
-            );
-            expect(new Uint8Array(await response.arrayBuffer())).toEqual(
-                TINY_PNG,
-            );
-            const cached = await storage.get(id);
-            expect(cached?.headers.get("x-model-used")).toBe("test-model");
-            expect(cached?.headers.get("x-usage-completion-audio-tokens")).toBe(
-                "10",
-            );
-            await cached?.arrayBuffer();
-            const head = await SELF.fetch(
-                `https://media.pollinations.ai/${id}`,
-                {
-                    method: "HEAD",
+    ])("stores generated %s once and serves its ID publicly", async (contentType) => {
+        const id = "a".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        expect(await storage.has(id)).toBe(false);
+        await storage.put(
+            id,
+            new Response(TINY_PNG, {
+                headers: {
+                    "Content-Type": contentType,
+                    "X-Model-Used": "test-model",
+                    "X-Usage-Completion-Audio-Tokens": "10",
+                    "Content-Security-Policy": "default-src 'none'; sandbox",
+                    "X-Custom-File-Metadata": "caller-selected",
                 },
-            );
-            expect(head.headers.get("content-length")).toBe(
-                String(TINY_PNG.byteLength),
-            );
-            const metadata = await SELF.fetch(
-                `https://media.pollinations.ai/${id}/metadata`,
-            );
-            expect(await metadata.json()).toMatchObject({
-                id,
-                size: TINY_PNG.byteLength,
-                contentType,
-            });
-            expect((await env.MEDIA_BUCKET.list()).objects).toHaveLength(1);
-            await waitOnExecutionContext(ctx);
-        },
-    );
+            }),
+        );
+        expect(await storage.has(id)).toBe(true);
+        const response = await SELF.fetch(
+            `https://media.pollinations.ai/${id}`,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe(contentType);
+        expect(response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        );
+        expect(response.headers.has("X-Media-URL")).toBe(false);
+        expect(response.headers.get("Access-Control-Expose-Headers")).toContain(
+            "Link",
+        );
+        expect(response.headers.get("cache-control")).toBe(
+            "public, max-age=31536000, immutable",
+        );
+        expect(response.headers.get("content-security-policy")).toBe(
+            "default-src 'none'; sandbox",
+        );
+        expect(response.headers.get("x-custom-file-metadata")).toBe(
+            "caller-selected",
+        );
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(TINY_PNG);
+        const cached = await storage.get(id);
+        expect(cached?.headers.get("x-model-used")).toBe("test-model");
+        expect(cached?.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "10",
+        );
+        await cached?.arrayBuffer();
+        const head = await SELF.fetch(`https://media.pollinations.ai/${id}`, {
+            method: "HEAD",
+        });
+        expect(head.headers.get("content-length")).toBe(
+            String(TINY_PNG.byteLength),
+        );
+        const metadata = await SELF.fetch(
+            `https://media.pollinations.ai/${id}/metadata`,
+        );
+        expect(await metadata.json()).toMatchObject({
+            id,
+            size: TINY_PNG.byteLength,
+            contentType,
+        });
+        expect((await env.MEDIA_BUCKET.list()).objects).toHaveLength(1);
+        await waitOnExecutionContext(ctx);
+    });
 
     it("does not regenerate a missing file, but a new generation may reuse its ID", async () => {
         const id = "b".repeat(64);

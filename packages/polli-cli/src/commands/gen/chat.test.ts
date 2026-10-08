@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { POLLI_CLIENT } from "../../lib/client.js";
 import { setKeyOverride } from "../../lib/config.js";
 import { setOutputMode } from "../../lib/output.js";
 import { createChatCommand } from "./chat.js";
@@ -158,6 +159,23 @@ describe("polli gen chat session lifecycle", () => {
 
         expect(fetch).toHaveBeenCalledTimes(1);
         expect(process.exitCode).toBe(0);
+    });
+
+    it("sends the X-Polli-Client attribution header the other commands set", async () => {
+        prepare(
+            async () =>
+                new Response(STREAM_OK, {
+                    headers: { "Content-Type": "text/event-stream" },
+                }),
+        );
+
+        const line = await startSession();
+        await line("hello");
+
+        const headers = vi.mocked(globalThis.fetch).mock.calls[0][1]
+            ?.headers as Record<string, string>;
+        expect(headers["X-Polli-Client"]).toBe(POLLI_CLIENT);
+        await line("/exit");
     });
 
     it("labels an omitted model as the API default without sending a model", async () => {

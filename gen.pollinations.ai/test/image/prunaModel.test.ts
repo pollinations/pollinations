@@ -138,20 +138,6 @@ describe("prunaModel - p-image-edit", () => {
         ).rejects.toMatchObject({ status: 400 });
     });
 
-    it("rejects more than five input images (400)", async () => {
-        mockPrunaFetch([]);
-
-        await expect(
-            callPrunaImageEditAPI("make it green", {
-                ...baseParams,
-                image: Array.from(
-                    { length: 6 },
-                    (_, i) => `https://example.com/${i}.jpg`,
-                ),
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
-
     it("posts image references to PrunaAI/p-image-Edit", async () => {
         const requests: ProviderRequest[] = [];
         mockPrunaFetch(requests);

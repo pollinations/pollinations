@@ -184,18 +184,6 @@ describe("qwenImage21Model", () => {
         });
     });
 
-    it("rejects more than ten reference images before calling Fal", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callQwen21("too many references", {
-                ...baseParams,
-                image: Array.from({ length: 11 }, () => INPUT_IMAGE),
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("rejects a successful Fal response without an output image", async () => {
         mockFal([], { body: { images: [] } });
 

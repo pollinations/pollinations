@@ -16,9 +16,9 @@ The pipeline uses **event-centric interpretation**: each PR is analyzed once at 
 
 ```
 TIER 1: PER-PR (real-time)
-  PR merged → AI analyzes → gist JSON committed to news branch → image generated → Discord post
+  PR merged → classification/model enrichment → AI analyzes remaining facts → image generated → gist JSON committed to news branch → Discord post
 
-TIER 2: DAILY (Mon-Sat 06:00 UTC)
+TIER 2: DAILY (every day 06:00 UTC; social delivery Mon-Sat)
   Read day's gists → AI generates daily summary → platform posts (X, Reddit)
   → commit to news branch → Buffer stages X immediately → README-only PR to main
   LinkedIn and Instagram are weekly-only. Reddit publishes via cron at 15:00 UTC.
@@ -32,7 +32,7 @@ TIER 3: WEEKLY (Sunday 06:00 UTC)
 ### Branch Strategy
 
 - **`main` branch** — source code only. No generated content. README "Latest News" section updated via small automated PRs.
-- **`news` branch** — all generated content: gists, daily posts, weekly posts, highlights, images. Unprotected (direct commits). Content is reviewed here before cron publishes it.
+- **`news` branch** — all generated content: gists, daily posts, weekly posts, `index.json`, images. Unprotected (direct commits). Content is reviewed here before cron publishes it.
 
 ### Data Flow
 
@@ -43,11 +43,11 @@ TIER 3: WEEKLY (Sunday 06:00 UTC)
 
 PR merge ──→ generate_realtime.py
                 │
-                ├──→ Step 1: AI analysis → gist JSON (incl. image prompt)
-                │    (committed to news branch)
+                ├──→ Step 1: classification/model enrichment → AI factual summary
                 │
                 └──→ Step 2: 🎨 GENERATE 1 image (8-bit pixel art)
-                     → stored in gist as image.url
+                     → stored once as image.prompt + image.url
+                     → complete gist committed to news branch
 
            ──→ publish_realtime.py (separate step)
                 └──→ Reads gist → AI announcement → Discord webhook post
@@ -60,11 +60,11 @@ PR merge ──→ generate_realtime.py
 ═══════════════════════════════════════════════════════════════════════
 
              06:00 UTC ──→ generate_daily.py
-                            │  (reads gists, clusters into 3-5 arcs)
+                            │  (reads gists, clusters into 3-5 arcs, picks 0-5 highlights)
                             │
+                            ├──→ summary.json   (story + highlights for Enter News and README)
                             ├──→ twitter.json   + 🎨 GENERATE 1 image (brand pixel art)
                             ├──→ reddit.json    + 🎨 GENERATE 1 image (brand pixel art)
-                            ├──→ highlights.md  (AI curates yesterday's gists)
                             │
                             ├──→ Commit all to news branch
                             ├──→ Buffer stages X immediately (PUBLISH_MODE=buffer)
@@ -109,6 +109,13 @@ All generated content lives on the **`news` branch**.
 
 ### PR Gists: `operations/social/news/gists/YYYY-MM-DD/PR-{number}.json`
 
+New gists also carry `area`, `type` (Dev Work type), `source`, and `merge_commit_sha`.
+The project manager rechecks classification at merge using its existing brief and updates Dev before returning these values.
+`announcements[]` stores exact official-model deltas from the merged registry trees, with `model_id`, `action` (`NEW`, `UPDATE`, `RETIRE`), `changes` (each field's `before` and `after`), pricing units, and effective timing.
+`announcement_evidence` records the compared commit references. Merge time never proves production availability: immediate changes have `effective_at: null` and `effective_status: unconfirmed`; registry retirement dates create scheduled retirements.
+`enrichment.classification` and `enrichment.models` report `complete` or `failed`. Classification/catalog enrichment failures leave unknown values while social publication continues. Fetching the PR and its complete file list is required. Manual dispatch regenerates text and images and posts Discord again; use local edits for enrichment-only repairs or backfills.
+Existing AI categories, text, images, and publish-tier rules remain available to social consumers.
+
 - Committed directly to `news` branch (no PR needed — small auto-generated JSON)
 - One file per merged PR per day
 - Unique filenames per PR (`PR-{number}.json`) — no git push race conditions
@@ -122,20 +129,21 @@ All generated content lives on the **`news` branch**.
   "author": "username",
   "url": "https://github.com/pollinations/pollinations/pull/8117",
   "merged_at": "2026-02-09T15:30:00Z",
-  "labels": ["bug", "enter"],
+  "labels": [],
+  "area": "Billing & payments",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "abc123",
+  "announcements": [],
+  "enrichment": {"classification": "complete", "models": "complete"},
 
   "gist": {
     "category": "bug_fix",
     "user_facing": true,
     "publish_tier": "daily",
     "importance": "major",
-    "headline": "One bucket to rule them all",
-    "blurb": "The bees fixed a leaky honey jar — balance deductions now flow through a single bucket instead of spilling across many.",
-    "summary": "Fixed balance deduction to use a single bucket instead of splitting across multiple.",
-    "impact": "Users no longer see incorrect balance after API calls.",
-    "keywords": ["billing", "balance", "api"],
-    "visual_concept": "A bee repairing a cracked piggy bank. The piggy bank represents the single-bucket billing system. Wrench = fix.",
-    "image_prompt": "Cozy pixel art scene of a tiny bee fixing a cracked piggy bank with a wrench. Soft lime green glow, chunky 8-bit sprites, warm lighting."
+    "summary": "Fixed balance deduction to use a single bucket instead of splitting across multiple. Users no longer see incorrect balances after API calls.",
+    "keywords": ["billing", "balance", "api"]
   },
 
   "image": {
@@ -154,9 +162,16 @@ All generated content lives on the **`news` branch**.
 | `publish_tier` | `"none"` / `"discord_only"` / `"daily"` — controls which tiers pick up this PR. See `publish_tier` decision logic below. |
 | `importance` | `"major"` / `"minor"` — AI picks. Binary: headline-worthy or not. |
 | `user_facing` | Boolean — AI determines if end users would notice this change |
-| `headline` | Short creative name for the change (3-8 words). Used in daily/weekly narrative arcs. |
-| `blurb` | Whimsical 1-2 sentence description for the website diary. Bee/nature metaphors welcome. |
-| `visual_concept` | AI reasoning space — identifies project mascots, symbols, and scene concept before writing `image_prompt`. |
+| `gist.summary` | One neutral account of meaningful PR changes and practical effects. Model values already in `announcements` are not repeated. |
+| `area`, `type`, `source` | Shared project-manager classification; null when unknown. |
+| `announcements` | Exact official-model changes computed once from the registry before/after merge. Scheduled/unconfirmed status is retained. |
+| `image.prompt`, `image.url` | The image prompt stored once and the generated image used by realtime Discord. |
+
+`gist_context()` passes the same facts to realtime Discord, daily and weekly: summary, selection metadata, Area/Type/Source and app links. Only the per-PR Discord post also receives model `announcements`: price, balance and eligibility changes go to Discord and Enter's model news, never to X, Reddit, LinkedIn or Instagram. Platform prose is generated downstream. Existing archive summaries remain readable without a backfill. Optional metadata backfills are prepared locally and preserve existing text, images and publishing flags. `gist.category` remains during classification migration.
+
+`build_news_index.py` (workflow `news-build-index.yml`, after every gist and daily summary) writes `index.json` on the news branch: model announcements from gists and the daily `highlights`. Enter's `/news` page and the README read only this file.
+
+Unconfirmed deployment stays in metadata; public copy describes merged changes without routine deployment disclaimers and includes known effective dates when relevant. Public gists and posts omit unresolved vulnerability details, user complaints and churn narratives; factual descriptions of product fixes remain appropriate.
 
 **Importance is binary:**
 
@@ -263,11 +278,12 @@ This makes all generated content available locally for scripts that read files (
 |---|---|
 | `generate_realtime.py` | Per-PR: AI analysis → gist JSON → image gen (source of truth) |
 | `publish_realtime.py` | Per-PR: reads gist → AI announcement → Discord webhook post |
-| `generate_daily.py` | Daily: read gists → summary + platform posts (X, Reddit) + images + highlights → commit to news |
+| `generate_daily.py` | Daily: read gists → summary with highlights + platform posts (X, Reddit) + images → commit to news |
+| `build_news_index.py` | Rebuilds `index.json` (model announcements + highlights) for Enter `/news` and the README |
 | `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → all 5 platform posts + images → commit to news |
 | `publish_daily.py` | PUBLISH_MODE=buffer: stage X to Buffer. PUBLISH_MODE=direct: Reddit VPS deployment. |
 | `publish_weekly.py` | PUBLISH_MODE=buffer: stage X + LI + IG to Buffer. PUBLISH_MODE=direct: Reddit VPS + Discord webhook. |
-| `update_readme.py` | Utility functions: `get_top_highlights()`, `update_readme_news_section()` (called by `docs-update-readme-news.yml`) |
+| `update_readme.py` | README Latest News from `index.json`: `get_top_highlights()`, `update_readme_news_section()` (called by `docs-update-readme-news.yml`) |
 | `common.py` | Shared utils: prompt loading, brand injection, API calls, gist I/O, retry logic, `read_news_file()`, constants |
 | `buffer_publish.py` | Buffer API staging with scheduled delivery |
 | `buffer_utils.py` | Buffer GraphQL API helpers |
@@ -351,13 +367,13 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 9. **Three independent image families** — see Image Generation Strategy section below.
 
-10. **Highlights + README in the daily flow** — `generate_daily.py` curates yesterday's gists into `highlights.md` (committed to news) and updates the README "Latest News" section via a small PR to main.
+10. **Highlights come from the daily summary** — the daily call also picks 0-5 highlights into `summary.json`; a quiet day adds none. `index.json` collects them for Enter and the README "Latest News" section (small PR to main).
 
 11. **Weekly delivery at Sunday 18:00 UTC** — Sunday evening "week wrap-up" energy. Reddit + Discord via cron. Buffer-staged platforms deliver on Buffer's schedule.
 
 12. **No fallback content for zero-PR days** — if no PRs merged, the daily workflow skips entirely. No posts generated. Quiet days are quiet days.
 
-13. **Website diary reads from gists + summary** — no separate diary generation step. Gists include `headline` and `blurb` fields; daily/weekly summaries include `mood`. The website can render a diary view directly from these sources.
+13. **Gists hold facts; summaries and posts hold presentation** — creative headlines and platform wording are generated downstream. Monthly diary generation reads canonical daily summaries; README and dashboard news read `index.json`.
 
 14. **Weekly reads gists directly, independent of dailies** — the weekly summary reads the week's gists (Sun→Sat) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"). This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
 
@@ -384,12 +400,12 @@ There are **3 independent families of images**. Each tier generates its own imag
 | Step | AI calls | Image gens |
 |---|---|---|
 | PR gists (5x) | 5 | 5 |
-| Daily summary + posts + highlights | 4 | 2 (1 twitter + 1 reddit) |
-| **Total** | **9** | **7** |
+| Daily summary (with highlights) + posts | 3 | 2 (1 twitter + 1 reddit) |
+| **Total** | **8** | **7** |
 
 Weekly adds ~6 AI calls + ~7 image gens on Sundays.
 
-AI calls scale as N+4 (N per-PR gists + summary + two platform posts + highlights), not N×platforms. Daily image generation is limited to the two platforms that publish daily.
+AI calls scale as N+3 (N per-PR gists + summary with highlights + two platform posts), not N×platforms. Daily image generation is limited to the two platforms that publish daily.
 
 ---
 
@@ -437,9 +453,8 @@ operations/social/prompts/
     discord.md                 # Discord voice + image adaptation
 
   gist.md                      # Tier 1: Analyze PR → gist JSON + image prompt
-  daily.md                     # Tier 2: Cluster gists into 3-5 narrative arcs
+  daily.md                     # Tier 2: Cluster gists into 3-5 narrative arcs + highlights
   weekly.md                    # Tier 3: Synthesize weekly recap from gists
-  highlights.md                # Highlights curation for GitHub + README
   format.md                    # Output format specs (JSON schemas per platform)
 ```
 

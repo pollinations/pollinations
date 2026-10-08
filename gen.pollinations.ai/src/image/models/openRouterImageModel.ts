@@ -98,16 +98,23 @@ const SEEDREAM_PRO_2K_SIZES: Record<SeedreamProAspectRatio, string> = {
 type GeminiImageConfig = {
     upstreamModel: string;
     provider: string;
-    maxReferenceImages: number;
     generator: string;
-    resolution: "none" | "tiered" | "1K";
+    resolution: "none" | "tiered" | "tiered-2K" | "1K";
+    seed?: boolean;
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
+    "google/gemini-nano-banana-2.1": {
+        upstreamModel: "google/gemini-nano-banana-2.1",
+        provider: "google-ai-studio",
+        generator: "Google AI Studio Gemini Nano Banana 2.1",
+        resolution: "tiered-2K",
+        reasoning: false,
+        seed: false,
+    },
     "google/gemini-2.5-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
-        maxReferenceImages: 3,
         generator: "Vertex AI Gemini 2.5 Flash Image",
         resolution: "none",
         reasoning: false,
@@ -115,7 +122,6 @@ const GEMINI_IMAGE_CONFIGS = {
     "google/gemini-3.1-flash-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3.1-flash-image",
         provider: "google-vertex/global",
-        maxReferenceImages: 14,
         generator: "Vertex AI Gemini 3.1 Flash Image",
         resolution: "tiered",
         reasoning: true,
@@ -123,7 +129,6 @@ const GEMINI_IMAGE_CONFIGS = {
     "google/gemini-3.1-flash-lite-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3.1-flash-lite-image",
         provider: "google-vertex/global",
-        maxReferenceImages: 14,
         generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
         resolution: "1K",
         reasoning: true,
@@ -131,7 +136,6 @@ const GEMINI_IMAGE_CONFIGS = {
     "google/gemini-3-pro-image:openrouter:ai-studio-global": {
         upstreamModel: "google/gemini-3-pro-image",
         provider: "google-ai-studio/global",
-        maxReferenceImages: 14,
         generator: "Google AI Studio Gemini 3 Pro Image",
         resolution: "tiered",
         reasoning: false,
@@ -312,12 +316,18 @@ function resolveGeminiImageResolution(
         { name: "2K" as const, pixels: 1920 * 1080 },
         { name: "4K" as const, pixels: 3840 * 2160 },
     ];
-    return tiers.reduce((closest, tier) =>
+    const resolution = tiers.reduce((closest, tier) =>
         Math.abs(tier.pixels - totalPixels) <
         Math.abs(closest.pixels - totalPixels)
             ? tier
             : closest,
     ).name;
+    if (config.resolution === "tiered-2K" && resolution === "4K") {
+        throw UpstreamError.fromProvider(400, {
+            message: "Nano Banana 2.1 supports output up to 2K on this route",
+        });
+    }
+    return resolution;
 }
 
 function resolveGeminiReasoningEffort(
@@ -372,12 +382,6 @@ export async function callOpenRouterSeedreamProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 14) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Seedream 4.5 supports at most 14 reference images (received ${safeParams.image.length}).`,
-        });
-    }
-
     const apiKey = requireOpenRouterImageApiKey();
 
     const downloadedImages = await Promise.all(
@@ -451,11 +455,6 @@ export async function callOpenRouterSeedreamFlashAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 10) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Seedream 5.0 Flash supports at most 10 reference images (received ${safeParams.image.length}).`,
-        });
-    }
     const apiKey = requireOpenRouterImageApiKey();
     const downloadedImages = await Promise.all(
         safeParams.image.map((image) => downloadUserImage(image)),
@@ -584,12 +583,6 @@ export async function callOpenRouterGrokImagineImage2API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 3) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "grok-imagine-image-2.0 supports at most 3 reference images",
-        });
-    }
     const apiKey = requireOpenRouterImageApiKey();
     const inputReferences = safeParams.image.map((url) => ({
         type: "image_url",
@@ -646,11 +639,6 @@ export async function callOpenRouterFlux2MaxAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 8) {
-        throw UpstreamError.fromProvider(400, {
-            message: "FLUX.2 Max supports at most 8 reference images",
-        });
-    }
     const apiKey = requireOpenRouterImageApiKey();
     // BFL does not follow redirects, so a raw reference URL 400s whenever the
     // host serves one (e.g. picsum.photos). Download and inline as a data
@@ -740,11 +728,6 @@ export async function callOpenRouterFlux3API(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (safeParams.image.length > 10) {
-        throw UpstreamError.fromProvider(400, {
-            message: "FLUX.3 Image supports at most 10 reference images",
-        });
-    }
     const apiKey = requireOpenRouterImageApiKey();
     // BFL does not follow redirects, so inline references as data URIs.
     const downloadedImages = await Promise.all(
@@ -820,7 +803,7 @@ export async function callOpenRouterGeminiImageAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
-    const config =
+    const config: GeminiImageConfig | undefined =
         GEMINI_IMAGE_CONFIGS[
             safeParams.model as keyof typeof GEMINI_IMAGE_CONFIGS
         ];
@@ -829,12 +812,6 @@ export async function callOpenRouterGeminiImageAPI(
             message: `Unsupported OpenRouter Gemini image model: ${safeParams.model}`,
         });
     }
-    if (safeParams.image.length > config.maxReferenceImages) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${safeParams.model} supports at most ${config.maxReferenceImages} reference images`,
-        });
-    }
-
     const apiKey = requireOpenRouterImageApiKey();
 
     const requestBody: Record<string, unknown> = {
@@ -846,7 +823,7 @@ export async function callOpenRouterGeminiImageAPI(
             safeParams.height,
             GEMINI_ASPECT_RATIOS,
         ).label,
-        seed: safeParams.seed,
+        ...(config.seed !== false && { seed: safeParams.seed }),
         provider: {
             only: [config.provider],
             allow_fallbacks: false,

@@ -1,3 +1,4 @@
+import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointVisibility,
@@ -37,7 +38,6 @@ import {
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { requireAccountPermission } from "./account-permissions.ts";
 import {
     type FallbackPrimary,
     fallbackTargetRejection,
@@ -244,7 +244,7 @@ async function enforceEndpointProbeThrottle(
 }
 
 export const communityEndpointsRoutes = new Hono<Env>()
-    .use(auth({ allowSessionCookie: true, allowApiKey: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     .get(
         "/",
         describeRoute({

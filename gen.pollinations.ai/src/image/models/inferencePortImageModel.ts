@@ -19,7 +19,6 @@ const logCloudflare = debug("pollinations:cloudflare");
 const INFERENCEPORT_BASE_URL = "https://api.inferenceport.ai/v1/images";
 const INFERENCEPORT_UPSTREAM_MODEL = "lightning-image-turbo";
 const INFERENCEPORT_TITLE = "Lightning Image Turbo";
-const INFERENCEPORT_MAX_REFERENCES = 2;
 
 type InferencePortResponse = {
     data?: Array<{ b64_json?: string; url?: string }>;
@@ -55,22 +54,10 @@ export async function callInferencePortImage(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
-    if (
-        safeParams.dimensionsExplicit &&
-        (safeParams.width !== 1024 || safeParams.height !== 1024)
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: "Lightning Image Turbo supports only 1024x1024 output.",
-        });
-    }
+    // Lightning Image Turbo only outputs 1024x1024; other sizes are ignored.
     if (safeParams.transparent) {
         throw UpstreamError.fromProvider(400, {
             message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
-        });
-    }
-    if (safeParams.image.length > INFERENCEPORT_MAX_REFERENCES) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${INFERENCEPORT_TITLE} supports at most ${INFERENCEPORT_MAX_REFERENCES} reference images`,
         });
     }
 

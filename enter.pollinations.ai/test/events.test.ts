@@ -63,6 +63,52 @@ test("sendErrorEventToTinybird sends structured error events", async ({
     });
 });
 
+test("sendToTinybird preserves fractional image units without sending them to integer columns", async ({
+    log,
+}) => {
+    const fetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response("{}"));
+    const usage = usageToEventParams({
+        promptImageTokens: 0.9216,
+        completionImageTokens: 2.0736,
+    });
+    await sendToTinybird(
+        { ...usage, totalPrice: 0.1 } as TinybirdEvent,
+        "https://api.tinybird.co/v0/events?name=generation_event_v2",
+        "test-token",
+        log,
+    );
+    const payload = JSON.parse(fetchMock.mock.calls[0][1]?.body as string);
+    expect(payload).toMatchObject({
+        usagePromptImageUnits: 0.9216,
+        usageCompletionImageUnits: 2.0736,
+        totalPrice: 0.1,
+    });
+    expect(payload).not.toHaveProperty("tokenCountPromptImage");
+    expect(payload).not.toHaveProperty("tokenCountCompletionImage");
+
+    await sendToTinybird(
+        {
+            ...usageToEventParams({
+                promptImageTokens: 4,
+                completionImageTokens: 0,
+            }),
+        } as TinybirdEvent,
+        "https://api.tinybird.co/v0/events?name=generation_event_v2",
+        "test-token",
+        log,
+    );
+    expect(
+        JSON.parse(fetchMock.mock.calls[1][1]?.body as string),
+    ).toMatchObject({
+        tokenCountPromptImage: 4,
+        tokenCountCompletionImage: 0,
+        usagePromptImageUnits: 4,
+        usageCompletionImageUnits: 0,
+    });
+});
+
 test("sendToTinybird does not retry failed responses", async ({ log }) => {
     const fetchMock = vi
         .spyOn(globalThis, "fetch")

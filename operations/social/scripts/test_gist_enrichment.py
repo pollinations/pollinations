@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from common import filter_daily_gists, generate_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from api_changes import api_changes, api_changes_for_pr
-from build_news_index import build_index, highlight_entries, model_entries
+from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
@@ -238,8 +238,15 @@ class GistEnrichmentTest(unittest.TestCase):
             surface.write_text(json.dumps({"GET /b": {"parameters": {}, "body": {}}}))
             git("commit", "-am", "docs: regenerate")
             second = {"number": 2, "merge_commit_sha": git("rev-parse", "HEAD"), "commits": 1}
-            self.assertEqual([(e["action"], e["endpoint"]) for e in api_changes_for_pr(second, root)],
-                             [("REMOVE", "GET /a"), ("ADD", "GET /b")])
+            changes = api_changes_for_pr(second, root)
+        self.assertEqual([(e["action"], e["endpoint"]) for e in changes],
+                         [("REMOVE", "GET /a"), ("ADD", "GET /b")])
+        gist = {"pr_number": 2, "merged_at": "2026-10-08T00:00:00Z",
+                "url": "https://github.com/example/repo/pull/2", "api_changes": changes}
+        old_gist = {**gist, "pr_number": 1, "merged_at": "2026-08-01T00:00:00Z"}
+        entries = api_entries([old_gist, gist], "2026-09-08")
+        self.assertEqual([(e["endpoint"], e["pr"], e["date"]) for e in entries],
+                         [("GET /a", 2, "2026-10-08"), ("GET /b", 2, "2026-10-08")])
 
     def test_index_highlights_cover_the_readme_and_feed_it(self):
         summaries = [{"date": f"2026-09-{day:02d}", "highlights": [

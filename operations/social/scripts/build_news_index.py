@@ -3,6 +3,7 @@
 
 Reads gists and daily summaries from the news branch checkout and keeps:
 - `models`: official model announcements from recent gists
+- `api`: API changes from the post-deploy docs PRs
 - `highlights`: the items each daily summary picked for users
 
     python build_news_index.py --news-dir <checkout>/operations/social/news [--publish]
@@ -59,6 +60,16 @@ def model_entries(gists: List[Dict], since: str) -> List[Dict]:
     return sorted(entries, key=lambda e: (e["date"], e["title"]))
 
 
+def api_entries(gists: List[Dict], since: str) -> List[Dict]:
+    """API changes from the post-deploy docs PRs (already live when recorded)."""
+    return sorted(
+        ({**item, "date": gist["merged_at"][:10], "pr": gist["pr_number"], "url": gist["url"]}
+         for gist in gists if gist["merged_at"][:10] >= since
+         for item in gist.get("api_changes") or []),
+        key=lambda e: (e["date"], e["endpoint"]),
+    )
+
+
 def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
     items = [
         {"date": summary["date"], **item}
@@ -71,10 +82,12 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
 
 def build_index(news_dir: Path, today: str) -> Dict:
     since = (datetime.fromisoformat(today) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%d")
+    gists = read_json(news_dir.glob("gists/*/PR-*.json"))
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "models": model_entries(read_json(news_dir.glob("gists/*/PR-*.json")), since),
+        "models": model_entries(gists, since),
+        "api": api_entries(gists, since),
         "highlights": highlight_entries(read_json(news_dir.glob("daily/*/summary.json")), since),
     }
 

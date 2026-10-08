@@ -102,7 +102,7 @@ const modelChange = (news: ModelNews, today: string): ChangeItem => ({
 });
 
 const API_LABEL = {
-    ADD: "Added",
+    ADD: "New",
     CHANGE: "Changed",
     REMOVE: "Removed",
 } as const;

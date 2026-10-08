@@ -1,0 +1,40 @@
+{
+  "pr_number": 16835,
+  "title": "fix: validate expiresIn on device approve",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16835",
+  "merged_at": "2026-10-08T22:26:49Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "POST /api/device/approve now validates expiresIn as a positive integer number of seconds whose expiry fits within the JavaScript Date range, preventing invalid lifetimes from being reported by device token responses. It also type-checks userCode, apiKey and apiKeyId as non-empty strings; expiresIn remains optional or nullable for keys without an expiry, and an empty scope remains valid. Invalid requests receive a 400 ValidationError before a KV entry is written, leaving the device code pending so approval can be retried. Key creation uses the same shared expiry rule without changing its behavior, and POST /api/oauth/code gains the Date-range check. No one-year expiry cap was added.",
+    "keywords": [
+      "device authorization",
+      "expiresIn",
+      "API keys",
+      "OAuth",
+      "validation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16835.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli checks a tiny hourglass beside a retro device-approval terminal while a code-plant grows from a prominent lime green (#ecf874) pot; a small CRT monitor robot holds a neatly checked form. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny clockmaker glasses, stays small-to-medium beside the other elements, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T22:28:33.152291+00:00",
+  "area": "Accounts & keys",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "162497faa5775b181a18f79b34021eeef377ae67",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "162497faa5775b181a18f79b34021eeef377ae67^1",
+    "after_ref": "162497faa5775b181a18f79b34021eeef377ae67"
+  }
+}

@@ -871,6 +871,7 @@ export interface UsageRecord {
     meter_source: string;
     input_text_tokens: number;
     input_cached_tokens: number;
+    input_cache_write_tokens: number;
     input_audio_tokens: number;
     input_audio_seconds: number;
     input_image_tokens: number;

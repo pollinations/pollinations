@@ -54,9 +54,7 @@ export type Highlight = {
 
 /** Highlights for News: not apps (README only) and not PRs the Changelog already lists. */
 export function newsHighlights(index: NewsIndex): Highlight[] {
-    const listed = new Set(
-        [...index.models, ...(index.api ?? [])].map(({ pr }) => pr),
-    );
+    const listed = new Set([...index.models, ...index.api].map(({ pr }) => pr));
     return index.highlights.filter(
         ({ app, prs }) => !app && !prs?.some((pr) => listed.has(pr)),
     );
@@ -69,7 +67,7 @@ export type ApiNews = {
     id: string;
     endpoint: string;
     /** The endpoint's one-line summary from APIDOCS.md. */
-    summary?: string;
+    summary: string;
     action: "ADD" | "REMOVE" | "CHANGE";
     breaking: boolean;
     changes: {
@@ -84,7 +82,7 @@ export type ApiNews = {
 
 export type NewsIndex = {
     models: ModelNews[];
-    api?: ApiNews[];
+    api: ApiNews[];
     highlights: Highlight[];
 };
 
@@ -198,7 +196,7 @@ const CAPABILITY_FIELDS: Record<string, [string, (value: unknown) => string]> =
         max_reference_images: ["Reference images", count("")],
     };
 
-/** The changed values a model card shows, under Price, Balance and Capability. */
+/** The rows a model change shows: Price, Balance, Model, Voices and Capability. */
 export function cardDetails(news: ModelNews): CardDetail[] {
     if (news.action === "RETIRE") {
         // A postponed or withdrawn announcement shows what it replaced.
@@ -283,7 +281,7 @@ export function cardDetails(news: ModelNews): CardDetail[] {
     return details;
 }
 
-/** Changes within today −30 to today +30 days, oldest first. */
+/** Entries dated within today −30 to today +30 days. */
 export function visibleModelNews<T extends { date: string }>(
     models: T[],
     today: string,
@@ -301,7 +299,6 @@ export function visibleModelNews<T extends { date: string }>(
 const describeField = (field: ApiField) =>
     [field.type, field.required && "required"].filter(Boolean).join(", ");
 
-/** One row per changed parameter or body field: "Body  seed: integer|null → integer". */
 /** One row per changed parameter or body field: "Body  seed: integer|null → integer". */
 export function apiDetails(news: ApiNews): CardDetail[] {
     const summary = news.summary

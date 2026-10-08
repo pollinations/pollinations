@@ -49,11 +49,10 @@ const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
     label,
     value,
     muted,
-}) =>
-    label === "Balance" ? (
-        <span
-            className={`inline-flex items-center gap-1 ${muted ? "text-theme-text-muted" : "text-theme-text-base"}`}
-        >
+}) => {
+    const tone = muted ? "text-theme-text-muted" : "text-theme-text-base";
+    return label === "Balance" ? (
+        <span className={`inline-flex items-center gap-1 ${tone}`}>
             <WalletKindIcon
                 kind={value === "paid" ? "paid" : "tier"}
                 className={muted ? "opacity-50" : undefined}
@@ -61,12 +60,9 @@ const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
             {value === "paid" ? "Paid" : "Quest"}
         </span>
     ) : (
-        <span
-            className={muted ? "text-theme-text-muted" : "text-theme-text-base"}
-        >
-            {value}
-        </span>
+        <span className={tone}>{value}</span>
     );
+};
 
 type ChangeItem = {
     key: string;
@@ -184,28 +180,29 @@ const ShowOlder: FC<{ hidden: boolean; onClick: () => void }> = ({
     );
 
 /** Starts each day; the row after it needs no top border. */
-const DayLine: FC<{ label: string }> = ({ label }) => (
-    <li className="flex items-center gap-2 py-1 text-[11px] [&+li]:border-t-0 font-semibold uppercase tracking-wider text-theme-text-muted">
+const DayLine: FC<{ date: string; today: string }> = ({ date, today }) => (
+    <li className="flex items-center gap-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted [&+li]:border-t-0">
         <span className="h-px flex-1 bg-theme-text-strong/30" />
-        {label}
+        {date === today ? "Today" : formatNewsDate(date)}
         <span className="h-px flex-1 bg-theme-text-strong/30" />
     </li>
 );
 
 /**
- * Changes that can affect what users built: model updates and retirements from
- * merged PRs (news/index.json), today −30 to +30 days.
+ * Model and API changes from merged PRs (news/index.json), today −30 to +30
+ * days: upcoming ones first, then the latest past ones.
  */
 export const Changelog: FC = () => {
     const index = useNewsIndex();
     const [visiblePast, setVisiblePast] = useState(PAGE_SIZE);
+    if (!index) return null;
     const today = new Date().toISOString().slice(0, 10);
-    // Model changes and API changes, newest first, so upcoming changes lead.
+    // Newest first, so upcoming changes lead.
     const changes = [
-        ...visibleModelNews(index?.models ?? [], today).map((news) =>
+        ...visibleModelNews(index.models, today).map((news) =>
             modelChange(news, today),
         ),
-        ...visibleModelNews(index?.api ?? [], today).map(apiChange),
+        ...visibleModelNews(index.api, today).map(apiChange),
     ].sort((a, b) => b.date.localeCompare(a.date));
     // All upcoming changes, then the latest past ones, PAGE_SIZE at a time.
     const upcoming = changes.filter(({ date }) => date > today);
@@ -229,16 +226,10 @@ export const Changelog: FC = () => {
                         <Fragment key={item.key}>
                             {/* Marks today even on a day without changes. */}
                             {item.date < today && previous > today && (
-                                <DayLine label="Today" />
+                                <DayLine date={today} today={today} />
                             )}
                             {item.date !== previous && (
-                                <DayLine
-                                    label={
-                                        item.date === today
-                                            ? "Today"
-                                            : formatNewsDate(item.date)
-                                    }
-                                />
+                                <DayLine date={item.date} today={today} />
                             )}
                             <ChangeRow item={item} />
                         </Fragment>
@@ -267,13 +258,7 @@ export const NewsBanner: FC = () => {
                 {highlights.map((item, i) => (
                     <Fragment key={`${item.date}-${item.title}`}>
                         {item.date !== highlights[i - 1]?.date && (
-                            <DayLine
-                                label={
-                                    item.date === today
-                                        ? "Today"
-                                        : formatNewsDate(item.date)
-                                }
-                            />
+                            <DayLine date={item.date} today={today} />
                         )}
                         <li className="grid items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                             <strong className="text-theme-text-strong">

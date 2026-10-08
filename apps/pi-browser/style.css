@@ -1,0 +1,95 @@
+:root {
+    color-scheme: light dark;
+    font: 15px/1.5 system-ui, sans-serif;
+}
+body {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+header p {
+    margin-top: 0;
+}
+#connect-panel,
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+#connect-panel {
+    margin-bottom: 1rem;
+}
+main {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 1.5rem;
+}
+@media (max-width: 800px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+}
+label {
+    display: block;
+    margin: 0.5rem 0 0.25rem;
+    font-weight: 600;
+}
+select,
+textarea,
+#shell {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+}
+#shell {
+    flex: 1;
+    width: auto;
+    font-family: ui-monospace, monospace;
+}
+button {
+    font: inherit;
+    padding: 0.3rem 0.8rem;
+}
+#log,
+pre {
+    font: 13px/1.45 ui-monospace, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: color-mix(in srgb, currentColor 6%, transparent);
+    padding: 0.5rem;
+    border-radius: 6px;
+    max-height: 28rem;
+    overflow: auto;
+}
+#log:empty,
+pre:empty {
+    display: none;
+}
+#log .tool {
+    color: #8250df;
+}
+#log .error {
+    color: #cf222e;
+}
+#log .meta {
+    opacity: 0.65;
+}
+#files {
+    padding-left: 1rem;
+    font-family: ui-monospace, monospace;
+}
+#files button {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+footer {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}

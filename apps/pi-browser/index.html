@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Pi in the browser · Pollinations</title>
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <header>
+            <h1>Pi in the browser</h1>
+            <p>
+                The real <a href="https://github.com/earendil-works/pi">Pi coding agent</a>
+                runs in a WebAssembly sandbox in this tab and spends your own Pollen.
+            </p>
+        </header>
+
+        <section id="connect-panel">
+            <button id="connect" type="button">Connect Pollinations</button>
+            <span id="device" hidden>
+                Approve code <strong id="user-code"></strong> in the
+                <a id="device-link" target="_blank" rel="noopener">Pollinations tab</a>.
+            </span>
+            <details>
+                <summary>Use an existing key</summary>
+                <form id="key-form">
+                    <input id="key" type="password" autocomplete="off" placeholder="sk_…" aria-label="Pollinations API key" />
+                    <button type="submit">Use key</button>
+                </form>
+            </details>
+            <span id="account"></span>
+            <button id="disconnect" type="button" hidden>Disconnect</button>
+        </section>
+
+        <main>
+            <section>
+                <label for="model">Model</label>
+                <select id="model"></select>
+                <label for="prompt">Ask Pi</label>
+                <textarea id="prompt" rows="4">Create fizzbuzz.js that prints FizzBuzz from 1 to 15, run it with node, then change it to go up to 20 and run it again.</textarea>
+                <div class="row">
+                    <button id="run" type="button" disabled>Run Pi</button>
+                    <button id="stop" type="button" disabled>Stop</button>
+                    <button id="new-session" type="button">New conversation</button>
+                </div>
+                <p id="status" role="status">Loading Pi (about 40 MB on the first visit)…</p>
+                <div id="log" role="log" aria-live="polite"></div>
+            </section>
+            <section>
+                <h2>Files <button id="refresh" type="button">Refresh</button></h2>
+                <ul id="files"></ul>
+                <pre id="file-view" tabindex="0" aria-label="Selected file"></pre>
+                <form id="shell-form">
+                    <label for="shell">Shell (bash in the same sandbox)</label>
+                    <div class="row">
+                        <input id="shell" value="ls -la && node --version" autocomplete="off" />
+                        <button type="submit" id="shell-run" disabled>Run</button>
+                    </div>
+                </form>
+                <pre id="shell-out" tabindex="0" aria-label="Shell output"></pre>
+            </section>
+        </main>
+
+        <footer>
+            <a href="https://pollinations.ai"><img src="./badge.svg" alt="Made with Pollinations" height="28" /></a>
+            <a href="https://github.com/pollinations/pollinations/tree/main/apps/pi-browser">Source</a>
+        </footer>
+
+        <script type="importmap">
+            { "imports": { "@wasmer/sdk": "./vendor/wasmer/dist/index.js" } }
+        </script>
+        <script type="module" src="./src/main.js"></script>
+    </body>
+</html>

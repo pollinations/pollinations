@@ -1,0 +1,4 @@
+# The WASIX runtime needs SharedArrayBuffer, which requires cross-origin isolation.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp

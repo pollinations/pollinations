@@ -183,6 +183,7 @@ describe("Responses to Chat request", () => {
 
     it.each([
         [{ max_tool_calls: 1 }, "max_tool_calls"],
+        [{ truncation: "auto" }, "truncation"],
         [{ top_logprobs: 2 }, "include"],
         [{ text: { format: { type: "grammar" } } }, "text.format"],
         [{ tool_choice: { type: "allowed_tools" } }, "tool_choice"],

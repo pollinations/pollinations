@@ -222,6 +222,9 @@ export function responsesToChatRequest(
             "max_tool_calls",
         );
     }
+    if (request.truncation === "auto") {
+        invalid("Automatic truncation is not supported", "truncation");
+    }
     if (
         (request.top_logprobs ?? 0) > 0 ||
         request.include?.includes("message.output_text.logprobs")

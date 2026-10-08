@@ -1,0 +1,36 @@
+{
+  "pr_number": 16328,
+  "title": "docs: say safety checks read input text only",
+  "author": "greysonmiller67-lang",
+  "url": "https://github.com/pollinations/pollinations/pull/16328",
+  "merged_at": "2026-10-08T04:10:19Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Updated gen.pollinations.ai’s safety documentation to clarify that safety checks inspect request text only. The `X-Safety-Applied` header does not indicate that generated output was inspected; apps that must exclude all nudity should moderate the generated output themselves.",
+    "keywords": [
+      "safety",
+      "documentation",
+      "moderation",
+      "generated output",
+      "X-Safety-Applied"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16328.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears a tiny clipboard satchel and points to an input-text card beside a separate generated-image card, while a lime green (#ecf874) code-plant grows by the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, sharing the frame with other elements, never oversized or dominating, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender surroundings and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T04:11:36.122957+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Community",
+  "merge_commit_sha": "b8a10047b8b3ffa0f383e452e7ed87895ca78ddb",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

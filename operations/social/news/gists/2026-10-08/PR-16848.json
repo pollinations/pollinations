@@ -1,0 +1,37 @@
+{
+  "pr_number": 16848,
+  "title": "fix(cli): keep config edits made between repeated harness setups",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16848",
+  "merged_at": "2026-10-08T22:50:11Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Repeated `polli harness <x> on` runs no longer cause a later `off` to overwrite config edits made between runs or delete a file that was created after the first `on`. The shared snapshot helper advances a file’s `afterHash` only if the file matched the stored hash when the repeated run began; untouched files still restore byte-for-byte. Existing snapshots need no schema change, and failed setup runs still leave the stored snapshot unchanged. The fix applies to harnesses using the helper, including Pi and OpenCode, with a regression test for each. The PR describes an `@pollinations/cli` version bump to 0.1.34, though the listed changed files do not include package manifests.",
+    "keywords": [
+      "polli CLI",
+      "harness",
+      "config edits",
+      "snapshots",
+      "Pi",
+      "OpenCode"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16848.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears a tiny tool belt and carefully preserves a handwritten edit on a config page while a retro terminal tidies up its own entries; lime green (#ecf874) code-plants grow beside the desk against a warm cream and pastel gradient background. Polli is a cute, small-to-medium pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush marks, a small happy smile, and small rounded translucent light blue wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T22:51:25.613562+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "b3c56b9b2cec364128759228130f45639a286102",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

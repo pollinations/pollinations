@@ -10,7 +10,8 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent))
 from common import filter_daily_gists, generate_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
-from build_news_index import build_index, highlight_entries, model_entries
+from api_changes import api_changes, api_changes_for_pr, api_surface
+from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
@@ -44,7 +45,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(removed["action"], "RETIRE")
 
     def test_rename_keeps_old_id_available_and_preserves_other_changes(self):
-        old = {"name": "kimi", "aliases": [], "paid_only": False,
+        old = {"name": "kimi", "title": "Kimi", "aliases": [], "paid_only": False,
                "pricing": {"currency": "pollen", "promptTextTokens": "0.000001"}}
         new = {**old, "name": "moonshot/kimi-k3", "aliases": ["kimi"], "paid_only": True}
         events = model_changes([old], [new], {"number": 1})
@@ -54,6 +55,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(events[0]["changes"]["model_id"], {"before": "kimi", "after": "moonshot/kimi-k3"})
         self.assertEqual(events[0]["changes"]["paid_only"], {"before": False, "after": True})
         self.assertNotIn("availability", events[0]["changes"])
+        self.assertEqual(events[0]["previous_title"], "Kimi")
         # Moving an ID onto an existing canonical model also preserves access.
         existing = {**new, "aliases": []}
         events = model_changes([old, existing], [new], {"number": 2})
@@ -185,12 +187,101 @@ class GistEnrichmentTest(unittest.TestCase):
                  event("removed", "RETIRE", retire),
                  event("routed", "UPDATE", {"supported_endpoints": {"before": [], "after": ["/v1"]}}),
                  event("priced", "UPDATE", {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}},
-                                            "voices": {"before": [], "after": ["alloy"]}})),
+                                            "supported_endpoints": {"before": [], "after": ["/v1"]}}),
+                 {**event("replaced", "UPDATE", {"model_id": {"before": "old/id", "after": "replaced"},
+                                                 "voices": {"before": ["a"], "after": ["b"]}}),
+                  "previous_title": "Old"}),
         ]
         entries = model_entries(gists, "2026-09-08", "2026-10-08")
-        self.assertEqual([e["model_id"] for e in entries], ["priced", "removed"])
+        self.assertEqual([e["model_id"] for e in entries], ["priced", "removed", "replaced"])
+        self.assertEqual(set(entries[2]["changes"]), {"model_id", "voices"})
+        self.assertEqual(entries[2]["previous_title"], "Old")
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
         self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
+
+    def test_api_changes_mark_what_breaks_existing_clients(self):
+        field = lambda type_, required=False: {"type": type_, "required": required}
+        before = {
+            "GET /old": {"parameters": {}, "body": {}},
+            "POST /v1/chat": {"parameters": {"query:debug": field("boolean")},
+                              "body": {"seed": field("integer|null"), "model": field("string")}},
+        }
+        after = {
+            "GET /new": {"parameters": {}, "body": {}},
+            "POST /v1/chat": {"parameters": {},
+                              "body": {"seed": field("integer|null|string"), "model": field("string", True),
+                                       "tools": field("array")}},
+        }
+        events = {e["endpoint"]: e for e in api_changes(before, after, {"number": 7})}
+        self.assertEqual({k: (e["action"], e["breaking"]) for k, e in events.items()},
+                         {"GET /new": ("ADD", False), "GET /old": ("REMOVE", True),
+                          "POST /v1/chat": ("CHANGE", True)})
+        chat = {c["field"]: c["breaking"] for c in events["POST /v1/chat"]["changes"]}
+        # removed parameter and newly required field break clients; a widened type and an optional field do not
+        self.assertEqual(chat, {"parameters:query:debug": True, "body:model": True,
+                                "body:seed": False, "body:tools": False})
+        self.assertEqual(events["GET /new"]["id"], "pr-7:GET /new")
+        # Documentation gaps: an undocumented body on one side, or a type lost to "any".
+        gap = api_changes(
+            {"POST /x": {"parameters": {}, "body": {"a": field("string", True)}},
+             "POST /y": {"parameters": {}, "body": {"b": field("string", True)}}},
+            {"POST /x": {"parameters": {}, "body": {}},
+             "POST /y": {"parameters": {}, "body": {"b": field("any")}}},
+            {"number": 8})
+        self.assertEqual(gap, [])
+
+    def test_docs_pr_reports_api_changes_from_apidocs(self):
+        docs = """## 🛠️ Endpoints
+
+#### `GET` `/a` — A
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `prompt` * | `path` | `string` | Prompt |
+| `seed` | `query` | `integer` \\| `null` | Seed |
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `audio` * | `string` | — |
+| `audio.voice` | `string` | nested, skipped |
+
+📤 **Response**
+
+| Field | Type | Description |
+|---|---|---|
+| `ignored` | `string` | — |
+"""
+        self.assertEqual(api_surface(docs), {"GET /a": {
+            "summary": "A",
+            "parameters": {"path:prompt": {"type": "string", "required": True},
+                           "query:seed": {"type": "integer|null", "required": False}},
+            "body": {"audio": {"type": "string", "required": True}}}})
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+            git("init", "-b", "main")
+            git("config", "user.name", "Test")
+            git("config", "user.email", "test@example.com")
+            (root / "APIDOCS.md").write_text(docs)
+            git("add", "APIDOCS.md")
+            git("commit", "-m", "docs: regenerate")
+            (root / "APIDOCS.md").write_text(docs.replace("`audio` *", "`file` *").replace("`/a`", "`/b`", 1))
+            git("commit", "-am", "docs: regenerate")
+            second = {"number": 2, "merge_commit_sha": git("rev-parse", "HEAD"), "commits": 1}
+            changes = api_changes_for_pr(second, root)
+        self.assertEqual([(e["action"], e["endpoint"], e["summary"]) for e in changes],
+                         [("REMOVE", "GET /a", "A"), ("ADD", "GET /b", "A")])
+        gist = {"pr_number": 2, "merged_at": "2026-10-08T00:00:00Z",
+                "url": "https://github.com/example/repo/pull/2", "api_changes": changes}
+        old_gist = {**gist, "pr_number": 1, "merged_at": "2026-08-01T00:00:00Z"}
+        entries = api_entries([old_gist, gist], "2026-09-08")
+        self.assertEqual([(e["endpoint"], e["pr"], e["date"]) for e in entries],
+                         [("GET /a", 2, "2026-10-08"), ("GET /b", 2, "2026-10-08")])
 
     def test_pr_description_announces_retirements_from_its_change_table(self):
         catalog = [{"name": "x-ai/grok-imagine", "title": "Grok Imagine", "category": "image"},

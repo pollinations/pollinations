@@ -506,6 +506,14 @@ async function startPi(mode = "guided") {
                             baseUrl: `${API}/v1`,
                             api: "openai-completions",
                             apiKey: "browser-bridge",
+                            compat: {
+                                supportsStore: false,
+                                supportsDeveloperRole: false,
+                                supportsReasoningEffort: true,
+                                supportsUsageInStreaming: true,
+                                supportsStrictMode: false,
+                                maxTokensField: "max_tokens",
+                            },
                             models: (models.length
                                 ? models
                                 : [{ name: options.model }]

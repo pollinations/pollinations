@@ -37,7 +37,7 @@ In guided mode, the stop budget uses balance changes between requests and the AP
 
 ## Evidence and checks
 
-`public/e2e-evidence.json` records a real Nano coding run, an optional-MCP run and a public-demo run: response IDs, provider usage, observed wallet deltas, tool arguments/results, and resulting files. The coding run creates files, executes a test, edits behavior, updates the test expectation, and executes the passing test again. The MCP run uses real Exa search and a read-only remote `printf`, then writes their results locally. A free fixture was used first to establish the real Pi read/write/edit/Bash loop; it is not the paid evidence.
+`evidence/e2e-evidence.json` records a real Nano coding run, an optional-MCP run and a public-demo run: response IDs, provider usage, observed wallet deltas, tool arguments/results, and resulting files. The coding run creates files, executes a test, edits behavior, updates the test expectation, and executes the passing test again. The MCP run uses real Exa search and a read-only remote `printf`, then writes their results locally. A free fixture was used first to establish the real Pi read/write/edit/Bash loop; it is not the paid evidence.
 
 Run `npm test` for the bridge's credential/endpoint boundary, enabled-tool checks, path validation and SSE/MCP response contracts. Reproduce the live run from the app and use **Show run evidence** to inspect or download its receipts. Test fixtures and credentials are not shared with visitors.
 

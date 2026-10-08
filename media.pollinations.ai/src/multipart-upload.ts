@@ -213,7 +213,9 @@ export async function stageMultipartUpload(
     }
 }
 
+/** Staged parts live in `stagingBucket`; the final file goes to `bucket`. */
 export async function putStagedMultipartUpload(
+    stagingBucket: R2Bucket,
     bucket: R2Bucket,
     id: string,
     upload: StagedMultipartUpload,
@@ -223,7 +225,7 @@ export async function putStagedMultipartUpload(
         if (!upload.bytes) throw new Error("Missing staged upload bytes");
         return bucket.put(id, upload.bytes, options);
     }
-    const stagedObject = await bucket.get(upload.temporaryKey);
+    const stagedObject = await stagingBucket.get(upload.temporaryKey);
     if (!stagedObject) throw new Error("Staged media upload disappeared");
     const stream = new FixedLengthStream(upload.size);
     const pipe = stagedObject.body.pipeTo(stream.writable);

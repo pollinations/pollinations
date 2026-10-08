@@ -1,6 +1,9 @@
+import { isAdminUser } from "@shared/auth/admin.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -25,7 +28,12 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 
-import { readMedia, uploadUnlistedMedia } from "./media-upload.ts";
+import {
+    bucketFor,
+    permanentId,
+    readMedia,
+    uploadUnlistedMedia,
+} from "./media-upload.ts";
 import {
     putStagedMultipartUpload,
     type StagedMultipartUpload,
@@ -46,6 +54,7 @@ const MAX_BUFFERED_SIZE = 104857600; // JSON base64 uploads still buffer in memo
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
+    PERMANENT_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
 }
@@ -91,6 +100,32 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
     } catch {
         return null;
     }
+}
+
+// Internal, unbilled and undocumented in the public API until storage billing
+// exists: only an admin's own secret key may create files that never expire —
+// not a publishable key or one minted for a BYOP app.
+async function canUploadPermanently(
+    db: D1Database,
+    auth: AuthResult,
+): Promise<boolean> {
+    if (
+        auth.type !== "secret" ||
+        auth.userId === null ||
+        auth.byopClientKeyId !== null
+    ) {
+        return false;
+    }
+    const [owner] = await getDb(db)
+        .select({
+            id: userTable.id,
+            role: userTable.role,
+            banned: userTable.banned,
+        })
+        .from(userTable)
+        .where(eq(userTable.id, auth.userId))
+        .limit(1);
+    return owner !== undefined && isAdminUser(owner);
 }
 
 function extractApiKey(req: Request): string | null {
@@ -382,6 +417,15 @@ api.post(
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
+        const permanent = c.req.query("permanent") === "true";
+        if (permanent && !(await canUploadPermanently(c.env.DB, authResult))) {
+            return c.json(
+                {
+                    error: "Permanent uploads require an admin account's own secret (sk_) API key",
+                },
+                403,
+            );
+        }
 
         const uploadMaxSize =
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -448,6 +492,7 @@ api.post(
                         size,
                         uploadedBy: authResult.name || "unknown",
                         keyType: authResult.type,
+                        permanent,
                     },
                 );
                 return c.json(upload);
@@ -577,13 +622,15 @@ api.post(
                     ),
                 );
                 id = `u_${namespace}_${requestedId}`;
-                // An expired published file still has a gallery entry. Do not
-                // attach a new upload to that old entry, even without new tags.
-                if (
-                    (await catalogItemOwner(getDb(c.env.DB), id)) !== undefined
-                ) {
-                    return c.json({ error: "Media ID already exists" }, 409);
-                }
+            }
+            if (permanent) id = permanentId(id);
+            // An expired published file still has a gallery entry. Do not
+            // attach a new upload to that old entry, even without new tags.
+            if (
+                requestedId !== undefined &&
+                (await catalogItemOwner(getDb(c.env.DB), id)) !== undefined
+            ) {
+                return c.json({ error: "Media ID already exists" }, 409);
             }
             const cacheControl =
                 tags.length > 0 || requestedId !== undefined
@@ -605,20 +652,18 @@ api.post(
                     keyType: authResult.type,
                 },
             };
+            const bucket = bucketFor(c.env, id);
             let stored: R2Object | null;
             if (stagedUpload) {
                 stored = await putStagedMultipartUpload(
                     c.env.MEDIA_BUCKET,
+                    bucket,
                     id,
                     stagedUpload,
                     putOptions,
                 );
             } else if (fileBuffer) {
-                stored = await c.env.MEDIA_BUCKET.put(
-                    id,
-                    fileBuffer,
-                    putOptions,
-                );
+                stored = await bucket.put(id, fileBuffer, putOptions);
             } else {
                 throw new Error("Missing decoded upload body");
             }
@@ -850,7 +895,7 @@ api.delete(
         // be retried — R2 delete is idempotent. The reverse order would
         // strand an undeletable public blob behind a 404ing retry. In the
         // brief gap a gallery may list an item whose URL already 404s.
-        await c.env.MEDIA_BUCKET.delete(id);
+        await bucketFor(c.env, id).delete(id);
         await deleteCatalogItem(db, id);
 
         console.log(
@@ -938,7 +983,7 @@ api.get(
         const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.head(id);
+            const object = await bucketFor(c.env, id).head(id);
 
             if (!object) {
                 return c.json({ error: "Not found" }, 404);

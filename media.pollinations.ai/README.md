@@ -238,6 +238,7 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 
 - **30-day lifecycle:** A GET refreshes an object once it is at least 15 days old, avoiding a storage rewrite on every access. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
 - **Delete (alpha):** Owners can delete their published items via `DELETE /media/:id` (secret key). Untagged uploads can't be deleted — they expire on their own.
+- **Permanent uploads (internal, unbilled):** `POST /upload?permanent=true` with an admin account's own secret key stores the file under a `p_` id in the `pollinations-media-permanent` bucket, which has no lifecycle rule and skips GET refreshes. Operators remove untagged permanent files with `wrangler r2 object delete pollinations-media-permanent/<id> --remote`; random-id files are cached as immutable, so also purge their URL from the Cloudflare cache.
 - **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 

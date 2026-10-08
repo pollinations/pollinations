@@ -71,6 +71,7 @@ function createMediaCacheEnv(
     return {
         MEDIA: new MediaUpload(mediaCtx, {
             MEDIA_BUCKET: bucket,
+            PERMANENT_BUCKET: createTestR2Bucket(),
             MAX_FILE_SIZE: "104857600",
         }),
         mediaCtx,

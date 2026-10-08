@@ -3,11 +3,26 @@ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
+// Only permanent uploads create this prefix: other upload IDs are UUIDs or
+// `u_` custom IDs, and generation keys are 64 hex characters.
+const PERMANENT_ID_PREFIX = "p_";
 
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;
+    PERMANENT_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
 };
+
+export function permanentId(id: string): string {
+    return `${PERMANENT_ID_PREFIX}${id}`;
+}
+
+/** Permanent files live in a bucket without the 30-day lifecycle rule. */
+export function bucketFor(env: MediaStorageEnv, id: string): R2Bucket {
+    return id.startsWith(PERMANENT_ID_PREFIX)
+        ? env.PERMANENT_BUCKET
+        : env.MEDIA_BUCKET;
+}
 
 export type UnlistedMediaUpload = {
     id?: string;
@@ -16,6 +31,7 @@ export type UnlistedMediaUpload = {
     size: number;
     uploadedBy?: string;
     keyType?: string;
+    permanent?: boolean;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -41,9 +57,11 @@ export async function uploadUnlistedMedia(
     if (input.id !== undefined && !/^[a-f0-9]{64}$/.test(input.id)) {
         throw new Error("Invalid media ID");
     }
-    const id = input.id ?? crypto.randomUUID();
+    let id = input.id ?? crypto.randomUUID();
+    if (input.permanent) id = permanentId(id);
+    const bucket = bucketFor(env, id);
     const contentType = input.contentType || "application/octet-stream";
-    if (input.id && (await env.MEDIA_BUCKET.head(id))) {
+    if (input.id && (await bucket.head(id))) {
         return {
             id,
             url: `https://media.pollinations.ai/${id}`,
@@ -55,7 +73,7 @@ export async function uploadUnlistedMedia(
     const pipe = body.pipeTo(upload.writable);
     try {
         await Promise.all([
-            env.MEDIA_BUCKET.put(id, upload.readable, {
+            bucket.put(id, upload.readable, {
                 httpMetadata: {
                     contentType,
                     cacheControl: IMMUTABLE_CACHE_CONTROL,
@@ -90,9 +108,8 @@ export async function readMedia(
     ctx: Pick<ExecutionContext, "waitUntil">,
     method = "GET",
 ): Promise<Response | null> {
-    const object = await (method === "HEAD"
-        ? env.MEDIA_BUCKET.head(id)
-        : env.MEDIA_BUCKET.get(id));
+    const bucket = bucketFor(env, id);
+    const object = await (method === "HEAD" ? bucket.head(id) : bucket.get(id));
     if (!object) return null;
 
     const headers = new Headers({
@@ -118,13 +135,16 @@ export async function readMedia(
         headers.set("Content-Length", object.size.toString());
         return new Response(null, { headers });
     }
-    const body = refreshR2ObjectTtl(
-        env.MEDIA_BUCKET,
-        id,
-        object as R2ObjectBody,
-        (promise) => ctx.waitUntil(promise),
-        (error) => console.error("Media TTL refresh failed", error),
-    );
+    const body =
+        bucket === env.PERMANENT_BUCKET
+            ? (object as R2ObjectBody).body
+            : refreshR2ObjectTtl(
+                  bucket,
+                  id,
+                  object as R2ObjectBody,
+                  (promise) => ctx.waitUntil(promise),
+                  (error) => console.error("Media TTL refresh failed", error),
+              );
     return new Response(body, { headers });
 }
 

@@ -152,7 +152,7 @@ export default defineConfig(async ({ mode }) => {
                                 modules: true,
                                 script: mediaScript,
                                 compatibilityDate: "2025-11-12",
-                                r2Buckets: ["MEDIA_BUCKET"],
+                                r2Buckets: ["MEDIA_BUCKET", "PERMANENT_BUCKET"],
                                 bindings: { MAX_FILE_SIZE: "104857600" },
                             },
                         ],

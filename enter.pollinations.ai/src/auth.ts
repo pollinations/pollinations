@@ -1,5 +1,6 @@
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
+import { ADMIN_USER_IDS, isAdminUser } from "@shared/auth/admin.ts";
 import {
     assertStagingAccess,
     createApiKeyPlugin,
@@ -39,22 +40,6 @@ import {
 } from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
-const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
-
-export function isAdminUser(user: {
-    id: string;
-    role?: string | null;
-    banned?: boolean | null;
-}) {
-    return (
-        !user.banned &&
-        (ADMIN_USER_IDS.includes(user.id) ||
-            user.role
-                ?.split(",")
-                .map((role) => role.trim())
-                .includes("admin") === true)
-    );
-}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);

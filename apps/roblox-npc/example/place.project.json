@@ -1,0 +1,66 @@
+{
+  "name": "Pollen Island",
+  "tree": {
+    "$className": "DataModel",
+    "HttpService": {
+      "$properties": { "HttpEnabled": true }
+    },
+    "ServerScriptService": {
+      "PollinationsNPC": { "$path": "../src/PollinationsNPC.luau" },
+      "Tomo": { "$path": "Tomo.server.luau" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "PollinationsNPCChat": { "$path": "../src/PollinationsNPCChat.client.luau" }
+      }
+    },
+    "Workspace": {
+      "Baseplate": {
+        "$className": "Part",
+        "$properties": {
+          "Anchored": true,
+          "Size": [256, 4, 256],
+          "CFrame": { "CFrame": { "position": [0, -2, 0], "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } },
+          "Color": [0.42, 0.66, 0.31],
+          "Material": "Grass",
+          "TopSurface": "Smooth"
+        }
+      },
+      "SpawnLocation": {
+        "$className": "SpawnLocation",
+        "$properties": {
+          "Anchored": true,
+          "Size": [6, 1, 6],
+          "CFrame": { "CFrame": { "position": [0, 0.5, 0], "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } },
+          "Duration": 0
+        }
+      },
+      "Tomo": {
+        "$className": "Model",
+        "Humanoid": {
+          "$className": "Humanoid",
+          "$properties": { "DisplayName": "Tomo (walk up and chat)", "RequiresNeck": false }
+        },
+        "Head": {
+          "$className": "Part",
+          "$properties": {
+            "Anchored": true,
+            "Shape": "Ball",
+            "Size": [2, 2, 2],
+            "CFrame": { "CFrame": { "position": [0, 6, -14], "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } },
+            "Color": [1, 0.8, 0.6]
+          }
+        },
+        "Body": {
+          "$className": "Part",
+          "$properties": {
+            "Anchored": true,
+            "Size": [2, 4, 1.5],
+            "CFrame": { "CFrame": { "position": [0, 3, -14], "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } },
+            "Color": [0.96, 0.76, 0.05]
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.16] - 2026-10-08
+
+### Fixed
+- Clearing a conversation prevents pending responses from adding messages to
+  the reset history.
+
 ## [5.1.0-alpha.14] - 2026-10-08
 
 ### Changed

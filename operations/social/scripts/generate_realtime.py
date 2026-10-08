@@ -20,6 +20,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
+from api_changes import API_DOCS, api_changes_for_pr
 from common import (
     load_prompt,
     get_env,
@@ -138,6 +139,14 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
         # Preserve the established social pipeline, with a visible retryable gap.
         print(f"  WARNING: Model enrichment failed ({type(error).__name__}); values remain unknown")
         status["models"] = "failed"
+    # The docs PR regenerated after each production deploy carries the live API changes.
+    if API_DOCS in files:
+        try:
+            gist["api_changes"] = api_changes_for_pr(pr, root)
+            status["api"] = "complete"
+        except Exception as error:
+            print(f"  WARNING: API enrichment failed ({type(error).__name__}); values remain unknown")
+            status["api"] = "failed"
 
 # ── App catalog lookup ──────────────────────────────────────────────
 

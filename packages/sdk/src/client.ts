@@ -322,7 +322,12 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
-    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+    private async getJson<T>(
+        url: string,
+        signal?: AbortSignal,
+        read: (response: Response) => Promise<T> = (response) =>
+            response.json() as Promise<T>,
+    ): Promise<T> {
         return fetchWithTimeout(
             url,
             { headers: this.getHeaders() },
@@ -330,7 +335,7 @@ export class Pollinations {
             signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
-                return response.json() as Promise<T>;
+                return read(response);
             },
         );
     }
@@ -1624,9 +1629,18 @@ export class Pollinations {
      * ```ts
      * const { usage } = await pollinations.accountUsage({ limit: 50 });
      * usage.forEach(r => console.log(r.model, r.cost_usd));
+     *
+     * // CSV export as text
+     * const csv = await pollinations.accountUsage({ format: 'csv' });
      * ```
      */
-    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+    async accountUsage(
+        options: UsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsage(options?: UsageOptions): Promise<UsageResponse>;
+    async accountUsage(
+        options: UsageOptions = {},
+    ): Promise<UsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1638,6 +1652,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<UsageResponse>(url);
     }
 
@@ -1651,8 +1667,14 @@ export class Pollinations {
      * ```
      */
     async accountUsageDaily(
+        options: DailyUsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsageDaily(
+        options?: DailyUsageOptions,
+    ): Promise<DailyUsageResponse>;
+    async accountUsageDaily(
         options: DailyUsageOptions = {},
-    ): Promise<DailyUsageResponse> {
+    ): Promise<DailyUsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1664,6 +1686,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<DailyUsageResponse>(url);
     }
 

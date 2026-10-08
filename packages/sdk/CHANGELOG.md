@@ -4,6 +4,13 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.18] - 2026-10-08
+
+### Fixed
+- `accountUsage({ format: "csv" })`, `accountUsageDaily({ format: "csv" })`,
+  `getUsage()` and `getDailyUsage()` return the CSV export as a string instead
+  of throwing a JSON `SyntaxError`.
+
 ## [5.1.0-alpha.14] - 2026-10-08
 
 ### Changed

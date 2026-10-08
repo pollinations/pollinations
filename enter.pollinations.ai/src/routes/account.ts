@@ -525,6 +525,7 @@ const USAGE_CSV_COLUMNS = [
     "meter_source",
     "input_text_tokens",
     "input_cached_tokens",
+    "input_cache_write_tokens",
     "input_audio_tokens",
     "input_audio_seconds",
     "input_image_tokens",
@@ -882,7 +883,14 @@ const usageRecordSchema = z.object({
             "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
-    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_cached_tokens: z
+        .number()
+        .describe("Number of input tokens read from the prompt cache"),
+    input_cache_write_tokens: z
+        .number()
+        .describe(
+            "Number of input tokens written to the prompt cache (billed at the cache-write rate)",
+        ),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
     input_audio_seconds: z
         .number()

@@ -7,6 +7,7 @@ import {
     withWorkspace,
 } from "@cloudflare/computer";
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
+import { WorkerJavaScriptBackend } from "@cloudflare/computer/backends/worker-javascript";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
 import curlModules from "@cloudflare/computer/shell/curl";
 import fileModules from "@cloudflare/computer/shell/file";
@@ -23,7 +24,7 @@ import {
 import { createMediaAssets, type MediaService } from "./assets.ts";
 import { COLLECTIVE_REPO_URL, collectiveCredentials } from "./collective.ts";
 import { createJustGitClient } from "./git.ts";
-import { createComputerMcpServer, HOME } from "./server.ts";
+import { createComputerMcpServer, HOME, JAVASCRIPT_BACKEND } from "./server.ts";
 import { shellBytesFix } from "./shell.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
@@ -52,11 +53,14 @@ in it (for example /workspace/thesis) and pass that folder as cwd.
   entry at the end of each run: what happened, what was decided, open items.
 - Before answering questions about earlier work, grep /workspace/memory.
 
-## Shell
+## Tools
 
-The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, xan, file, html-to-markdown, tar, curl and git are available).
-Write a file by passing its content as stdin to \`cat > path\`.
+- bash: an emulated shell (no Node, no Python; coreutils, grep, sed, awk,
+  jq, xan, file, html-to-markdown, tar, curl and git are available).
+  Write a file by passing its content as stdin to \`cat > path\`.
+- javascript: runs an ES module's default-exported function in a fresh
+  isolate. Use \`node:fs/promises\` for these files and fetch for the web;
+  there are no npm packages.
 
 ## Importing and sharing
 
@@ -108,6 +112,19 @@ export class Computer extends withWorkspace(
             env: Env;
             gitIdentity: GitIdentity;
         };
+        // Both backends send their requests through Egress.
+        const egress = {
+            mode: "http-gateway" as const,
+            gateway: (
+                ctx as unknown as {
+                    exports: { Egress: (options: object) => Fetcher };
+                }
+            ).exports.Egress({}),
+            // Part of the loader id: stable, so the loaded shell isolate is
+            // reused. Change it when the shell code changes, or a cached
+            // isolate keeps the old code.
+            revision: "bytes-read",
+        };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
             git: createJustGitClient(collectiveCredentials(env)),
@@ -121,20 +138,7 @@ export class Computer extends withWorkspace(
                     loader: env.LOADER,
                     workspace: { binding: "COMPUTER", id: ctx.id.toString() },
                     ctx,
-                    egress: {
-                        mode: "http-gateway",
-                        gateway: (
-                            ctx as unknown as {
-                                exports: {
-                                    Egress: (options: object) => Fetcher;
-                                };
-                            }
-                        ).exports.Egress({}),
-                        // Part of the loader id: stable, so the loaded shell
-                        // isolate is reused. Change it when the shell code
-                        // changes, or a cached isolate keeps the old code.
-                        revision: "bytes-read",
-                    },
+                    egress,
                     commands: [
                         jqModules,
                         curlModules,
@@ -143,6 +147,14 @@ export class Computer extends withWorkspace(
                         fileModules,
                         shellBytesFix,
                     ],
+                }),
+                // Each call runs in a fresh Dynamic Worker; node:fs reads and
+                // writes this workspace.
+                new WorkerJavaScriptBackend({
+                    id: JAVASCRIPT_BACKEND,
+                    loader: env.LOADER,
+                    access: "read-write",
+                    egress,
                 }),
             ],
         };

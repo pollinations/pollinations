@@ -205,7 +205,7 @@ export const MCP_SERVERS = [
         id: "computer",
         name: "Computer",
         description:
-            "A private persistent computer: files and a bash shell that survive between runs.",
+            "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
         binding: "COMPUTER_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",

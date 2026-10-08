@@ -1,0 +1,37 @@
+{
+  "pr_number": 16859,
+  "title": "feat(gen): publish the polli skill via Agent Skills well-known discovery",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16859",
+  "merged_at": "2026-10-08T23:52:36Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added Agent Skills Discovery RFC v0.2.0 endpoints to gen.pollinations.ai: `/.well-known/agent-skills/index.json` lists the `polli` skill with its description and a `sha256:` digest of the served bytes, while `/.well-known/agent-skills/polli/SKILL.md` serves the skill as Markdown. The index is linked from `llms.txt`, so agents can find it through either discovery path. Both skill URLs use `packages/polli-cli/SKILL.md` as their source; the index name and description come from its front matter, and the digest is computed once per isolate. No skill content changed.",
+    "keywords": [
+      "polli",
+      "Agent Skills",
+      "discovery",
+      "well-known",
+      "SKILL.md",
+      "gen.pollinations.ai"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16859.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny explorer goggles and points a curious CRT monitor robot toward a lime green (#ecf874) sign marked 'SKILL.md' beside a code-plant; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium within the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and mint surroundings and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T23:53:58.796092+00:00",
+  "area": "Developer tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "5c6c68c69ba0d38676e1096fa687634e76869aed",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

@@ -126,6 +126,13 @@ polli gen audio "Bonjour, ceci est un test" --model multilingual-v2 --voice rach
 ```
 Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
 
+### Estimate the cost before generating
+```bash
+polli gen image "a fox" --model flux --estimate
+polli gen video "a spacecraft landing on mars" --model veo --duration 8 --audio --estimate
+```
+`--estimate` reads the public model list (`/image/models`), prints the estimated Pollen for that request and exits without generating. Per-image, per-megapixel and per-second rates give a number; token-billed models (e.g. `gpt-image-2`, `nanobanana`) print `estimate: unknown` with their rates, because the charge depends on usage the provider reports afterwards. `--json` adds `pollen` (null when unknown) and the per-rate `lines`.
+
 ### Generate video
 ```bash
 polli gen video "a spacecraft landing on mars" --model wan-fast --duration 5 --output mars.mp4

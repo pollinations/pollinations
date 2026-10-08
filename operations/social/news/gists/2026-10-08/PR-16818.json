@@ -1,0 +1,36 @@
+{
+  "pr_number": 16818,
+  "title": "feat: announce model retirements from the PR change table",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16818",
+  "merged_at": "2026-10-08T16:51:03Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "The news pipeline now reads future-dated RETIRE rows from merged PR model-change tables and checks each model ID against the merged catalog. It also processes announcement-only PRs without a shared/ change. The index keeps the latest announcement per model: a postponement retains the previous date, a Cancelled row withdraws the announcement, a removal PR settles it, and a retirement date that passes without removal is hidden. The model-management skill now says to announce only decided retirements and to record postponements or cancellations in a new row.",
+    "keywords": [
+      "model retirements",
+      "news pipeline",
+      "model catalog",
+      "announcements",
+      "model-management"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16818.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli pins a dated model-retirement notice to a board while a small CRT monitor robot sorts updated notices beside a lime green (#ecf874) code-plant. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and tiny librarian glasses; she is small within the scene, strictly pixel art and never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T16:52:26.031607+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "a5a004c0ed303e596ae5c28e44e453beca24202f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

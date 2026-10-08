@@ -584,6 +584,53 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("prices Step 5 Preview on Vercel at base rates and keeps tool calls off that fallback", () => {
+        const primary = TEXT_SERVICES["stepfun/step-5-preview"];
+        const fallback = TEXT_SERVICES["stepfun/step-5-preview:vercel"];
+        expect(primary).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["stepfun/step-5-preview:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            tools: false,
+        });
+        expect(
+            findModelByName("stepfun/step-5-preview")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "stepfun/step-5-preview",
+        });
+        expect(
+            findModelByName("stepfun/step-5-preview:vercel")?.config(),
+        ).toMatchObject({ model: "stepfun/step-5-preview" });
+        const billing = calculateUsageBilling({
+            model: "stepfun/step-5-preview",
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0037, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0039035, 12);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [{ role: "user", content: "hi" }],
+                tools: [{ type: "function", function: { name: "lookup" } }],
+            }),
+        ).toBe(false);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [{ role: "user", content: "hi" }],
+            }),
+        ).toBe(true);
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];

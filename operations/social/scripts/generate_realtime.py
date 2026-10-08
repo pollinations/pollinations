@@ -108,12 +108,13 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
         print("  WARNING: Merge-time classification failed; gist classification remains unknown")
         status["classification"] = "failed"
     try:
-        from model_announcements import announcements_for_pr, pr_comparison_refs
-        if any(path.startswith("shared/") for path in files):
+        from model_announcements import announcements_for_pr, announces_retirement, pr_comparison_refs
+        changed = any(path.startswith("shared/") for path in files)
+        if changed or announces_retirement(pr):
             if not (root / "node_modules/tsx").is_dir():
                 subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
             # Rebase detection needs original commits as well as the merged history.
-            if pr.get("commits", 1) > 1:
+            if changed and pr.get("commits", 1) > 1:
                 commits = []
                 page = 1
                 while True:
@@ -129,9 +130,10 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
                     page += 1
                 pr = {**pr, "_commit_shas": commits}
                 subprocess.run(["git", "fetch", "origin", f"pull/{pr['number']}/head"], cwd=root, check=True)
-            before, after = pr_comparison_refs(pr, root)
-            gist["announcements"] = announcements_for_pr(pr, files, root, (before, after))
-            gist["announcement_evidence"] = {"before_ref": before, "after_ref": after}
+            refs = pr_comparison_refs(pr, root) if changed else None
+            gist["announcements"] = announcements_for_pr(pr, files, root, refs)
+            if refs:
+                gist["announcement_evidence"] = {"before_ref": refs[0], "after_ref": refs[1]}
         status["models"] = "complete"
     except Exception as error:
         # Preserve the established social pipeline, with a visible retryable gap.

@@ -33,31 +33,51 @@ def read_json(paths) -> List[Dict]:
     return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(paths)]
 
 
-def model_entries(gists: List[Dict], since: str) -> List[Dict]:
-    entries = []
-    for gist in gists:
+def model_entries(gists: List[Dict], since: str, today: str) -> List[Dict]:
+    entries, decisions, removed = [], {}, {}
+    for gist in sorted(gists, key=lambda g: (g["merged_at"], g["pr_number"])):
+        merged = gist["merged_at"][:10]
         for item in gist.get("announcements") or []:
-            # Older gists hold provider retirement dates, which the registry no longer keeps.
-            if item.get("effective_status") == "scheduled":
-                continue
-            changes = {k: v for k, v in item.get("changes", {}).items() if k in CARD_FIELDS}
-            date = gist["merged_at"][:10]
-            # Updates that change nothing a card shows (descriptions, routes, aliases) stay in the gist.
-            if date < since or (item["action"] == "UPDATE" and not changes):
-                continue
-            entries.append({
+            entry = {
                 "id": item["id"],
                 "model_id": item["model_id"],
                 "title": item.get("title") or item["model_id"],
                 "previous_title": item.get("previous_title"),
                 "action": item["action"],
                 "category": item.get("category"),
-                "date": date,
+                "date": merged,
                 "pr": gist["pr_number"],
                 "url": gist["url"],
                 "pricing_units": item.get("pricing_units"),
-                "changes": changes,
-            })
+                "changes": {k: v for k, v in item.get("changes", {}).items() if k in CARD_FIELDS},
+            }
+            status = item.get("effective_status")
+            if item.get("source") == "pr_description":
+                # Retirements announced in a PR description: the latest one per model wins.
+                previous, _ = decisions.get(item["model_id"], (None, None))
+                entry["status"] = status
+                if status == "scheduled":
+                    entry["date"] = item["effective_at"][:10]
+                if previous and previous["status"] == "scheduled":
+                    entry["previous_date"] = previous["date"]
+                decisions[item["model_id"]] = (entry, merged)
+                continue
+            # Older gists hold provider retirement dates, which the registry no longer keeps.
+            if status == "scheduled":
+                continue
+            if item["action"] == "RETIRE":
+                removed[item["model_id"]] = merged
+            # Updates that change nothing a card shows (descriptions, routes, aliases) stay in the gist.
+            if merged >= since and not (item["action"] == "UPDATE" and not entry["changes"]):
+                entries.append(entry)
+    for entry, announced in decisions.values():
+        # The removal PR settles an announcement; a date that passed without one is hidden.
+        if removed.get(entry["model_id"], "") >= announced or (entry["status"] == "scheduled" and entry["date"] < today):
+            continue
+        # A cancellation is news only for the window after it, and only if it withdrew a date.
+        if entry["status"] == "cancelled" and (entry["date"] < since or "previous_date" not in entry):
+            continue
+        entries.append(entry)
     return sorted(entries, key=lambda e: (e["date"], e["title"]))
 
 
@@ -87,7 +107,7 @@ def build_index(news_dir: Path, today: str) -> Dict:
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "models": model_entries(gists, since),
+        "models": model_entries(gists, since, today),
         "api": api_entries(gists, since),
         "highlights": highlight_entries(read_json(news_dir.glob("daily/*/summary.json")), since),
     }

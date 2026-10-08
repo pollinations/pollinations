@@ -30,5 +30,43 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-20/PR-15243.jpg",
     "prompt": "A cozy pixel art garden scene where Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blush, light blue wings, and tiny librarian glasses, updates the main label on a glowing code-flower to `typesafe/jev-1.13`; two smaller signs, `jev` and `typesafe/jev`, still point warmly to the same plant, while a cute CRT monitor robot watches beside a retro terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-vines and tiny flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: `CANONICAL`, nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-20T23:41:50.344434+00:00"
+  "generated_at": "2026-09-20T23:41:50.344434+00:00",
+  "announcements": [
+    {
+      "id": "pr-15243:typesafe/jev-1.13",
+      "model_id": "typesafe/jev-1.13",
+      "title": "Jev",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "jev"
+          ],
+          "after": [
+            "jev",
+            "typesafe/jev"
+          ]
+        },
+        "model_id": {
+          "before": "typesafe/jev",
+          "after": "typesafe/jev-1.13"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "d13bbdeaf86b3db3c01d3c3785f5f0a195e4023e^1",
+    "after_ref": "d13bbdeaf86b3db3c01d3c3785f5f0a195e4023e"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

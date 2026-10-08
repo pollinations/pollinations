@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14356.jpg",
     "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny librarian visor, carefully replacing a `BEDROCK` garden label with `AWS` beside a `VAST` code-plant pot; a friendly CRT monitor robot checks glowing model-route vines on its lime green (#ecf874) screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, little flowers and alias tags tucked into a tidy garden, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-08T10:24:41.876233+00:00"
+  "generated_at": "2026-09-08T10:24:41.876233+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "cdab19ade46b499c1c6c88995874326cf7ea50b4^1",
+    "after_ref": "cdab19ade46b499c1c6c88995874326cf7ea50b4"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

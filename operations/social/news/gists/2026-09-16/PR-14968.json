@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14968.jpg",
     "prompt": "A cozy pixel art garden-shed admin desk where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny inspector glasses, reviews a neat TSV candidate report on a clipboard beside a private CRT monitor glowing lime green (#ecf874); a chunky monitor robot points at a small threshold flag while gentle code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, subtle pixel-font screen text: \"REVIEW QUEUE\", nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-16T12:02:26.050299+00:00"
+  "generated_at": "2026-09-16T12:02:26.050299+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

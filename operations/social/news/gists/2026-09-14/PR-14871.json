@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-14T17:12:57.432036+00:00",
   "app_name": "Co-Eco-Graph — Enchanted Contract Explorer",
-  "app_url": "https://ceg-wine.vercel.app"
+  "app_url": "https://ceg-wine.vercel.app",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

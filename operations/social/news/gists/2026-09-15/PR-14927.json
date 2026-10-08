@@ -31,5 +31,99 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14927.jpg",
     "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny ranger hat and holding a map beside a forked code-garden trail: a large lime green (#ecf874) sign points to “VERCEL → DEEPINFRA” and a smaller warm backup sign points to “OPENROUTER → NOVITA.” A cute chunky CRT-monitor robot eagerly reads little pixel placards for “TEXT,” “VISION,” and “STREAM,” surrounded by flowers and sprouting code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and subtle CRT glow."
   },
-  "generated_at": "2026-09-15T19:13:33.732782+00:00"
+  "generated_at": "2026-09-15T19:13:33.732782+00:00",
+  "announcements": [
+    {
+      "id": "pr-14927:meta/llama-4-scout",
+      "model_id": "meta/llama-4-scout",
+      "title": "Meta Llama 4 Scout",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": []
+        },
+        "context_length": {
+          "before": 327680,
+          "after": 131072
+        },
+        "max_completion_tokens": {
+          "before": null,
+          "after": 16384
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptImageTokens": "0.0000001055",
+            "completionTextTokens": "0.0000003165"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptImageTokens": "0.0000001",
+            "completionTextTokens": "0.0000003"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "top_k",
+            "min_p",
+            "repetition_penalty",
+            "seed",
+            "logit_bias"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "temperature",
+            "top_p",
+            "frequency_penalty",
+            "presence_penalty",
+            "stop",
+            "top_k",
+            "seed",
+            "repetition_penalty"
+          ]
+        },
+        "supports_structured_output": {
+          "before": null,
+          "after": false
+        },
+        "tools": {
+          "before": true,
+          "after": false
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "e52ec736ade3478394968247159893fd7d1087fb^1",
+    "after_ref": "e52ec736ade3478394968247159893fd7d1087fb"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

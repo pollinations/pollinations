@@ -29,5 +29,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15091.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, gently placing a lime green (#ecf874) sign reading “SKIP AGENTS” beside a small autonomous code-garden workshop while a curious CRT-monitor robot checks a flourishing base-model code-plant with a clipboard. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, pixel flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
   },
-  "generated_at": "2026-09-17T13:02:02.323152+00:00"
+  "generated_at": "2026-09-17T13:02:02.323152+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

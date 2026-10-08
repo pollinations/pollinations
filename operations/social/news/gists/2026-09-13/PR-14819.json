@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14819.jpg",
     "prompt": "A cozy pixel art observability garden where the cute Polli bee mascot—yellow body with dark brown horizontal stripes, black antennae and oval eyes, pink rectangular cheek blushes, small smile, light blue rounded wings—wears tiny analyst glasses and checks a clipboard beside two blooming code-plants labeled in simple pixel text “AGENTS” and “MCP”; a chunky CRT-monitor robot points excitedly at their new dashboard chart rows, while older plots gently read “N/A.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-13T16:07:29.477036+00:00"
+  "generated_at": "2026-09-13T16:07:29.477036+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "be1369561da3a4df41a67bc2954b61ba90b69f4a^1",
+    "after_ref": "be1369561da3a4df41a67bc2954b61ba90b69f4a"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

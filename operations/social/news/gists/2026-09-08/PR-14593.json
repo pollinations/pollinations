@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14593.jpg",
     "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, filing duplicate rule scrolls into one large glowing AGENTS.md book at a warm retro review terminal, with code-plants growing from lime green (#ecf874) pots and a small checklist still open. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"ONE RULEBOOK\"."
   },
-  "generated_at": "2026-09-08T20:51:31.398375+00:00"
+  "generated_at": "2026-09-08T20:51:31.398375+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

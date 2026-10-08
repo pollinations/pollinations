@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15006.jpg",
     "prompt": "Cozy pixel art scene in a warm garden archive where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny archivist visor, gently trims a calendar hedge at a lime green (#ecf874) sign reading \"MAY 2026\" while a chunky CRT monitor robot checks recent receipt scrolls beside her; older unlabeled receipts rest safely in a compost basket, with flowers and code-plants around the path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-09-16T18:48:13.768850+00:00"
+  "generated_at": "2026-09-16T18:48:13.768850+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

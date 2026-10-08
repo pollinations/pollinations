@@ -33,5 +33,9 @@
   },
   "generated_at": "2026-09-12T08:09:05.775539+00:00",
   "app_name": "Pollination_chatbot",
-  "app_url": "https://pollinations-chatbot.vercel.app"
+  "app_url": "https://pollinations-chatbot.vercel.app",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

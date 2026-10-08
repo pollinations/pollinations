@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14635.jpg",
     "prompt": "Cozy pixel art scene in a warm garden server shed: Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular cheek blush, light-blue wings, and a tiny mechanic tool belt, uses a small key to open a Cloudflare Workers tool cabinet while a chunky CRT monitor robot carefully holds two sealed packets labeled \"STAGING\" and \"PROD\"; code-plants sprout beside a lime green (#ecf874) glowing terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text \"WORKERS\", nostalgic but beautiful."
   },
-  "generated_at": "2026-09-10T12:44:47.853348+00:00"
+  "generated_at": "2026-09-10T12:44:47.853348+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

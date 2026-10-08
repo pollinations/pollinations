@@ -38,7 +38,26 @@
   "merge_commit_sha": "c34810c8176d2ec755a0e193998a52634e07ed6b",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": [
+    {
+      "id": "pr-15756:POST /alpha/audio/stem-separation",
+      "endpoint": "POST /alpha/audio/stem-separation",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15756:POST /v1/messages",
+      "endpoint": "POST /v1/messages",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    }
+  ]
 }

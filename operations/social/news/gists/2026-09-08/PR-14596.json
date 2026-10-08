@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14596.jpg",
     "prompt": "Cozy pixel art scene of the cute pollinations bee mascot with a tiny passport-holder scarf handing an @pollinations/sdk alpha package to a friendly CRT-monitor robot at a warm little package registry post office, with an official OIDC badge and code-plants growing beside a prominent lime green (#ecf874) release conveyor. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel-font sign reads \"OIDC VERIFIED\", with the bee’s yellow body, dark brown stripes, pink blush, happy smile, and light blue wings clearly visible."
   },
-  "generated_at": "2026-09-08T21:53:09.499526+00:00"
+  "generated_at": "2026-09-08T21:53:09.499526+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

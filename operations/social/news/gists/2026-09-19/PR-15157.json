@@ -30,5 +30,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-19/PR-15157.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wearing a tiny doctor head mirror and checking a garden shelf of glowing model code-plants with little health cards reading \"HEALTHY 99.4%\" and request counters; a cute chunky CRT-monitor robot happily watches a lime-green (#ecf874) status board. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradients, warm lighting, flowers and vines, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but emotionally warm."
   },
-  "generated_at": "2026-09-19T01:59:26.193321+00:00"
+  "generated_at": "2026-09-19T01:59:26.193321+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "e72dfab7402319d15f652e55b5fd9f8323d5b58b^1",
+    "after_ref": "e72dfab7402319d15f652e55b5fd9f8323d5b58b"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

@@ -35,7 +35,31 @@
   "merge_commit_sha": "9ce47104ad1b7359e0c01e31e72ef8c27fef0015",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": [
+    {
+      "id": "pr-16638:POST /v1/audio/speech/with-timestamps",
+      "endpoint": "POST /v1/audio/speech/with-timestamps",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:model",
+          "before": {
+            "type": "\"elevenlabs/eleven-v3\"|\"elevenlabs/eleven-flash-v2.5\"|\"elevenlabs/eleven-multilingual-v2\"",
+            "required": false
+          },
+          "after": {
+            "type": "\"elevenlabs/eleven-v4\"|\"elevenlabs/eleven-v4-turbo\"|\"elevenlabs/eleven-v3\"|\"elevenlabs/eleven-flash-v2.5\"|\"elevenlabs/eleven-multilingual-v2\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14450.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, labeling glowing embedding-vector seed jars beside a retro terminal that displays `/v1/embeddings`, with code-plants sprouting from lime green (#ecf874) pots and a cheerful CRT monitor robot sorting a batch of seeds. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-09T14:59:37.404753+00:00"
+  "generated_at": "2026-09-09T14:59:37.404753+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

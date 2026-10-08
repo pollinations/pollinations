@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-10T00:43:26.978787+00:00",
   "app_name": "StoryCraft AI",
-  "app_url": "https://khushalkks.github.io/pollinations"
+  "app_url": "https://khushalkks.github.io/pollinations",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

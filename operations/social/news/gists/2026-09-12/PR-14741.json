@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14741.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny tool belt while tending a private `/workspace` garden shed; persistent code-plants grow from labeled `memory` folders beside a retro CRT terminal showing a bash prompt, with a tiny git branch and asset crate nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle scanlines, pixel-font text: `bash`, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-12T14:56:02.218568+00:00"
+  "generated_at": "2026-09-12T14:56:02.218568+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "a759f094847d0bbab8764a592f9c9da04af6473c^1",
+    "after_ref": "a759f094847d0bbab8764a592f9c9da04af6473c"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

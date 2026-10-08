@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-21T02:06:46.991392+00:00",
   "app_name": "Bees Pollination",
-  "app_url": "https://halimyassine.github.io/bees-pollination-app"
+  "app_url": "https://halimyassine.github.io/bees-pollination-app",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

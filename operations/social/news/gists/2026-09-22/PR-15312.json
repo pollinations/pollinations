@@ -31,5 +31,238 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15312.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny astronomer cap as she waters lime green (#ecf874) code-flowers in a warm garden observatory; above her, a pastel sun labeled “SOL” and lavender moon labeled “LUNA” send friendly code-stars into a retro CRT terminal while a chunky monitor robot looks delighted. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, dark purple (#110518) outlines, emotionally warm and nostalgic."
   },
-  "generated_at": "2026-09-22T19:18:15.193200+00:00"
+  "generated_at": "2026-09-22T19:18:15.193200+00:00",
+  "announcements": [
+    {
+      "id": "pr-15312:openai/gpt-6-luna",
+      "model_id": "openai/gpt-6-luna",
+      "title": "GPT-6 Luna",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "completionTextTokens": "0.0000005"
+          }
+        },
+        "pricing_default_label": {
+          "before": null,
+          "after": "≤272K context"
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000002",
+                "promptCachedTokens": "0.00000002",
+                "promptCacheWriteTokens": "0.00000025",
+                "completionTextTokens": "0.00000075"
+              }
+            }
+          ]
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "reasoning_effort",
+            "parallel_tool_calls"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15312:openai/gpt-6-sol",
+      "model_id": "openai/gpt-6-sol",
+      "title": "GPT-6 Sol",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          }
+        },
+        "pricing_default_label": {
+          "before": null,
+          "after": "≤272K context"
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000004",
+                "promptCachedTokens": "0.0000004",
+                "promptCacheWriteTokens": "0.000005",
+                "completionTextTokens": "0.000015"
+              }
+            }
+          ]
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "reasoning_effort",
+            "parallel_tool_calls"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "34a94b87a6cd76dcc52b8f94b2d3086c94b2b2bc^1",
+    "after_ref": "34a94b87a6cd76dcc52b8f94b2d3086c94b2b2bc"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

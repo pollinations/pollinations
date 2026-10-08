@@ -30,5 +30,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15029.jpg",
     "prompt": "A cozy pixel art garden routing scene where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears a tiny courier cap and guides glowing text-pollen from a busy \"VERTEX EU\" greenhouse toward an open \"VERTEX GLOBAL\" greenhouse; a smaller \"AI STUDIO\" shed waits peacefully at the end of the garden path, with code-plants, flowers, and helpful CRT monitor robots as route signs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-16T19:53:54.188954+00:00"
+  "generated_at": "2026-09-16T19:53:54.188954+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "f19ccd9a404f8986fcff9ff15d5088d9eda6a36d^1",
+    "after_ref": "f19ccd9a404f8986fcff9ff15d5088d9eda6a36d"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

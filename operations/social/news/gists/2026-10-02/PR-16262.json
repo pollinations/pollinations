@@ -35,7 +35,18 @@
   "merge_commit_sha": "4d67ddad0e46e87501a33486b27f88b1adae5720",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": [
+    {
+      "id": "pr-16262:POST /account/polli/harness-on",
+      "endpoint": "POST /account/polli/harness-on",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    }
+  ]
 }

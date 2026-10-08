@@ -31,5 +31,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-14951.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny accountant visor as she checks a glowing wallet-and-key status panel linked to a retro dashboard monitor; a friendly CRT robot holds a key while code-plants grow around jars of pollen, with simple pixel text reading “3.25 POLLEN” and “UNLIMITED.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-17T00:07:28.216688+00:00"
+  "generated_at": "2026-09-17T00:07:28.216688+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

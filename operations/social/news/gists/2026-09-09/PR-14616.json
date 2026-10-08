@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14616.jpg",
     "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny accountant glasses, carefully checking a lime green (#ecf874) pollen-and-token ledger beside a warm CRT terminal, while a small messenger bird carries one neatly addressed Discord note; healthy code-plants bloom in nearby pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle text in pixel font: 'TOKEN COUNT', with Polli's light blue wings and pink cheek blush clearly visible."
   },
-  "generated_at": "2026-09-09T01:48:11.789486+00:00"
+  "generated_at": "2026-09-09T01:48:11.789486+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

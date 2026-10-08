@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-17T17:01:55.122312+00:00",
   "app_name": "TestMine",
-  "app_url": "https://fadyabohamza-netizen.github.io/testmine"
+  "app_url": "https://fadyabohamza-netizen.github.io/testmine",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

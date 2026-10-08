@@ -32,5 +32,228 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15346.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, carefully arranging fresh API reference pages on a garden map beside a retro terminal glowing lime green (#ecf874); code-plants and small flowers sprout from nearby pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'API DOCS', nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-23T14:51:01.951549+00:00"
+  "generated_at": "2026-09-23T14:51:01.951549+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete",
+    "api": "complete"
+  },
+  "api_changes": [
+    {
+      "id": "pr-15346:GET /3d/models",
+      "endpoint": "GET /3d/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15346:GET /audio/models",
+      "endpoint": "GET /audio/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15346:GET /embeddings/models",
+      "endpoint": "GET /embeddings/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15346:GET /image/models",
+      "endpoint": "GET /image/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15346:GET /models",
+      "endpoint": "GET /models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15346:GET /text/models",
+      "endpoint": "GET /text/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15346:GET /v1/models",
+      "endpoint": "GET /v1/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-15346:GET /video/models",
+      "endpoint": "GET /video/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:reliability",
+          "before": null,
+          "after": {
+            "type": "\"reliable\"|\"all\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

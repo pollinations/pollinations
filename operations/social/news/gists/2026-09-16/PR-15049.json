@@ -28,5 +28,11 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15049.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and tiny librarian glasses, carefully stamping a fresh API reference parchment beside a retro terminal glowing lime green (#ecf874); code-plants and small pastel flowers sprout around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with simple pixel-font text: 'API DOCS'."
   },
-  "generated_at": "2026-09-16T23:12:31.069722+00:00"
+  "generated_at": "2026-09-16T23:12:31.069722+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete",
+    "api": "complete"
+  },
+  "api_changes": []
 }

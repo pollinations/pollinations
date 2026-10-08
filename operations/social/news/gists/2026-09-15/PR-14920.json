@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-15T11:43:06.811417+00:00",
   "app_name": "AI Flashcards",
-  "app_url": "https://chibbit-99.github.io/flashcardgen"
+  "app_url": "https://chibbit-99.github.io/flashcardgen",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

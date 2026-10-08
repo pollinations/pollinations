@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-17T16:58:09.022768+00:00",
   "app_name": "SQLCraft",
-  "app_url": "https://fadyabohamza-netizen.github.io/sqlcraft"
+  "app_url": "https://fadyabohamza-netizen.github.io/sqlcraft",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

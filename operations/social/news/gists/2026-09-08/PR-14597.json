@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14597.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, filing a glowing \"SEP 7\" news page into a warm archive garden while a retro terminal grows two JPEG picture cards from lime green (#ecf874) code-plants; a small unopened delivery crate rests nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: \"ARCHIVE RESTORED\", nostalgic but beautiful."
   },
-  "generated_at": "2026-09-08T22:34:49.274922+00:00"
+  "generated_at": "2026-09-08T22:34:49.274922+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

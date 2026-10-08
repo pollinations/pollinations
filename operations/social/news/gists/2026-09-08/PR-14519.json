@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14519.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carefully tends code-plants whose vines branch into reliable fallback paths toward a glowing retro video terminal; a cute chunky CRT monitor robot happily watches the routes connect. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, subtle pixel-font sign reading \"FALLBACK PATHS\", warm lighting, retro gaming vibes, soft pastel gradients, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-08T16:05:58.937844+00:00"
+  "generated_at": "2026-09-08T16:05:58.937844+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "815683e4e569c66507726ea109fc974128212507^1",
+    "after_ref": "815683e4e569c66507726ea109fc974128212507"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

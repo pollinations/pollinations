@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15319.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, handing a glowing OIDC passport and a parcel labeled \"@pollinations/ui alpha\" to a friendly CRT-monitor robot stamping it \"TRUSTED\" beside a lime green (#ecf874) release conveyor and blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: \"PUBLISH\"."
   },
-  "generated_at": "2026-09-23T08:53:58.055329+00:00"
+  "generated_at": "2026-09-23T08:53:58.055329+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

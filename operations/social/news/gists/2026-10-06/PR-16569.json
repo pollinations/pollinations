@@ -35,7 +35,28 @@
   "merge_commit_sha": "5e4ca47a33daae44230225d9bc33e47234caeffc",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": [
+    {
+      "id": "pr-16569:POST /account/keys",
+      "endpoint": "POST /account/keys",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:questPollenOnly",
+          "before": null,
+          "after": {
+            "type": "boolean",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

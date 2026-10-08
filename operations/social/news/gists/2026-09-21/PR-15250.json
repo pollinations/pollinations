@@ -31,5 +31,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15250.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, pinning fresh news notes onto a garden README noticeboard beside a retro terminal showing a gently rising star chart; new app-flowers bloom from lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text reading “LATEST NEWS,” nostalgic but beautiful."
   },
-  "generated_at": "2026-09-21T07:34:38.895434+00:00"
+  "generated_at": "2026-09-21T07:34:38.895434+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

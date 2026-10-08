@@ -30,5 +30,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14815.jpg",
     "prompt": "A cozy pixel art garden-workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and carries a seed packet labeled \"metadata.model\" to a retro terminal growing tidy code-plants; lime green (#ecf874) request envelopes flow directly into the garden, with no tangled pipes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, and a small pixel-font sign reading \"METADATA\"."
   },
-  "generated_at": "2026-09-14T22:59:50.184251+00:00"
+  "generated_at": "2026-09-14T22:59:50.184251+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "140b21de27d7bd5eb933ab1ab0f99ffca00ab601^1",
+    "after_ref": "140b21de27d7bd5eb933ab1ab0f99ffca00ab601"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

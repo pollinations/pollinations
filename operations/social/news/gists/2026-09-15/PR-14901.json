@@ -29,5 +29,130 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14901.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, updating a large glowing API field guide beside a retro terminal; fresh code-plants and flowers sprout from the pages. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, with subtle pixel-font text: 'API DOCS'. Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-15T00:33:52.281823+00:00"
+  "generated_at": "2026-09-15T00:33:52.281823+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete",
+    "api": "complete"
+  },
+  "api_changes": [
+    {
+      "id": "pr-14901:GET /v1/models/status/routes",
+      "endpoint": "GET /v1/models/status/routes",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14901:POST /account/agents/{id}/sync",
+      "endpoint": "POST /account/agents/{id}/sync",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14901:POST /account/my-models/endpoint-agents",
+      "endpoint": "POST /account/my-models/endpoint-agents",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:inputModalities",
+          "before": null,
+          "after": {
+            "type": "\"text\"|\"image\"|\"audio\"|\"video\"[]",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:outputModalities",
+          "before": null,
+          "after": {
+            "type": "enum",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14901:POST /account/my-models/{id}/update",
+      "endpoint": "POST /account/my-models/{id}/update",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:outputModalities",
+          "before": null,
+          "after": {
+            "type": "enum",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14901:POST /text",
+      "endpoint": "POST /text",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:metadata",
+          "before": null,
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14901:POST /v1/chat/completions",
+      "endpoint": "POST /v1/chat/completions",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:metadata",
+          "before": null,
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14901:POST /v1/responses",
+      "endpoint": "POST /v1/responses",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:metadata",
+          "before": {
+            "type": "object",
+            "required": false
+          },
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

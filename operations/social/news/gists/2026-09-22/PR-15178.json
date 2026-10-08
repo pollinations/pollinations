@@ -31,5 +31,111 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15178.jpg",
     "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing tiny aviator goggles, she guides a pixel picture card and a very long text scroll into a glowing retro terminal marked with a small Z.ai-inspired emblem, while lime green (#ecf874) code-plants bloom around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"FLASHX\", nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-22T19:27:15.883821+00:00"
+  "generated_at": "2026-09-22T19:27:15.883821+00:00",
+  "announcements": [
+    {
+      "id": "pr-15178:z-ai/glm-5.3-flashx",
+      "model_id": "z-ai/glm-5.3-flashx",
+      "title": "Z.ai GLM-5.3 FlashX",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.000000079125",
+            "completionTextTokens": "0.00000131875"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "top_k",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "d065abfb52cca380bd85a053df59039690ea2e6c^1",
+    "after_ref": "d065abfb52cca380bd85a053df59039690ea2e6c"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

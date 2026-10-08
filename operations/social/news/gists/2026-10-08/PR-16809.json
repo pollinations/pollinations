@@ -30,6 +30,60 @@
   "announcements": [],
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
-  }
+    "models": "complete",
+    "api": "complete"
+  },
+  "api_changes": [
+    {
+      "id": "pr-16809:GET /account/quests/rewards",
+      "endpoint": "GET /account/quests/rewards",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16809:GET /models/stats",
+      "endpoint": "GET /models/stats",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16809:PATCH /account/keys/{id}",
+      "endpoint": "PATCH /account/keys/{id}",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16809:POST /account/keys",
+      "endpoint": "POST /account/keys",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:consent",
+          "before": null,
+          "after": {
+            "type": "object",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "body:description",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

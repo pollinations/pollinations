@@ -32,5 +32,109 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15304.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a happy smile, and rounded light-blue translucent wings, wearing tiny programmer glasses and a tool belt as she feeds an enormous parchment scroll of code into a retro CRT terminal glowing lime green (#ecf874); a cute chunky monitor robot with excited square pixel eyes points at two small route signs, “EAST US” and “SWEDEN,” while code-plants and pixel flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: “400K CONTEXT”, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-23T13:53:16.726012+00:00"
+  "generated_at": "2026-09-23T13:53:16.726012+00:00",
+  "announcements": [
+    {
+      "id": "pr-15304:openai/gpt-5.3-codex",
+      "model_id": "openai/gpt-5.3-codex",
+      "title": "GPT-5.3 Codex",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 400000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": true
+        },
+        "max_completion_tokens": {
+          "before": null,
+          "after": 128000
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000013125",
+            "promptCachedTokens": "0.00000013125",
+            "promptCacheWriteTokens": "0.0000013125",
+            "completionTextTokens": "0.0000105"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "reasoning_effort",
+            "parallel_tool_calls"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "1304c76eebdc867806185f7cb9d46a412242e162^1",
+    "after_ref": "1304c76eebdc867806185f7cb9d46a412242e162"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

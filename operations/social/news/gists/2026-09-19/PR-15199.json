@@ -33,5 +33,9 @@
   },
   "generated_at": "2026-09-19T15:56:29.895866+00:00",
   "app_name": "aaarraaa",
-  "app_url": "https://aaarraaarr990-rgb.github.io/Monster"
+  "app_url": "https://aaarraaarr990-rgb.github.io/Monster",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

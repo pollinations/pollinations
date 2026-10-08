@@ -31,5 +31,37 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-20/PR-15217.jpg",
     "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she helps a cheerful CRT-monitor robot sort neat glowing decision cards labeled “STATE”, “QUESTIONS”, and “ANSWERS” beside a retro terminal; a crumpled JSON chat scroll rests in a flower pot as a code-plant blooms. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-20T22:59:20.052302+00:00"
+  "generated_at": "2026-09-20T22:59:20.052302+00:00",
+  "announcements": [
+    {
+      "id": "pr-15217:typesafe/jev",
+      "model_id": "typesafe/jev",
+      "title": "Jev",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/alpha/decisions",
+            "/v1/chat/completions"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "8a90fe5f5c08d32a8bd0ed47a4df7f0135bcf59b^1",
+    "after_ref": "8a90fe5f5c08d32a8bd0ed47a4df7f0135bcf59b"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

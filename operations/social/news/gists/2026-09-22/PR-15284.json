@@ -30,5 +30,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15284.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, and rounded light-blue translucent wings, wearing a tiny route-planner cap as she guides a glowing request along a lime green (#ecf874) garden path from an Azure cloud terminal to a friendly direct Mistral API observatory; seed packets labeled “random_seed” nourish small code-plants and pixel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic and emotionally warm."
   },
-  "generated_at": "2026-09-22T00:01:59.356431+00:00"
+  "generated_at": "2026-09-22T00:01:59.356431+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "3ccf8b9bf90ce8ac545318de599ffe049747351d^1",
+    "after_ref": "3ccf8b9bf90ce8ac545318de599ffe049747351d"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

@@ -29,5 +29,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14842.jpg",
     "prompt": "A cozy pixel art community model garden with neatly spaced publisher-icon plaques on a warm cream catalog board, each tile cleanly framed instead of overlapping, surrounded by small flowers and code-plants glowing lime green (#ecf874). The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny curator beret and carefully straightens an icon plaque while a cute CRT-monitor robot watches happily. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-14T00:57:20.023531+00:00"
+  "generated_at": "2026-09-14T00:57:20.023531+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "4bfeba0a94980c2614a72603731b85396b7f43d9^1",
+    "after_ref": "4bfeba0a94980c2614a72603731b85396b7f43d9"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

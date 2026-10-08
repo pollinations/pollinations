@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14764.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval black eyes, pink rectangular cheek blushes, a happy smile, light blue rounded wings, and a tiny deployment helmet, guiding a cheerful CRT monitor robot through a lime green (#ecf874) staging garden gate toward a little MCP worker hut and glowing terminal; code-plants, flowers, and a separate distant production gate show the paths are finally correctly connected. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"STAGING CONNECTED\"."
   },
-  "generated_at": "2026-09-12T13:55:24.081602+00:00"
+  "generated_at": "2026-09-12T13:55:24.081602+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

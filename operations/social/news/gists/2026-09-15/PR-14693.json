@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14693.jpg",
     "prompt": "Cozy pixel art scene in a warm garden bookkeeping nook: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny accountant visor, she stamps one glowing pollen receipt into a sturdy ledger while a friendly CRT-monitor robot holds it beside rooted code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes; subtle pixel-font text reads \"ONE TRUE DEBIT\", nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-15T22:06:54.906152+00:00"
+  "generated_at": "2026-09-15T22:06:54.906152+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "da9dbad25c0341e778b2fcec319dd2a5718fc843^1",
+    "after_ref": "da9dbad25c0341e778b2fcec319dd2a5718fc843"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

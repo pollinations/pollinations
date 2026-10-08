@@ -30,5 +30,40 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14627.jpg",
     "prompt": "A cozy pixel art scene of the main character, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she inspects a garden gate labeled in simple pixel text `nvidia/asset-harvester` beside a small Paid Pollen badge; a friendly 3D cube-shaped seedling, code-vines, and flowers grow beyond the gate, with lime green #ecf874 prominently glowing on the path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple #110518 outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-09T09:27:07.583942+00:00"
+  "generated_at": "2026-09-09T09:27:07.583942+00:00",
+  "announcements": [
+    {
+      "id": "pr-14627:nvidia/asset-harvester",
+      "model_id": "nvidia/asset-harvester",
+      "title": "NVIDIA Asset Harvester",
+      "action": "UPDATE",
+      "category": "3d",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "asset-harvester"
+          ],
+          "after": []
+        },
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "20eb509b77dd4bc2895952f13e58f1130aacc859^1",
+    "after_ref": "20eb509b77dd4bc2895952f13e58f1130aacc859"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

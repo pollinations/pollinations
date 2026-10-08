@@ -33,5 +33,9 @@
   },
   "generated_at": "2026-09-10T17:44:06.113602+00:00",
   "app_name": "YouTube Transcription AI by MrPaloma",
-  "app_url": "https://www.mrpaloma.com/trascrivere-video-youtube-pollinations"
+  "app_url": "https://www.mrpaloma.com/trascrivere-video-youtube-pollinations",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

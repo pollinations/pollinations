@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-14T17:59:39.080950+00:00",
   "app_name": "manhwa studio",
-  "app_url": "https://manhwa-studio-320488177521.asia-southeast1.run.app"
+  "app_url": "https://manhwa-studio-320488177521.asia-southeast1.run.app",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

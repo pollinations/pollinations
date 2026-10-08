@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-20T06:11:34.542549+00:00",
   "app_name": "Atelier — Pollinations Image Studio",
-  "app_url": "https://image.xt1171.eu.org"
+  "app_url": "https://image.xt1171.eu.org",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

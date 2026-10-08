@@ -31,5 +31,111 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-14812.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small smile, rounded translucent light-blue wings, and a tiny gardener tool belt, watering a blooming code-flower labeled “HY3” from two gentle pipes marked “BF16” and “FALLBACK”; a retro terminal beside her shows a very long glowing scroll of text, with flowers and code-vines growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-18T15:17:17.285314+00:00"
+  "generated_at": "2026-09-18T15:17:17.285314+00:00",
+  "announcements": [
+    {
+      "id": "pr-14812:tencent/hy3",
+      "model_id": "tencent/hy3",
+      "title": "Hy3",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001477",
+            "promptCachedTokens": "0.000000036925",
+            "completionTextTokens": "0.0000006119"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "structured_outputs",
+            "temperature",
+            "top_p",
+            "top_k",
+            "frequency_penalty",
+            "presence_penalty",
+            "repetition_penalty",
+            "stop",
+            "seed",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "cc821c9f02dd2fad1fc37dd09e13f77dca2418d4^1",
+    "after_ref": "cc821c9f02dd2fad1fc37dd09e13f77dca2418d4"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

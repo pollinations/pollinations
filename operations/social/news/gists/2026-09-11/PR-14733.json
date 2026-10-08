@@ -31,5 +31,9 @@
   },
   "generated_at": "2026-09-11T17:19:04.282271+00:00",
   "app_name": "Ziban",
-  "app_url": "https://ziban.pages.dev"
+  "app_url": "https://ziban.pages.dev",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

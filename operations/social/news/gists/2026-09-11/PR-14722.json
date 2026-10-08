@@ -31,5 +31,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14722.jpg",
     "prompt": "Cozy pixel art scene of the pollinations bee mascot in a tiny painter’s beret at a garden-shed Visual Studio, choosing between small and large glowing model cards while a retro CRT captures a long full-page artwork scroll; the bee has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings. A cute chunky Monitor Robot holds the finished render beside a small safely enclosed worker room, with code-plants, flowers, and vines around soft lime green (#ecf874) screens; simple pixel text reads “FULL PAGE.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-11T14:45:05.791908+00:00"
+  "generated_at": "2026-09-11T14:45:05.791908+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

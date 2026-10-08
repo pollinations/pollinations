@@ -35,7 +35,124 @@
   "merge_commit_sha": "1dd4627ab64301ecb075976148031a400f0d6ad3",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": [
+    {
+      "id": "pr-16537:GET /account/key/usage",
+      "endpoint": "GET /account/key/usage",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:before",
+          "before": {
+            "type": "string",
+            "required": false
+          },
+          "after": {
+            "type": "string|string · date-time",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16537:GET /account/usage",
+      "endpoint": "GET /account/usage",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:before",
+          "before": {
+            "type": "string",
+            "required": false
+          },
+          "after": {
+            "type": "string|string · date-time",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16537:POST /account/my-models/{id}/update",
+      "endpoint": "POST /account/my-models/{id}/update",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:hidden",
+          "before": {
+            "type": "boolean",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16537:POST /v1/audio/voice-changer",
+      "endpoint": "POST /v1/audio/voice-changer",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:audio",
+          "before": {
+            "type": "string · binary",
+            "required": true
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "body:file",
+          "before": null,
+          "after": {
+            "type": "string · binary",
+            "required": true
+          },
+          "breaking": true
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16537:POST /v1/audio/voice-isolator",
+      "endpoint": "POST /v1/audio/voice-isolator",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:audio",
+          "before": {
+            "type": "string · binary",
+            "required": true
+          },
+          "after": null,
+          "breaking": true
+        },
+        {
+          "field": "body:file",
+          "before": null,
+          "after": {
+            "type": "string · binary",
+            "required": true
+          },
+          "breaking": true
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

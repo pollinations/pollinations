@@ -31,5 +31,93 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-15111.jpg",
     "prompt": "Cozy pixel art scene in a warm garden hackerspace where a retro terminal glows prominently lime green (#ecf874) and sorts question cards into tidy typed answer cards with gentle confidence meters; the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she reviews the answers beside a chunky CRT-monitor robot holding a pixel card labeled \"jev_decide\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowering code-plants, subtle scanlines, dark purple (#110518) outlines, and a small pixel-font terminal label: \"TYPED ANSWERS\"."
   },
-  "generated_at": "2026-09-18T22:08:35.450410+00:00"
+  "generated_at": "2026-09-18T22:08:35.450410+00:00",
+  "announcements": [
+    {
+      "id": "pr-15111:typesafe/jev",
+      "model_id": "typesafe/jev",
+      "title": "Jev",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": [
+            "jev"
+          ]
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 64000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": true
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000004431"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": false
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "stream"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": false
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "ff1463b6547f7bceef8168dc03ad5c9620c034b7^1",
+    "after_ref": "ff1463b6547f7bceef8168dc03ad5c9620c034b7"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

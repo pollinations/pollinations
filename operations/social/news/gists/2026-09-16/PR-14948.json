@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-16T08:55:27.425872+00:00",
   "app_name": "cogitor",
-  "app_url": "https://github.com/SkalaSkalolaz/cogitor"
+  "app_url": "https://github.com/SkalaSkalolaz/cogitor",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

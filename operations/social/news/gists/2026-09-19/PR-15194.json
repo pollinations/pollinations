@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-19T15:33:59.375575+00:00",
   "app_name": "PersonaMorph",
-  "app_url": "https://personamorph-ai-production.up.railway.app"
+  "app_url": "https://personamorph-ai-production.up.railway.app",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

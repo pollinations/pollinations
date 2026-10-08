@@ -31,5 +31,102 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15309.jpg",
     "prompt": "Cozy pixel art scene of the cute bee mascot with a tiny wizard-glasses accessory guiding a giant cloud-shaped book labeled \"OPUS 5.5\" through a warm stone gateway into a garden library, while code-plants, image tiles, tool icons, and an enormous glowing context scroll bloom from its pages; a cheerful CRT monitor robot reads along. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-22T20:18:33.053891+00:00"
+  "generated_at": "2026-09-22T20:18:33.053891+00:00",
+  "announcements": [
+    {
+      "id": "pr-15309:anthropic/claude-opus-5.5",
+      "model_id": "anthropic/claude-opus-5.5",
+      "title": "Claude Opus 5.5",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 20
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000005",
+            "completionTextTokens": "0.00002"
+          }
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "reasoning_effort",
+            "tools",
+            "stop"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "3b251067b27bc613492bb1ee851f5d6626947ba2^1",
+    "after_ref": "3b251067b27bc613492bb1ee851f5d6626947ba2"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

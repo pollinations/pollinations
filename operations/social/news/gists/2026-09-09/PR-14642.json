@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14642.jpg",
     "prompt": "A cozy pixel-art garden hackerspace where Polli, a cute pixel bee with a yellow body, dark brown stripes, black antennae, oval black eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wears a tiny courier cap while carrying a glowing search envelope between a primary retro Perplexity terminal and a smaller backup OpenRouter terminal; both terminals connect to the same starry signal flower, while a chunky CRT monitor robot happily checks the routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradients, code-plants and tiny flowers, warm lighting, retro gaming vibes, subtle pixel-font text: \"SONAR ROUTES\", nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-09T14:10:22.984541+00:00"
+  "generated_at": "2026-09-09T14:10:22.984541+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "b1b1825c9f00a3ad7c1f05e83955269002179900^1",
+    "after_ref": "b1b1825c9f00a3ad7c1f05e83955269002179900"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

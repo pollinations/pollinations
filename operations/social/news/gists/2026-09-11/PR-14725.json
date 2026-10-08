@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-11T13:18:56.459788+00:00",
   "app_name": "Talk Ai Companion",
-  "app_url": "https://talkaicompanion.com"
+  "app_url": "https://talkaicompanion.com",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

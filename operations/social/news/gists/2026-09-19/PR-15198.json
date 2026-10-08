@@ -33,5 +33,9 @@
   },
   "generated_at": "2026-09-19T15:52:45.023449+00:00",
   "app_name": "Text to speech",
-  "app_url": "https://thinglover21-ux.github.io/My-app-mod"
+  "app_url": "https://thinglover21-ux.github.io/My-app-mod",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

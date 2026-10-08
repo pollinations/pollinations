@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-23T09:28:49.901020+00:00",
   "app_name": "ShouldIApply",
-  "app_url": "https://notsointresting.github.io/shouldiapply"
+  "app_url": "https://notsointresting.github.io/shouldiapply",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

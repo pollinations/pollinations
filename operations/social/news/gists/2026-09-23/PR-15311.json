@@ -32,5 +32,208 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15311.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black oval eyes, bright pink rectangular cheek blush, a small smile, light blue rounded wings, and tiny researcher glasses, tending two labeled pixel seed packets, “MiMo V2.6 FLASH” and “MiMo V2.6 PRO,” beside a retro terminal showing a huge “1,048,576” notebook and text-and-image code-plants sprouting from prominent lime green (#ecf874) pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, emotionally warm and nostalgic."
   },
-  "generated_at": "2026-09-23T19:34:47.137187+00:00"
+  "generated_at": "2026-09-23T19:34:47.137187+00:00",
+  "announcements": [
+    {
+      "id": "pr-15311:xiaomi/mimo-v2.6-flash",
+      "model_id": "xiaomi/mimo-v2.6-flash",
+      "title": "MiMo V2.6 Flash",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001477",
+            "promptCachedTokens": "0.000000002954",
+            "completionTextTokens": "0.0000002954"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "reasoning",
+            "include_reasoning"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15311:xiaomi/mimo-v2.6-pro",
+      "model_id": "xiaomi/mimo-v2.6-pro",
+      "title": "MiMo V2.6 Pro",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000458925",
+            "promptCachedTokens": "0.000000003798",
+            "completionTextTokens": "0.00000091785"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "reasoning",
+            "include_reasoning"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "f66a15fab6258496323cd9150604f5172592eec1^1",
+    "after_ref": "f66a15fab6258496323cd9150604f5172592eec1"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

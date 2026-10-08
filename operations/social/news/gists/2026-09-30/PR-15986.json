@@ -37,7 +37,28 @@
   "merge_commit_sha": "baf036694dc0ba8468a01aa813c02edb42c8f7c3",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": [
+    {
+      "id": "pr-15986:GET /models/status",
+      "endpoint": "GET /models/status",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:traffic",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"regular\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

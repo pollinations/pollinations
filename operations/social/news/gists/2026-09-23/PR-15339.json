@@ -31,5 +31,106 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15339.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny gardener visor and guiding glowing pixel pollen from a lime green (#ecf874) Azure code-garden toward a second OpenAI greenhouse; a cute chunky CRT monitor robot holds a pixel sign reading \"0.75×\", while flowers and code-vines bloom around both routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-23T13:34:45.817401+00:00"
+  "generated_at": "2026-09-23T13:34:45.817401+00:00",
+  "announcements": [
+    {
+      "id": "pr-15339:openai/gpt-image-2",
+      "model_id": "openai/gpt-image-2",
+      "title": "GPT Image 2",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": 6,
+          "after": null
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15339:openai/gpt-image-2.5-flare",
+      "model_id": "openai/gpt-image-2.5-flare",
+      "title": "GPT Image 2.5 Flare",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": 12,
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptCachedTokens": "0.0000009375",
+            "promptImageTokens": "0.000006",
+            "completionImageTokens": "0.0000225"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15339:openai/gpt-image-2.5-sunburst",
+      "model_id": "openai/gpt-image-2.5-sunburst",
+      "title": "GPT Image 2.5 Sunburst",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": 12,
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000005",
+            "promptCachedTokens": "0.00000125",
+            "promptImageTokens": "0.000008",
+            "completionImageTokens": "0.00003"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000375",
+            "promptCachedTokens": "0.0000009375",
+            "promptImageTokens": "0.000006",
+            "completionImageTokens": "0.0000225"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "5af051da5bf5b3ce5343c8b9e5820b8b2f4f17c7^1",
+    "after_ref": "5af051da5bf5b3ce5343c8b9e5820b8b2f4f17c7"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

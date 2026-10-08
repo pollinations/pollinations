@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-15T11:39:08.838009+00:00",
   "app_name": "PollenBatch Multi-Image Generation + Character Generation Engine",
-  "app_url": "https://donwrightdesigns.github.io/pollenbatch"
+  "app_url": "https://donwrightdesigns.github.io/pollenbatch",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

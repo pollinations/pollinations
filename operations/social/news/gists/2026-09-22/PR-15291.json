@@ -31,5 +31,413 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-22/PR-15291.jpg",
     "prompt": "A cozy pixel art garden-routing scene where the cute Polli bee mascot, with a tiny courier cap, points at a bold lime green (#ecf874) stepping-stone path from Qwen and Wan code-plants to a warm Alibaba gateway pavilion, with two smaller pastel fallback paths leading to friendly retro terminals. Polli has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; include flowers and vines around the terminals, with simple pixel-font text \"DIRECT ROUTE\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, lo-fi Stardew Valley warmth, dark purple (#110518) outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-22T12:24:40.901361+00:00"
+  "generated_at": "2026-09-22T12:24:40.901361+00:00",
+  "announcements": [
+    {
+      "id": "pr-15291:alibaba/wan-3.0",
+      "model_id": "alibaba/wan-3.0",
+      "title": "Wan 3.0",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.068"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptVideoSeconds": "0.068",
+            "completionVideoSeconds": "0.068"
+          }
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "720p",
+              "label": "720p",
+              "description": "Applies when the requested video resolution is 720p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.14"
+              }
+            },
+            {
+              "name": "1080p",
+              "label": "1080p",
+              "description": "Applies when the requested video resolution is 1080p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.28"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "720p",
+              "label": "720p",
+              "description": "Applies when the requested video resolution is 720p.",
+              "pricing": {
+                "currency": "pollen",
+                "promptVideoSeconds": "0.14",
+                "completionVideoSeconds": "0.14"
+              }
+            },
+            {
+              "name": "1080p",
+              "label": "1080p",
+              "description": "Applies when the requested video resolution is 1080p.",
+              "pricing": {
+                "currency": "pollen",
+                "promptVideoSeconds": "0.28",
+                "completionVideoSeconds": "0.28"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15291:qwen/qwen3.7-flash",
+      "model_id": "qwen/qwen3.7-flash",
+      "title": "Qwen3.7 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003165",
+            "promptCachedTokens": "0.00000000633",
+            "promptCacheWriteTokens": "0.00000004009",
+            "promptImageTokens": "0.00000003165",
+            "promptVideoTokens": "0.00000003165",
+            "completionTextTokens": "0.00000013715"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000003",
+            "promptCachedTokens": "0.000000006",
+            "promptCacheWriteTokens": "0.000000038",
+            "promptImageTokens": "0.00000003",
+            "promptVideoTokens": "0.00000003",
+            "completionTextTokens": "0.00000013"
+          }
+        },
+        "pricing_default_label": {
+          "before": "<32K context",
+          "after": "≤32K context, implicit/no cache"
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "context_32k",
+              "label": "32K+ context",
+              "description": "At least 32,000 prompt tokens; the higher rates apply to the whole request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000001055",
+                "promptCachedTokens": "0.0000000211",
+                "promptCacheWriteTokens": "0.000000131875",
+                "promptImageTokens": "0.0000001055",
+                "promptVideoTokens": "0.0000001055",
+                "completionTextTokens": "0.000000422"
+              }
+            },
+            {
+              "name": "context_256k",
+              "label": "256K+ context",
+              "description": "At least 256,000 prompt tokens; the highest rates apply to the whole request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000000211",
+                "promptCachedTokens": "0.0000000422",
+                "promptCacheWriteTokens": "0.00000026375",
+                "promptImageTokens": "0.000000211",
+                "promptVideoTokens": "0.000000211",
+                "completionTextTokens": "0.000000844"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "context_32k",
+              "label": ">32K context",
+              "description": "Direct Alibaba rates above 32,000 prompt tokens; the higher rates apply to the whole request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000001",
+                "promptCachedTokens": "0.00000002",
+                "promptCacheWriteTokens": "0.000000125",
+                "promptImageTokens": "0.0000001",
+                "promptVideoTokens": "0.0000001",
+                "completionTextTokens": "0.0000004"
+              }
+            },
+            {
+              "name": "context_256k",
+              "label": ">256K context",
+              "description": "Direct Alibaba rates above 256,000 prompt tokens; the highest rates apply to the whole request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000002",
+                "promptCachedTokens": "0.00000004",
+                "promptCacheWriteTokens": "0.00000025",
+                "promptImageTokens": "0.0000002",
+                "promptVideoTokens": "0.0000002",
+                "completionTextTokens": "0.0000008"
+              }
+            },
+            {
+              "name": "explicit_cache",
+              "label": "Explicit cache, ≤32K context",
+              "description": "Direct Alibaba explicit-cache reads cost 10% of input; creation costs 125%.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.00000003",
+                "promptCachedTokens": "0.000000003",
+                "promptCacheWriteTokens": "0.000000038",
+                "promptImageTokens": "0.00000003",
+                "promptVideoTokens": "0.00000003",
+                "completionTextTokens": "0.00000013"
+              }
+            },
+            {
+              "name": "context_32k_explicit_cache",
+              "label": "Explicit cache, >32K context",
+              "description": "Direct Alibaba >32K rates with explicit-cache reads at 10% of input.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000001",
+                "promptCachedTokens": "0.00000001",
+                "promptCacheWriteTokens": "0.000000125",
+                "promptImageTokens": "0.0000001",
+                "promptVideoTokens": "0.0000001",
+                "completionTextTokens": "0.0000004"
+              }
+            },
+            {
+              "name": "context_256k_explicit_cache",
+              "label": "Explicit cache, >256K context",
+              "description": "Direct Alibaba >256K rates with explicit-cache reads at 10% of input.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000002",
+                "promptCachedTokens": "0.00000002",
+                "promptCacheWriteTokens": "0.00000025",
+                "promptImageTokens": "0.0000002",
+                "promptVideoTokens": "0.0000002",
+                "completionTextTokens": "0.0000008"
+              }
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "logprobs",
+            "top_logprobs",
+            "reasoning",
+            "include_reasoning",
+            "presence_penalty",
+            "seed"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "top_k",
+            "presence_penalty",
+            "repetition_penalty",
+            "seed",
+            "parallel_tool_calls"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15291:qwen/qwen3.8-flash",
+      "model_id": "qwen/qwen3.8-flash",
+      "title": "Qwen3.8 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "promptCachedTokens": "0.00000001688",
+            "promptCacheWriteTokens": "0.000000211",
+            "promptImageTokens": "0.00000015825",
+            "promptVideoTokens": "0.00000015825",
+            "completionTextTokens": "0.00000049585"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000016",
+            "promptCacheWriteTokens": "0.0000002",
+            "promptImageTokens": "0.00000015",
+            "promptVideoTokens": "0.00000015",
+            "completionTextTokens": "0.00000047"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "top_k",
+            "presence_penalty",
+            "repetition_penalty",
+            "seed",
+            "reasoning_effort",
+            "parallel_tool_calls"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15291:qwen/qwen3.8-max",
+      "model_id": "qwen/qwen3.8-max",
+      "title": "Qwen3.8 Max",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000211",
+            "promptCachedTokens": "0.00000026375",
+            "promptCacheWriteTokens": "0.0000026375",
+            "promptImageTokens": "0.00000211",
+            "promptVideoTokens": "0.00000211",
+            "completionTextTokens": "0.00000633"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.00000025",
+            "promptCacheWriteTokens": "0.0000025",
+            "promptImageTokens": "0.000002",
+            "promptVideoTokens": "0.000002",
+            "completionTextTokens": "0.000006"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "top_k",
+            "presence_penalty",
+            "repetition_penalty",
+            "seed",
+            "reasoning_effort",
+            "parallel_tool_calls"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "71201d0e125b6dae2d8cbbb9e14f8fbd16542e9a^1",
+    "after_ref": "71201d0e125b6dae2d8cbbb9e14f8fbd16542e9a"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

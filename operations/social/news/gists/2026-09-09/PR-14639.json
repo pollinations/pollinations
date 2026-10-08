@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-09T12:57:38.429978+00:00",
   "app_name": "PolliArena",
-  "app_url": "https://polli-arena.cloudbr.eu.org"
+  "app_url": "https://polli-arena.cloudbr.eu.org",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

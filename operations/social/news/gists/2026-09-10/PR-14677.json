@@ -31,5 +31,9 @@
   },
   "generated_at": "2026-09-10T10:09:56.243609+00:00",
   "app_name": "Men's Fashion Pins",
-  "app_url": "https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html"
+  "app_url": "https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

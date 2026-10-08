@@ -36,7 +36,370 @@
   "merge_commit_sha": "708e61af0ec5884c354a3f3b901040a7d33da27b",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": [
+    {
+      "id": "pr-16488:GET /3d/models",
+      "endpoint": "GET /3d/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16488:GET /audio/models",
+      "endpoint": "GET /audio/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16488:GET /embeddings/models",
+      "endpoint": "GET /embeddings/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16488:GET /image/models",
+      "endpoint": "GET /image/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16488:GET /models",
+      "endpoint": "GET /models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16488:GET /text/models",
+      "endpoint": "GET /text/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16488:GET /v1/models",
+      "endpoint": "GET /v1/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-16488:GET /video/models",
+      "endpoint": "GET /video/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:query:agent",
+          "before": null,
+          "after": {
+            "type": "\"0\"|\"1\"|\"true\"|\"false\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:capabilities",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:limit",
+          "before": null,
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:query",
+          "before": null,
+          "after": {
+            "type": "string",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

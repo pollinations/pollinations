@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-17T08:16:22.474402+00:00",
   "app_name": "DCORE",
-  "app_url": "https://bot.dtempest.online"
+  "app_url": "https://bot.dtempest.online",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

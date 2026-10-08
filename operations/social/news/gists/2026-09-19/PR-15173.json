@@ -33,5 +33,9 @@
   },
   "generated_at": "2026-09-19T06:39:28.451390+00:00",
   "app_name": "baboolharech",
-  "app_url": "https://baboolharech-lgtm.github.io/Fith"
+  "app_url": "https://baboolharech-lgtm.github.io/Fith",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

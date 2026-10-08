@@ -29,5 +29,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14608.jpg",
     "prompt": "A cozy pixel art model garden where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny inspector glasses, holds a magnifying glass over a code-plant sign reading \"IMAGE EDIT ERROR\" while healthy flowering plants labeled \"GENERATE\" and \"PRICING\" glow beside it; a cheerful chunky CRT monitor robot displays a small clear diagnostic message. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-08T23:40:49.745958+00:00"
+  "generated_at": "2026-09-08T23:40:49.745958+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

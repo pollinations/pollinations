@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14960.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny bellhop cap, offering a folded towel to a cheerful but nervous retro elevator with expressive pixel eyes as it descends past flower pots and code-vines from Floor 3 toward Floor 1. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes; a small pixel display reads “FLOOR 3 · 4 LEFT,” nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-16T15:44:52.319966+00:00"
+  "generated_at": "2026-09-16T15:44:52.319966+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

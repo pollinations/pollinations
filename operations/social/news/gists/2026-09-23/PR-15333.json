@@ -32,5 +32,73 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15333.jpg",
     "prompt": "Cozy pixel art scene in a warm garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny painter goggles and plants a seed beside a flower-powered image printer. The printer produces a beautiful pixel landscape from a glowing lime green (#ecf874) FLUX 1.1 Pro flower, while a second pastel Sweden bloom connects by a backup vine; a cute CRT-monitor robot watches two happy region lights, with subtle pixel-font text reading “FLUX 1.1 PRO”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nature-filled code plants, dark purple (#110518) outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-23T14:21:37.062851+00:00"
+  "generated_at": "2026-09-23T14:21:37.062851+00:00",
+  "announcements": [
+    {
+      "id": "pr-15333:black-forest-labs/flux.1.1-pro",
+      "model_id": "black-forest-labs/flux.1.1-pro",
+      "title": "FLUX 1.1 Pro",
+      "action": "NEW",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "image"
+        },
+        "flat_rate": {
+          "before": null,
+          "after": true
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.03"
+          }
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "cdd841e73c6341cbee453a94ab1370888f23c06e^1",
+    "after_ref": "cdd841e73c6341cbee453a94ab1370888f23c06e"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

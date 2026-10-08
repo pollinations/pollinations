@@ -31,5 +31,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14584.jpg",
     "prompt": "Cozy pixel art scene of two separate digital garden plots labeled in simple pixel font “USAGE” and “EARNINGS,” each with its own tiny calendar and chart plants; one lime-green (#ecf874) chart bar is selected and sends a glowing vine to a matching table, while a CSV scroll rests nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny analyst glasses and points at the selected bar beside a cute chunky CRT-monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nature elements, dark purple (#110518) outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-08T22:26:16.242544+00:00"
+  "generated_at": "2026-09-08T22:26:16.242544+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

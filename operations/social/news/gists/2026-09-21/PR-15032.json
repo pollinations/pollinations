@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15032.jpg",
     "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, oval eyes, bright pink rectangular cheek blush, happy smile, and rounded light blue translucent wings wears a tiny mechanic tool belt while connecting glowing lime green (#ecf874) MCP seed-cables to a friendly row of 13 small retro coding-agent terminals; a chunky CRT Monitor Robot holds a catalog map and code-plants bloom beside untouched flower-pot server configs. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"MCP READY\", nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-21T15:28:28.718632+00:00"
+  "generated_at": "2026-09-21T15:28:28.718632+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

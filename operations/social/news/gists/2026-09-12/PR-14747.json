@@ -30,5 +30,74 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14747.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny director headphones, guiding a glowing film strip through a chunky retro projector labeled \"1080P\" while a helpful CRT-monitor robot watches the crisp video preview; lime green (#ecf874) shines prominently from the projector and code-plants bloom around the studio. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, simple pixel-font text: \"1080P\", nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-12T10:27:40.333240+00:00"
+  "generated_at": "2026-09-12T10:27:40.333240+00:00",
+  "announcements": [
+    {
+      "id": "pr-14747:minimax/minimax-h3-max-turbo",
+      "model_id": "minimax/minimax-h3-max-turbo",
+      "title": "MiniMax H3 Max Turbo",
+      "action": "UPDATE",
+      "category": "video",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "768p",
+              "label": "768p",
+              "description": "Applies when the requested video resolution is 768p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.01"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "768p",
+              "label": "768p",
+              "description": "Applies when the requested video resolution is 768p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.01"
+              }
+            },
+            {
+              "name": "1080p",
+              "label": "1080p",
+              "description": "Applies when the requested video resolution is 1080p.",
+              "pricing": {
+                "currency": "pollen",
+                "completionVideoSeconds": "0.02"
+              }
+            }
+          ]
+        },
+        "resolutions": {
+          "before": [
+            "480p",
+            "768p"
+          ],
+          "after": [
+            "480p",
+            "768p",
+            "1080p"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "2ed9a6b46fa1133f38168038185e21134f25aa96^1",
+    "after_ref": "2ed9a6b46fa1133f38168038185e21134f25aa96"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

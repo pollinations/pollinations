@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-16T08:51:53.688233+00:00",
   "app_name": "Comicstyles",
-  "app_url": "https://comicstyles.com"
+  "app_url": "https://comicstyles.com",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

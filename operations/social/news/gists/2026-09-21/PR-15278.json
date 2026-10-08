@@ -31,5 +31,135 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15278.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny engineer goggles as she helps a friendly chunky retro terminal with a giant “500K” backpack water code-plants; a small xAI-marked flower gate and tool, reasoning-gear, and image icons sit beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient garden background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and pixel-font text: “GROK 4.7”."
   },
-  "generated_at": "2026-09-21T23:49:13.029064+00:00"
+  "generated_at": "2026-09-21T23:49:13.029064+00:00",
+  "announcements": [
+    {
+      "id": "pr-15278:x-ai/grok-4.7",
+      "model_id": "x-ai/grok-4.7",
+      "title": "Grok 4.7",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 500000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001688",
+            "promptCachedTokens": "0.000000422",
+            "completionTextTokens": "0.000005064"
+          }
+        },
+        "pricing_default_label": {
+          "before": null,
+          "after": "<200K context"
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (200K+)",
+              "description": "At least 200,000 prompt tokens; text, cached, and output rates double.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000003376",
+                "promptCachedTokens": "0.000000844",
+                "completionTextTokens": "0.000010128"
+              }
+            }
+          ]
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "logprobs",
+            "top_logprobs",
+            "reasoning",
+            "include_reasoning",
+            "seed",
+            "structured_outputs",
+            "reasoning_effort"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "cba77af4bfc80ef3c12a4ef9548741b3eebe3993^1",
+    "after_ref": "cba77af4bfc80ef3c12a4ef9548741b3eebe3993"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

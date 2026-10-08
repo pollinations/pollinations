@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14574.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny librarian hat, tending two garden gates beside a retro terminal: one says '!POLLI' and leads to a reply mailbox, while the other says '!ASKPOLLI' and leads to a glowing read-only question desk; a cute CRT monitor robot holds an approved-access list among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-08T12:25:50.399860+00:00"
+  "generated_at": "2026-09-08T12:25:50.399860+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

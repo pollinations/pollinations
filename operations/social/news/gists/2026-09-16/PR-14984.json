@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14984.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny operator headphones, selecting one of five small dashboard cards on a chunky CRT monitor glowing prominently lime green (#ecf874); code-plants and soft flowers grow around the observability desk, with a tiny link icon beside the chosen dashboard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, optional pixel text: \"DASHBOARDS\"."
   },
-  "generated_at": "2026-09-16T13:19:44.146767+00:00"
+  "generated_at": "2026-09-16T13:19:44.146767+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

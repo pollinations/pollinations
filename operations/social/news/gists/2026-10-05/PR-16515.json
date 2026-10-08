@@ -35,7 +35,9 @@
   "merge_commit_sha": "ac23d4d1b585ee93f3895e2b7cb6b7c4772f1bac",
   "enrichment": {
     "classification": "complete",
-    "models": "complete"
+    "models": "complete",
+    "api": "complete"
   },
-  "announcements": []
+  "announcements": [],
+  "api_changes": []
 }

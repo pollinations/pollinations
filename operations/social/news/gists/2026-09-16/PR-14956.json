@@ -29,5 +29,372 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14956.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, and tiny librarian glasses, carefully adding glowing endpoint pages to a large API handbook beside a retro terminal. Lime green (#ecf874) code-plants, flowers, and little route signposts grow around the desk; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'API DOCS'."
   },
-  "generated_at": "2026-09-16T10:44:43.793896+00:00"
+  "generated_at": "2026-09-16T10:44:43.793896+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete",
+    "api": "complete"
+  },
+  "api_changes": [
+    {
+      "id": "pr-14956:GET /3d/models",
+      "endpoint": "GET /3d/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14956:GET /audio/models",
+      "endpoint": "GET /audio/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14956:GET /embeddings/models",
+      "endpoint": "GET /embeddings/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14956:GET /image/models",
+      "endpoint": "GET /image/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14956:GET /models",
+      "endpoint": "GET /models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14956:GET /text/models",
+      "endpoint": "GET /text/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14956:GET /v1/models",
+      "endpoint": "GET /v1/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    },
+    {
+      "id": "pr-14956:GET /video/models",
+      "endpoint": "GET /video/models",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "parameters:header:pollinations-model-source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:header:pollinations-model-status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:source",
+          "before": null,
+          "after": {
+            "type": "\"official\"|\"community\"",
+            "required": false
+          },
+          "breaking": false
+        },
+        {
+          "field": "parameters:query:status",
+          "before": null,
+          "after": {
+            "type": "\"all\"|\"healthy\"",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "effective_status": "live"
+    }
+  ]
 }

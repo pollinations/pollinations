@@ -29,5 +29,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14619.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny accountant glasses while updating a large lime green (#ecf874) garden ledger beside sprouting code-plants and neatly labeled seed packets. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel text reading 'DAILY METRICS', nostalgic but beautiful."
   },
-  "generated_at": "2026-09-09T04:13:27.552202+00:00"
+  "generated_at": "2026-09-09T04:13:27.552202+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

@@ -31,5 +31,541 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15268.jpg",
     "prompt": "A cozy pixel-art greenhouse routing garden where the cute pollinations bee mascot, with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny gardener hat while watering ten Gemini code-plants from a glowing Vertex AI pipe; a friendly backup path leads to a little OpenRouter shed, with a retro monitor showing a crisp pixel landscape and simple pixel text: “PRIMARY + FALLBACK.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, soft pastel gradients, retro gaming vibes, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-21T16:31:06.557047+00:00"
+  "generated_at": "2026-09-21T16:31:06.557047+00:00",
+  "announcements": [
+    {
+      "id": "pr-15268:google/gemini-2.5-flash-lite",
+      "model_id": "google/gemini-2.5-flash-lite",
+      "title": "Gemini 2.5 Flash Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "openrouter.google.web_search.v1",
+              "kind": "search_request",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search requests"
+            },
+            {
+              "name": "openrouter.google.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.087916666667",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "5 min"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_2.grounded_prompt.v1",
+              "kind": "grounded_prompt",
+              "price": "36.925",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "grounded prompts"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1.055",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "reasoning",
+            "include_reasoning",
+            "seed"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "seed",
+            "reasoning_effort"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15268:google/gemini-3-flash-preview",
+      "model_id": "google/gemini-3-flash-preview",
+      "title": "Gemini 3 Flash Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "openrouter.google.web_search.v1",
+              "kind": "search_request",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search requests"
+            },
+            {
+              "name": "openrouter.google.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.087916666667",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "5 min"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1.055",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "reasoning",
+            "include_reasoning",
+            "seed",
+            "reasoning_effort"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "seed",
+            "reasoning_effort"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15268:google/gemini-3.1-pro-preview",
+      "model_id": "google/gemini-3.1-pro-preview",
+      "title": "Gemini 3.1 Pro Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "openrouter.google.web_search.v1",
+              "kind": "search_request",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search requests"
+            },
+            {
+              "name": "openrouter.google.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.395625",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "5 min"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "4.7475",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "reasoning",
+            "include_reasoning",
+            "seed",
+            "reasoning_effort"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "seed",
+            "reasoning_effort"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15268:google/gemini-3.5-flash-lite",
+      "model_id": "google/gemini-3.5-flash-lite",
+      "title": "Gemini 3.5 Flash Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "openrouter.google.web_search.v1",
+              "kind": "search_request",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search requests"
+            },
+            {
+              "name": "openrouter.google.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.087916666667",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "5 min"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1.055",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "reasoning",
+            "include_reasoning",
+            "seed",
+            "reasoning_effort",
+            "stop"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "seed",
+            "reasoning_effort",
+            "stop"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15268:google/gemini-3.7-flash",
+      "model_id": "google/gemini-3.7-flash",
+      "title": "Gemini 3.7 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "openrouter.google.web_search.v1",
+              "kind": "search_request",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search requests"
+            },
+            {
+              "name": "openrouter.google.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.043958333333",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "5 min"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.5275",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "reasoning",
+            "include_reasoning",
+            "seed",
+            "reasoning_effort",
+            "stop"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "seed",
+            "reasoning_effort",
+            "stop"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15268:google/gemini-3.8-flash",
+      "model_id": "google/gemini-3.8-flash",
+      "title": "Gemini 3.8 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "openrouter.google.web_search.v1",
+              "kind": "search_request",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search requests"
+            },
+            {
+              "name": "openrouter.google.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.043958333333",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "5 min"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.5275",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "reasoning",
+            "include_reasoning",
+            "seed",
+            "reasoning_effort",
+            "stop"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "seed",
+            "reasoning_effort",
+            "stop"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "df0bfb05fdf054ab2586de04b9b2b864c29fda98^1",
+    "after_ref": "df0bfb05fdf054ab2586de04b9b2b864c29fda98"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

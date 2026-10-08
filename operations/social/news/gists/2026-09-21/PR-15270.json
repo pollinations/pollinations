@@ -31,5 +31,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15270.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings, wearing tiny librarian glasses while organizing a glowing model-seed catalog; she keeps a magnifying glass search bar and checked filter tokens aligned beside price tags, a copy clipboard, and a little CRT portal labeled \"OPEN WEBUI,\" with code-plants and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-21T20:02:16.599329+00:00"
+  "generated_at": "2026-09-21T20:02:16.599329+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

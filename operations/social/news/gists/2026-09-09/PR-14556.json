@@ -31,5 +31,75 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14556.jpg",
     "prompt": "Cozy pixel art scene in a warm garden workshop: Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and tiny safety goggles, feeds one framed picture into a chunky retro 3D machine glowing prominently lime green (#ecf874), while a cloud of soft pastel Gaussian-splat pixels pours into a jar labeled \"PLY\"; a cheerful CRT monitor robot holds the source image beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-09T01:14:27.242136+00:00"
+  "generated_at": "2026-09-09T01:14:27.242136+00:00",
+  "announcements": [
+    {
+      "id": "pr-14556:nvidia/asset-harvester",
+      "model_id": "nvidia/asset-harvester",
+      "title": "NVIDIA Asset Harvester",
+      "action": "NEW",
+      "category": "3d",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": [
+            "asset-harvester"
+          ]
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "3d"
+        },
+        "flat_rate": {
+          "before": null,
+          "after": true
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "3d"
+          ]
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.07"
+          }
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "12279b8b4763a5f539c0810fc7de398a0e35b7b1^1",
+    "after_ref": "12279b8b4763a5f539c0810fc7de398a0e35b7b1"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

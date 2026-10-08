@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14836.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light blue rounded wings, and a tiny gardener's hat, tending a lime green (#ecf874) code garden beside a 75% reliability gauge; a cheerful chunky CRT-monitor robot checks glowing text, audio, video, and embedding flowers while a gentle fallback watering pipe revives a plant. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"75% HEALTH\", with dark purple (#110518) outlines and a warm cream background."
   },
-  "generated_at": "2026-09-13T23:39:45.646637+00:00"
+  "generated_at": "2026-09-13T23:39:45.646637+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

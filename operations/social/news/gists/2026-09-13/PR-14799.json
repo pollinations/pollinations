@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14799.jpg",
     "prompt": "A cozy pixel art garden hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny librarian glasses and calmly routes glowing code pollen between two retro terminals labeled in simple pixel text “READ: TERRA” and “WRITE: ASTRA”; a friendly CRT monitor robot holds an “ag_” badge beside blooming code-plants, and both paths join at one API sign. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-13T10:23:33.935644+00:00"
+  "generated_at": "2026-09-13T10:23:33.935644+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "50d3cc894e0d67f3e8944e101317da8eb7a7af05^1",
+    "after_ref": "50d3cc894e0d67f3e8944e101317da8eb7a7af05"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

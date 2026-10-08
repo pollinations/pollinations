@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14999.jpg",
     "prompt": "A cozy pixel art observability garden where Polli, the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, carefully sorts three glowing error envelopes labeled with distinct code and message glyphs into jars beside a retro CRT analytics terminal; each envelope comes from a different little code-plant. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel-font text: \"ERROR DETAILS KEPT\"."
   },
-  "generated_at": "2026-09-16T15:10:54.177117+00:00"
+  "generated_at": "2026-09-16T15:10:54.177117+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

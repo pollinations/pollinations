@@ -30,5 +30,71 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15042.jpg",
     "prompt": "A cozy pixel art audio garden where the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings wears tiny studio headphones while tuning a blooming music code-plant; a chunky CRT-monitor robot holds a reference-plan sheet beside waveform vines, pixel music notes, and a tiny MP3 reel, all glowing prominently lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow; simple pixel-font label: \"MUSIC v2.5\". Nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-16T22:35:35.965269+00:00"
+  "generated_at": "2026-09-16T22:35:35.965269+00:00",
+  "announcements": [
+    {
+      "id": "pr-15042:elevenlabs/music-v2.5",
+      "model_id": "elevenlabs/music-v2.5",
+      "title": "ElevenLabs Music v2.5",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.0025",
+            "completionAudioSeconds": "0.0025"
+          }
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "a95098252742d6365a72432444bdf0dc035944bc^1",
+    "after_ref": "a95098252742d6365a72432444bdf0dc035944bc"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

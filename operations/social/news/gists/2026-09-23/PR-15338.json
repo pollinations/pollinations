@@ -30,5 +30,84 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15338.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny stationmaster cap as she switches a glowing M2.7 code train onto a safe garden track labeled “NOVITA” and “MINIMAX,” past an old crossed-out “DEEPINFRA” sign; a chunky CRT-monitor robot holds a pixel sign reading “M2.7 VERIFIED,” surrounded by code-plants, flowers, and little cache jars. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
   },
-  "generated_at": "2026-09-23T13:44:16.689511+00:00"
+  "generated_at": "2026-09-23T13:44:16.689511+00:00",
+  "announcements": [
+    {
+      "id": "pr-15338:minimax/minimax-m2.7",
+      "model_id": "minimax/minimax-m2.7",
+      "title": "MiniMax M2.7",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000026375",
+            "promptCachedTokens": "0.00000005275",
+            "completionTextTokens": "0.000001055"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000028485",
+            "promptCachedTokens": "0.00000005697",
+            "completionTextTokens": "0.0000011394"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "reasoning",
+            "include_reasoning",
+            "top_k",
+            "min_p",
+            "repetition_penalty",
+            "seed",
+            "logit_bias"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "reasoning",
+            "include_reasoning",
+            "top_k",
+            "repetition_penalty",
+            "seed"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "ad52febbe9e0411fd18c1c4d311536f4b515cca7^1",
+    "after_ref": "ad52febbe9e0411fd18c1c4d311536f4b515cca7"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

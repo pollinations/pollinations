@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-16T08:46:32.578542+00:00",
   "app_name": "Moko - The Remembering Fox",
-  "app_url": "https://heard-was-lessons-altered.trycloudflare.com"
+  "app_url": "https://heard-was-lessons-altered.trycloudflare.com",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

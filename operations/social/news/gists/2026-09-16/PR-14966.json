@@ -29,5 +29,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14966.jpg",
     "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny reviewer visor, warmly stamping a community access form labeled “DISCORD (OPTIONAL)” beside a helpful CRT monitor robot holding a checklist; lime green (#ecf874) forms, code-plants, and small flowers fill a warm cream and pastel workspace. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, emotionally warm."
   },
-  "generated_at": "2026-09-16T12:42:52.840482+00:00"
+  "generated_at": "2026-09-16T12:42:52.840482+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

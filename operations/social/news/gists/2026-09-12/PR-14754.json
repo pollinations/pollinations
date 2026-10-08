@@ -29,5 +29,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14754.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gatekeeper cap as she warmly stamps a little GitHub identity card beside a glowing lime green (#ecf874) garden gate and a retro terminal allowlist ledger; code-plants, flowers, and soft vines bloom around her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"WELCOME, ZAPGAMING\"."
   },
-  "generated_at": "2026-09-12T11:55:19.442899+00:00"
+  "generated_at": "2026-09-12T11:55:19.442899+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "c87742bdc0b637370a9182b278507e8b71b6acc9^1",
+    "after_ref": "c87742bdc0b637370a9182b278507e8b71b6acc9"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

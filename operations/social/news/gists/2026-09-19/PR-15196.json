@@ -32,5 +32,9 @@
   },
   "generated_at": "2026-09-19T15:49:33.918567+00:00",
   "app_name": "Oracle Mystique",
-  "app_url": "https://oracle-mystique.up.railway.app"
+  "app_url": "https://oracle-mystique.up.railway.app",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

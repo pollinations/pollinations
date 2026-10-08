@@ -30,5 +30,101 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15190.jpg",
     "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae, oval eyes, bright pink rectangular cheek blushes, a happy smile, light blue rounded wings, and tiny librarian glasses, placing glowing thought-bubble badges on three code-seedling pots labeled “GPT NANO”, “GPT 5 NANO”, and “GPT MINI” beside a lime-green (#ecf874) retro model-registry terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and code-vines, dark purple (#110518) outlines, and subtle pixel-font text: “REASONING”."
   },
-  "generated_at": "2026-09-21T23:19:33.924598+00:00"
+  "generated_at": "2026-09-21T23:19:33.924598+00:00",
+  "announcements": [
+    {
+      "id": "pr-15190:openai/gpt-5-nano",
+      "model_id": "openai/gpt-5-nano",
+      "title": "GPT-5 Nano",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15190:openai/gpt-5.4-mini",
+      "model_id": "openai/gpt-5.4-mini",
+      "title": "GPT-5.4 Mini",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15190:openai/gpt-5.4-nano",
+      "model_id": "openai/gpt-5.4-nano",
+      "title": "GPT-5.4 Nano",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling"
+          ],
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "ed2a689c962cda4c619c824d68e883497bb6f4b0^1",
+    "after_ref": "ed2a689c962cda4c619c824d68e883497bb6f4b0"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

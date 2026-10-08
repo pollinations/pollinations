@@ -31,5 +31,13 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14740.jpg",
     "prompt": "A cozy pixel-art garden workspace where a retro chat terminal displays a small \"402\" notice and opens onto two friendly signposted paths: a lime-green (#ecf874) wallet top-up kiosk with Pollen coins and a tiny key editor bench with a brass key and budget dial. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny courier cap and holds a \"Back to chat\" map beside an eager CRT-monitor robot, surrounded by flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
   },
-  "generated_at": "2026-09-12T15:28:55.156071+00:00"
+  "generated_at": "2026-09-12T15:28:55.156071+00:00",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "d4ac3cdb699f8167283da49c6c182a803c76d667^1",
+    "after_ref": "d4ac3cdb699f8167283da49c6c182a803c76d667"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

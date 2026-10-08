@@ -30,5 +30,84 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15320.jpg",
     "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny photographer goggles as she tends a blooming MAI Image 2.6 Flash camera-flower fed by a pastel Azure cloud watering can; crisp pixel art prints marked 768, 1024, and 1536 grow beside it, with a one-reference picture clipped to an easel, code-plants, and prominent lime green (#ecf874) garden pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
   },
-  "generated_at": "2026-09-23T11:50:14.517294+00:00"
+  "generated_at": "2026-09-23T11:50:14.517294+00:00",
+  "announcements": [
+    {
+      "id": "pr-15320:microsoft/mai-image-2.6-flash",
+      "model_id": "microsoft/mai-image-2.6-flash",
+      "title": "MAI Image 2.6 Flash",
+      "action": "NEW",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "image"
+        },
+        "flat_rate": {
+          "before": null,
+          "after": false
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 12
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000013125",
+            "promptImageTokens": "0.000001875",
+            "completionImageTokens": "0.00001425"
+          }
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "84259f0762f4ae663bb8ec29fe52b97d3e97adef^1",
+    "after_ref": "84259f0762f4ae663bb8ec29fe52b97d3e97adef"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

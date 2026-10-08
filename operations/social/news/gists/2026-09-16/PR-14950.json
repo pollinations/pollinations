@@ -30,5 +30,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14950.jpg",
     "prompt": "A cozy pixel-art app garden where the cute bee mascot Polli, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny gardener visor and measures a blooming code-plant fed by three Pollen tokens; a retro terminal shows a simple pixel counter for verified paid usage, with soft lime green (#ecf874) leaves and a small faded connection sign nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, emotionally warm and nostalgic."
   },
-  "generated_at": "2026-09-16T09:59:22.511189+00:00"
+  "generated_at": "2026-09-16T09:59:22.511189+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

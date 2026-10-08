@@ -30,5 +30,78 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-21/PR-15267.jpg",
     "prompt": "Cozy pixel art scene in a warm garden workshop where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; she wears tiny round accountant glasses and carefully compares price tags on branching code-plants labeled “CHUTES” and “AKASHML.” A cute chunky CRT-monitor robot holds a glowing token receipt beside jars marked “INPUT,” “CACHE,” and “OUTPUT,” with lime green (#ecf874) prominently glowing from the terminal and flower pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
   },
-  "generated_at": "2026-09-21T14:49:03.586889+00:00"
+  "generated_at": "2026-09-21T14:49:03.586889+00:00",
+  "announcements": [
+    {
+      "id": "pr-15267:openai/gpt-4o-mini",
+      "model_id": "openai/gpt-4o-mini",
+      "title": "GPT-4o Mini",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000075",
+            "completionTextTokens": "0.0000006"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "promptCachedTokens": "0.000000079125",
+            "completionTextTokens": "0.000000633"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-15267:qwen/qwen3.8-27b",
+      "model_id": "qwen/qwen3.8-27b",
+      "title": "Qwen3.8 27B",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003376",
+            "promptCachedTokens": "0.00000003376",
+            "promptImageTokens": "0.0000003376",
+            "promptVideoTokens": "0.0000003376",
+            "completionTextTokens": "0.0000026375"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002532",
+            "promptCachedTokens": "0.00000002532",
+            "promptImageTokens": "0.0000002532",
+            "promptVideoTokens": "0.0000002532",
+            "completionTextTokens": "0.000002321"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "e0f9d8ba2276f9d6318cd08847d9e353af0f2da5^1",
+    "after_ref": "e0f9d8ba2276f9d6318cd08847d9e353af0f2da5"
+  },
+  "enrichment": {
+    "models": "complete"
+  }
 }

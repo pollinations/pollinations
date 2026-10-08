@@ -32,5 +32,9 @@
     "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-23/PR-15351.jpg",
     "prompt": "A cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black antennae, oval eyes, pink rectangular blush, a happy smile, light-blue rounded wings, and a tiny gardener scarf, carefully replacing an old profile name tag with a fresh one on a glowing retro terminal; a chunky CRT monitor robot holds a profile card while code-plants and small flowers grow around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"PROFILE SYNCED\", nostalgic but beautiful, emotionally warm."
   },
-  "generated_at": "2026-09-23T21:47:35.224778+00:00"
+  "generated_at": "2026-09-23T21:47:35.224778+00:00",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

@@ -33,5 +33,9 @@
   },
   "generated_at": "2026-09-16T12:55:18.668884+00:00",
   "app_name": "GitMuse",
-  "app_url": "https://fadyabohamza-netizen.github.io/gitmuse"
+  "app_url": "https://fadyabohamza-netizen.github.io/gitmuse",
+  "announcements": [],
+  "enrichment": {
+    "models": "complete"
+  }
 }

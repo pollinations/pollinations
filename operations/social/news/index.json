@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-08T04:20:43.379277+00:00",
+  "generated_at": "2026-10-08T06:34:29.008778+00:00",
   "models": [
     {
       "id": "pr-15361:deepseek/deepseek-v4-flash",
@@ -2241,6 +2241,54 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-07",
+      "emoji": "🤖",
+      "title": "Two Nex reasoning models",
+      "text": "Try paid-only `nex-agi/nex-n2.5-pro` and `nex-agi/nex-n2.5-mini` with text or image input. Pro also supports tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        16340,
+        16341
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "emoji": "🤖",
+      "title": "Mistral Large 4 added",
+      "text": "Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
+      "prs": [
+        16606
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "emoji": "🎨",
+      "title": "More video reference options",
+      "text": "Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        16705
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "emoji": "✨",
+      "title": "SoloForge AI joins the catalog",
+      "text": "Turn content ideas into generated assets, review them, and organize publishing workflows with Pollinations image generation. [Try it](https://soloforge-ai-web.onrender.com).",
+      "prs": [
+        16664
+      ],
+      "app": true
+    },
+    {
+      "date": "2026-10-07",
+      "emoji": "🎵",
+      "title": "Audio joins the catalog",
+      "text": "Try this community text-to-speech app; its BYOP access requires sign-in. [Try it](https://dwikatmahmoud87-source.github.io/Gtdcg).",
+      "prs": [
+        16665
+      ],
+      "app": true
+    },
     {
       "date": "2026-10-06",
       "emoji": "🎵",

@@ -120,7 +120,7 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet APIDOCS.md APIDOCS.surface.json; then
+          if git diff --quiet APIDOCS.md; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -149,13 +149,12 @@ jobs:
           git config user.name "pollinations-ai[bot]"
           git config user.email "pollinations-ai[bot]@users.noreply.github.com"
 
-          # Save the regenerated files so we can re-apply them after resetting the branch
+          # Save the regenerated file so we can re-apply it after resetting the branch
           cp APIDOCS.md /tmp/APIDOCS.md.new
-          cp APIDOCS.surface.json /tmp/APIDOCS.surface.json.new
           # Discard the dirty worktree change so the upcoming checkout to
           # origin/main can't fail with "local changes would be overwritten"
           # when main has advanced (or the input ref differs from main).
-          git checkout -- APIDOCS.md APIDOCS.surface.json
+          git checkout -- APIDOCS.md
 
           # Reset the sync branch to current main so the PR can never conflict
           # with human edits to APIDOCS.md that landed on main since last run.
@@ -163,15 +162,13 @@ jobs:
           git checkout -B "$BRANCH" origin/main
 
           cp /tmp/APIDOCS.md.new APIDOCS.md
-          cp /tmp/APIDOCS.surface.json.new APIDOCS.surface.json
 
-          if git diff --quiet APIDOCS.md APIDOCS.surface.json; then
+          if git diff --quiet APIDOCS.md; then
             echo "Generated docs already match main; nothing to push."
             exit 0
           fi
 
-          # The surface file lets the news pipeline list the API changes of this PR.
-          git add APIDOCS.md APIDOCS.surface.json
+          git add APIDOCS.md
           git commit -m "docs: regenerate APIDOCS.md"
           git push -f -u origin "$BRANCH"
 

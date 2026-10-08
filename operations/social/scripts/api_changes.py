@@ -1,12 +1,43 @@
-"""API changes between two APIDOCS.surface.json files (written by gen's docs generator).
+"""API changes of the post-deploy docs PR, read from the APIDOCS.md it regenerates.
 
-The docs PR is regenerated after each production deploy, so its changes are already live.
+APIDOCS.md lists every endpoint with its parameter and request-body tables, so the
+docs PR diff is the live API change.
 """
-import json
+import re
 import subprocess
 from typing import Dict, List, Optional
 
-API_SURFACE = "APIDOCS.surface.json"
+API_DOCS = "APIDOCS.md"
+HEADING = re.compile(r"^#### `(\w+)` `([^`]+)`")
+NAME = re.compile(r"^`([^`]+)`( \*)?$")
+
+
+def api_surface(markdown: str) -> Dict:
+    """Each endpoint's parameters and top-level body fields: {"POST /x": {"parameters": {}, "body": {}}}."""
+    surface, endpoint, section = {}, None, None
+    for line in markdown.splitlines():
+        if heading := HEADING.match(line):
+            endpoint, section = f"{heading[1].upper()} {heading[2]}", None
+            surface[endpoint] = {"parameters": {}, "body": {}}
+        elif line.startswith(("## ", "### ")):
+            endpoint = section = None
+        elif endpoint and "**Parameters**" in line:
+            section = "parameters"
+        elif endpoint and "**Request body**" in line:
+            section = "body"
+        elif endpoint and line.startswith(("📤", "💻", "🔎")):
+            section = None
+        elif endpoint and section and line.startswith("| `"):
+            cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line)[1:-1]]
+            name = NAME.match(cells[0])
+            if not name or (section == "body" and "." in name[1]):
+                continue  # nested body fields follow their parent
+            key = f"{cells[1].strip('`')}:{name[1]}" if section == "parameters" else name[1]
+            type_ = cells[2] if section == "parameters" else cells[1]
+            type_ = re.sub(r"enum \(\d+\) — .*", "enum", type_.replace("\\|", "|").replace("`", ""))
+            surface[endpoint][section][key] = {"type": "|".join(t.strip() for t in type_.split("|")),
+                                               "required": bool(name[2])}
+    return surface
 
 
 def _types(field: Optional[Dict]) -> set:
@@ -27,47 +58,38 @@ def _field_change(name: str, before: Optional[Dict], after: Optional[Dict]) -> O
 
 
 def api_changes(before: Dict, after: Dict, pr: Dict) -> List[Dict]:
-    """ADD / REMOVE / DEPRECATE / CHANGE per endpoint (`METHOD /path`), with breaking flags."""
+    """ADD / REMOVE / CHANGE per endpoint (`METHOD /path`), with breaking flags."""
     events = []
     for endpoint in sorted(before.keys() | after.keys()):
         old, new = before.get(endpoint), after.get(endpoint)
         changes = []
-        if old is None:
-            action = "ADD"
-        elif new is None:
-            action = "REMOVE"
-        else:
+        if old and new:
             for kind in ("parameters", "body"):
                 # A body documented on one side only is a documentation gap, not an API change.
                 if kind == "body" and (not old[kind] or not new[kind]):
                     continue
                 for name in sorted(old[kind].keys() | new[kind].keys()):
-                    change = _field_change(f"{kind}:{name}", old[kind].get(name), new[kind].get(name))
-                    if change:
+                    if change := _field_change(f"{kind}:{name}", old[kind].get(name), new[kind].get(name)):
                         changes.append(change)
-            deprecated = new.get("deprecated") and not old.get("deprecated")
-            if not changes and not deprecated:
+            if not changes:
                 continue
-            action = "DEPRECATE" if deprecated else "CHANGE"
+        action = "ADD" if not old else "REMOVE" if not new else "CHANGE"
         events.append({
             "id": f"pr-{pr['number']}:{endpoint}",
             "endpoint": endpoint,
             "action": action,
             "breaking": action == "REMOVE" or any(change["breaking"] for change in changes),
             "changes": changes,
-            "effective_status": "live",
         })
     return events
 
 
 def api_changes_for_pr(pr: Dict, root) -> List[Dict]:
-    """API changes of a merged PR that updates the surface (the post-deploy docs PR)."""
+    """API changes of a merged PR that regenerates APIDOCS.md (the post-deploy docs PR)."""
     from model_announcements import pr_comparison_refs
 
     def surface(ref):
-        shown = subprocess.run(["git", "show", f"{ref}:{API_SURFACE}"], cwd=root, capture_output=True, text=True)
-        return json.loads(shown.stdout) if shown.returncode == 0 else None
+        return api_surface(subprocess.run(["git", "show", f"{ref}:{API_DOCS}"], cwd=root,
+                                          capture_output=True, text=True, check=True).stdout)
 
-    before, after = (surface(ref) for ref in pr_comparison_refs(pr, root))
-    # Without an earlier surface there is no baseline: nothing is reported as new.
-    return api_changes(before, after, pr) if before and after else []
+    return api_changes(*(surface(ref) for ref in pr_comparison_refs(pr, root)), pr)

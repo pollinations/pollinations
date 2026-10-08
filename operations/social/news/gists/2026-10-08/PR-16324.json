@@ -1,0 +1,35 @@
+{
+  "pr_number": 16324,
+  "title": "docs: list content_blocked in the API error table",
+  "author": "greysonmiller67-lang",
+  "url": "https://github.com/pollinations/pollinations/pull/16324",
+  "merged_at": "2026-10-08T03:46:31Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added `400 content_blocked` to the API error table generator alongside the existing `422 content_policy_violation` moderation error. The API already emits `content_blocked`, and the safety guide already documents it; the generated table omitted it. `APIDOCS.md` was not changed in this PR.",
+    "keywords": [
+      "API docs",
+      "error responses",
+      "content_blocked",
+      "moderation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16324.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and points to a retro monitor showing a simple API error table, while lime green (#ecf874) code-plants grow beside it; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T03:47:38.095732+00:00",
+  "area": "Docs & support",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "3d989a766a344c3f6cc7b0277afeb13cef14ef4c",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

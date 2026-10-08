@@ -445,8 +445,8 @@ async def chat_completions_get() -> dict[str, Any]:
                 "model": "floret",
                 "messages": [{"role": "user", "content": "Hi!"}],
                 "stream": True,
-                "routing": {
-                    "text": "auto",
+                "metadata": {
+                    "model": "auto",
                     "web_search": "auto",
                     "image_generation": "auto",
                     "image_editing": "auto",

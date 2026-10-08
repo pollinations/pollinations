@@ -14,7 +14,7 @@ import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
 interface AudioOptions {
-    voice: string;
+    voice?: string;
     format: string;
     model?: string;
     duration?: string;
@@ -26,7 +26,8 @@ async function generateSimple(
     text: string,
     opts: AudioOptions,
 ): Promise<Buffer> {
-    const params = new URLSearchParams({ voice: opts.voice });
+    const params = new URLSearchParams();
+    if (opts.voice) params.set("voice", opts.voice);
     if (opts.format !== "mp3") params.set("response_format", opts.format);
     if (opts.model) params.set("model", opts.model);
     if (opts.duration) params.set("duration", opts.duration);
@@ -44,7 +45,8 @@ async function generateWithTimestamps(
     opts: AudioOptions,
     alignmentPath: string,
 ): Promise<Buffer> {
-    const body: Record<string, unknown> = { input: text, voice: opts.voice };
+    const body: Record<string, unknown> = { input: text };
+    if (opts.voice) body.voice = opts.voice;
     if (opts.model) body.model = opts.model;
     if (opts.format !== "mp3") body.response_format = opts.format;
     if (opts.seed) body.seed = Number(opts.seed);
@@ -83,7 +85,7 @@ export function createAudioCommand() {
             `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice callum --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
         )
         .argument("[text]", "Text to speak (or pipe via stdin)")
-        .option("--voice <voice>", "Voice name", "sage")
+        .option("--voice <voice>", "Voice name (default: the model's own)")
         .option("--format <fmt>", "mp3/opus/aac/flac/wav", "mp3")
         .option("--model <model>", "Audio model")
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
@@ -126,7 +128,7 @@ export function createAudioCommand() {
                 printMeta({
                     path: output,
                     size: buffer.length,
-                    voice: opts.voice,
+                    ...(opts.voice && { voice: opts.voice }),
                     ...(alignmentPath && { timestamps: alignmentPath }),
                 });
 

@@ -177,6 +177,47 @@ describe("polli gen chat session lifecycle", () => {
         await line("/exit");
     });
 
+    it("includes the preceding assistant reply in a quickly entered follow-up turn", async () => {
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let turns = 0;
+        const fetch = prepare(async () => {
+            const content = ++turns === 1 ? "first reply" : "second reply";
+            await gate;
+            return new Response(
+                `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`,
+            );
+        });
+        const dir = mkdtempSync(join(tmpdir(), "polli-chat-turns-"));
+        const path = join(dir, "chat.txt");
+        try {
+            const line = await startSession(["--save", path]);
+            const first = line("first question");
+            const second = line("follow-up question");
+            // EOF must drain both accepted turns before autosaving.
+            h.fakeRl.close();
+            release();
+            await Promise.all([first, second]);
+
+            expect(fetch).toHaveBeenCalledTimes(2);
+            const body = vi.mocked(globalThis.fetch).mock.calls[1][1]
+                ?.body as string;
+            expect(JSON.parse(body).messages).toEqual([
+                { role: "user", content: "first question" },
+                { role: "assistant", content: "first reply" },
+                { role: "user", content: "follow-up question" },
+            ]);
+            expect(h.state.promptsAfterClose).toBe(0);
+            expect(readFileSync(path, "utf-8")).toBe(
+                "You: first question\n\nAI: first reply\n\nYou: follow-up question\n\nAI: second reply",
+            );
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
     it("does not prompt a closed interface when stdin ends mid-turn", async () => {
         let release: (() => void) | undefined;
         const gate = new Promise<void>((resolve) => {

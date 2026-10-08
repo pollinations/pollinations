@@ -9,6 +9,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     communityAudioSpeechUrl,
@@ -61,7 +62,6 @@ import {
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
-    session as sessionTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
@@ -490,23 +490,13 @@ async function fetchGen(
     return new Response(body, response);
 }
 
-async function signedSessionCookie(token: string): Promise<string> {
-    const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(env.BETTER_AUTH_SECRET),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"],
-    );
-    const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        new TextEncoder().encode(token),
-    );
-    const encodedSignature = btoa(
-        String.fromCharCode(...new Uint8Array(signature)),
-    );
-    return `better-auth.session_token=${encodeURIComponent(`${token}.${encodedSignature}`)}`;
+// The account API is bearer-only: the dashboard calls it with a short-lived
+// session token, signed here for the user.
+async function sessionAuthorization(userId: string): Promise<string> {
+    return `Bearer ${await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId,
+    })}`;
 }
 
 async function expectCommunityChatRequest(
@@ -5581,15 +5571,6 @@ fixtureTest(
             githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         // The probes are open to every account, so they reach the upstream
@@ -5663,7 +5644,8 @@ fixtureTest(
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Cookie: await signedSessionCookie(sessionToken),
+                            Authorization:
+                                await sessionAuthorization(ownerUserId),
                         },
                         body: JSON.stringify(probe.body),
                     },
@@ -5688,7 +5670,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: `${modelName}-direct-public`,
@@ -5714,7 +5696,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: privateModelName,
@@ -5749,7 +5731,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         visibility: "public",
@@ -5860,15 +5842,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
@@ -5961,7 +5934,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name: modelName,
@@ -6011,7 +5984,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: registered.api,
@@ -6036,7 +6009,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: registered.api,
@@ -6088,15 +6061,6 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
         });
 
         const enterApi = await createEnterCommunityApi();
@@ -6229,7 +6193,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -6246,7 +6210,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -6285,7 +6249,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -6574,7 +6538,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         completionImagePrice: MAX_COMMUNITY_PRICE_PER_IMAGE,
@@ -6592,7 +6556,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: await signedSessionCookie(sessionToken),
+                        Authorization: await sessionAuthorization(ownerUserId),
                     },
                     body: JSON.stringify({
                         completionImagePrice:
@@ -6614,16 +6578,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const cookie = await signedSessionCookie(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const enterApi = await createEnterCommunityApi();
         const videoEndpointUrl =
             "https://api.example.com/generate-video?version=1";
@@ -6698,7 +6653,10 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints/test", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Cookie: cookie },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authorization,
+                },
                 body: JSON.stringify({
                     baseUrl: videoEndpointUrl,
                     bearerToken: "sk_video_upstream",
@@ -6717,7 +6675,10 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
             enterApi,
             new Request("http://localhost:3000/api/community-endpoints", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Cookie: cookie },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authorization,
+                },
                 body: JSON.stringify({
                     name: modelName,
                     title: "Community Video",
@@ -6984,7 +6945,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify({
                         completionVideoPrice:
@@ -7005,15 +6966,6 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
         });
 
         const enterApi = await createEnterCommunityApi();
@@ -7058,7 +7010,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -7078,7 +7030,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     ...registrationPayload,
@@ -7099,7 +7051,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -7134,7 +7086,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -7238,15 +7190,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const embeddingUrl = "https://api.example.com/v1/embeddings";
@@ -7296,7 +7239,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify(registrationPayload),
             }),
@@ -7330,7 +7273,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     baseUrl: registered.baseUrl,
@@ -8036,16 +7979,7 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const cookie = await signedSessionCookie(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const enterApi = await createEnterCommunityApi();
         const createResponse = await fetchEnterApi(
             enterApi,
@@ -8053,7 +7987,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     name: "price-floor-test",
@@ -8083,7 +8017,7 @@ fixtureTest(
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Cookie: cookie,
+                            Authorization: authorization,
                         },
                         body: JSON.stringify({
                             promptTextPrice: price,
@@ -8146,15 +8080,6 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: `redir-${crypto.randomUUID().slice(0, 8)}`,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
         const fetchMock = vi.fn(async (input, init) => {
@@ -8181,7 +8106,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     api: "chat_completions",
@@ -8204,15 +8129,6 @@ fixtureTest("rejects unsafe community model names", async () => {
         githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterApi = await createEnterCommunityApi();
     for (const name of [
@@ -8227,7 +8143,7 @@ fixtureTest("rejects unsafe community model names", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name,
@@ -8253,18 +8169,9 @@ fixtureTest(
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
         });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
 
         const enterApi = await createEnterCommunityApi();
-        const cookie = await signedSessionCookie(sessionToken);
+        const authorization = await sessionAuthorization(ownerUserId);
         const register = (body: Record<string, unknown>) =>
             fetchEnterApi(
                 enterApi,
@@ -8272,7 +8179,7 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify({
                         name: `bee-${crypto.randomUUID().slice(0, 8)}`,
@@ -8377,15 +8284,6 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         githubId: nextAllowedGithubId(),
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterEnv = {
         ...env,
@@ -8393,10 +8291,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         GEN_BASE_URL: "https://gen.pollinations.ai",
     };
     const enterApi = await createEnterFrontendApi();
-    const cookie = (await signedSessionCookie(sessionToken)).replace(
-        "better-auth.session_token",
-        "__Secure-better-auth.session_token",
-    );
+    const authorization = await sessionAuthorization(ownerUserId);
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai/gpt-5-nano",
@@ -8409,7 +8304,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: cookie,
+                Authorization: authorization,
             },
             body: JSON.stringify({
                 ...promptAgent,
@@ -8460,7 +8355,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: cookie,
+                Authorization: authorization,
             },
             body: JSON.stringify({
                 systemPrompt: "You are an editable SQL tutor.",
@@ -8475,7 +8370,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: cookie,
+                Authorization: authorization,
             },
             body: JSON.stringify({
                 ...promptAgent,
@@ -8507,7 +8402,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const listResponse = await fetchEnterApi(
         enterApi,
         new Request("https://enter.test/api/account/my-models", {
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -8538,7 +8433,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     promptTextPrice: 0.00001,
@@ -8556,7 +8451,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     fallbacks: ["owner/backup"],
@@ -8573,7 +8468,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterApi,
         new Request(
             `https://enter.test/api/account/my-models/${registration.id}/fallback-candidates`,
-            { headers: { Cookie: cookie } },
+            { headers: { Authorization: authorization } },
         ),
         enterEnv,
     );
@@ -8651,7 +8546,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     api: "responses",
@@ -8689,7 +8584,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: cookie,
+                    Authorization: authorization,
                 },
                 body: JSON.stringify({
                     bearerToken: "not-supported",
@@ -8800,7 +8695,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "DELETE",
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -8819,21 +8714,9 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
         githubUsername: ownerGithubUsername,
     });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    });
 
     const enterApi = await createEnterFrontendApi();
-    const cookie = (await signedSessionCookie(sessionToken)).replace(
-        "better-auth.session_token",
-        "__Secure-better-auth.session_token",
-    );
+    const authorization = await sessionAuthorization(ownerUserId);
     let commit = "a".repeat(40);
     let repositoryDescription: string | null = "Example code agents";
     let source = `export default async ({ request, pollinations, mcp }) => {
@@ -8880,7 +8763,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request("https://enter.test/api/account/agents", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: JSON.stringify({
                 type: "code_agent",
                 repository: "https://github.com/example/agents.git",
@@ -8971,7 +8857,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
                     method,
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify(body),
                 }),
@@ -8991,7 +8877,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
                     method,
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: cookie,
+                        Authorization: authorization,
                     },
                     body: JSON.stringify(body),
                 }),
@@ -9029,7 +8915,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
             `https://enter.test/api/account/my-models/${agent.id}/update`,
             {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Cookie: cookie },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: authorization,
+                },
                 body: JSON.stringify({ hidden: true, description: "" }),
             },
         ),
@@ -9040,7 +8929,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: "{}",
         }),
         enterEnv,
@@ -9063,7 +8955,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: JSON.stringify({ visibility: "public" }),
         }),
         enterEnv,
@@ -9106,7 +9001,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     const listResponse = await fetchEnterApi(
         enterApi,
         new Request("https://enter.test/api/account/agents", {
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -9127,7 +9022,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "DELETE",
-            headers: { Cookie: cookie },
+            headers: { Authorization: authorization },
         }),
         enterEnv,
     );
@@ -9140,7 +9035,10 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterApi,
         new Request("https://enter.test/api/account/agents", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Cookie: cookie },
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+            },
             body: JSON.stringify({
                 type: "code_agent",
                 repository: "https://github.com/example/agents",
@@ -9170,15 +9068,6 @@ fixtureTest("validates community fallback targets on write", async () => {
     const otherOwnerUserId = await createTestUser({
         githubId: nextAllowedGithubId(),
         githubUsername: otherOwnerGithubUsername,
-    });
-    const sessionToken = `session-${crypto.randomUUID()}`;
-    await db.insert(sessionTable).values({
-        id: `session-${crypto.randomUUID()}`,
-        token: sessionToken,
-        userId: ownerUserId,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
     });
 
     const bearerTokenCiphertext = await encryptSecret(
@@ -9315,7 +9204,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     name,
@@ -9440,7 +9329,11 @@ fixtureTest("validates community fallback targets on write", async () => {
         enterApi,
         new Request(
             `http://localhost:3000/api/community-endpoints/${created.id}/fallback-candidates`,
-            { headers: { Cookie: await signedSessionCookie(sessionToken) } },
+            {
+                headers: {
+                    Authorization: await sessionAuthorization(ownerUserId),
+                },
+            },
         ),
     );
     expect(candidates.status).toBe(200);
@@ -9473,7 +9366,7 @@ fixtureTest("validates community fallback targets on write", async () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
+                    Authorization: await sessionAuthorization(ownerUserId),
                 },
                 body: JSON.stringify({
                     fallbacks: [],

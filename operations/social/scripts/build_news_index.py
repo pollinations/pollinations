@@ -2,7 +2,7 @@
 """Build operations/social/news/index.json — the one news feed Enter and the README read.
 
 Reads gists and daily summaries from the news branch checkout and keeps:
-- `models`: official model announcements from gists (recent, plus scheduled ones still ahead)
+- `models`: official model announcements from recent gists
 - `highlights`: the items each daily summary picked for users
 
     python build_news_index.py --news-dir <checkout>/operations/social/news [--publish]
@@ -33,37 +33,29 @@ def read_json(paths) -> List[Dict]:
 
 
 def model_entries(gists: List[Dict], since: str) -> List[Dict]:
-    events = []
-    for gist in sorted(gists, key=lambda g: (g["merged_at"], g["pr_number"])):
+    entries = []
+    for gist in gists:
         for item in gist.get("announcements") or []:
-            events.append({
+            # Older gists hold provider retirement dates, which the registry no longer keeps.
+            if item.get("effective_status") == "scheduled":
+                continue
+            changes = {k: v for k, v in item.get("changes", {}).items() if k in CARD_FIELDS}
+            date = gist["merged_at"][:10]
+            # Updates that change nothing a card shows (descriptions, routes, aliases) stay in the gist.
+            if date < since or (item["action"] == "UPDATE" and not changes):
+                continue
+            entries.append({
                 "id": item["id"],
                 "model_id": item["model_id"],
                 "title": item.get("title") or item["model_id"],
                 "action": item["action"],
                 "category": item.get("category"),
-                "date": (item.get("effective_at") or gist["merged_at"])[:10],
-                "scheduled": item.get("effective_status") == "scheduled",
+                "date": date,
                 "pr": gist["pr_number"],
                 "url": gist["url"],
                 "pricing_units": item.get("pricing_units"),
-                "changes": item.get("changes", {}),
+                "changes": changes,
             })
-    # A later retirement, reschedule or cancellation settles an earlier scheduled retirement.
-    settled = {}
-    for event in events:
-        if event["action"] == "RETIRE" or "retirement_at" in event["changes"]:
-            settled[event["model_id"]] = event["id"]
-    entries = []
-    for event in events:
-        event["changes"] = {k: v for k, v in event["changes"].items() if k in CARD_FIELDS}
-        superseded = settled.get(event["model_id"], event["id"]) != event["id"]
-        if event["date"] < since or (event["scheduled"] and superseded):
-            continue
-        # Updates that change nothing a card shows (descriptions, routes, aliases) stay in the gist.
-        if event["action"] == "UPDATE" and not event["changes"]:
-            continue
-        entries.append(event)
     return sorted(entries, key=lambda e: (e["date"], e["title"]))
 
 

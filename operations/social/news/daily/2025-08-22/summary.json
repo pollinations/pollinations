@@ -11,5 +11,19 @@
       "date": "2025-08-22"
     }
   ],
-  "generated_at": "2026-09-04T12:25:00.814032+00:00"
+  "generated_at": "2026-09-04T12:25:00.814032+00:00",
+  "highlights": [
+    {
+      "date": "2025-08-23",
+      "emoji": "🚀",
+      "title": "New AI Models",
+      "text": "Added support for **GPT-5 Nano**, **Claude 3.5 Haiku**, **OpenAI o3**, and **Gemini 2.5 Flash Lite** to the [Text API](https://enter.pollinations.ai)."
+    },
+    {
+      "date": "2025-08-23",
+      "emoji": "📊",
+      "title": "Usage Statistics API",
+      "text": "New endpoint to track hourly token usage, costs, and request counts with detailed filtering options. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
+    }
+  ]
 }

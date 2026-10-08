@@ -23,5 +23,22 @@
       "date": "2026-06-16"
     }
   ],
-  "generated_at": "2026-06-17T07:44:49.613429+00:00"
+  "generated_at": "2026-06-17T07:44:49.613429+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Unkillable Gemini",
+      "text": "Added automatic provider failover for `gemini-3-flash`. If the primary endpoint throws an error, requests instantly reroute to GCP Vertex. Same model, fewer headaches. Check the [available models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Localhost by Default",
+      "text": "New app keys now pre-fill `http://localhost/callback` for OAuth redirects. Because manually typing localhost every time you spin up a new project is a waste of keystrokes. [Manage keys](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Back to the Terminal",
+      "text": "The Sirius Cybernetics Elevator Challenge app dropped its heavy background animations and returned to a pure, 170kB ASCII terminal aesthetic. Sometimes less really is more."
+    }
+  ]
 }

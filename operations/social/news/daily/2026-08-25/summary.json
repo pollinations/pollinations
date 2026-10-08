@@ -83,5 +83,33 @@
       "date": "2026-08-25"
     }
   ],
-  "generated_at": "2026-08-26T06:16:48.530054+00:00"
+  "generated_at": "2026-08-26T06:16:48.530054+00:00",
+  "highlights": [
+    {
+      "emoji": "🎬",
+      "title": "Wan 3.0 video generation",
+      "text": "`wan-3.0` now makes 5-second text-to-video and image-to-video clips with optional audio, start frames, and 480p through 1080p output. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Hosted FFmpeg for prompt agents",
+      "text": "Agents can now select a managed FFmpeg tool to process media and receive stored outputs—no server maintenance, a small mercy. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+    },
+    {
+      "emoji": "💡",
+      "title": "Model lookup, OpenAI-style",
+      "text": "OpenAI-compatible clients can inspect a single accessible model with `GET /v1/models/:model`, including aliases and registry metadata. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🌟",
+      "title": "Pollen earnings in code and CLI",
+      "text": "Check developer earnings from TypeScript with `accountEarnings()` or run `polli earnings --days 30 --json` for scriptable totals and per-entity detail."
+    },
+    {
+      "emoji": "🎨",
+      "title": "EAS AI STUDIO joins the garden",
+      "text": "A collaborative image-making app built on the Pollinations image API is now in the community showcase. [Try it](https://www.ekin-ai-studio.my.id)",
+      "app": true
+    }
+  ]
 }

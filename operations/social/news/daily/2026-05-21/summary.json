@@ -19,5 +19,12 @@
       "date": "2026-05-21"
     }
   ],
-  "generated_at": "2026-05-22T07:08:59.727647+00:00"
+  "generated_at": "2026-05-22T07:08:59.727647+00:00",
+  "highlights": [
+    {
+      "emoji": "🔌",
+      "title": "MCP Server",
+      "text": "The Model Context Protocol (MCP) server is now officially wired into the main [API Docs](https://gen.pollinations.ai/docs). Connect your local AI agents directly to the hive."
+    }
+  ]
 }

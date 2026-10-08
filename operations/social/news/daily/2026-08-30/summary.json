@@ -23,5 +23,23 @@
       "date": "2026-08-30"
     }
   ],
-  "generated_at": "2026-08-31T06:38:13.255746+00:00"
+  "generated_at": "2026-08-31T06:38:13.255746+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Community Embeddings",
+      "text": "Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open."
+    },
+    {
+      "emoji": "✨",
+      "title": "Floret Media Tools",
+      "text": "Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress."
+    },
+    {
+      "emoji": "🎨",
+      "title": "AI Story & Image Studio",
+      "text": "Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com)",
+      "app": true
+    }
+  ]
 }

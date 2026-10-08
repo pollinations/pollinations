@@ -51,5 +51,27 @@
       "date": "2026-09-13"
     }
   ],
-  "generated_at": "2026-09-14T06:39:02.992318+00:00"
+  "generated_at": "2026-09-14T06:39:02.992318+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Polli gets two brains",
+      "text": "Ask Polli now runs on GPT-5.6 Terra, while write workflows use GPT-6 Astra—specialized routing without changing your existing Gen auth or endpoint setup. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Agents declare their senses",
+      "text": "Endpoint agents can now publish input and output modalities—including multiple outputs and 3D—through the standard [model listings](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "📱",
+      "title": "Agent and MCP KPIs land in the dashboard",
+      "text": "Inspect weekly requests, unique users, and MCP calls separately, then export the numbers as CSV. Software has begun counting its own pollen. [Open your dashboard](https://enter.pollinations.ai/keys)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Floret knows her toolkit",
+      "text": "Floret now clearly identifies herself and can point you toward image editing, voice changes, and background-noise removal when you need them. [Try it](https://pollinations.ai/play)"
+    }
+  ]
 }

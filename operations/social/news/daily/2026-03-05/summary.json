@@ -79,5 +79,36 @@
       "date": "2026-03-05"
     }
   ],
-  "generated_at": "2026-03-06T06:15:02.776516+00:00"
+  "generated_at": "2026-03-06T06:15:02.776516+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "GPT Image 1.5 Large",
+      "text": "We unblocked the Azure endpoints and wired up the new 1.5 large model. Better pixels, fewer timeouts. Hit the [Unified API](https://gen.pollinations.ai) to try it."
+    },
+    {
+      "emoji": "✨",
+      "title": "Unified Multimodal Chat",
+      "text": "The community shipped `pollinations-ui`, a single interface that handles text, images, video, and audio without making you switch tabs. [Try it](https://pollinations-ui.vercel.app)",
+      "app": true
+    },
+    {
+      "emoji": "🧩",
+      "title": "Browser Extension",
+      "text": "Generate images anywhere on the web using your own Pollen credits. No need to leave the tab you're supposed to be working in. [View repo](https://github.com/ChunkyPanda29/Pollinations_Browser_Extension/)",
+      "app": true
+    },
+    {
+      "emoji": "🎭",
+      "title": "SillyTavern Avatars",
+      "text": "A new community extension hooks into our image API to instantly generate and assign portraits to your roleplay characters based on their text descriptions. [Try it](https://docs.sillytavern.app/)",
+      "app": true
+    },
+    {
+      "emoji": "🛡️",
+      "title": "Skills-Sentinel-scan",
+      "text": "Added a Dockerized security scanner to the dev tools ecosystem. Because you should probably check if your AI agent is leaking credentials before letting it loose. [View repo](https://github.com/Amine-SGM/Skills-Sentinel-scan)",
+      "app": true
+    }
+  ]
 }

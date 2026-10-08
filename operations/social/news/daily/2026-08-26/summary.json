@@ -51,5 +51,28 @@
       "date": "2026-08-26"
     }
   ],
-  "generated_at": "2026-08-27T09:15:50.518510+00:00"
+  "generated_at": "2026-08-27T09:15:50.518510+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "Connect your Discord account",
+      "text": "Link Discord to your Pollinations account, verify hive membership, and claim a 1-Pollen community Quest. [Connect your account](https://enter.pollinations.ai/keys)"
+    },
+    {
+      "emoji": "🎬",
+      "title": "FFmpeg MCP takes multiple inputs",
+      "text": "Combine separate video, audio, and media files in one MCP job, then get the finished file hosted on Pollinations Media. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+    },
+    {
+      "emoji": "🔍",
+      "title": "Exa Search MCP joins the agent toolbox",
+      "text": "Prompt agents can now search the web and fetch pages through Exa in the shared MCP catalog. The internet remains largely unformatted. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+    },
+    {
+      "emoji": "💡",
+      "title": "Descriptly writes alt-text suggestions for PR images",
+      "text": "Use Pollinations vision models to spot changed images in pull requests and propose accessible descriptions. [View repo](https://github.com/g33ky00/descriptly)",
+      "app": true
+    }
+  ]
 }

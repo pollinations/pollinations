@@ -75,5 +75,34 @@
       "date": "2026-08-20"
     }
   ],
-  "generated_at": "2026-08-21T06:15:50.710568+00:00"
+  "generated_at": "2026-08-21T06:15:50.710568+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "GPT transcription, including live",
+      "text": "Send uploaded audio to `gpt-transcribe` or transcribe a live session with `gpt-live-transcribe` through the existing audio and realtime APIs. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Community model labels that answer useful questions",
+      "text": "Browse community text models with declared tool calling, reasoning support, and context length before handing them your prompt."
+    },
+    {
+      "emoji": "🔗",
+      "title": "MCP tools now discover themselves",
+      "text": "Enabled Pollinations MCP servers can advertise tools directly to managed agents. One less allowlist to forget in a drawer somewhere. [MCP Server Docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "The Mita joins chat",
+      "text": "A Roblox character AI for spoken roleplay that keeps the conversation context, now discoverable through Pollinations chat. [Try it](https://www.roblox.com/games/98105867888961/The-Mita)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Make a cursor from a sentence",
+      "text": "Cursor Maker turns prompts such as “glowing blue crystal arrow” into custom Windows cursor art using the Pollinations image API. [Try it](https://hk.1r.gs)",
+      "app": true
+    }
+  ]
 }

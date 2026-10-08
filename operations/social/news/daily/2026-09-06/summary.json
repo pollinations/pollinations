@@ -47,5 +47,17 @@
       "date": "2026-09-06"
     }
   ],
-  "generated_at": "2026-09-07T06:38:19.638749+00:00"
+  "generated_at": "2026-09-07T06:38:19.638749+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Polli found her tools",
+      "text": "Polli’s generation, visual, and repository tools are back after the model update, with sharper Discord search, thread-aware results, correct source links, and better chart, table, and Mermaid renders."
+    },
+    {
+      "emoji": "💡",
+      "title": "Provider errors keep their receipts",
+      "text": "Image, video, 3D, embedding, and text requests now preserve full upstream diagnostics while capacity fallback can still route generations through another provider. [API Docs](https://gen.pollinations.ai/docs)"
+    }
+  ]
 }

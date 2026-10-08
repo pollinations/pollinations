@@ -31,5 +31,12 @@
       "date": "2026-04-23"
     }
   ],
-  "generated_at": "2026-04-24T06:36:55.491346+00:00"
+  "generated_at": "2026-04-24T06:36:55.491346+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "MCP Server v2.1.0",
+      "text": "Your agents just got an upgrade. The [MCP package](https://www.npmjs.com/package/@pollinations_ai/mcp) now supports dynamic registries, unlocking 9 video models, 35+ voices, and direct Pollen balance checks."
+    }
+  ]
 }

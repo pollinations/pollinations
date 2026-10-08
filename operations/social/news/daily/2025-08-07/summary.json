@@ -19,5 +19,20 @@
       "date": "2025-08-07"
     }
   ],
-  "generated_at": "2026-09-04T12:18:48.814480+00:00"
+  "generated_at": "2026-09-04T12:18:48.814480+00:00",
+  "highlights": [
+    {
+      "date": "2025-08-09",
+      "emoji": "⚡",
+      "title": "Multilingual Caching",
+      "text": "Upgraded semantic cache to the `bge-m3` model for smarter prompt matching across languages."
+    },
+    {
+      "date": "2025-08-09",
+      "emoji": "🌟",
+      "title": "Community Showcase",
+      "text": "Welcomed 8 new projects including [Island AI](https://islandai.app) and [Botzy](https://botzy.hexabiz.com.pk) to the ecosystem.",
+      "app": true
+    }
+  ]
 }

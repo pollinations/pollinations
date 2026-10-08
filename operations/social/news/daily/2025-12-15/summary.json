@@ -79,5 +79,27 @@
       "date": "2025-12-15"
     }
   ],
-  "generated_at": "2026-09-04T12:33:23.352396+00:00"
+  "generated_at": "2026-09-04T12:33:23.352396+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "GPT-5.2 & Gemini Tools",
+      "text": "Upgraded `openai-large` to GPT-5.2 and enabled Google Search & Code Execution by default for Gemini models."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Face-Aware Upscaling",
+      "text": "Enhanced image generation with GFPGAN face restoration and MediaPipe detection for sharper portraits."
+    },
+    {
+      "emoji": "✨",
+      "title": "New Website Experience",
+      "text": "Complete rebuild of [hello.pollinations.ai](https://hello.pollinations.ai) with AI-powered theming and dynamic 3D backgrounds."
+    },
+    {
+      "emoji": "🚫",
+      "title": "No More Watermarks",
+      "text": "Removed the pollinations.ai logo from all generated images—outputs are now clean by default."
+    }
+  ]
 }

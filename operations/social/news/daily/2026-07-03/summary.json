@@ -19,5 +19,13 @@
       "date": "2026-07-03"
     }
   ],
-  "generated_at": "2026-07-04T06:58:25.652675+00:00"
+  "generated_at": "2026-07-04T06:58:25.652675+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Flow Linnom",
+      "text": "A new multi-model chat interface joins the community directory. For when querying just one LLM isn't enough. [Try it](https://flow.linnom.com)",
+      "app": true
+    }
+  ]
 }

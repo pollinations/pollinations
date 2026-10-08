@@ -123,5 +123,27 @@
       "date": "2026-09-01"
     }
   ],
-  "generated_at": "2026-09-02T06:35:15.390590+00:00"
+  "generated_at": "2026-09-02T06:35:15.390590+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Wan video gets more routes",
+      "text": "`wan-pro` and `wan-3.0` now handle text, image, and reference-to-video workflows; Wan 3.0 can also use a second image as the end frame. [Try the API](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Mercury 2.5 Preview",
+      "text": "A new model for reasoning, tool use, structured output, multi-turn chat, and streaming—available as `inception/mercury-2.5-preview`. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek V4 Flash Vision",
+      "text": "Send text and images to `deepseek/deepseek-v4-flash-vision-exp` for fast multimodal prompts through the unified API. [Try the API](https://gen.pollinations.ai/v1/chat/completions)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Claude Fable 5.1",
+      "text": "Long-context multimodal Claude arrives with adaptive reasoning, automatic tools, prompt caching, and up to 1M tokens of context. [Browse models](https://gen.pollinations.ai/v1/models)"
+    }
+  ]
 }

@@ -11,5 +11,12 @@
       "date": "2026-05-26"
     }
   ],
-  "generated_at": "2026-05-27T07:22:00.853658+00:00"
+  "generated_at": "2026-05-27T07:22:00.853658+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "LLM-Ready Docs",
+      "text": "We added \"Copy for LLMs\" buttons to the [Dashboard](https://enter.pollinations.ai) rail. One click grabs context-aware API, CLI, or MCP docs so you can paste them straight into your AI coding assistant and get back to building."
+    }
+  ]
 }

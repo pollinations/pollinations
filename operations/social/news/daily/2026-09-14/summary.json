@@ -59,5 +59,34 @@
       "date": "2026-09-14"
     }
   ],
-  "generated_at": "2026-09-15T06:30:50.869953+00:00"
+  "generated_at": "2026-09-15T06:30:50.869953+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "The hive speaks LLM",
+      "text": "Install `llm-pollinations` to use Pollinations chat models in LLM’s CLI and Python—streaming, vision, tool calls, reasoning, and multi-turn chat included. [View repo](https://github.com/pollinations/pollinations)"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Agents, meet the quest garden",
+      "text": "Use a qualifying agent to earn 0.25 Pollen, or create an agent somebody uses to earn 2 Pollen. The bees have started keeping score."
+    },
+    {
+      "emoji": "✨",
+      "title": "Media stays in the garden",
+      "text": "Apps using the shared UI can now render generated images, audio, and video inline in Markdown, alongside readable code blocks with one-click copy."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Follow the contract vines",
+      "text": "Explore an EVM contract’s The Graph entities and event handlers as an interactive, AI-illustrated ecosystem map. [Try it](https://ceg-wine.vercel.app)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Panels in the pollen",
+      "text": "Plan scenes, generate art, add dialogue, and assemble a vertical webtoon in one comic-making workspace. [Try it](https://manhwa-studio-320488177521.asia-southeast1.run.app)",
+      "app": true
+    }
+  ]
 }

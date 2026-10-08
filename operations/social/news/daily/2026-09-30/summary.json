@@ -119,5 +119,28 @@
       "date": "2026-09-30"
     }
   ],
-  "generated_at": "2026-10-01T06:32:47.090824+00:00"
+  "generated_at": "2026-10-01T06:32:47.090824+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "GPT-6.1 Sol is here",
+      "text": "Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions)."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Audio tools in the SDK",
+      "text": "Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "A new home for apps",
+      "text": "The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters."
+    },
+    {
+      "emoji": "🎮",
+      "title": "Pollinations for Godot 4",
+      "text": "Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations)",
+      "app": true
+    }
+  ]
 }

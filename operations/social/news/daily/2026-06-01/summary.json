@@ -111,5 +111,29 @@
       "date": "2026-06-01"
     }
   ],
-  "generated_at": "2026-06-02T07:34:33.015388+00:00"
+  "generated_at": "2026-06-02T07:34:33.015388+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Polly Paints by Numbers",
+      "text": "Our Discord bot now uses an explicit `render_visual` tool to generate 9 types of matplotlib charts and perfectly formatted data tables. [Join the Discord](https://discord.gg/pollinations-ai-885844321461485618)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Moving Day on NPM",
+      "text": "All our packages (SDK, UI, MCP, CLI) have officially migrated to the `@pollinations` scope. Time to update those `package.json` imports. [View NPM SDK](https://www.npmjs.com/package/@pollinations/sdk)"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Automate the Hive with n8n",
+      "text": "A new community-built n8n node lets you drop free-tier AI image and video generation directly into your automation pipelines. [Try it](https://unjustifiable-pedicellar-nadia.ngrok-free.dev/workflow/oWorRAl4sY41omgW)",
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "Forging Better Prompts",
+      "text": "Turn vague ideas into context-aware, highly specific AI inputs with PromptForge, a new community tool in the greenhouse. [Try it](https://knowledgeable-interface-for-refinem.vercel.app)",
+      "app": true
+    }
+  ]
 }

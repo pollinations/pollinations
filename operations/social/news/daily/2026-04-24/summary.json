@@ -31,5 +31,33 @@
       "date": "2026-04-24"
     }
   ],
-  "generated_at": "2026-04-25T06:28:37.144356+00:00"
+  "generated_at": "2026-04-25T06:28:37.144356+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Thinking in three speeds",
+      "text": "Image generation reasoning is no longer just on or off. You can now pass `fast`, `balanced`, or `pro` modes to the [Image API](https://gen.pollinations.ai/image/{prompt}) to dial in exactly how hard you want the models to think."
+    },
+    {
+      "emoji": "🧠",
+      "title": "DeepSeek V4 arrives",
+      "text": "DeepSeek V4 Flash and Pro are now live on the [Text API](https://gen.pollinations.ai/v1/chat/completions). Point your requests at the new models for heavy-duty reasoning and coding tasks."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Planting audio seeds",
+      "text": "The [Audio API](https://gen.pollinations.ai/audio/{text}) now accepts a `seed` parameter. Lock in that perfect voice inflection or music track instead of rolling the dice on every request."
+    },
+    {
+      "emoji": "📊",
+      "title": "Precise usage tracking",
+      "text": "The [Dashboard](https://enter.pollinations.ai) now features a proper calendar picker. Filter your API usage and export CSVs by exact days, weeks, or months instead of vague rolling windows."
+    },
+    {
+      "emoji": "🌟",
+      "title": "Time travel in the Greenhouse",
+      "text": "TimeMachine Chat just landed in the community showcase, bringing a unified and secure chat interface for your tech essentials. [Try it](https://timemachinechat.com/)",
+      "app": true
+    }
+  ]
 }

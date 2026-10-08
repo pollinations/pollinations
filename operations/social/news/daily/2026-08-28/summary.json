@@ -59,5 +59,28 @@
       "date": "2026-08-28"
     }
   ],
-  "generated_at": "2026-08-29T06:25:52.816079+00:00"
+  "generated_at": "2026-08-29T06:25:52.816079+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Every model gets a playground",
+      "text": "Open any supported Image, Text, Audio, or Video model directly in a preconfigured [Play session](https://pollinations.ai/play)."
+    },
+    {
+      "emoji": "🎯",
+      "title": "The quest garden has rankings",
+      "text": "The Community page now shows the top Quest contributors, completed quests, and Pollen earned. Useful motivation, mildly dangerous for your sleep schedule."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Two frames, then cinema",
+      "text": "Generate 3–10 second, audio-synced video clips with `google/gemini-omni-1.1-flash`: text or two keyframes in, 360p to 4K video out. [Check the API docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "✨",
+      "title": "Pixels enter the forge",
+      "text": "Pixel Forge is a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at the dimensions you choose. [Try it](https://b3b41020.github.io/pixel-forge)",
+      "app": true
+    }
+  ]
 }

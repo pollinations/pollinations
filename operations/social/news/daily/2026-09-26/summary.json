@@ -63,5 +63,22 @@
       "date": "2026-09-26"
     }
   ],
-  "generated_at": "2026-09-27T06:29:23.006194+00:00"
+  "generated_at": "2026-09-27T06:29:23.006194+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "MiniMax H3 Max makes longer videos",
+      "text": "Generate 5-, 10-, or 15-second clips up to 1080p, with synchronized audio and options for start/end frames or reference media. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Gemini 3.8 finds its voice",
+      "text": "Generate WAV or PCM speech in 30 voices, with style instructions, using Flash or Flash Lite through the [audio API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-6 Sol and Luna join the lineup",
+      "text": "Use both alongside Astra for vision, tools, structured output, streaming, and reasoning. Quest Pollen works too. [See available models](https://gen.pollinations.ai/v1/models)."
+    }
+  ]
 }

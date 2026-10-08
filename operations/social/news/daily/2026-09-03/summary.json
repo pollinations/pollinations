@@ -79,5 +79,29 @@
       "date": "2026-09-03"
     }
   ],
-  "generated_at": "2026-09-04T06:29:46.366930+00:00"
+  "generated_at": "2026-09-04T06:29:46.366930+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Qwen3.8 Max 0902",
+      "text": "The exact Qwen checkpoint is now available for chat and Responses API calls, with streaming, tool use, image/video input, structured output, and prompt caching. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Open WebUI for Pollinations",
+      "text": "A full chat workspace with every Pollinations text model and MCP-powered image, video, and audio tools—without leaving the conversation. [Try it](https://openwebui.pollinations.ai)",
+      "app": true
+    },
+    {
+      "emoji": "🔗",
+      "title": "Polli joins OpenClaw",
+      "text": "Run `polli harness openclaw on` to wire Pollinations models and managed media-generation skills into OpenClaw. The claw has access to pixels now."
+    },
+    {
+      "emoji": "🎯",
+      "title": "AI Homework Solver",
+      "text": "A Pollinations-powered study helper for multiple-choice, short-answer, true/false, and fill-in-the-blank questions joined the learn collection. [Try it](https://zizoisu.github.io/ai-homework-solver)",
+      "app": true
+    }
+  ]
 }

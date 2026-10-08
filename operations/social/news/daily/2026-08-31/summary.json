@@ -143,5 +143,27 @@
       "date": "2026-08-31"
     }
   ],
-  "generated_at": "2026-09-01T06:31:29.452077+00:00"
+  "generated_at": "2026-09-01T06:31:29.452077+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Community video models",
+      "text": "Community model publishers can now offer OpenAI-compatible video generation, with prompts, reference media, frame URLs, duration controls, and MP4 results."
+    },
+    {
+      "emoji": "🚀",
+      "title": "FLUX.2 Pro and Flex",
+      "text": "Paid users can generate with Azure-hosted `flux-2-pro` and `flux-2-flex`, including wide formats up to 4,096×1,024 and up to eight Pro reference images. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Inkling joins the model roster",
+      "text": "`thinkingmachines/inkling` is now available for paid API use with text, image, and audio inputs, tool calling, JSON, streaming, and reasoning. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🔗",
+      "title": "MCP servers get a catalog",
+      "text": "Browse available MCP servers, connection endpoints, and Pollen rates in the official catalog or through `GET /mcp` before letting tools near your agent. [API Docs](https://gen.pollinations.ai/docs)"
+    }
+  ]
 }

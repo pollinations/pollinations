@@ -43,5 +43,22 @@
       "date": "2026-07-20"
     }
   ],
-  "generated_at": "2026-07-21T07:01:05.159806+00:00"
+  "generated_at": "2026-07-21T07:01:05.159806+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Better embeddings, including multimodal search",
+      "text": "Gemini Embedding 2 now uses its GA endpoint, with role-aware Cohere requests and combined text-image embeddings for less approximate vector search."
+    },
+    {
+      "emoji": "💡",
+      "title": "Model pickers now speak human",
+      "text": "All 132 model descriptions were rewritten around practical trade-offs—quality, speed, cost, and capabilities—so apps can help people choose without making them read provider lore. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Community model publishing has a front door",
+      "text": "Prospective publishers can now request allowlist access for public text, image, embedding, speech, and transcription models; private models still need no invitation. [Request access](https://github.com/pollinations/pollinations/issues/new/choose)"
+    }
+  ]
 }

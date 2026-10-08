@@ -19,5 +19,12 @@
       "date": "2026-02-11"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.618882+00:00"
+  "generated_at": "2026-03-18T19:58:13.618882+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "OpenClaw Integration",
+      "text": "Set up AI coding agents in one command with the new OpenClaw landing page and auto-install script."
+    }
+  ]
 }

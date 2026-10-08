@@ -23,5 +23,12 @@
       "date": "2026-02-14"
     }
   ],
-  "generated_at": "2026-03-18T21:36:09.859613+00:00"
+  "generated_at": "2026-03-18T21:36:09.859613+00:00",
+  "highlights": [
+    {
+      "emoji": "🦞",
+      "title": "pollinations.ai × OpenClaw",
+      "text": "Power your [OpenClaw](https://openclaw.ai) agent with 25+ AI models — Kimi K2.5, DeepSeek, Claude, Gemini & more. One script, free credits, 30 seconds. [Get started →](https://openclaw.pollinations.ai)"
+    }
+  ]
 }

@@ -31,5 +31,12 @@
       "date": "2026-06-14"
     }
   ],
-  "generated_at": "2026-06-15T07:52:14.393578+00:00"
+  "generated_at": "2026-06-15T07:52:14.393578+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Qwen3.7 Plus & 512K Context",
+      "text": "Qwen3.7 Plus is now live, and MiniMax M3 just got its context window stretched to an absurd 512K tokens. Available now via the [text endpoint](https://gen.pollinations.ai/v1/chat/completions)."
+    }
+  ]
 }

@@ -27,5 +27,31 @@
       "date": "2026-05-05"
     }
   ],
-  "generated_at": "2026-05-06T06:52:11.050581+00:00"
+  "generated_at": "2026-05-06T06:52:11.050581+00:00",
+  "highlights": [
+    {
+      "emoji": "🧰",
+      "title": "Worl Tools",
+      "text": "An offline-first desktop app packing over 20 utilities into one Swiss army knife. [Try it](https://worldtools-mu.vercel.app/)",
+      "app": true
+    },
+    {
+      "emoji": "🔨",
+      "title": "App Forge",
+      "text": "A new community-built hub for discovering and exploring applications in the greenhouse. [Try it](http://torrents.signalcity.tv)",
+      "app": true
+    },
+    {
+      "emoji": "⚓",
+      "title": "Pyanchor",
+      "text": "Live-edit your Next.js, Vite, and Astro apps straight from the browser with this open-source AI sidecar. [Try it](https://pyanchor.pyan.kr)",
+      "app": true
+    },
+    {
+      "emoji": "📱",
+      "title": "ZenWall AI",
+      "text": "A dedicated generator for clean, minimalist 9:16 vertical wallpapers. [Try it](https://zenwall.netlify.app/)",
+      "app": true
+    }
+  ]
 }

@@ -19,5 +19,12 @@
       "date": "2026-05-20"
     }
   ],
-  "generated_at": "2026-05-21T07:13:01.310566+00:00"
+  "generated_at": "2026-05-21T07:13:01.310566+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Polly Upgrades",
+      "text": "We've tuned Polly's voice to drop the annoying chatbot fluff, improved LaTeX and markdown rendering for tables, and batched code blocks to keep your chat clean."
+    }
+  ]
 }

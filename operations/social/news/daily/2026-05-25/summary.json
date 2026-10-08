@@ -11,5 +11,13 @@
       "date": "2026-05-25"
     }
   ],
-  "generated_at": "2026-05-26T07:07:36.083775+00:00"
+  "generated_at": "2026-05-26T07:07:36.083775+00:00",
+  "highlights": [
+    {
+      "emoji": "💬",
+      "title": "Helix AI Enters the Chat",
+      "text": "Another community creation lands in the showcase. [Try it](https://helixai-4-0.github.io/)",
+      "app": true
+    }
+  ]
 }

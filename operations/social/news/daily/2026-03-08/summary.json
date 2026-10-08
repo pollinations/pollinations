@@ -11,5 +11,12 @@
       "date": "2026-03-08"
     }
   ],
-  "generated_at": "2026-03-09T06:21:52.145499+00:00"
+  "generated_at": "2026-03-09T06:21:52.145499+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Fresh coat of pixels",
+      "text": "The [main website](https://hello.pollinations.ai) has a new look. We replaced the old theming engine with a cohesive color palette and dynamic retro pixel art backgrounds. Much cozier."
+    }
+  ]
 }

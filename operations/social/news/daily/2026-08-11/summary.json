@@ -23,5 +23,13 @@
       "date": "2026-08-11"
     }
   ],
-  "generated_at": "2026-08-12T06:36:37.655695+00:00"
+  "generated_at": "2026-08-12T06:36:37.655695+00:00",
+  "highlights": [
+    {
+      "emoji": "🌟",
+      "title": "The app garden got portraits",
+      "text": "The community catalog now has visual previews for 762 more retained apps. Browsing strange little inventions is less of a text adventure now. [Try it](https://pollinations.ai)",
+      "app": true
+    }
+  ]
 }

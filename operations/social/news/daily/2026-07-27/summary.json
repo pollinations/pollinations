@@ -51,5 +51,22 @@
       "date": "2026-07-27"
     }
   ],
-  "generated_at": "2026-07-28T07:05:54.394133+00:00"
+  "generated_at": "2026-07-28T07:05:54.394133+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Community image edits",
+      "text": "Validated community models can now edit reference images through the OpenAI-compatible `/v1/images/edits` endpoint. Send pixels in; receive altered pixels back. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "NVIDIA Nemotron 3 Ultra",
+      "text": "`nemotron` is now available for 262K-context reasoning, tool use, and structured JSON through the standard text API. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "⚡",
+      "title": "More reliable Z-Image capacity",
+      "text": "New GPU workers now join production only after proving they are healthy; the canary handled 102/102 requests with a 4.69s p50."
+    }
+  ]
 }

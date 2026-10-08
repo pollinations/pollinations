@@ -47,5 +47,49 @@
       "date": "2026-03-26"
     }
   ],
-  "generated_at": "2026-03-27T06:24:30.576814+00:00"
+  "generated_at": "2026-03-27T06:24:30.576814+00:00",
+  "highlights": [
+    {
+      "emoji": "🌸",
+      "title": "OrchidLLM",
+      "text": "New multimodal generation app in the showcase. Send text, get whatever. [Try it](https://orchidllm.vercel.app)",
+      "app": true
+    },
+    {
+      "emoji": "⚙️",
+      "title": "OpenCode Configurator",
+      "text": "Auto-configure OpenCode environments with our text models. Less boilerplate, more building. [View repo](https://github.com/onatrain/opencode-pollinations-conf)",
+      "app": true
+    },
+    {
+      "emoji": "📝",
+      "title": "TranslateIt",
+      "text": "Context-aware AI translation tool. Because literal translations are usually terrible. [Try it](https://connor.ct.ws/translateit)",
+      "app": true
+    },
+    {
+      "emoji": "🖥️",
+      "title": "Tofu",
+      "text": "A rich terminal-based chat client. For when you absolutely refuse to leave the command line. [Try it](https://crates.io/crates/tofu-llm)",
+      "app": true
+    },
+    {
+      "emoji": "🎞️",
+      "title": "Storymake",
+      "text": "Generate short-form videos from text prompts. The content mill demands to be fed. [Try it](https://storymake.io)",
+      "app": true
+    },
+    {
+      "emoji": "🤖",
+      "title": "Apiction",
+      "text": "A new platform for chatting with multiple AI models side-by-side. [Try it](https://apiction.site/)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Visiona",
+      "text": "A clean, responsive web interface for real-time AI chatting. [Try it](https://visiona-wheat.vercel.app/)",
+      "app": true
+    }
+  ]
 }

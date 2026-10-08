@@ -63,5 +63,34 @@
       "date": "2026-07-22"
     }
   ],
-  "generated_at": "2026-07-23T07:00:03.935510+00:00"
+  "generated_at": "2026-07-23T07:00:03.935510+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Community image endpoints",
+      "text": "Community providers can now serve images through the standard `/image/{prompt}` and OpenAI-compatible `/v1/images/generations` APIs. [Try image generation](https://gen.pollinations.ai/image/{prompt})"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Gemini 3.6 Flash",
+      "text": "Google text models now run through Vertex endpoints with streaming, reasoning, tools, multimodal inputs, and native Google Search intact. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Laguna S 2.1",
+      "text": "`laguna` brings tool use, optional reasoning, and a mildly excessive 1,048,576-token context window to the text API. [Check the API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Anime Legends Generator",
+      "text": "Make anime-inspired legendary characters from a prompt. [Try it](https://anime.caasexpresss.com)",
+      "app": true
+    },
+    {
+      "emoji": "✨",
+      "title": "Arika",
+      "text": "A community-built conversational AI for chats with slightly less robot energy. [Try it](https://arika.hizumi.in)",
+      "app": true
+    }
+  ]
 }

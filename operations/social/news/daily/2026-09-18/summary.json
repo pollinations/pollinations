@@ -47,5 +47,27 @@
       "date": "2026-09-18"
     }
   ],
-  "generated_at": "2026-09-19T06:26:50.531194+00:00"
+  "generated_at": "2026-09-19T06:26:50.531194+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "FLUX.2 Max",
+      "text": "High-end image generation and editing now supports up to eight reference images via `black-forest-labs/flux.2-max`. [Try the image API](https://gen.pollinations.ai/image/{prompt})"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Tencent HY3 and HY4 Preview",
+      "text": "Two large-context text models joined the API: `tencent/hy3` for high-reasoning workloads and `tencent/hy4-preview` with a 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "💡",
+      "title": "Typed decisions with Jev",
+      "text": "Call `typesafe/jev` (or `jev`) through Chat Completions for structured answers with calibrated confidence, or use `jev_decide` through MCP. [Check the API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "GPT-4o mini",
+      "text": "`openai/gpt-4o-mini` is now available through the unified text API, with a 128K context window and pinned provider routing. [Browse models](https://gen.pollinations.ai/v1/models)"
+    }
+  ]
 }

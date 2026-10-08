@@ -135,5 +135,33 @@
       "date": "2026-10-01"
     }
   ],
-  "generated_at": "2026-10-02T06:31:28.156247+00:00"
+  "generated_at": "2026-10-02T06:31:28.156247+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Pollinations in Krita",
+      "text": "Generate or edit images inside Krita, size results to your canvas or selection, and keep the original paint layer intact."
+    },
+    {
+      "emoji": "🎨",
+      "title": "An image studio for Figma",
+      "text": "Generate and edit images in Figma with your own Pollinations key. [Try it](https://guest453.github.io/pollinations-figma/)",
+      "app": true
+    },
+    {
+      "emoji": "🤖",
+      "title": "Two new decision models",
+      "text": "Try Kev 4B and the free Span-01 Lite through `/alpha/decisions` or [chat completions](https://gen.pollinations.ai/v1/chat/completions)."
+    },
+    {
+      "emoji": "✨",
+      "title": "Bigger media uploads",
+      "text": "Send files up to 400 MiB through the existing FormData or raw `/upload` flow. No client changes needed. [Media Store](https://media.pollinations.ai)"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Pollen for connecting Polli CLI",
+      "text": "Connect with `polli auth login` and claim a one-time 2-Pollen Quest."
+    }
+  ]
 }

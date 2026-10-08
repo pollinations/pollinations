@@ -203,5 +203,27 @@
       "date": "2026-01-12"
     }
   ],
-  "generated_at": "2026-09-04T11:33:15.398325+00:00"
+  "generated_at": "2026-09-04T11:33:15.398325+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Models",
+      "text": "Added `glm` (GLM-4.7), `minimax` (MiniMax-M2.1), and Perplexity with citations. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
+    },
+    {
+      "emoji": "🎁",
+      "title": "Free Tier Upgrades",
+      "text": "Active users are now automatically upgraded to the Seed tier ($3/day) based on activity."
+    },
+    {
+      "emoji": "📱",
+      "title": "New AI Apps",
+      "text": "Try **Study Buzz** (study tools), **Onyx** (noir storyboards), and **Player or AI** (Roblox game)."
+    },
+    {
+      "emoji": "🎥",
+      "title": "Video Playback",
+      "text": "Video generations now render with native players and improved tooltips."
+    }
+  ]
 }

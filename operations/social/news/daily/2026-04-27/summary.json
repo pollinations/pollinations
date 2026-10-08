@@ -23,5 +23,19 @@
       "date": "2026-04-27"
     }
   ],
-  "generated_at": "2026-04-28T06:51:50.995459+00:00"
+  "generated_at": "2026-04-28T06:51:50.995459+00:00",
+  "highlights": [
+    {
+      "emoji": "📖",
+      "title": "StoryForge",
+      "text": "A new community app that generates illustrated, chapter-based short stories using the [Unified API](https://gen.pollinations.ai). [Try it](http://pollen-story-forge.vercel.app/)",
+      "app": true
+    },
+    {
+      "emoji": "🖥️",
+      "title": "Frieze",
+      "text": "Because your terminal needs art too. A community-built shell tool for generating AI banners and slogans right in your CLI. [View repo](https://github.com/peterjaric/frieze)",
+      "app": true
+    }
+  ]
 }

@@ -23,5 +23,22 @@
       "date": "2026-02-09"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.615251+00:00"
+  "generated_at": "2026-03-18T19:58:13.615251+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Massive Model Drop",
+      "text": "Added `imagen-4`, `flux-2-dev`, `grok-video`, and `LTX-2` for next-level image and video generation."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Audio Studio",
+      "text": "Generate music with `elevenmusic`, transcribe with `whisper`, and use emotive TTS with `eleven_v3`."
+    },
+    {
+      "emoji": "🧠",
+      "title": "Smarter Claude",
+      "text": "Upgraded `claude-large` to the latest Claude 3 Opus 4.6 for enhanced reasoning."
+    }
+  ]
 }

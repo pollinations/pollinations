@@ -67,5 +67,27 @@
       "date": "2026-01-19"
     }
   ],
-  "generated_at": "2026-09-04T11:38:40.272777+00:00"
+  "generated_at": "2026-09-04T11:38:40.272777+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Model: NomNom",
+      "text": "Added `nomnom` (alias `gemini-scrape`) for web research, scraping, and crawling capabilities. [API Docs](https://enter.pollinations.ai/api/docs)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Klein Image Model",
+      "text": "Deployed FLUX.2 `klein` model for faster text-to-image and precise image editing. [Try it](https://hello.pollinations.ai)"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Audio Generation",
+      "text": "Text-to-speech with voice selection is now available directly on the Play page."
+    },
+    {
+      "emoji": "🔑",
+      "title": "Bring Your Own Key",
+      "text": "Connect your personal API key to [chat.pollinations.ai](https://chat.pollinations.ai) for custom usage limits and billing."
+    }
+  ]
 }

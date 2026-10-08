@@ -55,5 +55,28 @@
       "date": "2026-10-03"
     }
   ],
-  "generated_at": "2026-10-04T08:09:39.264830+00:00"
+  "generated_at": "2026-10-04T08:09:39.264830+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "More tools for MCP clients",
+      "text": "Check usage and earnings, browse quests, and manage API keys from your MCP client. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)."
+    },
+    {
+      "emoji": "📱",
+      "title": "Sandboxes from `polli`",
+      "text": "Create, list, and stop sandboxes from the CLI, then generate SSH configuration to connect. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli)."
+    },
+    {
+      "emoji": "✨",
+      "title": "PDFs and audio in chat requests",
+      "text": "Send inline PDFs to OpenRouter models or base64 audio to Inkling; Gen handles the media transfer behind the scenes. [API docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Sixteen design decisions from one sentence",
+      "text": "Jev Assembler turns a page description into choices for layout, typography, palette, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler)",
+      "app": true
+    }
+  ]
 }

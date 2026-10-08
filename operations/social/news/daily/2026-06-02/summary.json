@@ -59,5 +59,66 @@
       "date": "2026-06-02"
     }
   ],
-  "generated_at": "2026-06-03T07:37:11.683117+00:00"
+  "generated_at": "2026-06-03T07:37:11.683117+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "MiniMax M3 arrives",
+      "text": "Added `minimax-m3` with support for vision, tools, reasoning, and a massive 1M context window. Check the [Available Text Models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "✨",
+      "title": "Lunar AI",
+      "text": "A new conversational interface with a sleek design joins the community greenhouse. [Try it](https://luquinhasamc.github.io/My-Hub-AI-Projects/prs/LunarAI.html)",
+      "app": true
+    },
+    {
+      "emoji": "🔗",
+      "title": "Anura Hub AI",
+      "text": "A community-built platform integrating image generation, text processing, and automation tools. [Try it](https://meow-script.vercel.all)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "NebulaCraft",
+      "text": "Generate custom amigurumi crochet patterns using Pollinations AI. [Try it](https://nebulacraft-1c723.web.app)",
+      "app": true
+    },
+    {
+      "emoji": "📱",
+      "title": "Photo AI",
+      "text": "A new iOS application leveraging the Pollinations image API for mobile generation. [Try it](https://apps.apple.com/pk/app/photo-ai-image-generator/id6759615194)",
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "Ather Mini",
+      "text": "An educational chat interface designed to teach people about AI. [Try it](http://minitejas.in)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Imagio AI",
+      "text": "A fast, community-built text-to-image generator. [Try it](https://imagio-ai.vercel.app/)",
+      "app": true
+    },
+    {
+      "emoji": "🤖",
+      "title": "OtakuBox Bot",
+      "text": "Generate anime content directly in Telegram with this new community bot. [Try it](https://badamchuk.github.io/otakubox/)",
+      "app": true
+    },
+    {
+      "emoji": "✨",
+      "title": "Multi-Model Chat UI",
+      "text": "A ready-to-use community chat app supporting multiple models, vision, and TTS. [Try it](https://farl.github.io/pollinations-ai-text-generation/)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "AuraForge",
+      "text": "An identity orchestration studio for generating flat 2D vector mascots and avatars. [Try it](https://autoforge-iota.vercel.app/)",
+      "app": true
+    }
+  ]
 }

@@ -27,5 +27,27 @@
       "date": "2026-04-12"
     }
   ],
-  "generated_at": "2026-04-13T06:40:41.248883+00:00"
+  "generated_at": "2026-04-13T06:40:41.248883+00:00",
+  "highlights": [
+    {
+      "emoji": "🧠",
+      "title": "Kimi gets a brain upgrade",
+      "text": "The `kimi` text model now runs Moonshot's K2-thinking model under the hood. You get reasoning blocks and a massive 128K context window for your largest prompts."
+    },
+    {
+      "emoji": "⚡",
+      "title": "50x faster text generation",
+      "text": "We migrated `deepseek`, `glm`, `minimax`, and `qwen-large` to Fireworks AI. Latency dropped off a cliff, and Qwen got bumped to its 396B flagship version. Try them in the [Unified API](https://gen.pollinations.ai)."
+    },
+    {
+      "emoji": "🖼️",
+      "title": "Sana hits 0.165s per image",
+      "text": "The default Sana [image model](https://gen.pollinations.ai/image/models) was upgraded to 1.6B and moved to GH200 instances. Better pixels, delivered in a fraction of a second."
+    },
+    {
+      "emoji": "🌐",
+      "title": "Client-side OpenAI SDK support",
+      "text": "We adjusted our CORS headers so standard OpenAI SDKs now work directly from the browser. Build your frontend apps without fighting preflight errors."
+    }
+  ]
 }

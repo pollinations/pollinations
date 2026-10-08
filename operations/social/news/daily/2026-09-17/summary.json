@@ -59,5 +59,29 @@
       "date": "2026-09-17"
     }
   ],
-  "generated_at": "2026-09-18T06:29:30.834688+00:00"
+  "generated_at": "2026-09-18T06:29:30.834688+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Your key has a pulse",
+      "text": "Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)"
+    },
+    {
+      "emoji": "📱",
+      "title": "Model status, minus the weather report",
+      "text": "Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "DCORE joins the garden",
+      "text": "Generate Pollinations images from a Discord–Telegram bot already tending 16 servers. [Try it](https://bot.dtempest.online)",
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "A small pile of developer shortcuts",
+      "text": "New community tools turn plain English into regexes, SQL, API blueprints, converted code, or unit tests. [Try it](https://fadyabohamza-netizen.github.io/regexly) [Try it](https://fadyabohamza-netizen.github.io/sqlcraft) [Try it](https://fadyabohamza-netizen.github.io/apiscribe) [Try it](https://fadyabohamza-netizen.github.io/codeverter) [Try it](https://fadyabohamza-netizen.github.io/testmine)",
+      "app": true
+    }
+  ]
 }

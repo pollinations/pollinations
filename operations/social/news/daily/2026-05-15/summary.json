@@ -67,5 +67,33 @@
       "date": "2026-05-15"
     }
   ],
-  "generated_at": "2026-05-16T06:45:30.298497+00:00"
+  "generated_at": "2026-05-16T06:45:30.298497+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "GPT-5.4-Mini added",
+      "text": "OpenAI's `gpt-5.4-mini` is now live on the free tier with full support for text, images, tools, and streaming."
+    },
+    {
+      "emoji": "🚀",
+      "title": "Mistral 4 arrives",
+      "text": "Added the new `mistral-4` model and bumped the default `mistral` alias to 3.2. Both are available on the free tier."
+    },
+    {
+      "emoji": "🔓",
+      "title": "DeepSeek V4 Flash is free",
+      "text": "We moved some infrastructure around and dropped the paid-only restriction on `deepseek-v4-flash`. Have at it."
+    },
+    {
+      "emoji": "⚡",
+      "title": "Faster Qwen Vision",
+      "text": "Swapped the default `qwen-vision` endpoint to the non-thinking instruct variant for much faster visual tasks. If you need it to ponder its existence, `qwen-vision-pro` is still there."
+    },
+    {
+      "emoji": "🎨",
+      "title": "PromptArt Telegram Bot",
+      "text": "A new community bot for generating styled images without wrestling with prompts. [Try it](https://t.me/promptart_ai_bot)",
+      "app": true
+    }
+  ]
 }

@@ -11,5 +11,12 @@
       "date": "2026-05-31"
     }
   ],
-  "generated_at": "2026-06-01T07:40:04.018021+00:00"
+  "generated_at": "2026-06-01T07:40:04.018021+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "React Auth & UI Packages",
+      "text": "Drop in a `PolliProvider` to get SSR-safe auth hooks, OAuth login, and wallet UI components with two imports. Stop writing auth boilerplate and check the [React Docs](https://react-hooks.pollinations.ai)."
+    }
+  ]
 }

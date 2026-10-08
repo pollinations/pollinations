@@ -43,5 +43,30 @@
       "date": "2026-05-08"
     }
   ],
-  "generated_at": "2026-05-09T06:41:09.594479+00:00"
+  "generated_at": "2026-05-09T06:41:09.594479+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Gemma 4 26B",
+      "text": "The new 26B parameter Gemma model is now live on the text API. It brings multimodal support, tool use, and a 262k context window for when you really need to paste that entire codebase. [View models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Command Line Canvas",
+      "text": "Because leaving the terminal is overrated. Generate AI images directly from your command line with the new PollImage CLI tool. [Try it](https://www.npmjs.com/package/pollimage)",
+      "app": true
+    },
+    {
+      "emoji": "🌟",
+      "title": "Madlisten",
+      "text": "The hive is cooking. A new community-built recipe browsing application joins the showcase. [Try it](https://madlisten.dk/)",
+      "app": true
+    },
+    {
+      "emoji": "📱",
+      "title": "QR Codes for Tiny Humans",
+      "text": "Generate and print custom QR-enabled learning cards for screen-free toddler interaction. [Try it](https://toddler-read.netlify.app/)",
+      "app": true
+    }
+  ]
 }

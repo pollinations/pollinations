@@ -155,5 +155,28 @@
       "date": "2026-09-16"
     }
   ],
-  "generated_at": "2026-09-17T06:30:59.952384+00:00"
+  "generated_at": "2026-09-17T06:30:59.952384+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "ElevenLabs Music v2.5",
+      "text": "Generate and inpaint music with the newer `elevenlabs/music-v2.5` model through the audio API. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "CatGPT Has Opinions",
+      "text": "Call `Creatneworld/catgpt-comic` through chat to get a sarcastic cat answer and an inline single-panel comic in one Markdown response."
+    },
+    {
+      "emoji": "💡",
+      "title": "The bees remember now",
+      "text": "Computer MCP agents can now share Git-backed collective memory—read, commit, and build on notes without handing shell access any credentials. [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "A fox remembers",
+      "text": "Chat with Moko, a desert-fox NPC that keeps the facts you ask it to remember between conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com)",
+      "app": true
+    }
+  ]
 }

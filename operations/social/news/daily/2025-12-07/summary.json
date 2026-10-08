@@ -31,5 +31,37 @@
       "date": "2025-12-07"
     }
   ],
-  "generated_at": "2026-09-04T12:26:07.891866+00:00"
+  "generated_at": "2026-09-04T12:26:07.891866+00:00",
+  "highlights": [
+    {
+      "emoji": "🎥",
+      "title": "Video Generation",
+      "text": "Create videos from text or images using **Veo** and **Seedance** models via API or [Chat](https://hello.pollinations.ai)."
+    },
+    {
+      "emoji": "✨",
+      "title": "Seedream 4.5",
+      "text": "Upgraded image generation to **Seedream 4.5** supporting stunning 2K resolution."
+    },
+    {
+      "emoji": "🔍",
+      "title": "Web Search",
+      "text": "**Perplexity** and **Gemini** models can now access real-time web search results."
+    },
+    {
+      "emoji": "🚀",
+      "title": "Amazon Nova Micro",
+      "text": "Added `nova-micro` to text services for ultra-low-cost, high-speed inference."
+    },
+    {
+      "emoji": "🎨",
+      "title": "High-Res Upgrades",
+      "text": "`seedream` updated to v4.5 (2K resolution) and `seedance` upgraded to Pro-Fast for superior quality."
+    },
+    {
+      "emoji": "📊",
+      "title": "Richer Chat",
+      "text": "The [Chat UI](https://chat.pollinations.ai) now renders data charts and supports video generation directly."
+    }
+  ]
 }

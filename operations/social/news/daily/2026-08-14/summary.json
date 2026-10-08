@@ -155,5 +155,43 @@
       "date": "2026-08-14"
     }
   ],
-  "generated_at": "2026-08-15T06:12:59.108969+00:00"
+  "generated_at": "2026-08-15T06:12:59.108969+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Starred models stay starred",
+      "text": "The [Model Monitor](https://model-monitor.pollinations.ai) now remembers your favorite models, filters, and category view. Because scrolling the whole garden every time was apparently a feature."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Scribe joins the live hive",
+      "text": "Plug ElevenLabs Scribe live transcription into OpenAI Realtime-compatible clients via `/realtime` or `/v1/realtime`, with partial transcripts, VAD, and language controls."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Grok gets a new canvas",
+      "text": "`x-ai/grok-imagine-image-2.0` can generate and edit 1K or 2K images with up to three reference images through the usual image routes."
+    },
+    {
+      "emoji": "🎬",
+      "title": "Two new seeds, faster films",
+      "text": "Generate video with `seedance-2.0-mini` for 4–10 second 480p/720p clips, `seedance-2.0-fast` for quick shots, or `minimax-h3` for five-second videos with synchronized audio."
+    },
+    {
+      "emoji": "🤖",
+      "title": "A glimmer and a very large Qwen arrive",
+      "text": "`muse-glimmer` brings vision, tools, reasoning, and 131K context; `qwen3.8-2.4t-a95b` adds a 262K-context option for long, tool-using work."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Speech takes the short route",
+      "text": "Every speech model, including multi-voice `eleven-dialogue`, now works through the compact `/audio/{text}` endpoint as well as `/v1/audio/speech`."
+    },
+    {
+      "emoji": "✨",
+      "title": "Words become wireframes",
+      "text": "FSChart turns plain-language prompts into browser-based 3D models and function plots. [Try it](https://fastnow.github.io/fschart_pollinations)",
+      "app": true
+    }
+  ]
 }

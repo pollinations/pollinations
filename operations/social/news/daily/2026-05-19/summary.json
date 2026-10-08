@@ -19,5 +19,18 @@
       "date": "2026-05-19"
     }
   ],
-  "generated_at": "2026-05-20T07:08:55.095654+00:00"
+  "generated_at": "2026-05-20T07:08:55.095654+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Gemini 3.5 Flash",
+      "text": "Google's `gemini-3.5-flash` is now live on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions). Fast, capable of reasoning, and ready for tool use and code execution."
+    },
+    {
+      "emoji": "🌸",
+      "title": "Duwit joins the showcase",
+      "text": "Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/)",
+      "app": true
+    }
+  ]
 }

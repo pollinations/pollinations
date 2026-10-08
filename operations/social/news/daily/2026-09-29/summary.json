@@ -171,5 +171,43 @@
       "date": "2026-09-29"
     }
   ],
-  "generated_at": "2026-09-30T06:31:48.436160+00:00"
+  "generated_at": "2026-09-30T06:31:48.436160+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Claude Sonnet 5.5",
+      "text": "Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Claude Code, meet Pollinations",
+      "text": "The new Anthropic-compatible `/v1/messages` endpoint supports streaming, tools, and thinking across chat-capable models. Point `ANTHROPIC_BASE_URL` at `https://gen.pollinations.ai`."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Lightning Image Turbo",
+      "text": "Generate images from a prompt, with up to two reference images for guidance, through the image API. [Explore image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Audio gets more useful",
+      "text": "Transcribe with Gemini 3.5 for word timestamps and speaker labels, or split a recording into two or six stems with ElevenLabs. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🎵",
+      "title": "More voices for speech",
+      "text": "`openai/tts-1` and `openai/tts-1-hd` are now available through the existing speech endpoints. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "✨",
+      "title": "Polli CLI grows a third dimension",
+      "text": "Generate 3D files from text or images with `polli gen 3d`; the CLI also adds voice changing, audio isolation, and speech timestamps. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Pollinations inside Figma",
+      "text": "Generate and edit images on the canvas with a community-built plugin using your own Pollen. [View repo](https://github.com/xiaotian1171/pollinations-figma)",
+      "app": true
+    }
+  ]
 }

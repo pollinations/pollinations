@@ -23,5 +23,29 @@
       "date": "2025-11-01"
     }
   ],
-  "generated_at": "2026-09-04T12:02:27.844602+00:00"
+  "generated_at": "2026-09-04T12:02:27.844602+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Next-Gen Models",
+      "text": "Access **GPT-5 Nano** and **GPT-4.1** via the text API, plus **Gemini 2.5 Flash** is now active. [Text API](https://enter.pollinations.ai)"
+    },
+    {
+      "emoji": "📱",
+      "title": "ReImagine Mobile App",
+      "text": "A new open-source React Native application for transforming images on the go. [Try it](https://play.google.com/store/apps/details?id=com.ismafly.reimagine)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Opposite Prompt Generator",
+      "text": "A creative tool that generates the semantic opposite of your image prompts. [Try it](https://opposite-prompt-generator.pollinations.ai)",
+      "app": true
+    },
+    {
+      "emoji": "⚡",
+      "title": "Simplified Text API",
+      "text": "Developers can now use `/api/generate/text/:prompt` for instant generation and pass auth tokens via URL parameters. [API Docs](https://enter.pollinations.ai/api/docs)"
+    }
+  ]
 }

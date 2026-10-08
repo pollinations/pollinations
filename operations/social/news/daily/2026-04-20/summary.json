@@ -31,5 +31,29 @@
       "date": "2026-04-20"
     }
   ],
-  "generated_at": "2026-04-21T06:34:59.169341+00:00"
+  "generated_at": "2026-04-21T06:34:59.169341+00:00",
+  "highlights": [
+    {
+      "emoji": "🔐",
+      "title": "The golden handshake",
+      "text": "The BYOP authorization screen got a complete redesign. Upfront spending limits and a cleaner flow so you actually know what you're agreeing to when handing over your pollen."
+    },
+    {
+      "emoji": "📊",
+      "title": "Dashboard spring cleaning",
+      "text": "We simplified the API key filter in the [Dashboard](https://enter.pollinations.ai) and added direct key filtering to the SDK. Track your usage without fighting the UI."
+    },
+    {
+      "emoji": "🌟",
+      "title": "Insight Engine blooms again",
+      "text": "Insight Engine has been rewired to use the latest endpoints and is back in the community showcase. [Try it](https://erbharatmalhotra.github.io/Insight_Engine/)",
+      "app": true
+    },
+    {
+      "emoji": "🔍",
+      "title": "X-Ray vision for repos",
+      "text": "Reporay joins the community showcase. Feed it a GitHub URL, get architectural insights and summaries back. [Try it](https://repo-ray.vercel.app)",
+      "app": true
+    }
+  ]
 }

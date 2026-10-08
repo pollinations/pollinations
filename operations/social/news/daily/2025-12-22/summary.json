@@ -79,5 +79,27 @@
       "date": "2025-12-22"
     }
   ],
-  "generated_at": "2026-09-04T12:38:47.879760+00:00"
+  "generated_at": "2026-09-04T12:38:47.879760+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Models",
+      "text": "Default `gemini` is now **Gemini 3 Flash**, plus added **Perplexity Sonar Reasoning Pro**. [API Docs](https://enter.pollinations.ai/api/docs)"
+    },
+    {
+      "emoji": "🎥",
+      "title": "Veo Video Upgrades",
+      "text": "Added **Image-to-Video** and **Frame Interpolation** (start/end frames) support for the `veo` model."
+    },
+    {
+      "emoji": "🔗",
+      "title": "MCP Server v2.0",
+      "text": "Major update adding video generation, analysis, and web search tools."
+    },
+    {
+      "emoji": "🎵",
+      "title": "New Voices",
+      "text": "Added 7 new voices (Coral, Verse, Sage, etc.) to the `openai-audio` model."
+    }
+  ]
 }

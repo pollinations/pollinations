@@ -71,5 +71,27 @@
       "date": "2026-07-14"
     }
   ],
-  "generated_at": "2026-07-15T06:54:42.012635+00:00"
+  "generated_at": "2026-07-15T06:54:42.012635+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Public media galleries",
+      "text": "Tag an upload to publish it in a shareable, newest-first gallery at `GET /media?tag=`; leave it untagged and it stays private. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "GPT Image models rerouted",
+      "text": "`gptimage`, `gptimage-large`, and `gpt-image-2` now use dedicated Azure routes with regional failover, so image generations and edits have somewhere else to go when one garden closes."
+    },
+    {
+      "emoji": "🌟",
+      "title": "Model speed, measured properly",
+      "text": "Model Monitor now sorts models by streamed completion throughput in tokens per second. Less folklore, more `tok/s`. [Check the monitor](https://model-monitor.pollinations.ai)"
+    },
+    {
+      "emoji": "💡",
+      "title": "Seeds reach the SDK API",
+      "text": "`@pollinations/sdk` now forwards seeds to Gen, giving SDK users reproducible generations without client-side retry roulette. [View package](https://www.npmjs.com/package/@pollinations/sdk)"
+    }
+  ]
 }

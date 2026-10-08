@@ -39,5 +39,27 @@
       "date": "2026-03-13"
     }
   ],
-  "generated_at": "2026-03-14T06:14:34.829767+00:00"
+  "generated_at": "2026-03-14T06:14:34.829767+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Voice acting via system prompt",
+      "text": "Seraphyn joined as a community provider, bringing `qwen3-tts` to the [Unified API](https://gen.pollinations.ai). You can now style the voice output just by describing what you want in the system prompt."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Dirtberry Pro",
+      "text": "Added `dirtberry-pro` to the image model roster. Pass it as your model parameter when you need high realism and complex scenes."
+    },
+    {
+      "emoji": "📊",
+      "title": "Public user endpoint",
+      "text": "We opened a restricted Tinybird pipe that safely exposes public profile and tier data. You can finally build those community leaderboards without leaking secrets."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Gratisfy integration",
+      "text": "Pollinations is now hooked up to Gratisfy, letting you access our endpoints alongside other free AI providers through a single unified API."
+    }
+  ]
 }

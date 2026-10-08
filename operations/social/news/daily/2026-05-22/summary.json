@@ -11,5 +11,12 @@
       "date": "2026-05-22"
     }
   ],
-  "generated_at": "2026-05-23T06:52:21.245638+00:00"
+  "generated_at": "2026-05-23T06:52:21.245638+00:00",
+  "highlights": [
+    {
+      "emoji": "📱",
+      "title": "Dashboard Navigation Update",
+      "text": "Mobile users can now always see the sign-in button regardless of screen height, plus new theme-aware scrollbars across the [Dashboard](https://enter.pollinations.ai)."
+    }
+  ]
 }

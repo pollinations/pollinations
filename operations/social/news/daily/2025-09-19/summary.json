@@ -11,5 +11,32 @@
       "date": "2025-09-19"
     }
   ],
-  "generated_at": "2026-09-04T12:33:15.731569+00:00"
+  "generated_at": "2026-09-04T12:33:15.731569+00:00",
+  "highlights": [
+    {
+      "date": "2025-09-20",
+      "emoji": "🔗",
+      "title": "OpenAI Proxy",
+      "text": "New drop-in replacement layer exposing OpenAI-compatible endpoints for pollinations.ai text, image, and audio services."
+    },
+    {
+      "date": "2025-09-20",
+      "emoji": "💻",
+      "title": "VS Code Extension",
+      "text": "Generate AI assets directly inside your IDE with the new Prompt2Image extension."
+    },
+    {
+      "date": "2025-09-20",
+      "emoji": "🎨",
+      "title": "StoryWeaver AI",
+      "text": "Create real-time comic book panels and storyboards. [Try it](https://storyweaver-ai-umber.vercel.app/)",
+      "app": true
+    },
+    {
+      "date": "2025-09-20",
+      "emoji": "⚡",
+      "title": "unpkg.ai",
+      "text": "Generate JavaScript ESM modules on-demand using LLMs in this new developer tool."
+    }
+  ]
 }

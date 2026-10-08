@@ -51,5 +51,32 @@
       "date": "2026-01-05"
     }
   ],
-  "generated_at": "2026-09-04T11:26:52.979196+00:00"
+  "generated_at": "2026-09-04T11:26:52.979196+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "React Audio Hook",
+      "text": "New `usePollinationsAudio` hook for adding AI voice to your apps."
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini Agent Tools",
+      "text": "Enable `google_search`, `code_execution`, and `url_context` on Gemini models. [API Docs](https://enter.pollinations.ai/api/docs)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Qwen3-Coder",
+      "text": "New `Qwen3-Coder-30B` model available for advanced code generation tasks."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Flux Returns",
+      "text": "The popular `flux` model is back as a standalone option for image generation."
+    },
+    {
+      "emoji": "✨",
+      "title": "High-Res Upscaling",
+      "text": "Generate images larger than 1280x1280 using the new integrated SPAN 2x upscaler."
+    }
+  ]
 }

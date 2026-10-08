@@ -59,5 +59,27 @@
       "date": "2026-02-02"
     }
   ],
-  "generated_at": "2026-09-04T11:49:16.996941+00:00"
+  "generated_at": "2026-09-04T11:49:16.996941+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Kimi K2.5",
+      "text": "Upgraded model with vision support and improved reasoning capabilities."
+    },
+    {
+      "emoji": "🧠",
+      "title": "Web Research",
+      "text": "Claude can now use `perplexity` and `gemini-search` tools for real-time answers."
+    },
+    {
+      "emoji": "💎",
+      "title": "Premium Access",
+      "text": "High-end models `veo`, `claude-large`, and `seedream-pro` are now available for credit holders."
+    },
+    {
+      "emoji": "📱",
+      "title": "Moltbot Integration",
+      "text": "Use pollinations.ai on Telegram & WhatsApp via the new Moltbot provider."
+    }
+  ]
 }

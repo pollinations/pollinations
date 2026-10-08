@@ -31,5 +31,22 @@
       "date": "2026-03-17"
     }
   ],
-  "generated_at": "2026-03-18T06:23:31.721923+00:00"
+  "generated_at": "2026-03-18T06:23:31.721923+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Drag-and-Drop Uploads",
+      "text": "You can now upload local images (up to 5MB) directly on the Play page instead of hunting for URLs."
+    },
+    {
+      "emoji": "📊",
+      "title": "Omniscient Model Monitor",
+      "text": "The model monitor now tracks audio and video models alongside text and images, so you know exactly what's up (or down)."
+    },
+    {
+      "emoji": "🧠",
+      "title": "Qwen3.5 397B Arrives",
+      "text": "We've added Qwen3.5 397B to the [Unified API](https://gen.pollinations.ai). Massive 262K context window, vision, and reasoning capabilities are now a single endpoint away."
+    }
+  ]
 }

@@ -27,5 +27,22 @@
       "date": "2026-02-18"
     }
   ],
-  "generated_at": "2026-02-19T06:21:56.260376+00:00"
+  "generated_at": "2026-02-19T06:21:56.260376+00:00",
+  "highlights": [
+    {
+      "emoji": "📅",
+      "title": "Build Diary",
+      "text": "The [Community page](https://hello.pollinations.ai) now features an interactive timeline of the project's history. Navigate daily changes and digests with keyboard controls."
+    },
+    {
+      "emoji": "🐛",
+      "title": "Readable Errors",
+      "text": "The [API](https://gen.pollinations.ai) now extracts actual human-readable messages from upstream JSON errors. No more raw dumps when providers fail."
+    },
+    {
+      "emoji": "🌱",
+      "title": "Seed Tier Logic",
+      "text": "GitHub activity qualification now uses a rolling 90-day window instead of resetting yearly. Your status is safe in January."
+    }
+  ]
 }

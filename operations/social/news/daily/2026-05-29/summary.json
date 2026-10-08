@@ -27,5 +27,22 @@
       "date": "2026-05-29"
     }
   ],
-  "generated_at": "2026-05-30T06:58:00.844570+00:00"
+  "generated_at": "2026-05-30T06:58:00.844570+00:00",
+  "highlights": [
+    {
+      "emoji": "🎙️",
+      "title": "Realtime Voice API",
+      "text": "The `/v1/realtime` endpoint is live. Point any standard OpenAI realtime SDK at us for low-latency voice and multimodal sessions using `gpt-realtime-2`. [View API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🧠",
+      "title": "Model Roster Expansion",
+      "text": "Added `claude-opus-4.8` (1M context), the Perplexity Sonar suite for web-grounded queries, and StepFun's `step-flash` / `step-3.5-flash` for multimodal reasoning. See [Available Text Models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "💾",
+      "title": "Persistent Cache",
+      "text": "The hive remembers. Generated media and text no longer hard-expire after 30 days—as long as a file is accessed at least once every 15 days, it stays alive."
+    }
+  ]
 }

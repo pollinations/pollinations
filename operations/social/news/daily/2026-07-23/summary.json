@@ -55,5 +55,32 @@
       "date": "2026-07-23"
     }
   ],
-  "generated_at": "2026-07-24T07:00:22.839538+00:00"
+  "generated_at": "2026-07-24T07:00:22.839538+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Polli learned diagrams and better search",
+      "text": "The Discord bot now renders Mermaid diagrams inline, handles mention searches and X links more reliably, and stops retrying the same broken tool call forever. [Join the chat](https://chat.pollinations.ai)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Gemini 3.5 Flash-Lite",
+      "text": "Existing Flash-Lite and `gemini-search-fast` aliases now run on stable Gemini 3.5 Flash-Lite, keeping multimodal input, tools, web search, structured output, reasoning, and streaming. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "LongCat 2.0",
+      "text": "Paid API users can call `longcat`, `longcat-2`, or `longcat-2.0` for reasoning, function tools, streaming, prompt caching, and a rather excessive 1M-token context window. [API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎵",
+      "title": "CSM 1B speech",
+      "text": "Text-to-speech gained CSM 1B: six voices, five output formats, and direct routing for speech that does not need to sound like it came from a voicemail tree. [Try the audio API](https://gen.pollinations.ai/audio/{text})"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Grok Imagine defaults to 2K",
+      "text": "Basic `grok-imagine-image` generation and editing now produce sharper 2K images by default. More pixels, same request. [Generate an image](https://gen.pollinations.ai/image/{prompt})"
+    }
+  ]
 }

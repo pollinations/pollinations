@@ -23,5 +23,17 @@
       "date": "2026-06-23"
     }
   ],
-  "generated_at": "2026-06-24T07:07:47.585940+00:00"
+  "generated_at": "2026-06-24T07:07:47.585940+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Stable Audio 3",
+      "text": "We've wired up Stable Audio 3 to the [audio API](https://gen.pollinations.ai/audio/{text}). Generate up to 380 seconds of 44.1 kHz stereo, or use the newly added audio-to-audio style transfer."
+    },
+    {
+      "emoji": "🤖",
+      "title": "Mercury 2",
+      "text": "Inception's Mercury 2 model is now live on the [text API](https://gen.pollinations.ai/v1/chat/completions). Full support for cached input and reasoning tokens included."
+    }
+  ]
 }

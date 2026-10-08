@@ -27,5 +27,27 @@
       "date": "2026-07-26"
     }
   ],
-  "generated_at": "2026-07-27T07:21:00.711761+00:00"
+  "generated_at": "2026-07-27T07:21:00.711761+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "ElevenLabs dialogue",
+      "text": "Generate multi-speaker scenes with up to 10 voices and 25 turns through `POST /v1/audio/dialogue`. The hive has learned to hold a conversation. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Voice isolation",
+      "text": "Send audio or video to `POST /v1/audio/voice-isolator` and get the speech back as a clean MP3. Useful when the background has opinions. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "GPT Realtime 2.1 Mini",
+      "text": "`gpt-realtime-2.1-mini` is now available for large-context realtime text, image, and voice sessions—with tools, PCM audio, caching, and ten voices. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎯",
+      "title": "TTS timestamps",
+      "text": "Get ElevenLabs speech plus character-level alignment from `POST /v1/audio/speech/with-timestamps`, for captions and text that highlights itself while it talks. [API Docs](https://gen.pollinations.ai/docs)"
+    }
+  ]
 }

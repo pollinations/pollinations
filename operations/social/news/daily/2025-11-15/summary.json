@@ -35,5 +35,27 @@
       "date": "2025-11-15"
     }
   ],
-  "generated_at": "2026-09-04T12:13:18.984569+00:00"
+  "generated_at": "2026-09-04T12:13:18.984569+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Models: Claude 4.5 & Grok 4",
+      "text": "Access `claude-large` (Sonnet 4.5) and `grok` (Grok 4 Fast) via the [Text API](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🧠",
+      "title": "Reasoning Tokens",
+      "text": "View the raw \"thinking\" process for reasoning models like o1, DeepSeek R1, and Claude in API responses."
+    },
+    {
+      "emoji": "🛡️",
+      "title": "Privacy Update",
+      "text": "Completely removed Google Analytics and user tracking scripts from the platform."
+    },
+    {
+      "emoji": "🌱",
+      "title": "New \"Spore\" Tier",
+      "text": "Introduced a new entry-level subscription tier for casual creators on [pollinations.ai](https://enter.pollinations.ai)."
+    }
+  ]
 }

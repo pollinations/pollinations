@@ -11,5 +11,13 @@
       "date": "2026-07-06"
     }
   ],
-  "generated_at": "2026-07-07T07:08:17.247415+00:00"
+  "generated_at": "2026-07-07T07:08:17.247415+00:00",
+  "highlights": [
+    {
+      "emoji": "🎮",
+      "title": "Roblox Integration",
+      "text": "Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com)",
+      "app": true
+    }
+  ]
 }

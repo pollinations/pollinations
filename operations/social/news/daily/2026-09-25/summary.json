@@ -99,5 +99,28 @@
       "date": "2026-09-25"
     }
   ],
-  "generated_at": "2026-09-26T06:28:00.970530+00:00"
+  "generated_at": "2026-09-26T06:28:00.970530+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Polli meets tgpt",
+      "text": "Connect tgpt to Pollinations with `polli harness tgpt on`, using `openai/gpt-5.4-nano` by default—and turn it back off without trampling your existing setup. [View repo](https://github.com/pollinations/pollinations)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Qwen Image 2.1 arrives",
+      "text": "Generate images or guide edits with up to 10 reference images using `qwen/qwen-image-2.1`. The model has brought its own collage scissors. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Recraft V4.1 Flash",
+      "text": "Generate crisp text-to-image work with `recraft/recraft-v4.1-flash`, including aspect ratios from square to 9:16. [Check the API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎵",
+      "title": "What TTS joins the app garden",
+      "text": "A browser-based Arabic RTL text-to-speech app with Pollinations OAuth is now in the community catalog. [Try it](https://bloodtubes6-cmyk.github.io/Blood)",
+      "app": true
+    }
+  ]
 }

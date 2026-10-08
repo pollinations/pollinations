@@ -27,5 +27,22 @@
       "date": "2026-01-30"
     }
   ],
-  "generated_at": "2026-09-04T11:48:03.298506+00:00"
+  "generated_at": "2026-09-04T11:48:03.298506+00:00",
+  "highlights": [
+    {
+      "emoji": "💎",
+      "title": "Paid-Only Models",
+      "text": "`claude-large`, `gemini-large`, `veo`, `seedream-pro`, and `nanobanana-pro` will require purchased pollen. Free credits work for all other models."
+    },
+    {
+      "emoji": "🆕",
+      "title": "Kimi K2.5 Thinking",
+      "text": "New open-source reasoning model rivaling Claude Opus at ~1/8th the cost."
+    },
+    {
+      "emoji": "💳",
+      "title": "New Payment Methods",
+      "text": "PayPal, Apple Pay, and Google Pay now accepted via Stripe."
+    }
+  ]
 }

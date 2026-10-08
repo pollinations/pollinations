@@ -31,5 +31,17 @@
       "date": "2026-04-28"
     }
   ],
-  "generated_at": "2026-04-29T06:47:56.134419+00:00"
+  "generated_at": "2026-04-29T06:47:56.134419+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "OpenClaw Integration",
+      "text": "Added an `openclaw` model alias backed by Qwen3-Coder-30B. You can now wire up the OpenClaw CLI to use Pollinations for automated coding workflows. Check the [Available Text Models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "⚡",
+      "title": "Unbottlenecking gpt-image-2",
+      "text": "Ripped out the old Azure routing for `gpt-image-2` and wired it directly to OpenAI. Expect significantly higher capacity and fewer rate limits when generating pixels."
+    }
+  ]
 }

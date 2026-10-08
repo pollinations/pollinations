@@ -59,5 +59,22 @@
       "date": "2026-07-24"
     }
   ],
-  "generated_at": "2026-07-25T06:55:31.040074+00:00"
+  "generated_at": "2026-07-25T06:55:31.040074+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Lyria 3 music clips",
+      "text": "Generate 30-second stereo MP3s with `lyria` or `lyria-3` through GET audio requests or the OpenAI-compatible API. [Try the API](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Recraft SVG generation",
+      "text": "Turn prompts—or one reference image—into real SVG files with `recraft-v4.1-vector`, available from image and OpenAI-compatible generation/edit endpoints. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Community model stats, including the long tail",
+      "text": "Public model estimates now cover all eligible models, including community image models that were previously below the volume cutoff. [View the model monitor](https://model-monitor.pollinations.ai)"
+    }
+  ]
 }

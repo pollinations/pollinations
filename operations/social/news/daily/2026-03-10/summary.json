@@ -27,5 +27,18 @@
       "date": "2026-03-10"
     }
   ],
-  "generated_at": "2026-03-11T06:20:15.692471+00:00"
+  "generated_at": "2026-03-11T06:20:15.692471+00:00",
+  "highlights": [
+    {
+      "emoji": "🧠",
+      "title": "New Models: Claude & Dirtberry",
+      "text": "Claude Sonnet 4.6 is now available via the `claude-airforce` text endpoint, alongside `dirtberry` for quick realistic image generation. Hit the [Unified API](https://gen.pollinations.ai) to try them out."
+    },
+    {
+      "emoji": "🔑",
+      "title": "Bring Your Own Pollen",
+      "text": "The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service. [View repos](https://github.com/pollinations/pollinations/tree/main/apps)",
+      "app": true
+    }
+  ]
 }

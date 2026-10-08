@@ -15,5 +15,19 @@
       "date": "2025-08-01"
     }
   ],
-  "generated_at": "2026-09-04T12:15:17.095971+00:00"
+  "generated_at": "2026-09-04T12:15:17.095971+00:00",
+  "highlights": [
+    {
+      "date": "2025-08-02",
+      "emoji": "🚀",
+      "title": "Hybrid Image Model",
+      "text": "Upgraded image generation to use BPAIGen (1216px) as the primary engine with Kontext fallback for higher quality results. [Image API](https://image.pollinations.ai)"
+    },
+    {
+      "date": "2025-08-02",
+      "emoji": "📚",
+      "title": "OpenAPI Spec",
+      "text": "Added official OpenAPI specification for the Image API to help developers build integrations faster. [API Docs](https://enter.pollinations.ai/api/docs)"
+    }
+  ]
 }

@@ -135,5 +135,33 @@
       "date": "2025-12-29"
     }
   ],
-  "generated_at": "2026-09-04T12:43:51.477732+00:00"
+  "generated_at": "2026-09-04T12:43:51.477732+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Model: GPT Image Large",
+      "text": "Access GPT Image 1.5 via the `gptimage-large` model ID for high-fidelity generations."
+    },
+    {
+      "emoji": "🤖",
+      "title": "DeepSeek V3.2",
+      "text": "Upgraded to the latest DeepSeek V3.2 model with reduced pricing and improved performance."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Image-to-Image Upgrades",
+      "text": "Now supports multiple input images (pipe-separated) and automatic resizing for better results."
+    },
+    {
+      "emoji": "📱",
+      "title": "New Community Apps",
+      "text": "Try [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev), [PromptPi](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk), and [Nuvole AI Lite](https://nuvoleai.com).",
+      "app": true
+    },
+    {
+      "emoji": "🎥",
+      "title": "Veo Image-to-Video",
+      "text": "Turn images into videos using the updated `veo` model capabilities. [API Docs](https://enter.pollinations.ai/api/docs)"
+    }
+  ]
 }

@@ -31,5 +31,27 @@
       "date": "2026-02-15"
     }
   ],
-  "generated_at": "2026-02-16T06:23:03.082727+00:00"
+  "generated_at": "2026-02-16T06:23:03.082727+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Polly API",
+      "text": "Access Polly's web research and coding skills via a new OpenAI-compatible endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
+    },
+    {
+      "emoji": "🛡️",
+      "title": "New Safety Model",
+      "text": "Qwen3Guard-8B is now available via the API for fast content moderation and safety classification."
+    },
+    {
+      "emoji": "✨",
+      "title": "Showcase Upgrade",
+      "text": "Explore the redesigned [App Showcase](https://hello.pollinations.ai) with AI-enhanced descriptions and real-time usage metrics."
+    },
+    {
+      "emoji": "🎮",
+      "title": "Community Apps",
+      "text": "New additions include the \"Nova Defense\" Discord bot and the AI-powered Roblox game \"Convince the CRAZY Idol\"."
+    }
+  ]
 }

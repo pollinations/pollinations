@@ -31,5 +31,17 @@
       "date": "2026-02-26"
     }
   ],
-  "generated_at": "2026-02-27T06:17:09.686070+00:00"
+  "generated_at": "2026-02-27T06:17:09.686070+00:00",
+  "highlights": [
+    {
+      "emoji": "📚",
+      "title": "Docs Overhaul",
+      "text": "Restructured [API Docs](https://enter.pollinations.ai/api/docs) with copy-pasteable code samples in multiple languages. Less reading, more building."
+    },
+    {
+      "emoji": "🏷️",
+      "title": "Ecosystem Sorting",
+      "text": "Added platform badges to the app registry. Filter the 500+ apps by Web, Discord, CLI, or Mobile."
+    }
+  ]
 }

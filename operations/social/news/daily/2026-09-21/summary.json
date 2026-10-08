@@ -75,5 +75,28 @@
       "date": "2026-09-21"
     }
   ],
-  "generated_at": "2026-09-22T06:30:12.955487+00:00"
+  "generated_at": "2026-09-22T06:30:12.955487+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "MCP moves into the workshop",
+      "text": "`polli mcp` can discover, install, inspect, and remove Pollinations MCP servers across 13 coding agents—without eating anyone else’s config. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "The router checks the weather",
+      "text": "Three new callable routing agents choose the cheapest healthy model that fits the job, using live pricing, latency, context, capability, and modality data. [Try the API](https://gen.pollinations.ai/v1/chat/completions)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "A Grok joins the garden",
+      "text": "`x-ai/grok-4.7` is now available with reasoning, tools, structured output, image input, and a 500K context window. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "A garden for generated pixels",
+      "text": "Bees Pollination is a simple browser-based prompt-to-image generator connected to your Pollinations account. [Try it](https://halimyassine.github.io/bees-pollination-app)",
+      "app": true
+    }
+  ]
 }

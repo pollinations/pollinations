@@ -35,5 +35,36 @@
       "date": "2026-04-01"
     }
   ],
-  "generated_at": "2026-04-02T06:24:59.107942+00:00"
+  "generated_at": "2026-04-02T06:24:59.107942+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "LTX-2 goes brrrrr",
+      "text": "We moved the video generation backend to a GH200 instance. End-to-end generation times just dropped to 12-16 seconds."
+    },
+    {
+      "emoji": "🎨",
+      "title": "SciVis AI",
+      "text": "Generate scientific visualizations in six different sci-fi styles using the [Image API](https://gen.pollinations.ai/image/models). [Try it](https://s971153.github.io/scivis-ai/)",
+      "app": true
+    },
+    {
+      "emoji": "✨",
+      "title": "ItacaLab",
+      "text": "Books need covers too. A new graphic editor tailored for authors to generate artwork for their literary projects. [Try it](https://itacalab.editoraitacaiunas.com/)",
+      "app": true
+    },
+    {
+      "emoji": "📱",
+      "title": "ContentAI",
+      "text": "Generate optimized social media content for your business without the usual headache. [Try it](https://contentaiak.lovable.app)",
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "Puzzel Math",
+      "text": "An interactive educational math app for elementary students, powered by the hive. [Try it](https://apps.apple.com/vn/app/puzzlemath-kids/id6751527974?l=vi)",
+      "app": true
+    }
+  ]
 }

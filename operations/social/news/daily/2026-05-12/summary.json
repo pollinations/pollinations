@@ -19,5 +19,19 @@
       "date": "2026-05-12"
     }
   ],
-  "generated_at": "2026-05-13T06:58:41.218591+00:00"
+  "generated_at": "2026-05-13T06:58:41.218591+00:00",
+  "highlights": [
+    {
+      "emoji": "🛠️",
+      "title": "Pollenforge-CLI",
+      "text": "A community-built CLI tool for wrangling Markdown into formatted output just dropped in the showcase. [View repo](https://github.com/ganya002/Pollenforge-CLI/tree/main)",
+      "app": true
+    },
+    {
+      "emoji": "🎲",
+      "title": "Storytale",
+      "text": "Take turns building a shared narrative with friends in this new multiplayer storytelling game powered by our text models. [Try it](https://storytale.net)",
+      "app": true
+    }
+  ]
 }

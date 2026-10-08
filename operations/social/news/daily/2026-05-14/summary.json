@@ -19,5 +19,12 @@
       "date": "2026-05-14"
     }
   ],
-  "generated_at": "2026-05-15T07:02:51.343772+00:00"
+  "generated_at": "2026-05-15T07:02:51.343772+00:00",
+  "highlights": [
+    {
+      "emoji": "⚡",
+      "title": "ElevenLabs Flash v2.5",
+      "text": "Ultra-low latency speech generation is here. Pass `elevenflash` to the [Audio API](https://gen.pollinations.ai/audio/{text}) for faster text-to-speech at half the credit cost."
+    }
+  ]
 }

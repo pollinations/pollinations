@@ -31,5 +31,23 @@
       "date": "2026-04-05"
     }
   ],
-  "generated_at": "2026-04-06T06:34:20.028480+00:00"
+  "generated_at": "2026-04-06T06:34:20.028480+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Sana Sprint 1.6B",
+      "text": "We've swapped out SDXL Turbo for Sana Sprint 1.6B on our workers, bringing you faster and more reliable [image generation](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "emoji": "✨",
+      "title": "URV AI Chat",
+      "text": "A new community app just dropped in the showcase, featuring diverse LLM access, character creation, and image generation. [Try it](https://urv-ai.vercel.app)",
+      "app": true
+    },
+    {
+      "emoji": "🤖",
+      "title": "Smarter llm.txt",
+      "text": "We've expanded our `llm.txt` endpoint so your AI agents can now automatically discover and use our complete set of account management and media storage APIs."
+    }
+  ]
 }

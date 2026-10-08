@@ -39,5 +39,22 @@
       "date": "2026-08-03"
     }
   ],
-  "generated_at": "2026-08-04T07:01:47.293796+00:00"
+  "generated_at": "2026-08-04T07:01:47.293796+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Krea 2 Medium",
+      "text": "Krea joins the image API: generate square, wide, or tall images with `krea-2`, aspect-ratio mapping, and seed support. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "🎥",
+      "title": "Grok Imagine Video 1.5",
+      "text": "Generate 480p, 720p, or 1080p video clips with synchronized audio through the unified API. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Qwen3.8 Max",
+      "text": "A new Alibaba-routed multimodal model for text, image, and video inputs—available as `qwen3.8-max`. [Available models](https://gen.pollinations.ai/v1/models)"
+    }
+  ]
 }

@@ -23,5 +23,28 @@
       "date": "2025-10-25"
     }
   ],
-  "generated_at": "2026-09-04T12:54:15.380587+00:00"
+  "generated_at": "2026-09-04T12:54:15.380587+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Claude 4.5 Haiku",
+      "text": "The new `claude-4.5-haiku` model is now live! Access it via the [Text API](https://enter.pollinations.ai) for faster, smarter responses."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Browser-Ready API",
+      "text": "Added CORS support and standard `Authorization: Bearer` headers, enabling secure, direct API calls from browser applications."
+    },
+    {
+      "emoji": "📚",
+      "title": "Docs Overhaul",
+      "text": "A complete rewrite of our [API Documentation](https://enter.pollinations.ai/api/docs) features a new structure and expanded examples for Python, JS, and cURL."
+    },
+    {
+      "emoji": "🌐",
+      "title": "Auto-Deploy Apps",
+      "text": "Hacktoberfest projects now automatically deploy to `*.pollinations.ai` subdomains — try the [View repo](https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master).",
+      "app": true
+    }
+  ]
 }

@@ -71,5 +71,27 @@
       "date": "2026-03-18"
     }
   ],
-  "generated_at": "2026-03-19T06:19:59.721818+00:00"
+  "generated_at": "2026-03-19T06:19:59.721818+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Silicon meets pollen",
+      "text": "Someone wired the API into an ESP32-S3 microcontroller (NEURGenerator). Hardware hackers now have a reference for bringing generation to physical devices."
+    },
+    {
+      "emoji": "📱",
+      "title": "Pocket-sized infrastructure",
+      "text": "Nova.ai just dropped into the showcase—a full iOS assistant with streaming chat and image generation built entirely on our endpoints."
+    },
+    {
+      "emoji": "📚",
+      "title": "The hive writes a novel",
+      "text": "NovelSeek-Pro-PC is now in the creative directory. It's a desktop tool that takes you from a blank page to a fully formatted ebook with generated cover art."
+    },
+    {
+      "emoji": "👾",
+      "title": "Bot swarm",
+      "text": "The community showcase on our [website](https://hello.pollinations.ai) absorbed over a dozen new apps this week, including Telegram model-routers and massive Discord bot presets."
+    }
+  ]
 }

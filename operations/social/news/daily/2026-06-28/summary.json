@@ -75,5 +75,41 @@
       "date": "2026-06-28"
     }
   ],
-  "generated_at": "2026-06-29T07:36:42.854712+00:00"
+  "generated_at": "2026-06-29T07:36:42.854712+00:00",
+  "highlights": [
+    {
+      "emoji": "🩺",
+      "title": "Real-time Model Health",
+      "text": "Added `GET /v1/models/status` so you can programmatically check if a model is awake before throwing requests at it. Cached for 60 seconds. Check the [API Docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🪙",
+      "title": "Get Paid to Ship",
+      "text": "The 'App Listed' quest is live. Build something, get it listed in the public directory, and earn Pollen directly to your wallet."
+    },
+    {
+      "emoji": "🧩",
+      "title": "Prompt Your Own Puzzles",
+      "text": "PolliCross uses our image API to generate playable Picross/Nonogram levels from whatever text prompt you can think of. [Try it](https://zqigolden.github.io/pollicross/)",
+      "app": true
+    },
+    {
+      "emoji": "📖",
+      "title": "Inpainted Storybooks",
+      "text": "Storiva is a clever Android app that uses AI inpainting to seamlessly put a child's face into custom-generated story illustrations. [Try it](https://play.google.com/store/apps/details?id=com.ismafly.storiva)",
+      "app": true
+    },
+    {
+      "emoji": "🌍",
+      "title": "World Weaver",
+      "text": "A tool that orchestrates text, image, and video models through our unified API to generate entire environments at once. [View repo](https://github.com/MrMegnis/world-generator)",
+      "app": true
+    },
+    {
+      "emoji": "🎵",
+      "title": "Endless Audio",
+      "text": "Generative Soundscape turns text prompts into continuous, never-ending music streams. [Try it](https://generative-soundscape.vercel.app/)",
+      "app": true
+    }
+  ]
 }

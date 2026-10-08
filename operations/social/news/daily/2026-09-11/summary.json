@@ -51,5 +51,28 @@
       "date": "2026-09-11"
     }
   ],
-  "generated_at": "2026-09-12T06:26:29.349394+00:00"
+  "generated_at": "2026-09-12T06:26:29.349394+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Managed Code Agents",
+      "text": "Publish commit-pinned TypeScript agents from a public GitHub repo with the dashboard or Polli CLI—models, MCP tools, and AI SDK helpers included. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Model Parameters, Visible",
+      "text": "Every public chat model now declares which request parameters it supports, so your app can inspect the knobs before turning them. [View models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Polli Visual Studio",
+      "text": "Discord communities can request richer page renders with full-page capture while Polli routes tasks to models by complexity."
+    },
+    {
+      "emoji": "🤖",
+      "title": "NewEra AI Agent",
+      "text": "Turn a plain-English app idea into a planned, coded, built, and deployed application from chat. [Try it](https://newera.namansoni.in)",
+      "app": true
+    }
+  ]
 }

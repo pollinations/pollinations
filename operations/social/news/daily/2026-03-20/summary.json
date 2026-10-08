@@ -47,5 +47,22 @@
       "date": "2026-03-20"
     }
   ],
-  "generated_at": "2026-03-21T06:10:53.817644+00:00"
+  "generated_at": "2026-03-21T06:10:53.817644+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Klein Multi-Image Blending",
+      "text": "The Klein model's image-to-image pipeline now accepts up to four parallel reference images via a multipart endpoint. Check the [API Docs](https://enter.pollinations.ai/api/docs) to start blending."
+    },
+    {
+      "emoji": "💻",
+      "title": "PowerShell & .NET Integrations",
+      "text": "You can now pipe text and image generation directly into your Windows scripting and Azure workflows. Because sometimes you just need to generate pixels from a terminal."
+    },
+    {
+      "emoji": "🌟",
+      "title": "Showcase Explosion",
+      "text": "The community directory is growing. New additions include a daily cryptid generator, a Turkish financial analysis bot, a markdown story exporter, and an AI bouquet designer. See what people are building on the [main website](https://hello.pollinations.ai)."
+    }
+  ]
 }

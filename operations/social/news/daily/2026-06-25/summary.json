@@ -27,5 +27,12 @@
       "date": "2026-06-25"
     }
   ],
-  "generated_at": "2026-06-26T07:14:20.118306+00:00"
+  "generated_at": "2026-06-26T07:14:20.118306+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Side Quests Unlocked",
+      "text": "The passive tier system is out. You can now track bounties and claim Pollen credits for things like GitHub contributions or cross-modality model usage directly from the new Quest [dashboard](https://enter.pollinations.ai)."
+    }
+  ]
 }

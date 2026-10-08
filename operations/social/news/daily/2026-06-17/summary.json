@@ -43,5 +43,33 @@
       "date": "2026-06-17"
     }
   ],
-  "generated_at": "2026-06-18T07:36:13.270166+00:00"
+  "generated_at": "2026-06-18T07:36:13.270166+00:00",
+  "highlights": [
+    {
+      "emoji": "📊",
+      "title": "Transaction History",
+      "text": "You can now see exactly where your Pollen is going. Check your last 5 requests directly on the Pollen page, or browse the full history on your [Dashboard](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🚀",
+      "title": "Siriusly Fast Elevators",
+      "text": "The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai)",
+      "app": true
+    },
+    {
+      "emoji": "⚡",
+      "title": "Faster Image Generation",
+      "text": "We rewired the [image generation](https://gen.pollinations.ai/image/models) load balancer to favor GPUs with the lowest recent latency. More traffic goes to the 4090s, meaning fewer timeouts and faster pixels."
+    },
+    {
+      "emoji": "🧠",
+      "title": "GLM-5.2 Upgrade",
+      "text": "The `glm` model slug now points to Z.ai's GLM-5.2, expanding the context window from 198k to a massive 1 million tokens."
+    },
+    {
+      "emoji": "✨",
+      "title": "Auto-Upgrading Model Slugs",
+      "text": "Clean slugs like `openai-large` and `claude-large` now automatically resolve to the latest versions (like GPT-5.5 and Opus 4.8). If you need the old stuff, versioned slugs still work. Check the [available models](https://gen.pollinations.ai/v1/models)."
+    }
+  ]
 }

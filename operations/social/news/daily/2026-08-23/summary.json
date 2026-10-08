@@ -79,5 +79,28 @@
       "date": "2026-08-23"
     }
   ],
-  "generated_at": "2026-08-24T06:21:07.838787+00:00"
+  "generated_at": "2026-08-24T06:21:07.838787+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Agents can delegate to agents",
+      "text": "MCP-connected agents can discover agent models and call them directly, inheriting permissions and billing through the parent key."
+    },
+    {
+      "emoji": "🚀",
+      "title": "Register endpoint agents by API",
+      "text": "Create private endpoint agents directly with `POST /account/my-models/endpoint-agents`; public publishing follows the existing allowlist."
+    },
+    {
+      "emoji": "🎯",
+      "title": "Find models usable with Quest Pollen",
+      "text": "The Models page now has a local filter for models your Quest-earned Pollen can actually use. Less botanical guesswork."
+    },
+    {
+      "emoji": "✨",
+      "title": "Turn an idea into an illustrated micro-story",
+      "text": "StoryForge lets you pick a genre and Pollen budget, then make a short illustrated story with BYOP sign-in. [Try it](https://storyforge.wiradifit-makmur-sejahtera.duckdns.org)",
+      "app": true
+    }
+  ]
 }

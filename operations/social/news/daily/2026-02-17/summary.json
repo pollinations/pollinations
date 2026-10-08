@@ -27,5 +27,22 @@
       "date": "2026-02-17"
     }
   ],
-  "generated_at": "2026-02-18T06:22:11.715445+00:00"
+  "generated_at": "2026-02-18T06:22:11.715445+00:00",
+  "highlights": [
+    {
+      "emoji": "📊",
+      "title": "SlidePainter",
+      "text": "Generate illustrated slide decks and export to PDF with this new community app."
+    },
+    {
+      "emoji": "👾",
+      "title": "Pixel Art & Markdown",
+      "text": "A cozy new retro theme is available, plus app descriptions are now auto-formatted via the [Text API](https://gen.pollinations.ai)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "UI Theme Cycling",
+      "text": "Click the [pollinations.ai](https://hello.pollinations.ai) logo to instantly cycle through visual themes."
+    }
+  ]
 }

@@ -47,5 +47,17 @@
       "date": "2026-09-07"
     }
   ],
-  "generated_at": "2026-09-08T21:47:31.987788+00:00"
+  "generated_at": "2026-09-08T21:47:31.987788+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Cleaner model catalog",
+      "text": "Model listings now use consistent canonical names and `publisher` metadata, while legacy model IDs keep working. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "📱",
+      "title": "Name your own uploads",
+      "text": "Give media uploads stable custom IDs via `POST /upload`—useful URLs, no random-ID archaeology, and duplicate names safely return `409`. [API Docs](https://gen.pollinations.ai/docs)"
+    }
+  ]
 }

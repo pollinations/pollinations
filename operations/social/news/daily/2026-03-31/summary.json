@@ -43,5 +43,48 @@
       "date": "2026-03-31"
     }
   ],
-  "generated_at": "2026-04-01T06:32:18.354401+00:00"
+  "generated_at": "2026-04-01T06:32:18.354401+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "CatGPT",
+      "text": "A new Discord bot that uses Claude to generate webcomic panels of your avatar arguing with a cat. Because the internet needed this."
+    },
+    {
+      "emoji": "🍳",
+      "title": "Smart Kitchen AI",
+      "text": "A community-built culinary platform that hallucinates recipe visualizations on demand. [Try it](https://matbaki.vercel.app)",
+      "app": true
+    },
+    {
+      "emoji": "🔍",
+      "title": "Labol Lens",
+      "text": "A streamlined image generation interface added to the community showcase. [Try it](https://labol-lens.streamlit.app/)",
+      "app": true
+    },
+    {
+      "emoji": "👾",
+      "title": "Exovia Destek",
+      "text": "Another Discord bot joins the hive, proving that text generation is the new server admin. [Try it](https://discord.com/invite/3BF7NH4fKN)",
+      "app": true
+    },
+    {
+      "emoji": "📚",
+      "title": "Vocamax",
+      "text": "A language learning app using our API to generate educational content on the fly. [Try it](https://play.google.com/store/apps/details?id=com.musiclearns.music_app)",
+      "app": true
+    },
+    {
+      "emoji": "🎲",
+      "title": "AI RPG Engine",
+      "text": "A browser-based RPG engine that uses our endpoints to run the campaign. Roll for initiative. [Try it](https://yuuki8763.github.io/en/index.html)",
+      "app": true
+    },
+    {
+      "emoji": "📱",
+      "title": "Soy Cosmo",
+      "text": "A WhatsApp personal assistant that generates images and audio. Texting AI is officially mainstream. [Try it](https://soy-cosmo.web.app)",
+      "app": true
+    }
+  ]
 }

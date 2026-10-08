@@ -99,5 +99,30 @@
       "date": "2026-08-05"
     }
   ],
-  "generated_at": "2026-08-06T07:03:28.616100+00:00"
+  "generated_at": "2026-08-06T07:03:28.616100+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Quests enter MCP",
+      "text": "Agents can now inspect available account Quests with the read-only `listQuests` tool—useful work, now queryable by machines too. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Visual agent workflows",
+      "text": "Build multi-step AI automations in Flow with drag-and-drop agents, HTTP requests, conditions, transforms, and outputs. [Try it](https://pollinations-chat-kohl.vercel.app)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Jewelry sketches, rendered",
+      "text": "Sparkle Studio turns jewelry descriptions or rough sketches into polished photorealistic designs. [Try it](https://sparkle-studio-pollinations-a031.onbelmo.uk)",
+      "app": true
+    },
+    {
+      "emoji": "🐱",
+      "title": "Cats, now sticker-shaped",
+      "text": "Upload a cat photo and turn its fur, eyes, and general feline bureaucracy into personalized cartoon stickers. [Try it](https://fantastic-dolphin-00911c.netlify.app)",
+      "app": true
+    }
+  ]
 }

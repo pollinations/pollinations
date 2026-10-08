@@ -11,5 +11,12 @@
       "date": "2026-03-19"
     }
   ],
-  "generated_at": "2026-03-20T06:16:28.939246+00:00"
+  "generated_at": "2026-03-20T06:16:28.939246+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "OpenClaw Integration",
+      "text": "Setting up OpenClaw with Pollinations is now faster and less prone to configuration errors thanks to native CLI onboarding for v2026.3."
+    }
+  ]
 }

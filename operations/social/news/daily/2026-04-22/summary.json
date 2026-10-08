@@ -15,5 +15,12 @@
       "date": "2026-04-22"
     }
   ],
-  "generated_at": "2026-04-23T06:35:47.801866+00:00"
+  "generated_at": "2026-04-23T06:35:47.801866+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "gptimage-2 is Live",
+      "text": "OpenAI's new `gptimage-2` model is now available on the [image generation API](https://gen.pollinations.ai/image/models). Generate fresh pixels with zero price markup."
+    }
+  ]
 }

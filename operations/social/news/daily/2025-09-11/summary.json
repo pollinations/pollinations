@@ -11,5 +11,20 @@
       "date": "2025-09-11"
     }
   ],
-  "generated_at": "2026-09-04T12:31:05.329545+00:00"
+  "generated_at": "2026-09-04T12:31:05.329545+00:00",
+  "highlights": [
+    {
+      "date": "2025-09-13",
+      "emoji": "💎",
+      "title": "Pollen MVP",
+      "text": "– Launched the foundation for user accounts and subscriptions with a new authentication system and [Polar.sh](https://polar.sh) integration."
+    },
+    {
+      "date": "2025-09-13",
+      "emoji": "🎨",
+      "title": "New Community App",
+      "text": "– Added **CapyIMG** to our showcase, a browser-based AI image generation tool powered by pollinations.ai. [Try it](https://capyuniverse.pages.dev/capyimg.html)",
+      "app": true
+    }
+  ]
 }

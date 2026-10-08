@@ -15,5 +15,12 @@
       "date": "2026-02-05"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.604901+00:00"
+  "generated_at": "2026-03-18T19:58:13.604901+00:00",
+  "highlights": [
+    {
+      "emoji": "💎",
+      "title": "Paid Models Update",
+      "text": "`claude`, `grok`, `kontext`, `seedream`, and `seedance-pro` are moving to paid-only."
+    }
+  ]
 }

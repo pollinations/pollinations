@@ -11,5 +11,17 @@
       "date": "2026-06-10"
     }
   ],
-  "generated_at": "2026-06-11T07:35:26.366474+00:00"
+  "generated_at": "2026-06-11T07:35:26.366474+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Blame the prompt, not the server",
+      "text": "Content moderation rejections now return a 422 `content_policy_violation` instead of a generic 500 error. Your code can finally tell the difference between a blocked prompt and an actual server fire."
+    },
+    {
+      "emoji": "📱",
+      "title": "Trimming the dead leaves",
+      "text": "Removed legacy image parameters (`negative_prompt`, `enhance`, `nologo`) from the [API](https://gen.pollinations.ai/docs) and SDKs. They weren't doing anything anyway, so we stopped pretending."
+    }
+  ]
 }

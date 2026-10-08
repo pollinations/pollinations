@@ -19,5 +19,17 @@
       "date": "2026-06-03"
     }
   ],
-  "generated_at": "2026-06-04T07:33:48.281024+00:00"
+  "generated_at": "2026-06-04T07:33:48.281024+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Nova-Fast Reliability",
+      "text": "We routed `nova-fast` through a cross-region profile to stop it from hitting rate limits during peak hours. Less throttling, more generating. Check the [available models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "⚡",
+      "title": "Faster Dashboard",
+      "text": "We optimized the database queries for developer earnings. Checking your balance on the [Dashboard](https://enter.pollinations.ai) is now significantly faster and less likely to buckle under heavy load."
+    }
+  ]
 }

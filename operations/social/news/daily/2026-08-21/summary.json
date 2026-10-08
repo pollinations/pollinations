@@ -47,5 +47,29 @@
       "date": "2026-08-21"
     }
   ],
-  "generated_at": "2026-08-22T06:12:25.001480+00:00"
+  "generated_at": "2026-08-22T06:12:25.001480+00:00",
+  "highlights": [
+    {
+      "emoji": "🎥",
+      "title": "Videos learn to count",
+      "text": "Video model endpoints and SDK types now expose supported minimum, maximum, default, and stepped durations—so apps can offer controls that match the model instead of asking nicely and hoping. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🔗",
+      "title": "OpenRouter takes the direct path",
+      "text": "Chat requests to OpenRouter models now preserve requested provider routing plus OpenRouter’s raw usage and cost data, in streaming and non-streaming calls. [Chat API](https://gen.pollinations.ai/v1/chat/completions)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "One garden, many brushes",
+      "text": "REKTY GENERATOR joins the app directory: an open-source image workspace with Pollinations generation alongside 57+ models. [Try it](https://visualaiartwork.pages.dev)",
+      "app": true
+    },
+    {
+      "emoji": "🌟",
+      "title": "A new canvas blooms",
+      "text": "ArtScape Studio brings a bilingual AI art workspace with idea, aspect-ratio, style, and seed controls for Pollinations-powered images. [Try it](https://creatneworld.github.io/artscape-studio)",
+      "app": true
+    }
+  ]
 }

@@ -63,5 +63,17 @@
       "date": "2026-02-08"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.613508+00:00"
+  "generated_at": "2026-03-18T19:58:13.613508+00:00",
+  "highlights": [
+    {
+      "emoji": "🐝",
+      "title": "Polly Bot Open Source",
+      "text": "Released the full source code for the Polly Discord bot. Fork it, remix it, build your own AI-powered bot."
+    },
+    {
+      "emoji": "✨",
+      "title": "Frontend Redesign",
+      "text": "Fresh header authentication flow, theme customization bar, and an overhauled Play page experience."
+    }
+  ]
 }

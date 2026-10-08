@@ -23,5 +23,17 @@
       "date": "2026-07-16"
     }
   ],
-  "generated_at": "2026-07-17T06:56:28.272165+00:00"
+  "generated_at": "2026-07-17T06:56:28.272165+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "GPT Realtime 2.1",
+      "text": "`gpt-realtime-2.1` is now the default realtime model, giving voice and live-interaction builders a newer verified endpoint while `gpt-realtime-2` remains available. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Model math, less mysterious",
+      "text": "The model table now shows Quest/Paid access clearly, reveals descriptions on hover, and lets you click a model name or ID to copy the exact identifier. [Browse models](https://gen.pollinations.ai/v1/models)"
+    }
+  ]
 }

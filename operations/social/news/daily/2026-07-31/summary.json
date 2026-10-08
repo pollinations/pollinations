@@ -19,5 +19,17 @@
       "date": "2026-07-31"
     }
   ],
-  "generated_at": "2026-08-01T06:58:21.390602+00:00"
+  "generated_at": "2026-08-01T06:58:21.390602+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Fallback routing for community models",
+      "text": "Model owners can nominate up to three compatible backups, so text and image generations can keep moving when an upstream model goes sideways. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "⚡",
+      "title": "Faster DreamShaper image generation",
+      "text": "The Sana pool now runs parallel workers per GPU, roughly doubling concurrent throughput. More pixels, less queue. [Try it](https://pollinations.ai/play)"
+    }
+  ]
 }

@@ -23,5 +23,13 @@
       "date": "2026-06-26"
     }
   ],
-  "generated_at": "2026-06-27T07:01:50.614720+00:00"
+  "generated_at": "2026-06-27T07:01:50.614720+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "REKTY AI",
+      "text": "The community app directory grows by one. REKTY AI is now live in the [showcase](https://pollinations.ai). [View repo](https://github.com/rekty/Rekty-AI)",
+      "app": true
+    }
+  ]
 }

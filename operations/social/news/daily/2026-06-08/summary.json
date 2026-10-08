@@ -11,5 +11,12 @@
       "date": "2026-06-08"
     }
   ],
-  "generated_at": "2026-06-09T07:10:13.245218+00:00"
+  "generated_at": "2026-06-09T07:10:13.245218+00:00",
+  "highlights": [
+    {
+      "emoji": "🔄",
+      "title": "Live Model Catalog",
+      "text": "The [dashboard](https://enter.pollinations.ai), SDK, and MCP server now fetch models dynamically. New AI models will appear in your API key settings the second they drop."
+    }
+  ]
 }

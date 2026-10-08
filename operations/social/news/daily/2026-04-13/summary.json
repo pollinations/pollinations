@@ -43,5 +43,31 @@
       "date": "2026-04-13"
     }
   ],
-  "generated_at": "2026-04-14T06:34:18.792227+00:00"
+  "generated_at": "2026-04-14T06:34:18.792227+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "ComfyUI Nodes",
+      "text": "Overtli Studio Suite built custom nodes to route generations through our API directly inside your local ComfyUI workflows. [View repo](https://github.com/OvertliDS/overtli-studio-suite)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Brand Generation",
+      "text": "StyleOps joined the showcase, wrapping our image models into a dedicated tool for spitting out cohesive brand assets. [Try it](https://styleops.co)",
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "The Institute of Everything",
+      "text": "A new community app that generates highly detailed, deadpan academic museum exhibits for completely absurd concepts. [Try it](https://rizperdana.github.io/institute-ai/)",
+      "app": true
+    },
+    {
+      "emoji": "🌟",
+      "title": "Showcase Expansion",
+      "text": "Four new community tools just dropped: Pigment, PseudoWrite, Tawer_bot, and JFOAC. The ecosystem grows. [View repos](https://hello.pollinations.ai)",
+      "app": true
+    }
+  ]
 }

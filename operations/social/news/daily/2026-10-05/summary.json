@@ -151,5 +151,38 @@
       "date": "2026-10-05"
     }
   ],
-  "generated_at": "2026-10-06T06:31:33.817802+00:00"
+  "generated_at": "2026-10-06T06:31:33.817802+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "FLUX.3 Image arrives",
+      "text": "Generate 1K or 2K images in fifteen aspect ratios, or edit with up to ten reference images. [Explore image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Seedream 5.0 Flash joins the garden",
+      "text": "Generate and edit images with up to ten references, seed control, and 1K or 2K output. [Explore image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "emoji": "🤖",
+      "title": "Ling 3.1 Flash is here",
+      "text": "Try a new text model with reasoning, tool use, and a 262K-token context at zero launch pricing, including with Quest Pollen. [See text models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "💡",
+      "title": "Decisions get another model",
+      "text": "Liquid D1 is available for paid decision requests and chat; the [SDK](https://www.npmjs.com/package/@pollinations/sdk) now has a typed `decision()` call for Jev."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Find the model you meant",
+      "text": "Search and filter the model catalog by capabilities through the API or MCP; Open WebUI can now sort models by category tags. [API docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🎯",
+      "title": "Seven quests, one page",
+      "text": "Pollinations Quest Starter walks new users through setup without sending their API key to its server. [Try it](https://elite-surely-machine-enemies.trycloudflare.com)",
+      "app": true
+    }
+  ]
 }

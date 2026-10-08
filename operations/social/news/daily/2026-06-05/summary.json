@@ -23,5 +23,12 @@
       "date": "2026-06-05"
     }
   ],
-  "generated_at": "2026-06-06T07:01:45.598172+00:00"
+  "generated_at": "2026-06-06T07:01:45.598172+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Standalone Playground",
+      "text": "Test image, video, text, and audio generation in one place without writing code. The new [Interactive Playground](https://pollinations.ai/play) supports multimodal inputs, video frame controls, and audio uploads."
+    }
+  ]
 }

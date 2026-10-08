@@ -15,5 +15,18 @@
       "date": "2026-06-11"
     }
   ],
-  "generated_at": "2026-06-12T07:33:12.808105+00:00"
+  "generated_at": "2026-06-12T07:33:12.808105+00:00",
+  "highlights": [
+    {
+      "emoji": "🌱",
+      "title": "Wikimind Joins the Showcase",
+      "text": "A new community-built learning tool that wires up translation for interactive messaging. [Try it](https://chpalitom09-bot.github.io/Wikimind-5/)",
+      "app": true
+    },
+    {
+      "emoji": "🚀",
+      "title": "Claude Fable 5 is Live",
+      "text": "Anthropic's Mythos-class model is now wired up via AWS Bedrock. 1M context window, vision, and tool support ready to go on the [text endpoint](https://gen.pollinations.ai/v1/chat/completions)."
+    }
+  ]
 }

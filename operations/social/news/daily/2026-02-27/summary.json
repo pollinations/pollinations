@@ -27,5 +27,17 @@
       "date": "2026-02-27"
     }
   ],
-  "generated_at": "2026-02-28T06:07:32.604075+00:00"
+  "generated_at": "2026-02-28T06:07:32.604075+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Seedream 5.0",
+      "text": "New `seedream5` model added for image generation. It's lighter, newer, and available on the [Unified API](https://gen.pollinations.ai)."
+    },
+    {
+      "emoji": "🚀",
+      "title": "Gemini 3.1 Arrives",
+      "text": "Upgraded `gemini-large` to 3.1 Pro and added `nanobanana-2` (Gemini 3.1 Flash) for high-speed image generation."
+    }
+  ]
 }

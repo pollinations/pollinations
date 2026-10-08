@@ -67,5 +67,28 @@
       "date": "2026-09-15"
     }
   ],
-  "generated_at": "2026-09-16T06:30:52.712164+00:00"
+  "generated_at": "2026-09-16T06:30:52.712164+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "A catalog with a pulse",
+      "text": "Filter model catalogs by `source=official|community` and opt into healthy models with `reliability=reliable`; responses now include compact 24-hour health data. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Routes learn to self-report",
+      "text": "Inspect primary and fallback model routes, rescue counts, and per-attempt upstream latency through the new `/v1/models/status/routes` endpoint. [Check the API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Scout finds the trail",
+      "text": "`meta/llama-4-scout` is back: text, vision, streaming, up to 10 images, and 16,384 output tokens, with primary and fallback routes behind it. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Pick the best bloom",
+      "text": "PollenBatch generates quick low-res image variations before high-res regeneration, with a character engine for keeping recurring faces less mysteriously mutable. [Try it](https://donwrightdesigns.github.io/pollenbatch)",
+      "app": true
+    }
+  ]
 }

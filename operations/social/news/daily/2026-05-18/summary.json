@@ -19,5 +19,12 @@
       "date": "2026-05-18"
     }
   ],
-  "generated_at": "2026-05-19T07:08:41.874282+00:00"
+  "generated_at": "2026-05-19T07:08:41.874282+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Uncapped Generations",
+      "text": "We removed the artificial timeouts on our text and image endpoints, and doubled the timeout for audio transcriptions. Your massive, long-running requests will actually finish now instead of dying at the 90-second mark. Let the models cook via the [Unified API](https://gen.pollinations.ai)."
+    }
+  ]
 }

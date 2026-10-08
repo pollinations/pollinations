@@ -43,5 +43,12 @@
       "date": "2026-02-06"
     }
   ],
-  "generated_at": "2026-03-18T19:58:13.608088+00:00"
+  "generated_at": "2026-03-18T19:58:13.608088+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Provider: api.airforce",
+      "text": "Added `imagen` (Google Imagen 3) and `grok-video` (xAI Grok Imagine Video) models via [api.airforce](https://api.airforce)."
+    }
+  ]
 }

@@ -35,5 +35,35 @@
       "date": "2026-05-03"
     }
   ],
-  "generated_at": "2026-05-04T06:58:28.152838+00:00"
+  "generated_at": "2026-05-04T06:58:28.152838+00:00",
+  "highlights": [
+    {
+      "emoji": "🦙",
+      "title": "Smarter Llamas",
+      "text": "Upgraded the default Llama endpoint to Llama-3.3-70B-Instruct and added new vision-capable Maverick and Scout variants to the [Text API](https://gen.pollinations.ai/v1/chat/completions)."
+    },
+    {
+      "emoji": "🛡️",
+      "title": "Optional Guardrails",
+      "text": "Keep things PG by passing a `safe` parameter or `Pollinations-Safe` header to the [Unified API](https://gen.pollinations.ai). Powered by AWS Bedrock."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Infinite Canvas",
+      "text": "Lkalma is an AI-powered collaborative whiteboard with offline-first sketching tools. [Try it](https://lkal.ma)",
+      "app": true
+    },
+    {
+      "emoji": "✍️",
+      "title": "Storyframe Studio",
+      "text": "An open-source AI creative workspace powered by the Pollinations API for your text and image workflows. [Try it](https://storyframe-studio.web.app)",
+      "app": true
+    },
+    {
+      "emoji": "🎛️",
+      "title": "AIGC Control Console",
+      "text": "A new web-based dashboard for managing your generative AI workflows. [Try it](https://jfliu3265.github.io/pollinations-aigc-public/)",
+      "app": true
+    }
+  ]
 }

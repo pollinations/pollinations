@@ -19,5 +19,17 @@
       "date": "2026-04-10"
     }
   ],
-  "generated_at": "2026-04-11T06:20:34.096177+00:00"
+  "generated_at": "2026-04-11T06:20:34.096177+00:00",
+  "highlights": [
+    {
+      "emoji": "⚡",
+      "title": "DeepSeek & Kimi Upgrades",
+      "text": "Migrated DeepSeek and Kimi to new infrastructure. Expect significantly fewer dropped connections and faster response times when chatting in the [Playground](https://pollinations.ai/play)."
+    },
+    {
+      "emoji": "🌍",
+      "title": "Gemini Flash Lite Routing",
+      "text": "Rerouted Gemini 2.5 Flash Lite to global endpoints to pool quota. It should now actually survive when everyone tries to hit the [Text API](https://gen.pollinations.ai/v1/chat/completions) at the exact same time."
+    }
+  ]
 }

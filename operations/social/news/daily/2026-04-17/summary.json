@@ -27,5 +27,24 @@
       "date": "2026-04-17"
     }
   ],
-  "generated_at": "2026-04-18T06:24:06.330017+00:00"
+  "generated_at": "2026-04-18T06:24:06.330017+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Polli CLI hits v0.1.0",
+      "text": "The terminal client is officially stable. It now streams text by default, formats tables without breaking your terminal, and plays audio directly via the new `--play` flag."
+    },
+    {
+      "emoji": "🧠",
+      "title": "Flashlearn",
+      "text": "Turn your documents into true/false flashcards and AI audio lessons. Because reading is hard. [Try it](http://flashlearn.asquareportal.com/)",
+      "app": true
+    },
+    {
+      "emoji": "📱",
+      "title": "Ciel AI",
+      "text": "A full-featured, mobile-first AI assistant powered entirely by our API. Good inspiration for your own mobile builds. [Try it](https://ciel-ai-v1.netlify.app)",
+      "app": true
+    }
+  ]
 }

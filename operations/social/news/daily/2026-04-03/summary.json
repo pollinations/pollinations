@@ -83,5 +83,34 @@
       "date": "2026-04-03"
     }
   ],
-  "generated_at": "2026-04-04T06:20:10.893185+00:00"
+  "generated_at": "2026-04-04T06:20:10.893185+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Gemini 3.1 Flash Lite",
+      "text": "Google's lightweight multimodal model is now live on the [text API](https://gen.pollinations.ai/v1/models). Fast processing and a 1M token context window for when you have entirely too much to say."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Programmatic API Keys",
+      "text": "You can now create, list, and revoke API keys directly via endpoints. Automate your access management instead of clicking around the [dashboard](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "SDK gets a paintbrush and a voice",
+      "text": "The [NPM SDK](https://www.npmjs.com/package/@pollinations_ai/sdk) now features dedicated methods for text-to-speech, music generation, and OpenAI-compatible image editing."
+    },
+    {
+      "emoji": "📱",
+      "title": "Genie AI",
+      "text": "A massive new community app featuring live web search, document analysis, and multimodal generation just dropped in the showcase. [Try it](https://cantalopapps.com/genie-ai)",
+      "app": true
+    },
+    {
+      "emoji": "🤖",
+      "title": "Discord bot family",
+      "text": "We added a functional multi-model bot framework to the apps directory, complete with per-channel routing. Deploy your own AI staff. [View repos](https://github.com/pollinations/pollinations)",
+      "app": true
+    }
+  ]
 }

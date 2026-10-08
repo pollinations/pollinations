@@ -47,5 +47,30 @@
       "date": "2026-09-10"
     }
   ],
-  "generated_at": "2026-09-11T06:29:09.448987+00:00"
+  "generated_at": "2026-09-11T06:29:09.448987+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "StoryCraft AI",
+      "text": "Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Men’s Fashion Pins",
+      "text": "Generate polished Pinterest artwork for men’s fashion with `gpt-image-2`. Pocket squares now have an API. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html)",
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "YouTube Transcription AI",
+      "text": "Turn YouTube transcripts into structured summaries, English translations, and concept-cover images. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations)",
+      "app": true
+    },
+    {
+      "emoji": "🔗",
+      "title": "Bloom harness for Polli CLI",
+      "text": "Connect Bloom CLI to Pollinations text models with `polli harness bloom on`, then inspect or remove the setup without disturbing the rest of your `.env`."
+    }
+  ]
 }

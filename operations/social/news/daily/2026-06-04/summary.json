@@ -19,5 +19,17 @@
       "date": "2026-06-04"
     }
   ],
-  "generated_at": "2026-06-05T07:25:14.248122+00:00"
+  "generated_at": "2026-06-05T07:25:14.248122+00:00",
+  "highlights": [
+    {
+      "emoji": "📦",
+      "title": "SDK Model Catalog",
+      "text": "Added `fetchModelCatalog()` to the [NPM SDK](https://www.npmjs.com/package/@pollinations/sdk) so you can programmatically fetch and filter metadata across all model types without guessing."
+    },
+    {
+      "emoji": "🎨",
+      "title": "UI Component Upgrades",
+      "text": "The [React UI library](https://www.npmjs.com/package/@pollinations/ui) just got a fresh coat of pixels, adding a new model selector, `FileUpload`, and `Markdown` primitives for your frontend builds."
+    }
+  ]
 }

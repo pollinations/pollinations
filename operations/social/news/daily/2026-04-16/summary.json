@@ -15,5 +15,18 @@
       "date": "2026-04-16"
     }
   ],
-  "generated_at": "2026-04-17T06:34:45.483020+00:00"
+  "generated_at": "2026-04-17T06:34:45.483020+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "The hive mind in your terminal",
+      "text": "We shipped an official CLI (`@pollinations_ai/cli`). Generate images, text, audio, and video directly from the command line. Includes colored tables for humans and JSON output for your agentic workflows."
+    },
+    {
+      "emoji": "✨",
+      "title": "Shorts in a snap",
+      "text": "Generate end-to-end shorts and faceless videos from a single prompt with kre8.info, the latest addition to the community showcase. [Try it](https://kre8.info)",
+      "app": true
+    }
+  ]
 }

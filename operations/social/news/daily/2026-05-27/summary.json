@@ -23,5 +23,12 @@
       "date": "2026-05-27"
     }
   ],
-  "generated_at": "2026-05-28T07:15:38.850527+00:00"
+  "generated_at": "2026-05-28T07:15:38.850527+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Six new brains for the hive",
+      "text": "Added 6 new models including Grok 4.3, Wan Pro video, and Gemini 3 search. Plus, flagship models like GPT-5.5 and DeepSeek Pro are now available on the free tier. Check the [available text models](https://gen.pollinations.ai/v1/models)."
+    }
+  ]
 }

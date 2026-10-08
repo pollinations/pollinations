@@ -95,5 +95,39 @@
       "date": "2026-09-04"
     }
   ],
-  "generated_at": "2026-09-05T06:28:12.926631+00:00"
+  "generated_at": "2026-09-05T06:28:12.926631+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "GPT-6 Astra",
+      "text": "Call `openai/gpt-6-astra` for tool use, structured output, vision, streaming, and prompt caching through one predictable model ID. [API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "MiniMax H3 Max Turbo",
+      "text": "Generate guided video with synchronized audio, first/last-frame inputs, 480p or 768p output, and clips up to 15 seconds. [Try the API](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Responses API for more models",
+      "text": "Use OpenAI-compatible `/v1/responses` across built-in, community, and agent-backed text models—with tools, structured output, streaming, and reasoning intact. [API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Pollinations MCP in Open WebUI",
+      "text": "Run Pollinations MCP tools from Open WebUI using your own consent key and Pollen balance. Your wallet, your tool calls. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Pollin Uptime",
+      "text": "A serverless multimodal playground routes chat, vision, images, video, and voice through a four-layer fallback cascade. [Try it](https://brhost.eu.org)",
+      "app": true
+    },
+    {
+      "emoji": "🌟",
+      "title": "Nectar MCP",
+      "text": "Give MCP clients dedicated tools for Pollinations image generation and editing, video creation, and speech generation. [View repo](https://github.com/pinkpixel-dev/nectar-mcp)",
+      "app": true
+    }
+  ]
 }

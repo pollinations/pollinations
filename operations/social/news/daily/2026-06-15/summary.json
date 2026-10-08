@@ -19,5 +19,17 @@
       "date": "2026-06-15"
     }
   ],
-  "generated_at": "2026-06-16T07:52:46.854159+00:00"
+  "generated_at": "2026-06-16T07:52:46.854159+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Ideogram 4.0 Models",
+      "text": "Three new Ideogram 4.0 image models (`ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`) are now available via the [Unified API](https://gen.pollinations.ai)."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Seamless App Embedding",
+      "text": "The [React SDK](https://react.pollinations.ai) now includes an `EmbedBridge` to automatically handle host handshakes, API key sharing, and theme syncing for apps embedded in trusted hosts."
+    }
+  ]
 }

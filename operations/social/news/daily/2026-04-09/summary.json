@@ -99,5 +99,41 @@
       "date": "2026-04-09"
     }
   ],
-  "generated_at": "2026-04-10T06:34:17.589313+00:00"
+  "generated_at": "2026-04-10T06:34:17.589313+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Heavyweight models hit the free tier",
+      "text": "GPT-5.4, Grok, and Qwen Coder are now free to use. We also wired up Mistral-Large-3 and Grok-4-20 to the [text endpoint](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Premium pixels, zero cost",
+      "text": "`gptimage-large` and `FLUX.1 Kontext` have been moved off the paid tier. Send a prompt, get high-quality pixels back."
+    },
+    {
+      "emoji": "🛠️",
+      "title": "Dreamframe",
+      "text": "A zero-dependency, single-HTML-file playground for testing image, video, voice, and music generation. View source, learn, steal. [Try it](https://funniman23.github.io/Dreamframe/)",
+      "app": true
+    },
+    {
+      "emoji": "🎭",
+      "title": "SillyTavern avatar generation",
+      "text": "A new extension lets you generate and update character avatars via our image API directly inside your local LLM frontend. [View repo](https://github.com/sunjichaocom/pollinations-avatar-gen-reforged)",
+      "app": true
+    },
+    {
+      "emoji": "🍏",
+      "title": "Warden App",
+      "text": "A lightweight, privacy-focused native SwiftUI client for Mac users who want to chat with our models without the Electron overhead. [View repo](https://github.com/SidhuK/WardenApp)",
+      "app": true
+    },
+    {
+      "emoji": "🌟",
+      "title": "Community app explosion",
+      "text": "The greenhouse is overflowing with 15+ new submissions this week, including emoji-to-image generators, botanical quizzes, and social video creators. [View apps](https://hello.pollinations.ai)",
+      "app": true
+    }
+  ]
 }

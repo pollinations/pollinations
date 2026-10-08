@@ -27,5 +27,17 @@
       "date": "2026-07-10"
     }
   ],
-  "generated_at": "2026-07-11T06:43:42.410378+00:00"
+  "generated_at": "2026-07-11T06:43:42.410378+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "GPT 5.6 & Seedream 5 Pro",
+      "text": "The GPT 5.6 family (Sol, Terra, Luna) is now live for text generation, alongside Seedream 5 Pro for high-quality images. Check the [Available Models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "emoji": "✨",
+      "title": "CLI Quest Rewards",
+      "text": "Track your earned Pollen and quest progress directly from the terminal with the updated [Polli CLI](https://www.npmjs.com/package/@pollinations/cli)."
+    }
+  ]
 }

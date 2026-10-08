@@ -27,5 +27,27 @@
       "date": "2025-10-04"
     }
   ],
-  "generated_at": "2026-09-04T12:41:31.962093+00:00"
+  "generated_at": "2026-09-04T12:41:31.962093+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "New Model: GPT-5 Mini",
+      "text": "Added support for `gpt-5-mini` to the text generation API. Try it in your next request!"
+    },
+    {
+      "emoji": "📚",
+      "title": "Interactive API Docs",
+      "text": "Launched new interactive documentation with request validation and schemas. Check it out at [enter.pollinations.ai/docs](https://enter.pollinations.ai/api/docs)."
+    },
+    {
+      "emoji": "🎃",
+      "title": "Hacktoberfest 2025",
+      "text": "We are officially participating! Check our [Contributing Guide](https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md) to join the open-source celebration."
+    },
+    {
+      "emoji": "🌟",
+      "title": "Community Showcase",
+      "text": "Added 20+ new projects to the showcase, including J.A.R.V.I.S., VOHU AI, and Interactive GeoMap."
+    }
+  ]
 }

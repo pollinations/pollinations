@@ -179,5 +179,27 @@
       "date": "2026-10-06"
     }
   ],
-  "generated_at": "2026-10-07T06:31:15.216065+00:00"
+  "generated_at": "2026-10-07T06:31:15.216065+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Eleven v4 speech arrives",
+      "text": "Generate speech with `elevenlabs/eleven-v4` or the faster `elevenlabs/eleven-v4-turbo`, including word timestamps. [Try the audio API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Nano Banana 2.1",
+      "text": "Create images at 1K or 2K, or edit them using up to 14 reference images with `google/gemini-nano-banana-2.1`. [See image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "emoji": "🎬",
+      "title": "Grok Imagine Video 1.5 Lite",
+      "text": "Turn a prompt or starting image into a 1–15 second clip at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "emoji": "🔗",
+      "title": "API keys get model categories",
+      "text": "Give a key access to text, image, audio, video, or other categories instead of selecting models one by one; new models in that category are included automatically. [Manage keys](https://enter.pollinations.ai/keys)."
+    }
+  ]
 }

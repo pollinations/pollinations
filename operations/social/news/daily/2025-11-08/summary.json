@@ -23,5 +23,27 @@
       "date": "2025-11-08"
     }
   ],
-  "generated_at": "2026-09-04T12:09:15.524677+00:00"
+  "generated_at": "2026-09-04T12:09:15.524677+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "New Models",
+      "text": "Added `perplexity-fast`, `perplexity-reasoning`, and `naughty` (Mistral Nemo) to the [Text API](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🔗",
+      "title": "OpenAI Compatibility",
+      "text": "New standard `/v1/chat/completions` endpoints allow seamless integration with existing OpenAI SDKs. Check [API Docs](https://enter.pollinations.ai/api/docs)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Exact Dimensions",
+      "text": "Removed auto-scaling limits—generate images in specific resolutions (e.g., 1536x1024) without modification via the [Image API](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Raw Output API",
+      "text": "GET requests to text and audio endpoints now return raw text strings or MP3 files instead of JSON for easier browser usage."
+    }
+  ]
 }

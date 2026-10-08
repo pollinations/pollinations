@@ -31,5 +31,17 @@
       "date": "2026-05-04"
     }
   ],
-  "generated_at": "2026-05-05T06:43:09.207181+00:00"
+  "generated_at": "2026-05-05T06:43:09.207181+00:00",
+  "highlights": [
+    {
+      "emoji": "⚡",
+      "title": "Mistral Speed Boost",
+      "text": "Rerouted Mistral Small to a new Azure Foundry deployment. Text generation is noticeably faster and gateway timeouts are a thing of the past. Try it via the [Unified API](https://gen.pollinations.ai/v1/chat/completions)."
+    },
+    {
+      "emoji": "🚀",
+      "title": "LTX-2 Video Pipeline",
+      "text": "Re-engineered the routing tunnel for LTX-2. Video generation is stable again and properly handles Cloudflare's edge network quirks."
+    }
+  ]
 }

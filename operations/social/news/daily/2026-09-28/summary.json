@@ -67,5 +67,27 @@
       "date": "2026-09-28"
     }
   ],
-  "generated_at": "2026-09-29T06:31:44.048001+00:00"
+  "generated_at": "2026-09-29T06:31:44.048001+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Frugal code-agent routing",
+      "text": "Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools."
+    },
+    {
+      "emoji": "🎯",
+      "title": "Code reviews with Prism",
+      "text": "`cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Polli connects to Codex and Claude Code",
+      "text": "Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login."
+    },
+    {
+      "emoji": "✨",
+      "title": "Prompt agents can call your tools",
+      "text": "Give agents client-side functions alongside server-side MCP tools, then send the results back to continue the conversation. [API docs](https://gen.pollinations.ai/docs)"
+    }
+  ]
 }

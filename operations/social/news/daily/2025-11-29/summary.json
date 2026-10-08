@@ -27,5 +27,28 @@
       "date": "2025-11-29"
     }
   ],
-  "generated_at": "2026-09-04T12:20:24.602442+00:00"
+  "generated_at": "2026-09-04T12:20:24.602442+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Nano Banana Pro",
+      "text": "New `nanobanana-pro` model (powered by Gemini 3 Pro) featuring 4K resolution support and built-in reasoning capabilities."
+    },
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 4.5",
+      "text": "Access the powerful new Claude Opus 4.5 model via the text API using the model ID `claude-xlarge`. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
+    },
+    {
+      "emoji": "🛠️",
+      "title": "Advanced API Control",
+      "text": "Added pass-through support for advanced parameters like `logprobs`, `logit_bias`, and `stream_options` for fine-grained generation control."
+    },
+    {
+      "emoji": "📱",
+      "title": "PolliPalmTop App",
+      "text": "A new Android app featuring AI chat, web search, and image generation. [Try it](https://aiworld.institute/server/pollipalmtopv1.apk)",
+      "app": true
+    }
+  ]
 }

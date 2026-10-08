@@ -27,5 +27,12 @@
       "date": "2026-08-04"
     }
   ],
-  "generated_at": "2026-08-05T07:03:30.409425+00:00"
+  "generated_at": "2026-08-05T07:03:30.409425+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "Command A Plus, less translation",
+      "text": "Native messages, `reasoning_effort`, tool calls, streaming, and verified image inputs now pass through more faithfully on Cohere Command A Plus."
+    }
+  ]
 }

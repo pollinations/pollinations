@@ -11,5 +11,12 @@
       "date": "2026-02-20"
     }
   ],
-  "generated_at": "2026-02-21T06:11:43.579784+00:00"
+  "generated_at": "2026-02-21T06:11:43.579784+00:00",
+  "highlights": [
+    {
+      "emoji": "🛠️",
+      "title": "GENEXUS AI",
+      "text": "Added to the developer tools showcase. Another backend integration for the ecosystem."
+    }
+  ]
 }

@@ -31,5 +31,12 @@
       "date": "2026-05-01"
     }
   ],
-  "generated_at": "2026-05-02T06:36:47.323637+00:00"
+  "generated_at": "2026-05-02T06:36:47.323637+00:00",
+  "highlights": [
+    {
+      "emoji": "🎥",
+      "title": "120-Second Nova Reel Videos",
+      "text": "The Nova Reel video model now supports generations up to two minutes long. Pass the updated duration parameters to the [Unified API](https://gen.pollinations.ai)."
+    }
+  ]
 }

@@ -27,5 +27,17 @@
       "date": "2026-04-30"
     }
   ],
-  "generated_at": "2026-05-01T06:52:11.495172+00:00"
+  "generated_at": "2026-05-01T06:52:11.495172+00:00",
+  "highlights": [
+    {
+      "emoji": "⚡",
+      "title": "Edge Text Generation",
+      "text": "Text generation now runs directly on the edge worker. One less network hop means faster responses when hitting the [text API](https://gen.pollinations.ai/v1/chat/completions)."
+    },
+    {
+      "emoji": "🚀",
+      "title": "Llama 3.3 70B",
+      "text": "Meta's Llama 3.3 70B Instruct is now live. Just pass `llama` to the [text endpoint](https://gen.pollinations.ai/v1/models) and see what it has to say."
+    }
+  ]
 }

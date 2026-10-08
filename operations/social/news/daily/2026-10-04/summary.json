@@ -155,5 +155,29 @@
       "date": "2026-10-04"
     }
   ],
-  "generated_at": "2026-10-05T06:45:05.004316+00:00"
+  "generated_at": "2026-10-05T06:45:05.004316+00:00",
+  "highlights": [
+    {
+      "emoji": "🌟",
+      "title": "New Quests for video and community models",
+      "text": "Earn Pollen for trying a video or community model; model publishers can earn it when others use their models."
+    },
+    {
+      "emoji": "🔗",
+      "title": "Claude Code connects directly",
+      "text": "Polli CLI can connect Claude Code to Pollinations’ `/v1/messages` endpoint, with model aliases and a separate config that leaves your Claude settings alone. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli)."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Explore a painted world",
+      "text": "In Postcard Worlds, enter a place, then step through doors and paths in AI-painted scenes that carry the view forward. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds)",
+      "app": true
+    },
+    {
+      "emoji": "🎵",
+      "title": "Turn study notes into songs",
+      "text": "Tunemory makes short songs from facts, formulas, or word lists and checks the lyrics for missing details. [Try it](https://tomdacatto.github.io/pollinations-tunemory)",
+      "app": true
+    }
+  ]
 }

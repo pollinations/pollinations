@@ -147,5 +147,29 @@
       "date": "2026-07-13"
     }
   ],
-  "generated_at": "2026-07-14T06:53:54.115890+00:00"
+  "generated_at": "2026-07-14T06:53:54.115890+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "New Pollen quests",
+      "text": "Use an app through BYOP to earn `0.25` Pollen, or keep your app active to earn `7` Pollen. The garden now pays rent."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Talkti: live voice translation",
+      "text": "Speak across languages in real time with a new community-built voice translation app. [Try it](https://talktiweb.web.app)",
+      "app": true
+    },
+    {
+      "emoji": "🎨",
+      "title": "Turn books into gamebooks",
+      "text": "Feed in `txt`, `mobi`, `epub`, `docx`, or `fb2` files and turn static reading into AI-driven interactive fiction. [Try it](https://gelfer1979.itch.io/book-to-game)",
+      "app": true
+    },
+    {
+      "emoji": "🌟",
+      "title": "Pollinations AI Night in Berlin",
+      "text": "The hive is meeting at Block1 Berlin on July 16: flyer, location, and RSVP are now at [`/night`](https://pollinations.ai/night)."
+    }
+  ]
 }

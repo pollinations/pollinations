@@ -19,5 +19,12 @@
       "date": "2026-06-29"
     }
   ],
-  "generated_at": "2026-06-30T07:14:06.870568+00:00"
+  "generated_at": "2026-06-30T07:14:06.870568+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Community Text Endpoints",
+      "text": "Bring your own brain. Register and monetize your own OpenAI-compatible models via the [dashboard](https://enter.pollinations.ai), or query the new decentralized registry of community-run AI at `community/{username}/{model-id}`."
+    }
+  ]
 }

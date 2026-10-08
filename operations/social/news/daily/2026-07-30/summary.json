@@ -51,5 +51,27 @@
       "date": "2026-07-30"
     }
   ],
-  "generated_at": "2026-07-31T07:08:56.250456+00:00"
+  "generated_at": "2026-07-31T07:08:56.250456+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Sharper speech-to-text",
+      "text": "Transcription now runs on AssemblyAI Universal-3.5 Pro at the same base rate, with plain text, SRT, and VTT output still available. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Cohere Command A+",
+      "text": "Call `command-a-plus` for 128K-context chat, reasoning, JSON, streaming, and automatic tool use—with Quest Pollen access. [Available models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Qwen3.7 Flash",
+      "text": "A fast paid model for text, images, video, tools, reasoning, streaming, and prompt-cache-aware workloads is now available as `qwen3.7-flash`. [Try the playground](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Weaver joins the model catalog",
+      "text": "The Polli media agent is now `weaver`: discover it via `/v1/models` and invoke it through `voodoohop/weaver`."
+    }
+  ]
 }

@@ -71,5 +71,28 @@
       "date": "2026-08-24"
     }
   ],
-  "generated_at": "2026-08-25T06:15:25.064469+00:00"
+  "generated_at": "2026-08-25T06:15:25.064469+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "MCPs move into the hive",
+      "text": "Managed agents can now discover and use registered MCP servers through a single authenticated Gen path, with Pollen handling the receipts. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-server)"
+    },
+    {
+      "emoji": "🎵",
+      "title": "The hive has ears",
+      "text": "MCP agents can now transcribe audio from a public HTTPS URL with the new `transcribeAudio` tool."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Kontext finds its way home",
+      "text": "Azure Flux Kontext is back for text-to-image generation and single-reference editing, at $0.03 per image. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "emoji": "📱",
+      "title": "Chat from the shell",
+      "text": "FreeChat CLI brings zero-config, multi-model Pollinations chat, streaming, and saved conversations to the terminal. [View repo](https://github.com/xiaotian1171/freechat-cli)",
+      "app": true
+    }
+  ]
 }

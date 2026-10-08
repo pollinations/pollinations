@@ -27,5 +27,22 @@
       "date": "2026-05-07"
     }
   ],
-  "generated_at": "2026-05-08T06:33:44.368779+00:00"
+  "generated_at": "2026-05-08T06:33:44.368779+00:00",
+  "highlights": [
+    {
+      "emoji": "🧠",
+      "title": "Text Embeddings API",
+      "text": "You can now generate vector embeddings directly through the `/v1/embeddings` endpoint. Wire it up for semantic search or RAG without leaving the [Unified API](https://gen.pollinations.ai)."
+    },
+    {
+      "emoji": "🎬",
+      "title": "Seedance 2.0 Video Model",
+      "text": "We wired up Replicate to bring you Seedance 2.0. Text-to-video, image-to-video, and frame interpolation are now live for your 720p generation needs."
+    },
+    {
+      "emoji": "🍯",
+      "title": "Creator Rewards",
+      "text": "App builders can now earn Pollen when users generate content through their apps. Opt-in via your API keys in the [Dashboard](https://enter.pollinations.ai) and watch the balance go up."
+    }
+  ]
 }

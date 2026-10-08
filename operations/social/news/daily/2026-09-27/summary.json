@@ -79,5 +79,24 @@
       "date": "2026-09-27"
     }
   ],
-  "generated_at": "2026-09-28T06:42:25.143367+00:00"
+  "generated_at": "2026-09-28T06:42:25.143367+00:00",
+  "highlights": [
+    {
+      "emoji": "🎯",
+      "title": "Apps can complete Quests",
+      "text": "Submit an app with an open Quest number. If the app is approved, the Quest closes and you can claim its Pollen reward."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Try image2gpt",
+      "text": "Prompt `openai/gpt-image-2` from a web app using your Pollinations account and Pollen. [Try it](https://image2gpt.vercel.app)",
+      "app": true
+    },
+    {
+      "emoji": "✨",
+      "title": "Generate images in your browser",
+      "text": "Simple Image Generator lets you sign in with Pollinations and create images using your Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator)",
+      "app": true
+    }
+  ]
 }

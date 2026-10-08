@@ -11,5 +11,12 @@
       "date": "2026-05-28"
     }
   ],
-  "generated_at": "2026-05-29T07:15:38.289709+00:00"
+  "generated_at": "2026-05-29T07:15:38.289709+00:00",
+  "highlights": [
+    {
+      "emoji": "🌍",
+      "title": "Local Currency Support",
+      "text": "Stripe adaptive pricing is live. You can now buy Pollen packs in your local currency instead of doing mental math against the USD. [Dashboard](https://enter.pollinations.ai)"
+    }
+  ]
 }

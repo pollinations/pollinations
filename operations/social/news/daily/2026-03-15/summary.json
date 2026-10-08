@@ -43,5 +43,29 @@
       "date": "2026-03-15"
     }
   ],
-  "generated_at": "2026-03-16T06:30:44.244975+00:00"
+  "generated_at": "2026-03-16T06:30:44.244975+00:00",
+  "highlights": [
+    {
+      "emoji": "⚡",
+      "title": "Frontend speed boost",
+      "text": "We added lazy-loading and aggressive caching to the [main site](https://hello.pollinations.ai). Return visits now render near-instantly, because waiting for DOM elements is boring."
+    },
+    {
+      "emoji": "🤖",
+      "title": "PromptPilot MCP Server",
+      "text": "You can now generate images, video, and audio directly inside Claude, Cursor, or any other MCP-compatible agent."
+    },
+    {
+      "emoji": "🎬",
+      "title": "AI City Diorama Generator",
+      "text": "New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts. [Try it](https://www.youtube.com/@WhatIF-KA/shorts)",
+      "app": true
+    },
+    {
+      "emoji": "📚",
+      "title": "LoreLoom Storybooks",
+      "text": "Also new in the community showcase: an interactive, narrated AI storybook generator for kids. [Try it](https://loreloom.sprinthon.com)",
+      "app": true
+    }
+  ]
 }

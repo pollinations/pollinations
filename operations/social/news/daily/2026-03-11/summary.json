@@ -11,5 +11,12 @@
       "date": "2026-03-11"
     }
   ],
-  "generated_at": "2026-03-12T06:17:49.772580+00:00"
+  "generated_at": "2026-03-12T06:17:49.772580+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "GPT Images Liberated",
+      "text": "We relocated `gpt-image-1-mini` and `gpt-image-1.5` to a new region to sidestep some overly enthusiastic content filters. Reliable, block-free generation is back on the [Unified API](https://gen.pollinations.ai)."
+    }
+  ]
 }

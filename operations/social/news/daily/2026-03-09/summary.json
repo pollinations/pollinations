@@ -35,5 +35,17 @@
       "date": "2026-03-09"
     }
   ],
-  "generated_at": "2026-03-10T06:14:28.126870+00:00"
+  "generated_at": "2026-03-10T06:14:28.126870+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Polly V2",
+      "text": "Our [Discord](https://discord.gg/pollinations-ai-885844321461485618) bot got a brain transplant. Rebuilt with native internals for speed, she now features an adaptive personality that matches your tone, skips the sycophancy, and points you to the docs instead of dumping massive code blocks."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Unfiltered nanobanana",
+      "text": "We took the training wheels off the nanobanana image model. Passing `safe=false` to the [API](https://gen.pollinations.ai) now properly bypasses native safety settings instead of relying on clunky prompt injections, resulting in fewer false-positive blocks on your creative prompts."
+    }
+  ]
 }

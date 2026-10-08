@@ -11,5 +11,22 @@
       "date": "2025-11-22"
     }
   ],
-  "generated_at": "2026-09-04T12:17:19.129063+00:00"
+  "generated_at": "2026-09-04T12:17:19.129063+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Massive Model Update",
+      "text": "Added support for `Kimi K2 Thinking`, `Gemini Large`, `DeepSeek V3.1`, `Grok 4 Fast`, and `GPT-5 Nano`. Try them in the [Text API](https://enter.pollinations.ai)."
+    },
+    {
+      "emoji": "🎤",
+      "title": "Multimodal Audio API",
+      "text": "Full support for OpenAI's Audio API features, including `input_audio` and mixed text/audio generation modalities."
+    },
+    {
+      "emoji": "🗳️",
+      "title": "Vote for Models",
+      "text": "You can now vote on which AI models we should add next directly in the pricing dashboard."
+    }
+  ]
 }

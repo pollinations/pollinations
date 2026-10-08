@@ -51,5 +51,27 @@
       "date": "2026-08-13"
     }
   ],
-  "generated_at": "2026-08-14T06:37:16.537473+00:00"
+  "generated_at": "2026-08-14T06:37:16.537473+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "Qwen Image 3",
+      "text": "Generate 1K/2K images or edit with up to three reference images using paid `qwen-image-3`. More eyes, fewer tabs. [Image API](https://gen.pollinations.ai/image/{prompt})"
+    },
+    {
+      "emoji": "🚀",
+      "title": "Seedance 2.5 video",
+      "text": "Generate four-second 480p or 720p clips with optional audio and first/last-frame guidance through `seedance-2.5`. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Live transcription",
+      "text": "`scribe-realtime` streams partial and final transcripts over WebSockets, with VAD, timestamps, language controls, and seven audio formats. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Bring your own audio URL",
+      "text": "Use validated public HTTP(S) URLs as `reference_audio` for supported music generation—reference clips no longer need to live in one particular garden. [API Docs](https://gen.pollinations.ai/docs)"
+    }
+  ]
 }

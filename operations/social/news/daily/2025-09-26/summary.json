@@ -59,5 +59,37 @@
       "date": "2025-09-26"
     }
   ],
-  "generated_at": "2026-09-04T12:37:26.329653+00:00"
+  "generated_at": "2026-09-04T12:37:26.329653+00:00",
+  "highlights": [
+    {
+      "date": "2025-09-27",
+      "emoji": "🚀",
+      "title": "GPT-5 Arrives",
+      "text": "The `openai` and `openai-fast` endpoints are now powered by GPT-5 Mini and Nano models. [Text API](https://enter.pollinations.ai)"
+    },
+    {
+      "date": "2025-09-27",
+      "emoji": "🎨",
+      "title": "4K Image Generation",
+      "text": "Added `seedream` (ByteDance ARK 4.0) for 4K images and `nanobanana` (Gemini 2.5 Flash). [Image API](https://enter.pollinations.ai)"
+    },
+    {
+      "date": "2025-09-27",
+      "emoji": "🤖",
+      "title": "DeepSeek V3.1",
+      "text": "The powerful DeepSeek V3.1 model is now available via the text API."
+    },
+    {
+      "date": "2025-09-27",
+      "emoji": "🖼️",
+      "title": "Reference Images",
+      "text": "You can now use reference images in the editor and API to guide generation style and composition."
+    },
+    {
+      "date": "2025-09-27",
+      "emoji": "🔍",
+      "title": "Live Search",
+      "text": "The `gemini-search` model now features automatic Google Search grounding for real-time answers."
+    }
+  ]
 }

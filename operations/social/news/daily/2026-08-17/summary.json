@@ -83,5 +83,33 @@
       "date": "2026-08-17"
     }
   ],
-  "generated_at": "2026-08-18T06:14:31.289997+00:00"
+  "generated_at": "2026-08-18T06:14:31.289997+00:00",
+  "highlights": [
+    {
+      "emoji": "✨",
+      "title": "The model garden got labels",
+      "text": "The redesigned model catalog makes official and community models easier to compare across desktop and mobile, with clearer pricing, access details, and copyable model info. [Browse models](https://enter.pollinations.ai/keys)"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Image models get a CLI key",
+      "text": "Community model builders can now create, price, validate, and list image endpoints with `polli-cli my-models`, including image-edit input support."
+    },
+    {
+      "emoji": "💡",
+      "title": "Every hive gets a probe",
+      "text": "Any account can fetch upstream model IDs and test a private community endpoint from My Models before saving it. Blind configuration, a cherished software tradition, is optional now."
+    },
+    {
+      "emoji": "🎯",
+      "title": "Quest bars grow leaves",
+      "text": "Measurable Quests now show exact progress and goal bars for things like top-ups, app users, and GitHub account age."
+    },
+    {
+      "emoji": "🌟",
+      "title": "A meadow for every model",
+      "text": "Meadows puts Pollinations text, image, video, and audio models in one chat playground for side-by-side experimentation. [Try it](https://meadowy.roboticrobot.xyz)",
+      "app": true
+    }
+  ]
 }

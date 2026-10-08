@@ -147,5 +147,27 @@
       "date": "2026-02-22"
     }
   ],
-  "generated_at": "2026-02-23T06:23:14.047060+00:00"
+  "generated_at": "2026-02-23T06:23:14.047060+00:00",
+  "highlights": [
+    {
+      "emoji": "🔗",
+      "title": "LangChain Support",
+      "text": "Python developers can now integrate Pollinations models directly into agents and RAG pipelines with the new `langchain-pollinations` package."
+    },
+    {
+      "emoji": "📱",
+      "title": "Pollinations on Android",
+      "text": "A dedicated community-built Android client is now available. Generate images and chat natively on mobile."
+    },
+    {
+      "emoji": "🎨",
+      "title": "Pollenboard",
+      "text": "A self-hostable, all-in-one frontend for those who want to run their own interface on top of our APIs."
+    },
+    {
+      "emoji": "🚀",
+      "title": "Showcase Expansion",
+      "text": "Added 30+ new community apps, including D&D tools, IoT pixel art displays, and YouTube summarizers. The [Showcase](https://hello.pollinations.ai) is getting crowded."
+    }
+  ]
 }

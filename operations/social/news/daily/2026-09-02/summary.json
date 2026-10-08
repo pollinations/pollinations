@@ -75,5 +75,27 @@
       "date": "2026-09-02"
     }
   ],
-  "generated_at": "2026-09-03T06:29:37.175699+00:00"
+  "generated_at": "2026-09-03T06:29:37.175699+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Responses API, direct from providers",
+      "text": "Send stateless OpenAI-compatible requests to `/v1/responses` across 56 supported models, with native SSE streaming plus Pollinations safety, caching, and billing. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🔗",
+      "title": "Agents can connect to the outside world",
+      "text": "The new Composio MCP connector lets agents use caller-owned Gmail, Slack, GitHub, Drive, and hundreds more services—without lending public agents anyone’s credentials. [MCP Docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+    },
+    {
+      "emoji": "✨",
+      "title": "Backup wings for official models",
+      "text": "42 text, image, video, audio, and 3D models can now continue through verified providers when an upstream has a bad day. Same requested model; fewer dead ends."
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 3.8 Flash is live",
+      "text": "Call `google/gemini-3.8-flash` for fast multimodal chat, streaming, structured output, tools, reasoning, search, and caching. [See available models](https://gen.pollinations.ai/v1/models)"
+    }
+  ]
 }

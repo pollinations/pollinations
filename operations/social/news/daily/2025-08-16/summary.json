@@ -15,5 +15,23 @@
       "date": "2025-08-16"
     }
   ],
-  "generated_at": "2026-09-04T12:23:06.946398+00:00"
+  "generated_at": "2026-09-04T12:23:06.946398+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "New Roleplay Model",
+      "text": "Access the new `roblox-rp` model via the [Text API](https://enter.pollinations.ai), utilizing AWS Bedrock for varied and dynamic responses."
+    },
+    {
+      "emoji": "📊",
+      "title": "Diagram Generation",
+      "text": "Create Mermaid flowcharts and diagrams with the new EasyGen AI integration."
+    },
+    {
+      "emoji": "🌟",
+      "title": "New Integration",
+      "text": "Welcoming Pollix AI to the ecosystem of projects powered by pollinations.ai. [Try it](http://t.me/pollixrobot)",
+      "app": true
+    }
+  ]
 }

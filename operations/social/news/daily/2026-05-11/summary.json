@@ -15,5 +15,12 @@
       "date": "2026-05-11"
     }
   ],
-  "generated_at": "2026-05-12T06:54:49.929823+00:00"
+  "generated_at": "2026-05-12T06:54:49.929823+00:00",
+  "highlights": [
+    {
+      "emoji": "📈",
+      "title": "Developer Earnings Dashboard",
+      "text": "Track the Pollen your apps are generating. Visualize daily earnings, active users, and top-performing apps directly in the [Dashboard](https://enter.pollinations.ai)."
+    }
+  ]
 }

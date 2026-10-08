@@ -23,5 +23,24 @@
       "date": "2025-09-06"
     }
   ],
-  "generated_at": "2026-09-04T12:29:13.483091+00:00"
+  "generated_at": "2026-09-04T12:29:13.483091+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "GPT-5 Nano Support",
+      "text": "The Text API now includes access to OpenAI's GPT-5 Nano model for next-gen performance. Check the [API Docs](https://enter.pollinations.ai/api/docs)."
+    },
+    {
+      "emoji": "🤖",
+      "title": "AI Agent Portal",
+      "text": "A new multi-agent development environment for building complex projects. [Try it](https://agent.makululinux.com/)",
+      "app": true
+    },
+    {
+      "emoji": "🌍",
+      "title": "CVRON AI Added",
+      "text": "New Turkish-language focused image generator with `tr-TR` support. [Try it](https://cvronai.rf.gd)",
+      "app": true
+    }
+  ]
 }

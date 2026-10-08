@@ -71,5 +71,29 @@
       "date": "2025-10-11"
     }
   ],
-  "generated_at": "2026-09-04T12:46:51.481304+00:00"
+  "generated_at": "2026-09-04T12:46:51.481304+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "New Creative Apps",
+      "text": "Launched three new AI tools: Virtual Makeup Studio, Packaging Designer, and Map-to-3D visualizer. [View repos](https://github.com/pollinations/pollinations/tree/main/apps)",
+      "app": true
+    },
+    {
+      "emoji": "🚀",
+      "title": "Model Upgrades",
+      "text": "`kontext` model now uses Azure Flux for superior img2img results. `openai-audio` input limit increased to 10k characters."
+    },
+    {
+      "emoji": "✨",
+      "title": "Prompt Enhancer",
+      "text": "The prompt enhancement system now supports image-based inputs to help refine your generation styles automatically."
+    },
+    {
+      "emoji": "🎮",
+      "title": "Devil Summoner",
+      "text": "A new procedural text RPG with combat and demon recruitment. [Play it](https://gamedemo-a65.pages.dev/)",
+      "app": true
+    }
+  ]
 }

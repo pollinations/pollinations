@@ -19,5 +19,32 @@
       "date": "2026-05-13"
     }
   ],
-  "generated_at": "2026-05-14T06:57:38.267738+00:00"
+  "generated_at": "2026-05-14T06:57:38.267738+00:00",
+  "highlights": [
+    {
+      "emoji": "🗺️",
+      "title": "Public Roadmap",
+      "text": "The homepage now clearly splits what just shipped from what's coming next, plus better visibility for developer earnings. [View site](https://hello.pollinations.ai)"
+    },
+    {
+      "emoji": "📖",
+      "title": "Docs Cleanup",
+      "text": "We stripped the marketing fluff out of the Pollen FAQ. Just straight answers about wallets and tiers now."
+    },
+    {
+      "emoji": "💳",
+      "title": "Pollen Packs",
+      "text": "Updated the Pollen pack tier structures and fixed some Stripe checkout metadata. Buying credits is now slightly more robust."
+    },
+    {
+      "emoji": "🎵",
+      "title": "Cheaper Audio",
+      "text": "ElevenLabs text-to-speech is now cheaper to generate. Scribe has moved to the paid tier because servers aren't free. [View API](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "emoji": "🧹",
+      "title": "Community Polish",
+      "text": "Trimmed the copy on the community page and unstyled some links. Less reading, more building. [Join Discord](https://chat.pollinations.ai)"
+    }
+  ]
 }

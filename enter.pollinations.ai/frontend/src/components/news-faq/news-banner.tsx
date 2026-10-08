@@ -117,24 +117,8 @@ const apiChange = (news: ApiNews): ChangeItem => {
     };
 };
 
-const ChangeRow: FC<{ item: ChangeItem; showDate: boolean }> = ({
-    item,
-    showDate,
-}) => (
-    <li
-        className={`grid grid-cols-[3.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 py-2 sm:grid-cols-[3.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)] ${
-            showDate
-                ? "border-t border-theme-text-strong/10 first:border-t-0"
-                : // Same day: the line starts at the name column, so a day reads as one block.
-                  "relative before:absolute before:top-0 before:right-0 before:left-[4.25rem] before:h-px before:bg-theme-text-strong/10"
-        }`}
-    >
-        <time
-            dateTime={item.date}
-            className="whitespace-nowrap text-theme-text-muted"
-        >
-            {showDate ? formatNewsDate(item.date) : ""}
-        </time>
+const ChangeRow: FC<{ item: ChangeItem }> = ({ item }) => (
+    <li className="grid items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <Chip size="sm" intent={item.chip.intent}>
@@ -152,7 +136,7 @@ const ChangeRow: FC<{ item: ChangeItem; showDate: boolean }> = ({
             </div>
         </div>
         {item.details.length > 0 && (
-            <dl className="col-start-2 grid gap-y-0.5 text-xs leading-5 sm:col-start-auto">
+            <dl className="grid gap-y-0.5 text-xs leading-5">
                 {item.details.map(({ label, before, after }, i) => (
                     <div
                         key={`${label}:${before}`}
@@ -183,11 +167,11 @@ const ChangeRow: FC<{ item: ChangeItem; showDate: boolean }> = ({
     </li>
 );
 
-/** Separates upcoming changes (above) from past ones (below). */
-const TodayLine: FC = () => (
+/** Starts each day; the row after it needs no top border. */
+const DayLine: FC<{ label: string }> = ({ label }) => (
     <li className="flex items-center gap-2 py-1 text-[11px] [&+li]:border-t-0 font-semibold uppercase tracking-wider text-theme-text-muted">
         <span className="h-px flex-1 bg-theme-text-strong/30" />
-        Today
+        {label}
         <span className="h-px flex-1 bg-theme-text-strong/30" />
     </li>
 );
@@ -223,16 +207,27 @@ export const Changelog: FC = () => {
             }
         >
             <ul className="text-sm text-theme-text-base">
-                {shown.map((item, i) => (
-                    <Fragment key={item.key}>
-                        {item.date <= today &&
-                            (shown[i - 1]?.date ?? "") > today && <TodayLine />}
-                        <ChangeRow
-                            item={item}
-                            showDate={item.date !== shown[i - 1]?.date}
-                        />
-                    </Fragment>
-                ))}
+                {shown.map((item, i) => {
+                    const previous = shown[i - 1]?.date ?? "";
+                    return (
+                        <Fragment key={item.key}>
+                            {/* Marks today even on a day without changes. */}
+                            {item.date < today && previous > today && (
+                                <DayLine label="Today" />
+                            )}
+                            {item.date !== previous && (
+                                <DayLine
+                                    label={
+                                        item.date === today
+                                            ? "Today"
+                                            : formatNewsDate(item.date)
+                                    }
+                                />
+                            )}
+                            <ChangeRow item={item} />
+                        </Fragment>
+                    );
+                })}
             </ul>
             {visiblePast < past.length && (
                 <div className="mt-4 flex justify-end">

@@ -145,4 +145,16 @@ describe("gen audio output", () => {
             rmSync(folder, { recursive: true });
         }
     });
+    it("rejects --speed instead of sending a parameter the API ignores", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+        await expect(
+            createAudioCommand()
+                .exitOverride()
+                .parseAsync(["hi", "--speed", "4"], { from: "user" }),
+        ).rejects.toMatchObject({ code: "commander.unknownOption" });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
 });

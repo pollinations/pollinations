@@ -17,7 +17,6 @@ interface AudioOptions {
     voice: string;
     format: string;
     model?: string;
-    speed?: string;
     duration?: string;
     instrumental?: boolean;
     seed?: string;
@@ -30,7 +29,6 @@ async function generateSimple(
     const params = new URLSearchParams({ voice: opts.voice });
     if (opts.format !== "mp3") params.set("response_format", opts.format);
     if (opts.model) params.set("model", opts.model);
-    if (opts.speed) params.set("speed", opts.speed);
     if (opts.duration) params.set("duration", opts.duration);
     if (opts.instrumental) params.set("instrumental", "true");
     if (opts.seed) params.set("seed", opts.seed);
@@ -88,7 +86,6 @@ export function createAudioCommand() {
         .option("--voice <voice>", "Voice name", "sage")
         .option("--format <fmt>", "mp3/opus/aac/flac/wav", "mp3")
         .option("--model <model>", "Audio model")
-        .option("--speed <n>", "Playback speed (0.25-4)")
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
         .option("--seed <n>", "Seed for deterministic output")

@@ -1,0 +1,36 @@
+{
+  "pr_number": 16842,
+  "title": "fix(enter): make the key limits and permissions layout thin again",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16842",
+  "merged_at": "2026-10-08T23:33:32Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The shared key editor and /authorize consent screen now combine limits and account permissions into one card, reducing the layout from three cards to two. Expiry, Budget and Quest Pollen only share a wrapping row on wider screens; on phones, each limit gets a full-width row with an easy-to-tap, right-aligned input. Username and picture and the optional grants use a tighter two-column list from the sm breakpoint up, cutting roughly half the desktop rows. Narrower number inputs and unit labels let the three limits fit on one line in the lg dialog. The consent screen still places its fixed developer-share row after the grants; the Generate/model card is unchanged.",
+    "keywords": [
+      "Enter",
+      "API keys",
+      "permissions",
+      "consent screen",
+      "responsive layout"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16842.jpg",
+    "prompt": "The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Wearing tiny reading glasses, she sits small-to-medium in a cozy garden workspace, tidying a retro screen's key-limit and permission rows into two compact cards beside a phone, with pixel flowers, prominent lime green (#ecf874), soft pastel gradients and warm lighting; strictly cozy pixel art, 8-bit aesthetic, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T23:34:37.915980+00:00",
+  "area": "Accounts & keys",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "c60c12cb044e10bab1fff9d809741d4f2d27e249",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

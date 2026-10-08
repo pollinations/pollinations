@@ -28,6 +28,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎬 Audio](https://dwikatmahmoud87-source.github.io/Gtdcg) | Update: The TTS feature is implemented and gated behind login, which is standard for a BYOP app — an unauthenticated reviewer can only see the sign-in screen, since the feature lives inside a hidden d | [@dwikatmahmoud87-source](https://github.com/dwikatmahmoud87-source) |
+| [🛠️ SoloForge AI](https://soloforge-ai-web.onrender.com) | SoloForge AI is an AI Creator OS that turns content ideas into generated assets, review queues, and automated publishing workflows. It uses Pollinations for AI image generation, authenticated AI sessi | [@soloforge-ai](https://github.com/soloforge-ai) |
 | [📚 Pollinations Quest Starter](https://elite-surely-machine-enemies.trycloudflare.com) | A zero-backend web app that walks a brand-new Pollinations user through the seven setup quests on one page. You paste your API key (kept only in browser localStorage - no server, no data collection) a | [@lingt11](https://github.com/lingt11) |
 | [🎮 Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds) | Type a place and an AI paints it as a postcard. A vision model finds the doors, paths and windows in the picture; click one to step into the next view, painted to match the last using the previous vie | [@tomdacatto](https://github.com/tomdacatto) |
 | [📚 Chorus](https://xiaotian1171.github.io/chorus) | Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor | [@xiaotian1171](https://github.com/xiaotian1171) |
@@ -36,8 +38,6 @@
 | [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
 | [🎮 Mole Party](https://tomdacatto.github.io/pollinations-mole-party) | Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
-| [🎮 Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) | Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi | [@NamanSoni78](https://github.com/NamanSoni78) |
-| [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-06** – **🎵 Eleven v4 speech arrives** Generate speech with `elevenlabs/eleven-v4` or the faster `elevenlabs/eleven-v4-turbo`, including word timestamps. [Try the audio API](https://gen.pollinations.ai/docs).
+- **2026-10-06** – **🎨 Nano Banana 2.1** Create images at 1K or 2K, or edit them using up to 14 reference images with `google/gemini-nano-banana-2.1`. [See image models](https://gen.pollinations.ai/image/models).
+- **2026-10-06** – **🎬 Grok Imagine Video 1.5 Lite** Turn a prompt or starting image into a 1–15 second clip at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).
+- **2026-10-06** – **🔗 API keys get model categories** Give a key access to text, image, audio, video, or other categories instead of selecting models one by one; new models in that category are included automatically. [Manage keys](https://enter.pollinations.ai/keys).
 - **2026-10-05** – **🎨 FLUX.3 Image arrives** Generate 1K or 2K images in fifteen aspect ratios, or edit with up to ten reference images. [Explore image models](https://gen.pollinations.ai/image/models).
 - **2026-10-05** – **🎨 Seedream 5.0 Flash joins the garden** Generate and edit images with up to ten references, seed control, and 1K or 2K output. [Explore image models](https://gen.pollinations.ai/image/models).
 - **2026-10-05** – **🤖 Ling 3.1 Flash is here** Try a new text model with reasoning, tool use, and a 262K-token context at zero launch pricing, including with Quest Pollen. [See text models](https://gen.pollinations.ai/v1/models).
 - **2026-10-05** – **💡 Decisions get another model** Liquid D1 is available for paid decision requests and chat; the [SDK](https://www.npmjs.com/package/@pollinations/sdk) now has a typed `decision()` call for Jev.
 - **2026-10-05** – **🔗 Find the model you meant** Search and filter the model catalog by capabilities through the API or MCP; Open WebUI can now sort models by category tags. [API docs](https://gen.pollinations.ai/docs).
 - **2026-10-05** – **🎯 Seven quests, one page** Pollinations Quest Starter walks new users through setup without sending their API key to its server. [Try it](https://elite-surely-machine-enemies.trycloudflare.com) <!-- app -->
-- **2026-10-04** – **🌟 New Quests for video and community models** Earn Pollen for trying a video or community model; model publishers can earn it when others use their models.
-- **2026-10-04** – **🔗 Claude Code connects directly** Polli CLI can connect Claude Code to Pollinations’ `/v1/messages` endpoint, with model aliases and a separate config that leaves your Claude settings alone. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
-- **2026-10-04** – **🎨 Explore a painted world** In Postcard Worlds, enter a place, then step through doors and paths in AI-painted scenes that carry the view forward. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds) <!-- app -->
-- **2026-10-04** – **🎵 Turn study notes into songs** Tunemory makes short songs from facts, formulas, or word lists and checks the lyrics for missing details. [Try it](https://tomdacatto.github.io/pollinations-tunemory) <!-- app -->
 ---
 
 ## 🌱 Introduction

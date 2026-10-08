@@ -174,6 +174,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "minimax/minimax-m3": {
+        "minimax/minimax-m3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/MiniMaxAI/MiniMax-M3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(0.28),
+                promptCachedTokens: perMillion(0.056),
+                completionTextTokens: perMillion(1.1),
+            },
+        },
+    },
     "qwen/qwen3.8-2.4t-a95b": {
         "qwen/qwen3.8-2.4t-a95b:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -309,6 +321,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/moonshotai/Kimi-K3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(2.85),
+                promptCachedTokens: perMillion(0.285),
+                completionTextTokens: perMillion(14.25),
+            },
+        },
+    },
     "meta/llama-3.3-70b-instruct": {
         "meta/llama-3.3-70b-instruct:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfra,
@@ -330,6 +354,14 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
             },
+        },
+    },
+    "mistralai/mistral-large-4": {
+        // Both routes use Mistral infrastructure; this covers gateway failures.
+        "mistralai/mistral-large-4:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
+            provider: "vercel",
+            addedDate: new Date("2026-10-06").getTime(),
         },
     },
     "mistralai/mistral-small-3.2": {
@@ -454,6 +486,14 @@ export const TEXT_FALLBACKS = {
                 promptCacheWriteTokens: perMillion(1.25) * 1.055,
                 completionTextTokens: perMillion(5) * 1.055,
             },
+        },
+    },
+    "anthropic/claude-haiku-5.5": {
+        // Same model through Vercel's AI Gateway at Anthropic's list price,
+        // so it inherits the primary's rates and long-context tier.
+        "anthropic/claude-haiku-5.5:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-10-07").getTime(),
         },
     },
     "anthropic/claude-opus-5.5": {

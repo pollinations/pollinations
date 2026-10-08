@@ -223,6 +223,49 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Nex N2.5 Mini to Nex AGI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nex-agi/nex-n2.5-mini",
+        });
+
+        expect(result.options.model).toBe("nex-agi/nex-n2.5-mini");
+        expect(result.options.provider).toEqual({
+            only: ["nex-agi/bf16"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Nex N2.5 Pro to Nex AGI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nex-agi/nex-n2.5-pro",
+        });
+
+        expect(result.options.model).toBe("nex-agi/nex-n2.5-pro");
+        expect(result.options.provider).toEqual({
+            only: ["nex-agi/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Mistral Large 4 to Mistral direct", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-large-4",
+        });
+
+        expect(result.options.model).toBe("mistral-large-4");
+    });
+
+    it("pins the Mistral Large 4 fallback to Mistral on Vercel", () => {
+        const result = resolveModelConfig(messages, {
+            model: "mistralai/mistral-large-4:vercel",
+        });
+
+        expect(result.options.model).toBe("mistral/mistral-large-4");
+        expect(result.options.providerOptions).toEqual({
+            gateway: { only: ["mistral"] },
+        });
+    });
+
     it("pins Ling 3.0 Flash VL to DeepInfra fp16 on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inclusionai/ling-3.0-flash-vl",
@@ -267,6 +310,23 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-sonnet-5-5");
         expect(result.options.modelConfig?.provider).toBe("bedrock");
         expect(result.options.max_tokens).toBe(128000);
+    });
+
+    it("routes Claude Haiku 5.5 to the Bedrock global inference profile and the Vercel fallback to the gateway", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "anthropic/claude-haiku-5.5",
+        });
+        expect(primary.options.model).toBe("global.anthropic.claude-haiku-5-5");
+        expect(primary.options.modelConfig?.provider).toBe("bedrock");
+        expect(primary.options.max_tokens).toBe(128000);
+
+        const fallback = resolveModelConfig(messages, {
+            model: "anthropic/claude-haiku-5.5:vercel",
+        });
+        expect(fallback.options.model).toBe("anthropic/claude-haiku-5.5");
+        expect(fallback.options.modelConfig?.directEndpoint).toBe(
+            "https://ai-gateway.vercel.sh/v1/chat/completions",
+        );
     });
 
     it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {

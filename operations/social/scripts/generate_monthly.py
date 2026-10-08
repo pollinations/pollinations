@@ -83,7 +83,7 @@ def generate_digest(
     pr_count = sum(int(summary.get("pr_count") or 0) for summary in daily_summaries)
     user_prompt = (
         f"Month: {month}\n"
-        f"Merged PRs: {pr_count}\n"
+        f"PRs selected for daily recaps: {pr_count}\n"
         f"Active days: {len(daily_summaries)}\n\n"
         f"Canonical daily summaries:\n{json.dumps(context, indent=2, ensure_ascii=False)}"
     )

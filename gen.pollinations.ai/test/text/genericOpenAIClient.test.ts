@@ -1,13 +1,182 @@
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isRetryableFallbackError } from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
+import { resolveModelConfig } from "../../src/text/utils/modelResolver.js";
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
 describe("genericOpenAIClient", () => {
+    it.each([
+        false,
+        true,
+    ])("normalizes configured Mistral thinking chunks and preserves usage (stream=%s)", async (stream) => {
+        const usage = {
+            prompt_tokens: 2,
+            completion_tokens: 7,
+            total_tokens: 9,
+        };
+        const content = [
+            {
+                type: "thinking",
+                thinking: [{ type: "text", text: "Checking." }],
+                closed: true,
+            },
+            { type: "text", text: "391" },
+        ];
+        const payload = {
+            choices: [
+                {
+                    [stream ? "delta" : "message"]: {
+                        role: "assistant",
+                        content,
+                    },
+                    finish_reason: "stop",
+                },
+            ],
+            usage,
+        };
+        const resolved = resolveModelConfig([], {
+            model: "mistralai/mistral-large-4",
+            stream,
+        });
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "17 * 23" }],
+            resolved.options,
+            {
+                endpoint: "https://api.mistral.ai/v1/chat/completions",
+                fetcher: async () =>
+                    stream
+                        ? new Response(
+                              `data: ${JSON.stringify(payload)}\n\ndata: [DONE]\n\n`,
+                          )
+                        : Response.json(payload),
+            },
+        );
+        const result = stream
+            ? JSON.parse(
+                  (await new Response(completion.responseStream).text())
+                      .split("\n")[0]
+                      .slice(6),
+              )
+            : completion;
+        expect(result.choices[0][stream ? "delta" : "message"]).toMatchObject({
+            content: "391",
+            reasoning_content: "Checking.",
+        });
+        expect(result.usage).toEqual(usage);
+    });
+
+    it("translates Mistral request controls while hiding reasoning locally", async () => {
+        const resolved = resolveModelConfig([], {
+            model: "mistralai/mistral-large-4",
+            seed: 42,
+            include_reasoning: false,
+            reasoning: { effort: "high" },
+        });
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "17 * 23" }],
+            resolved.options,
+            {
+                endpoint: "https://api.mistral.ai/v1/chat/completions",
+                fetcher: async (_url, init) => {
+                    const body = JSON.parse(String(init?.body));
+                    expect(body).toMatchObject({
+                        random_seed: 42,
+                        reasoning_effort: "high",
+                    });
+                    expect(body).not.toHaveProperty("seed");
+                    expect(body).not.toHaveProperty("reasoning");
+                    expect(body).not.toHaveProperty("include_reasoning");
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: [
+                                        {
+                                            type: "thinking",
+                                            thinking: [
+                                                {
+                                                    type: "text",
+                                                    text: "Checking.",
+                                                },
+                                            ],
+                                        },
+                                        { type: "text", text: "391" },
+                                    ],
+                                },
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 7,
+                            total_tokens: 9,
+                        },
+                    });
+                },
+            },
+        );
+        expect(completion.choices?.[0].message?.content).toBe("391");
+        expect(completion.choices?.[0].message).not.toHaveProperty(
+            "reasoning_content",
+        );
+        expect(completion.usage?.completion_tokens).toBe(7);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("returns reusable assistant messages when optional provider fields are null (tools=%s)", async (tools) => {
+        const message = {
+            role: "assistant",
+            content: tools ? null : "hello",
+            name: null,
+            tool_calls: tools
+                ? [
+                      {
+                          id: "call_1",
+                          type: "function",
+                          function: {
+                              name: "get_temperature",
+                              arguments: '{"city":"Berlin"}',
+                          },
+                      },
+                  ]
+                : null,
+        };
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    Response.json({
+                        choices: [{ message, finish_reason: "stop" }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+            },
+        );
+        const returned = completion.choices?.[0]?.message;
+        expect(
+            CreateChatCompletionRequestSchema.safeParse({
+                model: "provider-model",
+                messages: [returned],
+            }).success,
+        ).toBe(true);
+        expect(returned?.content).toBe(message.content);
+        expect(returned).not.toHaveProperty("name");
+        if (tools) expect(returned?.tool_calls).toEqual(message.tool_calls);
+        else expect(returned).not.toHaveProperty("tool_calls");
+    });
+
     it.each([
         [false, { reasoning: { enabled: true, exclude: true } }],
         [true, { reasoning: { enabled: true, exclude: true } }],

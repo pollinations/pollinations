@@ -374,6 +374,95 @@ describe("Device Authorization Flow", () => {
         expect(zeroed.scope).toBe("");
     }, 30000);
 
+    test("approve echoes a valid expiresIn as the token's expires_in", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const device = await insertDeviceCode();
+        const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                userCode: device.userCode,
+                apiKey: "sk_test_device_expiry",
+                apiKeyId: "key-id",
+                expiresIn: 604800,
+            }),
+        });
+        expect(approveRes.status).toBe(200);
+
+        const tokenRes = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: device.deviceCode }),
+        });
+        expect(tokenRes.status).toBe(200);
+        const tokenBody = (await tokenRes.json()) as { expires_in?: number };
+        expect(tokenBody.expires_in).toBe(604800);
+    }, 30000);
+
+    const invalidExpiresIn: [string, unknown][] = [
+        ["outside the Date range", 1e15],
+        ["negative", -60],
+        ["zero", 0],
+        ["fractional", 1.5],
+        ["a string", "3600"],
+    ];
+    for (const [label, expiresIn] of invalidExpiresIn) {
+        test(`approve rejects an expiresIn that is ${label}`, async ({
+            sessionToken,
+            mocks,
+        }) => {
+            await mocks.enable("tinybird", "github");
+            const device = await insertDeviceCode();
+            const approveRes = await SELF.fetch(`${BASE}/api/device/approve`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    userCode: device.userCode,
+                    apiKey: "sk_test_device_expiry",
+                    apiKeyId: "key-id",
+                    expiresIn,
+                }),
+            });
+            expect(approveRes.status).toBe(400);
+
+            // Nothing was parked for the CLI and the code is still pending
+            expect(
+                await env.KV.get(`device-key:${device.deviceCode}`),
+            ).toBeNull();
+            const db = drizzle(env.DB, { schema });
+            const row = await db.query.deviceCode.findFirst({
+                where: (t, { eq }) => eq(t.id, device.id),
+            });
+            expect(row?.status).toBe("pending");
+        }, 30000);
+    }
+
+    test("approve still requires userCode, apiKey and apiKeyId", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/approve`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ userCode: device.userCode, apiKey: "" }),
+        });
+        expect(res.status).toBe(400);
+    }, 30000);
+
     test("GET /api/device/userinfo returns OIDC-shaped profile", async ({
         sessionToken,
         mocks,

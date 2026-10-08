@@ -5,6 +5,7 @@ import {
     UpstreamError,
 } from "@shared/error.ts";
 import {
+    AUDIO_SERVICES,
     AUDIO_VOICES,
     type AudioModelName,
     GEMINI_TTS_VOICES,
@@ -2414,6 +2415,134 @@ export function resolveMaiSpeechVoice(
     return `${match}:${suffix}`;
 }
 
+export async function generateMaiSpeech(opts: {
+    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES;
+    routeId: string;
+    provider: string;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        modelName,
+        routeId,
+        provider,
+        text,
+        voice,
+        responseFormat,
+        apiKey,
+        log,
+    } = opts;
+    if (responseFormat !== "mp3" && responseFormat !== "pcm")
+        throw new UpstreamError(400, {
+            message: "MAI speech supports mp3 and 24 kHz pcm.",
+        });
+    if (!apiKey)
+        throw new UpstreamError(500, {
+            message: "MAI speech provider is not configured.",
+        });
+    const resolvedVoice = resolveMaiSpeechVoice(modelName, voice);
+    if (provider === "openrouter") {
+        const response = await generateOpenRouterMaiSpeech({
+            modelName,
+            text,
+            voice,
+            responseFormat,
+            apiKey,
+            log,
+        });
+        const headers = new Headers(response.headers);
+        for (const [key, value] of Object.entries(
+            buildUsageHeaders(routeId, createAudioTokenUsage([...text].length)),
+        ))
+            headers.set(key, value);
+        return new Response(response.body, {
+            status: response.status,
+            headers,
+        });
+    }
+    const gateway = provider === "vercel";
+    const url = gateway
+        ? "https://ai-gateway.vercel.sh/v4/ai/speech-model"
+        : "https://swedencentral.tts.speech.microsoft.com/cognitiveservices/v1";
+    const escapeXml = (value: string) =>
+        value.replace(
+            /[&<>"']/g,
+            (ch) =>
+                ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&apos;",
+                })[ch] ?? ch,
+        );
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${resolvedVoice.slice(0, 5)}"><voice name="${escapeXml(resolvedVoice)}">${escapeXml(text)}</voice></speak>`;
+    const response = await ensureUpstreamOk(
+        await fetch(url, {
+            method: "POST",
+            headers: gateway
+                ? {
+                      Authorization: `Bearer ${apiKey}`,
+                      "Content-Type": "application/json",
+                      "ai-gateway-protocol-version": "0.0.1",
+                      "ai-speech-model-specification-version": "4",
+                      "ai-model-id": modelName,
+                  }
+                : {
+                      "Ocp-Apim-Subscription-Key": apiKey,
+                      "Content-Type": "application/ssml+xml",
+                      "X-Microsoft-OutputFormat":
+                          responseFormat === "mp3"
+                              ? "audio-24khz-160kbitrate-mono-mp3"
+                              : "raw-24khz-16bit-mono-pcm",
+                  },
+            body: gateway
+                ? JSON.stringify({
+                      text,
+                      voice: resolvedVoice.split(":")[0],
+                      outputFormat: responseFormat,
+                  })
+                : ssml,
+        }),
+        url,
+    );
+    let audio: BodyInit | null = response.body;
+    let characters = [...text].length;
+    if (gateway) {
+        const parsed = z
+            .object({
+                audio: z.string().min(1),
+                usage: z
+                    .object({
+                        inputCharacters: z.number().nonnegative().optional(),
+                    })
+                    .passthrough()
+                    .optional(),
+            })
+            .safeParse(await response.json());
+        if (!parsed.success)
+            throw new UpstreamError(502, {
+                message: "MAI speech returned invalid audio.",
+            });
+        audio = Uint8Array.from(atob(parsed.data.audio), (ch) =>
+            ch.charCodeAt(0),
+        );
+        characters = parsed.data.usage?.inputCharacters ?? characters;
+    }
+    // Binary providers do not report characters; reconcile against provider billing before merge.
+    return new Response(audio, {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg",
+            "x-tts-voice": resolvedVoice,
+            ...buildUsageHeaders(routeId, createAudioTokenUsage(characters)),
+        },
+    });
+}
+
 export async function generateOpenRouterMaiSpeech(opts: {
     modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES;
     text: string;
@@ -3554,18 +3683,33 @@ async function dispatchAudioGeneration(
                 }),
             );
         case "microsoft/mai-voice-2.1":
+        case "microsoft/mai-voice-2.1:vercel":
+        case "microsoft/mai-voice-2.1:openrouter":
         case "microsoft/mai-voice-2.1-flash":
+        case "microsoft/mai-voice-2.1-flash:vercel":
+        case "microsoft/mai-voice-2.1-flash:openrouter": {
+            const upstreamModel = c.var.model
+                .resolved as keyof typeof MAI_TTS_MODEL_SUFFIXES;
+            const provider = AUDIO_SERVICES[model as AudioModelName].provider;
             return withSafetyHeaders(
                 c,
-                await generateOpenRouterMaiSpeech({
-                    modelName: model,
+                await generateMaiSpeech({
+                    modelName: upstreamModel,
+                    routeId: model,
+                    provider,
                     text,
                     voice,
                     responseFormat,
-                    apiKey: openRouterApiKey,
+                    apiKey:
+                        provider === "vercel"
+                            ? (c.env.AI_GATEWAY_API_KEY ?? "")
+                            : provider === "openrouter"
+                              ? openRouterApiKey
+                              : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                     log,
                 }),
             );
+        }
         case "google/gemini-3.8-flash-tts":
         case "google/gemini-3.8-flash-lite-tts":
             return withSafetyHeaders(

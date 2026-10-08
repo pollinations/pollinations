@@ -1038,43 +1038,35 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "microsoft/mai-voice-2.1": {
-        aliases: ["mai-voice", "mai-voice-2.1", "mai-tts"],
-        provider: "openrouter",
+        aliases: [],
+        provider: "azure",
         publisher: "Microsoft",
         category: "audio",
         addedDate: new Date("2026-10-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        cost: {
-            // OpenRouter/Azure, verified 2026-10-08: $22 per 1M characters
-            // (public preview introductory price), billed per input character
-            // like the character-priced azure TTS entries; the 1.055
-            // multiplier follows the fish-audio OpenRouter convention.
-            completionAudioTokens: (22 / 1_000_000) * 1.055,
-        },
+        // Direct Azure Speech list rate; Vercel matches it, OpenRouter adds 5.5%.
+        cost: { completionAudioTokens: 22 / 1_000_000 },
         title: "MAI-Voice-2.1",
         description:
-            "Microsoft's highest-fidelity expressive TTS across 23 languages and 97 voices; mp3 or 24 kHz pcm",
+            "Expressive speech across 23 languages with consistent voices for long-form narration; mp3 or 24 kHz pcm",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...MAI_VOICE_21_VOICES],
     },
     "microsoft/mai-voice-2.1-flash": {
-        aliases: ["mai-voice-flash", "mai-voice-2.1-flash", "mai-tts-flash"],
-        provider: "openrouter",
+        aliases: [],
+        provider: "azure",
         publisher: "Microsoft",
         category: "audio",
         addedDate: new Date("2026-10-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        cost: {
-            // OpenRouter/Azure, verified 2026-10-08: $15 per 1M characters.
-            // Same per-character billing as microsoft/mai-voice-2.1.
-            completionAudioTokens: (15 / 1_000_000) * 1.055,
-        },
+        // Direct Azure Speech list rate; Vercel matches it, OpenRouter adds 5.5%.
+        cost: { completionAudioTokens: 15 / 1_000_000 },
         title: "MAI-Voice-2.1 Flash",
         description:
-            "Low-latency Microsoft TTS for voice agents (~150 ms end-to-end); 23 languages, 97 voices; mp3 or 24 kHz pcm",
+            "Low-latency expressive speech across 23 languages for voice agents; mp3 or 24 kHz pcm",
         inputModalities: ["text"],
         outputModalities: ["audio"],
         voices: [...MAI_VOICE_21_VOICES],

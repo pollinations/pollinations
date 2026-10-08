@@ -3251,6 +3251,244 @@ fixtureTest(
     },
 );
 
+fixtureTest.each([{ api: "chat_completions" }, { api: "responses" }] as const)(
+    "registers a $api endpoint without SSE and serves and bills stream: false and stream: true",
+    async ({ api }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `nosse-${crypto.randomUUID().slice(0, 8)}`;
+        const url = `https://plain-json.example.com/v1/${api}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const usage =
+            api === "responses"
+                ? { input_tokens: 2, output_tokens: 3, total_tokens: 5 }
+                : { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 };
+        // A plain JSON server: it ignores `stream` and never sends SSE.
+        const upstreamStreams: unknown[] = [];
+        const events: Record<string, unknown>[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === url) {
+                    upstreamStreams.push(
+                        ((await request.json()) as { stream?: unknown }).stream,
+                    );
+                    return Response.json(
+                        api === "responses"
+                            ? {
+                                  id: "resp_plain",
+                                  object: "response",
+                                  created_at: 1,
+                                  model: "plain-json",
+                                  status: "completed",
+                                  output: [
+                                      {
+                                          id: "msg_plain",
+                                          type: "message",
+                                          role: "assistant",
+                                          status: "completed",
+                                          content: [
+                                              {
+                                                  type: "output_text",
+                                                  text: "plain answer",
+                                                  annotations: [],
+                                              },
+                                          ],
+                                      },
+                                  ],
+                                  usage,
+                              }
+                            : {
+                                  id: "chatcmpl_plain",
+                                  object: "chat.completion",
+                                  created: 1,
+                                  model: "plain-json",
+                                  choices: [
+                                      {
+                                          index: 0,
+                                          message: {
+                                              role: "assistant",
+                                              content: "plain answer",
+                                          },
+                                          finish_reason: "stop",
+                                      },
+                                  ],
+                                  usage,
+                              },
+                    );
+                }
+                if (isBillingFetch(request)) {
+                    if (new URL(request.url).pathname === "/v0/events")
+                        events.push(
+                            ...parseIngestedEvents(await request.text()),
+                        );
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+        const enterApi = await createEnterCommunityApi();
+        const enterPost = async (path: string, body: unknown) =>
+            fetchEnterApi(
+                enterApi,
+                new Request(
+                    `http://localhost:3000/api/community-endpoints${path}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization:
+                                await sessionAuthorization(ownerUserId),
+                        },
+                        body: JSON.stringify(body),
+                    },
+                ),
+            );
+
+        // 1. The endpoint test passes and reports the missing capability.
+        const probe = await enterPost("/test", {
+            api,
+            url,
+            bearerToken: "plain-token",
+            model: "plain-json",
+        });
+        expect(probe.status).toBe(200);
+        await expect(probe.json()).resolves.toMatchObject({
+            ok: true,
+            streaming: false,
+            usage,
+        });
+
+        // 2. Registration stores it, then the model is published.
+        const registered = await enterPost("", {
+            name: modelName,
+            title: "Plain JSON",
+            api,
+            url,
+            upstreamModel: "plain-json",
+            bearerToken: "plain-token",
+            visibility: "public",
+            advertised: { streaming: false },
+            promptTextPrice: 0.00001,
+            completionTextPrice: 0.00001,
+        });
+        expect(registered.status).toBe(200);
+        const endpoint = (await registered.json()) as {
+            id: string;
+            modelId: string;
+            advertised: unknown;
+        };
+        expect(endpoint.advertised).toEqual({ streaming: false });
+        await maturePendingCommunityEndpoint(endpoint.id);
+
+        // 3. Callers can tell.
+        const models = (await (
+            await fetchGen("https://gen.pollinations.ai/v1/models")
+        ).json()) as { data: { id: string; supports_streaming?: boolean }[] };
+        expect(
+            models.data.find((model) => model.id === endpoint.modelId),
+        ).toMatchObject({ supports_streaming: false });
+
+        // 4. Both request modes on the public text API.
+        const route = api === "responses" ? "responses" : "chat/completions";
+        const call = (stream: boolean) =>
+            fetchGen(
+                new Request(`https://gen.pollinations.ai/v1/${route}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: endpoint.modelId,
+                        stream,
+                        ...(api === "responses"
+                            ? { input: "hello" }
+                            : {
+                                  messages: [
+                                      { role: "user", content: "hello" },
+                                  ],
+                              }),
+                    }),
+                }),
+            );
+        const before = await getUserBalance(db, caller.userId);
+
+        const json = await call(false);
+        expect(json.status).toBe(200);
+        expect(json.headers.get("x-model-used")).toBe(endpoint.modelId);
+        expect(json.headers.get("x-usage-completion-text-tokens")).toBe("3");
+        expect(await json.text()).toContain("plain answer");
+
+        const streamed = await call(true);
+        expect(streamed.status).toBe(200);
+        expect(streamed.headers.get("content-type")).toContain(
+            "text/event-stream",
+        );
+        expect(streamed.headers.get("x-model-used")).toBe(endpoint.modelId);
+        const streamBody = await streamed.text();
+        expect(streamBody).toContain("plain answer");
+        expect(streamBody).not.toContain("usage_missing");
+        if (api === "responses") {
+            expect(streamBody).toContain("event: response.output_text.delta");
+            expect(streamBody).toContain("event: response.completed");
+        } else {
+            expect(streamBody).toContain('"completion_tokens":3');
+            expect(streamBody.trimEnd().endsWith("data: [DONE]")).toBe(true);
+        }
+
+        // The probe sent stream: false then true; Gen only ever sent false.
+        expect(upstreamStreams).toEqual([false, true, false, false]);
+
+        // 5. Both calls are billed from the reported usage, like any other
+        // community model: 2 prompt + 3 completion tokens at 1e-5 each.
+        const after = await getUserBalance(db, caller.userId);
+        expect(before.packBalance - after.packBalance).toBeCloseTo(10e-5, 9);
+        const billed = events.filter((event) => event.isBilledUsage === true);
+        expect(billed).toHaveLength(2);
+        for (const event of billed) {
+            expect(event).toMatchObject({
+                modelUsed: endpoint.modelId,
+                tokenCountPromptText: 2,
+                tokenCountCompletionText: 3,
+            });
+            expect(event.totalPrice).toBeCloseTo(5e-5, 9);
+        }
+
+        // Clients that stream by default over Chat Completions (Open WebUI)
+        // also get a valid stream from a Responses model.
+        if (api === "responses") {
+            const adapted = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: endpoint.modelId,
+                        stream: true,
+                        messages: [{ role: "user", content: "hello" }],
+                    }),
+                }),
+            );
+            expect(adapted.status).toBe(200);
+            const adaptedBody = await adapted.text();
+            expect(adaptedBody).toContain("plain answer");
+            expect(adaptedBody).toContain('"completion_tokens":3');
+            expect(adaptedBody).not.toContain("usage_missing");
+            expect(upstreamStreams.at(-1)).toBe(false);
+        }
+    },
+    20_000,
+);
+
 fixtureTest(
     "a private model is owner-only and a zero-priced public model is free for funded callers",
     async ({ apiKey }) => {

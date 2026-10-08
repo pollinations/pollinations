@@ -162,7 +162,7 @@ describe("polli gen chat session lifecycle", () => {
     });
 
     it("sends the X-Polli-Client attribution header the other commands set", async () => {
-        const fetch = prepare(
+        prepare(
             async () =>
                 new Response(STREAM_OK, {
                     headers: { "Content-Type": "text/event-stream" },
@@ -172,10 +172,8 @@ describe("polli gen chat session lifecycle", () => {
         const line = await startSession();
         await line("hello");
 
-        const headers = fetch.mock.calls[0]?.[1]?.headers as Record<
-            string,
-            string
-        >;
+        const headers = vi.mocked(globalThis.fetch).mock.calls[0][1]
+            ?.headers as Record<string, string>;
         expect(headers["X-Polli-Client"]).toBe(POLLI_CLIENT);
         await line("/exit");
     });

@@ -750,7 +750,14 @@ const models: ModelDefinition[] = [
                     ...rest,
                     ...(reasoning_effort === undefined
                         ? {}
-                        : { reasoning: { effort: reasoning_effort } }),
+                        : {
+                              reasoning: {
+                                  ...(rest.reasoning as
+                                      | Record<string, unknown>
+                                      | undefined),
+                                  effort: reasoning_effort,
+                              },
+                          }),
                 },
             };
         },

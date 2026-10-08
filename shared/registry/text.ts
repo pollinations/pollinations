@@ -66,10 +66,11 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Glyph Cluster (Stealth)",
         description:
-            "Experimental coding and long-context reasoning with tool calling. Prompts and responses may be retained and used for training; no zero data retention.",
+            "Experimental coding and long-context reasoning with automatic tool calling. Prompts and responses may be retained and used for training; no zero data retention.",
         inputModalities: ["text"],
         outputModalities: ["text"],
         contextLength: 256000,
+        // The Gateway rejects required and named tool choices; auto/none work.
         tools: true,
         reasoning: true,
         isSpecialized: false,

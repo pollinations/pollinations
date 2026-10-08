@@ -68,7 +68,7 @@ export async function transcribeMai(opts: {
         throw new UpstreamError(500, {
             message: "MAI transcription provider is not configured.",
         });
-    const gateway = modelId.endsWith(":vercel");
+    const gateway = modelId === "microsoft/mai-transcribe-2:vercel";
     const url = gateway
         ? "https://ai-gateway.vercel.sh/v4/ai/transcription-model"
         : "https://myceli-prod-swedencentral.cognitiveservices.azure.com/speechtotext/transcriptions:transcribe?api-version=2025-10-15";
@@ -77,7 +77,11 @@ export async function transcribeMai(opts: {
     form.append(
         "definition",
         JSON.stringify({
-            enhancedMode: { enabled: true, model: "MAI-Transcribe-2" },
+            enhancedMode: {
+                enabled: true,
+                model: "MAI-Transcribe-2",
+                modelOptions: { timestamps: "segment" },
+            },
         }),
     );
     const response = await ensureUpstreamOk(

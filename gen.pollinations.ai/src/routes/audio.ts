@@ -3819,9 +3819,10 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 responseFormat,
                 temperature,
                 modelId: candidate.id,
-                apiKey: candidate.id.endsWith(":vercel")
-                    ? (c.env.AI_GATEWAY_API_KEY ?? "")
-                    : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+                apiKey:
+                    candidate.id === "microsoft/mai-transcribe-2:vercel"
+                        ? (c.env.AI_GATEWAY_API_KEY ?? "")
+                        : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             });
         }
         if (candidate.id === "x-ai/grok-transcribe") {

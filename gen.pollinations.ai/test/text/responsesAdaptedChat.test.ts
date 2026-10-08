@@ -391,6 +391,7 @@ describe("Chat stream to Responses stream", () => {
             "response.output_item.done",
             "response.output_item.added",
             "response.function_call_arguments.delta",
+            "response.function_call_arguments.delta",
             "response.function_call_arguments.done",
             "response.output_item.done",
             "response.completed",
@@ -399,7 +400,8 @@ describe("Chat stream to Responses stream", () => {
             list.map((_, index) => index),
         );
         expect(list[12]).toMatchObject({ output_index: 1, text: "Hello" });
-        expect(list[17]).toMatchObject({
+        expect(list[16]).toMatchObject({ output_index: 2, delta: '{"ci' });
+        expect(list[18]).toMatchObject({
             output_index: 2,
             arguments: '{"city":"Oslo"}',
         });
@@ -425,6 +427,46 @@ describe("Chat stream to Responses stream", () => {
             );
             expect(done.item).toEqual(item);
         }
+    });
+
+    it("streams interleaved parallel tool calls onto their own items", async () => {
+        const chunk = (index: number, fn: object, id?: string) => ({
+            choices: [{ delta: { tool_calls: [{ index, id, function: fn }] } }],
+        });
+        const list = await events(
+            chatStreamToResponsesStream(
+                sse(
+                    chunk(0, { name: "a", arguments: '{"x"' }, "call_a"),
+                    chunk(1, { name: "b", arguments: '{"y"' }, "call_b"),
+                    chunk(0, { arguments: ":1}" }),
+                    chunk(1, { arguments: ":2}" }),
+                    {
+                        choices: [{ delta: {}, finish_reason: "tool_calls" }],
+                        usage,
+                    },
+                    "[DONE]",
+                ),
+                request({ input: "hi", stream: true }),
+                "m",
+            ),
+        );
+
+        const deltas = list
+            .filter(
+                (event) =>
+                    event.type === "response.function_call_arguments.delta",
+            )
+            .map((event) => [event.output_index, event.delta]);
+        expect(deltas).toEqual([
+            [0, '{"x"'],
+            [1, '{"y"'],
+            [0, ":1}"],
+            [1, ":2}"],
+        ]);
+        expect(list.at(-1).response.output).toMatchObject([
+            { call_id: "call_a", name: "a", arguments: '{"x":1}' },
+            { call_id: "call_b", name: "b", arguments: '{"y":2}' },
+        ]);
     });
 
     it.each([

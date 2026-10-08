@@ -10,7 +10,7 @@ import {
     printTable,
 } from "../lib/output.js";
 
-type QuestStatus = "open" | "claimable" | "claimed" | "coming";
+type QuestStatus = "open" | "claimable" | "claimed" | "closed" | "coming";
 
 interface QuestReward {
     id: string;
@@ -40,17 +40,19 @@ interface QuestsResponse {
 }
 
 // Derive the display status. Claim state lives on the reward (claimedAt === null
-// means it's earned but not yet banked); everything else falls back to the
-// quest's own state.
+// means it's earned but not yet banked) and wins over the quest's own lifecycle
+// flags; without a reward, the quest's own state decides.
 function questStatus(quest: QuestEntry): QuestStatus {
-    if (quest.state === "coming_soon" || quest.status === "coming_soon") {
-        return "coming";
-    }
     if (quest.reward) {
         return quest.reward.claimedAt === null ? "claimable" : "claimed";
     }
+    if (quest.state === "coming_soon" || quest.status === "coming_soon") {
+        return "coming";
+    }
     if (quest.state === "completed" || quest.status === "completed") {
-        return "claimed";
+        // Closed without this account: the quest was achieved by someone else
+        // (or retired). It must not read as "you claimed this" in your list.
+        return "closed";
     }
     return "open";
 }
@@ -61,6 +63,8 @@ function colorStatus(status: QuestStatus): string {
             return chalk.green(status);
         case "claimed":
             return chalk.cyan(status);
+        case "closed":
+            return chalk.dim(status);
         case "coming":
             return chalk.dim(status);
         default:
@@ -82,6 +86,7 @@ function filterQuests(
     if (opts.open) wanted.add("open");
     if (opts.claimable) wanted.add("claimable");
     if (opts.claimed) wanted.add("claimed");
+    if (opts.closed) wanted.add("closed");
     if (opts.comingSoon) wanted.add("coming");
     if (wanted.size === 0) return quests;
     return quests.filter((quest) => wanted.has(questStatus(quest)));
@@ -112,11 +117,12 @@ function renderQuests(quests: QuestEntry[]): void {
 
 export const questsCommand = new Command("quests")
     .description(
-        "List your quests with claim state (open / claimable / claimed / coming)",
+        "List your quests with claim state (open / claimable / claimed / closed / coming)",
     )
     .option("--open", "Show only open quests")
     .option("--claimable", "Show only quests with a reward ready to claim")
-    .option("--claimed", "Show only already-claimed quests")
+    .option("--claimed", "Show only quests you already claimed")
+    .option("--closed", "Show only quests closed without you")
     .option("--coming-soon", "Show only coming-soon quests")
     .action(async (opts) => {
         try {

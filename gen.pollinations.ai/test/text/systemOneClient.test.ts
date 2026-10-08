@@ -440,6 +440,81 @@ describe("System One adapter", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ["a ```json fence", `\`\`\`json\n${nativeContent}\n\`\`\``],
+        ["a bare ``` fence", `\`\`\`\n${nativeContent}\n\`\`\``],
+        ["surrounding whitespace", `\n  ${nativeContent}  \n`],
+        ["a byte-order mark", `\uFEFF${nativeContent}`],
+        ["a zero-width space", `\u200B${nativeContent}\u200B`],
+    ])("accepts the native request wrapped in %s", async (_name, content) => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "typesafe/jev-1.13",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "jev-1.13.0",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            });
+        await callSystemOne([{ role: "user", content }], { modelConfig });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects JSON with text around a fence", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne(
+                [
+                    {
+                        role: "user",
+                        content: `Here you go:\n\`\`\`json\n${nativeContent}\n\`\`\``,
+                    },
+                ],
+                { modelConfig },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("shows a noul-only example for Span-01 Lite", async () => {
+        const error = (await callSystemOne(
+            [{ role: "user", content: "not json" }],
+            {
+                modelConfig: {
+                    ...modelConfig,
+                    model: "respan/span-01-lite",
+                },
+            },
+        ).then(
+            () => new Error("expected a rejection"),
+            (thrown: unknown) => thrown,
+        )) as Error;
+        expect(error).toMatchObject({ status: 400 });
+        const example = error.message.match(/as JSON: (\{.*\}) \(/)?.[1];
+        const questions = JSON.parse(String(example)).questions;
+        expect(Object.values(questions)).toEqual([
+            { type: "noul", instructions: "Does this convey urgency?" },
+        ]);
+        expect(error.message).toContain(
+            'respan/span-01-lite accepts only "noul" questions',
+        );
+    });
+
+    it("keeps the full example for models that accept every question type", async () => {
+        await expect(
+            callSystemOne([{ role: "user", content: "not json" }], {
+                modelConfig,
+            }),
+        ).rejects.toMatchObject({
+            message: expect.stringContaining('"type":"choice"'),
+        });
+    });
+
     it("names the requested model when the request is malformed", async () => {
         await expect(
             callSystemOne([{ role: "user", content: "not json" }], {

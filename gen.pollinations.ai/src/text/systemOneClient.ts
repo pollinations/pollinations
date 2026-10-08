@@ -11,6 +11,18 @@ import { isPlainObject } from "./utils/objectCleaners.js";
 const DOCS_URL = "https://docs.typesafe.ai/api";
 const REQUEST_EXAMPLE =
     '{"state":"My payouts have been failing for 3 days.","questions":{"department":{"type":"choice","instructions":"Which team should handle this?","criteria":{"billing":"Payment issues","technical":"Product failures"}},"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
+// Span-01 Lite accepts only noul questions with plain-string instructions, so
+// the generic example above (which has a choice) would fail upstream for it.
+const NOUL_ONLY_REQUEST_EXAMPLE =
+    '{"state":"My payouts have been failing for 3 days.","questions":{"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
+const NOUL_ONLY_MODELS = new Set(["respan/span-01-lite"]);
+
+function requestExample(model: unknown): string {
+    if (typeof model === "string" && NOUL_ONLY_MODELS.has(model)) {
+        return `${NOUL_ONLY_REQUEST_EXAMPLE} (${model} accepts only "noul" questions with plain-string instructions)`;
+    }
+    return REQUEST_EXAMPLE;
+}
 
 type SystemOneResponse = {
     model: string;
@@ -29,11 +41,23 @@ function serviceError(message: string, status: number): ServiceError {
     return error;
 }
 
-function nativeRequestError(detail: string): ServiceError {
+function nativeRequestError(detail: string, model: unknown): ServiceError {
     return serviceError(
-        `${detail} The last user message's content must be the native TypeSafe request as JSON: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
+        `${detail} The last user message's content must be the native TypeSafe request as JSON: ${requestExample(model)}. Docs: ${DOCS_URL}`,
         400,
     );
+}
+
+// Chat clients often paste the request as a Markdown block (```json ... ```)
+// or carry invisible characters (BOM, zero-width spaces) that JSON.parse
+// rejects; strip those around the whole message so the JSON inside parses.
+const INVISIBLE_EDGES =
+    /^[\s\uFEFF\u200B-\u200D\u2060]+|[\s\uFEFF\u200B-\u200D\u2060]+$/g;
+
+function unwrapNativeJson(content: string): string {
+    const trimmed = content.replace(INVISIBLE_EDGES, "");
+    const fenced = trimmed.match(/^```[\w-]*[ \t]*\n([\s\S]*?)\n?```$/);
+    return fenced ? fenced[1] : trimmed;
 }
 
 function parseNativeRequest(
@@ -49,14 +73,16 @@ function parseNativeRequest(
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
             `${model} requires a user message with string content.`,
+            model,
         );
     }
     let payload: unknown;
     try {
-        payload = JSON.parse(message.content);
+        payload = JSON.parse(unwrapNativeJson(message.content));
     } catch {
         throw nativeRequestError(
             `${model} could not parse the user message content as JSON.`,
+            model,
         );
     }
     if (
@@ -66,6 +92,7 @@ function parseNativeRequest(
     ) {
         throw nativeRequestError(
             `${model} expects a JSON object with "state" and a "questions" map.`,
+            model,
         );
     }
     return { state: payload.state, questions: payload.questions };

@@ -1,17 +1,7 @@
-import {
-    Button,
-    Chip,
-    GitPullRequestIcon,
-    InlineLink,
-    Section,
-    Surface,
-} from "@pollinations/ui";
+import { Button, Chip, InlineLink, Section, Surface } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import { type FC, Fragment, type ReactNode, useState } from "react";
-import {
-    type BalanceAccess,
-    BalanceAccessChip,
-} from "../models/model-status-chips.tsx";
 import {
     type ApiNews,
     apiDetails,
@@ -56,14 +46,17 @@ function changeChip(
     } as const;
 }
 
-/** Balance values use /models' Quest and Paid chips; the rest is text. */
+/** Balance values show the wallet icon and its name; the rest is text. */
 const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
     label,
     value,
     muted,
 }) =>
     label === "Balance" ? (
-        <BalanceAccessChip access={value as BalanceAccess} />
+        <span className="inline-flex items-center gap-1 font-medium text-theme-text-strong">
+            <WalletKindIcon kind={value === "paid" ? "paid" : "tier"} />
+            {value === "paid" ? "Paid" : "Quest"}
+        </span>
     ) : (
         <span
             className={
@@ -81,6 +74,8 @@ type ChangeItem = {
     date: string;
     chip: { label: string; intent: "danger" | "info" | "success" | "warning" };
     name: ReactNode;
+    /** Muted line under the name, e.g. an endpoint's summary. */
+    note?: string;
     pr: number;
     url: string;
     details: CardDetail[];
@@ -90,13 +85,7 @@ const modelChange = (news: ModelNews, today: string): ChangeItem => ({
     key: news.id,
     date: news.date,
     chip: changeChip(news, today),
-    name: (
-        <strong className="text-theme-text-strong">
-            {news.changes.model_id
-                ? `${news.previous_title ?? news.changes.model_id.before} → ${news.title}`
-                : news.title}
-        </strong>
-    ),
+    name: <strong className="text-theme-text-strong">{news.title}</strong>,
     pr: news.pr,
     url: news.url,
     details: cardDetails(news),
@@ -128,73 +117,76 @@ const apiChange = (news: ApiNews): ChangeItem => {
                 <span className="font-semibold">{method}</span> {path}
             </code>
         ),
+        note: news.summary,
         pr: news.pr,
         url: news.url,
         details: apiDetails(news),
     };
 };
 
-const ChangeRow: FC<{ item: ChangeItem }> = ({ item }) => {
-    const { chip, details } = item;
-    return (
-        <li
-            className={`grid border-t border-theme-text-strong/10 first:border-t-0 grid-cols-[3.5rem_5.25rem_minmax(0,1fr)] items-baseline gap-x-2 gap-y-1 py-2 sm:grid-cols-[3.5rem_5.25rem_minmax(0,0.8fr)_minmax(0,1.2fr)]`}
+const ChangeRow: FC<{ item: ChangeItem; showDate: boolean }> = ({
+    item,
+    showDate,
+}) => (
+    <li className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 first:border-t-0 sm:grid-cols-[3.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <time
+            dateTime={item.date}
+            className="whitespace-nowrap text-theme-text-muted"
         >
-            <time
-                dateTime={item.date}
-                className="whitespace-nowrap text-theme-text-muted"
-            >
-                {formatNewsDate(item.date)}
-            </time>
-            <span>
-                <Chip size="sm" intent={chip.intent}>
-                    {chip.label}
+            {showDate ? formatNewsDate(item.date) : ""}
+        </time>
+        <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <Chip size="sm" intent={item.chip.intent}>
+                    {item.chip.label}
                 </Chip>
-            </span>
-            <span className="min-w-0">
-                {item.name}{" "}
-                <InlineLink
+                <a
                     href={item.url}
-                    className="inline-flex items-center gap-1"
-                    size="sm"
-                    aria-label={`View pull request #${item.pr}`}
+                    target="_blank"
+                    rel="noreferrer"
                     title={`PR #${item.pr}`}
+                    className="min-w-0 hover:underline"
                 >
-                    <GitPullRequestIcon className="h-3 w-3" />
-                </InlineLink>
-            </span>
-            {details.length > 0 && (
-                <dl className="col-span-3 grid gap-y-0.5 text-xs leading-5 sm:col-span-1">
-                    {details.map(({ label, before, after }, i) => (
-                        <div
-                            key={`${label}:${before}`}
-                            className="flex max-w-full items-baseline gap-2"
-                        >
-                            <dt className="w-16 shrink-0 font-semibold text-theme-text-base">
-                                {details[i - 1]?.label === label ? "" : label}
-                            </dt>
-                            <dd className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-                                {before && (
-                                    <>
-                                        <DetailValue
-                                            label={label}
-                                            value={before}
-                                            muted
-                                        />
-                                        <span className="text-theme-text-muted">
-                                            →
-                                        </span>
-                                    </>
-                                )}
-                                <DetailValue label={label} value={after} />
-                            </dd>
-                        </div>
-                    ))}
-                </dl>
+                    {item.name}
+                </a>
+            </div>
+            {item.note && (
+                <div className="mt-0.5 text-xs text-theme-text-muted">
+                    {item.note}
+                </div>
             )}
-        </li>
-    );
-};
+        </div>
+        {item.details.length > 0 && (
+            <dl className="col-start-2 grid gap-y-0.5 text-xs leading-5 sm:col-start-auto">
+                {item.details.map(({ label, before, after }, i) => (
+                    <div
+                        key={`${label}:${before}`}
+                        className="flex max-w-full items-baseline gap-2"
+                    >
+                        <dt className="w-16 shrink-0 font-semibold text-theme-text-base">
+                            {item.details[i - 1]?.label === label ? "" : label}
+                        </dt>
+                        <dd className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+                            {before && (
+                                <>
+                                    <DetailValue
+                                        label={label}
+                                        value={before}
+                                        muted
+                                    />
+                                    <span className="text-theme-text-muted">
+                                        →
+                                    </span>
+                                </>
+                            )}
+                            <DetailValue label={label} value={after} />
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        )}
+    </li>
+);
 
 /** Separates upcoming changes (above) from past ones (below). */
 const TodayLine: FC = () => (
@@ -240,7 +232,10 @@ export const Changelog: FC = () => {
                     <Fragment key={item.key}>
                         {item.date <= today &&
                             (shown[i - 1]?.date ?? "") > today && <TodayLine />}
-                        <ChangeRow item={item} />
+                        <ChangeRow
+                            item={item}
+                            showDate={item.date !== shown[i - 1]?.date}
+                        />
                     </Fragment>
                 ))}
             </ul>

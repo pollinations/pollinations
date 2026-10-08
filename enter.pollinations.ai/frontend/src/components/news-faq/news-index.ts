@@ -16,8 +16,6 @@ export type ModelNews = {
     id: string;
     model_id: string;
     title: string;
-    /** Title of the model an alias now points away from (a replacement). */
-    previous_title?: string;
     action: "NEW" | "UPDATE" | "RETIRE";
     category?: ApiModelInfo["category"];
     date: string;
@@ -220,13 +218,12 @@ export function cardDetails(news: ModelNews): CardDetail[] {
     const before = priceLines(news, "before");
     const after = priceLines(news, "after");
     if (news.action === "NEW") {
-        if (after.size) {
-            details.push({
-                label: "Price",
-                after: [...after.values()]
-                    .map(({ label, value }) => `${label} ${value}`)
-                    .join(" · "),
-            });
+        // Main rates only; cache rates are one click away on /models.
+        const main = [...after]
+            .filter(([key]) => !/:(cached|cacheWrite)$/.test(key))
+            .map(([, { label, value }]) => `${label} ${value}`);
+        if (main.length) {
+            details.push({ label: "Price", after: main.join(" · ") });
         }
         details.push({
             label: "Balance",
@@ -238,8 +235,7 @@ export function cardDetails(news: ModelNews): CardDetail[] {
     if (replaced) {
         details.push({
             label: "Model",
-            before: String(replaced.before),
-            after: `${replaced.after} (old ID still works)`,
+            after: `replaces ${replaced.before} · old ID still works`,
         });
     }
     // Lines that moved differently: one row each, "Text in $0.1/M → $0.01/M".
@@ -306,41 +302,34 @@ const describeField = (field: ApiField) =>
     [field.type, field.required && "required"].filter(Boolean).join(", ");
 
 /** One row per changed parameter or body field: "Body  seed: integer|null → integer". */
+/** One row per changed parameter or body field: "Body  seed: integer|null → integer". */
 export function apiDetails(news: ApiNews): CardDetail[] {
-    const what = news.summary
-        ? [{ label: "Endpoint", after: news.summary }]
-        : [];
-    return [
-        ...what,
-        ...news.changes.map(({ field, before, after }) => {
-            const [kind, location, ...rest] = field.split(":");
-            const label =
-                kind === "body"
-                    ? "Body"
-                    : `${location[0].toUpperCase()}${location.slice(1)}`;
-            const name =
-                kind === "body"
-                    ? [location, ...rest].join(":")
-                    : rest.join(":");
-            if (!before && after) {
-                return {
-                    label,
-                    before: name,
-                    after: `added · ${describeField(after)}`,
-                };
-            }
-            if (before && !after) {
-                return {
-                    label,
-                    before: `${name}: ${describeField(before)}`,
-                    after: "removed",
-                };
-            }
+    return news.changes.map(({ field, before, after }) => {
+        const [kind, location, ...rest] = field.split(":");
+        const label =
+            kind === "body"
+                ? "Body"
+                : `${location[0].toUpperCase()}${location.slice(1)}`;
+        const name =
+            kind === "body" ? [location, ...rest].join(":") : rest.join(":");
+        if (!before && after) {
             return {
                 label,
-                before: `${name}: ${describeField(before as ApiField)}`,
-                after: describeField(after as ApiField),
+                before: name,
+                after: `added · ${describeField(after)}`,
             };
-        }),
-    ];
+        }
+        if (before && !after) {
+            return {
+                label,
+                before: `${name}: ${describeField(before)}`,
+                after: "removed",
+            };
+        }
+        return {
+            label,
+            before: `${name}: ${describeField(before as ApiField)}`,
+            after: describeField(after as ApiField),
+        };
+    });
 }

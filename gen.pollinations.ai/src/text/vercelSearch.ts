@@ -72,6 +72,9 @@ export async function callVercelSearch(
             response_format: undefined,
             stream: false,
             stream_options: undefined,
+            // The caller's limit is for the answer they receive, not this hidden step.
+            max_tokens: undefined,
+            max_completion_tokens: undefined,
         },
         config,
     );

@@ -10,8 +10,6 @@ const POLLI_SKILL_PATH = "/.well-known/agent-skills/polli/SKILL.md";
 const POLLI_SKILL_DESCRIPTION =
     CLI_SKILL.match(/^description:\s*(.+)$/m)?.[1].trim() ?? "";
 
-let polliSkillDigest: Promise<string> | undefined;
-
 async function sha256Hex(text: string): Promise<string> {
     const hash = await crypto.subtle.digest(
         "SHA-256",
@@ -24,7 +22,6 @@ async function sha256Hex(text: string): Promise<string> {
 
 export const wellKnownRoutes = new Hono<Env>()
     .get("/agent-skills/index.json", async (c) => {
-        polliSkillDigest ??= sha256Hex(CLI_SKILL);
         c.header("Cache-Control", "public, max-age=3600");
         return c.json({
             $schema: SKILLS_SCHEMA,
@@ -34,7 +31,7 @@ export const wellKnownRoutes = new Hono<Env>()
                     type: "skill-md",
                     description: POLLI_SKILL_DESCRIPTION,
                     url: POLLI_SKILL_PATH,
-                    digest: `sha256:${await polliSkillDigest}`,
+                    digest: `sha256:${await sha256Hex(CLI_SKILL)}`,
                 },
             ],
         });

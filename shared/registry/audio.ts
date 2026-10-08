@@ -546,7 +546,7 @@ const AUDIO_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
-        retirementDate: new Date("2028-02-01").getTime(),
+        // Provider retires this route on 2028-02-01.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -961,7 +961,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         // Alibaba Model Studio notice 2009; its notice times are UTC+8.
-        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
+        // Provider retires this route on 2026-10-10T00:00:00+08:00.
         paidOnly: true,
         priceMultiplier: 1,
         cost: {

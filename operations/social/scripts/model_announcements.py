@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 IGNORED = {"health", "pending_change", "name", "title", "description", "publisher",
-           "brand_url", "brand_icon_url", "added_date", "community", "agent", "retirement_at"}
+           "brand_url", "brand_icon_url", "added_date", "community", "agent"}
 
 
 def model_changes(before, after, pr):
@@ -35,8 +35,6 @@ def model_changes(before, after, pr):
         if previous is None or current is None:
             changes["availability"] = {"before": "Available" if previous else "Unavailable",
                                        "after": "Available" if current else "Retired"}
-        if (previous or {}).get("retirement_at") and not (current or {}).get("retirement_at") and current:
-            changes["retirement_at"] = {"before": previous["retirement_at"], "after": None}
         kind = "added" if previous is None else "removed" if current is None else "changed"
         if changes or previous is None or current is None:
             events.append({"id": f"pr-{pr['number']}:{name}", "model_id": name,
@@ -44,12 +42,6 @@ def model_changes(before, after, pr):
                            "category": (current or previous).get("category"),
                            "pricing_units": {"before": (previous or {}).get("pricing_units"), "after": (current or {}).get("pricing_units")},
                            "changes": changes, "effective_at": None, "effective_status": "unconfirmed", "official": True})
-        retirement = (current or {}).get("retirement_at")
-        if retirement and retirement != (previous or {}).get("retirement_at"):
-            events.append({"id": f"pr-{pr['number']}:{name}:retirement", "model_id": name,
-                           "title": current.get("title", name), "action": "RETIRE",
-                           "changes": {"availability": {"before": "Available", "after": "Retired"}},
-                           "effective_at": retirement, "effective_status": "scheduled", "official": True})
     return events
 
 

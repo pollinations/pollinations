@@ -312,5 +312,7 @@ test("rendered standings show the minimum increment for a tied row", () => {
         }),
     );
 
-    expect(html).toContain("0.25 Pollen to pass @alice");
+    expect(html).toContain(
+        "0.25 Pollen to pass @alice — “Use a text model” is +0.25.",
+    );
 });

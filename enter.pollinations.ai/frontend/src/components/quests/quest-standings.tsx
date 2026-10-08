@@ -42,9 +42,10 @@ function nudge(
     if (rank === 1) return `You're leading ${monthName(standings.month)}.`;
     const above = rows.find((row) => row.rank === rank - 1);
     if (!above) return null;
-    const gap = Math.max(above.totalPollen - you.totalPollen, 0.25);
+    const gap = above.totalPollen - you.totalPollen;
     const pass = byReward.find((quest) => quest.reward > gap);
-    const target = `${formatPollen(gap)} Pollen to pass @${above.githubLogin}`;
+    // A tie still needs the smallest quest reward to pass, not 0.
+    const target = `${formatPollen(Math.max(gap, 0.25))} Pollen to pass @${above.githubLogin}`;
     return pass
         ? `${target} — “${pass.title}” is +${formatPollen(pass.reward)}.`
         : `${target}.`;

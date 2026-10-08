@@ -14,7 +14,6 @@ Given the canonical daily summaries for one calendar month, identify the few the
 - **Lead with user-visible progress.** Infrastructure and maintenance belong in supporting themes.
 - **Be concrete.** Name important products, capabilities, models, or systems when they matter.
 - **Keep it compact.** The website displays one title and one short summary.
-- **Positive framing only.** Skip pricing changes, feature removals, and business negatives.
 - **Use only the supplied daily summaries.** Do not invent releases, metrics, or outcomes.
 
 ## Output Format (JSON only)
@@ -33,7 +32,7 @@ Given the canonical daily summaries for one calendar month, identify the few the
       "importance": "major"
     }
   ],
-  "pr_summary": "MONTHLY UPDATES (123 merged PRs):\n- Theme one\n- Theme two"
+  "pr_summary": "MONTHLY UPDATES (123 selected PRs):\n- Theme one\n- Theme two"
 }
 ```
 

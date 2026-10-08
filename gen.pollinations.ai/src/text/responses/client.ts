@@ -1,7 +1,8 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
 import { findModelByName } from "../availableModels.js";
-import type { ServiceError, TransformOptions } from "../types.js";
+import { imageUrlToBase64Transform } from "../transforms/imageUrlToBase64Transform.js";
+import type { ChatMessage, ServiceError, TransformOptions } from "../types.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
 import { isPlainObject } from "../utils/objectCleaners.js";
 import { buildDirectResponsesRequestBody } from "./request.js";
@@ -17,6 +18,7 @@ export type DirectResponsesTarget = {
     headers: Record<string, string>;
     model: string;
     defaults: JsonObject;
+    imageConversionModel?: string;
 };
 
 /** Build a Responses target from an already-resolved model configuration. */
@@ -46,6 +48,9 @@ export function responsesTargetFromConfig(
         endpoint,
         headers: authHeader,
         model,
+        ...(config.requiresBase64ImageUrls === true
+            ? { imageConversionModel: model }
+            : {}),
         defaults: {
             // Request fields the route always sends unless the caller sets them.
             ...(isPlainObject(config.responsesDefaults)
@@ -83,7 +88,10 @@ export function resolveDirectResponsesTarget(
     };
     const resolved = resolveModelConfig([], options).options;
     const config = resolved.modelConfig ?? {};
-    return responsesTargetFromConfig(String(resolved.model), config);
+    const target = responsesTargetFromConfig(String(resolved.model), config);
+    return target?.imageConversionModel
+        ? { ...target, imageConversionModel: modelId }
+        : target;
 }
 
 function parseJson(text: string): unknown {
@@ -121,6 +129,23 @@ export async function callDirectResponses(
         error.status = 500;
         error.requestUrl = requestUrl;
         throw error;
+    }
+
+    if (target.imageConversionModel && Array.isArray(request.input)) {
+        const transformed = await imageUrlToBase64Transform(
+            request.input.filter(isPlainObject) as ChatMessage[],
+            {
+                requestedModel: target.imageConversionModel,
+                modelConfig: { requiresBase64ImageUrls: true },
+            },
+        );
+        let index = 0;
+        request = {
+            ...request,
+            input: request.input.map((item) =>
+                isPlainObject(item) ? transformed.messages[index++] : item,
+            ),
+        };
     }
 
     let response: Response;

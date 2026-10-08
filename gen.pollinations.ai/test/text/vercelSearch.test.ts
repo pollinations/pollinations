@@ -116,8 +116,8 @@ describe("Vercel search then JSON formatting", () => {
             tools: options.tools,
             tool_choice: "required",
             stream: false,
-            max_tokens: 2048,
         });
+        expect(requests[0]).not.toHaveProperty("max_tokens");
         expect(requests[0]).not.toHaveProperty("response_format");
         expect(requests[1]).toMatchObject({
             response_format: format,

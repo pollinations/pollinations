@@ -501,32 +501,6 @@ describe("static provider fallbacks", () => {
         expect(parent.fallbacks).toBeUndefined();
     });
 
-    it("keeps a retirement date on the route that states it", () => {
-        const parentId = "google/gemini-2.5-flash-lite:search";
-        const parent: ModelDefinition = {
-            ...TEXT_SERVICES[parentId],
-            retirementDate: Date.UTC(2026, 9, 20),
-        };
-        const undatedId = `${parentId}:openrouter:ai-studio`;
-        const datedId = `${parentId}:openrouter:vertex`;
-        const services = mergeFallbacks(
-            { [parentId]: parent },
-            {
-                [parentId]: {
-                    [undatedId]: { provider: "openrouter" },
-                    [datedId]: {
-                        provider: "openrouter",
-                        retirementDate: Date.UTC(2027, 2, 15),
-                    },
-                },
-            },
-        );
-
-        expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
-        expect(services[undatedId].retirementDate).toBeUndefined();
-        expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
-    });
-
     it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
         const primary = TEXT_SERVICES["liquid/d1"];
         const fallback = TEXT_SERVICES["liquid/d1:vercel"];

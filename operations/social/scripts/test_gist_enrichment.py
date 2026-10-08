@@ -35,20 +35,13 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(model_changes([old], [{**old, "health": {}}], {"number": 1}), [])
         self.assertEqual(model_changes([], [{**new, "community": True}], {"number": 1}), [])
 
-    def test_new_retired_and_scheduled_are_distinct(self):
+    def test_new_and_retired_are_distinct(self):
         model = {"name": "example/model", "paid_only": False, "capabilities": []}
         new = model_changes([], [model], {"number": 1})[0]
         self.assertEqual(new["action"], "NEW")
         self.assertEqual(new["changes"]["paid_only"], {"before": None, "after": False})
         removed = model_changes([model], [], {"number": 2})[0]
         self.assertEqual(removed["action"], "RETIRE")
-        scheduled = model_changes([model], [{**model, "retirement_at": "2026-10-10T00:00:00Z"}], {"number": 3})
-        self.assertEqual(len(scheduled), 1)
-        self.assertEqual(scheduled[0]["effective_status"], "scheduled")
-        self.assertEqual(scheduled[0]["action"], "RETIRE")
-        cancelled = model_changes([{**model, "retirement_at": "2026-10-10T00:00:00Z"}], [model], {"number": 4})[0]
-        self.assertEqual(cancelled["action"], "UPDATE")
-        self.assertEqual(cancelled["changes"]["retirement_at"]["after"], None)
 
     def test_rename_keeps_old_id_available_and_preserves_other_changes(self):
         old = {"name": "kimi", "aliases": [], "paid_only": False,
@@ -177,30 +170,26 @@ class GistEnrichmentTest(unittest.TestCase):
         quiet = build_daily_summary_artifact({"arcs": []}, [{"pr_number": 2}], "2026-10-07", "now")
         self.assertEqual(quiet["highlights"], [])
 
-    def test_index_keeps_card_changes_and_settles_scheduled_retirements(self):
+    def test_index_keeps_card_changes_and_skips_old_scheduled_retirements(self):
         def gist(number, merged_at, *announcements):
             return {"pr_number": number, "merged_at": merged_at, "announcements": list(announcements),
                     "url": f"https://github.com/example/repo/pull/{number}"}
-        def event(model, action, changes, effective_at=None, status="unconfirmed"):
-            return {"id": f"{model}:{action}:{effective_at}", "model_id": model, "title": model, "action": action,
-                    "changes": changes, "effective_at": effective_at, "effective_status": status}
+        def event(model, action, changes, status="unconfirmed"):
+            return {"id": f"{model}:{action}", "model_id": model, "title": model, "action": action,
+                    "changes": changes, "effective_at": None, "effective_status": status}
         retire = {"availability": {"before": "Available", "after": "Retired"}}
         gists = [
             gist(1, "2026-08-01T00:00:00Z", event("old", "NEW", {"paid_only": {"before": None, "after": True}})),
             gist(2, "2026-10-01T00:00:00Z",
-                 event("kept", "RETIRE", retire, "2026-11-01T00:00:00Z", "scheduled"),
-                 event("cancelled", "RETIRE", retire, "2026-10-20T00:00:00Z", "scheduled"),
+                 event("dated", "RETIRE", retire, "scheduled"),
+                 event("removed", "RETIRE", retire),
                  event("routed", "UPDATE", {"supported_endpoints": {"before": [], "after": ["/v1"]}}),
                  event("priced", "UPDATE", {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}},
                                             "voices": {"before": [], "after": ["alloy"]}})),
-            gist(3, "2026-10-06T00:00:00Z",
-                 event("cancelled", "UPDATE", {"retirement_at": {"before": "2026-10-20", "after": None}})),
         ]
         entries = model_entries(gists, "2026-09-08")
-        self.assertEqual([(e["model_id"], e["date"]) for e in entries],
-                         [("priced", "2026-10-01"), ("kept", "2026-11-01")])
+        self.assertEqual([e["model_id"] for e in entries], ["priced", "removed"])
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
-        self.assertTrue(entries[1]["scheduled"])
         self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
 
     def test_index_highlights_cover_the_readme_and_feed_it(self):

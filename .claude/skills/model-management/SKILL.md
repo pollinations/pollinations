@@ -243,7 +243,7 @@ The PR description must include a user-visible change table for each affected mo
 | --- | --- | --- | --- | --- | --- |
 | `<public ID>` | NEW / UPDATE / RETIRE | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
 
-- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability. A future retirement uses `RETIRE` with its scheduled effective date; passing that date does not prove the model has been removed.
+- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability, in the PR that removes the model. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
 - Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
 - For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
 - For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.

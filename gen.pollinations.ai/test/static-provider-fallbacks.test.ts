@@ -584,7 +584,7 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("prices Step 5 Preview on Vercel at base rates and keeps tool calls off that fallback", () => {
+    it("prices Step 5 Preview on Vercel at base rates and supports tool calls on that fallback", () => {
         const primary = TEXT_SERVICES["stepfun/step-5-preview"];
         const fallback = TEXT_SERVICES["stepfun/step-5-preview:vercel"];
         expect(primary).toMatchObject({
@@ -599,7 +599,7 @@ describe("static provider fallbacks", () => {
             hidden: true,
             fallbackOnly: true,
             aliases: [],
-            tools: false,
+            tools: true,
         });
         expect(
             findModelByName("stepfun/step-5-preview")?.config(),
@@ -623,7 +623,24 @@ describe("static provider fallbacks", () => {
                 messages: [{ role: "user", content: "hi" }],
                 tools: [{ type: "function", function: { name: "lookup" } }],
             }),
-        ).toBe(false);
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [
+                    {
+                        role: "assistant",
+                        tool_calls: [
+                            {
+                                id: "call_1",
+                                type: "function",
+                                function: { name: "lookup", arguments: "{}" },
+                            },
+                        ],
+                    },
+                    { role: "tool", tool_call_id: "call_1", content: "found" },
+                ],
+            }),
+        ).toBe(true);
         expect(
             supportsTextFallbackRequest(fallback, {
                 messages: [{ role: "user", content: "hi" }],

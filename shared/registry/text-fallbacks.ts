@@ -25,11 +25,9 @@ export const TEXT_FALLBACKS = {
     },
     "stepfun/step-5-preview": {
         // Same StepFun model through Vercel's AI Gateway at the posted base
-        // rates, without OpenRouter's credit fee. Tool calls stay off this route
-        // until a maintainer probe shows Vercel serves them.
+        // rates, without OpenRouter's credit fee.
         "stepfun/step-5-preview:vercel": {
             provider: "vercel",
-            tools: false,
             cost: {
                 promptTextTokens: perMillion(1),
                 promptCachedTokens: perMillion(0.05),

@@ -1,0 +1,8 @@
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/*.webc
+  Access-Control-Allow-Origin: *

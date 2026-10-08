@@ -1,0 +1,261 @@
+:root {
+    --bg: #0f1419;
+    --panel: #171d24;
+    --border: #2a3441;
+    --text: #d8e2ec;
+    --muted: #7d8ca0;
+    --accent: #6ee7a0;
+    --danger: #f47174;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+}
+
+.brand {
+    font-weight: 700;
+}
+.brand span {
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.header-right {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.status {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+.status.ok {
+    color: var(--accent);
+}
+.status.err {
+    color: var(--danger);
+}
+
+main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.pane {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+#connect-pane {
+    max-width: 34rem;
+    margin: 0 auto;
+    justify-content: center;
+}
+
+.connect-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.row {
+    display: flex;
+    gap: 0.5rem;
+}
+.row.space {
+    justify-content: space-between;
+    align-items: center;
+}
+
+button {
+    background: var(--border);
+    color: var(--text);
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+button:hover {
+    filter: brightness(1.15);
+}
+button.primary {
+    background: var(--accent);
+    color: #08301a;
+    font-weight: 600;
+}
+button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+input,
+textarea,
+select {
+    background: #10161d;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    flex: 1;
+    font-family: inherit;
+}
+select {
+    max-width: 16rem;
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: 0.2rem 0;
+}
+.mono {
+    font-family: ui-monospace, monospace;
+}
+
+#tabs {
+    display: flex;
+    gap: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+}
+.tab {
+    border-radius: 6px 6px 0 0;
+    background: transparent;
+    color: var(--muted);
+}
+.tab.active {
+    background: var(--panel);
+    color: var(--text);
+}
+
+.tab-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#terminal {
+    flex: 1;
+    min-height: 0;
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem;
+}
+
+#guided-stream {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.msg {
+    border-left: 3px solid var(--border);
+    padding-left: 0.7rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.92rem;
+}
+.msg.user {
+    border-color: #5b8def;
+}
+.msg.assistant {
+    border-color: var(--accent);
+}
+.msg.tool {
+    border-color: #d9a35b;
+    color: #d9c9a5;
+    font-size: 0.82rem;
+}
+.msg.error {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+.msg.raw {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+.msg .label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.15rem;
+}
+
+.prompt-row {
+    margin-top: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+.prompt-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+#file-tree {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 0.6rem;
+    font-family: ui-monospace, monospace;
+    font-size: 0.85rem;
+}
+.file-entry {
+    padding: 0.15rem 0.3rem;
+    white-space: pre;
+}
+.file-entry.dir {
+    color: var(--accent);
+}
+
+details summary {
+    cursor: pointer;
+    color: var(--muted);
+}

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Pi in the browser - Pollinations</title>
+        <link rel="stylesheet" href="xterm.css" />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <header>
+            <div class="brand">🥦 Pi <span>in the browser</span></div>
+            <div class="header-right">
+                <span id="status" class="status"></span>
+                <select id="model-select" hidden></select>
+            </div>
+        </header>
+
+        <main>
+            <section id="connect-pane" class="pane">
+                <h1>Connect your Pollinations account</h1>
+                <p>
+                    Pi runs fully in your browser inside a WASIX sandbox. Your
+                    key stays on this page and never enters the sandbox: the
+                    app's bridge calls gen.pollinations.ai directly with it.
+                </p>
+                <div class="connect-box">
+                    <button id="btn-oauth" class="primary">
+                        Connect with Pollinations
+                    </button>
+                    <p class="hint">
+                        Uses OAuth (PKCE). Optionally paste an App Key first
+                        if you have one registered for this site's redirect
+                        URI:
+                    </p>
+                    <div class="row">
+                        <input
+                            id="app-key"
+                            type="text"
+                            placeholder="pk_... (optional App Key)"
+                            autocomplete="off"
+                        />
+                    </div>
+                    <details>
+                        <summary>Or paste an API key directly</summary>
+                        <div class="row">
+                            <input
+                                id="api-key"
+                                type="password"
+                                placeholder="sk_..."
+                                autocomplete="off"
+                            />
+                            <button id="btn-key">Use key</button>
+                        </div>
+                        <p class="hint">
+                            Get a key at
+                            <span class="mono">enter.pollinations.ai/keys</span>
+                        </p>
+                    </details>
+                </div>
+            </section>
+
+            <section id="work-pane" class="pane" hidden>
+                <nav id="tabs">
+                    <button class="tab active" data-tab="terminal">Terminal</button>
+                    <button class="tab" data-tab="guided">Guided</button>
+                    <button class="tab" data-tab="files">Files</button>
+                </nav>
+
+                <div id="tab-terminal" class="tab-body">
+                    <p class="hint">
+                        This is the real Pi TUI running inside the sandbox.
+                        Try: <span class="mono">/model</span>,
+                        <span class="mono">/help</span>, or just ask Pi to
+                        build something in /workspace.
+                    </p>
+                    <div id="terminal"></div>
+                </div>
+
+                <div id="tab-guided" class="tab-body" hidden>
+                    <div id="guided-stream"></div>
+                    <div class="prompt-row">
+                        <textarea
+                            id="guided-prompt"
+                            rows="2"
+                            placeholder="Ask Pi to create or edit files, run a command..."
+                        ></textarea>
+                        <div class="prompt-buttons">
+                            <label class="hint">
+                                <input type="checkbox" id="guided-continue" />
+                                continue session
+                            </label>
+                            <button id="btn-send" class="primary">Send</button>
+                            <button id="btn-stop" hidden>Stop</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-files" class="tab-body" hidden>
+                    <div class="row space">
+                        <span id="file-progress" class="hint"></span>
+                        <button id="btn-export" class="primary" disabled>
+                            Export workspace (.zip)
+                        </button>
+                    </div>
+                    <div id="file-tree"></div>
+                </div>
+            </section>
+        </main>
+
+        <script type="module" src="bundle.js"></script>
+    </body>
+</html>

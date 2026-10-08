@@ -220,9 +220,14 @@ export const Changelog: FC = () => {
             title="Changelog"
             actionClassName="ml-auto"
             action={
-                <InlineLink href="/models" size="sm">
-                    Browse models
-                </InlineLink>
+                <div className="flex gap-4">
+                    <InlineLink href="/models" size="sm">
+                        Browse models
+                    </InlineLink>
+                    <InlineLink href="https://gen.pollinations.ai/docs" size="sm">
+                        API docs
+                    </InlineLink>
+                </div>
             }
         >
             <ul className="text-sm text-theme-text-base">

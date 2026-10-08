@@ -1,0 +1,36 @@
+{
+  "pr_number": 16695,
+  "title": "fix(cli): send X-Polli-Client from gen chat",
+  "author": "zilin6666-svg",
+  "url": "https://github.com/pollinations/pollinations/pull/16695",
+  "merged_at": "2026-10-08T03:41:28Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Fixed `polli gen chat` to send `X-Polli-Client: cli/<version>` using the shared `POLLI_CLIENT` constant, matching other CLI generation commands. The tracking middleware can now record chat requests under `polliClientVersion` as CLI usage. Added a regression test for the header.",
+    "keywords": [
+      "polli-cli",
+      "chat",
+      "client header",
+      "usage tracking",
+      "regression test"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16695.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny headphones and checks a retro chat terminal as a lime green (#ecf874) request carrying a small 'CLI' tag travels toward a glowing counter beside sprouting code-plants. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, rendered in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T03:42:47.245366+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "1403f29a81d44bbc6afe30bf7d4fe0deda6d4147",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

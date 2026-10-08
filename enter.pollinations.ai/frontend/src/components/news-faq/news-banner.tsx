@@ -100,26 +100,15 @@ const modelChange = (news: ModelNews, today: string): ChangeItem => ({
     details: cardDetails(news),
 });
 
-const API_CHIP = {
-    ADD: "Added",
-    CHANGE: "Changed",
-    DEPRECATE: "Deprecated",
-    REMOVE: "Removed",
-} as const;
-
-/** API rows name the endpoint in code style; breaking ones are red like retirements. */
+/** Breaking API changes: the endpoint in code style, red like retirements. */
 const apiChange = (news: ApiNews): ChangeItem => {
     const [method, path] = news.endpoint.split(" ");
     return {
         key: news.id,
         date: news.date,
         chip: {
-            label: API_CHIP[news.action],
-            intent: news.breaking
-                ? "danger"
-                : news.action === "DEPRECATE"
-                  ? "warning"
-                  : "info",
+            label: news.action === "REMOVE" ? "Removed" : "Changed",
+            intent: "danger",
         },
         name: (
             <code className="font-mono text-xs text-theme-text-strong">
@@ -217,12 +206,9 @@ export const Changes: FC = () => {
         ...visibleModelNews(index?.models ?? [], today)
             .filter(({ action }) => action !== "NEW")
             .map((news) => modelChange(news, today)),
-        // API rows only when clients must act: breaking, deprecated or removed.
+        // API rows only when clients must act: breaking changes and removals.
         ...visibleModelNews(index?.api ?? [], today)
-            .filter(
-                ({ action, breaking }) =>
-                    breaking || action === "DEPRECATE" || action === "REMOVE",
-            )
+            .filter(({ breaking }) => breaking)
             .map(apiChange),
     ].sort((a, b) => b.date.localeCompare(a.date));
     // All upcoming changes, then the latest past ones, PAGE_SIZE at a time.

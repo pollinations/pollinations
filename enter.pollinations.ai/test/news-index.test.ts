@@ -64,23 +64,25 @@ describe("model news cards", () => {
     it("uses the billing unit /models uses, not the pricing field name", () => {
         const [price] = cardDetails(
             news({
-                action: "NEW",
                 category: "audio",
                 changes: {
                     pricing: {
-                        before: null,
+                        before: {
+                            currency: "pollen",
+                            completionAudioTokens: "0.0000115",
+                        },
                         after: {
                             currency: "pollen",
-                            completionAudioTokens: "0.000022",
+                            completionAudioTokens: "0.000015",
                         },
                     },
-                    paid_only: { before: null, after: true },
                 },
             }),
         );
         expect(price).toEqual({
             label: "Price",
-            after: "Audio out $0.022/K chars",
+            before: "Audio out $0.0115/K chars",
+            after: "$0.015/K chars",
         });
     });
 

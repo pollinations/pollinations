@@ -52,19 +52,18 @@ export type Highlight = {
     app?: boolean;
 };
 
-export type ApiField = { type: string; required: boolean; deprecated?: true };
+export type ApiField = { type: string; required: boolean };
 
 /** One endpoint's change from the post-deploy docs PR (already live). */
 export type ApiNews = {
     id: string;
     endpoint: string;
-    action: "ADD" | "REMOVE" | "CHANGE" | "DEPRECATE";
+    action: "ADD" | "REMOVE" | "CHANGE";
     breaking: boolean;
     changes: {
         field: string;
         before: ApiField | null;
         after: ApiField | null;
-        breaking: boolean;
     }[];
     date: string;
     pr: number;
@@ -206,21 +205,6 @@ export function cardDetails(news: ModelNews): CardDetail[] {
     const details: CardDetail[] = [];
     const before = priceLines(news, "before");
     const after = priceLines(news, "after");
-    if (news.action === "NEW") {
-        if (after.size) {
-            details.push({
-                label: "Price",
-                after: [...after.values()]
-                    .map(({ label, value }) => `${label} ${value}`)
-                    .join(" · "),
-            });
-        }
-        details.push({
-            label: "Balance",
-            after: balance(news.changes.paid_only?.after),
-        });
-        return details;
-    }
     const replaced = news.changes.model_id;
     if (replaced) {
         details.push({
@@ -290,9 +274,7 @@ export function visibleModelNews<T extends { date: string }>(
 }
 
 const describeField = (field: ApiField) =>
-    [field.type, field.required && "required", field.deprecated && "deprecated"]
-        .filter(Boolean)
-        .join(", ");
+    [field.type, field.required && "required"].filter(Boolean).join(", ");
 
 /** One row per changed parameter or body field: "Body  seed: integer|null → integer". */
 export function apiDetails(news: ApiNews): CardDetail[] {

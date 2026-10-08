@@ -926,6 +926,7 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
+        let completed = false;
         let events: string[] = [];
         const parser = createParser({
             onEvent: ({ data }) => events.push(data),
@@ -944,10 +945,29 @@ export class Pollinations {
                 for (const data of events) {
                     options.signal?.throwIfAborted();
                     if (data.trim() === "[DONE]") return;
-                    if (data) yield parseChatStreamData(data);
+                    if (data) {
+                        const chunk = parseChatStreamData(data);
+                        if (
+                            chunk.choices.some(
+                                (choice) => choice.finish_reason != null,
+                            )
+                        ) {
+                            completed = true;
+                        }
+                        yield chunk;
+                    }
                 }
                 events = [];
-                if (done) return;
+                if (done) {
+                    if (!completed) {
+                        throw new PollinationsError(
+                            "Chat completion stream closed before completion",
+                            "INCOMPLETE_STREAM",
+                            502,
+                        );
+                    }
+                    return;
+                }
             }
         } catch (error) {
             if (options.signal?.aborted) {

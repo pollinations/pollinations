@@ -1,7 +1,7 @@
-import { InfoTip } from "@pollinations/ui";
+import { CheckIcon, InfoTip } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useModelCatalog } from "../models/use-model-catalog.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { KeyLimitInput } from "./key-limit-input.tsx";
@@ -80,6 +80,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setQuestPollenOnly,
     } = value;
     const catalog = useModelCatalog();
+    const questPollenOnlyId = useId();
 
     const hasModels =
         permissions.allowedModels === null ||
@@ -98,14 +99,18 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             visiblePermissions={visiblePermissions}
         />
     );
+    // Expiry, Budget and the Quest Pollen toggle share one thin line, like
+    // the Name and Generate rows. Each control group stays intact when the
+    // line wraps on narrow screens.
     const limitInputs = (
-        <>
+        <li className="flex min-h-8 flex-wrap items-center gap-x-4 gap-y-2 font-body text-sm font-semibold leading-5">
             <KeyLimitInput
                 kind="expiry"
                 accessContext={accessContext}
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}
                 disabled={disabled}
+                inline
             />
             <KeyLimitInput
                 kind="budget"
@@ -113,21 +118,45 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 value={permissions.pollenBudget}
                 onChange={setPollenBudget}
                 disabled={disabled}
+                inline
             />
-            <AuthAccessItem
-                checked={permissions.questPollenOnly}
-                onChange={setQuestPollenOnly}
-                disabled={disabled}
-                info={
-                    <InfoTip
-                        text={`This ${accessContext ?? "key"} never spends paid Pollen. Requests stop when Quest Pollen runs out.`}
-                        label="Quest Pollen only information"
-                    />
-                }
-            >
-                Quest Pollen only
-            </AuthAccessItem>
-        </>
+            <span className="flex w-full shrink-0 items-center gap-3 whitespace-nowrap sm:w-auto">
+                <label
+                    htmlFor={questPollenOnlyId}
+                    className={`flex items-center gap-3 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                    <span className="relative flex h-5 w-5 shrink-0">
+                        <input
+                            id={questPollenOnlyId}
+                            type="checkbox"
+                            checked={permissions.questPollenOnly}
+                            disabled={disabled}
+                            onChange={(event) =>
+                                setQuestPollenOnly(event.target.checked)
+                            }
+                            className="peer sr-only"
+                        />
+                        <span
+                            aria-hidden="true"
+                            className="flex h-5 w-5 items-center justify-center rounded border border-theme-text-muted/50 bg-transparent transition-colors peer-checked:border-theme-bg-active peer-checked:bg-theme-bg-active peer-checked:text-theme-text-strong peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-theme-text-soft peer-disabled:opacity-50"
+                        >
+                            {permissions.questPollenOnly && (
+                                <CheckIcon className="h-3.5 w-3.5" />
+                            )}
+                        </span>
+                    </span>
+                    <span
+                        className={`transition-opacity ${permissions.questPollenOnly ? "" : "opacity-60"}`}
+                    >
+                        Quest Pollen only
+                    </span>
+                </label>
+                <InfoTip
+                    text={`This ${accessContext ?? "key"} never spends paid Pollen. Requests stop when Quest Pollen runs out.`}
+                    label="Quest Pollen only information"
+                />
+            </span>
+        </li>
     );
     const modelsItem = (
         <AuthAccessItem
@@ -143,14 +172,18 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     return (
         <div className="space-y-3">
             <div
-                className={`grid items-start gap-3 [&_li>:first-child]:min-h-11 ${hasAccountCard ? "md:grid-cols-2" : ""}`}
+                className={`grid items-start gap-3 ${hasAccountCard ? "md:grid-cols-2" : ""}`}
             >
-                <AuthInfoCard>
-                    <ul className="space-y-3 text-sm">
-                        {lead}
-                        {limitInputs}
-                    </ul>
-                </AuthInfoCard>
+                {/* Full width so the three limits stay on one thin line even
+                    when the account card sits beside/below. */}
+                <div className={hasAccountCard ? "md:col-span-2" : ""}>
+                    <AuthInfoCard>
+                        <ul className="space-y-3 text-sm">
+                            {lead}
+                            {limitInputs}
+                        </ul>
+                    </AuthInfoCard>
+                </div>
                 {hasAccountCard && (
                     <AuthInfoCard>
                         <ul className="space-y-3 text-sm">

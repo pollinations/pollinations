@@ -36,12 +36,15 @@ export function KeyLimitInput({
     onChange,
     disabled = false,
     accessContext,
+    inline = false,
 }: {
     kind: keyof typeof limits;
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
     accessContext?: "app" | "device";
+    /** Compact one-line rendering for grouping several limits on a row. */
+    inline?: boolean;
 }) {
     const inputId = useId();
     const limit = limits[kind];
@@ -56,34 +59,68 @@ export function KeyLimitInput({
         setDraft(value === null ? "" : String(value));
     }, [value]);
 
+    const input = (
+        <Input
+            id={inputId}
+            name={limit.name}
+            type="number"
+            min={min}
+            step={limit.step}
+            value={draft}
+            placeholder={limit.empty}
+            disabled={disabled}
+            onChange={(event) => {
+                setDraft(event.target.value);
+                const next = Number(event.target.value);
+                onChange(
+                    event.target.value !== "" && Number.isFinite(next)
+                        ? next
+                        : null,
+                );
+            }}
+            className={inline ? "w-20" : "w-[116px]"}
+            hideNumberSteppers
+        />
+    );
+    const info = (
+        <InfoTip
+            text={
+                accessContext ? limit.accessHelper(accessContext) : limit.helper
+            }
+            label={`${limit.label} information`}
+        />
+    );
+
+    if (inline) {
+        // One control group: icon + label + input + unit stay together when
+        // the surrounding row wraps; full-width on phones for easy tapping.
+        return (
+            <span className="flex w-full shrink-0 items-center gap-2 whitespace-nowrap sm:w-auto">
+                <span
+                    aria-hidden="true"
+                    className="flex h-5 w-5 shrink-0 items-center justify-center text-theme-text-strong [&>svg]:h-4 [&>svg]:w-4"
+                >
+                    {limit.icon}
+                </span>
+                <span className="inline-flex items-center">
+                    <label htmlFor={inputId}>{limit.label}</label>
+                    {info}
+                </span>
+                {input}
+                <Text as="span" size="xs" tone="muted">
+                    {limit.unit}
+                </Text>
+            </span>
+        );
+    }
+
     return (
         <AuthAccessItem
             icon={limit.icon}
             control={
                 <label htmlFor={inputId} className="flex items-center gap-2">
                     <span className="sr-only">{limit.label} value</span>
-                    <Input
-                        id={inputId}
-                        name={limit.name}
-                        type="number"
-                        min={min}
-                        step={limit.step}
-                        value={draft}
-                        placeholder={limit.empty}
-                        disabled={disabled}
-                        onChange={(event) => {
-                            setDraft(event.target.value);
-                            const next = Number(event.target.value);
-                            onChange(
-                                event.target.value !== "" &&
-                                    Number.isFinite(next)
-                                    ? next
-                                    : null,
-                            );
-                        }}
-                        className="w-[116px]"
-                        hideNumberSteppers
-                    />
+                    {input}
                     <Text as="span" size="xs" tone="muted" className="w-12">
                         {limit.unit}
                     </Text>
@@ -92,14 +129,7 @@ export function KeyLimitInput({
         >
             <span className="inline-flex items-center">
                 {limit.label}
-                <InfoTip
-                    text={
-                        accessContext
-                            ? limit.accessHelper(accessContext)
-                            : limit.helper
-                    }
-                    label={`${limit.label} information`}
-                />
+                {info}
             </span>
         </AuthAccessItem>
     );

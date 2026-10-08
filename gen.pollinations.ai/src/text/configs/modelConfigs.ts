@@ -830,6 +830,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-haiku-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-haiku-5.5:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-haiku-5.5",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",

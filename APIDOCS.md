@@ -3145,7 +3145,8 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].api_key_type` * | `any` | Type of API key ('secret', 'publishable') |
 | `usage[].meter_source` * | `any` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
-| `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
+| `usage[].input_cached_tokens` * | `number` | Number of input tokens read from the prompt cache |
+| `usage[].input_cache_write_tokens` * | `number` | Number of input tokens written to the prompt cache (billed at the cache-write rate) |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
 | `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |
@@ -3528,7 +3529,8 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].api_key_type` * | `any` | Type of API key ('secret', 'publishable') |
 | `usage[].meter_source` * | `any` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
-| `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
+| `usage[].input_cached_tokens` * | `number` | Number of input tokens read from the prompt cache |
+| `usage[].input_cache_write_tokens` * | `number` | Number of input tokens written to the prompt cache (billed at the cache-write rate) |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
 | `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |

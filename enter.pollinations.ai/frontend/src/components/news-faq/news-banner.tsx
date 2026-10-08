@@ -1,18 +1,19 @@
 import { Chip, InlineLink, Section, Surface } from "@pollinations/ui";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 
-const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
-export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
+const NEWS_INDEX_URL =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/index.json";
+export const NEWS_MORE_URL =
+    "https://github.com/pollinations/pollinations#-latest-news";
 
 const DYNAMIC_NEWS_COUNT = 6;
 
+/** A highlight from news/index.json (picked by the daily summary). */
 interface Highlight {
     date: string;
-    emoji: string;
+    emoji?: string;
     title: string;
-    description: string;
+    text: string;
 }
 
 const ACTION_INTENT = {
@@ -100,25 +101,6 @@ function renderWithLinks(text: string): ReactNode[] {
     return parts;
 }
 
-function parseHighlights(md: string): Highlight[] {
-    return md
-        .split("\n")
-        .filter((line) => line.startsWith("- **"))
-        .filter((line) => !line.includes("<!-- app -->"))
-        .map((line) => {
-            const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
-            const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
-            const descStart = line.lastIndexOf("**") + 2;
-            const description = line.slice(descStart).trim();
-            return {
-                date: dateMatch?.[1] ?? "",
-                emoji: emojiTitleMatch?.[1] ?? "",
-                title: emojiTitleMatch?.[2]?.trim() ?? "",
-                description,
-            };
-        });
-}
-
 function formatNewsDate(date: string): string {
     if (!date) return "";
     const parsed = new Date(`${date}T00:00:00.000Z`);
@@ -179,10 +161,20 @@ export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);
 
     useEffect(() => {
-        fetch(HIGHLIGHTS_RAW_URL)
-            .then((res) => res.text())
-            .then((md) =>
-                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
+        // Highlights picked by each daily summary; apps are listed in the README only.
+        fetch(NEWS_INDEX_URL)
+            .then(
+                (res) =>
+                    res.json() as Promise<{
+                        highlights: (Highlight & { app?: boolean })[];
+                    }>,
+            )
+            .then((index) =>
+                setHighlights(
+                    index.highlights
+                        .filter((item) => !item.app)
+                        .slice(0, DYNAMIC_NEWS_COUNT),
+                ),
             )
             .catch((err) => console.error("Failed to fetch highlights:", err));
     }, []);
@@ -216,6 +208,6 @@ const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
             )}
             <div className="min-w-0">{item.title}</div>
         </div>
-        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
+        <p className="mt-1 text-ink-700">{renderWithLinks(item.text)}</p>
     </Surface>
 );

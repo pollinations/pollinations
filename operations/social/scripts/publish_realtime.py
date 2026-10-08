@@ -88,7 +88,9 @@ def fetch_pr_merged_at(repo_full: str, pr_number: str, github_token: str) -> str
 
 def generate_snippet(gist: Dict, token: str) -> Optional[str]:
     """Generate announcement text without publishing it."""
-    task = load_format("realtime").replace("{gist}", json.dumps(gist_context(gist), indent=2))
+    # Discord may state exact model prices; other platforms never receive announcements.
+    context = {**gist_context(gist), "announcements": gist.get("announcements", [])}
+    task = load_format("realtime").replace("{gist}", json.dumps(context, indent=2))
     return call_pollinations_api(load_prompt("tone/discord"), task, token, temperature=0.7)
 
 

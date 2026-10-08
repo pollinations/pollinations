@@ -797,10 +797,15 @@ export class Pollinations {
         options: Omit<ChatOptions, "stream">,
         stream: boolean,
     ): Record<string, unknown> {
+        // Router agents read overrides from `metadata`, where `text` is `model`.
+        const { text, ...routing } = options.routing ?? {};
         return this.stripUndefined({
             messages,
             model: options.model,
-            routing: options.routing,
+            metadata: options.routing && {
+                ...(text !== undefined && { model: text }),
+                ...routing,
+            },
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,

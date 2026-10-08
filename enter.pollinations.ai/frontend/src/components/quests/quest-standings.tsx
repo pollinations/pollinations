@@ -54,7 +54,13 @@ function nudge(
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 /** Places moved since the start of today (UTC): ↑3, ↓1, or "new". */
-function Movement({ movement }: { movement: number | null }) {
+function Movement({
+    movement,
+    isYou,
+}: {
+    movement: number | null;
+    isYou: boolean;
+}) {
     if (movement === 0) return null;
     const [label, text, className] =
         movement === null
@@ -73,7 +79,10 @@ function Movement({ movement }: { movement: number | null }) {
     return (
         <span
             title={label}
-            className={`shrink-0 text-xs font-semibold tabular-nums ${className}`}
+            // The viewer row sits on the accent fill, where tone colours fade.
+            className={`shrink-0 text-xs font-semibold tabular-nums ${
+                isYou ? "text-theme-text-strong" : className
+            }`}
         >
             <span aria-hidden="true">{text}</span>
             <span className="sr-only">{label}</span>
@@ -91,7 +100,11 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
         >
             <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-theme-text-muted">
                 {medal ? (
-                    <span role="img" aria-label={`Rank ${row.rank}`}>
+                    <span
+                        role="img"
+                        aria-label={`Rank ${row.rank}`}
+                        className="text-base leading-none"
+                    >
                         {medal}
                     </span>
                 ) : (
@@ -125,7 +138,7 @@ function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
                 </span>
             )}
             <span className="ml-auto flex shrink-0 items-center gap-2">
-                <Movement movement={row.movement} />
+                <Movement movement={row.movement} isYou={isYou} />
                 <Text
                     as="span"
                     weight="semibold"

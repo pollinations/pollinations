@@ -500,9 +500,9 @@ test("rendered standings give the podium medals and show movement", () => {
         }),
     );
 
-    expect(html).toContain('aria-label="Rank 1">🥇');
-    expect(html).toContain('aria-label="Rank 2">🥈');
-    expect(html).toContain('aria-label="Rank 3">🥉');
+    expect(html).toMatch(/aria-label="Rank 1"[^>]*>🥇</);
+    expect(html).toMatch(/aria-label="Rank 2"[^>]*>🥈</);
+    expect(html).toMatch(/aria-label="Rank 3"[^>]*>🥉</);
     expect(html).not.toContain("🏅");
     expect(html).toContain("↑2");
     expect(html).toContain("Up 2 since yesterday");

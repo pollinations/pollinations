@@ -1,7 +1,7 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { and, eq, gte, inArray, isNotNull, like, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, like, lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
@@ -183,10 +183,9 @@ export async function buildQuestStandings(
     const monthEnd = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
     );
-    // earned_at is stored in Unix seconds.
-    const todayStart =
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) /
-        1000;
+    const todayStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
     const db = drizzle(env.DB);
     const githubLogin = sql<string>`lower(${schema.user.githubUsername})`;
     const rows = await db
@@ -196,7 +195,7 @@ export async function buildQuestStandings(
                 Number,
             ),
             yesterdayPollen:
-                sql<number>`coalesce(sum(case when ${rewardsTable.earnedAt} < ${todayStart} then ${rewardsTable.pollenAmount} end), 0)`.mapWith(
+                sql<number>`coalesce(sum(case when ${lt(rewardsTable.earnedAt, todayStart)} then ${rewardsTable.pollenAmount} end), 0)`.mapWith(
                     Number,
                 ),
         })

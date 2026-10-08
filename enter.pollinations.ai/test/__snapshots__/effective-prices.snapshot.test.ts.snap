@@ -1875,6 +1875,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-voice-2.1": {
+    "cost": {
+      "completionAudioTokens": 0.00002321,
+    },
+    "price": {
+      "completionAudioTokens": 0.00002321,
+    },
+  },
+  "microsoft/mai-voice-2.1-flash": {
+    "cost": {
+      "completionAudioTokens": 0.000015825,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015825,
+    },
+  },
   "microsoft/trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,

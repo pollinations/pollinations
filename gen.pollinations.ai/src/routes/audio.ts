@@ -8,6 +8,7 @@ import {
     AUDIO_VOICES,
     type AudioModelName,
     GEMINI_TTS_VOICES,
+    MAI_VOICE_21_VOICES,
     resolveElevenLabsVoiceId,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
@@ -90,7 +91,7 @@ const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(380).optional().meta({
@@ -2407,6 +2408,107 @@ const GEMINI_TTS_MODELS = {
     "google/gemini-3.8-flash-tts": "gemini-3.8-flash-tts",
     "google/gemini-3.8-flash-lite-tts": "gemini-3.8-flash-lite-tts",
 } as const;
+
+// Canonical model id -> the suffix Azure expects on its voice ids.
+const MAI_TTS_MODEL_SUFFIXES = {
+    "microsoft/mai-voice-2.1": "MAI-Voice-2.1",
+    "microsoft/mai-voice-2.1-flash": "MAI-Voice-2.1-Flash",
+} as const;
+const MAI_TTS_DEFAULT_VOICE = "en-US-Harper";
+
+export function resolveMaiSpeechVoice(
+    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES,
+    requestedVoice: string,
+): string {
+    const suffix = MAI_TTS_MODEL_SUFFIXES[modelName];
+    // The speech schema defaults voice to "alloy"; for MAI that means unset.
+    const requested =
+        requestedVoice === "alloy" ? MAI_TTS_DEFAULT_VOICE : requestedVoice;
+    const base = requested.endsWith(`:${suffix}`)
+        ? requested.slice(0, -(suffix.length + 1))
+        : requested;
+    const match = MAI_VOICE_21_VOICES.find(
+        (v) => v.toLowerCase() === base.toLowerCase(),
+    );
+    if (!match) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for ${modelName}: ${requestedVoice}. Supported voices: ${MAI_VOICE_21_VOICES.join(", ")} (optionally suffixed with :${suffix}).`,
+        });
+    }
+    return `${match}:${suffix}`;
+}
+
+export async function generateOpenRouterMaiSpeech(opts: {
+    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+    if (responseFormat !== "mp3" && responseFormat !== "pcm") {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: mp3, pcm (24 kHz mono).`,
+        });
+    }
+    const resolvedVoice = resolveMaiSpeechVoice(modelName, voice);
+    // Character-priced upstream, so bill code points like the azure TTS entries.
+    const characters = [...text].length;
+    log.info(
+        "MAI TTS request: model={model}, voice={voice}, characters={chars}",
+        {
+            model: modelName,
+            voice: resolvedVoice,
+            chars: characters,
+        },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: modelName,
+                input: text,
+                voice: resolvedVoice,
+                response_format: responseFormat,
+                provider: {
+                    only: ["Azure"],
+                    allow_fallbacks: false,
+                },
+            }),
+        }),
+        OPENROUTER_SPEECH_ENDPOINT,
+    );
+
+    const generationId = response.headers.get("x-generation-id");
+    log.info("MAI TTS success: model={model}, {chars} characters", {
+        model: modelName,
+        chars: characters,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") ||
+                (responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg"),
+            ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
+            "x-tts-voice": resolvedVoice,
+            ...(generationId ? { "x-generation-id": generationId } : {}),
+        },
+    });
+}
 const GEMINI_TTS_ENDPOINT =
     "https://generativelanguage.googleapis.com/v1beta/interactions";
 
@@ -3468,6 +3570,19 @@ async function dispatchAudioGeneration(
             return withSafetyHeaders(
                 c,
                 await generateOpenRouterFishSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: openRouterApiKey,
+                    log,
+                }),
+            );
+        case "microsoft/mai-voice-2.1":
+        case "microsoft/mai-voice-2.1-flash":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterMaiSpeech({
+                    modelName: model,
                     text,
                     voice,
                     responseFormat,

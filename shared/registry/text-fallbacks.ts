@@ -23,6 +23,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "stepfun/step-5-preview": {
+        // Same StepFun model through Vercel's AI Gateway at the posted base
+        // rates, without OpenRouter's credit fee.
+        "stepfun/step-5-preview:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(1),
+                promptCachedTokens: perMillion(0.05),
+                completionTextTokens: perMillion(2.7),
+            },
+        },
+    },
     "inclusionai/ling-3.1-flash": {
         "inclusionai/ling-3.1-flash:openrouter:novita": {
             provider: "openrouter",

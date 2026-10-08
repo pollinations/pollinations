@@ -31,7 +31,7 @@ import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
-import { modelStatusRoutes } from "./routes/model-status.ts";
+import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 import { stemSeparationRoutes } from "./routes/stem-separation.ts";
@@ -165,8 +165,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
         return fetchEnter(c, url);
     })
-    // Only the read-only quest catalog is part of the public gen API. Dashboard
-    // quest actions (/check, /rewards, /claim) stay on enter's session API.
+    // The read-only quest catalog. Per-account quest rewards live under
+    // /account/quests.
     .all("/quests/catalog", (c) => {
         if (c.req.method !== "GET" && c.req.method !== "HEAD") {
             return notFound();
@@ -196,6 +196,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
+    .route("/", modelStatsRoutes)
     .route(
         "/",
         createMessagesRoutes((request, c) =>

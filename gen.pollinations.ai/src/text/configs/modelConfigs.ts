@@ -364,6 +364,35 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
+    "mistral-large-4": () =>
+        createMistralModelConfig({
+            model: "mistral-large-4",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
+        }),
+    "mistral-large-4-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "mistral/mistral-large-4",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["mistral"] } },
+            },
+        }),
+    // Nex returns a generic server error when it cannot fetch an image URL.
+    "nex-agi/nex-n2.5-mini": () => ({
+        ...createPinnedOpenRouterConfig(
+            "nex-agi/nex-n2.5-mini",
+            "nex-agi/bf16",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
+    "nex-agi/nex-n2.5-pro": () => ({
+        ...createPinnedOpenRouterConfig(
+            "nex-agi/nex-n2.5-pro",
+            "nex-agi/fp8",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",
@@ -579,6 +608,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
     "moonshotai/Kimi-K2.6": () =>
         createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
+    "moonshotai/Kimi-K3": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K3" }),
     "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
         createDeepInfraModelConfig({
             model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
@@ -799,6 +830,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-haiku-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-haiku-5.5:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-haiku-5.5",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",
@@ -918,6 +960,8 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/minimax-m3",
         }),
+    "MiniMaxAI/MiniMax-M3": () =>
+        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M3" }),
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
@@ -977,6 +1021,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "stepfun/step-3.5-flash": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
+        }),
+    "stepfun/step-5-preview": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-5-preview",
+        }),
+    "stepfun/step-5-preview:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-5-preview",
         }),
 
     // -- DeepInfra (StepFun) --------------------------------------------------

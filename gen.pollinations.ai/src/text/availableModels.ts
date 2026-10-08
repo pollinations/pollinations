@@ -388,6 +388,16 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "stepfun/step-5-preview",
+        config: portkeyConfig["stepfun/step-5-preview"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "stepfun/step-5-preview:vercel",
+        config: portkeyConfig["stepfun/step-5-preview:vercel"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "mistralai/mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
@@ -514,6 +524,17 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-haiku-4.5:openrouter:vertex-global",
         config: portkeyConfig["claude-fast-openrouter-vertex"],
         transform: claudeManualThinking,
+    },
+    {
+        name: "anthropic/claude-haiku-5.5",
+        config: portkeyConfig["anthropic/claude-haiku-5.5"],
+        // Sampling parameters are rejected on this model.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-haiku-5.5:vercel",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:vercel"],
+        transform: omitClaudeSampling,
     },
     {
         name: "anthropic/claude-sonnet-4.6",
@@ -791,6 +812,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
+        name: "moonshotai/kimi-k3:deepinfra",
+        config: portkeyConfig["moonshotai/Kimi-K3"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
         name: "poolside/laguna-s-2.1",
         config: portkeyConfig["poolside/laguna-s-2.1"],
         transform: createReasoningEffortTransform("toggle"),
@@ -973,6 +999,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.1-flash:openrouter:novita"],
     },
     {
+        name: "nex-agi/nex-n2.5-mini",
+        config: portkeyConfig["nex-agi/nex-n2.5-mini"],
+    },
+    {
+        name: "nex-agi/nex-n2.5-pro",
+        config: portkeyConfig["nex-agi/nex-n2.5-pro"],
+    },
+    {
         name: "inclusionai/ling-3.0-flash-vl",
         config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },
@@ -983,6 +1017,11 @@ const models: ModelDefinition[] = [
     {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "minimax/minimax-m3:deepinfra",
+        config: portkeyConfig["MiniMaxAI/MiniMax-M3"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
@@ -1025,6 +1064,14 @@ const models: ModelDefinition[] = [
         name: "meta/llama-4-scout:openrouter:novita-bf16",
         config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,
+    },
+    {
+        name: "mistralai/mistral-large-4",
+        config: portkeyConfig["mistral-large-4"],
+    },
+    {
+        name: "mistralai/mistral-large-4:vercel",
+        config: portkeyConfig["mistral-large-4-vercel"],
     },
     {
         name: "mistralai/mistral-large-3",

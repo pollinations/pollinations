@@ -312,7 +312,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 | `POST /v1/messages` | Anthropic Messages API — Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
-**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, liquid/d1, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, liquid/d1, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
 
 ### Responses API
 
@@ -899,7 +899,7 @@ Generate images from text prompts via a simple GET request. Returns JPEG, PNG, o
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 ```
 
-**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
+**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.1.1-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux-3-image, black-forest-labs/flux.2-flex, black-forest-labs/flux.2-max, microsoft/mai-image-2.6-flash, microsoft/mai-image-2.6, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-nano-banana-2.1, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-flash, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-2.1, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, recraft/recraft-v4.1-flash, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, inferenceport-ai/lightning-image-turbo
 
 ### Community image models
 
@@ -909,7 +909,7 @@ Community image models use a `community/owner/model` id and support generation t
 
 Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-3`, `qwen/qwen-image-3:fal`, `qwen/qwen-image-3:replicate`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
+**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.1.1-pro`, `black-forest-labs/flux.1.1-pro:azure:sweden`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux-3-image`, `black-forest-labs/flux.2-flex`, `black-forest-labs/flux.2-max`, `black-forest-labs/flux.2-max:openrouter`, `microsoft/mai-image-2.6-flash`, `microsoft/mai-image-2.6`, `google/gemini-2.5-flash-image`, `google/gemini-2.5-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:vertex-global`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-lite-image:openrouter:vertex-global`, `google/gemini-nano-banana-2.1`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:ai-studio-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-flash`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image:replicate`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-2.1`, `qwen/qwen-image-3`, `qwen/qwen-image-3:fal`, `qwen/qwen-image-3:replicate`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `recraft/recraft-v4.1-flash`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `inferenceport-ai/lightning-image-turbo`. `tongyi-mai/z-image-turbo` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -1036,7 +1036,7 @@ Generate videos from text prompts or reference images. Returns MP4.
 https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4
 ```
 
-**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, bytedance/seedance-2.5, alibaba/happyhorse-1.1, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video
+**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, x-ai/grok-imagine-video-1.5-lite, bytedance/seedance-2.5, alibaba/happyhorse-1.1, heygen/heygen-video-1, minimax/minimax-h3, minimax/minimax-h3-max, minimax/minimax-h3-max-turbo, prunaai/p-video
 
 ### Community video models
 
@@ -1046,7 +1046,7 @@ Community video models use a `community/owner/model` id and work on `/video/{pro
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:fal`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:fal`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:openrouter`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `heygen/heygen-video-1`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`.
+**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:fal`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:replicate`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:fal`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `alibaba/wan-3.0:fal`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:openrouter`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `x-ai/grok-imagine-video-1.5-lite`, `x-ai/grok-imagine-video-1.5-lite:openrouter`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `heygen/heygen-video-1`, `minimax/minimax-h3`, `minimax/minimax-h3-max`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -1096,7 +1096,7 @@ Text-to-speech, music generation, and audio transcription.
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
 
-**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/stem-separation, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, google/gemini-3.5-transcribe, x-ai/grok-tts, openai/tts-1, openai/tts-1-hd, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
+**Audio models:** elevenlabs/eleven-v4, elevenlabs/eleven-v4-turbo, elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/stem-separation, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, google/gemini-3.5-transcribe, x-ai/grok-tts, openai/tts-1, openai/tts-1-hd, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -1204,13 +1204,13 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/speech" \
 
 #### `POST` `/v1/audio/speech/with-timestamps` — Generate Speech with Timestamps
 
-Generate base64-encoded speech with character-level timing for the original and normalized text. Supports `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2`.
+Generate base64-encoded speech with character-level timing for the original and normalized text. See `/audio/models` for models advertising this endpoint.
 
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | `"elevenlabs/eleven-v3"` \| `"elevenlabs/eleven-flash-v2.5"` \| `"elevenlabs/eleven-multilingual-v2"` | default: `"elevenlabs/eleven-v3"` |
+| `model` | `"elevenlabs/eleven-v4"` \| `"elevenlabs/eleven-v4-turbo"` \| `"elevenlabs/eleven-v3"` \| `"elevenlabs/eleven-flash-v2.5"` \| `"elevenlabs/eleven-multilingual-v2"` | default: `"elevenlabs/eleven-v3"` |
 | `input` * | `string` | Text to synthesize and align. · max length: `10000` |
 | `voice` | `string` | Preset voice name or custom ElevenLabs voice ID. · default: `"alloy"` |
 | `response_format` | `"mp3"` \| `"opus"` \| `"aac"` \| `"wav"` \| `"pcm"` | Encoding used for audio_base64. · default: `"mp3"` |
@@ -1480,7 +1480,7 @@ Gemini task instructions count toward prompt token usage. Cohere requests contai
 
 **Gemini GA migration:** `google/gemini-embedding-2` now uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.
 
-**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-large, cohere/embed-v4.0, cohere/embed-v4.0:azure:sweden, qwen/qwen3-embedding-8b
+**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-large, cohere/embed-v4.0, cohere/embed-v4.0:azure:sweden, qwen/qwen3-embedding-8b, qwen/qwen3-embedding-8b:fireworks
 
 ## Community embedding endpoints
 
@@ -2920,7 +2920,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000/metadat
 
 Self-service endpoints for the authenticated user. Endpoints require authentication (API key or session) unless their schema says otherwise. API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
-`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Newly created child keys cannot receive `account:keys` through this API.
+`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` is account admin: a key with it can create keys with any limits, edit or revoke every key on the account, and, where enabled, manage my-models. Grant it only to tools that administer the account. These permissions are independent; request both when a client needs both. Agent run tokens (`ag_`) carry the same account permissions as the key the agent was called with.
 
 | Endpoint | Description |
 |----------|-------------|
@@ -3057,6 +3057,35 @@ curl "https://gen.pollinations.ai/account/quests" \
 
 ---
 
+#### `GET` `/account/quests/rewards` — Get Quest Rewards
+
+Returns every reward the account has earned, newest first, including claim state. API keys require the read-only `account:usage` permission.
+
+📤 **Response** · `200` · `application/json` — Quest rewards
+
+| Field | Type | Description |
+|---|---|---|
+| `rewards` * | `object`[] | — |
+| `rewards[].id` * | `string` | — |
+| `rewards[].questId` * | `any` | — |
+| `rewards[].title` * | `string` | — |
+| `rewards[].pollenAmount` * | `number` | — |
+| `rewards[].balanceBucket` * | `string` | — |
+| `rewards[].earnedAt` * | `string` | — |
+| `rewards[].claimedAt` * | `any` | — |
+| `rewards[].url` * | `any` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/account/quests/rewards" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
 #### `GET` `/account/balance` — Get Balance
 
 Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.
@@ -3119,12 +3148,12 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
-| `usage[].input_image_tokens` * | `number` | Number of input image tokens |
+| `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_text_tokens` * | `number` | Number of output text tokens |
 | `usage[].output_reasoning_tokens` * | `number` | Number of reasoning tokens (for models with chain-of-thought) |
 | `usage[].output_audio_tokens` * | `number` | Number of output audio tokens |
 | `usage[].output_audio_seconds` * | `number` | Duration of output audio in seconds (for TTS/music generation) |
-| `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
+| `usage[].output_image_tokens` * | `number` | Output image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
 | `usage[].cost_usd` * | `number` | Cost in USD for this request |
 | `usage[].response_time_ms` * | `any` | Response time in milliseconds |
@@ -3327,6 +3356,12 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
+| `description` | `string` | Note shown with the key |
+| `consent` | `object` | Set by the consent screen when a user authorizes an app: binds the key to the app's publishable key and verifies the redirect URI or device code against it. |
+| `consent.requestedClientId` | `string` | — |
+| `consent.redirectUri` | `string` | — |
+| `consent.redirectOrigin` | `string` | — |
+| `consent.deviceUserCode` | `string` | — |
 
 <sub>`*` = required field</sub>
 
@@ -3339,6 +3374,47 @@ curl -X POST "https://gen.pollinations.ai/account/keys" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"my-app-backend","type":"secret","allowedModels":["openai/gpt-5.4-nano","black-forest-labs/flux.1-schnell"],"pollenBudget":100}'
+```
+
+---
+
+#### `PATCH` `/account/keys/{id}` — Update API Key
+
+Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `allowedModels` | `string`[] \| `null` | Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models |
+| `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
+| `questPollenOnly` | `boolean` | Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only |
+| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
+| `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
+| `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
+| `description` | `string` | Note shown with the key |
+| `name` | `string` | Name for the API key · length: `1…253` |
+| `expiresAt` | `string · date-time` \| `null` | Expiry as an ISO 8601 timestamp. null = never expires |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` — Updated API key
+
+💻 **Example**
+
+```bash
+curl -X PATCH "https://gen.pollinations.ai/account/keys/key_abc123" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-renamed-key"}'
 ```
 
 ---
@@ -3455,12 +3531,12 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
-| `usage[].input_image_tokens` * | `number` | Number of input image tokens |
+| `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_text_tokens` * | `number` | Number of output text tokens |
 | `usage[].output_reasoning_tokens` * | `number` | Number of reasoning tokens (for models with chain-of-thought) |
 | `usage[].output_audio_tokens` * | `number` | Number of output audio tokens |
 | `usage[].output_audio_seconds` * | `number` | Duration of output audio in seconds (for TTS/music generation) |
-| `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
+| `usage[].output_image_tokens` * | `number` | Output image usage quantity (provider-specific tokens, images, or megapixels) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
 | `usage[].cost_usd` * | `number` | Cost in USD for this request |
 | `usage[].response_time_ms` * | `any` | Response time in milliseconds |
@@ -3658,6 +3734,25 @@ curl "https://gen.pollinations.ai/models/status?traffic=all&minutes=60" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
+---
+
+#### `GET` `/models/stats` — Model Usage Stats
+
+Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.
+
+`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.
+
+Refreshed hourly.
+
+📤 **Response** · `200` — Raw Tinybird pipe rows
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/models/stats" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
 ### 3D
 
 Generate 3D models from text prompts and images via a simple GET request.
@@ -3774,6 +3869,7 @@ All endpoints return errors in this envelope:
 | `400` | `failed_to_download_image` | A supplied image URL could not be downloaded — host unreachable, DNS failure, a non-2xx response from the image host, or a body that ended mid-read. The host's status is reported in `details.upstreamStatus`. |
 | `400` | `image_too_large` | A supplied image exceeds the per-image size cap, or the request exceeds the per-request image size or count cap. |
 | `400` | `unsupported_image_media_type` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
+| `400` | `content_blocked` | The input safety check blocked the request before generation — enabled via `safe` / the `Pollinations-Safe` header, or required by the model (`required_safety`). `message` names the triggered categories, e.g. `Request blocked by safety filter: sexual`. Change the input rather than retrying it. |
 | `401` | `UNAUTHORIZED` | Missing or invalid API key. Provide via `Authorization: Bearer <key>` header or `?key=<key>` query param. |
 | `402` | `PAYMENT_REQUIRED` | Insufficient pollen balance or API key budget exhausted. |
 | `403` | `FORBIDDEN` | Access denied — insufficient permissions or paid-model access for this model. |

@@ -63,6 +63,11 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install screenshot dependency
+        run: |
+          npm install --prefix "$RUNNER_TEMP/sharp" --no-audit --no-fund sharp@0.34.5
+          echo "NODE_PATH=$RUNNER_TEMP/sharp/node_modules" >> "$GITHUB_ENV"
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"

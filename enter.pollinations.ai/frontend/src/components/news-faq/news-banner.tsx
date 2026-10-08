@@ -208,7 +208,7 @@ const TodayLine: FC = () => (
  * Changes that can affect what users built: model updates and retirements from
  * merged PRs (news/index.json), today −30 to +30 days.
  */
-export const Changes: FC = () => {
+export const Changelog: FC = () => {
     const index = useNewsIndex();
     const [visiblePast, setVisiblePast] = useState(PAGE_SIZE);
     const today = new Date().toISOString().slice(0, 10);
@@ -226,7 +226,7 @@ export const Changes: FC = () => {
     if (changes.length === 0) return null;
     return (
         <Section
-            title="Changes"
+            title="Changelog"
             actionClassName="ml-auto"
             action={
                 <InlineLink href="/models" size="sm">

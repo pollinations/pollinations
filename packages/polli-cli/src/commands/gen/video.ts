@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { numberOption } from "../../lib/number-option.js";
 import {
     ExitSignal,
     getOutputMode,
@@ -27,14 +28,30 @@ export function createVideoCommand() {
             const isHuman = getOutputMode() === "human";
 
             const params = new URLSearchParams({
-                width: opts.width,
-                height: opts.height,
+                width: String(
+                    numberOption("--width", opts.width, 1, 4096, true),
+                ),
+                height: String(
+                    numberOption("--height", opts.height, 1, 4096, true),
+                ),
             });
             if (opts.model) params.set("model", opts.model);
-            if (opts.duration) params.set("duration", opts.duration);
+            if (opts.duration !== undefined)
+                params.set(
+                    "duration",
+                    String(
+                        numberOption("--duration", opts.duration, 1, 30, true),
+                    ),
+                );
             if (opts.aspectRatio) params.set("aspectRatio", opts.aspectRatio);
             if (opts.audio) params.set("audio", "true");
-            if (opts.seed) params.set("seed", opts.seed);
+            if (opts.seed !== undefined)
+                params.set(
+                    "seed",
+                    String(
+                        numberOption("--seed", opts.seed, -1, 2147483647, true),
+                    ),
+                );
             if (opts.image) {
                 if (!/^https?:\/\//i.test(opts.image)) {
                     printError(

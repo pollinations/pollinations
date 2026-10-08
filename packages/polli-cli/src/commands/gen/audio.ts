@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { numberOption } from "../../lib/number-option.js";
 import {
     ExitSignal,
     fail,
@@ -99,6 +100,12 @@ export function createAudioCommand() {
             "Also save character-level timing as JSON next to the audio",
         )
         .action(async (textArg, opts) => {
+            if (opts.speed !== undefined)
+                numberOption("--speed", opts.speed, 0.25, 4);
+            if (opts.duration !== undefined)
+                numberOption("--duration", opts.duration, 0.5, 380);
+            if (opts.seed !== undefined)
+                numberOption("--seed", opts.seed, -1, 4294967295, true);
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
             const inputText = textArg || (await readStdin());

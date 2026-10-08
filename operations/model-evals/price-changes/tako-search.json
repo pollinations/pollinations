@@ -10,7 +10,6 @@
         "search_instant_per_1000_requests": 7,
         "search_fast_per_1000_requests": 7,
         "search_deep_per_1000_requests": 12,
-        "contents_per_1000_results": 1,
         "structured_data_export": "Variable; reconcile provider-reported charges"
     },
     "merge_on": "2026-10-16",
@@ -18,16 +17,16 @@
     "unknowns": [
         "Email says free through October 15; public Vercel announcement still says September 30",
         "Gateway-specific post-promotion charges",
-        "Effective cutoff timezone",
-        "Integration and public API approval"
+        "Effective cutoff timezone"
     ],
     "sources": [
         "https://vercel.com/changelog/tako-search-is-free-on-ai-gateway-through-september-30th",
         "https://tako.com/pricing/"
     ],
     "required_changes": [
-        "Confirm promotion extension before treating calls as free",
-        "Meter provider-reported search and export charges; account separately for any model tokens",
-        "Apply confirmed paid rates only after integration is approved and tested"
-    ]
+        "Confirm promotion extension and exact cutoff; do not assume current calls are free",
+        "Verify Gateway reported request costs include search and model tokens at post-promotion rates",
+        "Update catalog pricing disclosure if a fixed Gateway search rate is confirmed; runtime already bills provider-reported cost"
+    ],
+    "feature_pr": "https://github.com/pollinations/pollinations/pull/16808"
 }

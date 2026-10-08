@@ -52,10 +52,10 @@ const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
 }) => {
     const tone = muted ? "text-theme-text-muted" : "text-theme-text-base";
     return label === "Balance" ? (
-        <span className={`inline-flex items-center gap-1 ${tone}`}>
+        <span className={`inline-flex items-baseline gap-1 ${tone}`}>
             <WalletKindIcon
                 kind={value === "paid" ? "paid" : "tier"}
-                className={muted ? "opacity-50" : undefined}
+                className={`self-center ${muted ? "opacity-50" : ""}`}
             />
             {value === "paid" ? "Paid" : "Quest"}
         </span>

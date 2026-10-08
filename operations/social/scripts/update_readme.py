@@ -1,25 +1,19 @@
 import os
 import re
+import json
 import argparse
 
-HIGHLIGHTS_PATH = "operations/social/news/highlights.md"
+INDEX_PATH = "operations/social/news/index.json"
 README_PATH = "README.md"
 MAX_README_ENTRIES = 10
 
 
-def get_top_highlights(highlights_content: str, count: int = MAX_README_ENTRIES) -> list[str]:
-    """Extract top N highlight entries from highlights.md"""
-    lines = highlights_content.strip().split('\n')
-    entries = []
-
-    for line in lines:
-        line = line.strip()
-        if line.startswith('- **'):
-            entries.append(line)
-            if len(entries) >= count:
-                break
-
-    return entries
+def get_top_highlights(index: dict, count: int = MAX_README_ENTRIES) -> list[str]:
+    """The newest highlights from index.json as README bullets."""
+    return [
+        f"- **{item['date']}** – **{item.get('emoji', '✨')} {item['title']}** {item['text']}"
+        for item in index.get("highlights", [])[:count]
+    ]
 
 
 def update_readme_news_section(readme_content: str, new_entries: list[str]) -> str:
@@ -47,19 +41,19 @@ def update_readme_news_section(readme_content: str, new_entries: list[str]) -> s
     return updated_readme
 
 
-def update_readme_local(highlights_path: str, readme_path: str) -> bool:
-    """Read highlights.md and README.md from disk, update README in place.
+def update_readme_local(index_path: str, readme_path: str) -> bool:
+    """Read index.json and README.md from disk, update README in place.
 
     Returns True if README was modified, False otherwise.
     """
-    if not os.path.exists(highlights_path):
-        print(f"Highlights file not found: {highlights_path}")
+    if not os.path.exists(index_path):
+        print(f"News index not found: {index_path}")
         return False
 
-    with open(highlights_path, "r") as f:
-        highlights_content = f.read()
+    with open(index_path, "r", encoding="utf-8") as f:
+        index = json.load(f)
 
-    top_entries = get_top_highlights(highlights_content, MAX_README_ENTRIES)
+    top_entries = get_top_highlights(index, MAX_README_ENTRIES)
     if not top_entries:
         print("No highlight entries found.")
         return False
@@ -84,11 +78,11 @@ def update_readme_local(highlights_path: str, readme_path: str) -> bool:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Update README Latest News section from highlights.md")
+    parser = argparse.ArgumentParser(description="Update README Latest News section from the news index")
     parser.add_argument("--repo-root", default=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")),
                         help="Repository root directory")
     args = parser.parse_args()
 
-    highlights = os.path.join(args.repo_root, HIGHLIGHTS_PATH)
+    index = os.path.join(args.repo_root, INDEX_PATH)
     readme = os.path.join(args.repo_root, README_PATH)
-    update_readme_local(highlights, readme)
+    update_readme_local(index, readme)

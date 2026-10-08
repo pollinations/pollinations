@@ -424,6 +424,7 @@ const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
     limit: z.coerce
         .number()
+        .int()
         .min(1)
         .max(MAX_USAGE_EXPORT_ROWS)
         .optional()

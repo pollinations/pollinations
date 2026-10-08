@@ -450,6 +450,27 @@ test("GET /api/account/usage forwards table filters to the pipe", async ({
     expect(usageCalls[0].query.models).toBe("gpt-a,gpt-b");
 });
 
+// Tinybird reads `limit` as Int32, so a fractional value must fail here, not
+// upstream as a 500.
+test("GET /api/account/usage rejects a non-integer limit", async ({
+    accountToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/account/usage?limit=1.5",
+        { headers: authHeaders(accountToken) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(
+        mocks.tinybird.state.pipeCalls.filter((call) =>
+            call.url.includes("activity_usage_transactions.json"),
+        ),
+    ).toHaveLength(0);
+});
+
 test("GET /api/account/usage?format=csv renders rows and sets filename from limit", async ({
     accountToken,
     mocks,

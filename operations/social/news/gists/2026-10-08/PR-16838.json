@@ -1,0 +1,36 @@
+{
+  "pr_number": 16838,
+  "title": "fix(cli): drop the gen audio --speed flag the API ignores",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16838",
+  "merged_at": "2026-10-08T22:30:09Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Removed `--speed` from `polli gen audio` because the `/audio` API ignored its `speed` query parameter; values from 0.25 to 4 previously returned unchanged audio without warning. The CLI now rejects the option before making a request, and its help no longer lists it. Added a rejection test and bumped `@pollinations/cli` to 0.1.35. This does not add audio speed support to the API.",
+    "keywords": [
+      "polli CLI",
+      "audio",
+      "speed",
+      "API",
+      "option validation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16838.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny headphones and points to a retro terminal showing a crossed-out `--speed` flag, while a code-plant grows beside a lime green (#ecf874) speaker. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T22:37:31.781469+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "fc0da3372bfadb7831443cae761743e3a96b443d",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

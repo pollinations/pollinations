@@ -68,6 +68,18 @@ def test_invalid_routing_shape_is_rejected(routing):
     assert response.status_code == 422
 
 
+def test_top_level_routing_is_rejected_with_metadata_hint(monkeypatch):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"text": "openai"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+    assert "metadata.model" in response.text
+
+
 @pytest.mark.parametrize("routing", [None, {"model": "auto"}])
 def test_omitted_and_auto_routing_values_remain_allowed(monkeypatch, routing):
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)

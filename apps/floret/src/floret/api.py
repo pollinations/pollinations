@@ -17,7 +17,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from floret.agent import run_agent, run_agent_events
 from floret.config import _api_key_override, settings
@@ -66,6 +66,15 @@ class ChatRequest(BaseModel):
     stream: bool = False
     stream_options: dict[str, Any] | None = None
     metadata: RoutingInput | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_routing(cls, value: Any) -> Any:
+        if isinstance(value, dict) and "routing" in value:
+            raise ValueError(
+                "routing moved to metadata; send routing.text as metadata.model"
+            )
+        return value
 
 
 def _files_dir() -> str:

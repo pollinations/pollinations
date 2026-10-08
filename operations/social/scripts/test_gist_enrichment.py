@@ -15,7 +15,7 @@ from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
-from model_announcements import model_changes, pr_comparison_refs
+from model_announcements import announced_retirements, model_changes, pr_comparison_refs
 from update_readme import get_top_highlights
 
 
@@ -187,10 +187,61 @@ class GistEnrichmentTest(unittest.TestCase):
                  event("priced", "UPDATE", {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}},
                                             "voices": {"before": [], "after": ["alloy"]}})),
         ]
-        entries = model_entries(gists, "2026-09-08")
+        entries = model_entries(gists, "2026-09-08", "2026-10-08")
         self.assertEqual([e["model_id"] for e in entries], ["priced", "removed"])
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
         self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
+
+    def test_pr_description_announces_retirements_from_its_change_table(self):
+        catalog = [{"name": "x-ai/grok-imagine", "title": "Grok Imagine", "category": "image"},
+                   {"name": "qwen/qwen3-vl", "title": "Qwen3 VL"}]
+        body = """Retires two models.
+
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `x-ai/grok-imagine` | RETIRE | Availability | Available | Retired | 2026-11-02 00:00 UTC |
+| `qwen/qwen3-vl` | RETIRE | Availability | Available | Retired | 2026-11-09 08:00 +08:00 |
+| `qwen/qwen3-vl` | RETIRE | Availability | Available | Retired | 2026-10-01 |
+| `unknown/model` | RETIRE | Availability | Available | Retired | 2026-12-01 |
+| `x-ai/grok-imagine` | RETIRE | Availability | Available | Retired | On production deployment |
+"""
+        pr = {"number": 5, "merged_at": "2026-10-08T00:00:00Z", "body": body}
+        events = announced_retirements(pr, catalog)
+        self.assertEqual([(e["model_id"], e["effective_at"], e["effective_status"]) for e in events],
+                         [("x-ai/grok-imagine", "2026-11-02T00:00:00Z", "scheduled"),
+                          ("qwen/qwen3-vl", "2026-11-09T00:00:00Z", "scheduled")])
+        self.assertEqual(events[0]["source"], "pr_description")
+        cancel = {**pr, "body": "| `x-ai/grok-imagine` | RETIRE | Availability | Retiring | Available | Cancelled |"}
+        self.assertEqual(announced_retirements(cancel, catalog)[0]["effective_status"], "cancelled")
+
+    def test_index_keeps_the_latest_announcement_until_the_model_is_removed(self):
+        def gist(number, merged_at, *announcements):
+            return {"pr_number": number, "merged_at": merged_at, "announcements": list(announcements),
+                    "url": f"https://github.com/example/repo/pull/{number}"}
+        def announced(model, status, effective_at=None):
+            return {"id": f"{model}:retirement", "model_id": model, "title": model, "action": "RETIRE",
+                    "changes": {}, "effective_at": effective_at, "effective_status": status,
+                    "source": "pr_description"}
+        removal = {"id": "gone:remove", "model_id": "gone", "title": "gone", "action": "RETIRE",
+                   "changes": {}, "effective_at": None, "effective_status": "unconfirmed"}
+        gists = [
+            gist(1, "2026-09-20T00:00:00Z", announced("moved", "scheduled", "2026-10-20T00:00:00Z"),
+                 announced("kept", "scheduled", "2026-10-25T00:00:00Z"),
+                 announced("gone", "scheduled", "2026-10-02T00:00:00Z"),
+                 announced("overdue", "scheduled", "2026-10-05T00:00:00Z"),
+                 announced("withdrawn", "scheduled", "2026-10-30T00:00:00Z")),
+            gist(2, "2026-10-01T00:00:00Z", announced("moved", "scheduled", "2026-12-01T00:00:00Z"),
+                 announced("withdrawn", "cancelled")),
+            gist(3, "2026-10-02T00:00:00Z", removal),
+        ]
+        entries = {e["model_id"]: e for e in model_entries(gists, "2026-09-08", "2026-10-08")}
+        self.assertEqual(entries["moved"]["date"], "2026-12-01")
+        self.assertEqual(entries["moved"]["previous_date"], "2026-10-20")
+        self.assertEqual(entries["kept"]["status"], "scheduled")
+        self.assertEqual(entries["withdrawn"]["status"], "cancelled")
+        self.assertEqual(entries["withdrawn"]["previous_date"], "2026-10-30")
+        self.assertNotIn("overdue", entries)
+        self.assertNotIn("status", entries["gone"])  # the removal itself, not the announcement
 
     def test_index_highlights_cover_the_readme_and_feed_it(self):
         summaries = [{"date": f"2026-09-{day:02d}", "highlights": [

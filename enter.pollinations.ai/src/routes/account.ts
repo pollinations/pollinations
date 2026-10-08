@@ -185,7 +185,7 @@ const UpdateKeySchema = CreateKeySchema.pick({
     name: CreateKeySchema.shape.name.optional(),
     expiresAt: z
         .string()
-        .datetime()
+        .datetime({ offset: true })
         .nullable()
         .optional()
         .transform((val) => (val == null ? val : new Date(val)))

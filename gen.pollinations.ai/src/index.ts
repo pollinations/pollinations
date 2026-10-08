@@ -29,6 +29,7 @@ import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
+import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
@@ -102,6 +103,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
+- [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
 
 ## Account
@@ -185,6 +187,10 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
     .route("/", stemSeparationRoutes)
+    // SEP-2127 Server Cards must be registered before mcpRoutes: its
+    // ".use("/mcp/:serverId", auth(), ...)" middleware would otherwise
+    // gate the unauthenticated card endpoints.
+    .route("/", mcpCardRoutes)
     .route("/", mcpRoutes)
     .route(E2B_PATH, e2bRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;

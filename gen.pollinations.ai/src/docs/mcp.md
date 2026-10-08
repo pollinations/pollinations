@@ -14,6 +14,7 @@ then choose a server:
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
+| Tako Search | `https://gen.pollinations.ai/mcp/tako` | Search web pages and structured data with sources | Paid Pollen required |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
@@ -203,3 +204,14 @@ key and cannot spend beyond that key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys). See
 [Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
 types and security guidance.
+
+### Tako Search
+
+`tako_search` accepts `query` (1–2000 characters) and optional `effort`
+(`instant`, `fast`, or `deep`; default `fast`). It returns structured search
+results with source URLs and a JSON text representation. Inline contents
+exports are disabled.
+
+Calls use AI Gateway and incur model-token and search costs. Paid Pollen is
+required; initialization and discovery are free. Billing uses the cost reported
+for the completed Gateway request. Check `/mcp` for current pricing information.

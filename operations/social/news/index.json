@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-08T16:37:58.210795+00:00",
+  "generated_at": "2026-10-08T16:39:51.670934+00:00",
   "models": [
     {
       "id": "pr-14589:openai/gpt-image-2.5-flare",
@@ -4991,6 +4991,32 @@
             "promptCachedTokens": "0.00000001",
             "promptCacheWriteTokens": "0.000000125",
             "completionTextTokens": "0.0000005"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16821:qwen/qwen-audio-3.0-tts-flash",
+      "model_id": "qwen/qwen-audio-3.0-tts-flash",
+      "title": "Qwen-Audio 3.0 TTS Flash",
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-10-08",
+      "pr": 16821,
+      "url": "https://github.com/pollinations/pollinations/pull/16821",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0000115"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000015"
           }
         }
       }

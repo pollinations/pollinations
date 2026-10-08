@@ -551,7 +551,6 @@ _IMAGE_TEXT_PRIORITY: list[str] = [
     "grok-imagine",
     "zimage",
     "p-image",
-    "nova-canvas",
     "klein",
     "wan-image",
     "wan-image-pro",

@@ -25,15 +25,15 @@ type ApiKeyListResponse = {
 };
 
 describe("API Key Management", () => {
-    describe("POST /api/api-keys", () => {
-        test("allows an expiry beyond one year", async ({ sessionToken }) => {
+    describe("POST /api/account/keys", () => {
+        test("allows an expiry beyond one year", async ({ accountToken }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "long-lived-key",
@@ -50,14 +50,14 @@ describe("API Key Management", () => {
         });
 
         test("preserves Generate off through creation, listing, authentication and editing", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const headers = {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             };
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers,
@@ -77,7 +77,7 @@ describe("API Key Management", () => {
             });
 
             const list = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 { headers },
             );
             expect(list.status).toBe(200);
@@ -87,9 +87,9 @@ describe("API Key Management", () => {
             ).toEqual({ models: [], account: ["profile"] });
 
             const update = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                `http://localhost:3000/api/account/keys/${created.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers,
                     body: JSON.stringify({
                         allowedModels: [],
@@ -114,26 +114,24 @@ describe("API Key Management", () => {
         });
 
         test("forces publishable keys to zero direct-spend budget", async ({
-            sessionToken,
+            accountToken,
         }) => {
             for (const pollenBudget of [undefined, null, 0]) {
                 const response = await SELF.fetch(
-                    "http://localhost:3000/api/api-keys",
+                    "http://localhost:3000/api/account/keys",
                     {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Cookie: `better-auth.session_token=${sessionToken}`,
+                            Authorization: `Bearer ${accountToken}`,
                         },
                         body: JSON.stringify({
                             name: `forced-zero-publishable-${String(pollenBudget)}`,
                             type: "publishable",
                             pollenBudget,
-                            metadata: {
-                                redirectUris: [
-                                    "https://zero-budget.example/callback",
-                                ],
-                            },
+                            redirectUris: [
+                                "https://zero-budget.example/callback",
+                            ],
                         }),
                     },
                 );
@@ -151,15 +149,15 @@ describe("API Key Management", () => {
         });
 
         test("rejects non-zero publishable-key budgets", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "invalid-budget-publishable",
@@ -178,24 +176,22 @@ describe("API Key Management", () => {
         });
 
         test("should create publishable key metadata in one step", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "one-step-publishable",
                         type: "publishable",
-                        metadata: {
-                            description: "created in one step",
-                            redirectUris: ["https://one-step.example/callback"],
-                            earningsEnabled: true,
-                        },
+                        description: "created in one step",
+                        redirectUris: ["https://one-step.example/callback"],
+                        earningsEnabled: true,
                     }),
                 },
             );
@@ -212,50 +208,21 @@ describe("API Key Management", () => {
             });
         });
 
-        test("allows reward-enabled app keys", async ({ sessionToken }) => {
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        name: "wallet-reward-publishable",
-                        type: "publishable",
-                        metadata: {
-                            redirectUris: [
-                                "https://wallet-rewards.example/callback",
-                            ],
-                            earningsEnabled: true,
-                        },
-                    }),
-                },
-            );
-
-            expect(response.status).toBe(200);
-            const created = await response.json();
-            expect(created.metadata.earningsEnabled).toBe(true);
-        });
-
         test("should accept loopback redirectUris metadata with earnings off by default", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "localhost-publishable",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["http://localhost:3456/callback"],
-                        },
+                        redirectUris: ["http://localhost:3456/callback"],
                     }),
                 },
             );
@@ -268,59 +235,30 @@ describe("API Key Management", () => {
             expect(created.metadata.earningsEnabled).toBe(false);
         });
 
-        test("rejects unsafe redirectUris metadata during app key creation", async ({
-            sessionToken,
+        test("blocks every native Better Auth api-key route", async ({
+            accountToken,
         }) => {
-            for (const redirectUri of [
-                "javascript://x/%0afetch('https://example.com')//",
-                "data://x/text/html,<script>alert(1)</script>",
-                "file://localhost/tmp/callback",
-                "http://app.example/callback",
-            ]) {
-                const response = await SELF.fetch(
-                    "http://localhost:3000/api/api-keys",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Cookie: `better-auth.session_token=${sessionToken}`,
-                        },
-                        body: JSON.stringify({
-                            name: "unsafe-publishable",
-                            type: "publishable",
-                            metadata: {
-                                redirectUris: [redirectUri],
-                            },
-                        }),
-                    },
-                );
-
-                expect(response.status).toBe(400);
-            }
-        });
-
-        test("blocks native Better Auth api-key create/update routes", async ({
-            sessionToken,
-        }) => {
-            // Keys are created/updated only through /api/api-keys, which validates
+            // Keys are managed only through /api/account/keys, which validates
             // redirect URIs and strips server-only metadata. The native routes store
-            // caller metadata verbatim, so they must not be reachable over HTTP.
+            // caller metadata verbatim, so none of them may be reachable over HTTP.
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            };
+            const unsafeMetadata = {
+                redirectUris: [
+                    "javascript://x/%0afetch('https://example.com')//",
+                ],
+            };
             const nativeCreate = await SELF.fetch(
                 "http://localhost:3000/api/auth/api-key/create",
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
+                    headers,
                     body: JSON.stringify({
                         name: "native-redirect-bypass",
                         prefix: "pk",
-                        metadata: {
-                            redirectUris: [
-                                "javascript://x/%0afetch('https://example.com')//",
-                            ],
-                        },
+                        metadata: unsafeMetadata,
                     }),
                 },
             );
@@ -328,66 +266,81 @@ describe("API Key Management", () => {
 
             // The safe route still works and validates the scheme.
             const safeCreate = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
+                    headers,
                     body: JSON.stringify({
                         name: "safe-publishable",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://safe.example/callback"],
-                        },
+                        redirectUris: ["https://safe.example/callback"],
                     }),
                 },
             );
             expect(safeCreate.status).toBe(200);
             const created = await safeCreate.json();
 
-            const nativeUpdate = await SELF.fetch(
-                "http://localhost:3000/api/auth/api-key/update",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+            const nativeCalls: [string, string, unknown?][] = [
+                [
+                    "POST",
+                    "update",
+                    { keyId: created.id, metadata: unsafeMetadata },
+                ],
+                ["POST", "delete", { keyId: created.id }],
+                ["GET", "list"],
+                ["GET", `get?id=${created.id}`],
+                ["POST", "verify", { key: created.key }],
+            ];
+            for (const [method, path, body] of nativeCalls) {
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/auth/api-key/${path}`,
+                    {
+                        method,
+                        headers,
+                        ...(body !== undefined && {
+                            body: JSON.stringify(body),
+                        }),
                     },
-                    body: JSON.stringify({
-                        keyId: created.id,
-                        metadata: {
-                            redirectUris: [
-                                "javascript://x/%0afetch('https://example.com')//",
-                            ],
-                        },
-                    }),
-                },
+                );
+                expect(response.status, `${method} ${path}`).toBe(405);
+            }
+
+            // The blocked native delete and update left the key untouched.
+            const list = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                { headers },
             );
-            expect(nativeUpdate.status).toBe(405);
+            expect(list.status).toBe(200);
+            const listed = (await list.json()) as ApiKeyListResponse;
+            expect(
+                listed.data.find((key) => key.id === created.id)?.metadata
+                    ?.redirectUris,
+            ).toEqual(["https://safe.example/callback"]);
         });
 
         test("rejects spoofed keyType / createdVia / plaintextKey from caller metadata", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "spoof-attempt",
                         type: "publishable",
                         accountPermissions: ["keys"],
+                        redirectUris: ["https://legit.example/callback"],
+                        keyType: "secret",
+                        createdVia: "forged",
+                        plaintextKey: "sk_forged",
                         metadata: {
                             keyType: "secret",
                             createdVia: "forged",
                             plaintextKey: "sk_forged",
-                            redirectUris: ["https://legit.example/callback"],
                         },
                     }),
                 },
@@ -405,20 +358,20 @@ describe("API Key Management", () => {
         });
 
         test("allows unbranded redirect-auth key creation without client_id", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "unbranded-redirect-auth",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             redirectUri: "https://solo.example/callback",
                             redirectOrigin: "https://solo.example",
                             createdForUserId: "spoofed-user",
@@ -451,23 +404,21 @@ describe("API Key Management", () => {
         });
 
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "registered-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://legit.example/callback"],
-                            earningsEnabled: true,
-                        },
+                        redirectUris: ["https://legit.example/callback"],
+                        earningsEnabled: true,
                     }),
                 },
             );
@@ -475,17 +426,17 @@ describe("API Key Management", () => {
             const appKey = await appResponse.json();
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "forged-redirect-auth",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri: "https://attacker.example/callback",
                             redirectOrigin: "https://attacker.example",
@@ -496,40 +447,18 @@ describe("API Key Management", () => {
 
             expect(response.status).toBe(400);
 
-            const storedOnlyResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        name: "client-id-without-requested-client-id",
-                        type: "secret",
-                        metadata: {
-                            clientId: appKey.id,
-                            redirectUri: "https://legit.example/callback",
-                            redirectOrigin: "https://legit.example",
-                        },
-                    }),
-                },
-            );
-
-            expect(storedOnlyResponse.status).toBe(400);
-
             const matchingResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "valid-redirect-auth",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             createdForUserId: "spoofed-user",
                             createdForApp: "spoofed-app",
@@ -550,25 +479,23 @@ describe("API Key Management", () => {
         });
 
         test("stores app attribution even when rewards are currently disabled", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "disabled-reward-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: [
-                                "https://disabled-reward.example/callback",
-                            ],
-                            earningsEnabled: false,
-                        },
+                        redirectUris: [
+                            "https://disabled-reward.example/callback",
+                        ],
+                        earningsEnabled: false,
                     }),
                 },
             );
@@ -576,17 +503,17 @@ describe("API Key Management", () => {
             const appKey = await appResponse.json();
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "disabled-reward-attributed-secret",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri:
                                 "https://disabled-reward.example/callback",
@@ -603,22 +530,20 @@ describe("API Key Management", () => {
         });
 
         test("allows device-flow attribution without redirect_uri when client_id matches the device code", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "device-registered-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://device.example/callback"],
-                        },
+                        redirectUris: ["https://device.example/callback"],
                     }),
                 },
             );
@@ -641,17 +566,17 @@ describe("API Key Management", () => {
             });
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "device-auth-key",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             deviceUserCode: userCode,
                             requestedClientId: appKey.key,
                             createdForUserId: "spoofed-user",
@@ -672,7 +597,7 @@ describe("API Key Management", () => {
         });
 
         test("allows unbranded device-flow key creation without caller attribution", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const db = drizzle(env.DB, { schema });
             const userCode = crypto
@@ -691,17 +616,17 @@ describe("API Key Management", () => {
             });
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "unbranded-device-auth-key",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             deviceUserCode: userCode,
                             createdForUserId: "victim-user",
                             createdForApp: "spoofed-device-app",
@@ -720,22 +645,20 @@ describe("API Key Management", () => {
         });
 
         test("rejects forged device-flow attribution when client_id does not match the device code", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "victim-device-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://device.example/callback"],
-                        },
+                        redirectUris: ["https://device.example/callback"],
                     }),
                 },
             );
@@ -758,17 +681,17 @@ describe("API Key Management", () => {
             });
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "forged-device-auth-key",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             deviceUserCode: userCode,
                             requestedClientId: appKey.key,
                             createdForApp: "victim-device-app",
@@ -783,15 +706,15 @@ describe("API Key Management", () => {
 
     describe("GET /api/app-lookup", () => {
         test("blocks redirect lookup when publishable key has no redirectUris", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "generic-publishable",
@@ -821,22 +744,20 @@ describe("API Key Management", () => {
         });
 
         test("ignores query string differences but rejects path mismatches", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "query-bound-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://app.example/callback"],
-                        },
+                        redirectUris: ["https://app.example/callback"],
                     }),
                 },
             );
@@ -870,23 +791,21 @@ describe("API Key Management", () => {
         });
 
         test("createApiKey enforces same flexible redirect_uri rules", async ({
-            sessionToken,
+            accountToken,
         }) => {
             // Mint a publishable key with one registered URI.
             const appResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "minting-app",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: ["https://mint.example/cb"],
-                        },
+                        redirectUris: ["https://mint.example/cb"],
                     }),
                 },
             );
@@ -896,17 +815,17 @@ describe("API Key Management", () => {
             // sk_ minting must accept query + trailing slash on the redirect
             // (matches what /authorize forwards from a browser address bar).
             const mint = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "minted-sk",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri:
                                 "https://mint.example/cb/?prompt=hi&model=x",
@@ -918,17 +837,17 @@ describe("API Key Management", () => {
 
             // But mismatching host still fails.
             const evil = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "evil-sk",
                         type: "secret",
-                        metadata: {
+                        consent: {
                             requestedClientId: appKey.key,
                             redirectUri: "https://attacker.example/cb",
                         },
@@ -939,9 +858,9 @@ describe("API Key Management", () => {
         });
     });
 
-    describe("GET /api/api-keys", () => {
+    describe("GET /api/account/keys", () => {
         test("should list all API keys for authenticated user", async ({
-            sessionToken,
+            accountToken,
             apiKey,
             pubApiKey,
             restrictedApiKey,
@@ -952,10 +871,10 @@ describe("API Key Management", () => {
             expect(restrictedApiKey).toBeTruthy();
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -980,53 +899,30 @@ describe("API Key Management", () => {
             );
             expect(restrictedKey).toBeTruthy();
             expect(restrictedKey.permissions).toEqual({
-                models: [
-                    "openai/gpt-5-nano",
-                    "black-forest-labs/flux.1-schnell",
-                ],
+                models: ["text", "image"],
             });
         });
 
-        test("should disable caching for authenticated key lists", async ({
-            sessionToken,
+        test("widens model IDs and aliases to categories and rejects unknown values without changing permissions", async ({
+            accountToken,
         }) => {
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
-                {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-
-            expect(response.status).toBe(200);
-            expect(response.headers.get("cache-control")).toBe(
-                "private, no-store, max-age=0",
-            );
-            expect(response.headers.get("pragma")).toBe("no-cache");
-        });
-
-        test("rejects aliases and unknown IDs on key create and update without changing permissions", async ({
-            sessionToken,
-        }) => {
-            const canonical = "black-forest-labs/flux.1-schnell";
-            const created = await createApiKeyViaApi(sessionToken, {
-                name: "canonical-only-permissions",
-                allowedModels: [canonical],
+            const created = await createApiKeyViaApi(accountToken, {
+                name: "category-permissions",
+                allowedModels: ["flux", "nanobanana2"],
             });
             const headers = {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             };
-            for (const model of ["flux", "nanobanana2", "retired-model"]) {
-                for (const path of [
-                    "/api/api-keys",
-                    `/api/api-keys/${created.id}/update`,
+            for (const model of ["retired-model", "community/nobody/missing"]) {
+                for (const [method, path] of [
+                    ["POST", "/api/account/keys"],
+                    ["PATCH", `/api/account/keys/${created.id}`],
                 ]) {
                     const response = await SELF.fetch(
                         `http://localhost:3000${path}`,
                         {
-                            method: "POST",
+                            method,
                             headers,
                             body: JSON.stringify({
                                 name: "invalid-model",
@@ -1037,7 +933,7 @@ describe("API Key Management", () => {
                     );
                     expect(response.status).toBe(400);
                     expect(JSON.stringify(await response.json())).toContain(
-                        "not a canonical model ID",
+                        "is not a model category",
                     );
                 }
             }
@@ -1046,167 +942,120 @@ describe("API Key Management", () => {
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                canonical,
+                "image",
             ]);
         });
 
-        test("should include only private community models owned by the user", async ({
-            sessionToken,
+        test("widens community model IDs to their modality's category", async ({
+            accountToken,
         }) => {
-            const created = await createApiKeyViaApi(sessionToken, {
-                name: "key-with-private-community-models",
+            const created = await createApiKeyViaApi(accountToken, {
+                name: "key-with-community-model",
             });
             const db = drizzle(env.DB, { schema });
             const key = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
-            expect(key?.configId).toBe("default");
-            expect(key?.referenceId).toBeTruthy();
             const ownerUserId = key?.referenceId as string;
-
             await db
                 .update(schema.user)
                 .set({ githubUsername: "model-owner" })
                 .where(eq(schema.user.id, ownerUserId));
-            await db.insert(schema.user).values({
-                id: "other-model-owner-id",
-                name: "Other Model Owner",
-                email: "other-model-owner@example.com",
-                githubUsername: "other-owner",
-                createdAt: new Date(),
-                updatedAt: new Date(),
+            await db.insert(schema.communityEndpoint).values({
+                id: "owner-private-image-model",
+                ownerUserId,
+                name: "private-model",
+                title: "Owner private image model",
+                baseUrl: "https://owner.example.com/v1",
+                upstreamModel: "private-model",
+                payload: JSON.stringify({
+                    paidOnly: false,
+                    bearerTokenCiphertext: "encrypted-token",
+                    modality: "image",
+                    imagePricing: "request",
+                    inputModalities: ["text"],
+                    perUserRpm: null,
+                    fallbacks: [],
+                    prices: {},
+                }),
+                visibility: "private",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
             });
-            await db.insert(schema.communityEndpoint).values([
-                {
-                    id: "owner-private-model",
-                    ownerUserId,
-                    name: "private-model",
-                    title: "Owner private model",
-                    baseUrl: "https://owner.example.com/v1",
-                    upstreamModel: "private-model",
-                    payload: JSON.stringify({
-                        bearerTokenCiphertext: "encrypted-token",
-                        modality: "text",
-                        imagePricing: "request",
-                        inputModalities: ["text"],
-                        perUserRpm: null,
-                        fallbacks: [],
-                        prices: {},
-                    }),
-                    visibility: "private",
-                    promptTextPrice: 0,
-                    completionTextPrice: 0,
-                },
-                {
-                    id: "other-private-model",
-                    ownerUserId: "other-model-owner-id",
-                    name: "private-model",
-                    title: "Other private model",
-                    baseUrl: "https://other.example.com/v1",
-                    upstreamModel: "private-model",
-                    payload: JSON.stringify({
-                        bearerTokenCiphertext: "encrypted-token",
-                        modality: "text",
-                        imagePricing: "request",
-                        inputModalities: ["text"],
-                        perUserRpm: null,
-                        fallbacks: [],
-                        prices: {},
-                    }),
-                    visibility: "private",
-                    promptTextPrice: 0,
-                    completionTextPrice: 0,
-                },
-            ]);
 
             const headers = {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             };
-            const update = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
-                {
-                    method: "POST",
-                    headers,
-                    body: JSON.stringify({
-                        allowedModels: [
-                            communityModelId("model-owner", "private-model"),
-                            communityModelId("other-owner", "private-model"),
-                        ],
-                    }),
-                },
-            );
-            expect(update.status).toBe(200);
-            const aliasUpdate = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
-                {
-                    method: "POST",
-                    headers,
-                    body: JSON.stringify({
-                        allowedModels: [
-                            legacyCommunityModelId(
-                                "model-owner",
-                                "private-model",
-                            ),
-                        ],
-                    }),
-                },
-            );
-            expect(aliasUpdate.status).toBe(400);
+            for (const model of [
+                communityModelId("model-owner", "private-model"),
+                legacyCommunityModelId("model-owner", "private-model"),
+            ]) {
+                const update = await SELF.fetch(
+                    `http://localhost:3000/api/account/keys/${created.id}`,
+                    {
+                        method: "PATCH",
+                        headers,
+                        body: JSON.stringify({ allowedModels: [model] }),
+                    },
+                );
+                expect(update.status).toBe(200);
+            }
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
-                {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
+                "http://localhost:3000/api/account/keys",
+                { headers },
             );
-
             expect(response.status).toBe(200);
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((item) => item.id === created.id);
-            expect(listed?.permissions?.models).toEqual([
-                "community/model-owner/private-model",
-            ]);
+            expect(listed?.permissions?.models).toEqual(["image"]);
         });
 
         test("should require authentication", async () => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
             );
             expect(response.status).toBe(401);
         });
 
-        test("should not allow API key authentication", async ({ apiKey }) => {
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+        test("should allow API key authentication with account:keys", async ({
+            accountToken,
+        }) => {
+            const keysKey = await createApiKeyViaApi(accountToken, {
+                name: "keys-permission-list",
+                accountPermissions: ["keys"],
+            });
+            const allowed = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Authorization: `Bearer ${apiKey}`,
+                        Authorization: `Bearer ${keysKey.key}`,
                     },
                 },
             );
-            expect(response.status).toBe(401);
+            expect(allowed.status).toBe(200);
+            const listed = (await allowed.json()) as ApiKeyListResponse;
+            expect(listed.data.some((key) => key.id === keysKey.id)).toBe(true);
         });
     });
 
-    describe("POST /api/api-keys/:id/update", () => {
-        test("should update API key name", async ({ sessionToken }) => {
+    describe("PATCH /api/account/keys/:id", () => {
+        test("should update API key name", async ({ accountToken }) => {
             // Create a new key for this test
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "original-name",
             });
             const keyId = createdKey.id;
 
             // Update the name
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "updated-name",
@@ -1220,10 +1069,10 @@ describe("API Key Management", () => {
 
             // Verify the change persisted
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -1232,21 +1081,21 @@ describe("API Key Management", () => {
             expect(updatedKey.name).toBe("updated-name");
         });
 
-        test("should update API key permissions", async ({ sessionToken }) => {
+        test("should update API key permissions", async ({ accountToken }) => {
             // Create a new key
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "permissions-test",
             });
             const keyId = createdKey.id;
 
             // Update with model restrictions
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         allowedModels: [
@@ -1261,42 +1110,42 @@ describe("API Key Management", () => {
 
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
-            expect(result.permissions).toContain("models");
+            expect(result.permissions).toEqual({
+                models: ["image"],
+                account: ["profile", "usage"],
+            });
 
             // Verify permissions in list
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: [
-                    "black-forest-labs/flux.1-schnell",
-                    "google/gemini-3.1-flash-image",
-                ],
+                models: ["image"],
                 account: ["profile", "usage"],
             });
         });
 
         test("should reflect updated permissions immediately after update", async ({
-            sessionToken,
+            accountToken,
         }) => {
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "permissions-freshness-test",
             });
 
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/update`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         allowedModels: ["black-forest-labs/flux.1-schnell"],
@@ -1318,25 +1167,23 @@ describe("API Key Management", () => {
             const keyInfo = (await accountKeyResponse.json()) as {
                 permissions?: { models?: string[] };
             };
-            expect(keyInfo.permissions?.models).toEqual([
-                "black-forest-labs/flux.1-schnell",
-            ]);
+            expect(keyInfo.permissions?.models).toEqual(["image"]);
         });
 
         test("should reflect updated metadata immediately after update", async ({
-            sessionToken,
+            accountToken,
         }) => {
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "metadata-freshness-test",
             });
 
             const metadataResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         redirectUris: ["https://freshness.example/callback"],
@@ -1350,10 +1197,10 @@ describe("API Key Management", () => {
             ]);
 
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -1366,20 +1213,20 @@ describe("API Key Management", () => {
         });
 
         test("rejects unsafe redirectUris during metadata updates", async ({
-            sessionToken,
+            accountToken,
         }) => {
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "metadata-unsafe-redirect-test",
                 type: "publishable",
             });
 
             const metadataResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         redirectUris: [
@@ -1393,24 +1240,22 @@ describe("API Key Management", () => {
         });
 
         test("allows enabling rewards from app key metadata", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const createResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "metadata-reward-toggle",
                         type: "publishable",
-                        metadata: {
-                            redirectUris: [
-                                "https://metadata-reward.example/callback",
-                            ],
-                        },
+                        redirectUris: [
+                            "https://metadata-reward.example/callback",
+                        ],
                     }),
                 },
             );
@@ -1418,12 +1263,12 @@ describe("API Key Management", () => {
             const createdKey = await createResponse.json();
 
             const metadataResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdKey.id}/metadata`,
+                `http://localhost:3000/api/account/keys/${createdKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({ earningsEnabled: true }),
                 },
@@ -1434,29 +1279,27 @@ describe("API Key Management", () => {
             expect(updated.metadata.earningsEnabled).toBe(true);
         });
 
-        test("should update pollen budget", async ({ sessionToken }) => {
+        test("should update pollen budget", async ({ accountToken }) => {
             // Create a new key
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "budget-test",
             });
             const keyId = createdKey.id;
             await drizzle(env.DB)
                 .update(schema.apikey)
                 .set({
-                    permissions: JSON.stringify({
-                        models: ["flux", "retired-model"],
-                    }),
+                    permissions: JSON.stringify({ models: ["image"] }),
                 })
                 .where(eq(schema.apikey.id, keyId));
 
             // Set budget to 50
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         pollenBudget: 50,
@@ -1467,16 +1310,14 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
-            expect(JSON.parse(result.permissions).models).toEqual([
-                "black-forest-labs/flux.1-schnell",
-            ]);
+            expect(result.permissions.models).toEqual(["image"]);
 
             // Verify in list
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -1485,9 +1326,9 @@ describe("API Key Management", () => {
             expect(updatedKey.pollenBalance).toBe(50);
         });
 
-        test("should update expiry date", async ({ sessionToken }) => {
+        test("should update expiry date", async ({ accountToken }) => {
             // Create a new key
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "expiry-test",
             });
             const keyId = createdKey.id;
@@ -1497,12 +1338,12 @@ describe("API Key Management", () => {
             futureDate.setDate(futureDate.getDate() + 30);
 
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         expiresAt: futureDate.toISOString(),
@@ -1514,10 +1355,10 @@ describe("API Key Management", () => {
 
             // Verify in list
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -1532,22 +1373,22 @@ describe("API Key Management", () => {
         });
 
         test("should clear permissions when set to null", async ({
-            sessionToken,
+            accountToken,
         }) => {
             // Create a key with permissions
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "clear-permissions-test",
             });
             const keyId = createdKey.id;
 
             // First set some permissions
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         allowedModels: ["black-forest-labs/flux.1-schnell"],
@@ -1558,12 +1399,12 @@ describe("API Key Management", () => {
 
             // Then clear them
             const clearResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         allowedModels: null,
@@ -1576,10 +1417,10 @@ describe("API Key Management", () => {
 
             // Verify permissions are cleared
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -1589,15 +1430,15 @@ describe("API Key Management", () => {
         });
 
         test("should return 404 for non-existent key", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys/non-existent-id/update",
+                "http://localhost:3000/api/account/keys/non-existent-id",
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "new-name",
@@ -1609,20 +1450,20 @@ describe("API Key Management", () => {
         });
 
         test("should not allow updating another user's key", async ({
-            sessionToken,
+            accountToken,
         }) => {
             // This test would need a second user session to be comprehensive
             // For now, we'll just verify authentication is required
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "ownership-test",
             });
             const keyId = createdKey.id;
 
             // Try updating without authentication
             const response = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                     },
@@ -1636,22 +1477,22 @@ describe("API Key Management", () => {
         });
 
         test("should handle multiple updates in sequence", async ({
-            sessionToken,
+            accountToken,
         }) => {
             // Create a key
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "multi-update-test",
             });
             const keyId = createdKey.id;
 
             // Update 1: Set name and budget
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "step-1",
@@ -1662,12 +1503,12 @@ describe("API Key Management", () => {
 
             // Update 2: Add permissions
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         allowedModels: ["openai/gpt-5.4-nano"],
@@ -1680,12 +1521,12 @@ describe("API Key Management", () => {
             expiryDate.setDate(expiryDate.getDate() + 7);
 
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "final-name",
@@ -1696,10 +1537,10 @@ describe("API Key Management", () => {
 
             // Verify all changes persisted
             const listResponse = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -1708,17 +1549,15 @@ describe("API Key Management", () => {
 
             expect(finalKey.name).toBe("final-name");
             expect(finalKey.pollenBalance).toBe(25);
-            expect(finalKey.permissions.models).toEqual([
-                "openai/gpt-5.4-nano",
-            ]);
+            expect(finalKey.permissions.models).toEqual(["text"]);
             expect(finalKey.expiresAt).toBeTruthy();
         });
     });
 
     describe("Permission enforcement", () => {
-        test("should reject expired keys", async ({ sessionToken }) => {
+        test("should reject expired keys", async ({ accountToken }) => {
             // Create a key that expires immediately
-            const createdKey = await createApiKeyViaApi(sessionToken, {
+            const createdKey = await createApiKeyViaApi(accountToken, {
                 name: "expired-key",
             });
             const keyId = createdKey.id;
@@ -1729,12 +1568,12 @@ describe("API Key Management", () => {
             pastDate.setDate(pastDate.getDate() - 1);
 
             const updateResp = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${keyId}/update`,
+                `http://localhost:3000/api/account/keys/${keyId}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         expiresAt: pastDate.toISOString(),
@@ -1746,10 +1585,10 @@ describe("API Key Management", () => {
 
             // Verify the key was updated with expiry
             const listResp = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
+                "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );

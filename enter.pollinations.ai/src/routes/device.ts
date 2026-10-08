@@ -1,3 +1,4 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -9,7 +10,6 @@ import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
-import { hasAccountPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
     Bindings: Env["Bindings"];
@@ -182,6 +182,7 @@ export const deviceRoutes = new Hono<Env>()
                     `device-key:${device.deviceCode}`,
                     JSON.stringify({
                         key: body.apiKey,
+                        keyId: body.apiKeyId,
                         expiresIn: body.expiresIn ?? null,
                         // Granted scope — may be narrower than what the row
                         // stored at issuance ("" = narrowed to zero)
@@ -314,6 +315,7 @@ export async function exchangeDeviceCode(
                 "json",
             )) as {
                 key: string;
+                keyId?: string;
                 expiresIn: number | null;
                 scope?: string | null;
             } | null;
@@ -332,6 +334,7 @@ export async function exchangeDeviceCode(
             captureFromRequest(c, "device_token_issued", device.userId ?? "", {
                 flow_id: device.id,
                 client_id: device.clientId ?? "",
+                key_id: stored.keyId ?? "",
             });
 
             return c.json({

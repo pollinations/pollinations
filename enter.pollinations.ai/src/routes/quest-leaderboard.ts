@@ -1,16 +1,18 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { and, eq, isNotNull, like, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
+import { TOP_UP_QUEST_IDS } from "../services/quests/groups/account-setup.ts";
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const LEADERBOARD_CACHE_TTL = 60;
 const LEADERBOARD_LIMIT = 50;
+const EXCLUDED_GITHUB_LOGIN = "voodoohop";
 
 const leaderboardEntrySchema = z.object({
     githubLogin: z.string(),
@@ -99,7 +101,7 @@ async function buildQuestLeaderboard(
 
     const contributors = rows
         .flatMap((row) =>
-            row.githubLogin
+            row.githubLogin && row.githubLogin !== EXCLUDED_GITHUB_LOGIN
                 ? [
                       {
                           githubLogin: row.githubLogin,
@@ -128,5 +130,139 @@ async function buildQuestLeaderboard(
                 contributors.reduce((sum, entry) => sum + entry.totalPollen, 0),
             ),
         },
+    };
+}
+
+const STANDINGS_PODIUM = 3;
+const STANDINGS_ABOVE = 2;
+const STANDINGS_BELOW = 1;
+
+export const questStandingRowSchema = z.object({
+    rank: z.number().int().positive(),
+    githubLogin: z.string(),
+    totalPollen: z.number().nonnegative(),
+    supporter: z.boolean(),
+});
+
+export const questStandingsResponseSchema = z.object({
+    month: z.string(),
+    endsAt: z.string(),
+    participants: z.number().int().nonnegative(),
+    rows: z.array(questStandingRowSchema),
+    you: z
+        .object({
+            githubLogin: z.string(),
+            rank: z.number().int().positive().nullable(),
+            totalPollen: z.number().nonnegative(),
+        })
+        .nullable(),
+});
+
+export type QuestStandingsResponse = z.infer<
+    typeof questStandingsResponseSchema
+>;
+
+/**
+ * This calendar month's (UTC) Quest Pollen race, cut down to what one viewer
+ * needs: the podium plus the rows just above and below them. Every quest
+ * reward counts. Supporters are earners of a top-up quest at any time.
+ */
+export async function buildQuestStandings(
+    env: CloudflareBindings,
+    viewerGithubLogin: string | null,
+    now = new Date(),
+): Promise<QuestStandingsResponse> {
+    const monthStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
+    const monthEnd = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+    );
+    const db = drizzle(env.DB);
+    const githubLogin = sql<string>`lower(${schema.user.githubUsername})`;
+    const rows = await db
+        .select({
+            githubLogin,
+            totalPollen: sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(
+                Number,
+            ),
+        })
+        .from(rewardsTable)
+        .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
+        .where(
+            and(
+                gte(rewardsTable.earnedAt, monthStart),
+                isNotNull(schema.user.githubUsername),
+            ),
+        )
+        .groupBy(githubLogin);
+
+    const ranking = rows
+        .map((row) => ({
+            githubLogin: row.githubLogin,
+            totalPollen: roundPollenLedgerAmount(row.totalPollen),
+        }))
+        .filter(
+            (row) =>
+                row.totalPollen > 0 &&
+                row.githubLogin !== EXCLUDED_GITHUB_LOGIN,
+        )
+        .sort(
+            (a, b) =>
+                b.totalPollen - a.totalPollen ||
+                a.githubLogin.localeCompare(b.githubLogin),
+        );
+
+    const viewer = viewerGithubLogin?.toLowerCase() ?? null;
+    const viewerIndex = ranking.findIndex((row) => row.githubLogin === viewer);
+    const shown = ranking
+        .map((row, index) => ({ ...row, rank: index + 1 }))
+        .filter(
+            ({ rank }) =>
+                rank <= STANDINGS_PODIUM ||
+                (viewerIndex >= 0 &&
+                    rank >= viewerIndex + 1 - STANDINGS_ABOVE &&
+                    rank <= viewerIndex + 1 + STANDINGS_BELOW),
+        );
+
+    const supporters = new Set(
+        shown.length === 0
+            ? []
+            : (
+                  await db
+                      .selectDistinct({ githubLogin })
+                      .from(rewardsTable)
+                      .innerJoin(
+                          schema.user,
+                          eq(rewardsTable.userId, schema.user.id),
+                      )
+                      .where(
+                          and(
+                              inArray(rewardsTable.questId, TOP_UP_QUEST_IDS),
+                              inArray(
+                                  githubLogin,
+                                  shown.map((row) => row.githubLogin),
+                              ),
+                          ),
+                      )
+              ).map((row) => row.githubLogin),
+    );
+
+    return {
+        month: monthStart.toISOString().slice(0, 7),
+        endsAt: monthEnd.toISOString(),
+        participants: ranking.length,
+        rows: shown.map((row) => ({
+            ...row,
+            supporter: supporters.has(row.githubLogin),
+        })),
+        you:
+            viewer && viewer !== EXCLUDED_GITHUB_LOGIN
+                ? {
+                      githubLogin: viewer,
+                      rank: viewerIndex >= 0 ? viewerIndex + 1 : null,
+                      totalPollen: ranking[viewerIndex]?.totalPollen ?? 0,
+                  }
+                : null,
     };
 }

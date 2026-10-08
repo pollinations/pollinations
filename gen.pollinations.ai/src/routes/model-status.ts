@@ -1,4 +1,5 @@
 import type { ModelHealthRow } from "@shared/model-health.ts";
+import { getModelStats } from "@shared/utils/model-stats.ts";
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import type { Env } from "@/env.ts";
@@ -32,7 +33,7 @@ export function fetchCatalogHealthRows(): Promise<ModelHealthRow[]> {
 // Official models and agents retain their existing 24-hour health display.
 export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
     const url = new URL(MODEL_ROUTE_HEALTH_URL);
-    url.searchParams.set("minutes", "1440");
+    url.pathname = "/v0/pipes/model_health_24h.json";
     return fetchHealthRows(url);
 }
 
@@ -49,9 +50,21 @@ export const modelStatusRoutes = new Hono<Env>().get(
             "",
             "Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.",
             "",
-            "Cached for 60 seconds per window.",
+            "Cached for 60 seconds per window and traffic scope.",
         ].join("\n"),
         parameters: [
+            {
+                name: "traffic",
+                in: "query",
+                required: false,
+                description:
+                    "Traffic population: all requests (default), or regular usage excluding legacy APIs and Pollinations-internal traffic.",
+                schema: {
+                    type: "string",
+                    enum: ["all", "regular"],
+                    default: "all",
+                },
+            },
             {
                 name: "minutes",
                 in: "query",
@@ -75,6 +88,10 @@ export const modelStatusRoutes = new Hono<Env>().get(
     }),
     async (c) => {
         const url = new URL(MODEL_ROUTE_HEALTH_URL);
+        const traffic = c.req.query("traffic") ?? "all";
+        if (traffic !== "all" && traffic !== "regular")
+            return c.json({ error: "traffic must be all or regular" }, 400);
+        url.searchParams.set("traffic", traffic);
         const minutes = c.req.query("minutes");
         if (minutes !== undefined) url.searchParams.set("minutes", minutes);
         const upstream = await fetch(url, {
@@ -87,5 +104,27 @@ export const modelStatusRoutes = new Hono<Env>().get(
                 "Cache-Control": "public, max-age=60",
             },
         });
+    },
+);
+
+export const modelStatsRoutes = new Hono<Env>().get(
+    "/models/stats",
+    describeRoute({
+        tags: ["📊 Monitor"],
+        summary: "Model Usage Stats",
+        description: [
+            "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",
+            "",
+            "`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.",
+            "",
+            "Refreshed hourly.",
+        ].join("\n"),
+        responses: {
+            200: { description: "Raw Tinybird pipe rows" },
+        },
+    }),
+    async (c) => {
+        c.header("Cache-Control", "public, max-age=300");
+        return c.json(await getModelStats(c.env.KV, c.var.log));
     },
 );

@@ -10,9 +10,12 @@ type MediaStorageEnv = {
 };
 
 export type UnlistedMediaUpload = {
+    id?: string;
     contentType: string;
     fileName?: string;
     size: number;
+    uploadedBy?: string;
+    keyType?: string;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -35,23 +38,37 @@ export async function uploadUnlistedMedia(
         throw new Error(`Media exceeds ${maxSize} bytes`);
     }
 
-    const id = crypto.randomUUID();
+    if (input.id !== undefined && !/^[a-f0-9]{64}$/.test(input.id)) {
+        throw new Error("Invalid media ID");
+    }
+    const id = input.id ?? crypto.randomUUID();
     const contentType = input.contentType || "application/octet-stream";
+    if (input.id && (await env.MEDIA_BUCKET.head(id))) {
+        return {
+            id,
+            url: `https://media.pollinations.ai/${id}`,
+            contentType,
+            size: input.size,
+        };
+    }
     const upload = new FixedLengthStream(input.size);
-    body.pipeTo(upload.writable).catch(() => undefined);
+    const pipe = body.pipeTo(upload.writable);
     try {
-        await env.MEDIA_BUCKET.put(id, upload.readable, {
-            httpMetadata: {
-                contentType,
-                cacheControl: IMMUTABLE_CACHE_CONTROL,
-            },
-            customMetadata: {
-                uploadedAt: new Date().toISOString(),
-                originalName: input.fileName?.slice(0, 253) || "",
-                uploadedBy: "pollinations-service",
-                keyType: "service",
-            },
-        });
+        await Promise.all([
+            env.MEDIA_BUCKET.put(id, upload.readable, {
+                httpMetadata: {
+                    contentType,
+                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                },
+                customMetadata: {
+                    uploadedAt: new Date().toISOString(),
+                    originalName: input.fileName?.slice(0, 253) || "",
+                    uploadedBy: input.uploadedBy || "pollinations-service",
+                    keyType: input.keyType || "service",
+                },
+            }),
+            pipe,
+        ]);
     } catch (error) {
         throw new Error(
             `R2 upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,

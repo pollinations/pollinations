@@ -1,54 +1,27 @@
-import {
-    DiscordIcon,
-    GithubIcon,
-    InstagramIcon,
-    LinkedinIcon,
-    RedditIcon,
-    XIcon,
-} from "../../ui/assets/SocialIcons";
-
 export const SOCIAL_LINKS = {
     discord: {
         label: "Discord",
-        icon: DiscordIcon,
         url: "https://discord.gg/pollinations-ai-885844321461485618",
-        width: "32px",
-        height: "32px",
     },
     github: {
         label: "GitHub",
-        icon: GithubIcon,
         url: "https://www.github.com/pollinations/pollinations",
-        width: "25px",
-        height: "25px",
     },
     linkedin: {
         label: "LinkedIn",
-        icon: LinkedinIcon,
         url: "https://www.linkedin.com/company/pollinations-ai",
-        width: "22px",
-        height: "22px",
     },
     instagram: {
         label: "Instagram",
-        icon: InstagramIcon,
         url: "https://instagram.com/pollinations_ai",
-        width: "22px",
-        height: "22px",
     },
     x: {
         label: "X",
-        icon: XIcon,
         url: "https://twitter.com/pollinations_ai",
-        width: "20px",
-        height: "20px",
     },
     reddit: {
         label: "Reddit",
-        icon: RedditIcon,
         url: "https://www.reddit.com/r/pollinations_ai/",
-        width: "24px",
-        height: "24px",
     },
 };
 
@@ -78,8 +51,6 @@ export const LINKS = {
     docsImage: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image",
     docsAudio: "https://gen.pollinations.ai/docs#tag/-audio",
     docsAuth: "https://gen.pollinations.ai/docs#tag/-authentication",
-    highlightsSource:
-        "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md",
     polliCli:
         "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

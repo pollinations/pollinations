@@ -51,6 +51,10 @@ const PRICE_UNIT_SUFFIX: Record<
 > = {
     second: "/sec",
     request: "/gen",
+    megapixel: "/MP",
+    character: "/K chars",
+    byte: "/K bytes",
+    image: "/image",
 };
 
 const PRICE_LINE_LABELS: Record<PriceKind, Record<PriceDirection, string>> = {
@@ -118,7 +122,7 @@ export const PriceBadge: FC<PriceBadgeConfig> = ({ price, unit, subKinds }) => {
                 })}
             </span>
             <span>
-                {displayedPrice.value}
+                ${displayedPrice.value}
                 {unit === "token"
                     ? `/${displayedPrice.tokenScale}`
                     : PRICE_UNIT_SUFFIX[unit]}
@@ -474,7 +478,7 @@ export const UsagePriceRows: FC<{
                     }
                 />
                 <LedgerPriceValue
-                    value={formatDisplayPrice(adjustment.price).value}
+                    value={`$${formatDisplayPrice(adjustment.price).value}`}
                 />
                 {adjustment.suffix ? (
                     <Tooltip
@@ -632,12 +636,10 @@ export const ModelPricingLedger: FC<{
         Number.isFinite(Number(cacheWritePrice.price)) &&
         Number.isFinite(Number(cacheStorageAdjustment.price));
     const combinedCacheWriteValue = canCombineCacheWrite
-        ? formatDisplayPrice(
-              String(
-                  Number(cacheWritePrice.price) +
-                      Number(cacheStorageAdjustment?.price),
-              ),
-          ).value
+        ? String(
+              Number(cacheWritePrice.price) +
+                  Number(cacheStorageAdjustment?.price),
+          )
         : undefined;
     const standaloneTokenAdjustments = tokenBasedAdjustments.filter(
         (adjustment) =>
@@ -646,17 +648,16 @@ export const ModelPricingLedger: FC<{
 
     const rateRows = pricing.prices.flatMap((price) => {
         const displayedPrice = formatDisplayPrice(
-            price.price,
+            price === cacheWritePrice && combinedCacheWriteValue
+                ? combinedCacheWriteValue
+                : price.price,
             price.unit === "token",
         );
         const rows = [
             {
                 key: `${price.direction}-${price.kind}-${price.unit}`,
                 label: PRICE_LINE_LABELS[price.kind][price.direction],
-                value:
-                    price === cacheWritePrice && combinedCacheWriteValue
-                        ? combinedCacheWriteValue
-                        : displayedPrice.value,
+                value: displayedPrice.value,
                 unit:
                     price.unit === "token"
                         ? `/${displayedPrice.tokenScale} tokens`
@@ -707,7 +708,7 @@ export const ModelPricingLedger: FC<{
                 >
                     {align === "right" && <span aria-hidden="true" />}
                     <LedgerLabel Icon={PriceIcon} label={row.label} />
-                    <LedgerPriceValue value={row.value} />
+                    <LedgerPriceValue value={`$${row.value}`} />
                     <span
                         className="min-w-0 cursor-help truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
                         title={row.unit}
@@ -742,7 +743,7 @@ export const ModelPricingLedger: FC<{
                     <LedgerLabel Icon={TokensIcon} label="Requests" />
                     {requestEstimate}
                     <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
-                        /pollen
+                        /$1
                     </span>
                     <span
                         aria-hidden="true"

@@ -74,6 +74,14 @@ export type UsageType =
 // Usage represents raw usage metrics (tokens, seconds, etc.)
 export type Usage = { [K in UsageType]?: number };
 
+export const PRICE_UNITS = ["megapixel", "token", "byte"] as const;
+
+// Billed unit for a usage field whose name or category default misdescribes
+// it. `quantity` usage units make one billed unit. Display-only.
+export type PriceUnits = Partial<
+    Record<UsageType, { unit: (typeof PRICE_UNITS)[number]; quantity?: number }>
+>;
+
 // USD-equivalent amounts per usage type, plus what Pollinations pays the provider.
 export type UsageCost = Usage & {
     totalCost: number;
@@ -133,6 +141,8 @@ export type BillingAdjustmentRule = BillingRateDefinition & {
 
 export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
+    /** Complete provider charge, including tools, when token details cannot reproduce it. */
+    resolveTotalCost?: (output: unknown) => number | undefined;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
@@ -212,24 +222,29 @@ export type ModelDefinition = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    paidOnly?: boolean; // Models that require paid balance only
+    // True when callers may only spend Paid Pollen; false when Quest Pollen
+    // also works. Required on every model — there is no implicit default.
+    paidOnly: boolean;
     alpha?: boolean; // Experimental models with potential instability
     // Flat per-generation pricing (one fee per request, independent of output
     // size/length). Lets the pricing UI show a "/gen" badge instead of guessing
     // a per-second rate from a per-token cost. Used to disambiguate flat-fee
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
+    priceUnits?: PriceUnits;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
     /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
     fallbackOnly?: boolean;
+    /** Change when the same request starts producing different media, so old cached results are not served. */
+    cacheVersion?: string;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
-    minDuration?: number; // Video-only: minimum accepted duration in seconds
-    maxDuration?: number; // Video-only: maximum accepted duration in seconds
+    minDuration?: number; // Video and audio: minimum accepted duration in seconds
+    maxDuration?: number; // Video and audio: maximum accepted duration in seconds
     defaultDuration?: number; // Video-only: duration when caller omits the param
-    allowedDurations?: number[]; // Video-only: explicit set of valid durations (overrides min/max range)
+    allowedDurations?: number[]; // Video and audio: explicit set of valid durations (overrides min/max range)
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
@@ -469,9 +484,19 @@ function rateAgainst(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
+    // Opt-in provider totals include search; adjustments remain an informational breakdown.
+    const reportedCost = svc.billing?.resolveTotalCost?.(output);
+
     return {
-        cost,
-        price,
+        cost: reportedCost === undefined ? cost : { totalCost: reportedCost },
+        price:
+            reportedCost === undefined
+                ? price
+                : {
+                      totalPrice: roundPollenLedgerAmount(
+                          reportedCost * svc.priceMultiplier,
+                      ),
+                  },
         adjustments,
         priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
         costVariant,

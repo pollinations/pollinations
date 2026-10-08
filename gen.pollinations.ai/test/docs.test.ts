@@ -124,14 +124,8 @@ describe("docs routes", () => {
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
                 },
-                "/api/quests/check": {
-                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
-                },
-                "/api/quests/rewards": {
-                    get: { tags: ["✨ Quests"], security: [{ session: [] }] },
-                },
-                "/api/quests/rewards/{rewardId}/claim": {
-                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                "/api/account/quests/rewards": {
+                    get: { tags: ["👤 Account"] },
                 },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
@@ -197,6 +191,7 @@ describe("docs routes", () => {
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
         expect(schema.paths["/account/quests"]).toBeDefined();
+        expect(schema.paths["/account/quests/rewards"]).toBeDefined();
         expect(schema.paths["/account/my-models"]).toBeDefined();
         expect(schema.paths["/account/my-models/{id}/update"]).toBeDefined();
         expect(schema.paths["/account/agents"]).toBeDefined();
@@ -205,19 +200,10 @@ describe("docs routes", () => {
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/account/quests"]).toBeUndefined();
+        expect(schema.paths["/api/account/quests/rewards"]).toBeUndefined();
         expect(schema.paths["/api/account/my-models"]).toBeUndefined();
         expect(schema.paths["/api/account/agents"]).toBeUndefined();
         expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
-        expect(schema.paths["/quests/check"]).toBeUndefined();
-        expect(schema.paths["/quests/rewards"]).toBeUndefined();
-        expect(
-            schema.paths["/quests/rewards/{rewardId}/claim"],
-        ).toBeUndefined();
-        expect(schema.paths["/api/quests/check"]).toBeUndefined();
-        expect(schema.paths["/api/quests/rewards"]).toBeUndefined();
-        expect(
-            schema.paths["/api/quests/rewards/{rewardId}/claim"],
-        ).toBeUndefined();
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
@@ -568,7 +554,7 @@ describe("docs routes", () => {
         expect(mcpBody).toContain("### Pollinations MCP");
         expect(mcpBody).toContain("### FFmpeg MCP");
         expect(mcpBody).toContain("### Exa Search MCP");
-        expect(mcpBody).toContain("### Connected Apps MCP");
+        expect(mcpBody).toContain("### Connectors MCP");
         expect(mcpBody).toContain("### Computer MCP");
         expect(mcpBody).toContain("https://enter.pollinations.ai/my-models");
         expect(mcpBody).not.toContain("## Other built-in MCPs");

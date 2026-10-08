@@ -14,6 +14,7 @@ import {
 import { parseMetadata } from "./api-key-metadata.ts";
 import { isUserBanned } from "./ban.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
+import { SESSION_TOKEN_PREFIX, verifySessionToken } from "./session-token.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
@@ -25,6 +26,8 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    /** Charges never fall through to the owner's paid balance. */
+    questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
@@ -35,7 +38,8 @@ export interface AuthenticatedApiKey {
 
 export interface ApiKeyAuthResult {
     user?: AuthUser;
-    apiKey: AuthenticatedApiKey;
+    /** Absent for a session token: the account owner, with no key restrictions. */
+    apiKey?: AuthenticatedApiKey;
     rawApiKey: string;
     agentRun?: AgentRunClaims;
 }
@@ -165,7 +169,7 @@ export function createApiKeyPlugin() {
 
 export function createApiKeyAuth(
     env: ApiKeyAuthBindings,
-    ctx?: ExecutionContext,
+    ctx?: Pick<ExecutionContext, "waitUntil">,
 ) {
     const db = drizzle(env.DB);
     return betterAuth({
@@ -193,11 +197,18 @@ export function extractApiKey(request: Request): string | null {
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
+    // E2B's SDKs send the key in X-API-KEY.
+    const headerKey = request.headers.get("x-api-key");
+    if (headerKey) return headerKey;
+
     // Query keys end up in access logs, referrers and browser history. Their
-    // owner can rotate them; an agent run token is handed to a third party
-    // mid-run and cannot be, so it is Bearer-only.
+    // owner can rotate them; agent run and session tokens cannot be revoked,
+    // so they are Bearer-only.
     const queryKey = new URL(request.url).searchParams.get("key");
-    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ? null : queryKey;
+    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ||
+        queryKey?.startsWith(SESSION_TOKEN_PREFIX)
+        ? null
+        : queryKey;
 }
 
 export function assertNotBanned(user: {
@@ -215,13 +226,16 @@ export async function authenticateApiKeyRequest(opts: {
     request: Request;
     env: ApiKeyAuthBindings;
     client?: VerifyApiKeyClient;
-    ctx?: ExecutionContext;
+    ctx?: Pick<ExecutionContext, "waitUntil">;
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
 
     if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
         return authenticateAgentRunToken(rawApiKey, opts.env);
+    }
+    if (rawApiKey.startsWith(SESSION_TOKEN_PREFIX)) {
+        return authenticateSessionToken(rawApiKey, opts.env);
     }
 
     const client: VerifyApiKeyClient =
@@ -263,19 +277,34 @@ async function authenticateAgentRunToken(
     });
     if (!parent) return null;
 
-    // The token inherits the parent's model access but never its account scope:
-    // it is a generation credential held by a third party, so it must not be
-    // able to manage the owner's keys, endpoints or account.
-    const models = parent.apiKey.permissions?.models;
+    // The token carries the parent key's permissions unchanged; the owner
+    // limits what an agent can do by limiting the key it is called with.
+    return { ...parent, agentRun: claims };
+}
 
-    return {
-        ...parent,
-        apiKey: {
-            ...parent.apiKey,
-            permissions: models ? { models } : undefined,
-        },
-        agentRun: claims,
-    };
+async function authenticateSessionToken(
+    rawToken: string,
+    env: ApiKeyAuthBindings,
+): Promise<ApiKeyAuthResult | null> {
+    if (!env.BETTER_AUTH_SECRET) return null;
+
+    let userId: string;
+    try {
+        userId = await verifySessionToken(rawToken, env.BETTER_AUTH_SECRET);
+    } catch {
+        return null;
+    }
+
+    const user = await drizzle(env.DB)
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, userId))
+        .get();
+    if (!user) return null;
+
+    assertNotBanned(user);
+    assertStagingAccess(env, user);
+    return { user, rawApiKey: rawToken };
 }
 
 /**
@@ -287,7 +316,7 @@ async function loadActiveApiKeyAuthResult(opts: {
     apiKeyId: string;
     rawApiKey: string;
     env: ApiKeyAuthBindings;
-}): Promise<ApiKeyAuthResult | null> {
+}): Promise<(ApiKeyAuthResult & { apiKey: AuthenticatedApiKey }) | null> {
     const db = drizzle(opts.env.DB, { schema });
     const byopClientKey = alias(schema.apikey, "byop_client_key");
     const byopOwner = alias(schema.user, "byop_owner");
@@ -338,6 +367,7 @@ async function loadActiveApiKeyAuthResult(opts: {
             ),
             metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
             pollenBalance: row.apiKey.pollenBalance ?? null,
+            questPollenOnly: row.apiKey.questPollenOnly,
             byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
             byopClientName: row.byopClientName ?? null,
             byopClientUserId: row.byopClientUserId ?? null,

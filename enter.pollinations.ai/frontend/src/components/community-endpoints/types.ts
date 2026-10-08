@@ -83,13 +83,9 @@ type CommunityEndpointBase = {
     title: string;
     description: string | null;
     requiredSafetyFeatures: SafetyFeature[];
-    // private → owner-only, shown only to the owner, no owner-set price;
-    // public → globally listed + billed to callers.
+    // Private is owner-only and free at runtime; saved public pricing remains.
     visibility: CommunityEndpointVisibility;
     pending: PendingCommunityEndpointChange | null;
-    hidden: boolean;
-    hiddenReason: string | null;
-    hiddenAt: string | null;
 };
 
 export type ProxyCommunityEndpoint = CommunityEndpointBase &
@@ -138,13 +134,12 @@ export type EditableEndpoint =
 
 /**
  * The model id to offer as an Open WebUI test link, or null when Open WebUI
- * cannot chat with it: a hidden model is not served, and image, video,
+ * cannot chat with it: image, video,
  * transcription and embedding models never reach its chat picker.
  */
 export function openWebUiTestableModelId(
     endpoint: CommunityEndpoint,
 ): string | null {
-    if (endpoint.hidden) return null;
     if (endpoint.type === "proxy" && endpoint.modality !== "text") return null;
     return endpoint.modelId;
 }
@@ -156,7 +151,7 @@ export type FallbackModelOption = {
 
 /**
  * Public community models from the model catalog, in dialog option form. The
- * catalog already excludes private and hidden models, and the server
+ * catalog already excludes private models, and the server
  * re-validates modality and pricing on write.
  */
 export function publicCommunityFallbackOptions(
@@ -607,11 +602,9 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             modality,
         ),
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
-        paidOnly: form.visibility === "public" ? form.paidOnly : false,
+        paidOnly: form.paidOnly,
         requiredSafetyFeatures: form.requiredSafetyFeatures,
-        // Private models carry no public pricing, so their fallbacks cannot be
-        // validated against a quoted price.
-        fallbacks: form.visibility === "public" ? form.fallbacks : [],
+        fallbacks: form.fallbacks,
         ...formPricesToPayload(form, modality, imagePricing),
     };
 }

@@ -6,18 +6,44 @@ import {
     getRegistryModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
 
-// Azure image deployments with a small quota cap each user at the deployment's
-// own request limit instead of the 60 RPM floor.
+// Capacity-constrained models use a lower cap instead of the 60 RPM floor.
 const QUOTA_BOUND_MODELS = new Set([
-    "microsoft/mai-image-2.5-flash",
+    "inclusionai/ling-3.1-flash",
+    ...TEXT_SERVICES["inclusionai/ling-3.1-flash"].fallbacks,
+    "inferenceport-ai/lightning-image-turbo",
     "microsoft/mai-image-2.6-flash",
     "microsoft/mai-image-2.6",
 ]);
 
 describe("model rate limiting", () => {
+    it("caps Ling at 8 RPM and publishes its limit", async () => {
+        const definition = TEXT_SERVICES["inclusionai/ling-3.1-flash"];
+        expect(definition.perUserRpm).toBe(8);
+        for (const fallback of getModels().filter((id) =>
+            definition.fallbacks.includes(id),
+        )) {
+            expect(getRegistryModelDefinition(fallback).perUserRpm).toBe(8);
+        }
+        expect(
+            modelInfoFromDefinition("inclusionai/ling-3.1-flash", definition)
+                .per_user_rpm,
+        ).toBe(8);
+        const stub = env.COMMUNITY_MODEL_RATE_LIMITER.get(
+            env.COMMUNITY_MODEL_RATE_LIMITER.newUniqueId(),
+        ) as DurableObjectStub<CommunityModelRateLimiter>;
+        for (let i = 0; i < 8; i++) {
+            await expect(stub.check(definition.perUserRpm)).resolves.toEqual({
+                allowed: true,
+            });
+        }
+        await expect(stub.check(definition.perUserRpm)).resolves.toMatchObject({
+            allowed: false,
+        });
+    });
     it("limits the self-hosted image models", () => {
         expect(
             IMAGE_SERVICES["black-forest-labs/flux.1-schnell"].perUserRpm,
@@ -27,9 +53,6 @@ describe("model rate limiting", () => {
             IMAGE_SERVICES["black-forest-labs/flux.2-klein-4b"].perUserRpm,
         ).toBe(60);
         expect(IMAGE_SERVICES["lykon/dreamshaper-8-lcm"].perUserRpm).toBe(300);
-        expect(IMAGE_SERVICES["microsoft/mai-image-2.5-flash"].perUserRpm).toBe(
-            12,
-        );
         expect(IMAGE_SERVICES["microsoft/mai-image-2.6-flash"].perUserRpm).toBe(
             12,
         );
@@ -54,6 +77,7 @@ describe("model rate limiting", () => {
             category: "text",
             cost: {},
             priceMultiplier: 1,
+            paidOnly: false,
             addedDate: 0,
             title: "Test",
         };

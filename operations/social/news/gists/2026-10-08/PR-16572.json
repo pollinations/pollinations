@@ -1,0 +1,39 @@
+{
+  "pr_number": 16572,
+  "title": "fix: p-video aspect ratio and Recraft vector 3:2 rejection",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16572",
+  "merged_at": "2026-10-08T03:24:49Z",
+  "labels": [
+    "API"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed p-video text-to-video ignoring `aspectRatio`: a requested 9:16 ratio is now sent to the provider instead of producing a square video. Fixed Recraft vector rejecting 3:2-shaped reference images or requested sizes by sharing Recraft Flash’s ratio resolver and supported list: 1:1, 4:3, 3:4, 16:9, 9:16, and auto. Gen no longer rejects explicit `aspectRatio` values using its own provider lists for p-video or either Recraft model; it passes them through so provider errors can report accepted values. The lists remain in use for snapping width and height. Added ratio regression tests and removed tests for Gen’s former rejection behavior.",
+    "keywords": [
+      "p-video",
+      "Recraft vector",
+      "aspectRatio",
+      "video generation",
+      "image generation",
+      "API"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16572.jpg",
+    "prompt": "In a cozy pixel art garden workshop, a CRT monitor robot shows a tall video frame beside a Recraft vector canvas with neatly fitted image shapes, while code vines curl around a prominently lime green (#ecf874) workbench. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny measuring-tape tool belt and adjusts the frames, small-to-medium in the scene, in strictly pixel art style with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T03:25:58.771979+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "9411aee01ab0bf8ccf432bbabf9b32088b88e530",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

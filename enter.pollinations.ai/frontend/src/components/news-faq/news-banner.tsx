@@ -42,6 +42,7 @@ function changeChip(
     // Same ID, different model behind it: check voices and behavior.
     if (changes.model_id)
         return { label: "Replaced", intent: "warning" } as const;
+    if (action === "NEW") return { label: "New", intent: "success" } as const;
     if (action === "RETIRE") {
         return {
             label: upcoming ? "Retiring" : "Retired",
@@ -77,7 +78,7 @@ const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
 type ChangeItem = {
     key: string;
     date: string;
-    chip: { label: string; intent: "danger" | "info" | "warning" };
+    chip: { label: string; intent: "danger" | "info" | "success" | "warning" };
     name: ReactNode;
     pr: number;
     url: string;
@@ -100,15 +101,26 @@ const modelChange = (news: ModelNews, today: string): ChangeItem => ({
     details: cardDetails(news),
 });
 
-/** Breaking API changes: the endpoint in code style, red like retirements. */
+const API_LABEL = {
+    ADD: "Added",
+    CHANGE: "Changed",
+    REMOVE: "Removed",
+} as const;
+
+/** API rows name the endpoint in code style; breaking ones are red like retirements. */
 const apiChange = (news: ApiNews): ChangeItem => {
     const [method, path] = news.endpoint.split(" ");
     return {
         key: news.id,
         date: news.date,
         chip: {
-            label: news.action === "REMOVE" ? "Removed" : "Changed",
-            intent: "danger",
+            label: API_LABEL[news.action],
+            intent:
+                news.action === "ADD"
+                    ? "success"
+                    : news.breaking
+                      ? "danger"
+                      : "info",
         },
         name: (
             <code className="font-mono text-xs text-theme-text-strong">
@@ -194,22 +206,18 @@ const TodayLine: FC = () => (
 
 /**
  * Changes that can affect what users built: model updates and retirements from
- * merged PRs (news/index.json), today −7 to +30 days. Launches are News.
+ * merged PRs (news/index.json), today −30 to +30 days.
  */
 export const Changes: FC = () => {
     const index = useNewsIndex();
     const [visiblePast, setVisiblePast] = useState(PAGE_SIZE);
     const today = new Date().toISOString().slice(0, 10);
     // Model changes and API changes, newest first, so upcoming changes lead.
-    // Launches and additions (new models, endpoints, optional fields) are News.
     const changes = [
-        ...visibleModelNews(index?.models ?? [], today)
-            .filter(({ action }) => action !== "NEW")
-            .map((news) => modelChange(news, today)),
-        // API rows only when clients must act: breaking changes and removals.
-        ...visibleModelNews(index?.api ?? [], today)
-            .filter(({ breaking }) => breaking)
-            .map(apiChange),
+        ...visibleModelNews(index?.models ?? [], today).map((news) =>
+            modelChange(news, today),
+        ),
+        ...visibleModelNews(index?.api ?? [], today).map(apiChange),
     ].sort((a, b) => b.date.localeCompare(a.date));
     // All upcoming changes, then the latest past ones, PAGE_SIZE at a time.
     const upcoming = changes.filter(({ date }) => date > today);

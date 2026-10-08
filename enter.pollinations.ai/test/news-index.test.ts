@@ -162,6 +162,29 @@ describe("model news cards", () => {
         ).toEqual([{ label: "Date", before: "Oct 20", after: "cancelled" }]);
     });
 
+    it("shows a new model's prices and Quest/Paid access", () => {
+        expect(
+            cardDetails(
+                news({
+                    action: "NEW",
+                    changes: {
+                        pricing: {
+                            before: null,
+                            after: {
+                                currency: "pollen",
+                                promptTextTokens: "0.00000068",
+                            },
+                        },
+                        paid_only: { before: null, after: true },
+                    },
+                }),
+            ),
+        ).toEqual([
+            { label: "Price", after: "Text in $0.68/M" },
+            { label: "Balance", after: "paid" },
+        ]);
+    });
+
     it("shows retirements without details", () => {
         expect(cardDetails(news({ action: "RETIRE" }))).toEqual([]);
     });

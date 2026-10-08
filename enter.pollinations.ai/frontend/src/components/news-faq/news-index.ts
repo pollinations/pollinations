@@ -205,6 +205,21 @@ export function cardDetails(news: ModelNews): CardDetail[] {
     const details: CardDetail[] = [];
     const before = priceLines(news, "before");
     const after = priceLines(news, "after");
+    if (news.action === "NEW") {
+        if (after.size) {
+            details.push({
+                label: "Price",
+                after: [...after.values()]
+                    .map(({ label, value }) => `${label} ${value}`)
+                    .join(" · "),
+            });
+        }
+        details.push({
+            label: "Balance",
+            after: balance(news.changes.paid_only?.after),
+        });
+        return details;
+    }
     const replaced = news.changes.model_id;
     if (replaced) {
         details.push({

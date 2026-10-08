@@ -1,0 +1,102 @@
+{
+  "pr_number": 16821,
+  "title": "[2026-10-09] feat: replace Qwen3-TTS Instruct Flash with Qwen-Audio 3.0 TTS Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16821",
+  "merged_at": "2026-10-08T16:37:27Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Replaced Qwen3-TTS Instruct Flash with the paid-only qwen/qwen-audio-3.0-tts-flash ahead of Alibaba's retirement of the old model on 2026-10-10 at 00:00 UTC+8. The new model uses the same DashScope account and key, has a 1× multiplier, is billed per 10,000 characters, and offers 12 Chinese/English system voices; base voice names also pass through. The former canonical ID and three short IDs remain aliases, so existing model selections and category-based key permissions need no migration. Qwen TTS handling now uses per-model configuration for endpoints, voice mapping, and instruction support; the new model calls /services/audio/tts/SpeechSynthesizer with parameters.instruction. OpenAI voice names map to supported voices, including alloy → loongeva_v3.6, echo/onyx → loongjohn, and fable/shimmer → loongmary. Other voice names pass through, and Alibaba returns a 400 for unknown names. The new Alibaba billing label is mapped; usage counts input characters, with CJK characters counted twice. Local checks covered both /v1/audio/speech and GET /audio/{text}, legacy aliases, WAV responses, and repeat-request caching.",
+    "keywords": [
+      "Qwen-Audio 3.0",
+      "text-to-speech",
+      "DashScope",
+      "voice mapping",
+      "model aliases",
+      "character billing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16821.jpg",
+    "prompt": "In a cozy pixel art recording nook, Polli wears tiny headphones and helps a friendly CRT monitor robot tend twelve little voice-flower pots beside a lime green (#ecf874) soundboard, with soft mint-to-peach gradients and warm cream walls. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-08T16:39:13.017514+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "e88d35a22e8bad9520474c1a3d459c9652c9c3f9",
+  "announcements": [
+    {
+      "id": "pr-16821:qwen/qwen-audio-3.0-tts-flash",
+      "model_id": "qwen/qwen-audio-3.0-tts-flash",
+      "title": "Qwen-Audio 3.0 TTS Flash",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "qwen3-tts-instruct",
+            "qwen3-tts-instruct-flash",
+            "qwen-tts-instruct"
+          ],
+          "after": [
+            "qwen/qwen3-tts-instruct-flash",
+            "qwen3-tts-instruct",
+            "qwen3-tts-instruct-flash",
+            "qwen-tts-instruct"
+          ]
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0000115"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000015"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "loongeva_v3.6",
+            "loongjohn",
+            "loongmary",
+            "longanfengyue",
+            "longanyuanfei",
+            "longanlingxi",
+            "longanxiaoxin",
+            "longanhuan_v3.6",
+            "longjielidou_v3.6",
+            "longpaopao_v3.6",
+            "longhuohuo_v3.6",
+            "longchuanshu_v3.6"
+          ]
+        },
+        "model_id": {
+          "before": "qwen/qwen3-tts-instruct-flash",
+          "after": "qwen/qwen-audio-3.0-tts-flash"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "e88d35a22e8bad9520474c1a3d459c9652c9c3f9^1",
+    "after_ref": "e88d35a22e8bad9520474c1a3d459c9652c9c3f9"
+  }
+}

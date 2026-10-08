@@ -2,25 +2,13 @@ import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
 import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
-import {
-    InfrastructureAnnouncements,
-    ModelAnnouncements,
-    NEWS_MORE_URL,
-    NewsBanner,
-} from "./news-banner.tsx";
+import { Announcements, NEWS_MORE_URL, NewsBanner } from "./news-banner.tsx";
 
 export const NewsFaq: FC = () => {
     const { user } = useLoaderData({ from: "/_dashboard" });
     return (
         <>
-            {user && (
-                <>
-                    <ModelAnnouncements />
-                    <Section title="Infrastructure announcements">
-                        <InfrastructureAnnouncements />
-                    </Section>
-                </>
-            )}
+            {user && <Announcements />}
             <Section
                 title="News"
                 framed

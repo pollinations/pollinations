@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number to generate gist for (manual retry)'
+        description: 'PR number to regenerate; reruns images and Discord posting, which may duplicate a successful post'
         required: true
         type: number
 
@@ -29,6 +29,7 @@ jobs:
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
 
       - name: Checkout code
         uses: actions/checkout@v5
@@ -42,6 +43,13 @@ jobs:
 
       - name: Install dependencies
         run: pip install requests PyYAML Jinja2
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        continue-on-error: true
+        with:
+          node-version: '24'
+          cache: npm
 
       - name: Generate PR gist
         env:

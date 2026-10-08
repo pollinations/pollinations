@@ -1,4 +1,8 @@
 import unittest
+import json
+import os
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from operations.github import project_manager as manager
@@ -46,7 +50,9 @@ class ClassificationTest(unittest.TestCase):
         context = {"IS_PULL_REQUEST": True, "ISSUE_NUMBER": 1, "ISSUE_NODE_ID": "pr-node",
                    "GITHUB_TOKEN": "test", "POLLINATIONS_TOKEN": "test", "GITHUB_EVENT": {},
                    "ITEM_DATA": {"labels": []}, "DRY_RUN": False}
-        with patch.multiple(manager, **context), \
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.dict(os.environ, {"CLASSIFICATION_OUTPUT": str(Path(directory) / "classification.json")}), \
+             patch.multiple(manager, **context), \
              patch.object(manager, "dev_fields", return_value=fields), \
              patch.object(manager, "fetch_pr_files", return_value=[]), \
              patch.object(manager, "closing_issues", return_value=[]), \
@@ -55,6 +61,8 @@ class ClassificationTest(unittest.TestCase):
              patch.object(manager, "set_field") as write, \
              patch.object(manager, "set_issue_type") as native_type:
             manager.main()
+            result = json.loads((Path(directory) / "classification.json").read_text())
+            self.assertEqual(result, {"area": None, "type": None, "source": "Community"})
         write.assert_any_call("item", fields["Work type"], None)
         native_type.assert_not_called()
 

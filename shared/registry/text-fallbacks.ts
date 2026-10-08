@@ -23,6 +23,18 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "stepfun/step-5-preview": {
+        // Same StepFun model through Vercel's AI Gateway at the posted base
+        // rates, without OpenRouter's credit fee.
+        "stepfun/step-5-preview:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(1),
+                promptCachedTokens: perMillion(0.05),
+                completionTextTokens: perMillion(2.7),
+            },
+        },
+    },
     "inclusionai/ling-3.1-flash": {
         "inclusionai/ling-3.1-flash:openrouter:novita": {
             provider: "openrouter",
@@ -486,6 +498,14 @@ export const TEXT_FALLBACKS = {
                 promptCacheWriteTokens: perMillion(1.25) * 1.055,
                 completionTextTokens: perMillion(5) * 1.055,
             },
+        },
+    },
+    "anthropic/claude-haiku-5.5": {
+        // Same model through Vercel's AI Gateway at Anthropic's list price,
+        // so it inherits the primary's rates and long-context tier.
+        "anthropic/claude-haiku-5.5:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-10-07").getTime(),
         },
     },
     "anthropic/claude-opus-5.5": {

@@ -554,6 +554,100 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("prices Claude Haiku 5.5 on Vercel exactly as on Bedrock, including the long-context tier", () => {
+        const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];
+        expect(primary).toMatchObject({
+            provider: "aws",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["anthropic/claude-haiku-5.5:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        for (const [promptTextTokens, expected] of [
+            [1000, (1000 * 0.1 + 1000 * 0.5) / 1e6],
+            [100_001, (100_001 * 0.5 + 1000 * 2.5) / 1e6],
+        ] as const) {
+            const billing = calculateUsageBilling({
+                model: "anthropic/claude-haiku-5.5",
+                usage: { promptTextTokens, completionTextTokens: 1000 },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(expected, 9);
+        }
+    });
+
+    it("prices Step 5 Preview on Vercel at base rates and supports tool calls on that fallback", () => {
+        const primary = TEXT_SERVICES["stepfun/step-5-preview"];
+        const fallback = TEXT_SERVICES["stepfun/step-5-preview:vercel"];
+        expect(primary).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["stepfun/step-5-preview:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            tools: true,
+        });
+        expect(
+            findModelByName("stepfun/step-5-preview")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "stepfun/step-5-preview",
+        });
+        expect(
+            findModelByName("stepfun/step-5-preview:vercel")?.config(),
+        ).toMatchObject({ model: "stepfun/step-5-preview" });
+        const billing = calculateUsageBilling({
+            model: "stepfun/step-5-preview",
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0037, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0039035, 12);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [{ role: "user", content: "hi" }],
+                tools: [{ type: "function", function: { name: "lookup" } }],
+            }),
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [
+                    {
+                        role: "assistant",
+                        tool_calls: [
+                            {
+                                id: "call_1",
+                                type: "function",
+                                function: { name: "lookup", arguments: "{}" },
+                            },
+                        ],
+                    },
+                    { role: "tool", tool_call_id: "call_1", content: "found" },
+                ],
+            }),
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [{ role: "user", content: "hi" }],
+            }),
+        ).toBe(true);
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];

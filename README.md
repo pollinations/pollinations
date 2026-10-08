@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-07** – **🤖 Two Nex reasoning models** Try paid-only `nex-agi/nex-n2.5-pro` and `nex-agi/nex-n2.5-mini` with text or image input. Pro also supports tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).
+- **2026-10-07** – **🤖 Mistral Large 4 added** Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).
+- **2026-10-07** – **🎨 More video reference options** Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
+- **2026-10-07** – **✨ SoloForge AI joins the catalog** Turn content ideas into generated assets, review them, and organize publishing workflows with Pollinations image generation. [Try it](https://soloforge-ai-web.onrender.com).
+- **2026-10-07** – **🎵 Audio joins the catalog** Try this community text-to-speech app; its BYOP access requires sign-in. [Try it](https://dwikatmahmoud87-source.github.io/Gtdcg).
 - **2026-10-06** – **🎵 Eleven v4 speech arrives** Generate speech with `elevenlabs/eleven-v4` or the faster `elevenlabs/eleven-v4-turbo`, including word timestamps. [Try the audio API](https://gen.pollinations.ai/docs).
 - **2026-10-06** – **🎨 Nano Banana 2.1** Create images at 1K or 2K, or edit them using up to 14 reference images with `google/gemini-nano-banana-2.1`. [See image models](https://gen.pollinations.ai/image/models).
 - **2026-10-06** – **🎬 Grok Imagine Video 1.5 Lite** Turn a prompt or starting image into a 1–15 second clip at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).
 - **2026-10-06** – **🔗 API keys get model categories** Give a key access to text, image, audio, video, or other categories instead of selecting models one by one; new models in that category are included automatically. [Manage keys](https://enter.pollinations.ai/keys).
 - **2026-10-05** – **🎨 FLUX.3 Image arrives** Generate 1K or 2K images in fifteen aspect ratios, or edit with up to ten reference images. [Explore image models](https://gen.pollinations.ai/image/models).
-- **2026-10-05** – **🎨 Seedream 5.0 Flash joins the garden** Generate and edit images with up to ten references, seed control, and 1K or 2K output. [Explore image models](https://gen.pollinations.ai/image/models).
-- **2026-10-05** – **🤖 Ling 3.1 Flash is here** Try a new text model with reasoning, tool use, and a 262K-token context at zero launch pricing, including with Quest Pollen. [See text models](https://gen.pollinations.ai/v1/models).
-- **2026-10-05** – **💡 Decisions get another model** Liquid D1 is available for paid decision requests and chat; the [SDK](https://www.npmjs.com/package/@pollinations/sdk) now has a typed `decision()` call for Jev.
-- **2026-10-05** – **🔗 Find the model you meant** Search and filter the model catalog by capabilities through the API or MCP; Open WebUI can now sort models by category tags. [API docs](https://gen.pollinations.ai/docs).
-- **2026-10-05** – **🎯 Seven quests, one page** Pollinations Quest Starter walks new users through setup without sending their API key to its server. [Try it](https://elite-surely-machine-enemies.trycloudflare.com) <!-- app -->
 ---
 
 ## 🌱 Introduction

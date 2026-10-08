@@ -1,0 +1,41 @@
+{
+  "pr_number": 16736,
+  "title": "fix: preserve Gemini tool-call thought signatures",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16736",
+  "merged_at": "2026-10-08T04:06:43Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Chat request validation now preserves Gemini thought signatures on assistant tool calls, so a signed tool call can be sent back with its result. A regression test covers that exchange; the existing schema and routing are otherwise unchanged.",
+    "keywords": [
+      "Gemini",
+      "tool calls",
+      "thought signatures",
+      "chat API",
+      "request validation",
+      "regression test"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16736.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears a tiny tool belt and watches a signed tool-call note travel from a lime-green (#ecf874) terminal to a little CRT robot carrying the result, with code-plants growing beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or elongated, in strictly pixel art style, never realistic, with a warm cream and pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T04:08:23.465687+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "ba471528315a9dae1ded3d0a78309fa425705f9f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "ba471528315a9dae1ded3d0a78309fa425705f9f^1",
+    "after_ref": "ba471528315a9dae1ded3d0a78309fa425705f9f"
+  }
+}

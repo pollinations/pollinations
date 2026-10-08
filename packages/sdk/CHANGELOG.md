@@ -4,6 +4,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.14] - 2026-10-08
+
+### Changed
+- `ChatOptions.routing` is sent as `metadata`, with `text` as `metadata.model`.
+  Floret no longer accepts a top-level `routing` object.
+
 ## [5.1.0-alpha.13] - 2026-10-07
 
 ### Added

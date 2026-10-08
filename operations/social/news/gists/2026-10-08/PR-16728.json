@@ -1,0 +1,36 @@
+{
+  "pr_number": 16728,
+  "title": "revert: restore Enter /news UI from before #16725",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16728",
+  "merged_at": "2026-10-08T00:50:28Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Restored Enter’s previous /news layout and hand-written Announcements list, replacing the model-card UI added in #16725. Removed the model-card index, its test, and the formatPriceLine helper. News cards still read highlights from index.json because the daily run no longer updates highlights.md; the cards retain their previous appearance.",
+    "keywords": [
+      "Enter",
+      "news",
+      "announcements",
+      "model cards",
+      "highlights"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16728.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli wears a tiny editor’s visor and pins handwritten announcements beside familiar news cards, with pixel flowers growing around a lime green (#ecf874) noticeboard. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, never realistic, amid soft pastel gradients and warm lighting with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T00:51:35.408483+00:00",
+  "area": "Dashboard",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "e57974f9e0329f5936f2b52274cf3407d05254f7",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

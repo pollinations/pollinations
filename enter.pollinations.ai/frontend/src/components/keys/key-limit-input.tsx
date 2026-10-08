@@ -81,10 +81,10 @@ export function KeyLimitInput({
                                     : null,
                             );
                         }}
-                        className="w-[116px]"
+                        className="w-24"
                         hideNumberSteppers
                     />
-                    <Text as="span" size="xs" tone="muted" className="w-12">
+                    <Text as="span" size="xs" tone="muted" className="w-10">
                         {limit.unit}
                     </Text>
                 </label>

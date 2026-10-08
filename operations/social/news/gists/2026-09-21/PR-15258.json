@@ -39,10 +39,10 @@
     {
       "id": "pr-15258:POST /alpha/decisions",
       "endpoint": "POST /alpha/decisions",
+      "summary": "Create Decision",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     }
   ]
 }

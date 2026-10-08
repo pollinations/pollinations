@@ -39,22 +39,23 @@
     {
       "id": "pr-14901:GET /v1/models/status/routes",
       "endpoint": "GET /v1/models/status/routes",
+      "summary": "Model Route Health Status",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     },
     {
       "id": "pr-14901:POST /account/agents/{id}/sync",
       "endpoint": "POST /account/agents/{id}/sync",
+      "summary": "Sync Code Agent",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     },
     {
       "id": "pr-14901:POST /account/my-models/endpoint-agents",
       "endpoint": "POST /account/my-models/endpoint-agents",
+      "summary": "Create Endpoint Agent",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -76,12 +77,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14901:POST /account/my-models/{id}/update",
       "endpoint": "POST /account/my-models/{id}/update",
+      "summary": "Update My Model",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -94,12 +95,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14901:POST /text",
       "endpoint": "POST /text",
+      "summary": "Text Generation With Messages",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -112,12 +113,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14901:POST /v1/chat/completions",
       "endpoint": "POST /v1/chat/completions",
+      "summary": "Chat Completions",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -130,12 +131,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14901:POST /v1/responses",
       "endpoint": "POST /v1/responses",
+      "summary": "Create Response",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -151,8 +152,7 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     }
   ]
 }

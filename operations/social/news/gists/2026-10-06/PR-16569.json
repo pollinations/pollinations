@@ -43,6 +43,7 @@
     {
       "id": "pr-16569:POST /account/keys",
       "endpoint": "POST /account/keys",
+      "summary": "Create API Key",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -55,8 +56,7 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     }
   ]
 }

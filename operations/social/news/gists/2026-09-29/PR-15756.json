@@ -46,18 +46,18 @@
     {
       "id": "pr-15756:POST /alpha/audio/stem-separation",
       "endpoint": "POST /alpha/audio/stem-separation",
+      "summary": "Separate Audio Stems",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     },
     {
       "id": "pr-15756:POST /v1/messages",
       "endpoint": "POST /v1/messages",
+      "summary": "Create Message (Anthropic-compatible)",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     }
   ]
 }

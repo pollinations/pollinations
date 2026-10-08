@@ -43,6 +43,7 @@
     {
       "id": "pr-16537:GET /account/key/usage",
       "endpoint": "GET /account/key/usage",
+      "summary": "Get API Key Usage",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -58,12 +59,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-16537:GET /account/usage",
       "endpoint": "GET /account/usage",
+      "summary": "Get Usage History",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -79,12 +80,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-16537:POST /account/my-models/{id}/update",
       "endpoint": "POST /account/my-models/{id}/update",
+      "summary": "Update My Model",
       "action": "CHANGE",
       "breaking": true,
       "changes": [
@@ -97,12 +98,12 @@
           "after": null,
           "breaking": true
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-16537:POST /v1/audio/voice-changer",
       "endpoint": "POST /v1/audio/voice-changer",
+      "summary": "Transform a Voice",
       "action": "CHANGE",
       "breaking": true,
       "changes": [
@@ -124,12 +125,12 @@
           },
           "breaking": true
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-16537:POST /v1/audio/voice-isolator",
       "endpoint": "POST /v1/audio/voice-isolator",
+      "summary": "Isolate Speech",
       "action": "CHANGE",
       "breaking": true,
       "changes": [
@@ -151,8 +152,7 @@
           },
           "breaking": true
         }
-      ],
-      "effective_status": "live"
+      ]
     }
   ]
 }

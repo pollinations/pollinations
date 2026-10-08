@@ -43,10 +43,10 @@
     {
       "id": "pr-16262:POST /account/polli/harness-on",
       "endpoint": "POST /account/polli/harness-on",
+      "summary": "postAccountPolliHarnessOn",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     }
   ]
 }

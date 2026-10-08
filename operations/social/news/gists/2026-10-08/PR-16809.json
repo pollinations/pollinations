@@ -37,30 +37,31 @@
     {
       "id": "pr-16809:GET /account/quests/rewards",
       "endpoint": "GET /account/quests/rewards",
+      "summary": "Get Quest Rewards",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     },
     {
       "id": "pr-16809:GET /models/stats",
       "endpoint": "GET /models/stats",
+      "summary": "Model Usage Stats",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     },
     {
       "id": "pr-16809:PATCH /account/keys/{id}",
       "endpoint": "PATCH /account/keys/{id}",
+      "summary": "Update API Key",
       "action": "ADD",
       "breaking": false,
-      "changes": [],
-      "effective_status": "live"
+      "changes": []
     },
     {
       "id": "pr-16809:POST /account/keys",
       "endpoint": "POST /account/keys",
+      "summary": "Create API Key",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -82,8 +83,7 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     }
   ]
 }

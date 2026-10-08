@@ -39,6 +39,7 @@
     {
       "id": "pr-14956:GET /3d/models",
       "endpoint": "GET /3d/models",
+      "summary": "List 3D Models",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -78,12 +79,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14956:GET /audio/models",
       "endpoint": "GET /audio/models",
+      "summary": "List Audio Models",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -123,12 +124,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14956:GET /embeddings/models",
       "endpoint": "GET /embeddings/models",
+      "summary": "List Embedding Models",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -168,12 +169,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14956:GET /image/models",
       "endpoint": "GET /image/models",
+      "summary": "List Image & Video Models",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -213,12 +214,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14956:GET /models",
       "endpoint": "GET /models",
+      "summary": "List Models",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -258,12 +259,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14956:GET /text/models",
       "endpoint": "GET /text/models",
+      "summary": "List Text Models (Detailed)",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -303,12 +304,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14956:GET /v1/models",
       "endpoint": "GET /v1/models",
+      "summary": "List Models (OpenAI-compatible)",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -348,12 +349,12 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     },
     {
       "id": "pr-14956:GET /video/models",
       "endpoint": "GET /video/models",
+      "summary": "List Video Models",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -393,8 +394,7 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     }
   ]
 }

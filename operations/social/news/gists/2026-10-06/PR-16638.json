@@ -43,6 +43,7 @@
     {
       "id": "pr-16638:POST /v1/audio/speech/with-timestamps",
       "endpoint": "POST /v1/audio/speech/with-timestamps",
+      "summary": "Generate Speech with Timestamps",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -58,8 +59,7 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     }
   ]
 }

@@ -39,6 +39,7 @@
     {
       "id": "pr-14566:POST /upload",
       "endpoint": "POST /upload",
+      "summary": "Upload media",
       "action": "CHANGE",
       "breaking": false,
       "changes": [
@@ -51,8 +52,7 @@
           },
           "breaking": false
         }
-      ],
-      "effective_status": "live"
+      ]
     }
   ]
 }

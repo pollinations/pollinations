@@ -232,50 +232,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001055,
     },
   },
-  "anthropic/claude-haiku-5.5": {
-    "cost": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.0000025,
-        "promptCacheWriteTokens": 0.000000625,
-        "promptCachedTokens": 0.00000005,
-        "promptTextTokens": 0.0000005,
-      },
-    },
-    "price": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
-    },
-  },
-  "anthropic/claude-haiku-5.5:vercel": {
-    "cost": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
-    },
-    "costVariants": {
-      "long_context": {
-        "completionTextTokens": 0.0000025,
-        "promptCacheWriteTokens": 0.000000625,
-        "promptCachedTokens": 0.00000005,
-        "promptTextTokens": 0.0000005,
-      },
-    },
-    "price": {
-      "completionTextTokens": 0.0000005,
-      "promptCacheWriteTokens": 0.000000125,
-      "promptCachedTokens": 0.00000001,
-      "promptTextTokens": 0.0000001,
-    },
-  },
   "anthropic/claude-opus-4.6": {
     "cost": {
       "completionTextTokens": 0.000025,
@@ -1875,6 +1831,22 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-voice-2.1": {
+    "cost": {
+      "completionAudioTokens": 0.00002321,
+    },
+    "price": {
+      "completionAudioTokens": 0.00002321,
+    },
+  },
+  "microsoft/mai-voice-2.1-flash": {
+    "cost": {
+      "completionAudioTokens": 0.000015825,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015825,
+    },
+  },
   "microsoft/trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,
@@ -2027,30 +1999,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000375,
     },
   },
-  "mistralai/mistral-large-4": {
-    "cost": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
-    },
-    "price": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
-    },
-  },
-  "mistralai/mistral-large-4:vercel": {
-    "cost": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
-    },
-    "price": {
-      "completionTextTokens": 0.00000209,
-      "promptCachedTokens": 0.00000007,
-      "promptTextTokens": 0.00000068,
-    },
-  },
   "mistralai/mistral-small-3.2": {
     "cost": {
       "completionTextTokens": 0.000000211,
@@ -2195,30 +2143,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00001425,
       "promptCachedTokens": 0.000000285,
       "promptTextTokens": 0.00000285,
-    },
-  },
-  "nex-agi/nex-n2.5-mini": {
-    "cost": {
-      "completionTextTokens": 0.0000001055,
-      "promptCachedTokens": 0.0000000026375,
-      "promptTextTokens": 0.000000026375,
-    },
-    "price": {
-      "completionTextTokens": 0.0000001055,
-      "promptCachedTokens": 0.0000000026375,
-      "promptTextTokens": 0.000000026375,
-    },
-  },
-  "nex-agi/nex-n2.5-pro": {
-    "cost": {
-      "completionTextTokens": 0.00000026375,
-      "promptCachedTokens": 0.000000015825,
-      "promptTextTokens": 0.000000079125,
-    },
-    "price": {
-      "completionTextTokens": 0.00000026375,
-      "promptCachedTokens": 0.000000015825,
-      "promptTextTokens": 0.000000079125,
     },
   },
   "nvidia/asset-harvester": {

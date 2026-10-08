@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     fail,
     getOutputMode,
@@ -29,16 +30,30 @@ interface EarningsResponse {
 
 export type { EarningsRow };
 
+// Server-side bound of /account/earnings?days (see
+// enter.pollinations.ai/src/routes/account.ts).
+export const MAX_EARNINGS_DAYS = 365;
+
 export function totalPollenEarned(perEntity: EarningsRow[]): number {
     return perEntity.reduce((sum, row) => sum + row.pollen_earned, 0);
 }
 
 export const earningsCommand = new Command("earnings")
     .description("Show developer earnings from BYOP apps and community models")
-    .option("--days <n>", "Rolling window in days", "30")
+    .option(
+        "--days <n>",
+        `Rolling window in days (1-${MAX_EARNINGS_DAYS})`,
+        "30",
+    )
     .action(async (opts) => {
+        const days = numberOption(
+            "--days",
+            opts.days,
+            1,
+            MAX_EARNINGS_DAYS,
+            true,
+        );
         const key = requireKey();
-        const days = opts.days;
 
         try {
             const data = await gen<EarningsResponse>(

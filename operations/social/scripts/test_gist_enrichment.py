@@ -10,6 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent))
 from common import filter_daily_gists, generate_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
+from api_changes import api_changes, api_changes_for_pr
 from build_news_index import build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
@@ -191,6 +192,54 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual([e["model_id"] for e in entries], ["priced", "removed"])
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
         self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
+
+    def test_api_changes_mark_what_breaks_existing_clients(self):
+        field = lambda type_, required=False: {"type": type_, "required": required}
+        before = {
+            "GET /old": {"parameters": {}, "body": {}},
+            "GET /kept": {"parameters": {}, "body": {}},
+            "POST /v1/chat": {"parameters": {"query:debug": field("boolean")},
+                              "body": {"seed": field("integer|null"), "model": field("string")}},
+        }
+        after = {
+            "GET /new": {"parameters": {}, "body": {}},
+            "GET /kept": {"deprecated": True, "parameters": {}, "body": {}},
+            "POST /v1/chat": {"parameters": {},
+                              "body": {"seed": field("integer|null|string"), "model": field("string", True),
+                                       "tools": field("array")}},
+        }
+        events = {e["endpoint"]: e for e in api_changes(before, after, {"number": 7})}
+        self.assertEqual({k: (e["action"], e["breaking"]) for k, e in events.items()},
+                         {"GET /new": ("ADD", False), "GET /old": ("REMOVE", True),
+                          "GET /kept": ("DEPRECATE", False), "POST /v1/chat": ("CHANGE", True)})
+        chat = {c["field"]: c["breaking"] for c in events["POST /v1/chat"]["changes"]}
+        # removed parameter and newly required field break clients; a widened type and an optional field do not
+        self.assertEqual(chat, {"parameters:query:debug": True, "body:model": True,
+                                "body:seed": False, "body:tools": False})
+        self.assertEqual(events["GET /new"]["id"], "pr-7:GET /new")
+
+    def test_docs_pr_reports_api_changes_only_against_an_earlier_surface(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+            git("init", "-b", "main")
+            git("config", "user.name", "Test")
+            git("config", "user.email", "test@example.com")
+            (root / "README").write_text("base")
+            git("add", "README")
+            git("commit", "-m", "base")
+            surface = root / "APIDOCS.surface.json"
+            surface.write_text(json.dumps({"GET /a": {"parameters": {}, "body": {}}}))
+            git("add", surface.name)
+            git("commit", "-m", "docs: first surface")
+            first = {"number": 1, "merge_commit_sha": git("rev-parse", "HEAD"), "commits": 1}
+            self.assertEqual(api_changes_for_pr(first, root), [])  # no baseline yet
+            surface.write_text(json.dumps({"GET /b": {"parameters": {}, "body": {}}}))
+            git("commit", "-am", "docs: regenerate")
+            second = {"number": 2, "merge_commit_sha": git("rev-parse", "HEAD"), "commits": 1}
+            self.assertEqual([(e["action"], e["endpoint"]) for e in api_changes_for_pr(second, root)],
+                             [("REMOVE", "GET /a"), ("ADD", "GET /b")])
 
     def test_index_highlights_cover_the_readme_and_feed_it(self):
         summaries = [{"date": f"2026-09-{day:02d}", "highlights": [

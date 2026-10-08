@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
+const SURFACE_PATH = join(__dirname, "..", "..", "APIDOCS.surface.json");
 const INTRODUCTION_PATH = join(
     __dirname,
     "..",
@@ -1164,6 +1165,102 @@ function groupByTag(
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// API surface: what a client can call and send, for breaking-change diffs
+// ────────────────────────────────────────────────────────────────────────────
+
+type SurfaceField = { type: string; required: boolean; deprecated?: true };
+
+function typeName(spec: Spec, schema: Schema): string {
+    const ref = refName(schema);
+    if (ref) return ref;
+    const union = asArr(schema.anyOf).length
+        ? asArr(schema.anyOf)
+        : asArr(schema.oneOf);
+    if (union.length) {
+        return [...new Set(union.map((s) => typeName(spec, asObj(s))))].join(
+            "|",
+        );
+    }
+    return asStr(deref(spec, schema).type, "any");
+}
+
+function surfaceField(
+    spec: Spec,
+    schema: Schema,
+    required: boolean,
+): SurfaceField {
+    return {
+        type: typeName(spec, schema),
+        required,
+        ...(schema.deprecated === true && { deprecated: true as const }),
+    };
+}
+
+/**
+ * Every operation's parameters and top-level body fields, sorted, without
+ * descriptions or model lists (model changes are announced separately).
+ * The news pipeline diffs this file between docs PRs to list API changes.
+ */
+function apiSurface(spec: Spec) {
+    const surface: Record<string, Json> = {};
+    for (const path of Object.keys(asObj(spec.paths)).sort()) {
+        const methods = asObj(spec.paths[path]);
+        for (const method of Object.keys(methods).sort()) {
+            if (!HTTP_METHODS.has(method.toLowerCase())) continue;
+            const op = asObj(methods[method]);
+            const parameters: Record<string, SurfaceField> = {};
+            for (const raw of visibleParams(
+                path,
+                asArr(op.parameters) as Schema[],
+            )) {
+                const param = deref(spec, asObj(raw));
+                parameters[`${asStr(param.in)}:${asStr(param.name)}`] = {
+                    ...surfaceField(
+                        spec,
+                        asObj(param.schema),
+                        param.required === true,
+                    ),
+                    ...(param.deprecated === true && {
+                        deprecated: true as const,
+                    }),
+                };
+            }
+            const content = asObj(asObj(op.requestBody).content);
+            const bodySchema = deref(
+                spec,
+                asObj(
+                    asObj(content["application/json"]).schema ??
+                        asObj(content["multipart/form-data"]).schema,
+                ),
+            );
+            const requiredBody = new Set(
+                asArr(bodySchema.required) as string[],
+            );
+            const body: Record<string, SurfaceField> = {};
+            for (const name of Object.keys(
+                asObj(bodySchema.properties),
+            ).sort()) {
+                body[name] = surfaceField(
+                    spec,
+                    asObj(asObj(bodySchema.properties)[name]),
+                    requiredBody.has(name),
+                );
+            }
+            surface[`${method.toUpperCase()} ${path}`] = {
+                ...(op.deprecated === true && { deprecated: true }),
+                parameters: Object.fromEntries(
+                    Object.entries(parameters).sort(([a], [b]) =>
+                        a.localeCompare(b),
+                    ),
+                ),
+                body,
+            };
+        }
+    }
+    return surface;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // Main
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -1171,6 +1268,11 @@ async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
     const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as Spec;
     requireMergedPaths(spec);
+    writeFileSync(
+        SURFACE_PATH,
+        `${JSON.stringify(apiSurface(spec), null, 2)}\n`,
+    );
+    console.log(`✅ Saved API surface to ${SURFACE_PATH}`);
     simplifyModelEnums(spec);
 
     const byTag = groupByTag(spec);

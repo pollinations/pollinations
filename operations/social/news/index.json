@@ -1,0 +1,2967 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-08T00:37:23.008221+00:00",
+  "models": [
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-flash",
+      "model_id": "deepseek/deepseek-v4-flash",
+      "title": "DeepSeek V4 Flash 0731",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000022",
+            "promptCachedTokens": "0.000000007",
+            "completionTextTokens": "0.00000066"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000033",
+            "promptCachedTokens": "0.0000000105",
+            "completionTextTokens": "0.00000099"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-flash-vision-exp",
+      "model_id": "deepseek/deepseek-v4-flash-vision-exp",
+      "title": "DeepSeek V4 Flash Vision Exp",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000022",
+            "promptCachedTokens": "0.000000007",
+            "promptImageTokens": "0.00000022",
+            "completionTextTokens": "0.00000066"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002156",
+            "promptCachedTokens": "0.0000000069",
+            "promptImageTokens": "0.0000002156",
+            "completionTextTokens": "0.0000006468"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-pro",
+      "model_id": "deepseek/deepseek-v4-pro",
+      "title": "DeepSeek V4 Pro 0813",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "context_length": {
+          "before": 1048576,
+          "after": 1000000
+        },
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000132",
+            "promptCachedTokens": "0.000000044",
+            "completionTextTokens": "0.00000396"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000118371",
+            "promptCachedTokens": "0.000000118371",
+            "completionTextTokens": "0.00000355113"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15327:inclusionai/ling-3.0-flash-vl",
+      "model_id": "inclusionai/ling-3.0-flash-vl",
+      "title": "Ling 3.0 Flash VL",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15327,
+      "url": "https://github.com/pollinations/pollinations/pull/15327",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 131072
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "video"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000633",
+            "promptCachedTokens": "0.00000001266",
+            "promptImageTokens": "0.0000000633",
+            "promptVideoTokens": "0.0000000633",
+            "completionTextTokens": "0.0000001899"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15413:minimax/minimax-h3-max-turbo",
+      "model_id": "minimax/minimax-h3-max-turbo",
+      "title": "MiniMax H3 Max Turbo",
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15413,
+      "url": "https://github.com/pollinations/pollinations/pull/15413",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.00625"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.025"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15361:moonshotai/kimi-k2.7-code",
+      "model_id": "moonshotai/kimi-k2.7-code",
+      "title": "Moonshot Kimi K2.7 Code",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000095",
+            "promptCachedTokens": "0.00000019",
+            "promptCacheWriteTokens": "0.00000095",
+            "promptImageTokens": "0.00000095",
+            "completionTextTokens": "0.000004"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000100225",
+            "promptCachedTokens": "0.00000020045",
+            "promptCacheWriteTokens": "0.00000100225",
+            "promptImageTokens": "0.00000100225",
+            "completionTextTokens": "0.00000422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15361:meta/muse-glimmer-30b",
+      "model_id": "meta/muse-glimmer-30b",
+      "title": "Muse Glimmer 30B",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000035",
+            "promptCachedTokens": "0.00000004",
+            "promptImageTokens": "0.00000035",
+            "completionTextTokens": "0.0000015"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000004",
+            "promptImageTokens": "0.0000003",
+            "completionTextTokens": "0.0000012"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15361:z-ai/glm-5.2",
+      "model_id": "z-ai/glm-5.2",
+      "title": "Z.ai GLM-5.2",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-24",
+      "scheduled": false,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000014",
+            "promptCachedTokens": "0.00000014",
+            "completionTextTokens": "0.0000044"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001477",
+            "promptCachedTokens": "0.0000002743",
+            "completionTextTokens": "0.000004642"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15362:perplexity/sonar",
+      "model_id": "perplexity/sonar",
+      "title": "Perplexity Sonar Fast Search",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-25",
+      "scheduled": false,
+      "pr": 15362,
+      "url": "https://github.com/pollinations/pollinations/pull/15362",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001",
+            "completionTextTokens": "0.000001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000025",
+            "promptCachedTokens": "0.0000000625",
+            "promptCacheWriteTokens": "0.00000025",
+            "completionTextTokens": "0.0000025"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15236:qwen/qwen-image-2.1",
+      "model_id": "qwen/qwen-image-2.1",
+      "title": "Qwen Image 2.1",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-25",
+      "scheduled": false,
+      "pr": 15236,
+      "url": "https://github.com/pollinations/pollinations/pull/15236",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.00000002"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15357:recraft/recraft-v4.1-flash",
+      "model_id": "recraft/recraft-v4.1-flash",
+      "title": "Recraft V4.1 Flash",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-25",
+      "scheduled": false,
+      "pr": 15357,
+      "url": "https://github.com/pollinations/pollinations/pull/15357",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.007385"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15457:openai/gpt-6-astra",
+      "model_id": "openai/gpt-6-astra",
+      "title": "GPT-6 Astra",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-26",
+      "scheduled": false,
+      "pr": 15457,
+      "url": "https://github.com/pollinations/pollinations/pull/15457",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000075",
+            "promptCachedTokens": "0.00000075",
+            "promptCacheWriteTokens": "0.000009375",
+            "completionTextTokens": "0.0000375"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00001",
+            "promptCachedTokens": "0.000001",
+            "promptCacheWriteTokens": "0.0000125",
+            "completionTextTokens": "0.00005"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15457:openai/gpt-6-luna",
+      "model_id": "openai/gpt-6-luna",
+      "title": "GPT-6 Luna",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-26",
+      "scheduled": false,
+      "pr": 15457,
+      "url": "https://github.com/pollinations/pollinations/pull/15457",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "completionTextTokens": "0.0000005"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "promptImageTokens": "0.0000001",
+            "completionTextTokens": "0.0000005"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15457:openai/gpt-6-sol",
+      "model_id": "openai/gpt-6-sol",
+      "title": "GPT-6 Sol",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-26",
+      "scheduled": false,
+      "pr": 15457,
+      "url": "https://github.com/pollinations/pollinations/pull/15457",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.00001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15395:google/gemini-3.8-flash-lite-tts",
+      "model_id": "google/gemini-3.8-flash-lite-tts",
+      "title": "Gemini 3.8 Flash Lite TTS",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-26",
+      "scheduled": false,
+      "pr": 15395,
+      "url": "https://github.com/pollinations/pollinations/pull/15395",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "completionAudioTokens": "0.000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15395:google/gemini-3.8-flash-tts",
+      "model_id": "google/gemini-3.8-flash-tts",
+      "title": "Gemini 3.8 Flash TTS",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-26",
+      "scheduled": false,
+      "pr": 15395,
+      "url": "https://github.com/pollinations/pollinations/pull/15395",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "completionAudioTokens": "0.000009"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15491:google/lyria-3.5",
+      "model_id": "google/lyria-3.5",
+      "title": "Lyria 3.5",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-26",
+      "scheduled": false,
+      "pr": 15491,
+      "url": "https://github.com/pollinations/pollinations/pull/15491",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.08"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15392:minimax/minimax-h3-max",
+      "model_id": "minimax/minimax-h3-max",
+      "title": "MiniMax H3 Max",
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-09-26",
+      "scheduled": false,
+      "pr": 15392,
+      "url": "https://github.com/pollinations/pollinations/pull/15392",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "video",
+            "audio"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15550:minimax/minimax-h3-max-turbo",
+      "model_id": "minimax/minimax-h3-max-turbo",
+      "title": "MiniMax H3 Max Turbo",
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-09-27",
+      "scheduled": false,
+      "pr": 15550,
+      "url": "https://github.com/pollinations/pollinations/pull/15550",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.025"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.0125"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15671:anthropic/claude-sonnet-5.5",
+      "model_id": "anthropic/claude-sonnet-5.5",
+      "title": "Claude Sonnet 5.5",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15671,
+      "url": "https://github.com/pollinations/pollinations/pull/15671",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 20
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15497:elevenlabs/stem-separation",
+      "model_id": "elevenlabs/stem-separation",
+      "title": "ElevenLabs Stem Separation",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15497,
+      "url": "https://github.com/pollinations/pollinations/pull/15497",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.005"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15512:google/gemini-3.5-transcribe",
+      "model_id": "google/gemini-3.5-transcribe",
+      "title": "Gemini 3.5 Transcribe",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15512,
+      "url": "https://github.com/pollinations/pollinations/pull/15512",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioTokens": "0.000002",
+            "completionTextTokens": "0.000012"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-14797:inferenceport-ai/lightning-image-turbo",
+      "model_id": "inferenceport-ai/lightning-image-turbo",
+      "title": "Lightning Image Turbo",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 14797,
+      "url": "https://github.com/pollinations/pollinations/pull/14797",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 2
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "per_user_rpm": {
+          "before": null,
+          "after": 15
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.02"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15690:pollinations/midijourney",
+      "model_id": "pollinations/midijourney",
+      "title": "MIDIjourney",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15690,
+      "url": "https://github.com/pollinations/pollinations/pull/15690",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "input_modalities": {
+          "before": [
+            "text"
+          ],
+          "after": [
+            "text",
+            "image"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-15690:pollinations/midijourney-large",
+      "model_id": "pollinations/midijourney-large",
+      "title": "MIDIjourney Large",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15690,
+      "url": "https://github.com/pollinations/pollinations/pull/15690",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "input_modalities": {
+          "before": [
+            "text"
+          ],
+          "after": [
+            "text",
+            "image"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-15814:openai/tts-1",
+      "model_id": "openai/tts-1",
+      "title": "OpenAI TTS",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15814,
+      "url": "https://github.com/pollinations/pollinations/pull/15814",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000015"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15814:openai/tts-1-hd",
+      "model_id": "openai/tts-1-hd",
+      "title": "OpenAI TTS HD",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15814,
+      "url": "https://github.com/pollinations/pollinations/pull/15814",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00003"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15690:qwen/qwen3.8-2.4t-a95b",
+      "model_id": "qwen/qwen3.8-2.4t-a95b",
+      "title": "Qwen3.8 2.4T A95B",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-09-29",
+      "scheduled": false,
+      "pr": 15690,
+      "url": "https://github.com/pollinations/pollinations/pull/15690",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "input_modalities": {
+          "before": [
+            "text"
+          ],
+          "after": [
+            "text",
+            "image"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-15960:openai/gpt-6.1-sol",
+      "model_id": "openai/gpt-6.1-sol",
+      "title": "GPT-6.1 Sol",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-09-30",
+      "scheduled": false,
+      "pr": 15960,
+      "url": "https://github.com/pollinations/pollinations/pull/15960",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000001",
+            "promptCacheWriteTokens": "0.0000025",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.00001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15555:minimax/minimax-h3-max-turbo",
+      "model_id": "minimax/minimax-h3-max-turbo",
+      "title": "MiniMax H3 Max Turbo",
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-09-30",
+      "scheduled": false,
+      "pr": 15555,
+      "url": "https://github.com/pollinations/pollinations/pull/15555",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.0125"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.025"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15486:amazon/nova-canvas-v1",
+      "model_id": "amazon/nova-canvas-v1",
+      "title": "Nova Canvas",
+      "action": "RETIRE",
+      "category": "image",
+      "date": "2026-09-30",
+      "scheduled": false,
+      "pr": 15486,
+      "url": "https://github.com/pollinations/pollinations/pull/15486",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [],
+          "after": null
+        },
+        "input_modalities": {
+          "before": [
+            "text",
+            "image"
+          ],
+          "after": null
+        },
+        "max_reference_images": {
+          "before": 1,
+          "after": null
+        },
+        "output_modalities": {
+          "before": [
+            "image"
+          ],
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionImageTokens": "0.04"
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "id": "pr-15486:amazon/nova-reel-v1",
+      "model_id": "amazon/nova-reel-v1",
+      "title": "Nova Reel",
+      "action": "RETIRE",
+      "category": "video",
+      "date": "2026-09-30",
+      "scheduled": false,
+      "pr": 15486,
+      "url": "https://github.com/pollinations/pollinations/pull/15486",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [],
+          "after": null
+        },
+        "input_modalities": {
+          "before": [
+            "text",
+            "image"
+          ],
+          "after": null
+        },
+        "max_reference_images": {
+          "before": 1,
+          "after": null
+        },
+        "output_modalities": {
+          "before": [
+            "video"
+          ],
+          "after": null
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.08"
+          },
+          "after": null
+        }
+      }
+    },
+    {
+      "id": "pr-15968:jaredpalmer/kev-4b",
+      "model_id": "jaredpalmer/kev-4b",
+      "title": "Kev 4B",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-01",
+      "scheduled": false,
+      "pr": 15968,
+      "url": "https://github.com/pollinations/pollinations/pull/15968",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 8192
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000004431"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15970:respan/span-01-lite",
+      "model_id": "respan/span-01-lite",
+      "title": "Span-01 Lite",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-01",
+      "scheduled": false,
+      "pr": 15970,
+      "url": "https://github.com/pollinations/pollinations/pull/15970",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15998:nvidia/nemotron-3-ultra",
+      "model_id": "nvidia/nemotron-3-ultra",
+      "title": "NVIDIA Nemotron 3 Ultra",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-04",
+      "scheduled": false,
+      "pr": 15998,
+      "url": "https://github.com/pollinations/pollinations/pull/15998",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": true,
+          "after": false
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.0000001",
+            "completionTextTokens": "0.0000022"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000006",
+            "promptCachedTokens": "0.00000012",
+            "completionTextTokens": "0.0000024"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16245:black-forest-labs/flux-3-image",
+      "model_id": "black-forest-labs/flux-3-image",
+      "title": "FLUX.3 Image",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-10-05",
+      "scheduled": false,
+      "pr": 16245,
+      "url": "https://github.com/pollinations/pollinations/pull/16245",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.02532"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16250:inclusionai/ling-3.1-flash",
+      "model_id": "inclusionai/ling-3.1-flash",
+      "title": "Ling 3.1 Flash",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-05",
+      "scheduled": false,
+      "pr": 16250,
+      "url": "https://github.com/pollinations/pollinations/pull/16250",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16244:liquid/d1",
+      "model_id": "liquid/d1",
+      "title": "Liquid D1",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-05",
+      "scheduled": false,
+      "pr": 16244,
+      "url": "https://github.com/pollinations/pollinations/pull/16244",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 65536
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000000422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15510:qwen/qwen3-coder-30b-a3b-instruct",
+      "model_id": "qwen/qwen3-coder-30b-a3b-instruct",
+      "title": "Qwen3 Coder 30B",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-05",
+      "scheduled": false,
+      "pr": 15510,
+      "url": "https://github.com/pollinations/pollinations/pull/15510",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000007",
+            "completionTextTokens": "0.00000026"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "completionTextTokens": "0.0000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16248:bytedance/seedream-5.0-flash",
+      "model_id": "bytedance/seedream-5.0-flash",
+      "title": "Seedream 5.0 Flash",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-10-05",
+      "scheduled": false,
+      "pr": 16248,
+      "url": "https://github.com/pollinations/pollinations/pull/16248",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.01899"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16581:elevenlabs/eleven-v4",
+      "model_id": "elevenlabs/eleven-v4",
+      "title": "ElevenLabs v4",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-10-06",
+      "scheduled": false,
+      "pr": 16581,
+      "url": "https://github.com/pollinations/pollinations/pull/16581",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000022"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16582:elevenlabs/eleven-v4-turbo",
+      "model_id": "elevenlabs/eleven-v4-turbo",
+      "title": "ElevenLabs v4 Turbo",
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-10-06",
+      "scheduled": false,
+      "pr": 16582,
+      "url": "https://github.com/pollinations/pollinations/pull/16582",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000011"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16593:google/gemini-2.5-flash-lite",
+      "model_id": "google/gemini-2.5-flash-lite",
+      "title": "Gemini 2.5 Flash Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-06",
+      "scheduled": false,
+      "pr": 16593,
+      "url": "https://github.com/pollinations/pollinations/pull/16593",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": [
+            "tool_calling",
+            "web_search"
+          ],
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptCachedTokens": "0.00000001055",
+            "promptCacheWriteTokens": "0.0000001055",
+            "promptAudioTokens": "0.0000003165",
+            "promptImageTokens": "0.0000001055",
+            "promptVideoTokens": "0.0000001055",
+            "completionTextTokens": "0.000000422"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000001",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "completionTextTokens": "0.0000004"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16593:google/gemini-2.5-flash-lite:search",
+      "model_id": "google/gemini-2.5-flash-lite:search",
+      "title": "Google Gemini 2.5 Flash Lite Search",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-06",
+      "scheduled": false,
+      "pr": 16593,
+      "url": "https://github.com/pollinations/pollinations/pull/16593",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.0000001",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000001",
+            "promptVideoTokens": "0.0000001",
+            "completionTextTokens": "0.0000004"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001055",
+            "promptCachedTokens": "0.00000001055",
+            "promptCacheWriteTokens": "0.0000001055",
+            "promptAudioTokens": "0.0000003165",
+            "promptImageTokens": "0.0000001055",
+            "promptVideoTokens": "0.0000001055",
+            "completionTextTokens": "0.000000422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16640:x-ai/grok-imagine-video-1.5-lite",
+      "model_id": "x-ai/grok-imagine-video-1.5-lite",
+      "title": "Grok Imagine Video 1.5 Lite",
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-10-06",
+      "scheduled": false,
+      "pr": 16640,
+      "url": "https://github.com/pollinations/pollinations/pull/16640",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptImageTokens": "0.01",
+            "completionVideoSeconds": "0.03"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16609:google/gemini-nano-banana-2.1",
+      "model_id": "google/gemini-nano-banana-2.1",
+      "title": "Nano Banana 2.1",
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-10-06",
+      "scheduled": false,
+      "pr": 16609,
+      "url": "https://github.com/pollinations/pollinations/pull/16609",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 14
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001669537",
+            "promptImageTokens": "0.000001669537",
+            "completionTextTokens": "0.000008347687",
+            "completionImageTokens": "0.00003339075"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16605:qwen/qwen3-embedding-8b",
+      "model_id": "qwen/qwen3-embedding-8b",
+      "title": "Qwen3 Embedding 8B",
+      "action": "UPDATE",
+      "category": "embedding",
+      "date": "2026-10-06",
+      "scheduled": false,
+      "pr": 16605,
+      "url": "https://github.com/pollinations/pollinations/pull/16605",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16691:inclusionai/ling-3.1-flash",
+      "model_id": "inclusionai/ling-3.1-flash",
+      "title": "Ling 3.1 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-07",
+      "scheduled": false,
+      "pr": 16691,
+      "url": "https://github.com/pollinations/pollinations/pull/16691",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "per_user_rpm": {
+          "before": null,
+          "after": 8
+        }
+      }
+    },
+    {
+      "id": "pr-16606:mistralai/mistral-large-4",
+      "model_id": "mistralai/mistral-large-4",
+      "title": "Mistral Large 4",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-07",
+      "scheduled": false,
+      "pr": 16606,
+      "url": "https://github.com/pollinations/pollinations/pull/16606",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 524288
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000068",
+            "promptCachedTokens": "0.00000007",
+            "completionTextTokens": "0.00000209"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16341:nex-agi/nex-n2.5-mini",
+      "model_id": "nex-agi/nex-n2.5-mini",
+      "title": "Nex N2.5 Mini",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-07",
+      "scheduled": false,
+      "pr": 16341,
+      "url": "https://github.com/pollinations/pollinations/pull/16341",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000026375",
+            "promptCachedTokens": "0.000000002638",
+            "completionTextTokens": "0.0000001055"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16340:nex-agi/nex-n2.5-pro",
+      "model_id": "nex-agi/nex-n2.5-pro",
+      "title": "Nex N2.5 Pro",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-07",
+      "scheduled": false,
+      "pr": 16340,
+      "url": "https://github.com/pollinations/pollinations/pull/16340",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 262144
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000079125",
+            "promptCachedTokens": "0.000000015825",
+            "completionTextTokens": "0.00000026375"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16557:cohere/command-a-plus:retirement",
+      "model_id": "cohere/command-a-plus",
+      "title": "Cohere Command A+",
+      "action": "RETIRE",
+      "category": null,
+      "date": "2026-10-09",
+      "scheduled": true,
+      "pr": 16557,
+      "url": "https://github.com/pollinations/pollinations/pull/16557",
+      "pricing_units": null,
+      "changes": {}
+    },
+    {
+      "id": "pr-15361:deepseek/deepseek-v4-flash:retirement",
+      "model_id": "deepseek/deepseek-v4-flash",
+      "title": "DeepSeek V4 Flash 0731",
+      "action": "RETIRE",
+      "category": null,
+      "date": "2026-12-03",
+      "scheduled": true,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": null,
+      "changes": {}
+    },
+    {
+      "id": "pr-15361:moonshotai/kimi-k2.6:retirement",
+      "model_id": "moonshotai/kimi-k2.6",
+      "title": "Moonshot Kimi K2.6",
+      "action": "RETIRE",
+      "category": null,
+      "date": "2027-04-16",
+      "scheduled": true,
+      "pr": 15361,
+      "url": "https://github.com/pollinations/pollinations/pull/15361",
+      "pricing_units": null,
+      "changes": {}
+    }
+  ],
+  "highlights": [
+    {
+      "date": "2026-10-06",
+      "emoji": "🎵",
+      "title": "Eleven v4 speech arrives",
+      "text": "Generate speech with `elevenlabs/eleven-v4` or the faster `elevenlabs/eleven-v4-turbo`, including word timestamps. [Try the audio API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-10-06",
+      "emoji": "🎨",
+      "title": "Nano Banana 2.1",
+      "text": "Create images at 1K or 2K, or edit them using up to 14 reference images with `google/gemini-nano-banana-2.1`. [See image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "date": "2026-10-06",
+      "emoji": "🎬",
+      "title": "Grok Imagine Video 1.5 Lite",
+      "text": "Turn a prompt or starting image into a 1–15 second clip at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-10-06",
+      "emoji": "🔗",
+      "title": "API keys get model categories",
+      "text": "Give a key access to text, image, audio, video, or other categories instead of selecting models one by one; new models in that category are included automatically. [Manage keys](https://enter.pollinations.ai/keys)."
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "🎨",
+      "title": "FLUX.3 Image arrives",
+      "text": "Generate 1K or 2K images in fifteen aspect ratios, or edit with up to ten reference images. [Explore image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "🎨",
+      "title": "Seedream 5.0 Flash joins the garden",
+      "text": "Generate and edit images with up to ten references, seed control, and 1K or 2K output. [Explore image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "🤖",
+      "title": "Ling 3.1 Flash is here",
+      "text": "Try a new text model with reasoning, tool use, and a 262K-token context at zero launch pricing, including with Quest Pollen. [See text models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "💡",
+      "title": "Decisions get another model",
+      "text": "Liquid D1 is available for paid decision requests and chat; the [SDK](https://www.npmjs.com/package/@pollinations/sdk) now has a typed `decision()` call for Jev."
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "🔗",
+      "title": "Find the model you meant",
+      "text": "Search and filter the model catalog by capabilities through the API or MCP; Open WebUI can now sort models by category tags. [API docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-10-05",
+      "emoji": "🎯",
+      "title": "Seven quests, one page",
+      "text": "Pollinations Quest Starter walks new users through setup without sending their API key to its server. [Try it](https://elite-surely-machine-enemies.trycloudflare.com)",
+      "app": true
+    },
+    {
+      "date": "2026-10-04",
+      "emoji": "🌟",
+      "title": "New Quests for video and community models",
+      "text": "Earn Pollen for trying a video or community model; model publishers can earn it when others use their models."
+    },
+    {
+      "date": "2026-10-04",
+      "emoji": "🔗",
+      "title": "Claude Code connects directly",
+      "text": "Polli CLI can connect Claude Code to Pollinations’ `/v1/messages` endpoint, with model aliases and a separate config that leaves your Claude settings alone. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli)."
+    },
+    {
+      "date": "2026-10-04",
+      "emoji": "🎨",
+      "title": "Explore a painted world",
+      "text": "In Postcard Worlds, enter a place, then step through doors and paths in AI-painted scenes that carry the view forward. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds)",
+      "app": true
+    },
+    {
+      "date": "2026-10-04",
+      "emoji": "🎵",
+      "title": "Turn study notes into songs",
+      "text": "Tunemory makes short songs from facts, formulas, or word lists and checks the lyrics for missing details. [Try it](https://tomdacatto.github.io/pollinations-tunemory)",
+      "app": true
+    },
+    {
+      "date": "2026-10-03",
+      "emoji": "🔗",
+      "title": "More tools for MCP clients",
+      "text": "Check usage and earnings, browse quests, and manage API keys from your MCP client. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)."
+    },
+    {
+      "date": "2026-10-03",
+      "emoji": "📱",
+      "title": "Sandboxes from `polli`",
+      "text": "Create, list, and stop sandboxes from the CLI, then generate SSH configuration to connect. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli)."
+    },
+    {
+      "date": "2026-10-03",
+      "emoji": "✨",
+      "title": "PDFs and audio in chat requests",
+      "text": "Send inline PDFs to OpenRouter models or base64 audio to Inkling; Gen handles the media transfer behind the scenes. [API docs](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-10-03",
+      "emoji": "🎨",
+      "title": "Sixteen design decisions from one sentence",
+      "text": "Jev Assembler turns a page description into choices for layout, typography, palette, and more. [Try it](https://tomdacatto.github.io/pollinations-jev-assembler)",
+      "app": true
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "🚀",
+      "title": "A little room to compute",
+      "text": "Create E2B-compatible sandboxes through the gen API or `polli sandbox`, then connect over SSH. The coding-agent template comes with five agents ready to use. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "🤖",
+      "title": "The models meet Alice",
+      "text": "Compare official and community models on weekly puzzle evals, with past runs and uncertainty shown alongside the scores. [See the rankings](https://model-monitor.pollinations.ai)"
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "✨",
+      "title": "A bigger picture fits",
+      "text": "Send chat requests up to 100 MiB with inline images; large image, video, and file data URLs can be uploaded and reused across turns. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "🎨",
+      "title": "A new layer of pollen",
+      "text": "Generate and edit images directly in Krita, with results placed on new layers. [View repo](https://github.com/xiaotian1171/pollinations-krita)",
+      "app": true
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "🎵",
+      "title": "A bee enters Unity",
+      "text": "Add Pollinations-powered chat, image generation, and speech to Unity games with an async C# package. [View repo](https://github.com/Marcus-Mok-GH/pollinations-unity)",
+      "app": true
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "🔗",
+      "title": "Pi gets a proper plug",
+      "text": "Run `polli mcp install pi` to add Pollinations to Pi’s native MCP config without disturbing your other servers. [Polli CLI](https://www.npmjs.com/package/@pollinations/cli)"
+    },
+    {
+      "date": "2026-10-02",
+      "emoji": "🌟",
+      "title": "The garden gets a gathering place",
+      "text": "The Community page now shows live project activity, open votes, and Quest rankings in one place. [Visit the community](https://pollinations.ai)"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🎨",
+      "title": "Pollinations in Krita",
+      "text": "Generate or edit images inside Krita, size results to your canvas or selection, and keep the original paint layer intact."
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🎨",
+      "title": "An image studio for Figma",
+      "text": "Generate and edit images in Figma with your own Pollinations key. [Try it](https://guest453.github.io/pollinations-figma/)",
+      "app": true
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🤖",
+      "title": "Two new decision models",
+      "text": "Try Kev 4B and the free Span-01 Lite through `/alpha/decisions` or [chat completions](https://gen.pollinations.ai/v1/chat/completions)."
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "✨",
+      "title": "Bigger media uploads",
+      "text": "Send files up to 400 MiB through the existing FormData or raw `/upload` flow. No client changes needed. [Media Store](https://media.pollinations.ai)"
+    },
+    {
+      "date": "2026-10-01",
+      "emoji": "🎯",
+      "title": "Pollen for connecting Polli CLI",
+      "text": "Connect with `polli auth login` and claim a one-time 2-Pollen Quest."
+    },
+    {
+      "date": "2026-09-30",
+      "emoji": "🚀",
+      "title": "GPT-6.1 Sol is here",
+      "text": "Use it for text, reasoning, tools, streaming, and image input through the [text API](https://gen.pollinations.ai/v1/chat/completions)."
+    },
+    {
+      "date": "2026-09-30",
+      "emoji": "🎵",
+      "title": "Audio tools in the SDK",
+      "text": "Send speech duration, seed, and reference audio, or use `audioTransform()` to change a voice or isolate it. [Get the SDK](https://www.npmjs.com/package/@pollinations/sdk)."
+    },
+    {
+      "date": "2026-09-30",
+      "emoji": "🎨",
+      "title": "A new home for apps",
+      "text": "The refreshed [website](https://pollinations.ai) has a searchable app directory with shareable category, platform, and Pollen Pay filters."
+    },
+    {
+      "date": "2026-09-30",
+      "emoji": "🎮",
+      "title": "Pollinations for Godot 4",
+      "text": "Generate text, images, and speech directly from GDScript with a community-made editor addon. [View repo](https://github.com/davealan74/godot-pollinations)",
+      "app": true
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🚀",
+      "title": "Claude Sonnet 5.5",
+      "text": "Use `anthropic/claude-sonnet-5.5` for chats with images, tools, adaptive reasoning, and up to 1M tokens of context. [See available models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🔗",
+      "title": "Claude Code, meet Pollinations",
+      "text": "The new Anthropic-compatible `/v1/messages` endpoint supports streaming, tools, and thinking across chat-capable models. Point `ANTHROPIC_BASE_URL` at `https://gen.pollinations.ai`."
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎨",
+      "title": "Lightning Image Turbo",
+      "text": "Generate images from a prompt, with up to two reference images for guidance, through the image API. [Explore image models](https://gen.pollinations.ai/image/models)."
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎵",
+      "title": "Audio gets more useful",
+      "text": "Transcribe with Gemini 3.5 for word timestamps and speaker labels, or split a recording into two or six stems with ElevenLabs. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎵",
+      "title": "More voices for speech",
+      "text": "`openai/tts-1` and `openai/tts-1-hd` are now available through the existing speech endpoints. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "✨",
+      "title": "Polli CLI grows a third dimension",
+      "text": "Generate 3D files from text or images with `polli gen 3d`; the CLI also adds voice changing, audio isolation, and speech timestamps. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli)."
+    },
+    {
+      "date": "2026-09-29",
+      "emoji": "🎨",
+      "title": "Pollinations inside Figma",
+      "text": "Generate and edit images on the canvas with a community-built plugin using your own Pollen. [View repo](https://github.com/xiaotian1171/pollinations-figma)",
+      "app": true
+    },
+    {
+      "date": "2026-09-28",
+      "emoji": "🤖",
+      "title": "Frugal code-agent routing",
+      "text": "Call `community/fadyabohamza-netizen/frugal` to pick a low-cost, healthy model that can handle your context, images, and tools."
+    },
+    {
+      "date": "2026-09-28",
+      "emoji": "🎯",
+      "title": "Code reviews with Prism",
+      "text": "`cesus-agent/prism-code-review-router` matches review requests to fast, balanced, or deep models based on the diff, tool needs, and available budget."
+    },
+    {
+      "date": "2026-09-28",
+      "emoji": "🔗",
+      "title": "Polli connects to Codex and Claude Code",
+      "text": "Use `polli harness codex` or `polli harness claude-code` to route either tool through Pollinations, choose a model, and disconnect without changing your native login."
+    },
+    {
+      "date": "2026-09-28",
+      "emoji": "✨",
+      "title": "Prompt agents can call your tools",
+      "text": "Give agents client-side functions alongside server-side MCP tools, then send the results back to continue the conversation. [API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-27",
+      "emoji": "🎯",
+      "title": "Apps can complete Quests",
+      "text": "Submit an app with an open Quest number. If the app is approved, the Quest closes and you can claim its Pollen reward."
+    },
+    {
+      "date": "2026-09-27",
+      "emoji": "🎨",
+      "title": "Try image2gpt",
+      "text": "Prompt `openai/gpt-image-2` from a web app using your Pollinations account and Pollen. [Try it](https://image2gpt.vercel.app)",
+      "app": true
+    },
+    {
+      "date": "2026-09-27",
+      "emoji": "✨",
+      "title": "Generate images in your browser",
+      "text": "Simple Image Generator lets you sign in with Pollinations and create images using your Pollen balance. [Try it](https://xzeyrix.github.io/Simple-Image-Generator)",
+      "app": true
+    },
+    {
+      "date": "2026-09-26",
+      "emoji": "🎨",
+      "title": "MiniMax H3 Max makes longer videos",
+      "text": "Generate 5-, 10-, or 15-second clips up to 1080p, with synchronized audio and options for start/end frames or reference media. [Explore the API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-09-26",
+      "emoji": "🎵",
+      "title": "Gemini 3.8 finds its voice",
+      "text": "Generate WAV or PCM speech in 30 voices, with style instructions, using Flash or Flash Lite through the [audio API](https://gen.pollinations.ai/docs)."
+    },
+    {
+      "date": "2026-09-26",
+      "emoji": "🤖",
+      "title": "GPT-6 Sol and Luna join the lineup",
+      "text": "Use both alongside Astra for vision, tools, structured output, streaming, and reasoning. Quest Pollen works too. [See available models](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "🚀",
+      "title": "Polli meets tgpt",
+      "text": "Connect tgpt to Pollinations with `polli harness tgpt on`, using `openai/gpt-5.4-nano` by default—and turn it back off without trampling your existing setup. [View repo](https://github.com/pollinations/pollinations)"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "🎨",
+      "title": "Qwen Image 2.1 arrives",
+      "text": "Generate images or guide edits with up to 10 reference images using `qwen/qwen-image-2.1`. The model has brought its own collage scissors. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "✨",
+      "title": "Recraft V4.1 Flash",
+      "text": "Generate crisp text-to-image work with `recraft/recraft-v4.1-flash`, including aspect ratios from square to 9:16. [Check the API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-25",
+      "emoji": "🎵",
+      "title": "What TTS joins the app garden",
+      "text": "A browser-based Arabic RTL text-to-speech app with Pollinations OAuth is now in the community catalog. [Try it](https://bloodtubes6-cmyk.github.io/Blood)",
+      "app": true
+    },
+    {
+      "date": "2026-09-24",
+      "emoji": "🎯",
+      "title": "Video input for Ling 3.0 Flash VL",
+      "text": "Send `video_url` alongside text and images to `inclusionai/ling-3.0-flash-vl`. The hive watches clips now. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-24",
+      "emoji": "✨",
+      "title": "`polli whoami`",
+      "text": "Check which Polli identity your CLI is using with one small, script-friendly command: `polli whoami`."
+    },
+    {
+      "date": "2026-09-24",
+      "emoji": "🚀",
+      "title": "Seven models, same IDs",
+      "text": "Fireworks-backed models moved before the shutdown, keeping existing calls alive; Kimi K2.6 can now accept up to 30 images per request."
+    },
+    {
+      "date": "2026-09-24",
+      "emoji": "🎮",
+      "title": "GATEKEEPER",
+      "text": "A 60-second arcade arena where an AI writes each run’s survival rules. Fixed rulebooks were apparently too stable. [Try it](https://khuzaima3232.github.io/gatekeeper)",
+      "app": true
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "🤖",
+      "title": "GPT-5.3 Codex",
+      "text": "`openai/gpt-5.3-codex` is now available with a 400K-token context window, tool use, structured output, images, files, reasoning, streaming, and terminal workflows. [Try the API](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "🚀",
+      "title": "MiMo V2.6 Flash and Pro",
+      "text": "Two Xiaomi models join the text API with image input, tools, streaming, JSON schema, reasoning controls, and a frankly excessive 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "🎨",
+      "title": "New Azure image models",
+      "text": "Generate and edit with `microsoft/mai-image-2.6`, its faster Flash sibling, and `black-forest-labs/flux.1.1-pro` through the existing image API. [Try image generation](https://pollinations.ai/play)"
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "✨",
+      "title": "Floret gets 3D output",
+      "text": "Floret now uses shared authenticated media tools and can produce downloadable 3D generations alongside editable, publishable media."
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "⚡",
+      "title": "GPT Image overflow",
+      "text": "`gpt-image-2`, Flare, and Sunburst can absorb larger generation bursts through Azure with OpenAI fallback; Flare and Sunburst also cost 25% less."
+    },
+    {
+      "date": "2026-09-23",
+      "emoji": "🎯",
+      "title": "ShouldIApply",
+      "text": "Paste a resume and job description to estimate your odds of clearing the initial screen before beginning the traditional application odyssey. [Try it](https://notsointresting.github.io/shouldiapply)",
+      "app": true
+    },
+    {
+      "date": "2026-09-22",
+      "emoji": "🚀",
+      "title": "Claude Opus 5.5",
+      "text": "`anthropic/claude-opus-5.5` is available through the unified API: 1M-token context, image input, adaptive thinking, automatic tools, and up to 128K output tokens. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-22",
+      "emoji": "🚀",
+      "title": "GPT-6 Sol and Luna",
+      "text": "Two new paid OpenAI models, `openai/gpt-6-sol` and `openai/gpt-6-luna`, now work through the existing text API. No new endpoint ritual required. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-22",
+      "emoji": "✨",
+      "title": "GLM-5.3 FlashX",
+      "text": "`z-ai/glm-5.3-flashx` brings 1M-token context, image input, and up to 131K output tokens to the unified text API, routed directly to Z.AI. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-21",
+      "emoji": "🔗",
+      "title": "MCP moves into the workshop",
+      "text": "`polli mcp` can discover, install, inspect, and remove Pollinations MCP servers across 13 coding agents—without eating anyone else’s config. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+    },
+    {
+      "date": "2026-09-21",
+      "emoji": "🤖",
+      "title": "The router checks the weather",
+      "text": "Three new callable routing agents choose the cheapest healthy model that fits the job, using live pricing, latency, context, capability, and modality data. [Try the API](https://gen.pollinations.ai/v1/chat/completions)"
+    },
+    {
+      "date": "2026-09-21",
+      "emoji": "🚀",
+      "title": "A Grok joins the garden",
+      "text": "`x-ai/grok-4.7` is now available with reasoning, tools, structured output, image input, and a 500K context window. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-21",
+      "emoji": "🎨",
+      "title": "A garden for generated pixels",
+      "text": "Bees Pollination is a simple browser-based prompt-to-image generator connected to your Pollinations account. [Try it](https://halimyassine.github.io/bees-pollination-app)",
+      "app": true
+    },
+    {
+      "date": "2026-09-20",
+      "emoji": "🎨",
+      "title": "Atelier Image Studio",
+      "text": "Generate and refine images with reference photos, live model selection, and English/简体中文 controls. [Try it](https://image.xt1171.eu.org)",
+      "app": true
+    },
+    {
+      "date": "2026-09-20",
+      "emoji": "✨",
+      "title": "Jev Decisions API",
+      "text": "Ask Jev structured questions through `POST /alpha/decisions`—typed requests and native answers, no JSON folded into chat prompts. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-20",
+      "emoji": "🤖",
+      "title": "Jev 1.13",
+      "text": "`typesafe/jev-1.13` is now the canonical Jev model name, while `jev` and `typesafe/jev` keep working because breaking people’s code is not a feature. [Available models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-19",
+      "emoji": "💡",
+      "title": "Model discovery now includes vitals",
+      "text": "`/v1/models` and `/models` return each model’s recent health, success rate, and request volume—so choosing a model involves slightly less divination. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-19",
+      "emoji": "🎨",
+      "title": "PersonaMorph turns photos into personas",
+      "text": "Connect a Pollinations wallet and use image edits to remake portraits as artistic identities. [Try it](https://personamorph-ai-production.up.railway.app)",
+      "app": true
+    },
+    {
+      "date": "2026-09-19",
+      "emoji": "✨",
+      "title": "Oracle Mystique deals three illustrated cards",
+      "text": "Ask the AI tarot reader for a Past, Present, and Future spread, with generated card art and BYOP OAuth2. [Try it](https://oracle-mystique.up.railway.app)",
+      "app": true
+    },
+    {
+      "date": "2026-09-19",
+      "emoji": "🎵",
+      "title": "Arabic browser-only text-to-speech",
+      "text": "An RTL app lets Arabic-speaking makers sign in with BYOP PKCE and generate speech without maintaining a backend. [Try it](https://thinglover21-ux.github.io/My-app-mod)",
+      "app": true
+    },
+    {
+      "date": "2026-09-18",
+      "emoji": "🚀",
+      "title": "FLUX.2 Max",
+      "text": "High-end image generation and editing now supports up to eight reference images via `black-forest-labs/flux.2-max`. [Try the image API](https://gen.pollinations.ai/image/{prompt})"
+    },
+    {
+      "date": "2026-09-18",
+      "emoji": "🤖",
+      "title": "Tencent HY3 and HY4 Preview",
+      "text": "Two large-context text models joined the API: `tencent/hy3` for high-reasoning workloads and `tencent/hy4-preview` with a 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-18",
+      "emoji": "💡",
+      "title": "Typed decisions with Jev",
+      "text": "Call `typesafe/jev` (or `jev`) through Chat Completions for structured answers with calibrated confidence, or use `jev_decide` through MCP. [Check the API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-18",
+      "emoji": "🚀",
+      "title": "GPT-4o mini",
+      "text": "`openai/gpt-4o-mini` is now available through the unified text API, with a 128K context window and pinned provider routing. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-17",
+      "emoji": "✨",
+      "title": "Your key has a pulse",
+      "text": "Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)"
+    },
+    {
+      "date": "2026-09-17",
+      "emoji": "📱",
+      "title": "Model status, minus the weather report",
+      "text": "Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-17",
+      "emoji": "🤖",
+      "title": "DCORE joins the garden",
+      "text": "Generate Pollinations images from a Discord–Telegram bot already tending 16 servers. [Try it](https://bot.dtempest.online)",
+      "app": true
+    },
+    {
+      "date": "2026-09-17",
+      "emoji": "💡",
+      "title": "A small pile of developer shortcuts",
+      "text": "New community tools turn plain English into regexes, SQL, API blueprints, converted code, or unit tests. [Try it](https://fadyabohamza-netizen.github.io/regexly) [Try it](https://fadyabohamza-netizen.github.io/sqlcraft) [Try it](https://fadyabohamza-netizen.github.io/apiscribe) [Try it](https://fadyabohamza-netizen.github.io/codeverter) [Try it](https://fadyabohamza-netizen.github.io/testmine)",
+      "app": true
+    },
+    {
+      "date": "2026-09-16",
+      "emoji": "🎵",
+      "title": "ElevenLabs Music v2.5",
+      "text": "Generate and inpaint music with the newer `elevenlabs/music-v2.5` model through the audio API. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-16",
+      "emoji": "🎨",
+      "title": "CatGPT Has Opinions",
+      "text": "Call `Creatneworld/catgpt-comic` through chat to get a sarcastic cat answer and an inline single-panel comic in one Markdown response."
+    },
+    {
+      "date": "2026-09-16",
+      "emoji": "💡",
+      "title": "The bees remember now",
+      "text": "Computer MCP agents can now share Git-backed collective memory—read, commit, and build on notes without handing shell access any credentials. [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+    },
+    {
+      "date": "2026-09-16",
+      "emoji": "🤖",
+      "title": "A fox remembers",
+      "text": "Chat with Moko, a desert-fox NPC that keeps the facts you ask it to remember between conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com)",
+      "app": true
+    },
+    {
+      "date": "2026-09-15",
+      "emoji": "✨",
+      "title": "A catalog with a pulse",
+      "text": "Filter model catalogs by `source=official|community` and opt into healthy models with `reliability=reliable`; responses now include compact 24-hour health data. [Browse models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-15",
+      "emoji": "🔗",
+      "title": "Routes learn to self-report",
+      "text": "Inspect primary and fallback model routes, rescue counts, and per-attempt upstream latency through the new `/v1/models/status/routes` endpoint. [Check the API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-15",
+      "emoji": "🤖",
+      "title": "Scout finds the trail",
+      "text": "`meta/llama-4-scout` is back: text, vision, streaming, up to 10 images, and 16,384 output tokens, with primary and fallback routes behind it. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "date": "2026-09-15",
+      "emoji": "🎨",
+      "title": "Pick the best bloom",
+      "text": "PollenBatch generates quick low-res image variations before high-res regeneration, with a character engine for keeping recurring faces less mysteriously mutable. [Try it](https://donwrightdesigns.github.io/pollenbatch)",
+      "app": true
+    },
+    {
+      "date": "2026-09-14",
+      "emoji": "🤖",
+      "title": "The hive speaks LLM",
+      "text": "Install `llm-pollinations` to use Pollinations chat models in LLM’s CLI and Python—streaming, vision, tool calls, reasoning, and multi-turn chat included. [View repo](https://github.com/pollinations/pollinations)"
+    },
+    {
+      "date": "2026-09-14",
+      "emoji": "🎯",
+      "title": "Agents, meet the quest garden",
+      "text": "Use a qualifying agent to earn 0.25 Pollen, or create an agent somebody uses to earn 2 Pollen. The bees have started keeping score."
+    },
+    {
+      "date": "2026-09-14",
+      "emoji": "✨",
+      "title": "Media stays in the garden",
+      "text": "Apps using the shared UI can now render generated images, audio, and video inline in Markdown, alongside readable code blocks with one-click copy."
+    },
+    {
+      "date": "2026-09-14",
+      "emoji": "🎨",
+      "title": "Follow the contract vines",
+      "text": "Explore an EVM contract’s The Graph entities and event handlers as an interactive, AI-illustrated ecosystem map. [Try it](https://ceg-wine.vercel.app)",
+      "app": true
+    },
+    {
+      "date": "2026-09-14",
+      "emoji": "🎨",
+      "title": "Panels in the pollen",
+      "text": "Plan scenes, generate art, add dialogue, and assemble a vertical webtoon in one comic-making workspace. [Try it](https://manhwa-studio-320488177521.asia-southeast1.run.app)",
+      "app": true
+    },
+    {
+      "date": "2026-09-13",
+      "emoji": "🤖",
+      "title": "Polli gets two brains",
+      "text": "Ask Polli now runs on GPT-5.6 Terra, while write workflows use GPT-6 Astra—specialized routing without changing your existing Gen auth or endpoint setup. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "date": "2026-09-13",
+      "emoji": "✨",
+      "title": "Agents declare their senses",
+      "text": "Endpoint agents can now publish input and output modalities—including multiple outputs and 3D—through the standard [model listings](https://gen.pollinations.ai/v1/models)."
+    },
+    {
+      "date": "2026-09-13",
+      "emoji": "📱",
+      "title": "Agent and MCP KPIs land in the dashboard",
+      "text": "Inspect weekly requests, unique users, and MCP calls separately, then export the numbers as CSV. Software has begun counting its own pollen. [Open your dashboard](https://enter.pollinations.ai/keys)"
+    },
+    {
+      "date": "2026-09-13",
+      "emoji": "🎨",
+      "title": "Floret knows her toolkit",
+      "text": "Floret now clearly identifies herself and can point you toward image editing, voice changes, and background-noise removal when you need them. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "date": "2026-09-12",
+      "emoji": "🚀",
+      "title": "DeepSeek V4.1 Flash",
+      "text": "is now on the unified text API: reasoning, tool use, and a 1M-token context window under `deepseek/deepseek-v4.1-flash`. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "date": "2026-09-12",
+      "emoji": "🤖",
+      "title": "A computer for every bee",
+      "text": "Agents now get a private persistent `/workspace`, Bash, asset publishing, and the ability to push finished work to your own repos via `/mcp/computer`. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)"
+    },
+    {
+      "date": "2026-09-12",
+      "emoji": "🎨",
+      "title": "1080p MiniMax video",
+      "text": "Generate 5-, 10-, or 15-second 1080p clips with `minimax/minimax-h3-max-turbo`, including first/last-frame image-to-video. [API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-12",
+      "emoji": "💡",
+      "title": "Bring your own backup bees",
+      "text": "Send up to four comma-separated models such as `?model=a,b,c` on any generation endpoint; Pollinations tries your fallback chain when a provider gets dramatic. [API docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-12",
+      "emoji": "✨",
+      "title": "A friendly chat flower",
+      "text": "Pollination_chatbot is a Pollinations-powered chat interface for OpenAI, Mistral, and Gemini models, with Login with Pollinations. [Try it](https://pollinations-chatbot.vercel.app)",
+      "app": true
+    },
+    {
+      "date": "2026-09-11",
+      "emoji": "🚀",
+      "title": "Managed Code Agents",
+      "text": "Publish commit-pinned TypeScript agents from a public GitHub repo with the dashboard or Polli CLI—models, MCP tools, and AI SDK helpers included. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-11",
+      "emoji": "✨",
+      "title": "Model Parameters, Visible",
+      "text": "Every public chat model now declares which request parameters it supports, so your app can inspect the knobs before turning them. [View models](https://gen.pollinations.ai/v1/models)"
+    },
+    {
+      "date": "2026-09-11",
+      "emoji": "🎨",
+      "title": "Polli Visual Studio",
+      "text": "Discord communities can request richer page renders with full-page capture while Polli routes tasks to models by complexity."
+    },
+    {
+      "date": "2026-09-11",
+      "emoji": "🤖",
+      "title": "NewEra AI Agent",
+      "text": "Turn a plain-English app idea into a planned, coded, built, and deployed application from chat. [Try it](https://newera.namansoni.in)",
+      "app": true
+    },
+    {
+      "date": "2026-09-10",
+      "emoji": "✨",
+      "title": "StoryCraft AI",
+      "text": "Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations)",
+      "app": true
+    },
+    {
+      "date": "2026-09-10",
+      "emoji": "🎨",
+      "title": "Men’s Fashion Pins",
+      "text": "Generate polished Pinterest artwork for men’s fashion with `gpt-image-2`. Pocket squares now have an API. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html)",
+      "app": true
+    },
+    {
+      "date": "2026-09-10",
+      "emoji": "💡",
+      "title": "YouTube Transcription AI",
+      "text": "Turn YouTube transcripts into structured summaries, English translations, and concept-cover images. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations)",
+      "app": true
+    },
+    {
+      "date": "2026-09-10",
+      "emoji": "🔗",
+      "title": "Bloom harness for Polli CLI",
+      "text": "Connect Bloom CLI to Pollinations text models with `polli harness bloom on`, then inspect or remove the setup without disturbing the rest of your `.env`."
+    },
+    {
+      "date": "2026-09-09",
+      "emoji": "✨",
+      "title": "Media joins the chat",
+      "text": "Generate images, video, audio, and 3D through OpenAI-compatible `/v1/chat/completions` and `/v1/responses`, with shareable public URLs returned in the reply. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-09",
+      "emoji": "💡",
+      "title": "Vectors join the hive",
+      "text": "The JavaScript/TypeScript SDK now has `embeddings()` for text, batches, and multimodal inputs—no hand-rolled `/v1/embeddings` requests required. [SDK](https://www.npmjs.com/package/@pollinations/sdk)"
+    },
+    {
+      "date": "2026-09-09",
+      "emoji": "🎨",
+      "title": "Polli moves into GIMP",
+      "text": "Generate images as new GIMP 3 layers, or edit a selection or active layer into a new layer while leaving the original alone. The plugin remembers your private auth after a restart."
+    },
+    {
+      "date": "2026-09-09",
+      "emoji": "🌟",
+      "title": "Let the models duel",
+      "text": "PolliArena runs blind, side-by-side image-model battles so you can find out which model you actually prefer, rather than which one has the loudest name. [Try it](https://polli-arena.cloudbr.eu.org)",
+      "app": true
+    },
+    {
+      "date": "2026-09-08",
+      "emoji": "🎨",
+      "title": "GPT Image 2.5 arrives",
+      "text": "Paid users can generate and edit with `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`, including native quality controls and PNG transparency. [Try it](https://pollinations.ai/play)"
+    },
+    {
+      "date": "2026-09-08",
+      "emoji": "✨",
+      "title": "Generated media gets permanent-ish homes",
+      "text": "Images, video, audio, edits, and 3D outputs now return stable Media links instead of accidentally starting another generation when revisited. Old cached creations can be recovered too. [API Docs](https://gen.pollinations.ai/docs)"
+    },
+    {
+      "date": "2026-09-08",
+      "emoji": "📱",
+      "title": "Activity charts grew little handles",
+      "text": "Usage and Earnings now have independent date ranges, filters, CSV exports, and clickable chart bars that drill into the matching table. The Pollen ledger is becoming legible."
+    },
+    {
+      "date": "2026-09-08",
+      "emoji": "🚀",
+      "title": "More routes around broken things",
+      "text": "Expanded fallbacks keep text, embeddings, Veo, and Grok video generation moving when a provider takes an unplanned nap—without changing model IDs or prices."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-08T06:34:29.008778+00:00",
+  "generated_at": "2026-10-08T13:51:54.204848+00:00",
   "models": [
     {
       "id": "pr-15361:deepseek/deepseek-v4-flash",
@@ -2196,6 +2196,60 @@
             "promptCachedTokens": "0.00000001",
             "promptCacheWriteTokens": "0.000000125",
             "completionTextTokens": "0.0000005"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16796:stepfun/step-5-preview",
+      "model_id": "stepfun/step-5-preview",
+      "title": "StepFun Step 5 Preview",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-08",
+      "scheduled": false,
+      "pr": 16796,
+      "url": "https://github.com/pollinations/pollinations/pull/16796",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001055",
+            "promptCachedTokens": "0.00000005275",
+            "completionTextTokens": "0.0000028485"
           }
         }
       }

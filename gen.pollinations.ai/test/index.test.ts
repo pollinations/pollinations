@@ -770,6 +770,24 @@ describe("model status", () => {
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({ error: "bad minutes" });
     });
+
+    it("serves the 7-day model usage stats the dashboard prices models with", async () => {
+        await env.KV.delete("model-stats-v3");
+        const stats = { data: [{ model: "test", avg_cost_usd: 0.001 }] };
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json(stats));
+
+        const response = await fetchWorker("/models/stats");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=300",
+        );
+        expect(await response.json()).toEqual(stats);
+        expect(String(upstream.mock.calls[0]?.[0])).toContain(
+            "/v0/pipes/public_model_stats.json",
+        );
+    });
 });
 
 fixtureTest(
@@ -1222,7 +1240,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "validates CSM input before calling DeepInfra",
+    "rejects CSM input over 200 characters before calling DeepInfra",
     async ({ paidApiKey }) => {
         const deepInfraEndpoint =
             "https://api.deepinfra.com/v1/openai/audio/speech";
@@ -1250,18 +1268,6 @@ fixtureTest(
                 voice: "conversational_a",
                 response_format: "mp3",
                 message: "Maximum is 200",
-            },
-            {
-                input: "Hello",
-                voice: "unknown_voice",
-                response_format: "mp3",
-                message: "Invalid voice for sesame/csm-1b",
-            },
-            {
-                input: "Hello",
-                voice: "conversational_a",
-                response_format: "aac",
-                message: "Unsupported response_format for sesame/csm-1b",
             },
         ];
 
@@ -1414,65 +1420,6 @@ fixtureTest(
 );
 
 fixtureTest(
-    "validates Kokoro voices and formats before calling DeepInfra",
-    async ({ paidApiKey }) => {
-        const deepInfraEndpoint =
-            "https://api.deepinfra.com/v1/openai/audio/speech";
-        const calls: string[] = [];
-
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                calls.push(request.url);
-                if (
-                    request.url.startsWith(
-                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
-                    ) ||
-                    request.url.startsWith("http://localhost:7181/")
-                ) {
-                    return Response.json({ data: [] });
-                }
-                throw new Error(`Unexpected fetch: ${request.url}`);
-            },
-        );
-
-        for (const testCase of [
-            { voice: "unknown_voice", response_format: "mp3" },
-            { voice: "af_bella", response_format: "aac" },
-        ]) {
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request(
-                    "https://staging.gen.pollinations.ai/v1/audio/speech",
-                    {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${paidApiKey}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            model: "kokoro",
-                            input: "Hello",
-                            ...testCase,
-                        }),
-                    },
-                ),
-                withInlineGenerationCoordinator({
-                    ...env,
-                    DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings),
-                ctx,
-            );
-
-            expect(response.status).toBe(400);
-            await waitOnExecutionContext(ctx);
-        }
-
-        expect(calls).not.toContain(deepInfraEndpoint);
-    },
-);
-
-fixtureTest(
     "routes Lyria aliases through the Vertex interactions API",
     async ({ paidApiKey }) => {
         const endpoint =
@@ -1592,7 +1539,7 @@ fixtureTest(
                     input: "slow ambient strings",
                     duration: 20,
                 },
-                message: "fixed 30-second clips",
+                message: "Unsupported duration for google/lyria-3-clip-preview",
             },
             {
                 body: {

@@ -250,6 +250,24 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-06").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.03 * 1.055, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.02 * 1.055,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14 * 1.055,
+                },
+            },
+        },
+    },
     "alibaba/wan-2.6": {
         "alibaba/wan-2.6:replicate": { provider: "replicate" },
         "alibaba/wan-2.6:fal": {

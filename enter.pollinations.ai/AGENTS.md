@@ -594,7 +594,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CAL
 | `response_type` | `code` for OAuth code flow; omit for legacy fragment flow | `code` |
 | `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
 | `code_challenge_method` | Must be `S256` for code flow | `S256` |
-| `models` | Comma-separated allowed models | `flux,openai,gptimage` |
+| `models` | Comma-separated model categories; a model ID allows its whole category | `text,image` |
 | `budget` | Pollen budget limit | `10` |
 | `expiry` | Expiry in days (default: 7) | `7` |
 | `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |
@@ -689,7 +689,7 @@ OpenAPI 3.x JSON served at /docs/open-api/generate-schema
   2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
   3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
 - **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
-- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`)
+- **Hidden endpoints** — routes with `hide` in `describeRoute()` are excluded from production docs (e.g. `/app-lookup`, `/account/quests/check`)
 
 ### Three Output Surfaces
 

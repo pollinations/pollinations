@@ -121,6 +121,92 @@ describe("Convenience helpers", () => {
         }
     });
 
+    it.each([
+        true,
+        false,
+    ])("preserves text options and response metadata in raw mode (json: %s)", async (json) => {
+        const response = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "actual-model",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: '{"ok":true}' },
+                    finish_reason: "stop",
+                },
+            ],
+            usage: {
+                prompt_tokens: 2,
+                completion_tokens: 3,
+                total_tokens: 5,
+            },
+        };
+        fetchMock.mockResolvedValue(makeResponse(response));
+        const options = {
+            systemPrompt: "be concise",
+            model: "openai",
+            temperature: 0.5,
+            maxTokens: 42,
+            frequencyPenalty: 0.25,
+            presencePenalty: -0.25,
+            seed: -1,
+            json,
+            private: true,
+        };
+
+        await expect(generateText("hello", options)).resolves.toBe(
+            '{"ok":true}',
+        );
+        await expect(
+            generateText("hello", { ...options, raw: true }),
+        ).resolves.toMatchObject({
+            ...response,
+            text: '{"ok":true}',
+            tokens: { input: 2, output: 3, total: 5 },
+            actualModel: "actual-model",
+            requestId: "chatcmpl-test",
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const expectedBody = {
+            messages: [
+                { role: "system", content: "be concise" },
+                { role: "user", content: "hello" },
+            ],
+            model: "openai",
+            temperature: 0.5,
+            max_tokens: 42,
+            frequency_penalty: 0.25,
+            presence_penalty: -0.25,
+            seed: -1,
+            private: true,
+            stream: false,
+            ...(json ? { response_format: { type: "json_object" } } : {}),
+        };
+        expect(fetchMock.mock.calls.map(bodyOf)).toEqual([
+            expectedBody,
+            expectedBody,
+        ]);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("rejects an empty text prompt before dispatch (raw: %s)", async (raw) => {
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await expect(generateText("", { raw })).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+            message: "Prompt is required and must be a string",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("makes one request per text helper without inventing a seed", async () => {
         const response = {
             id: "chatcmpl-test",
@@ -518,6 +604,93 @@ describe("Pollinations server-owned defaults", () => {
 
         const request = fetchMock.mock.calls[0][1] as RequestInit;
         expect((request.body as FormData).has("model")).toBe(false);
+    });
+
+    // Azure's gpt-transcribe rejects a WAV upload named audio.mp3.
+    it("keeps an uploaded file's name for transcription", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(makeResponse({ text: "hello" }));
+
+        await client.transcribe(
+            new File([new Uint8Array(8)], "clip.wav", { type: "audio/wav" }),
+        );
+        await client.transcribe(new ArrayBuffer(8));
+
+        const files = fetchMock.mock.calls.map(
+            ([, request]) =>
+                ((request as RequestInit).body as FormData).get("file") as File,
+        );
+        expect(files.map((file) => file.name)).toEqual([
+            "clip.wav",
+            "audio.mp3",
+        ]);
+    });
+});
+
+describe("Pollinations video reference media", () => {
+    it.each([
+        false,
+        true,
+    ])("sends guidance URLs (arrays: %s)", async (arrays) => {
+        const urls = [
+            "https://media.example/ref,one?size=large&tag=a b",
+            "https://media.example/ref-two",
+        ];
+        const references = arrays ? urls : urls[0];
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { kind: "binary", contentType: "video/mp4" }),
+        );
+
+        await newClient().video("a guided scene", {
+            referenceImages: references,
+            referenceVideos: references,
+            referenceAudios: references,
+            referenceImage: "https://media.example/start.png",
+        });
+
+        const [requestUrl] = fetchMock.mock.calls[0];
+        const url = new URL(requestUrl as string);
+        const expected = arrays ? urls.join("|") : urls[0];
+        for (const name of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ]) {
+            expect(url.searchParams.get(name)).toBe(expected);
+        }
+        expect(url.searchParams.get("image")).toBe(
+            "https://media.example/start.png",
+        );
+        expect([...url.searchParams.keys()].sort()).toEqual([
+            "image",
+            "key",
+            "reference_audios",
+            "reference_images",
+            "reference_videos",
+        ]);
+    });
+
+    it.each([
+        undefined,
+        "https://media.example/start.png",
+        ["https://media.example/start.png", "https://media.example/end.png"],
+    ])("omits guidance and preserves frame images: %s", async (referenceImage) => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        await newClient().video("a scene", { referenceImage });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("image")).toBe(
+            Array.isArray(referenceImage)
+                ? referenceImage.join(",")
+                : (referenceImage ?? null),
+        );
+        for (const name of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ]) {
+            expect(url.searchParams.has(name)).toBe(false);
+        }
     });
 });
 
@@ -1436,6 +1609,17 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
         expect(result.buffer.byteLength).toBe(3);
     });
 
+    it("keeps the declared media type of a b64_json response", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                data: [{ b64_json: "PHN2Zy8+", media_type: "image/svg+xml" }],
+            }),
+        );
+
+        const result = await newClient().imageEdit("make it a vector");
+        expect(result.contentType).toBe("image/svg+xml");
+    });
+
     it("throws INVALID_RESPONSE / status 500 when the item has neither url nor b64_json", async () => {
         const client = newClient();
 
@@ -1470,6 +1654,54 @@ describe("Pollinations model discovery", () => {
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/models",
         );
+    });
+});
+
+describe("Pollinations.authorizeDevice", () => {
+    const deviceCode = {
+        device_code: "dev",
+        user_code: "ABCD",
+        verification_uri_complete: "https://example.test/device",
+        expires_in: 60,
+        interval: 5,
+    };
+
+    async function pollWith(...tokenResponses: Response[]) {
+        vi.useFakeTimers();
+        fetchMock.mockResolvedValueOnce(Response.json(deviceCode));
+        for (const res of tokenResponses) fetchMock.mockResolvedValueOnce(res);
+        const auth = await Pollinations.authorizeDevice();
+        const result = auth.poll();
+        result.catch(() => {});
+        await vi.advanceTimersByTimeAsync(5000 * tokenResponses.length);
+        return result;
+    }
+
+    it.each([
+        [
+            new Response("Service Unavailable", { status: 503 }),
+            503,
+            "DEVICE_FLOW_ERROR",
+        ],
+        [
+            Response.json({ error: "access_denied" }, { status: 400 }),
+            400,
+            "access_denied",
+        ],
+    ])("keeps the token endpoint status (%#)", async (res, status, code) => {
+        await expect(pollWith(res)).rejects.toMatchObject({ status, code });
+    });
+
+    it("keeps polling while pending and returns the token", async () => {
+        await expect(
+            pollWith(
+                Response.json(
+                    { error: "authorization_pending" },
+                    { status: 400 },
+                ),
+                Response.json({ access_token: "sk_device" }),
+            ),
+        ).resolves.toBe("sk_device");
     });
 });
 

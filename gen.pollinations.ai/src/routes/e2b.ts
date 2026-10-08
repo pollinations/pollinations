@@ -1,11 +1,10 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import { extractApiKey } from "@shared/auth/api-key.ts";
-import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
-import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
-import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     priceToEventParams,
@@ -19,6 +18,7 @@ import type { Env } from "@/env.ts";
 import { auth, keyPermissionsLink } from "@/middleware/auth.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
+import { requireFunds } from "@/utils/generation-access.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -157,30 +157,6 @@ function lease(sandbox: SandboxDetail, seconds: number): Lease {
     };
 }
 
-async function requireFunds(c: E2bContext, price: number) {
-    const apiKey = c.var.auth.apiKey;
-    if (
-        apiKey &&
-        typeof apiKey.pollenBalance === "number" &&
-        apiKey.pollenBalance < price
-    ) {
-        throw new PaymentRequiredError(
-            "KEY_BUDGET_EXHAUSTED",
-            `API key budget too low for this sandbox lease (${price} pollen). Increase the key budget at ${keyPermissionsLink(apiKey.id, c.env.ENVIRONMENT)}; topping up the wallet does not increase this limit.`,
-        );
-    }
-    const balance = await getUserBalance(
-        drizzle(c.env.DB),
-        c.var.auth.requireUser().id,
-    );
-    if (!canCoverEstimatedCharge(balance, price)) {
-        throw new PaymentRequiredError(
-            "INSUFFICIENT_BALANCE",
-            `Insufficient balance for this sandbox lease (${price} pollen). Top up at https://enter.pollinations.ai/top-up.`,
-        );
-    }
-}
-
 async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
     let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
         null;
@@ -198,6 +174,7 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
+            questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
         c.var.log.error("Sandbox lease charge failed: {error}", {
@@ -264,7 +241,7 @@ async function extendLease(
             : now;
     const endAt = now + timeout * 1000;
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (bill.price > 0) await requireFunds(c, bill.price);
+    if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
     const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -338,7 +315,7 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     }
     c.var.auth.requireUser();
     const apiKey = c.var.auth.apiKey;
-    if (!apiKey?.permissions?.account?.includes("machines")) {
+    if (!hasAccountPermission(apiKey, "machines")) {
         throw new HTTPException(403, {
             message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
         });
@@ -365,7 +342,7 @@ export const e2bRoutes = new Hono<Env>()
             });
         }
         // An empty wallet cannot pay for any lease.
-        await requireFunds(c, 0);
+        await requireFunds(c, 0, "sandbox lease");
         await requireCapacity(c);
 
         const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
@@ -399,7 +376,7 @@ export const e2bRoutes = new Hono<Env>()
                 (Date.parse(sandbox.endAt) - Date.parse(sandbox.startedAt)) /
                     1000,
             );
-            await requireFunds(c, bill.price);
+            await requireFunds(c, bill.price, "sandbox lease");
         } catch (error) {
             // Never leave an unpaid sandbox running.
             await e2b(c, `/sandboxes/${created.sandboxID}`, {

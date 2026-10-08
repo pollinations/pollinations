@@ -23,6 +23,7 @@ const NAMES: Record<string, string> = {
     paypal: "PayPal",
     "apple-pay": "Apple Pay",
     "google-pay": "Google Pay",
+    crypto: "Crypto",
 };
 
 /** Local examples; Stripe decides which methods appear at checkout. */
@@ -50,6 +51,7 @@ export function paymentMethods(country?: string | null): string[] {
         "paypal",
         "apple-pay",
         "google-pay",
+        "crypto",
     ];
 }
 

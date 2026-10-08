@@ -56,7 +56,15 @@ export const sandboxCommand = new Command("sandbox")
                 requireKey();
                 try {
                     const { sandboxID } = await createSandbox(template);
-                    setupSsh();
+                    try {
+                        setupSsh();
+                    } catch (err) {
+                        printResult({ id: sandboxID });
+                        fail(
+                            `Sandbox ${sandboxID} created, but failed to set up ssh`,
+                            err,
+                        );
+                    }
                     printSuccess(
                         `Sandbox ${sandboxID} created. It pauses after ${LEASE_SECONDS / 60} minutes without an ssh session.`,
                     );

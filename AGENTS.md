@@ -10,7 +10,9 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
 
-Catalog fields are defined in `operations/app-management/app.js`; categories and platform detection in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
+New submissions must credit Pollinations with the badge (`packages/ui/src/brand/badge-made-with.svg`) in the README, or on the app page when there is no repository, and upload a 16:9 screenshot (PNG/JPEG/WebP, ≤5 MB, ≥1280×720). Publishing converts it to WebP 1280×720 on `media.pollinations.ai` and sets `screenshotUrl`.
+
+Catalog fields are defined in `operations/app-management/app.js`; categories and platforms in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 ## Discord
 
@@ -171,6 +173,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Search targeted paths.
 - Keep scratch files clearly labeled in `temp/`.
 - `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
+- `packages/sdk`, `packages/ui` and `packages/polli-cli` publish to npm from `main` only when their `version` changes; CI skips a version already on npm. A PR that changes what one of them ships bumps that version (prereleases take the next number on the same tag, e.g. `5.1.0-alpha.8`), including the package's own `package-lock.json` where it has one. SDK changes also get a `CHANGELOG.md` entry.
 
 ## Testing
 

@@ -195,7 +195,7 @@ describe("large chat route", () => {
         }
     });
 
-    it("forwards over 32 MiB of base64 audio as URLs to Fireworks Inkling", async () => {
+    it("forwards over 32 MiB of base64 and data-URL audio as URLs to Fireworks Inkling", async () => {
         const { key, userId } = await createTestApiKey({
             user: { packBalance: 100 },
         });
@@ -207,9 +207,14 @@ describe("large chat route", () => {
             messages: [
                 {
                     role: "user",
-                    content: Array.from({ length: 2 }, () => ({
+                    content: Array.from({ length: 2 }, (_, index) => ({
                         type: "input_audio",
-                        input_audio: { data: base64, format: "opus" },
+                        input_audio: {
+                            data: index
+                                ? `data:audio/opus;base64,${base64}`
+                                : base64,
+                            format: "opus",
+                        },
                     })),
                 },
             ],
@@ -247,13 +252,22 @@ describe("large chat route", () => {
         } finally {
             fetch.mockRestore();
         }
-        const id = createHmac("sha256", env.BETTER_AUTH_SECRET)
+        // Bare base64 is wrapped with the ogg mime type, while an already
+        // encoded data: URL is offloaded as-is with its own mime type.
+        const bareId = createHmac("sha256", env.BETTER_AUTH_SECRET)
             .update("chat-input\0")
             .update(userId)
             .update("\0audio/ogg\0")
             .update(bytes)
             .digest("hex");
-        expect(await env.MEDIA.has(id)).toBe(true);
+        const dataUrlId = createHmac("sha256", env.BETTER_AUTH_SECRET)
+            .update("chat-input\0")
+            .update(userId)
+            .update("\0audio/opus\0")
+            .update(bytes)
+            .digest("hex");
+        expect(await env.MEDIA.has(bareId)).toBe(true);
+        expect(await env.MEDIA.has(dataUrlId)).toBe(true);
         const parts = (
             forwarded as {
                 messages: {
@@ -262,12 +276,14 @@ describe("large chat route", () => {
             }
         ).messages[0].content;
         expect(parts).toHaveLength(2);
-        for (const part of parts) {
-            expect(part).toEqual({
-                type: "audio_url",
-                audio_url: { url: `https://media.pollinations.ai/${id}` },
-            });
-        }
+        expect(parts[0]).toEqual({
+            type: "audio_url",
+            audio_url: { url: `https://media.pollinations.ai/${bareId}` },
+        });
+        expect(parts[1]).toEqual({
+            type: "audio_url",
+            audio_url: { url: `https://media.pollinations.ai/${dataUrlId}` },
+        });
     });
 
     it("accepts a 48 MiB mixed-media request through the real media service", async () => {

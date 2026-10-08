@@ -256,6 +256,7 @@ class GistEnrichmentTest(unittest.TestCase):
 | `ignored` | `string` | — |
 """
         self.assertEqual(api_surface(docs), {"GET /a": {
+            "summary": "A",
             "parameters": {"path:prompt": {"type": "string", "required": True},
                            "query:seed": {"type": "integer|null", "required": False}},
             "body": {"audio": {"type": "string", "required": True}}}})
@@ -273,8 +274,8 @@ class GistEnrichmentTest(unittest.TestCase):
             git("commit", "-am", "docs: regenerate")
             second = {"number": 2, "merge_commit_sha": git("rev-parse", "HEAD"), "commits": 1}
             changes = api_changes_for_pr(second, root)
-        self.assertEqual([(e["action"], e["endpoint"]) for e in changes],
-                         [("REMOVE", "GET /a"), ("ADD", "GET /b")])
+        self.assertEqual([(e["action"], e["endpoint"], e["summary"]) for e in changes],
+                         [("REMOVE", "GET /a", "A"), ("ADD", "GET /b", "A")])
         gist = {"pr_number": 2, "merged_at": "2026-10-08T00:00:00Z",
                 "url": "https://github.com/example/repo/pull/2", "api_changes": changes}
         old_gist = {**gist, "pr_number": 1, "merged_at": "2026-08-01T00:00:00Z"}

@@ -8,17 +8,17 @@ import subprocess
 from typing import Dict, List, Optional
 
 API_DOCS = "APIDOCS.md"
-HEADING = re.compile(r"^#### `(\w+)` `([^`]+)`")
+HEADING = re.compile(r"^#### `(\w+)` `([^`]+)`(?: — (.*))?")
 NAME = re.compile(r"^`([^`]+)`( \*)?$")
 
 
 def api_surface(markdown: str) -> Dict:
-    """Each endpoint's parameters and top-level body fields: {"POST /x": {"parameters": {}, "body": {}}}."""
+    """Each endpoint's summary, parameters and top-level body fields: {"POST /x": {"summary", "parameters", "body"}}."""
     surface, endpoint, section = {}, None, None
     for line in markdown.splitlines():
         if heading := HEADING.match(line):
             endpoint, section = f"{heading[1].upper()} {heading[2]}", None
-            surface[endpoint] = {"parameters": {}, "body": {}}
+            surface[endpoint] = {"summary": heading[3] or "", "parameters": {}, "body": {}}
         elif line.startswith(("## ", "### ")):
             endpoint = section = None
         elif endpoint and "**Parameters**" in line:
@@ -77,6 +77,7 @@ def api_changes(before: Dict, after: Dict, pr: Dict) -> List[Dict]:
         events.append({
             "id": f"pr-{pr['number']}:{endpoint}",
             "endpoint": endpoint,
+            "summary": (new or old).get("summary", ""),
             "action": action,
             "breaking": action == "REMOVE" or any(change["breaking"] for change in changes),
             "changes": changes,

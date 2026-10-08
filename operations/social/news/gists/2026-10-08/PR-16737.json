@@ -1,0 +1,37 @@
+{
+  "pr_number": 16737,
+  "title": "fix(cli): show the key budget and account balance correctly in auth status",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16737",
+  "merged_at": "2026-10-08T03:51:22Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed `polli auth status` and `polli whoami` reporting a budgeted key’s remaining budget as the wallet’s `pollen` balance. `pollen` now reflects the spendable wallet from `accountBalance.total` in the same `/account/balance` response; a separate `key_budget` line and JSON field appears when the key’s budget differs. Keys without `account:usage` report `pollen: unknown` alongside `key_budget` rather than presenting the budget as wallet funds. Unbudgeted keys retain their previous output, and the JSON `pollen` field keeps its name and type. Added a regression test and bumped the CLI to 0.1.33.",
+    "keywords": [
+      "polli CLI",
+      "auth status",
+      "whoami",
+      "Pollen balance",
+      "key budget",
+      "account:usage"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16737.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wearing a tiny accountant’s visor checks a retro terminal with separate ‘POLLEN’ and ‘KEY BUDGET’ readouts beside a sprouting code-plant; she is a cute small-to-medium pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and mint surroundings, and dark purple (#110518) text."
+  },
+  "generated_at": "2026-10-08T03:52:37.553334+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "faaaaf196f4d7163baf659adb58a74b06ba11c37",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

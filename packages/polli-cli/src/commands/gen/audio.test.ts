@@ -62,6 +62,42 @@ describe("gen audio output", () => {
         }
     });
 
+    it.each([
+        [[], null],
+        [["--voice", "alloy"], "alloy"],
+    ])("sends voice only when --voice is passed (%j)", async (args, voice) => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+        try {
+            process.chdir(folder);
+            Object.defineProperty(process.stdin, "isTTY", {
+                configurable: true,
+                value: true,
+            });
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            const output: string[] = [];
+            vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+                output.push(String(value));
+                return true;
+            });
+            let requestUrl = "";
+            vi.stubGlobal("fetch", async (url: string) => {
+                requestUrl = url;
+                return new Response(new Uint8Array([1, 2, 3]));
+            });
+
+            await createAudioCommand().parseAsync(["hi", ...args], {
+                from: "user",
+            });
+
+            expect(new URL(requestUrl).searchParams.get("voice")).toBe(voice);
+            expect(JSON.parse(output.join("")).voice).toBe(voice ?? undefined);
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+
     it("saves character timings alongside the audio with --timestamps", async () => {
         const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
         try {
@@ -95,6 +131,7 @@ describe("gen audio output", () => {
 
             expect(requestPath).toContain("/v1/audio/speech/with-timestamps");
             expect(requestBody?.input).toBe("hi");
+            expect(requestBody).not.toHaveProperty("voice");
             expect([...readFileSync("speech.mp3")]).toEqual([1, 2, 3]);
             const alignment = JSON.parse(
                 readFileSync("speech.mp3.json", "utf-8"),

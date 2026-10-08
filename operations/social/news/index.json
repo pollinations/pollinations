@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-08T00:37:23.008221+00:00",
+  "generated_at": "2026-10-08T04:20:43.379277+00:00",
   "models": [
     {
       "id": "pr-15361:deepseek/deepseek-v4-flash",
@@ -2137,6 +2137,65 @@
             "promptTextTokens": "0.000000079125",
             "promptCachedTokens": "0.000000015825",
             "completionTextTokens": "0.00000026375"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16713:anthropic/claude-haiku-5.5",
+      "model_id": "anthropic/claude-haiku-5.5",
+      "title": "Claude Haiku 5.5",
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-08",
+      "scheduled": false,
+      "pr": 16713,
+      "url": "https://github.com/pollinations/pollinations/pull/16713",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 20
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001",
+            "promptCachedTokens": "0.00000001",
+            "promptCacheWriteTokens": "0.000000125",
+            "completionTextTokens": "0.0000005"
           }
         }
       }

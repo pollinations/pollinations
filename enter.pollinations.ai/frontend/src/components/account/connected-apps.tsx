@@ -14,7 +14,7 @@ import {
     Text,
 } from "@pollinations/ui";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 
 type Connection = {
@@ -120,7 +120,7 @@ export function ConnectedApps() {
     const [actionError, setActionError] = useState<string | null>(null);
 
     const loadConnections = useCallback(async () => {
-        const response = await apiClient.account.integrations.$get();
+        const response = await accountClient.integrations.$get();
         if (!response.ok) throw new Error("Could not load connected apps.");
         setConnections(
             ((await response.json()) as { data: Connection[] }).data,
@@ -128,7 +128,7 @@ export function ConnectedApps() {
     }, []);
 
     const loadToolkits = useCallback(async (query = "") => {
-        const response = await apiClient.account.integrations.toolkits.$get({
+        const response = await accountClient.integrations.toolkits.$get({
             query: query ? { search: query } : {},
         });
         if (!response.ok) throw new Error("Could not load available apps.");
@@ -182,7 +182,7 @@ export function ConnectedApps() {
         setPendingId(toolkit);
         setActionError(null);
         try {
-            const response = await apiClient.account.integrations.$post({
+            const response = await accountClient.integrations.$post({
                 json: { toolkit },
             });
             if (!response.ok) throw new Error("Could not connect this app.");
@@ -202,9 +202,9 @@ export function ConnectedApps() {
         setPendingId(connection.id);
         setActionError(null);
         try {
-            const response = await apiClient.account.integrations[
-                ":id"
-            ].$delete({ param: { id: connection.id } });
+            const response = await accountClient.integrations[":id"].$delete({
+                param: { id: connection.id },
+            });
             if (!response.ok) {
                 throw new Error("Could not disconnect this app.");
             }

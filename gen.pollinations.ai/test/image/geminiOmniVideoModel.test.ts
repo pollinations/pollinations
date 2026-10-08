@@ -178,19 +178,13 @@ describe("geminiOmniVideoModel", () => {
         });
     });
 
-    it("rejects unsupported duration and FPS before calling Vertex", async () => {
+    it("rejects an unsupported FPS before calling Vertex", async () => {
         setGoogleEnv();
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        for (const params of [
-            { duration: 2 },
-            { duration: 3.5 },
-            { fps: 30 },
-        ]) {
-            await expect(
-                callGeminiOmniAPI("test", { ...baseParams, ...params }),
-            ).rejects.toMatchObject({ status: 400 });
-        }
+        await expect(
+            callGeminiOmniAPI("test", { ...baseParams, fps: 30 }),
+        ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 

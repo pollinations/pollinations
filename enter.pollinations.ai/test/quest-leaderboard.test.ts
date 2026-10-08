@@ -7,7 +7,10 @@ import { expect } from "vitest";
 import type { QuestLeaderboardData } from "../../pollinations.ai/src/data/community";
 import { QuestLeaderboard } from "../../pollinations.ai/src/ui/components/QuestLeaderboard";
 import { QuestStandings } from "../frontend/src/components/quests/quest-standings.tsx";
-import type { QuestStandingsResponse } from "../src/routes/quest-leaderboard.ts";
+import {
+    buildQuestStandings,
+    type QuestStandingsResponse,
+} from "../src/routes/quest-leaderboard.ts";
 import { test } from "./fixtures.ts";
 
 type ApiResponse = QuestLeaderboardData;
@@ -148,6 +151,66 @@ test("rendered leaderboard shows its heading and CTA while loading", () => {
     expect(html).toContain("Quest leaderboard");
     expect(html).toContain('href="https://enter.pollinations.ai/quests"');
     expect(html).toContain('aria-busy="true"');
+});
+
+test("voodoohop is excluded from both quest leaderboards", async () => {
+    const db = drizzle(env.DB, { schema });
+    await db.insert(schema.user).values([
+        {
+            id: "excluded-leaderboard-user",
+            name: "Excluded user",
+            email: "excluded-leaderboard@example.com",
+            githubId: 8_999_998,
+            githubUsername: "VoodooHop",
+        },
+        {
+            id: "included-leaderboard-user",
+            name: "Included user",
+            email: "included-leaderboard@example.com",
+            githubId: 8_999_999,
+            githubUsername: "included-builder",
+        },
+    ]);
+    await db.insert(schema.rewards).values([
+        {
+            id: "excluded-leaderboard-reward",
+            idempotencyKey: "excluded-leaderboard-reward",
+            userId: "excluded-leaderboard-user",
+            questId: "github:issue:12345",
+            title: "Excluded quest",
+            pollenAmount: 10,
+            balanceBucket: "tier",
+        },
+        {
+            id: "included-leaderboard-reward",
+            idempotencyKey: "included-leaderboard-reward",
+            userId: "included-leaderboard-user",
+            questId: "github:issue:12346",
+            title: "Included quest",
+            pollenAmount: 2,
+            balanceBucket: "tier",
+        },
+    ]);
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    const leaderboard = (await response.json()) as ApiResponse;
+    expect(leaderboard.leaderboard.map((row) => row.githubLogin)).toEqual([
+        "included-builder",
+    ]);
+    expect(leaderboard.totals).toEqual({
+        contributors: 1,
+        completedQuests: 1,
+        totalPollen: 2,
+    });
+
+    const standings = await buildQuestStandings(env, "VoodooHop");
+    expect(standings.participants).toBe(1);
+    expect(standings.rows.map((row) => row.githubLogin)).toEqual([
+        "included-builder",
+    ]);
+    expect(standings.you).toBeNull();
 });
 
 test("monthly standings show the podium and the rows around the viewer", async ({

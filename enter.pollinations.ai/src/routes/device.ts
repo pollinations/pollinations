@@ -1,3 +1,4 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
@@ -9,7 +10,6 @@ import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
-import { hasAccountPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
     Bindings: Env["Bindings"];

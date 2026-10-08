@@ -1,0 +1,39 @@
+{
+  "pr_number": 16033,
+  "title": "feat: run real Pi in a browser workbench with Pollinations",
+  "author": "MetaMysteries8",
+  "url": "https://github.com/pollinations/pollinations/pull/16033",
+  "merged_at": "2026-10-08T20:31:27Z",
+  "labels": [
+    "POLLEN-QUEST"
+  ],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "MetaMysteries8 added Pi Workbench, a browser app running upstream Pi 0.87.1 in WASIX. It offers guided prompts, Pi’s real fullscreen terminal, file access, Node and Bash output, HTML previews, and ZIP downloads that work during execution. Visitors can connect their own Pollinations account through registered OAuth PKCE or an existing key; generation credentials remain in tab memory outside the guest, and projects download before OAuth navigation. The app uses the live model catalog and provider usage, with optional Exa search, page reading, and Computer MCP charged to the visitor’s account. It discloses a 25% developer markup and warns that the real terminal bypasses guided spending and call limits. Terminal output is batched, rendering uses the GPU, resizing is coalesced, and Pi configuration is preserved. The README covers setup, buffered responses, startup and memory requirements, and disabled guest networking. Tests and hosted runs checked coding, MCP, OAuth recognition and cancellation, fullscreen and Escape behavior, 4,000-line output, and byte-exact 3 MiB downloads without issuing a user token.",
+    "keywords": [
+      "Pi Workbench",
+      "WASIX",
+      "OAuth PKCE",
+      "terminal",
+      "MCP",
+      "community app"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16033.jpg",
+    "prompt": "In a cozy pixel art garden workbench, a small Pi-symbol terminal glows lime green (#ecf874) beside code-plants while Polli helps a friendly CRT robot pack a project into a ZIP file. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny programmer headphones and shares the frame without dominating it, in a cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-10-08T20:33:54.228904+00:00",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "b786a995750195a2de651a51f374b59dfe05ad36",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

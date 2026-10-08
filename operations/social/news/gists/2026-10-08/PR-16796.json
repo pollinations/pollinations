@@ -1,0 +1,139 @@
+{
+  "pr_number": 16796,
+  "title": "feat: add StepFun Step 5 Preview via OpenRouter with Vercel fallback",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16796",
+  "merged_at": "2026-10-08T13:48:51Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added paid-only `stepfun/step-5-preview` with no aliases or Pollinations GPU route. It accepts text and image input, returns text, and supports tool calling, structured outputs, streaming, and reasoning controls; video input is excluded. StepFun documents a 1M-token context and 64K-token output limit. OpenRouter’s StepFun fp8 endpoint is the primary route, with a hidden Vercel AI Gateway route as fallback; the fallback supports tool calls and tool history. Input, cached-input, and output prices are billed per 1M tokens, with separate rates for the two routes. No retirement date or successor has been confirmed for the preview.",
+    "keywords": [
+      "StepFun",
+      "Step 5 Preview",
+      "OpenRouter",
+      "Vercel",
+      "model fallback",
+      "tool calling"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-08/PR-16796.jpg",
+    "prompt": "In a cozy pixel-art garden shed, two small retro terminals marked OpenRouter and Vercel sit beside a blooming code-plant, while Polli in a tiny tool belt checks the connection between them. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, never elongated or realistic, amid prominent lime green (#ecf874), soft pastel gradients, warm lighting, and cozy pixel art, 8-bit aesthetic, retro gaming vibes."
+  },
+  "generated_at": "2026-10-08T13:50:54.262496+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "3db3d414b1d5227ec45dfb7c27930e204c0945e9",
+  "announcements": [
+    {
+      "id": "pr-16796:stepfun/step-5-preview",
+      "model_id": "stepfun/step-5-preview",
+      "title": "StepFun Step 5 Preview",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001055",
+            "promptCachedTokens": "0.00000005275",
+            "completionTextTokens": "0.0000028485"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": true
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "temperature",
+            "top_p",
+            "tools",
+            "stop",
+            "frequency_penalty",
+            "logprobs",
+            "top_logprobs",
+            "reasoning",
+            "include_reasoning",
+            "response_format",
+            "structured_outputs",
+            "reasoning_effort"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "3db3d414b1d5227ec45dfb7c27930e204c0945e9^1",
+    "after_ref": "3db3d414b1d5227ec45dfb7c27930e204c0945e9"
+  }
+}

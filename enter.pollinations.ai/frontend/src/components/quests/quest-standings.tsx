@@ -44,7 +44,8 @@ function nudge(
     if (!above) return null;
     const gap = above.totalPollen - you.totalPollen;
     const pass = byReward.find((quest) => quest.reward > gap);
-    const target = `${formatPollen(gap)} Pollen to pass @${above.githubLogin}`;
+    // A tie still needs the smallest quest reward to pass, not 0.
+    const target = `${formatPollen(Math.max(gap, 0.25))} Pollen to pass @${above.githubLogin}`;
     return pass
         ? `${target} — “${pass.title}” is +${formatPollen(pass.reward)}.`
         : `${target}.`;

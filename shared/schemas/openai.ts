@@ -213,6 +213,7 @@ const ChatCompletionMessageToolCallSchema = z.object({
     function: z.object({
         name: z.string(),
         arguments: z.string(),
+        thought_signature: z.string().optional(),
     }),
 });
 

@@ -516,6 +516,17 @@ const models: ModelDefinition[] = [
         transform: claudeManualThinking,
     },
     {
+        name: "anthropic/claude-haiku-5.5",
+        config: portkeyConfig["anthropic/claude-haiku-5.5"],
+        // Sampling parameters are rejected on this model.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-haiku-5.5:vercel",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:vercel"],
+        transform: omitClaudeSampling,
+    },
+    {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
         transform: pipe(claudeAdaptiveThinking, preferTemperature),

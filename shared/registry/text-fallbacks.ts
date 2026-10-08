@@ -1,6 +1,5 @@
 import {
     defineCostVariants,
-    longContextAbove,
     longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
@@ -25,30 +24,19 @@ export const TEXT_FALLBACKS = {
         },
     },
     "openai/gpt-6-luna-decisions": {
-        // Same OpenAI backend; covers OpenRouter failures, not OpenAI outages.
-        "openai/gpt-6-luna-decisions:openai": {
-            provider: "openai",
+        // Same OpenAI backend; covers direct-route failures, not OpenAI outages.
+        "openai/gpt-6-luna-decisions:openrouter": {
+            provider: "openrouter",
             cost: {
-                promptTextTokens: perMillion(0.1),
+                promptTextTokens: perMillion(0.1) * 1.055,
                 completionTextTokens: perMillion(0),
             },
-            ...defineCostVariants(
-                {
-                    long_context: {
-                        promptTextTokens: perMillion(0.2),
-                        completionTextTokens: perMillion(0),
-                    },
-                },
-                longContextAbove(272_000),
-                {
-                    long_context: {
-                        label: "Long context (>272K)",
-                        description:
-                            "More than 272,000 input tokens; OpenAI doubles the input rate for the full request.",
-                    },
-                },
-                "≤272K context",
-            ),
+            // OpenRouter's flat rate must not inherit OpenAI's context tier.
+            costVariants: undefined,
+            selectCostVariant: undefined,
+            costVariantMetadata: undefined,
+            defaultCostVariantLabel: undefined,
+            pricingDimensions: undefined,
         },
     },
     "inclusionai/ling-3.1-flash": {

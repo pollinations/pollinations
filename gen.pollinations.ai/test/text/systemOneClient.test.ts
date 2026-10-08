@@ -186,7 +186,7 @@ describe("System One adapter", () => {
         }
     });
 
-    it("routes openai/gpt-6-luna-decisions to the decisions endpoint with its own id", async () => {
+    it("routes openai/gpt-6-luna-decisions:openrouter to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (input, init) => {
@@ -205,7 +205,7 @@ describe("System One adapter", () => {
         await generateTextPortkey(
             [{ role: "user", content: nativeContent }],
             {
-                model: "openai/gpt-6-luna-decisions",
+                model: "openai/gpt-6-luna-decisions:openrouter",
                 modelConfig: {
                     ...modelConfig,
                     model: "openai/gpt-6-luna-decisions",
@@ -303,12 +303,10 @@ describe("System One adapter", () => {
         const result = await generateTextPortkey(
             [{ role: "user", content: nativeContent }],
             {
-                model: "openai/gpt-6-luna-decisions:openai",
+                model: "openai/gpt-6-luna-decisions",
                 stream,
                 modelConfig: {
-                    ...findModelByName(
-                        "openai/gpt-6-luna-decisions:openai",
-                    )?.config(),
+                    ...findModelByName("openai/gpt-6-luna-decisions")?.config(),
                     authKey: "test-key",
                 },
             },
@@ -360,10 +358,10 @@ describe("System One adapter", () => {
             generateTextPortkey(
                 [{ role: "user", content: nativeContent }],
                 {
-                    model: "openai/gpt-6-luna-decisions:openai",
+                    model: "openai/gpt-6-luna-decisions",
                     modelConfig: {
                         ...findModelByName(
-                            "openai/gpt-6-luna-decisions:openai",
+                            "openai/gpt-6-luna-decisions",
                         )?.config(),
                         authKey: "test-key",
                     },

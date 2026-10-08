@@ -1615,18 +1615,35 @@ const TEXT_BASE_SERVICES = {
     "openai/gpt-6-luna-decisions": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "openrouter",
+        provider: "openai",
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
-        priceMultiplier: 1, // Quote the primary route; fallback cost is separate.
+        priceMultiplier: 1, // Public pricing follows the direct OpenAI rate.
         paidOnly: true,
         cost: {
-            // OpenRouter Decisions: $0.10/M input, including long context,
-            // plus its 5.5% credit-purchase fee. Output and cache are free.
-            promptTextTokens: perMillion(0.1) * 1.055,
+            // Direct OpenAI Decisions: $0.10/M input through 272K tokens.
+            // Output and cache are free; the long-context tier is below.
+            promptTextTokens: perMillion(0.1),
             completionTextTokens: perMillion(0),
         },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 input tokens; OpenAI doubles the input rate for the full request.",
+                },
+            },
+            "≤272K context",
+        ),
         title: "GPT-6 Luna Decisions",
         description:
             "Typed answers with probabilities and confidence instead of " +

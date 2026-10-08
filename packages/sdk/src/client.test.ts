@@ -916,18 +916,17 @@ describe("Pollinations chat routing", () => {
             },
         });
 
-        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
-            model: "floret",
-            stream: false,
-            routing: {
-                text: "openai",
-                web_search: "perplexity-fast",
-                image_generation: "flux",
-                image_editing: "nanobanana",
-                video: "veo",
-                audio: "elevenlabs",
-            },
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body).toMatchObject({ model: "floret", stream: false });
+        expect(body.metadata).toEqual({
+            model: "openai",
+            web_search: "perplexity-fast",
+            image_generation: "flux",
+            image_editing: "nanobanana",
+            video: "veo",
+            audio: "elevenlabs",
         });
+        expect(body.routing).toBeUndefined();
     });
 
     it("serializes partial routing for streaming chat requests", async () => {
@@ -952,11 +951,10 @@ describe("Pollinations chat routing", () => {
             // Consume the stream.
         }
 
-        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
-            model: "floret",
-            stream: true,
-            routing: { video: "veo" },
-        });
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body).toMatchObject({ model: "floret", stream: true });
+        expect(body.metadata).toEqual({ video: "veo" });
+        expect(body.routing).toBeUndefined();
     });
 
     it("omits routing when no override is provided", async () => {
@@ -969,7 +967,7 @@ describe("Pollinations chat routing", () => {
             model: "floret",
         });
 
-        expect(bodyOf(fetchMock.mock.calls[0]).routing).toBeUndefined();
+        expect(bodyOf(fetchMock.mock.calls[0]).metadata).toBeUndefined();
     });
 });
 
@@ -1017,7 +1015,7 @@ describe("Pollinations chat streaming", () => {
         expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
             messages,
             model: "requested-alias",
-            routing,
+            metadata: { model: "publisher/custom-model" },
             seed: 0,
             temperature: 0,
             stream: true,

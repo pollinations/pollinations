@@ -144,6 +144,9 @@ function useAccountResource<T>(
 
     useEffect(() => {
         void refresh();
+        return () => {
+            ++reqIdRef.current;
+        };
     }, [refresh]);
 
     return useMemo(

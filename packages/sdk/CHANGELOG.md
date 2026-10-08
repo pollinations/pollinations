@@ -4,6 +4,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.15] - 2026-10-08
+
+### Fixed
+- Pending account requests no longer log out the connected account or update
+  hook state after their hook unmounts.
+
 ## [5.1.0-alpha.14] - 2026-10-08
 
 ### Changed

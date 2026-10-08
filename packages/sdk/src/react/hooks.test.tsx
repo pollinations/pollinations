@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -145,6 +146,71 @@ describe("account hooks", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(logout).not.toHaveBeenCalled();
         await act(async () => renderer.unmount());
+    });
+
+    it("does not log out from an account request after its hook unmounts", async () => {
+        let resolve!: (response: Response) => void;
+        const pending = new Promise<Response>((r) => {
+            resolve = r;
+        });
+        vi.spyOn(globalThis, "fetch").mockReturnValue(pending);
+
+        let switchAccount!: (apiKey: string) => void;
+        function AccountProbe() {
+            useAccountKey();
+            return null;
+        }
+        function AuthProbe() {
+            const { apiKey } = useAuthState();
+            return <span>{apiKey ?? "disconnected"}</span>;
+        }
+        function Session({ showAccount }: { showAccount: boolean }) {
+            const [apiKey, setApiKey] = useState<string | null>("sk_test");
+            switchAccount = setApiKey;
+            const value = authValue({
+                apiKey,
+                isLoggedIn: !!apiKey,
+                logout: () => setApiKey(null),
+            });
+            return (
+                <AuthContext.Provider value={value}>
+                    <AuthProbe />
+                    {showAccount && <AccountProbe />}
+                </AuthContext.Provider>
+            );
+        }
+
+        let renderer!: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(<Session showAccount={true} />);
+        });
+        try {
+            // Remove the old account screen while connecting a different key.
+            await act(async () => {
+                switchAccount("sk_new_account");
+                renderer.update(<Session showAccount={false} />);
+            });
+            await act(async () => {
+                resolve(
+                    jsonResponse(
+                        {
+                            error: {
+                                code: "UNAUTHORIZED",
+                                message: "Expired key",
+                            },
+                        },
+                        { status: 401 },
+                    ),
+                );
+                await pending;
+            });
+
+            expect(renderer.root.findByType("span").children).toEqual([
+                "sk_new_account",
+            ]);
+        } finally {
+            await act(async () => renderer.unmount());
+        }
     });
 
     it("logs out when an account hook receives 401", async () => {

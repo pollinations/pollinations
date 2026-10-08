@@ -3502,6 +3502,29 @@ fixtureTest.each([{ api: "chat_completions" }, { api: "responses" }] as const)(
             expect(adaptedBody).not.toContain("usage_missing");
             expect(upstreamStreams.at(-1)).toBe(false);
         }
+        // And the other way: a streaming Responses client on a Chat model.
+        if (api === "chat_completions") {
+            const adapted = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/responses", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: endpoint.modelId,
+                        stream: true,
+                        input: "hello",
+                    }),
+                }),
+            );
+            expect(adapted.status).toBe(200);
+            const adaptedBody = await adapted.text();
+            expect(adaptedBody).toContain("event: response.output_text.delta");
+            expect(adaptedBody).toContain("event: response.completed");
+            expect(adaptedBody).not.toContain("usage_missing");
+            expect(upstreamStreams.at(-1)).toBe(false);
+        }
     },
     20_000,
 );

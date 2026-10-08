@@ -3,6 +3,7 @@ import {
     apiDetails,
     apiDocsAnchor,
     cardDetails,
+    highlightLink,
     type ModelNews,
     newsHighlights,
     visibleModelNews,
@@ -206,6 +207,26 @@ describe("model news cards", () => {
                 ],
             }).map(({ title }) => title),
         ).toEqual(["feature", "older, no PR numbers"]);
+    });
+
+    it("moves a highlight's link under its title", () => {
+        expect(
+            highlightLink(
+                "Pass arrays of URLs. [Explore the SDK](https://example.com/sdk).",
+            ),
+        ).toEqual({
+            text: "Pass arrays of URLs.",
+            link: { label: "Explore the SDK", href: "https://example.com/sdk" },
+        });
+        // An inline link keeps its words in the sentence.
+        expect(
+            highlightLink(
+                "Upload up to 400 MiB through [the media store](https://example.com).",
+            ),
+        ).toEqual({
+            text: "Upload up to 400 MiB through the media store.",
+            link: { label: "Media store", href: "https://example.com" },
+        });
     });
 
     it("puts the endpoint summary first in the API row details", () => {

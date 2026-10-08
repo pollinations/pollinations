@@ -10,6 +10,7 @@ import {
     type CardDetail,
     cardDetails,
     formatNewsDate,
+    highlightLink,
     type ModelNews,
     newsHighlights,
     useNewsIndex,
@@ -224,7 +225,10 @@ export const Changelog: FC = () => {
                     <InlineLink href="/models" size="sm">
                         Browse models
                     </InlineLink>
-                    <InlineLink href="https://gen.pollinations.ai/docs" size="sm">
+                    <InlineLink
+                        href="https://gen.pollinations.ai/docs"
+                        size="sm"
+                    >
                         API docs
                     </InlineLink>
                 </div>
@@ -266,26 +270,34 @@ export const NewsBanner: FC = () => {
     return (
         <>
             <ul className="text-sm text-theme-text-base">
-                {highlights.map((item, i) => (
-                    <Fragment key={`${item.date}-${item.title}`}>
-                        {item.date !== highlights[i - 1]?.date && (
-                            <DayLine date={item.date} today={today} />
-                        )}
-                        <li className="grid items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                            <strong className="text-theme-text-strong">
-                                {item.emoji && (
-                                    <span aria-hidden="true" className="mr-2">
-                                        {item.emoji}
-                                    </span>
-                                )}
-                                {item.title}
-                            </strong>
-                            <Markdown className="text-xs leading-5 text-theme-text-base">
-                                {item.text}
-                            </Markdown>
-                        </li>
-                    </Fragment>
-                ))}
+                {highlights.map((item, i) => {
+                    const { text, link } = highlightLink(item.text);
+                    return (
+                        <Fragment key={`${item.date}-${item.title}`}>
+                            {item.date !== highlights[i - 1]?.date && (
+                                <DayLine date={item.date} today={today} />
+                            )}
+                            <li className="grid items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                                <div className="flex flex-col items-start gap-0.5">
+                                    <strong className="text-theme-text-strong">
+                                        {item.title}
+                                    </strong>
+                                    {link && (
+                                        <InlineLink
+                                            href={link.href}
+                                            className="text-xs"
+                                        >
+                                            {link.label}
+                                        </InlineLink>
+                                    )}
+                                </div>
+                                <Markdown className="text-xs leading-5 text-theme-text-base">
+                                    {text}
+                                </Markdown>
+                            </li>
+                        </Fragment>
+                    );
+                })}
             </ul>
             <ShowOlder
                 hidden={visible >= all.length}

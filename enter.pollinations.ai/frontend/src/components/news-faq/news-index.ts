@@ -44,7 +44,6 @@ export function formatNewsDate(date: string): string {
 
 export type Highlight = {
     date: string;
-    emoji?: string;
     title: string;
     text: string;
     app?: boolean;
@@ -58,6 +57,29 @@ export function newsHighlights(index: NewsIndex): Highlight[] {
     return index.highlights.filter(
         ({ app, prs }) => !app && !prs?.some((pr) => listed.has(pr)),
     );
+}
+
+const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/;
+const CLOSING_LINK = /(^|[.!?]\s+)\[[^\]]+\]\([^)\s]+\)\.?\s*$/;
+
+/**
+ * Moves a highlight's link under its title: a closing call to action
+ * ("… [Explore the SDK](url).") leaves the text, an inline one stays as words.
+ */
+export function highlightLink(text: string): {
+    text: string;
+    link?: { label: string; href: string };
+} {
+    const match = text.match(LINK);
+    if (!match) return { text };
+    const label = match[1].replace(/^the /i, "");
+    return {
+        text: text.replace(CLOSING_LINK, "$1").replace(LINK, "$1").trim(),
+        link: {
+            label: label[0].toUpperCase() + label.slice(1),
+            href: match[2],
+        },
+    };
 }
 
 export type ApiField = { type: string; required: boolean };

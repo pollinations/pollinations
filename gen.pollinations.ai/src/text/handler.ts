@@ -24,6 +24,7 @@ import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import { publicChatChoices, publicChatStream } from "./chat/public.ts";
+import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -143,13 +144,21 @@ export async function generateChatAttempt(
     candidate: FallbackCandidate,
 ): Promise<ChatCompletion> {
     const portkey = c.env.PORTKEY;
+    // An upstream without SSE is asked for JSON, then its answer is replayed
+    // as a stream.
+    const buffered =
+        requestData.stream === true &&
+        candidate.definition?.supportsStreaming === false;
+    const attemptData = buffered
+        ? { ...requestData, stream: false }
+        : requestData;
     const result = await generateTextPortkey(
-        requestData.messages,
-        await gatewayContext(c, requestData, candidate),
+        attemptData.messages,
+        await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!requestData.stream) requireChatCompletionUsage(result);
-    return result;
+    if (!attemptData.stream) requireChatCompletionUsage(result);
+    return buffered ? completionToChatStream(result) : result;
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {

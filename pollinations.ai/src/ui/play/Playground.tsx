@@ -25,6 +25,7 @@ import {
     type FileUploadProps,
     ImageIcon,
     Input,
+    MediaPlaceholder,
     MicIcon,
     ScrollArea,
     Slider,
@@ -35,7 +36,12 @@ import {
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
-import { categoryLabel, ModalityTab } from "@pollinations/ui/gen";
+import {
+    categoryLabel,
+    ModalityTab,
+    modalityBgVar,
+    modalityTextColor,
+} from "@pollinations/ui/gen";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type CSSProperties,
@@ -550,6 +556,25 @@ function Lightbox({
                     </video>
                 ))}
         </Dialog>
+    );
+}
+
+/** The result slot while an image or video is generating, in its modality's tint. */
+function BusyPlaceholder({ category }: { category: "image" | "video" }) {
+    const Icon = CATEGORY_ICON[category];
+    return (
+        <MediaPlaceholder
+            busy
+            tint={modalityBgVar(category)}
+            icon={
+                <Icon
+                    aria-hidden="true"
+                    className="size-6"
+                    style={{ color: modalityTextColor(category) }}
+                />
+            }
+            className="mx-auto w-full max-w-3xl"
+        />
     );
 }
 
@@ -1900,6 +1925,12 @@ export function Playground() {
                         </Button>
                     )}
 
+                    {/* Holds the result's place while an image or video is
+                        on its way, so the API card below moves once, not
+                        twice. Audio keeps just the button's cue. */}
+                    {isGenerating && activeCategory !== "audio" && (
+                        <BusyPlaceholder category={activeCategory} />
+                    )}
                     {result && <ResultPanel result={result} />}
                     {apiUrl && (
                         <ApiUrlCard

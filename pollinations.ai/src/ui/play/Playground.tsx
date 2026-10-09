@@ -983,9 +983,7 @@ export function Playground() {
                       : {}),
                   ...(requiresMediaUpload
                       ? {
-                            file:
-                                audioFiles[0]?.name ||
-                                "YOUR_AUDIO_FILE (multipart upload)",
+                            file: "YOUR_AUDIO_FILE",
                         }
                       : audioFiles.length
                         ? { reference_audio: "YOUR_UPLOADED_AUDIO_URL" }

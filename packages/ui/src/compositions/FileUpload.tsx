@@ -192,7 +192,6 @@ export function FileUpload({
             <ul className="polli:m-0 polli:flex polli:flex-wrap polli:gap-3 polli:p-0">
                 {value.map((file, index) => (
                     <li
-                        // biome-ignore lint/suspicious/noArrayIndexKey: Duplicate files are allowed; position identifies each attachment.
                         key={`${file.name}-${index}`}
                         title={file.name}
                         className="polli:relative polli:list-none"

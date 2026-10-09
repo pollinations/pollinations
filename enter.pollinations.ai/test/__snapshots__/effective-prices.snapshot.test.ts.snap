@@ -3622,6 +3622,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioTokens": 0.0041,
     },
   },
+  "stealth/glyph-cluster": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptCachedTokens": 0,
+      "promptTextTokens": 0,
+    },
+  },
   "stepfun/step-3.5-flash": {
     "cost": {
       "completionTextTokens": 0.0000003165,

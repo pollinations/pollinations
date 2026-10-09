@@ -1,6 +1,27 @@
 [
   {
     "emoji": "✍️",
+    "name": "Nice No",
+    "url": "https://nice-no.maxtoms21.chatgpt.site",
+    "description": "Nice No helps people turn awkward everyday requests into kind, clear boundary messages. Describe a situation, choose Gentle, Firm, or Brief, then copy a suggested reply and a follow-up for pushback. I",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "maxtoms",
+    "githubUserId": "259193166",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16817",
+    "approvedDate": "2026-10-09",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/c4d6d7c2-019a-4a21-847c-762d0668edfa"
+  },
+  {
+    "emoji": "✍️",
     "name": "Fable Finder",
     "url": "https://mhmdrizki803-boop.github.io/fable-finder",
     "description": "Type the lesson you keep forgetting and get a four line fable with a picture, written on the spot.",

@@ -1,0 +1,159 @@
+{
+  "pr_number": 16701,
+  "title": "feat: add GPT-6 Luna Decisions with OpenAI primary and OpenRouter fallback",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16701",
+  "merged_at": "2026-10-09T09:51:09Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added the Paid-only openai/gpt-6-luna-decisions model for text and JSON decisions, with no alias or Pollinations GPU. It uses OpenAI’s /v1/decisions as primary and OpenRouter’s /api/alpha/decisions as fallback through a shared backend, and supports /alpha/decisions and /v1/chat/completions, including streaming. Input is billed per million tokens; above 272K input tokens, the higher rate applies to the entire request, while output is free. Primary and forced-fallback tests succeeded with 600K input tokens, and eight receipts reconciled wallet charges with usage records. Requests at 900K input tokens returned upstream 504s on both routes without debiting the wallet, so usable capacity at that size remains unconfirmed. Azure’s Decisions routes returned 404 in October 9 checks, and Fireworks did not list Luna.",
+    "keywords": [
+      "GPT-6 Luna Decisions",
+      "decisions API",
+      "OpenAI",
+      "OpenRouter",
+      "fallback",
+      "long context",
+      "billing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16701.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and compares two branching decision cards beside a lime green (#ecf874) glowing terminal, with code-plants growing around it; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and mint tones and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-09T09:53:06.023741+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "b07646efb9c761d196800639e825543a51362317",
+  "announcements": [
+    {
+      "id": "pr-16701:openai/gpt-6-luna-decisions",
+      "model_id": "openai/gpt-6-luna-decisions",
+      "title": "GPT-6 Luna Decisions",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": true
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001"
+          }
+        },
+        "pricing_default_label": {
+          "before": null,
+          "after": "≤272K context"
+        },
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "context",
+              "label": "Context",
+              "unit": "tokens",
+              "values": {
+                "": "≤272K",
+                "long_context": ">272K"
+              }
+            }
+          ]
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (>272K)",
+              "description": "More than 272,000 input tokens; OpenAI doubles the input rate for the full request.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.0000002"
+              }
+            }
+          ]
+        },
+        "reasoning": {
+          "before": null,
+          "after": false
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/alpha/decisions",
+            "/v1/chat/completions"
+          ]
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "stream"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": false
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "b07646efb9c761d196800639e825543a51362317^1",
+    "after_ref": "b07646efb9c761d196800639e825543a51362317"
+  }
+}

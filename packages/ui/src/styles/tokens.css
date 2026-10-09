@@ -102,7 +102,8 @@
 :root,
 [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.981 0.018 var(--polli-hue));
-    --polli-color-bg-subtle:       oklch(0.955 0.022 var(--polli-hue) / 0.7);
+    /* 0.918 keeps quiet fills visible on the cream block (surface-block 0.96). */
+    --polli-color-bg-subtle:       oklch(0.918 0.022 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
     --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);

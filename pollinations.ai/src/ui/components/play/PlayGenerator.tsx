@@ -597,7 +597,7 @@ export function PlayGenerator({
             ) : (
                 <Button
                     size="lg"
-                    disabled={isLoading}
+                    disabled={isLoading || !currentModelData}
                     onClick={apiKey ? handleGenerate : onLoginRequired}
                     className="self-end"
                 >

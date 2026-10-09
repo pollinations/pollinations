@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-09T09:53:48.479992+00:00",
+  "generated_at": "2026-10-09T10:57:35.094738+00:00",
   "models": [
     {
       "id": "pr-14556:nvidia/asset-harvester",
@@ -5361,6 +5361,298 @@
             "currency": "pollen",
             "promptTextTokens": "0.0000001"
           }
+        }
+      }
+    },
+    {
+      "id": "pr-16800:microsoft/mai-voice-2.1",
+      "model_id": "microsoft/mai-voice-2.1",
+      "title": "MAI-Voice-2.1",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-10-09",
+      "pr": 16800,
+      "url": "https://github.com/pollinations/pollinations/pull/16800",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0000165"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "cs-CZ-Grant",
+            "cs-CZ-Harper",
+            "da-DK-Grant",
+            "da-DK-Harper",
+            "de-DE-Grant",
+            "de-DE-Harper",
+            "de-DE-Klaus",
+            "de-DE-Mia",
+            "en-AU-Isla",
+            "en-GB-Emily",
+            "en-GB-Harry",
+            "en-IN-Dhruv",
+            "en-IN-Priya",
+            "en-US-Ethan",
+            "en-US-Grant",
+            "en-US-Harper",
+            "en-US-Iris",
+            "en-US-Jasper",
+            "en-US-Olivia",
+            "en-US-Sage",
+            "es-ES-Marta",
+            "es-MX-Alejo",
+            "es-MX-Grant",
+            "es-MX-Harper",
+            "es-MX-Valeria",
+            "fi-FI-Grant",
+            "fi-FI-Harper",
+            "fr-FR-Grant",
+            "fr-FR-Harper",
+            "fr-FR-Marc",
+            "fr-FR-Soleil",
+            "hi-IN-Arjun",
+            "hi-IN-Dhruv",
+            "hi-IN-Grant",
+            "hi-IN-Harper",
+            "hi-IN-Kavya",
+            "hi-IN-Priya",
+            "hu-HU-Bence",
+            "hu-HU-Grant",
+            "hu-HU-Harper",
+            "hu-HU-Levente",
+            "hu-HU-Lilla",
+            "hu-HU-Reka",
+            "id-ID-Grant",
+            "id-ID-Harper",
+            "it-IT-Grant",
+            "it-IT-Harper",
+            "it-IT-Luca",
+            "it-IT-Rosa",
+            "ko-KR-Grant",
+            "ko-KR-Haena",
+            "ko-KR-Harper",
+            "ko-KR-Junho",
+            "nb-NO-Grant",
+            "nb-NO-Harper",
+            "nl-NL-Grant",
+            "nl-NL-Harper",
+            "nl-NL-Sander",
+            "pl-PL-Grant",
+            "pl-PL-Harper",
+            "pt-BR-Caio",
+            "pt-BR-Grant",
+            "pt-BR-Harper",
+            "pt-BR-Luana",
+            "pt-BR-Pedro",
+            "pt-BR-Rafael",
+            "pt-PT-Grant",
+            "pt-PT-Harper",
+            "pt-PT-Rui",
+            "ro-RO-Andrei",
+            "ro-RO-Elena",
+            "ro-RO-Grant",
+            "ro-RO-Harper",
+            "ro-RO-Ioana",
+            "ro-RO-Radu",
+            "ru-RU-Grant",
+            "ru-RU-Harper",
+            "ru-RU-Lev",
+            "ru-RU-Masha",
+            "sv-SE-Grant",
+            "sv-SE-Harper",
+            "th-TH-Grant",
+            "th-TH-Harper",
+            "th-TH-Krit",
+            "th-TH-Nattapong",
+            "tr-TR-Aydin",
+            "tr-TR-Elif",
+            "tr-TR-Grant",
+            "tr-TR-Harper",
+            "vi-VN-Grant",
+            "vi-VN-Harper",
+            "zh-CN-Bo",
+            "zh-CN-Grant",
+            "zh-CN-Harper",
+            "zh-CN-Lan",
+            "zh-CN-Mei",
+            "zh-CN-Wei"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-16800:microsoft/mai-voice-2.1-flash",
+      "model_id": "microsoft/mai-voice-2.1-flash",
+      "title": "MAI-Voice-2.1 Flash",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-10-09",
+      "pr": 16800,
+      "url": "https://github.com/pollinations/pollinations/pull/16800",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00001125"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "cs-CZ-Grant",
+            "cs-CZ-Harper",
+            "da-DK-Grant",
+            "da-DK-Harper",
+            "de-DE-Grant",
+            "de-DE-Harper",
+            "de-DE-Klaus",
+            "de-DE-Mia",
+            "en-AU-Isla",
+            "en-GB-Emily",
+            "en-GB-Harry",
+            "en-IN-Dhruv",
+            "en-IN-Priya",
+            "en-US-Ethan",
+            "en-US-Grant",
+            "en-US-Harper",
+            "en-US-Iris",
+            "en-US-Jasper",
+            "en-US-Olivia",
+            "en-US-Sage",
+            "es-ES-Marta",
+            "es-MX-Alejo",
+            "es-MX-Grant",
+            "es-MX-Harper",
+            "es-MX-Valeria",
+            "fi-FI-Grant",
+            "fi-FI-Harper",
+            "fr-FR-Grant",
+            "fr-FR-Harper",
+            "fr-FR-Marc",
+            "fr-FR-Soleil",
+            "hi-IN-Arjun",
+            "hi-IN-Dhruv",
+            "hi-IN-Grant",
+            "hi-IN-Harper",
+            "hi-IN-Kavya",
+            "hi-IN-Priya",
+            "hu-HU-Bence",
+            "hu-HU-Grant",
+            "hu-HU-Harper",
+            "hu-HU-Levente",
+            "hu-HU-Lilla",
+            "hu-HU-Reka",
+            "id-ID-Grant",
+            "id-ID-Harper",
+            "it-IT-Grant",
+            "it-IT-Harper",
+            "it-IT-Luca",
+            "it-IT-Rosa",
+            "ko-KR-Grant",
+            "ko-KR-Haena",
+            "ko-KR-Harper",
+            "ko-KR-Junho",
+            "nb-NO-Grant",
+            "nb-NO-Harper",
+            "nl-NL-Grant",
+            "nl-NL-Harper",
+            "nl-NL-Sander",
+            "pl-PL-Grant",
+            "pl-PL-Harper",
+            "pt-BR-Caio",
+            "pt-BR-Grant",
+            "pt-BR-Harper",
+            "pt-BR-Luana",
+            "pt-BR-Pedro",
+            "pt-BR-Rafael",
+            "pt-PT-Grant",
+            "pt-PT-Harper",
+            "pt-PT-Rui",
+            "ro-RO-Andrei",
+            "ro-RO-Elena",
+            "ro-RO-Grant",
+            "ro-RO-Harper",
+            "ro-RO-Ioana",
+            "ro-RO-Radu",
+            "ru-RU-Grant",
+            "ru-RU-Harper",
+            "ru-RU-Lev",
+            "ru-RU-Masha",
+            "sv-SE-Grant",
+            "sv-SE-Harper",
+            "th-TH-Grant",
+            "th-TH-Harper",
+            "th-TH-Krit",
+            "th-TH-Nattapong",
+            "tr-TR-Aydin",
+            "tr-TR-Elif",
+            "tr-TR-Grant",
+            "tr-TR-Harper",
+            "vi-VN-Grant",
+            "vi-VN-Harper",
+            "zh-CN-Bo",
+            "zh-CN-Grant",
+            "zh-CN-Harper",
+            "zh-CN-Lan",
+            "zh-CN-Mei",
+            "zh-CN-Wei"
+          ]
         }
       }
     }

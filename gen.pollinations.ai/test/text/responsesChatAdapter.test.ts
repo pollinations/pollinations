@@ -64,116 +64,35 @@ async function streamEvents(completion: ChatCompletion) {
 }
 
 describe("Chat Completions over Responses", () => {
-    it("preserves tool-result cache boundaries for growing agent conversations", () => {
-        const response = chatToResponsesRequest(
+    it("maps OpenAI and legacy cache breakpoints without forcing explicit mode", () => {
+        const request = chatToResponsesRequest(
             [
                 {
-                    role: "tool",
-                    tool_call_id: "call_1",
-                    content: "Stable tool result",
-                    cache_control: { type: "ephemeral" },
+                    role: "system",
+                    content: "Static agent instructions",
+                    prompt_cache_breakpoint: { mode: "explicit" },
                 },
                 {
-                    role: "tool",
-                    tool_call_id: "call_2",
+                    role: "user",
                     content: [
                         {
                             type: "text",
-                            text: "Shared prefix",
+                            text: "Stable context",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                        {
+                            type: "text",
+                            text: "Legacy stable context",
                             cache_control: { type: "ephemeral" },
                         },
-                        { type: "text", text: "Changing tail" },
+                        { type: "text", text: "Dynamic question" },
                     ],
                 },
-                { role: "tool", tool_call_id: "call_3", content: "Unmarked" },
             ],
             { model: "provider-model" },
         );
-        expect(response.prompt_cache_options).toEqual({ mode: "implicit" });
-        expect(response.input).toEqual([
-            {
-                type: "function_call_output",
-                call_id: "call_1",
-                output: [
-                    {
-                        type: "input_text",
-                        text: "Stable tool result",
-                        prompt_cache_breakpoint: { mode: "explicit" },
-                    },
-                ],
-            },
-            {
-                type: "function_call_output",
-                call_id: "call_2",
-                output: [
-                    {
-                        type: "input_text",
-                        text: "Shared prefix",
-                        prompt_cache_breakpoint: { mode: "explicit" },
-                    },
-                    { type: "input_text", text: "Changing tail" },
-                ],
-            },
-            {
-                type: "function_call_output",
-                call_id: "call_3",
-                output: "Unmarked",
-            },
-        ]);
-        const native = [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: "Static prefix",
-                        prompt_cache_breakpoint: { mode: "explicit" },
-                    },
-                ],
-            },
-        ];
-        expect(
-            chatToResponsesRequest(native, { model: "provider-model" })
-                .prompt_cache_options,
-        ).toEqual({ mode: "explicit" });
-        expect(
-            chatToResponsesRequest(native, {
-                model: "provider-model",
-                prompt_cache_options: { mode: "implicit" },
-            }).prompt_cache_options,
-        ).toEqual({ mode: "implicit" });
-    });
-
-    it("maps OpenAI and legacy explicit cache breakpoints", () => {
-        expect(
-            chatToResponsesRequest(
-                [
-                    {
-                        role: "system",
-                        content: "Static agent instructions",
-                        prompt_cache_breakpoint: { mode: "explicit" },
-                    },
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: "Stable context",
-                                prompt_cache_breakpoint: { mode: "explicit" },
-                            },
-                            {
-                                type: "text",
-                                text: "Legacy stable context",
-                                cache_control: { type: "ephemeral" },
-                            },
-                            { type: "text", text: "Dynamic question" },
-                        ],
-                    },
-                ],
-                { model: "provider-model" },
-            ),
-        ).toMatchObject({
-            prompt_cache_options: { mode: "implicit" },
+        expect(request.prompt_cache_options).toBeUndefined();
+        expect(request).toMatchObject({
             input: [
                 {
                     role: "system",

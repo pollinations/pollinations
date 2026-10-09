@@ -62,21 +62,6 @@ function withPromptCacheBreakpoint(
         : content;
 }
 
-function hasPromptCacheBreakpoint(items: JsonObject[]): boolean {
-    return items.some((item) => {
-        const content = item.content ?? item.output;
-        return (
-            Array.isArray(content) &&
-            content.some(
-                (part) =>
-                    part != null &&
-                    typeof part === "object" &&
-                    "prompt_cache_breakpoint" in part,
-            )
-        );
-    });
-}
-
 function messageContent(
     message: ChatMessage,
     output: boolean,
@@ -277,20 +262,11 @@ function messageItems(message: ChatMessage): JsonObject[] {
                 })
                 .join("");
         })();
-        const content = messageContent(message, false);
-        const messageBreakpoint = promptCacheBreakpoint(message);
-        if (messageBreakpoint) {
-            if (!content.length) content.push({ type: "input_text", text: "" });
-            content[content.length - 1].prompt_cache_breakpoint =
-                messageBreakpoint;
-        }
         return [
             {
                 type: "function_call_output",
                 call_id: message.tool_call_id,
-                output: content.some((part) => part.prompt_cache_breakpoint)
-                    ? content
-                    : output,
+                output,
             },
         ];
     }
@@ -470,29 +446,15 @@ export function chatToResponsesRequest(
     if (typeof options.prompt_cache_key === "string") {
         request.prompt_cache_key = options.prompt_cache_key;
     }
+    // Without caller options, OpenAI's default mode honors the breakpoints and
+    // also looks back over earlier turns. Explicit mode would not: Claude Code
+    // moves its marker every turn, so earlier turns would never be read back.
     if (
         options.prompt_cache_options &&
         typeof options.prompt_cache_options === "object"
     ) {
         request.prompt_cache_options =
             options.prompt_cache_options as CreateResponseRequest["prompt_cache_options"];
-    } else if (hasPromptCacheBreakpoint(input)) {
-        // Anthropic clients move their breakpoint to the latest turn. Keep
-        // OpenAI's lookback at earlier user/tool endings so that prefix can hit.
-        const anthropicCache = messages.some(
-            (message) =>
-                message.cache_control ||
-                (Array.isArray(message.content) &&
-                    message.content.some(
-                        (part) =>
-                            part != null &&
-                            typeof part === "object" &&
-                            "cache_control" in part,
-                    )),
-        );
-        request.prompt_cache_options = {
-            mode: anthropicCache ? "implicit" : "explicit",
-        };
     }
     if (typeof options.prompt_cache_retention === "string") {
         request.prompt_cache_retention =

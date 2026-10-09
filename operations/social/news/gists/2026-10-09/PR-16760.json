@@ -1,0 +1,36 @@
+{
+  "pr_number": 16760,
+  "title": "fix: retrieve models by canonical ID with an unencoded slash",
+  "author": "Connectslide121",
+  "url": "https://github.com/pollinations/pollinations/pull/16760",
+  "merged_at": "2026-10-09T08:24:12Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "GET /v1/models/openai/gpt-5-nano now matches the full canonical model ID instead of returning 404 when the ID contains an unencoded slash. The route and its optional-auth middleware both match the rest of the path; encoded IDs and aliases continue to work. OpenAPI still documents the endpoint as /v1/models/{model}, with regression tests for the unencoded path and documented route.",
+    "keywords": [
+      "models API",
+      "canonical IDs",
+      "route matching",
+      "OpenAPI",
+      "bug fix"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16760.jpg",
+    "prompt": "In a cozy pixel art garden, Polli wears tiny coder glasses and helps a cheerful CRT monitor robot guide a model-ID sign reading 'openai/gpt-5-nano' along one continuous path through code-plants; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene, strictly pixel art and never realistic. Prominent lime green (#ecf874) flowers glow against a warm cream and soft pastel gradient background with dark purple (#110518) outlines: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T08:25:17.389599+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "5b5c40a5991b644a4f2220eaa3e6b3981f926915",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

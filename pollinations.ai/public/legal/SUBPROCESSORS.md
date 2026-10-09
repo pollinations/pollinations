@@ -9,7 +9,6 @@ This register accompanies the [Data Processing Addendum](/dpa). It records servi
 | Service | Purpose and data potentially processed | Location evidence and outstanding verification |
 | --- | --- | --- |
 | Cloudflare | Edge routing, Workers, databases, object storage, and media delivery; request content, cached outputs, uploaded media, account and technical data as applicable. | Distributed infrastructure. Confirm the contracted entity, actual storage/processing settings and countries, retention, and transfer terms. No EEA-only commitment is established. |
-| Amazon Web Services | Hosted operational services and configured Bedrock inference; request content and operational data where those services are used. | Bedrock config defaults to US East (Northern Virginia); other service locations and cross-region inference require deployment verification. Confirm entity and agreements. |
 | Tinybird | Usage and billing analytics; request/account identifiers, usage and payment-event metadata as described in the Privacy Policy. | Configured API host is Europe West 2 (London, UK). Confirm dataset residency, other processing locations, entity, retention and safeguards; the host alone is insufficient. |
 | Vast.ai and the selected GPU host operator | Pollinations-operated GPU inference; prompts, input media, outputs, and technical request data. | Locations vary by rented host. Verify both the marketplace's role and the host operator's identity, access, agreements, and processing country; record changes before routing personal data. |
 
@@ -36,6 +35,7 @@ These service names appear in the model registry or inference configuration. The
 | Perplexity | Search/text inference. |
 | OpenRouter | Inference routing; identify the selected downstream providers and fallback policy as well as OpenRouter itself. |
 | Vercel AI Gateway | Inference routing; identify downstream inference providers and their locations. |
+| InferencePort | Model inference and routing; identify downstream providers and their processing locations. |
 | fal.ai | Image, video, and audio inference and configured fallbacks. |
 | Replicate | Image and video inference. |
 | xAI | Text, image, and audio inference on configured routes. |
@@ -56,8 +56,9 @@ These are configuration/inventory observations, not binding region restrictions.
 
 ## Independent services and controller processing
 
-- **Externally hosted community endpoints, including InferencePort:** independently operated services described in the Privacy Policy. Their routing and fallback providers must be disclosed separately. This draft does not verify their data practices or authorise them as Pollinations sub-processors for personal-data processing under the DPA.
+- **Externally hosted community endpoints:** independently operated services described in the Privacy Policy. Their routing and fallback providers must be disclosed separately. This draft does not verify their data practices or authorise them as Pollinations sub-processors for personal-data processing under the DPA.
 - **Stripe:** payment processing and invoice delivery. Pollinations processes account, billing, and fraud records as controller; Stripe's applicable role and terms must be assessed separately. Listing it here does not make payment processing part of API inference.
+- **Buffer:** social-media scheduling and publishing. Receives post text, media links, and connected social-channel information; it is not used to deliver API inference. Confirm its contracting entity, locations, and applicable terms separately from the API DPA.
 - **GitHub, Discord, and email providers:** account/community/support channels, with their own applicable roles and policies. Do not submit Customer Data in public support channels.
 - **Customer-authorised apps and tools:** selected by the Customer; their own processing arrangements may be required.
 

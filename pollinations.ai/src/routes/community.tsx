@@ -9,6 +9,7 @@ import {
     Eyebrow,
     InlineLink,
     LinkCard,
+    LiveDot,
     MegaphoneIcon,
     Surface,
 } from "@pollinations/ui";
@@ -106,6 +107,9 @@ function FeedState({
 }
 
 /** A live count hides when its feed fails and shows a skeleton while loading. */
+// Only the Discord count is "right now"; the other metrics are totals.
+const LIVE_METRIC = "online in Discord";
+
 function liveMetric<T>(
     label: string,
     {
@@ -134,7 +138,7 @@ function CommunityParticipation() {
         liveMetric("PRs merged", pullRequests, compact),
         // The widget only exposes who is online now; a member total needs
         // a bot token, so this is the one live number the card can show.
-        liveMetric("online in Discord", online, compact),
+        liveMetric(LIVE_METRIC, online, compact),
     ].map((metric, index) => ({ ...WAYS_IN[index], metric }));
 
     return (
@@ -204,8 +208,14 @@ function CommunityParticipation() {
                                                             />
                                                         )}
                                                     </dt>
-                                                    <dd className="text-xs text-theme-text-muted">
+                                                    <dd className="flex items-center gap-1.5 text-xs text-theme-text-muted">
                                                         {way.metric.label}
+                                                        {way.metric.label ===
+                                                            LIVE_METRIC &&
+                                                            way.metric
+                                                                .value && (
+                                                                <LiveDot />
+                                                            )}
                                                     </dd>
                                                 </div>
                                             </dl>

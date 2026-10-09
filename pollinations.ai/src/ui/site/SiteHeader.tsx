@@ -9,6 +9,7 @@ import {
     ExternalLinkIcon,
     GitHubIcon,
     IconButton,
+    LiveDot,
     LogInIcon,
     MenuIcon,
     SocialCount,
@@ -105,6 +106,7 @@ function MenuUtilities({
                 {discordOnline !== null && (
                     <SocialCount as="span" network="discord" showIcon={false}>
                         {compact(discordOnline)} online
+                        <LiveDot />
                     </SocialCount>
                 )}
             </DropdownItem>
@@ -164,6 +166,7 @@ function DiscordLiveButton({ online }: { online: number | null }) {
             title={label}
         >
             {compact(online)} online
+            <LiveDot />
         </SocialCount>
     );
 }

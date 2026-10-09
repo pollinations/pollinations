@@ -3,6 +3,7 @@ import {
     ContentHeader,
     ExternalLinkButton,
     InlineLink,
+    LiveDot,
     RocketIcon,
     Text,
     UsageIcon,
@@ -90,6 +91,7 @@ function RequestsLastHour() {
                         </Text>{" "}
                         requests in the last hour
                     </span>
+                    <LiveDot />
                 </>
             ) : null}
         </Text>

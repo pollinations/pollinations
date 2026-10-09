@@ -159,6 +159,7 @@ export { IconTile, type IconTileProps } from "./primitives/IconTile.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
+export { LiveDot } from "./primitives/LiveDot.tsx";
 export { LoadingStatus } from "./primitives/LoadingStatus.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";

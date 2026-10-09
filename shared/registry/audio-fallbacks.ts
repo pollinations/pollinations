@@ -1,6 +1,18 @@
 import type { FallbackMap } from "./merge-fallbacks";
 
 export const AUDIO_FALLBACKS = {
+    "microsoft/mai-voice-2.1": {
+        "microsoft/mai-voice-2.1:vercel": {
+            provider: "vercel",
+            cost: { completionAudioTokens: 22 / 1_000_000 },
+        },
+    },
+    "microsoft/mai-voice-2.1-flash": {
+        "microsoft/mai-voice-2.1-flash:vercel": {
+            provider: "vercel",
+            cost: { completionAudioTokens: 15 / 1_000_000 },
+        },
+    },
     "google/gemini-3.5-transcribe": {
         "google/gemini-3.5-transcribe:openrouter": {
             provider: "openrouter",

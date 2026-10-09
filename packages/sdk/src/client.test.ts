@@ -454,6 +454,15 @@ describe("Pollinations media upload", () => {
         expect(formData.get("tags")).toBe("cats,gallery");
         expect(result.tags).toEqual(["cats", "gallery"]);
     });
+
+    it("keeps an uploaded file's name", async () => {
+        fetchMock.mockResolvedValue(makeResponse({ id: "media-id" }));
+
+        await newClient().upload(new File(["video"], "holiday.mp4"));
+
+        const formData = fetchMock.mock.calls[0][1].body as FormData;
+        expect((formData.get("file") as File).name).toBe("holiday.mp4");
+    });
 });
 
 describe("audio inputs", () => {

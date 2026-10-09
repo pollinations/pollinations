@@ -92,8 +92,6 @@ export async function requestDecision(
         );
     }
     const requestUrl = new URL(endpoint);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
         const response = await fetch(requestUrl, {
             method: "POST",
@@ -102,7 +100,6 @@ export async function requestDecision(
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ state, model, questions }),
-            signal: controller.signal,
         });
         await ensureUpstreamOk(response, requestUrl);
         const result = (await response.json()) as SystemOneResponse;
@@ -123,11 +120,9 @@ export async function requestDecision(
             thrown instanceof Error
                 ? (thrown as ServiceError)
                 : (new Error(String(thrown)) as ServiceError);
-        error.status ??= controller.signal.aborted ? 504 : 502;
+        error.status ??= 502;
         error.requestUrl = requestUrl;
         throw error;
-    } finally {
-        clearTimeout(timeout);
     }
 }
 

@@ -1,4 +1,5 @@
 import { CheckIcon, ClipboardIcon, CopyButton, Text } from "@pollinations/ui";
+import { Fragment } from "react";
 
 function shellQuote(value: string): string {
     return `'${value.replace(/'/g, "'\\''")}'`;
@@ -33,6 +34,21 @@ export function apiExample(
     return command.join(" \\\n");
 }
 
+/** Lets long URLs wrap after "/", "?" and "&" instead of inside a word. */
+function withBreaks(text: string) {
+    let offset = 0;
+    return text.split(/(?<=[/?&])/).map((part) => {
+        const key = offset;
+        offset += part.length;
+        return (
+            <Fragment key={key}>
+                {key > 0 && <wbr />}
+                {part}
+            </Fragment>
+        );
+    });
+}
+
 export function ApiUrlCard({
     url,
     fields,
@@ -55,15 +71,15 @@ export function ApiUrlCard({
             >
                 {(copied) => (
                     <>
-                        <code className="block whitespace-pre-wrap break-all font-mono text-sm leading-7 text-theme-text-strong">
-                            {example}
+                        <code className="block whitespace-pre-wrap font-mono text-sm leading-7 text-theme-text-strong [overflow-wrap:anywhere]">
+                            {withBreaks(example)}
                         </code>
                         <span
                             aria-hidden="true"
                             className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-theme-bg-active text-theme-text-strong"
                         >
                             {copied ? (
-                                <CheckIcon className="h-4 w-4" />
+                                <CheckIcon className="h-4 w-4 text-intent-success-text" />
                             ) : (
                                 <ClipboardIcon className="h-4 w-4" />
                             )}

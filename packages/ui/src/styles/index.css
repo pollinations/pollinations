@@ -223,9 +223,10 @@
         --polli-slider-fill,
         var(--polli-color-bg-active)
     );
+    /* A neutral track, so the amber fill alone shows the value. */
     --polli-slider-track-value: var(
         --polli-slider-track,
-        var(--polli-color-bg-pale)
+        var(--polli-color-divider)
     );
     --polli-slider-thumb-border-value: var(
         --polli-slider-thumb-border,

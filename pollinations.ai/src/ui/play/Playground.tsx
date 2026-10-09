@@ -24,11 +24,13 @@ import {
     FileUpload,
     type FileUploadProps,
     ImageIcon,
+    InfoTip,
     Input,
     MediaPlaceholder,
     MicIcon,
     ScrollArea,
     Slider,
+    Surface,
     TabButton,
     Text,
     Textarea,
@@ -44,7 +46,6 @@ import {
 } from "@pollinations/ui/gen";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
-    type CSSProperties,
     Fragment,
     type ReactNode,
     useCallback,
@@ -344,7 +345,7 @@ function VoicePicker({
     onChange: (voice: string) => void;
 }) {
     return (
-        <FieldStack label="Voice" className="play-parameter-row min-w-0">
+        <FieldStack label="Voice" orientation="inline" className="min-w-0">
             <Dropdown
                 portalled={false}
                 className="w-80 max-w-[calc(100vw-2rem)] p-2"
@@ -407,8 +408,8 @@ function ModelPicker({
                 portalled={false}
                 className="w-80 max-w-[calc(100vw-2rem)] p-2"
                 trigger={(open) => (
-                    <TabButton
-                        active
+                    <Button
+                        type="button"
                         size="lg"
                         disabled={isLoading || models.length === 0}
                         className="w-fit max-w-full self-start justify-between gap-2"
@@ -420,7 +421,7 @@ function ModelPicker({
                                 : (selected?.title ?? "No models available")}
                         </span>
                         <ChevronIcon expanded={open} />
-                    </TabButton>
+                    </Button>
                 )}
             >
                 {(close) => (
@@ -494,13 +495,10 @@ function ResultDownloadButton({
                     ? "pollinations-playground.txt"
                     : result.filename
             }
-            size="sm"
+            size="icon"
             aria-label={label}
             title={label}
-            className={cn(
-                "h-10 w-10 shrink-0 self-auto rounded-full p-0",
-                className,
-            )}
+            className={cn("shrink-0 self-auto", className)}
         >
             <DownloadIcon className="size-4" />
         </Button>
@@ -532,9 +530,10 @@ function Lightbox({
                 type="button"
                 aria-label="Close media preview"
                 onClick={onClose}
-                className="absolute top-5 right-5 z-10 h-10 w-10 min-w-10 p-0 [&>svg]:size-5"
+                size="icon"
+                className="absolute top-5 right-5 z-10"
             >
-                <XIcon />
+                <XIcon className="size-5" />
             </Button>
             {open &&
                 (result.type === "image" ? (
@@ -586,24 +585,27 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
 
     if (result.type === "audio") {
         return (
-            <div className="flex items-center gap-3 bg-surface-white p-4">
+            <Surface variant="card" className="flex items-center gap-3">
                 {/* biome-ignore lint/a11y/useMediaCaption: Generated audio has no timed caption file; an empty track creates a broken native menu. */}
                 <audio
                     src={result.url}
                     controls
                     controlsList="nodownload noplaybackrate"
                     autoPlay
-                    className="polli-playground-audio min-w-0 flex-1"
+                    className="play-audio min-w-0 flex-1"
                 />
                 <ResultDownloadButton result={result} />
-            </div>
+            </Surface>
         );
     }
 
     return (
         <div className="w-full min-w-0">
             {result.type === "text" ? (
-                <div className="relative min-h-0 flex-1 overflow-auto rounded-xl bg-surface-white p-4 pr-16 text-theme-text-strong">
+                <Surface
+                    variant="card"
+                    className="relative min-h-0 flex-1 overflow-auto pr-16 text-theme-text-strong"
+                >
                     <ResultDownloadButton
                         result={result}
                         className="absolute top-3 right-3"
@@ -615,9 +617,9 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
                     >
                         {result.text}
                     </Text>
-                </div>
+                </Surface>
             ) : (
-                <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-card bg-surface-white text-theme-text-strong">
+                <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-card bg-surface-opaque text-theme-text-strong">
                     <ResultDownloadButton
                         result={result}
                         className="absolute bottom-3 right-3 z-10"
@@ -1223,7 +1225,8 @@ export function Playground() {
     const audioInput =
         currentModel?.category === "audio" && acceptsMediaUpload ? (
             <FieldStack
-                className="play-parameter-row min-w-0"
+                orientation="inline"
+                className="min-w-0"
                 label={
                     requiresMediaUpload
                         ? `${mediaUploadLabel.charAt(0).toUpperCase()}${mediaUploadLabel.slice(1)} input`
@@ -1290,9 +1293,11 @@ export function Playground() {
                                 another model to continue.
                             </Alert>
                         )}
-                    <section
+                    <Surface
+                        as="section"
+                        variant="card"
                         aria-label="Generation inputs"
-                        className="play-parameter-card flex flex-col gap-5"
+                        className="flex flex-col gap-5"
                     >
                         {showPromptInput && (
                             <FieldStack label={promptLabel}>
@@ -1329,10 +1334,12 @@ export function Playground() {
                             {isAudioTranscription && (
                                 <FieldStack
                                     label="Language"
-                                    className="play-parameter-row min-w-0"
+                                    orientation="inline"
+                                    className="min-w-0"
                                 >
                                     <Input
                                         aria-label="Language"
+                                        className="max-w-40"
                                         placeholder="Auto (e.g. en)"
                                         value={language}
                                         onChange={(event) =>
@@ -1345,10 +1352,12 @@ export function Playground() {
                             {showsAudioLength && (
                                 <FieldStack
                                     label="Length (seconds)"
-                                    className="play-parameter-row min-w-0"
+                                    orientation="inline"
+                                    className="min-w-0"
                                 >
                                     <Input
                                         aria-label="Length in seconds"
+                                        className="max-w-40"
                                         type="number"
                                         hideNumberSteppers
                                         min={0}
@@ -1365,7 +1374,8 @@ export function Playground() {
                             {isReferenceImageListMode && (
                                 <div className="min-w-0">
                                     <FieldStack
-                                        className="play-parameter-row min-w-0"
+                                        orientation="inline"
+                                        className="min-w-0"
                                         label={
                                             <span className="inline-flex flex-wrap items-center gap-2">
                                                 Reference images
@@ -1411,7 +1421,8 @@ export function Playground() {
                                 videoConfig.exclusiveReferences && (
                                     <FieldStack
                                         label="Guidance"
-                                        className="play-parameter-row min-w-0"
+                                        orientation="inline"
+                                        className="min-w-0"
                                     >
                                         <ButtonGroup aria-label="Video guidance">
                                             {["frames", "references"].map(
@@ -1449,7 +1460,8 @@ export function Playground() {
                                     <FieldStack
                                         key={media}
                                         label={`Reference ${MEDIA_PLURAL[media]}`}
-                                        className="play-parameter-row min-w-0"
+                                        orientation="inline"
+                                        className="min-w-0"
                                     >
                                         <FileUpload
                                             value={videoReferences[media]}
@@ -1506,7 +1518,8 @@ export function Playground() {
                             {isVideoReferenceMode && (
                                 <FieldStack
                                     label="Frame"
-                                    className="play-parameter-row min-w-0"
+                                    orientation="inline"
+                                    className="min-w-0"
                                 >
                                     <div className="flex flex-wrap items-start gap-3">
                                         <fieldset
@@ -1574,7 +1587,8 @@ export function Playground() {
                                     {currentModel.resolutions.length > 1 ? (
                                         <FieldStack
                                             label="Resolution"
-                                            className="play-parameter-row min-w-0"
+                                            orientation="inline"
+                                            className="min-w-0"
                                         >
                                             <ButtonGroup aria-label="Resolution">
                                                 {currentModel.resolutions.map(
@@ -1601,108 +1615,124 @@ export function Playground() {
                                     ) : mediaSettings.resolution ? (
                                         <FieldStack
                                             label="Resolution"
-                                            className="play-parameter-row min-w-0"
+                                            orientation="inline"
+                                            className="min-w-0"
                                         >
-                                            <ButtonGroup aria-label="Resolution">
-                                                <TabButton
-                                                    size="sm"
-                                                    active
-                                                    disabled
-                                                    aria-label={`Fixed resolution: ${mediaSettings.resolution}`}
-                                                >
-                                                    {mediaSettings.resolution.toUpperCase()}
-                                                </TabButton>
-                                            </ButtonGroup>
+                                            <Chip
+                                                size="lg"
+                                                aria-label={`Fixed resolution: ${mediaSettings.resolution}`}
+                                                className="justify-self-start"
+                                            >
+                                                {mediaSettings.resolution.toUpperCase()}
+                                            </Chip>
                                         </FieldStack>
                                     ) : null}
 
                                     {currentModel.category === "video" && (
                                         <FieldStack
                                             label="Aspect ratio"
-                                            className="play-parameter-row min-w-0"
+                                            orientation="inline"
+                                            className="min-w-0"
                                         >
-                                            <ButtonGroup aria-label="Aspect ratio">
-                                                {videoConfig.ratios.map(
-                                                    (ratio) => (
-                                                        <TabButton
-                                                            key={
-                                                                ratio || "auto"
-                                                            }
-                                                            active={
-                                                                videoAspectRatio ===
-                                                                ratio
-                                                            }
-                                                            size="sm"
-                                                            disabled={
-                                                                videoConfig
-                                                                    .ratios
-                                                                    .length ===
-                                                                1
-                                                            }
-                                                            onClick={() =>
-                                                                setAspectRatio(
-                                                                    ratio,
-                                                                )
-                                                            }
-                                                        >
-                                                            {ratio || "Auto"}
-                                                        </TabButton>
-                                                    ),
-                                                )}
-                                            </ButtonGroup>
+                                            {videoConfig.ratios.length === 1 ? (
+                                                <Chip
+                                                    size="lg"
+                                                    aria-label={`Fixed aspect ratio: ${videoConfig.ratios[0] || "Auto"}`}
+                                                    className="justify-self-start"
+                                                >
+                                                    {videoConfig.ratios[0] ||
+                                                        "Auto"}
+                                                </Chip>
+                                            ) : (
+                                                <ButtonGroup aria-label="Aspect ratio">
+                                                    {videoConfig.ratios.map(
+                                                        (ratio) => (
+                                                            <TabButton
+                                                                key={
+                                                                    ratio ||
+                                                                    "auto"
+                                                                }
+                                                                active={
+                                                                    videoAspectRatio ===
+                                                                    ratio
+                                                                }
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    setAspectRatio(
+                                                                        ratio,
+                                                                    )
+                                                                }
+                                                            >
+                                                                {ratio ||
+                                                                    "Auto"}
+                                                            </TabButton>
+                                                        ),
+                                                    )}
+                                                </ButtonGroup>
+                                            )}
                                         </FieldStack>
                                     )}
 
                                     {currentModel.category === "video" && (
                                         <FieldStack
                                             label="Sound"
-                                            className="play-parameter-row min-w-0"
+                                            orientation="inline"
+                                            className="min-w-0"
                                         >
-                                            <ButtonGroup aria-label="Video sound">
-                                                {[true, false]
-                                                    .filter(
-                                                        (value) =>
-                                                            videoConfig.sound ===
-                                                                "optional" ||
-                                                            value ===
-                                                                (videoConfig.sound ===
-                                                                    "on"),
-                                                    )
-                                                    .map((value) => (
-                                                        <TabButton
-                                                            key={String(value)}
-                                                            size="sm"
-                                                            active={
+                                            {videoConfig.sound !==
+                                            "optional" ? (
+                                                <Chip
+                                                    size="lg"
+                                                    aria-label={`Fixed sound: ${videoConfig.sound === "on" ? "On" : "Off"}`}
+                                                    className="justify-self-start"
+                                                >
+                                                    {videoConfig.sound === "on"
+                                                        ? "On"
+                                                        : "Off"}
+                                                </Chip>
+                                            ) : (
+                                                <ButtonGroup aria-label="Video sound">
+                                                    {[true, false]
+                                                        .filter(
+                                                            (value) =>
                                                                 videoConfig.sound ===
-                                                                "optional"
-                                                                    ? videoSound ===
-                                                                      value
-                                                                    : true
-                                                            }
-                                                            disabled={
-                                                                videoConfig.sound !==
-                                                                "optional"
-                                                            }
-                                                            onClick={() =>
-                                                                setSound(
+                                                                    "optional" ||
+                                                                value ===
+                                                                    (videoConfig.sound ===
+                                                                        "on"),
+                                                        )
+                                                        .map((value) => (
+                                                            <TabButton
+                                                                key={String(
+                                                                    value,
+                                                                )}
+                                                                size="sm"
+                                                                active={
+                                                                    videoSound ===
                                                                     value
-                                                                        ? "on"
-                                                                        : "off",
-                                                                )
-                                                            }
-                                                        >
-                                                            {value
-                                                                ? "On"
-                                                                : "Off"}
-                                                        </TabButton>
-                                                    ))}
-                                            </ButtonGroup>
+                                                                }
+                                                                onClick={() =>
+                                                                    setSound(
+                                                                        value
+                                                                            ? "on"
+                                                                            : "off",
+                                                                    )
+                                                                }
+                                                            >
+                                                                {value
+                                                                    ? "On"
+                                                                    : "Off"}
+                                                            </TabButton>
+                                                        ))}
+                                                </ButtonGroup>
+                                            )}
                                         </FieldStack>
                                     )}
                                     {videoDuration && (
                                         <FieldStack
                                             label="Duration"
-                                            className="play-parameter-row min-w-0"
+                                            orientation="inline"
+                                            className="min-w-0"
                                         >
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <Slider
@@ -1712,14 +1742,6 @@ export function Playground() {
                                                         videoDuration.max
                                                     }
                                                     aria-valuetext={`${videoDuration.value} seconds`}
-                                                    style={
-                                                        {
-                                                            "--polli-slider-fill":
-                                                                "var(--polli-color-text-soft)",
-                                                            "--polli-slider-track":
-                                                                "var(--polli-color-bg-active)",
-                                                        } as CSSProperties
-                                                    }
                                                     min={
                                                         videoDuration.options
                                                             .length
@@ -1777,9 +1799,10 @@ export function Playground() {
                                     {customSize && (
                                         <FieldStack
                                             label="Dimensions"
-                                            className="play-parameter-row min-w-0"
+                                            orientation="inline"
+                                            className="min-w-0"
                                         >
-                                            <div className="play-dimensions flex min-w-0 items-center gap-2">
+                                            <div className="flex min-w-0 items-center gap-2">
                                                 {(
                                                     [
                                                         [
@@ -1813,6 +1836,7 @@ export function Playground() {
                                                             )}
                                                             <Input
                                                                 aria-label={`${label} in pixels`}
+                                                                className="w-24 min-w-0 px-2"
                                                                 type="number"
                                                                 hideNumberSteppers
                                                                 min={1}
@@ -1844,22 +1868,21 @@ export function Playground() {
 
                                     <FieldStack
                                         label={
-                                            <span className="inline-flex items-center gap-2">
+                                            <span className="inline-flex items-center">
                                                 Seed
-                                                <Tooltip
-                                                    ariaLabel="About seed"
+                                                <InfoTip
+                                                    label="About seed"
                                                     tapEnabled
                                                     content="A positive integer up to 2,147,483,647 (10 digits). Controls generation randomness. Reusing a seed can help reproduce a result with the same model and inputs."
-                                                    className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-theme-border text-xs text-theme-text-muted"
-                                                >
-                                                    ?
-                                                </Tooltip>
+                                                />
                                             </span>
                                         }
-                                        className="play-parameter-row min-w-0"
+                                        orientation="inline"
+                                        className="min-w-0"
                                     >
                                         <Input
                                             aria-label="Seed"
+                                            className="max-w-40"
                                             type="number"
                                             hideNumberSteppers
                                             min={1}
@@ -1875,7 +1898,7 @@ export function Playground() {
                                 </div>
                             )}
                         </div>
-                    </section>
+                    </Surface>
 
                     {error && <Alert intent="danger">{error}</Alert>}
 

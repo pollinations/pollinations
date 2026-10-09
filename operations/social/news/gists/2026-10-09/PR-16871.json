@@ -1,0 +1,38 @@
+{
+  "pr_number": 16871,
+  "title": "Add Nice No to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16871",
+  "merged_at": "2026-10-09T04:01:23Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added Nice No to the writing app catalog. It helps people turn awkward everyday requests into kind, clear boundary messages: describe a situation, choose Gentle, Firm, or Brief, then copy a suggested reply and a follow-up for pushback.",
+    "keywords": [
+      "Nice No",
+      "writing",
+      "app catalog",
+      "boundaries",
+      "messages"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16871.jpg",
+    "prompt": "In a cozy writing nook, three pixel message cards labeled Gentle, Firm, and Brief sit beside a code-plant with lime green (#ecf874) leaves; Polli, wearing tiny reading glasses, helps choose a reply. Polli is a small, cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; strictly pixel art, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T04:02:23.925383+00:00",
+  "app_name": "Nice No",
+  "app_url": "https://nice-no.maxtoms21.chatgpt.site",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "f68e5ee6e447cfa050a6183a7b7b28e6205d0815",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

@@ -349,6 +349,35 @@ describe("Account Key Management API", () => {
         });
     });
 
+    describe("PATCH /api/account/keys/:id (update)", () => {
+        test("accepts an ISO 8601 expiry with a UTC offset", async ({
+            accountToken,
+        }) => {
+            const key = await createApiKeyViaApi(accountToken, {
+                name: "offset-expiry",
+            });
+
+            const response = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${key.id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accountToken}`,
+                    },
+                    body: JSON.stringify({
+                        expiresAt: "2030-01-01T02:00:00+02:00",
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(200);
+            expect((await response.json()).expiresAt).toBe(
+                "2030-01-01T00:00:00.000Z",
+            );
+        });
+    });
+
     describe("GET /api/account/keys (list)", () => {
         test("should list keys via session auth", async ({
             accountToken,

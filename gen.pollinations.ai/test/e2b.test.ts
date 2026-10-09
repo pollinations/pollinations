@@ -138,7 +138,13 @@ function stubE2b() {
         }
         if (call === "POST /timeout") {
             // Like E2B, end the lease with the run at the latest, and refuse
-            // to renew a run past its end (keep_alive.go).
+            // to renew a paused sandbox or a run past its end (keep_alive.go).
+            if (sandbox.state !== "running") {
+                return Response.json(
+                    { code: 404, message: "Sandbox not found" },
+                    { status: 404 },
+                );
+            }
             const runEnd = Date.parse(sandbox.startedAt) + RUN_MS;
             if (Date.now() > runEnd) {
                 return Response.json(
@@ -164,6 +170,8 @@ function stubE2b() {
         if (call === "POST /connect") {
             const endAt = inSeconds(body.timeout ?? 300);
             const resumed = sandbox.state === "paused";
+            // Like E2B, resuming starts a new run (create_instance.go).
+            if (resumed) sandbox.startedAt = inSeconds(0);
             sandbox.state = "running";
             sandbox.endAt =
                 resumed || endAt > sandbox.endAt ? endAt : sandbox.endAt;
@@ -327,18 +335,18 @@ test("E2B errors reach the caller and cost nothing", async () => {
 
     const created = await createSandbox(owner.key);
     const { sandboxID } = await created.json<{ sandboxID: string }>();
-    e2b.sandboxes[0].startedAt = new Date(Date.now() - RUN_MS).toISOString();
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
     const extended = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
         timeout: 600,
     });
-    expect(extended.status).toBe(400);
+    expect(extended.status).toBe(404);
 
     // Only the lease E2B actually granted is paid for.
     expect(await questPollen(owner.userId)).toBeCloseTo(10 - LEASE_300S, 8);
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
 });
 
-test("a lease runs to the end of E2B's 24-hour run at the latest, and pays no further", async () => {
+test("a lease runs to the end of E2B's 24-hour run at the latest; resuming starts a new run", async () => {
     const e2b = stubE2b();
     const owner = await sandboxKey();
     const created = await createSandbox(owner.key);
@@ -353,9 +361,18 @@ test("a lease runs to the end of E2B's 24-hour run at the latest, and pays no fu
     });
     expect(extended.status).toBe(204);
 
-    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(2));
+    // E2B pauses the sandbox when the run ends; resuming pays a whole lease.
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+    e2b.sandboxes[0].startedAt = new Date(Date.now() - RUN_MS).toISOString();
+    const resumed = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        timeout: 300,
+    });
+    expect(resumed.status).toBe(201);
+
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
     expect(e2b.leases()[1].totalPrice).toBeCloseTo(LEASE_300S, 5);
-    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 2 * LEASE_300S, 5);
+    expect(e2b.leases()[2].totalPrice).toBeCloseTo(LEASE_300S, 5);
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 3 * LEASE_300S, 5);
 });
 
 test("refuses keys without the scope, unpaid leases and closed endpoints", async () => {

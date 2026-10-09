@@ -29,6 +29,8 @@ export const E2B_PATH = "/alpha/e2b";
 // One E2B team runs every user's sandboxes; this metadata key names the owner.
 const OWNER_KEY = "pollinations_user";
 const MAX_RUNNING_PER_USER = 3;
+// E2B ends a sandbox's run 24 hours after it starts or resumes.
+const MAX_RUN_MS = 24 * 60 * 60_000;
 // E2B list prices per second, in pollen (1 pollen ≈ $1).
 const VCPU_SECOND = 0.000014;
 const GIB_SECOND = 0.0000045;
@@ -235,31 +237,20 @@ async function extendLease(
         });
     }
     const now = startTime.getTime();
-    const paidUntil =
-        sandbox.state === "running"
-            ? Math.max(Date.parse(sandbox.endAt), now)
-            : now;
-    const endAt = now + timeout * 1000;
-    const quote = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (quote.price > 0) await requireFunds(c, quote.price, "sandbox lease");
+    const running = sandbox.state === "running";
+    const paidUntil = running ? Math.max(Date.parse(sandbox.endAt), now) : now;
+    // E2B silently shortens a lease past the end of the run, so pay only up
+    // to it. Resuming a paused sandbox starts a new run.
+    const runEnd = (running ? Date.parse(sandbox.startedAt) : now) + MAX_RUN_MS;
+    const endAt = Math.min(now + timeout * 1000, runEnd);
+    const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
+    if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
     const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ timeout }),
     });
-    if (response.ok && quote.price > 0) {
-        // E2B silently shortens a lease past the end of the sandbox's 24-hour
-        // run, so pay only for the lease it set.
-        const updated = await getSandbox(c, sandbox.sandboxID).catch(
-            () => null,
-        );
-        const granted =
-            updated?.state === "running"
-                ? Math.min(endAt, Date.parse(updated.endAt))
-                : endAt;
-        const bill = lease(sandbox, Math.max(0, granted - paidUntil) / 1000);
-        if (bill.price > 0) await charge(c, bill, startTime);
-    }
+    if (response.ok && bill.price > 0) await charge(c, bill, startTime);
     return new Response(response.body, response);
 }
 

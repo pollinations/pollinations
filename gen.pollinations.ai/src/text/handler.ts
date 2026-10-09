@@ -23,6 +23,7 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import { findModelByName } from "./availableModels.js";
 import { chatStreamToCompletion } from "./chat/assemble.ts";
 import { publicChatChoices, publicChatStream } from "./chat/public.ts";
 import { completionToChatStream } from "./chat/stream.ts";
@@ -171,16 +172,20 @@ export async function generateChatAttempt(
 /**
  * Cloudflare ends a request with 524 when its origin sends nothing for 125s.
  * Reasoning models can think longer than that before a JSON answer, so their
- * non-stream requests are streamed from the provider and assembled here
- * (#15396).
+ * non-stream Chat Completions requests are streamed from the provider and
+ * assembled here (#15396). Responses and TypeSafe targets keep their own
+ * transports.
  */
 function streamsNonStreamRequests(candidate: FallbackCandidate): boolean {
     const definition = candidate.definition;
+    const transport = findModelByName(candidate.id);
     return (
         !candidate.communityEndpoint &&
         definition?.reasoning === true &&
         definition.supportsStreaming !== false &&
-        !definition.outputModalities?.includes("audio")
+        !definition.outputModalities?.includes("audio") &&
+        !transport?.useResponsesApi &&
+        !transport?.useSystemOneApi
     );
 }
 

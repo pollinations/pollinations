@@ -2,7 +2,7 @@ import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
-import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
+import { normalizeSeed, parseBooleanLike, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
@@ -13,12 +13,10 @@ const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
+// Same tokens as the text route (1/yes/on); unrecognized values stay false.
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])
-    .transform((value) => {
-        if (typeof value === "boolean") return value;
-        return value?.toString()?.toLowerCase?.() === "true";
-    });
+    .transform((value) => parseBooleanLike(value) ?? false);
 
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);

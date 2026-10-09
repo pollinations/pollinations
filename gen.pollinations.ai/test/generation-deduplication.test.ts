@@ -18,6 +18,7 @@ import {
 import {
     deduplicateGeneration,
     type GenerationJob,
+    type GenerationJobHead,
 } from "@/middleware/generation-deduplication.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 
@@ -41,6 +42,16 @@ type TestEnv = {
             formData?: FormData;
         };
 };
+
+/** Folds the streamed RPC body back into the job, as the coordinator does. */
+async function receivedJob(
+    head: GenerationJobHead,
+    body?: ReadableStream<Uint8Array>,
+): Promise<GenerationJob> {
+    if (!body) return head;
+    const bytes = new Uint8Array(await new Response(body).arrayBuffer());
+    return { ...head, request: { ...head.request, body: bytes } };
+}
 
 function executionContext(): ExecutionContext {
     return {
@@ -139,8 +150,11 @@ describe("generation request deduplication", () => {
         let active: Promise<void> | undefined;
         let owners = 0;
         const coordinator = {
-            async startAndWait(job: GenerationJob) {
-                jobs.push(job);
+            async startAndWait(
+                head: GenerationJobHead,
+                body?: ReadableStream<Uint8Array>,
+            ) {
+                jobs.push(await receivedJob(head, body));
                 if (!active) {
                     owners += 1;
                     active = Promise.resolve().then(() => {
@@ -246,8 +260,11 @@ describe("generation request deduplication", () => {
             const bindings = {
                 GENERATION_COORDINATOR: {
                     getByName: () => ({
-                        startAndWait: async (captured: GenerationJob) => {
-                            job = captured;
+                        startAndWait: async (
+                            head: GenerationJobHead,
+                            stream?: ReadableStream<Uint8Array>,
+                        ) => {
+                            job = await receivedJob(head, stream);
                             cache.set("same-request", "generated");
                             return { status: "cached" as const };
                         },
@@ -364,7 +381,11 @@ describe("generation request deduplication", () => {
         const bindings = {
             GENERATION_COORDINATOR: {
                 getByName: () => ({
-                    startAndWait: async (job: GenerationJob) => {
+                    startAndWait: async (
+                        head: GenerationJobHead,
+                        body?: ReadableStream<Uint8Array>,
+                    ) => {
+                        const job = await receivedJob(head, body);
                         jobs.push(job);
                         cache.set(job.cache.key, "generated");
                         return { status: "cached" as const };

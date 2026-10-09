@@ -19,6 +19,7 @@ SQL >
         ) AS meter_source,
         token_count_prompt_text AS input_text_tokens,
         token_count_prompt_cached AS input_cached_tokens,
+        token_count_prompt_cache_write AS input_cache_write_tokens,
         token_count_prompt_audio AS input_audio_tokens,
         token_count_prompt_audio_seconds AS input_audio_seconds,
         token_count_prompt_image AS input_image_tokens,

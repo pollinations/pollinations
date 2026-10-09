@@ -171,6 +171,7 @@ describe("token totals", () => {
     const row = {
         input_text_tokens: 10,
         input_cached_tokens: 3,
+        input_cache_write_tokens: 7,
         input_audio_tokens: 2,
         input_image_tokens: 1,
         output_text_tokens: 20,
@@ -179,8 +180,8 @@ describe("token totals", () => {
         output_image_tokens: 6,
     };
 
-    it("sums all input token columns", () => {
-        expect(tokensIn(row)).toBe(16);
+    it("sums all input token columns, including cache writes", () => {
+        expect(tokensIn(row)).toBe(23);
     });
 
     it("sums all output token columns including reasoning", () => {

@@ -16,6 +16,7 @@ import {
     Tooltip,
     XIcon,
 } from "@pollinations/ui";
+import { formatPollen } from "@pollinations/ui/wallet";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { FC } from "react";
 import { useState } from "react";
@@ -24,6 +25,8 @@ import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
+import { filterKeys, type KeySort, sortKeys } from "./key-filter-sort.ts";
+import { KeyListToolbar } from "./key-list-toolbar.tsx";
 import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
@@ -48,6 +51,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [query, setQuery] = useState("");
+    const [sort, setSort] = useState<KeySort>("created");
 
     async function handleDelete(): Promise<void> {
         if (!deletingKey || isDeleting) return;
@@ -73,12 +78,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const visibleKeys = apiKeys.filter(
         (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
     );
-    const sortedKeys = [...visibleKeys].sort(
-        (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    const sortedKeys = sortKeys(filterKeys(visibleKeys, query), sort);
     const sortedApiKeys = sortedKeys.filter((apiKey) => !isAppKey(apiKey));
     const sortedAppKeys = sortedKeys.filter(isAppKey);
+    const hasKeys = visibleKeys.length > 0;
+    const noMatches = hasKeys && sortedKeys.length === 0;
 
     function renderKeyCard(apiKey: ApiKey) {
         const isPublishable = isPublishableKey(apiKey);
@@ -179,6 +183,16 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 : "never"}
                         </span>
                     </span>
+                    {apiKey.totalSpend != null && apiKey.totalSpend > 0 && (
+                        <span>
+                            <span className="text-theme-text-muted">
+                                Spent:{" "}
+                            </span>
+                            <span className="text-theme-text-muted">
+                                {formatPollen(apiKey.totalSpend)}p
+                            </span>
+                        </span>
+                    )}
                     {isPublishable && primaryRedirectUri && (
                         <span className="inline-flex min-w-0 items-center gap-1">
                             <span className="text-theme-text-muted">
@@ -322,13 +336,28 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
 
     return (
         <>
+            {hasKeys && (
+                <KeyListToolbar
+                    query={query}
+                    onQueryChange={setQuery}
+                    sort={sort}
+                    onSortChange={setSort}
+                />
+            )}
+            {noMatches && (
+                <Surface className="p-6 text-center">
+                    <p className="text-sm text-theme-text-muted">
+                        No keys match “{query.trim()}”.
+                    </p>
+                </Surface>
+            )}
             <Section
                 title="Secrets"
                 id="api-keys"
                 action={sortedApiKeys.length > 0 && keyAction}
             >
                 <div className="flex flex-col gap-3">
-                    {!sortedApiKeys.length && (
+                    {!sortedApiKeys.length && !hasKeys && (
                         <Surface className="p-6 text-center">
                             <div className="mb-2">{keyAction}</div>
                             <p className="text-sm text-theme-text-muted">
@@ -354,7 +383,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 action={sortedAppKeys.length > 0 && appAction}
             >
                 <div className="flex flex-col gap-3">
-                    {!sortedAppKeys.length && (
+                    {!sortedAppKeys.length && !hasKeys && (
                         <Surface className="p-6 text-center">
                             <div className="mb-2">{appAction}</div>
                             <p className="text-sm text-theme-text-muted">

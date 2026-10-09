@@ -12,6 +12,8 @@ type TabButtonOwnProps = {
     /** Omit when rendering as a link (`as`) and navigation carries the change. */
     onClick?: () => void;
     children: ReactNode;
+    /** Leading icon, sized to the label like Button's. */
+    icon?: ReactNode;
     size?: "lg" | "md" | "sm" | "xs";
     variant?: "soft" | "ghost";
     /**
@@ -108,6 +110,7 @@ export function TabButton<T extends ElementType = "button">({
     active,
     onClick,
     children,
+    icon,
     size = "md",
     variant = "soft",
     intent,
@@ -164,6 +167,14 @@ export function TabButton<T extends ElementType = "button">({
                 className,
             )}
         >
+            {icon && (
+                <span
+                    aria-hidden="true"
+                    className="polli:mr-1.5 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
+                >
+                    {icon}
+                </span>
+            )}
             {children}
             {detail != null && (
                 <span className="polli:ml-1 polli:font-normal polli:opacity-70">

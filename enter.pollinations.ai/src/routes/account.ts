@@ -1878,6 +1878,14 @@ export const accountRoutes = new Hono<Env>()
                     message: "Disabled or expired keys can't be rotated",
                 });
             }
+            // As on creation and PATCH: a key can't hand out spending it
+            // doesn't have, so it can't take over a key that spends paid Pollen.
+            if (c.var.auth.apiKey?.questPollenOnly && !key.questPollenOnly) {
+                throw new HTTPException(403, {
+                    message:
+                        "A Quest Pollen only key can't rotate a key that spends paid Pollen",
+                });
+            }
 
             // Swapping the stored hash on the same row keeps every setting
             // and the key's usage history, and invalidates the old value in

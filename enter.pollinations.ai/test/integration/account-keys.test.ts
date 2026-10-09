@@ -619,6 +619,25 @@ describe("Account Key Management API", () => {
             expect((await keyInfo(created.key)).status).toBe(200);
         });
 
+        test("a Quest Pollen only key can't rotate a key that spends paid Pollen", async ({
+            accountToken,
+        }) => {
+            const questOnly = await createApiKeyViaApi(accountToken, {
+                name: "quest-only-manager",
+                accountPermissions: ["keys"],
+                questPollenOnly: true,
+            });
+            const paid = await createApiKeyViaApi(accountToken, {
+                name: "spends-paid",
+            });
+
+            expect((await rotate(paid.id, questOnly.key)).status).toBe(403);
+            expect((await keyInfo(paid.key)).status).toBe(200);
+            expect((await rotate(questOnly.id, questOnly.key)).status).toBe(
+                200,
+            );
+        });
+
         test("rejects publishable keys", async ({ accountToken }) => {
             const created = await createApiKeyViaApi(accountToken, {
                 name: "app-key",

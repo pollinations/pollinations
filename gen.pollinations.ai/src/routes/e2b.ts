@@ -240,14 +240,26 @@ async function extendLease(
             ? Math.max(Date.parse(sandbox.endAt), now)
             : now;
     const endAt = now + timeout * 1000;
-    const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
+    const quote = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
+    if (quote.price > 0) await requireFunds(c, quote.price, "sandbox lease");
     const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ timeout }),
     });
-    if (response.ok && bill.price > 0) await charge(c, bill, startTime);
+    if (response.ok && quote.price > 0) {
+        // E2B silently shortens a lease past the end of the sandbox's 24-hour
+        // run, so pay only for the lease it set.
+        const updated = await getSandbox(c, sandbox.sandboxID).catch(
+            () => null,
+        );
+        const granted =
+            updated?.state === "running"
+                ? Math.min(endAt, Date.parse(updated.endAt))
+                : endAt;
+        const bill = lease(sandbox, Math.max(0, granted - paidUntil) / 1000);
+        if (bill.price > 0) await charge(c, bill, startTime);
+    }
     return new Response(response.body, response);
 }
 

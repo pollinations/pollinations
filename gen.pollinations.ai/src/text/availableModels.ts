@@ -494,7 +494,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "x-ai/grok-4.7",
-        config: portkeyConfig["x-ai/grok-4.7"],
+        config: portkeyConfig["grok-4.7"],
     },
     {
         name: "x-ai/grok-4.6:azure:sweden",
@@ -503,6 +503,10 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.6:xai",
         config: portkeyConfig["grok-4.6-xai"],
+    },
+    {
+        name: "x-ai/grok-4.7:xai",
+        config: portkeyConfig["grok-4.7-xai"],
     },
     {
         name: "openai/gpt-audio-mini",

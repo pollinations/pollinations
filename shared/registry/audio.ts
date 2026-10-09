@@ -1060,9 +1060,9 @@ const AUDIO_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "audio",
         addedDate: new Date("2026-10-08").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // Direct Azure Speech list rate; Vercel matches it, OpenRouter adds 5.5%.
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Direct Azure Speech list rate; Vercel matches it.
         cost: { completionAudioTokens: 22 / 1_000_000 },
         title: "MAI-Voice-2.1",
         description:
@@ -1077,9 +1077,9 @@ const AUDIO_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "audio",
         addedDate: new Date("2026-10-08").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // Direct Azure Speech list rate; Vercel matches it, OpenRouter adds 5.5%.
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Direct Azure Speech list rate; Vercel matches it.
         cost: { completionAudioTokens: 15 / 1_000_000 },
         title: "MAI-Voice-2.1 Flash",
         description:

@@ -6,19 +6,11 @@ export const AUDIO_FALLBACKS = {
             provider: "vercel",
             cost: { completionAudioTokens: 22 / 1_000_000 },
         },
-        "microsoft/mai-voice-2.1:openrouter": {
-            provider: "openrouter",
-            cost: { completionAudioTokens: (22 / 1_000_000) * 1.055 },
-        },
     },
     "microsoft/mai-voice-2.1-flash": {
         "microsoft/mai-voice-2.1-flash:vercel": {
             provider: "vercel",
             cost: { completionAudioTokens: 15 / 1_000_000 },
-        },
-        "microsoft/mai-voice-2.1-flash:openrouter": {
-            provider: "openrouter",
-            cost: { completionAudioTokens: (15 / 1_000_000) * 1.055 },
         },
     },
     "google/gemini-3.5-transcribe": {

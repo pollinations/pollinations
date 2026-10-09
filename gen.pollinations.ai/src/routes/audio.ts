@@ -18,6 +18,7 @@ import {
     createAudioSecondsUsage,
     createAudioTokenUsage,
     createCompletionAudioSecondsUsage,
+    PROVIDER_BILLING_HEADERS,
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
@@ -2457,7 +2458,6 @@ export async function generateMaiSpeech(opts: {
         voice,
         responseFormat,
         apiKey,
-        log,
     } = opts;
     if (responseFormat !== "mp3" && responseFormat !== "pcm")
         throw new UpstreamError(400, {
@@ -2468,25 +2468,6 @@ export async function generateMaiSpeech(opts: {
             message: "MAI speech provider is not configured.",
         });
     const resolvedVoice = resolveMaiSpeechVoice(modelName, voice);
-    if (provider === "openrouter") {
-        const response = await generateOpenRouterMaiSpeech({
-            modelName,
-            text,
-            voice,
-            responseFormat,
-            apiKey,
-            log,
-        });
-        const headers = new Headers(response.headers);
-        for (const [key, value] of Object.entries(
-            buildUsageHeaders(routeId, createAudioTokenUsage([...text].length)),
-        ))
-            headers.set(key, value);
-        return new Response(response.body, {
-            status: response.status,
-            headers,
-        });
-    }
     const gateway = provider === "vercel";
     const url = gateway
         ? "https://ai-gateway.vercel.sh/v4/ai/speech-model"
@@ -2517,7 +2498,8 @@ export async function generateMaiSpeech(opts: {
                   }
                 : {
                       "Ocp-Apim-Subscription-Key": apiKey,
-                      "Content-Type": "application/ssml+xml",
+                      "Content-Type": "application/ssml+xml; charset=utf-8",
+                      "User-Agent": "pollinations",
                       "X-Microsoft-OutputFormat":
                           responseFormat === "mp3"
                               ? "audio-24khz-160kbitrate-mono-mp3"
@@ -2534,11 +2516,17 @@ export async function generateMaiSpeech(opts: {
         url,
     );
     let audio: BodyInit | null = response.body;
-    let characters = [...text].length;
+    let characters = text.length;
+    let providerCost: number | undefined;
     if (gateway) {
         const parsed = z
             .object({
                 audio: z.string().min(1),
+                providerMetadata: z.object({
+                    gateway: z.object({
+                        cost: z.coerce.number().finite().positive(),
+                    }),
+                }),
                 usage: z
                     .object({
                         inputCharacters: z.number().nonnegative().optional(),
@@ -2555,6 +2543,7 @@ export async function generateMaiSpeech(opts: {
             ch.charCodeAt(0),
         );
         characters = parsed.data.usage?.inputCharacters ?? characters;
+        providerCost = parsed.data.providerMetadata.gateway.cost;
     }
     // Binary providers do not report characters; reconcile against provider billing before merge.
     return new Response(audio, {
@@ -2563,81 +2552,16 @@ export async function generateMaiSpeech(opts: {
                 responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg",
             "x-tts-voice": resolvedVoice,
             ...buildUsageHeaders(routeId, createAudioTokenUsage(characters)),
+            ...(providerCost === undefined
+                ? {}
+                : {
+                      [PROVIDER_BILLING_HEADERS.units]: String(providerCost),
+                      [PROVIDER_BILLING_HEADERS.unitCost]: "1",
+                  }),
         },
     });
 }
 
-export async function generateOpenRouterMaiSpeech(opts: {
-    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES;
-    text: string;
-    voice: string;
-    responseFormat: string;
-    apiKey: string;
-    log: Logger;
-}): Promise<Response> {
-    const { modelName, text, voice, responseFormat, apiKey, log } = opts;
-
-    if (!apiKey) {
-        throw new UpstreamError(500 as ContentfulStatusCode, {
-            message: "OpenRouter is not configured (missing API key)",
-        });
-    }
-    if (responseFormat !== "mp3" && responseFormat !== "pcm") {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: mp3, pcm (24 kHz mono).`,
-        });
-    }
-    const resolvedVoice = resolveMaiSpeechVoice(modelName, voice);
-    // Character-priced upstream, so bill code points like the azure TTS entries.
-    const characters = [...text].length;
-    log.info(
-        "MAI TTS request: model={model}, voice={voice}, characters={chars}",
-        {
-            model: modelName,
-            voice: resolvedVoice,
-            chars: characters,
-        },
-    );
-
-    const response = await ensureUpstreamOk(
-        await fetch(OPENROUTER_SPEECH_ENDPOINT, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                model: modelName,
-                input: text,
-                voice: resolvedVoice,
-                response_format: responseFormat,
-                provider: {
-                    only: ["Azure"],
-                    allow_fallbacks: false,
-                },
-            }),
-        }),
-        OPENROUTER_SPEECH_ENDPOINT,
-    );
-
-    const generationId = response.headers.get("x-generation-id");
-    log.info("MAI TTS success: model={model}, {chars} characters", {
-        model: modelName,
-        chars: characters,
-    });
-
-    return new Response(response.body, {
-        status: 200,
-        headers: {
-            "Content-Type":
-                response.headers.get("content-type") ||
-                (responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg"),
-            ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
-            "x-tts-voice": resolvedVoice,
-            ...(generationId ? { "x-generation-id": generationId } : {}),
-        },
-    });
-}
 const GEMINI_TTS_ENDPOINT =
     "https://generativelanguage.googleapis.com/v1beta/interactions";
 
@@ -3708,7 +3632,6 @@ async function dispatchAudioGeneration(
             );
         case "microsoft/mai-voice-2.1":
         case "microsoft/mai-voice-2.1:vercel":
-        case "microsoft/mai-voice-2.1:openrouter":
         case "microsoft/mai-voice-2.1-flash":
         case "microsoft/mai-voice-2.1-flash:vercel":
         case "microsoft/mai-voice-2.1-flash:openrouter": {
@@ -3727,9 +3650,7 @@ async function dispatchAudioGeneration(
                     apiKey:
                         provider === "vercel"
                             ? (c.env.AI_GATEWAY_API_KEY ?? "")
-                            : provider === "openrouter"
-                              ? openRouterApiKey
-                              : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+                            : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                     log,
                 }),
             );

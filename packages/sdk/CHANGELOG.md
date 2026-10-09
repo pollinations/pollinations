@@ -8,6 +8,10 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.
 
+### Fixed
+- `upload()` keeps an uploaded `File`'s name instead of always sending
+  `upload`, so the media service can detect its type from the extension.
+
 ## [5.1.0-alpha.14] - 2026-10-08
 
 ### Changed

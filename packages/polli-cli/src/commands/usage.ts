@@ -52,6 +52,7 @@ interface DailyUsageResponse {
 
 interface BalanceResponse {
     balance: number;
+    accountBalance?: { total: number };
 }
 
 /** Minimal shape of a key as returned by /account/keys. */
@@ -243,15 +244,30 @@ export const usageCommand = new Command("usage")
                 const data = await gen<BalanceResponse>("/account/balance", {
                     apiKey: key,
                 });
+                // `balance` is a budgeted key's remaining budget, not the
+                // wallet; the wallet is in `accountBalance` (needs
+                // account:usage). Same rule as `polli auth status`.
+                const wallet = data.accountBalance?.total;
+                const keyBudget =
+                    data.balance !== wallet ? data.balance : undefined;
                 if (getOutputMode() !== "human") {
-                    printResult({ pollen: data.balance });
+                    printResult({
+                        pollen: wallet ?? "unknown",
+                        key_budget: keyBudget,
+                    });
                     return;
                 }
-                const bal = data.balance;
-                let color = chalk.green;
-                if (bal <= 0) color = chalk.red;
-                else if (bal < 1) color = chalk.yellow;
-                printResult({ pollen: color(String(bal)) });
+                const colorize = (bal?: number) => {
+                    if (bal === undefined) return undefined;
+                    let color = chalk.green;
+                    if (bal <= 0) color = chalk.red;
+                    else if (bal < 1) color = chalk.yellow;
+                    return color(String(bal));
+                };
+                printResult({
+                    pollen: colorize(wallet) ?? "unknown",
+                    key_budget: colorize(keyBudget),
+                });
                 return;
             } catch (err) {
                 printError(

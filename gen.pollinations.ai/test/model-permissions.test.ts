@@ -438,15 +438,21 @@ test("Scout catalog exposes its enforced output capabilities", async () => {
     });
 });
 
-test("MAI transcription requires Paid Pollen and hides its fallback route", async ({
+test("MAI transcription allows Quest Pollen and hides its fallback route", async ({
     apiKey,
 }) => {
+    const modelDefinition = getRegistryModelDefinition(
+        "microsoft/mai-transcribe-2",
+    );
+    expect(modelDefinition.paidOnly).toBe(false);
+    expect(modelDefinition.priceMultiplier).toBe(0.75);
     for (const [model, status] of [
-        ["microsoft/mai-transcribe-2", 402],
+        ["microsoft/mai-transcribe-2", 400],
         ["microsoft/mai-transcribe-2:vercel", 400],
     ] as const) {
         const form = new FormData();
         form.set("model", model);
+        form.set("response_format", "srt");
         form.set(
             "file",
             new File(["audio"], "test.wav", { type: "audio/wav" }),
@@ -463,7 +469,10 @@ test("MAI transcription requires Paid Pollen and hides its fallback route", asyn
             };
             expect(body.error.message).toContain("Invalid model or alias");
         } else {
-            await response.arrayBuffer();
+            const body = (await response.json()) as {
+                error: { message: string };
+            };
+            expect(body.error.message).toContain("response_format");
         }
     }
 });

@@ -1880,7 +1880,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000277777777777778,
     },
     "price": {
-      "promptAudioSeconds": 0.0000277777777777778,
+      "promptAudioSeconds": 0.0000208333333333333,
     },
   },
   "microsoft/mai-transcribe-2:vercel": {
@@ -1888,7 +1888,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000277777777777778,
     },
     "price": {
-      "promptAudioSeconds": 0.0000277777777777778,
+      "promptAudioSeconds": 0.0000208333333333333,
     },
   },
   "microsoft/trellis-2": {

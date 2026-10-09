@@ -213,8 +213,8 @@ const AUDIO_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "audio",
         addedDate: new Date("2026-10-08").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
+        paidOnly: false,
+        priceMultiplier: 0.75,
         // Promotional $0.10/hour; standard $0.36/hour, expiry unpublished.
         // https://microsoft.ai/models/mai-transcribe-2/
         cost: { promptAudioSeconds: 0.1 / 3600 },

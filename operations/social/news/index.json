@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-09T10:57:35.094738+00:00",
+  "generated_at": "2026-10-09T11:16:15.386532+00:00",
   "models": [
     {
       "id": "pr-14556:nvidia/asset-harvester",
@@ -5360,6 +5360,50 @@
           "after": {
             "currency": "pollen",
             "promptTextTokens": "0.0000001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16798:microsoft/mai-transcribe-2",
+      "model_id": "microsoft/mai-transcribe-2",
+      "title": "MAI Transcribe 2",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "audio",
+      "date": "2026-10-09",
+      "pr": 16798,
+      "url": "https://github.com/pollinations/pollinations/pull/16798",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000020833333"
           }
         }
       }

@@ -9,9 +9,13 @@ import {
     Dropdown,
     EditableCombobox,
     EditableComboboxToken,
+    EmptyState,
     ExternalLinkButton,
+    LoadingStatus,
     PlusIcon,
     SearchIcon,
+    Skeleton,
+    StableLabel,
     Surface,
     TabButton,
     TrendUpIcon,
@@ -452,9 +456,9 @@ function AppsPage() {
                 >
                     <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
                         <ContentHeader
-                            eyebrow="Last 7 days"
-                            title="Most-used pollen pay apps"
-                            subtitle="Ranked by successful, billable requests through pollen pay."
+                            eyebrow="pollen pay"
+                            title="Most used this week"
+                            subtitle="Apps ranked by requests their users paid for with their own pollen."
                         />
                     </div>
                     {spotlightLoading ? (
@@ -462,10 +466,17 @@ function AppsPage() {
                             aria-hidden="true"
                             className="flex flex-col border-theme-text-strong/10 border-t"
                         >
-                            <div className="aspect-[16/7] animate-pulse bg-theme-bg-subtle sm:aspect-[18/7]" />
-                            <div className="flex flex-col gap-2 px-5 py-4">
-                                <div className="h-6 w-48 max-w-full animate-pulse rounded bg-theme-bg-subtle" />
-                                <div className="h-10 animate-pulse rounded bg-theme-bg-subtle" />
+                            <Skeleton
+                                shape="media"
+                                className="aspect-[16/7] sm:aspect-[18/7]"
+                            />
+                            {/* The real tile's copy row is 8.5rem tall. */}
+                            <div className="flex h-[8.5rem] flex-col gap-2 px-5 py-4">
+                                <Skeleton
+                                    shape="text"
+                                    className="h-6 w-48 max-w-full"
+                                />
+                                <Skeleton shape="text" className="h-10" />
                             </div>
                         </div>
                     ) : (
@@ -520,17 +531,31 @@ function AppsPage() {
                         </div>
 
                         <div className="flex min-h-11 items-center gap-3">
-                            {!loading && (
+                            {loading ? (
+                                <Skeleton shape="text" className="h-7 w-37" />
+                            ) : (
                                 <Chip
                                     size="lg"
                                     aria-live="polite"
-                                    className="gap-1.5 bg-theme-bg-subtle px-3 text-theme-text-soft"
+                                    className="bg-theme-bg-subtle px-3 text-theme-text-soft"
                                 >
-                                    <AppIcon className="size-4" />
+                                    {/* Sized for "N / N apps", so filtering
+                                        never moves the sort button. */}
                                     <span className="tabular-nums">
-                                        {filtered.length === apps.length
-                                            ? `${apps.length} apps`
-                                            : `${filtered.length} / ${apps.length} apps`}
+                                        <StableLabel
+                                            prefix={
+                                                <AppIcon className="mr-0.5 size-4" />
+                                            }
+                                            text={
+                                                filtered.length === apps.length
+                                                    ? `${apps.length} apps`
+                                                    : `${filtered.length} / ${apps.length} apps`
+                                            }
+                                            options={[
+                                                `${apps.length} apps`,
+                                                `${apps.length} / ${apps.length} apps`,
+                                            ]}
+                                        />
                                     </span>
                                 </Chip>
                             )}
@@ -542,15 +567,20 @@ function AppsPage() {
                                     return (
                                         <Button
                                             type="button"
-                                            size="sm"
+                                            size="md"
+                                            icon={<SortIcon />}
                                             aria-label={`Sort apps: ${SORT_LABELS[sort]}`}
-                                            className="min-h-8 gap-2 whitespace-nowrap px-3 py-1.5 text-xs"
+                                            className="whitespace-nowrap"
                                         >
-                                            <SortIcon className="size-4 shrink-0" />
-                                            {SORT_LABELS[sort]}
+                                            <StableLabel
+                                                text={SORT_LABELS[sort]}
+                                                options={Object.values(
+                                                    SORT_LABELS,
+                                                )}
+                                            />
                                             <ChevronIcon
                                                 expanded={open}
-                                                className="size-3 shrink-0"
+                                                className="ml-2"
                                             />
                                         </Button>
                                     );
@@ -567,7 +597,8 @@ function AppsPage() {
                                                     active={sort === value}
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="w-full justify-start gap-2"
+                                                    icon={<OptionIcon />}
+                                                    className="w-full justify-start"
                                                     onClick={() => {
                                                         updateSearch({
                                                             sort:
@@ -579,7 +610,6 @@ function AppsPage() {
                                                         close();
                                                     }}
                                                 >
-                                                    <OptionIcon className="size-4 shrink-0" />
                                                     {SORT_LABELS[value]}
                                                 </TabButton>
                                             );
@@ -592,15 +622,13 @@ function AppsPage() {
                 </div>
 
                 {failed ? (
-                    <p className="text-theme-text-base">
+                    <EmptyState>
                         The app directory couldn’t be loaded right now.
-                    </p>
+                    </EmptyState>
                 ) : loading ? (
-                    <p className="text-theme-text-muted">Loading apps…</p>
+                    <LoadingStatus>Loading apps…</LoadingStatus>
                 ) : filtered.length === 0 ? (
-                    <div className="rounded-2xl border border-theme-border border-dashed p-12 text-center text-theme-text-muted">
-                        No apps match that combination yet.
-                    </div>
+                    <EmptyState>No apps match that combination yet.</EmptyState>
                 ) : (
                     <>
                         <div className="border-t border-transparent">

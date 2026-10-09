@@ -18,6 +18,8 @@ export type DirectoryApp = {
     web_url: string;
     screenshot_url: string;
     description: string;
+    /** BCP 47 tags, comma-separated when an app has several ("es, en"). */
+    language: string;
     category: string;
     platform: string;
     github_username: string;
@@ -96,6 +98,10 @@ export const isFresh = (app: DirectoryApp) => {
     return Number.isFinite(approved) && approved >= Date.now() - THIRTY_DAYS_MS;
 };
 
+/** English is one of the app's languages; untagged apps don't count. */
+export const isEnglish = (app: DirectoryApp) =>
+    (app.language ?? "").split(",").some((tag) => /^en(-|$)/i.test(tag.trim()));
+
 export const newestFirst = (a: DirectoryApp, b: DirectoryApp) =>
     (b.approved_date || "").localeCompare(a.approved_date || "");
 
@@ -126,7 +132,10 @@ export type WeeklyAppUsage = {
     request_count: number;
 };
 
-/** Ranking is already filtered and aggregated per catalog listing on the server. */
+/**
+ * Ranking is already filtered and aggregated per catalog listing on the
+ * server; only English listings are featured.
+ */
 export function selectWeeklyApps(
     catalog: DirectoryApp[],
     ranking: WeeklyAppUsage[],
@@ -141,7 +150,7 @@ export function selectWeeklyApps(
                     candidate.github_username.toLowerCase() ===
                         row.owner.toLowerCase(),
             );
-            if (!app) return [];
+            if (!app || !isEnglish(app)) return [];
             const identity = appIdentity(app);
             if (seen.has(identity)) return [];
             seen.add(identity);
@@ -153,7 +162,8 @@ export function selectWeeklyApps(
 export const loadWeeklyApps = cachePublic(async () => {
     const [catalog, ranking] = await Promise.all([
         loadDirectory(),
-        tinybird<WeeklyAppUsage>("app_top_weekly", "&limit=8"),
+        // Wider than the eight shown, since non-English listings drop out.
+        tinybird<WeeklyAppUsage>("app_top_weekly", "&limit=50"),
     ]);
     return selectWeeklyApps(catalog, ranking);
 });

@@ -5,6 +5,7 @@ import {
     CodeIcon,
     ContentHeader,
     cn,
+    EmptyState,
     ExternalLinkButton,
     Eyebrow,
     Heading,
@@ -12,6 +13,7 @@ import {
     LinkCard,
     LiveDot,
     MegaphoneIcon,
+    Skeleton,
     StatCard,
     Surface,
     Text,
@@ -92,20 +94,13 @@ function FeedState({
     failed: boolean;
     what: string;
 }) {
-    if (loading) {
-        return (
-            <div
-                aria-busy="true"
-                className="h-14 animate-pulse rounded-2xl bg-theme-bg-subtle"
-            />
-        );
-    }
+    if (loading) return <Skeleton className="h-14" />;
     return (
-        <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
+        <EmptyState>
             {failed
                 ? `${what} couldn’t be loaded right now.`
                 : `No ${what.toLowerCase()} yet.`}
-        </p>
+        </EmptyState>
     );
 }
 
@@ -203,9 +198,9 @@ function CommunityParticipation() {
                                                 variant="display"
                                                 value={
                                                     way.metric.value ?? (
-                                                        <span
-                                                            aria-hidden="true"
-                                                            className="block h-9 w-16 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                        <Skeleton
+                                                            shape="text"
+                                                            className="h-9 w-16"
                                                         />
                                                     )
                                                 }

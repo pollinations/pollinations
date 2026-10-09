@@ -1,9 +1,11 @@
 import {
     Chip,
     ContentHeader,
+    EmptyState,
     ExternalLinkButton,
     Heading,
     LinkCard,
+    Skeleton,
     StatCard,
     Surface,
     Text,
@@ -22,7 +24,10 @@ export function QuestLeaderboard() {
     const { data, loading } = useQuestLeaderboard();
 
     return (
-        <section className="flex flex-col gap-5">
+        <section
+            aria-busy={!data && loading ? true : undefined}
+            className="flex flex-col gap-5"
+        >
             <ContentHeader
                 eyebrow={null}
                 title="Quest leaderboard"
@@ -132,14 +137,27 @@ export function QuestLeaderboard() {
                     </ol>
                 </>
             ) : loading ? (
-                <div
-                    aria-busy="true"
-                    className="h-40 animate-pulse rounded-xl bg-theme-bg-subtle"
-                />
+                // The totals and rows at their real sizes, so nothing below
+                // moves when the board arrives.
+                <>
+                    <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3">
+                        {[0, 1, 2].map((i) => (
+                            <Skeleton key={i} className="h-23.5 sm:h-24.5" />
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2">
+                        {[...Array(VISIBLE_CONTRIBUTORS).keys()].map((i) => (
+                            <Skeleton
+                                key={i}
+                                className="h-[70.5px] sm:h-[74.5px]"
+                            />
+                        ))}
+                    </div>
+                </>
             ) : (
-                <Text size="sm" tone="muted">
+                <EmptyState>
                     The Quest leaderboard couldn’t be loaded right now.
-                </Text>
+                </EmptyState>
             )}
         </section>
     );

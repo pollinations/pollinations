@@ -30,6 +30,7 @@ import {
     MicIcon,
     ScrollArea,
     Slider,
+    StableLabel,
     Surface,
     TabButton,
     Text,
@@ -1084,7 +1085,7 @@ export function Playground() {
     async function generate() {
         const trimmedPrompt = prompt.trim();
 
-        if (!apiKey || !currentModel || blockedReason) return;
+        if (isGenerating || !apiKey || !currentModel || blockedReason) return;
 
         setIsGenerating(true);
         setError(null);
@@ -1194,6 +1195,14 @@ export function Playground() {
     const GenerateIcon = isAudioTranscription
         ? MicIcon
         : CATEGORY_ICON[activeCategory];
+    const busyLabel = isAudioTranscription ? "Transcribing…" : "Generating…";
+    // Sized for both labels, so starting a run never resizes the button.
+    const generateText = (
+        <StableLabel
+            text={isGenerating ? busyLabel : generateLabel}
+            options={[generateLabel, busyLabel]}
+        />
+    );
     const connectLabel =
         currentModel?.category === "video"
             ? "Connect to create video"
@@ -1914,16 +1923,20 @@ export function Playground() {
                             content={blockedReason}
                             className="self-start"
                         >
-                            <Button size="lg" disabled>
-                                <GenerateIcon className="mr-2 h-4 w-4" />
-                                {generateLabel}
+                            <Button size="lg" disabled icon={<GenerateIcon />}>
+                                {generateText}
                             </Button>
                         </Tooltip>
                     ) : (
                         <Button
                             size="lg"
                             intent={needsSignIn ? "brand" : undefined}
-                            disabled={isGenerating}
+                            // Busy keeps full strength and swaps the icon for
+                            // a spinner. aria-disabled, not disabled, so focus
+                            // stays on the button; generate() ignores repeats.
+                            aria-disabled={isGenerating || undefined}
+                            aria-busy={isGenerating}
+                            icon={needsSignIn ? undefined : <GenerateIcon />}
                             // Wrapped: login() takes an optional request
                             // object, so passing the ref directly would
                             // hand it the click event.
@@ -1934,17 +1947,13 @@ export function Playground() {
                             )}
                         >
                             {needsSignIn ? (
-                                <BrandMark className="h-6 w-6" />
+                                <>
+                                    <BrandMark className="h-6 w-6" />
+                                    {connectLabel}
+                                </>
                             ) : (
-                                <GenerateIcon className="mr-2 h-4 w-4" />
+                                generateText
                             )}
-                            {isGenerating
-                                ? isAudioTranscription
-                                    ? "Transcribing…"
-                                    : "Generating…"
-                                : needsSignIn
-                                  ? connectLabel
-                                  : generateLabel}
                         </Button>
                     )}
 

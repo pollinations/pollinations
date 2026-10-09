@@ -101,6 +101,7 @@ describe("weekly featured apps", () => {
             name,
             web_url,
             github_username: "owner",
+            language: "en",
             byop: "",
             requests_24h: null,
         }) as DirectoryApp;
@@ -144,6 +145,21 @@ describe("weekly featured apps", () => {
         ).toEqual(["Low usage", "No description"]);
     });
 
+    it("features English listings only, bilingual ones included", () => {
+        const catalog = [
+            { ...app("English"), language: "en-US" },
+            { ...app("Bilingual"), language: "zh-TW,en" },
+            { ...app("French"), language: "fr" },
+            { ...app("Untagged"), language: "" },
+        ];
+        expect(
+            selectWeeklyApps(
+                catalog,
+                catalog.map((item) => usage(item)),
+            ).map((item) => item.name),
+        ).toEqual(["English", "Bilingual"]);
+    });
+
     it("caps at eight distinct apps and never fills missing entries from unranked apps", () => {
         const catalog = Array.from({ length: 12 }, (_, i) => app(`App${i}`));
         expect(
@@ -164,14 +180,14 @@ describe("weekly featured apps", () => {
         ).toEqual([]);
     });
 
-    it("requests eight weekly apps, shares the catalog, and retries failed rankings", async () => {
+    it("requests a wider weekly ranking, shares the catalog, and retries failed rankings", async () => {
         vi.resetModules();
         const { loadWeeklyApps } = await import("./publicStats");
         const item = app("App");
         let available = false;
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("app_top_weekly")) {
-                expect(new URL(url).searchParams.get("limit")).toBe("8");
+                expect(new URL(url).searchParams.get("limit")).toBe("50");
                 return available
                     ? Response.json({ data: [usage(item)] })
                     : new Response("Unavailable", { status: 503 });

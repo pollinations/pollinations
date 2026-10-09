@@ -491,7 +491,11 @@ const earningsTransactionsQuerySchema = usageQuerySchema
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
-    date: z.string().describe("Date (YYYY-MM-DD format)"),
+    date: z
+        .string()
+        .describe(
+            "Date bucket: YYYY-MM-DD, or hourly YYYY-MM-DD HH:MM:SS (UTC) when `granularity=day`",
+        ),
     api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
         .string()

@@ -1,16 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-10-09**
-
-_2026-10-09 — Proposed DPA incorporation and named provider register; draft pending legal and operational review._
-
-_2026-09-16 — Accounts may be suspended immediately where we reasonably believe there is payment fraud or abuse._
-
-_2026-09-04 — Added terms for the Polli Discord bot and related assistant service._
-
-_2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
-
-_2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
+**Last updated: 2026-10-09**
 
 ## About Pollinations
 

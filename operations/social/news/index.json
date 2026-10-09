@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-09T11:16:15.386532+00:00",
+  "generated_at": "2026-10-09T13:52:45.136683+00:00",
   "models": [
     {
       "id": "pr-14556:nvidia/asset-harvester",
@@ -5404,6 +5404,50 @@
           "after": {
             "currency": "pollen",
             "promptAudioSeconds": "0.000020833333"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16802:microsoft/mai-transcribe-2-streaming",
+      "model_id": "microsoft/mai-transcribe-2-streaming",
+      "title": "MAI Transcribe 2 Streaming",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "realtime",
+      "date": "2026-10-09",
+      "pr": 16802,
+      "url": "https://github.com/pollinations/pollinations/pull/16802",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.0001125"
           }
         }
       }

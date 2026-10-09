@@ -1,0 +1,13 @@
+{
+  "name": "brick-router",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pollinations-hosted Brick endpoint agent",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.7"
+  }
+}

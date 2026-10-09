@@ -1,0 +1,78 @@
+model:
+  name: brick
+  description: Capability router backed by Pollinations models
+
+server_port: 8000
+auto_model_name: brick
+include_config_models_in_list: true
+
+brick:
+  enabled: true
+
+providers:
+  pollinations:
+    type: openai_compatible
+    base_url: https://gen.pollinations.ai/v1
+provider_profiles:
+  pollinations:
+    type: openai_compatible
+    base_url: https://gen.pollinations.ai/v1
+provider_endpoints:
+  - name: pollinations
+    provider_profile: pollinations
+    weight: 1
+
+default_model: gpt-5.6-terra
+model_config:
+  gpt-5.6-luna: { preferred_endpoints: [pollinations], param_size: unknown, reasoning_family: openai_reasoning }
+  gpt-5.6-terra: { preferred_endpoints: [pollinations], param_size: unknown, reasoning_family: openai_reasoning }
+  gpt-5.6-sol: { preferred_endpoints: [pollinations], param_size: unknown, reasoning_family: openai_reasoning }
+
+reasoning_families:
+  openai_reasoning: { type: reasoning_effort, parameter: reasoning_effort }
+default_reasoning_effort: medium
+
+# This local service deliberately returns neutral complexity. Brick still routes
+# by capability and cost without requiring an operator credential or billing a
+# classifier call to the user.
+complexity_service:
+  enabled: true
+  base_url: http://127.0.0.1:8094
+  timeout_seconds: 1
+  auto_spawn: false
+
+skill_router:
+  enabled: true
+  dynamic_effort: true
+  capabilities: [coding, creative_synthesis, instruction_following, math_reasoning, planning_agentic, world_knowledge]
+  capability_model:
+    local_path: /app/models/modernbert-capability-classifier
+    labels: [coding, creative_synthesis, instruction_following, math_reasoning, planning_agentic, world_knowledge]
+    use_cpu: true
+  complexity_model:
+    model_id: neutral
+    base_url: http://127.0.0.1:8094
+    timeout_seconds: 1
+    auto_spawn: false
+  math:
+    routing_preference: 0
+    tau: { easy: 0.55, medium: 0.72, hard: 0.88 }
+  models:
+    - model: gpt-5.6-luna
+      skill_vector: [0.80, 0.80, 0.75, 0.82, 0.83, 0.82]
+      cost_weight: 0.1
+      use_reasoning: true
+      base_url: https://gen.pollinations.ai/v1
+    - model: gpt-5.6-terra
+      skill_vector: [0.85, 0.85, 0.80, 0.88, 0.86, 0.88]
+      cost_weight: 0.4
+      use_reasoning: true
+      base_url: https://gen.pollinations.ai/v1
+    - model: gpt-5.6-sol
+      skill_vector: [0.90, 0.91, 0.86, 0.94, 0.92, 0.94]
+      cost_weight: 1.0
+      use_reasoning: true
+      base_url: https://gen.pollinations.ai/v1
+  keyword_rules: []
+
+decisions: []

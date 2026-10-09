@@ -312,7 +312,7 @@ const result2 = await editImage('Combine these two scenes', {
 
 ## Image Generation (OpenAI-compatible)
 
-The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `n`, `response_format`) or want multiple images from a single call.
+The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `responseFormat`). It returns one image per call.
 
 ```javascript
 import { imageGenerate } from '@pollinations/sdk';

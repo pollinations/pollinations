@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-08** – **🤖 Two long-context text models** Try `anthropic/claude-haiku-5.5` and `stepfun/step-5-preview` for text and image input, tool calls and 1M-token contexts. Both are paid-only models available through the [text API](https://gen.pollinations.ai/v1/chat/completions).
+- **2026-10-08** – **🔗 Responses for every Chat model** Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).
+- **2026-10-08** – **💡 Publish non-streaming text models** Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.
+- **2026-10-08** – **💻 Pi in a browser workbench** Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.
+- **2026-10-08** – **✨ Polish a Japanese memo** Keigo Formatter turns rough Japanese notes into polite business Japanese using the Pollinations text API. [Try it](https://ucalis-uma.github.io/keigo-formatter).
 - **2026-10-07** – **🤖 Two Nex reasoning models** Try paid-only `nex-agi/nex-n2.5-pro` and `nex-agi/nex-n2.5-mini` with text or image input. Pro also supports tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).
 - **2026-10-07** – **🤖 Mistral Large 4 added** Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).
 - **2026-10-07** – **🎨 More video reference options** Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
 - **2026-10-07** – **✨ SoloForge AI joins the catalog** Turn content ideas into generated assets, review them, and organize publishing workflows with Pollinations image generation. [Try it](https://soloforge-ai-web.onrender.com).
 - **2026-10-07** – **🎵 Audio joins the catalog** Try this community text-to-speech app; its BYOP access requires sign-in. [Try it](https://dwikatmahmoud87-source.github.io/Gtdcg).
-- **2026-10-06** – **🎵 Eleven v4 speech arrives** Generate speech with `elevenlabs/eleven-v4` or the faster `elevenlabs/eleven-v4-turbo`, including word timestamps. [Try the audio API](https://gen.pollinations.ai/docs).
-- **2026-10-06** – **🎨 Nano Banana 2.1** Create images at 1K or 2K, or edit them using up to 14 reference images with `google/gemini-nano-banana-2.1`. [See image models](https://gen.pollinations.ai/image/models).
-- **2026-10-06** – **🎬 Grok Imagine Video 1.5 Lite** Turn a prompt or starting image into a 1–15 second clip at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).
-- **2026-10-06** – **🔗 API keys get model categories** Give a key access to text, image, audio, video, or other categories instead of selecting models one by one; new models in that category are included automatically. [Manage keys](https://enter.pollinations.ai/keys).
-- **2026-10-05** – **🎨 FLUX.3 Image arrives** Generate 1K or 2K images in fifteen aspect ratios, or edit with up to ten reference images. [Explore image models](https://gen.pollinations.ai/image/models).
 ---
 
 ## 🌱 Introduction

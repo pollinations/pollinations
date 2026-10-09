@@ -74,8 +74,13 @@ export function QuestLeaderboard() {
                                         rel="noopener noreferrer"
                                         className="flex h-full items-center gap-3 transition-colors hover:bg-theme-bg-subtle"
                                     >
+                                        {/* The top three take the amber accent: a small podium. */}
                                         <Chip
-                                            intent="neutral"
+                                            intent={
+                                                index < 3
+                                                    ? undefined
+                                                    : "neutral"
+                                            }
                                             size="sm"
                                             aria-label={`Rank ${index + 1}`}
                                             className="w-8"
@@ -114,12 +119,12 @@ export function QuestLeaderboard() {
                                                         ? "reward"
                                                         : "rewards"}
                                                 </Text>
+                                                {/* Quest payouts, in the wallet's Quest green. */}
                                                 <Text
                                                     as="strong"
                                                     size="xs"
-                                                    tone="strong"
                                                     weight="bold"
-                                                    className="whitespace-nowrap tabular-nums"
+                                                    className="polli-wallet-text-tier whitespace-nowrap tabular-nums"
                                                 >
                                                     {formatNumber(
                                                         entry.totalPollen,

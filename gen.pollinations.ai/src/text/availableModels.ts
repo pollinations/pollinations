@@ -388,6 +388,16 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "stepfun/step-5-preview",
+        config: portkeyConfig["stepfun/step-5-preview"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "stepfun/step-5-preview:vercel",
+        config: portkeyConfig["stepfun/step-5-preview:vercel"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "mistralai/mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
@@ -770,6 +780,16 @@ const models: ModelDefinition[] = [
     {
         name: "liquid/d1:vercel",
         config: portkeyConfig["liquid/d1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna-decisions",
+        config: portkeyConfig["gpt-6-luna-decisions"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna-decisions:openrouter",
+        config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
         useSystemOneApi: true,
     },
     {

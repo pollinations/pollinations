@@ -66,7 +66,7 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                 "Anthropic Messages API for Claude Code, the Anthropic SDKs, and other Messages clients. Point the client's base URL at `https://gen.pollinations.ai` and authenticate with `Authorization: Bearer`.",
                 "JSON request bodies may be up to 32 MiB, including inline images.",
                 "",
-                "Runs every model that lists `/v1/messages` in `supported_endpoints` — the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.",
+                "Runs every model that lists `/v1/messages` in `supported_endpoints` — the same text models as Chat Completions, with the same balance checks, key permissions, rate limits, caching, and billing. Supports streaming, tools, images, PDF documents (base64), system prompts, stop sequences, `cache_control`, and thinking. Thinking maps to `reasoning_effort`; provider reasoning returns as `thinking` blocks.",
                 "",
                 "Errors use Anthropic's error shape. `count_tokens`, batches, files, server tools, and `x-api-key` auth are not supported.",
             ].join("\n"),

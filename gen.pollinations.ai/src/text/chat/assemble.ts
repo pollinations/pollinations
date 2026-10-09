@@ -18,6 +18,8 @@ const CONCATENATED = new Set([
     "summary",
 ]);
 const TOKEN_KEYS = ["prompt_tokens", "completion_tokens", "total_tokens"];
+// Provider JSON is untrusted: these keys would reach Object.prototype.
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
 function isObject(value: unknown): value is JsonObject {
     return !!value && typeof value === "object" && !Array.isArray(value);
@@ -27,7 +29,8 @@ function isObject(value: unknown): value is JsonObject {
 function mergeDelta(target: JsonObject, delta: JsonObject): void {
     for (const [key, value] of Object.entries(delta)) {
         if (value === null || value === undefined) continue;
-        const current = target[key];
+        if (UNSAFE_KEYS.has(key)) continue;
+        const current = Object.hasOwn(target, key) ? target[key] : undefined;
         if (typeof value === "string") {
             if (CONCATENATED.has(key)) target[key] = `${current ?? ""}${value}`;
             else if (!current) target[key] = value;
@@ -143,6 +146,7 @@ export async function chatStreamToCompletion(
         const { choices: chunkChoices, usage: chunkUsage, ...rest } = chunk;
         if (isObject(rest.error)) failure ??= rest.error;
         for (const [key, value] of Object.entries(rest)) {
+            if (UNSAFE_KEYS.has(key)) continue;
             if (value !== null && value !== undefined) top[key] = value;
         }
         // Same rule as stream billing: the last update carrying token counts.

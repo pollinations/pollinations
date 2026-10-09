@@ -91,6 +91,42 @@ describe("chatStreamToCompletion", () => {
         }
     });
 
+    it("ignores __proto__ keys so a delta cannot pollute Object.prototype", async () => {
+        // Raw JSON: an object literal would set the prototype, not a key.
+        const wire = [
+            `{"id":"chatcmpl-1","created":42,"model":"grok-4.6","__proto__":{"polluted":"top"},"choices":[{"index":0,"delta":{"role":"assistant","content":"Hi","__proto__":{"polluted":"delta"},"constructor":{"prototype":{"polluted":"ctor"}}}}]}`,
+            `{"id":"chatcmpl-1","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"f","arguments":"{}","__proto__":{"polluted":"tool"}}}]},"__proto__":{"polluted":"choice"},"finish_reason":"stop"}]}`,
+            JSON.stringify({ ...chunk, choices: [], usage }),
+        ]
+            .map((event) => `data: ${event}\n\n`)
+            .join("");
+        try {
+            const completion = await chatStreamToCompletion(
+                streamed(`${wire}data: [DONE]\n\n`),
+            );
+            expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+            expect(Object.prototype).not.toHaveProperty("polluted");
+            expect(Object.getPrototypeOf(completion)).toBe(Object.prototype);
+            expect(completion.choices?.[0]).toEqual({
+                index: 0,
+                message: {
+                    role: "assistant",
+                    content: "Hi",
+                    tool_calls: [
+                        {
+                            type: "function",
+                            id: "call_1",
+                            function: { name: "f", arguments: "{}" },
+                        },
+                    ],
+                },
+                finish_reason: "tool_calls",
+            });
+        } finally {
+            delete (Object.prototype as Record<string, unknown>).polluted;
+        }
+    });
+
     it("joins tool call argument deltas by index", async () => {
         const completion = await chatStreamToCompletion(
             streamed(

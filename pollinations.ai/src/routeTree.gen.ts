@@ -15,6 +15,7 @@ import { Route as CommunityRouteImport } from './routes/community'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundsRouteImport } from './routes/refunds'
+import { Route as SubprocessorsRouteImport } from './routes/subprocessors'
 import { Route as TermsRouteImport } from './routes/terms'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const RefundsRoute = RefundsRouteImport.update({
   path: '/refunds',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubprocessorsRoute = SubprocessorsRouteImport.update({
+  id: '/subprocessors',
+  path: '/subprocessors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
+  '/subprocessors': typeof SubprocessorsRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
+  '/subprocessors': typeof SubprocessorsRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRoutesById {
@@ -79,15 +87,30 @@ export interface FileRoutesById {
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
+  '/subprocessors': typeof SubprocessorsRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/apps' | '/community' | '/play' | '/privacy' | '/refunds' | '/terms'
+    | '/'
+    | '/apps'
+    | '/community'
+    | '/play'
+    | '/privacy'
+    | '/refunds'
+    | '/subprocessors'
+    | '/terms'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/apps' | '/community' | '/play' | '/privacy' | '/refunds' | '/terms'
+    | '/'
+    | '/apps'
+    | '/community'
+    | '/play'
+    | '/privacy'
+    | '/refunds'
+    | '/subprocessors'
+    | '/terms'
   id:
     | '__root__'
     | '/'
@@ -96,6 +119,7 @@ export interface FileRouteTypes {
     | '/play'
     | '/privacy'
     | '/refunds'
+    | '/subprocessors'
     | '/terms'
   fileRoutesById: FileRoutesById
 }
@@ -106,6 +130,7 @@ export interface RootRouteChildren {
   PlayRoute: typeof PlayRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
+  SubprocessorsRoute: typeof SubprocessorsRoute
   TermsRoute: typeof TermsRoute
 }
 
@@ -153,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RefundsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subprocessors': {
+      id: '/subprocessors'
+      path: '/subprocessors'
+      fullPath: '/subprocessors'
+      preLoaderRoute: typeof SubprocessorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -170,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlayRoute: PlayRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
+  SubprocessorsRoute: SubprocessorsRoute,
   TermsRoute: TermsRoute,
 }
 export const routeTree = rootRouteImport

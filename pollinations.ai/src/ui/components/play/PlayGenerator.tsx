@@ -23,7 +23,11 @@ import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../../api.config";
 import { PLAY_PAGE, PLAY_PAGE_NO_TRANSLATE } from "../../../copy/content/play";
 import { LINKS } from "../../../copy/content/socialLinks";
-import type { Model } from "../../../hooks/useModelList";
+import {
+    getAudioGenerationEndpoint,
+    type Model,
+    sendAudioGenerationRequest,
+} from "../../../hooks/useModelList";
 import { usePageCopy } from "../../../hooks/usePageCopy";
 
 interface PlayGeneratorProps {
@@ -154,10 +158,9 @@ export function PlayGenerator({
     // Image-registry models (type "image") include video models (hasVideoOutput),
     // which are served by the same /image endpoint — keep them in this flag.
     const isImageModel = currentModelData?.type === "image";
-    const isAudioModel =
-        currentModelData?.hasAudioOutput ||
-        currentModelData?.type === "audio" ||
-        false;
+    const audioGenerationEndpoint =
+        getAudioGenerationEndpoint(currentModelData);
+    const isAudioModel = audioGenerationEndpoint !== undefined;
     const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
     // Keep uploads for switching back, but only send them to models that take images.
@@ -320,48 +323,19 @@ export function PlayGenerator({
                 },
                 "Image generation error:",
             );
-        } else if (isAudioModel) {
-            // Dedicated audio models (type=audio, e.g. elevenmusic, elevenlabs)
-            // use /v1/audio/speech; text models with audio output use /v1/chat/completions
-            const isDedicatedAudioModel = currentModelData?.type === "audio";
+        } else if (currentModelData && audioGenerationEndpoint) {
             await runGeneration(
-                () => {
-                    if (isDedicatedAudioModel) {
-                        const body = {
-                            model: selectedModel,
-                            input: prompt,
-                            ...(selectedVoice ? { voice: selectedVoice } : {}),
-                        };
-                        return fetch(`${API_BASE}/v1/audio/speech`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${apiKey}`,
-                            },
-                            body: JSON.stringify(body),
-                        });
-                    }
-                    const body = {
-                        model: selectedModel,
-                        modalities: ["text", "audio"],
-                        audio: {
-                            voice: selectedVoice || "alloy",
-                            format: "wav",
-                        },
-                        messages: [{ role: "user", content: prompt }],
-                    };
-                    return fetch(`${API_BASE}/v1/chat/completions`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${apiKey}`,
-                        },
-                        body: JSON.stringify(body),
-                    });
-                },
+                () =>
+                    sendAudioGenerationRequest(
+                        currentModelData,
+                        selectedModel,
+                        prompt,
+                        selectedVoice,
+                        apiKey,
+                    ),
                 async (response) => {
                     let audioURL: string;
-                    if (isDedicatedAudioModel) {
+                    if (audioGenerationEndpoint === "/v1/audio/speech") {
                         const blob = await response.blob();
                         audioURL = URL.createObjectURL(blob);
                     } else {

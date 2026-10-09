@@ -1,6 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
-import { fetchUserImage, MAX_IMAGE_SIZE } from "@/userImage.ts";
-import { arrayBufferToBase64 } from "@/util.ts";
+import { fetchUserImage, MAX_IMAGE_SIZE } from "../../userImage.ts";
+import { arrayBufferToBase64 } from "../../util.ts";
 import type { TransformFn } from "../types.ts";
 
 /**

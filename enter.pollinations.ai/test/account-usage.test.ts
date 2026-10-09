@@ -489,6 +489,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
             meter_source: "tier",
             input_text_tokens: 10,
             input_cached_tokens: 0,
+            input_cache_write_tokens: 10089,
             input_audio_tokens: 0,
             input_audio_seconds: 0,
             input_image_tokens: 0.9216,
@@ -524,6 +525,10 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     const values = lines[1].split(",");
     expect(values[columns.indexOf("input_image_tokens")]).toBe("0.9216");
     expect(values[columns.indexOf("output_image_tokens")]).toBe("2.0736");
+    expect(columns.indexOf("input_cache_write_tokens")).toBe(
+        columns.indexOf("input_cached_tokens") + 1,
+    );
+    expect(values[columns.indexOf("input_cache_write_tokens")]).toBe("10089");
 
     const jsonResponse = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30",
@@ -535,6 +540,7 @@ test("GET /api/account/usage?format=csv renders rows and sets filename from limi
     };
     expect(body.usage[0].input_image_tokens).toBe(0.9216);
     expect(body.usage[0].output_image_tokens).toBe(2.0736);
+    expect(body.usage[0].input_cache_write_tokens).toBe(10089);
 
     const usageCalls = mocks.tinybird.state.pipeCalls.filter((call) =>
         call.url.includes("activity_usage_transactions.json"),

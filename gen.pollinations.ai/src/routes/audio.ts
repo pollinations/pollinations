@@ -152,7 +152,7 @@ const CreateSpeechRequestSchema = z
         }),
         instructions: z.string().optional().meta({
             description:
-                "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (Gemini TTS and qwen/qwen-audio-3.0-tts-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
     })
@@ -1914,9 +1914,6 @@ export async function generateSoundEffect(opts: {
     });
 }
 
-const QWEN_TTS_ENDPOINT =
-    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
-
 const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
 
 const DEEPINFRA_TTS_ENDPOINT =
@@ -1946,12 +1943,59 @@ const DEEPINFRA_TTS_CONFIGS = {
 
 type DeepInfraTtsModelName = keyof typeof DEEPINFRA_TTS_CONFIGS;
 
-const QWEN_TTS_MODEL_IDS = {
-    "qwen/qwen3-tts-flash": "qwen3-tts-flash",
-    "qwen/qwen3-tts-instruct-flash": "qwen3-tts-instruct-flash",
-} as const satisfies Partial<Record<AudioModelName, string>>;
+// Both DashScope routes return { output.audio.url, usage.characters }.
+const QWEN_TTS_CONFIGS = {
+    "qwen/qwen3-tts-flash": {
+        modelId: "qwen3-tts-flash",
+        endpoint:
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        supportsInstructions: false,
+        openAiVoices: {
+            alloy: "Chelsie",
+            echo: "Ethan",
+            fable: "Cherry",
+            onyx: "Ryan",
+            nova: "Serena",
+            shimmer: "Jada",
+            coral: "Cherry",
+            verse: "Ethan",
+            ballad: "Ryan",
+            ash: "Ethan",
+            sage: "Serena",
+        },
+    },
+    "qwen/qwen-audio-3.0-tts-flash": {
+        modelId: "qwen-audio-3.0-tts-flash",
+        endpoint:
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+        supportsInstructions: true,
+        openAiVoices: {
+            alloy: "loongeva_v3.6",
+            echo: "loongjohn",
+            fable: "loongmary",
+            onyx: "loongjohn",
+            nova: "loongeva_v3.6",
+            shimmer: "loongmary",
+            coral: "longanfengyue",
+            verse: "loongjohn",
+            ballad: "loongjohn",
+            ash: "loongjohn",
+            sage: "longanfengyue",
+        },
+    },
+} as const satisfies Partial<
+    Record<
+        AudioModelName,
+        {
+            modelId: string;
+            endpoint: string;
+            supportsInstructions: boolean;
+            openAiVoices: Record<string, string>;
+        }
+    >
+>;
 
-type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
+type QwenTtsModelName = keyof typeof QWEN_TTS_CONFIGS;
 
 type LyriaInteractionResponse = {
     status?: string;
@@ -1961,24 +2005,6 @@ type LyriaInteractionResponse = {
         data?: string;
     }>;
 };
-
-const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
-    alloy: "Chelsie",
-    echo: "Ethan",
-    fable: "Cherry",
-    onyx: "Ryan",
-    nova: "Serena",
-    shimmer: "Jada",
-    coral: "Cherry",
-    verse: "Ethan",
-    ballad: "Ryan",
-    ash: "Ethan",
-    sage: "Serena",
-};
-
-function resolveQwenVoice(voice: string): string {
-    return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
-}
 
 export async function generateLyria3Clip(opts: {
     prompt: string;
@@ -2235,7 +2261,7 @@ export async function generateQwenTts(opts: {
     log: Logger;
 }): Promise<Response> {
     const { modelName, text, voice, instructions, apiKey, log } = opts;
-    const modelId = QWEN_TTS_MODEL_IDS[modelName];
+    const config = QWEN_TTS_CONFIGS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -2243,31 +2269,29 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    if (instructions && modelName !== "qwen/qwen3-tts-instruct-flash") {
+    if (instructions && !config.supportsInstructions) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "The instructions parameter is only supported by qwen/qwen3-tts-instruct-flash",
+            message: `The instructions parameter is not supported by ${modelName}`,
         });
     }
 
-    const qwenVoice = resolveQwenVoice(voice);
+    const openAiVoices: Record<string, string> = config.openAiVoices;
+    const qwenVoice = openAiVoices[voice] ?? voice;
 
     log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
-        model: modelId,
+        model: config.modelId,
         voice: qwenVoice,
         chars: text.length,
     });
 
     const body: Record<string, unknown> = {
-        model: modelId,
+        model: config.modelId,
         input: { text, voice: qwenVoice },
-        parameters:
-            modelName === "qwen/qwen3-tts-instruct-flash" && instructions
-                ? { instructions }
-                : {},
+        // Qwen-Audio names the field `instruction`.
+        parameters: instructions ? { instruction: instructions } : {},
     };
 
-    const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {
+    const rawResponse = await fetch(config.endpoint, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -2275,7 +2299,7 @@ export async function generateQwenTts(opts: {
         },
         body: JSON.stringify(body),
     });
-    const response = await ensureUpstreamOk(rawResponse, QWEN_TTS_ENDPOINT);
+    const response = await ensureUpstreamOk(rawResponse, config.endpoint);
 
     const data = (await response.json()) as {
         output?: { audio?: { url?: string } };
@@ -3405,7 +3429,7 @@ async function dispatchAudioGeneration(
                 }),
             );
         case "qwen/qwen3-tts-flash":
-        case "qwen/qwen3-tts-instruct-flash":
+        case "qwen/qwen-audio-3.0-tts-flash":
             return withSafetyHeaders(
                 c,
                 await generateQwenTts({

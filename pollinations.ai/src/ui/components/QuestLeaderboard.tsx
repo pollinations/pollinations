@@ -1,8 +1,8 @@
 import {
     Chip,
+    ContentHeader,
     ExternalLinkButton,
     Heading,
-    Section,
     StatCard,
     Surface,
     Text,
@@ -21,21 +21,21 @@ export function QuestLeaderboard() {
     const { data, loading } = useQuestLeaderboard();
 
     return (
-        <Section
-            title="Quest leaderboard"
-            intro="Pollen earned by completing Quests and contributing to Pollinations."
-            action={
-                <ExternalLinkButton
-                    href={QUESTS_PAGE_URL}
-                    size="md"
-                    intent="brand"
-                >
-                    Explore Quests
-                </ExternalLinkButton>
-            }
-            className="gap-5"
-            titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
-        >
+        <section className="flex flex-col gap-5">
+            <ContentHeader
+                eyebrow={null}
+                title="Quest leaderboard"
+                subtitle="Pollen earned by completing Quests and contributing to Pollinations."
+                action={
+                    <ExternalLinkButton
+                        href={QUESTS_PAGE_URL}
+                        size="md"
+                        intent="brand"
+                    >
+                        Explore Quests
+                    </ExternalLinkButton>
+                }
+            />
             {data ? (
                 <>
                     <dl
@@ -148,6 +148,6 @@ export function QuestLeaderboard() {
                     The Quest leaderboard couldn’t be loaded right now.
                 </Text>
             )}
-        </Section>
+        </section>
     );
 }

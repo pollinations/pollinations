@@ -156,127 +156,120 @@ function CommunityParticipation() {
                 />
             </HeroScene>
 
-            <Surface
-                variant="panel"
+            {/* No panel here: the sheet is already the block, so a panel only
+                cut a seam through the hero art and indented the headings. */}
+            <section
                 className={cn(
                     postHeroSpacingClassName,
-                    "overflow-hidden polli:p-0 polli:sm:p-0",
+                    "flex flex-col gap-6 pt-5 sm:pt-6",
                 )}
             >
-                <div className="flex flex-col gap-6 p-5 pb-0 sm:p-6 sm:pb-0">
-                    <div className="flex max-w-xl flex-col gap-2">
-                        <Eyebrow>Get involved</Eyebrow>
-                        <h2 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
-                            Help shape Pollinations
-                        </h2>
-                        <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
-                            Share your work, contribute, or help decide what we
-                            build next.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
-                        {ways.map((way) => {
-                            const WayIcon = way.icon;
+                <ContentHeader
+                    eyebrow="Get involved"
+                    title="Help shape Pollinations"
+                    subtitle="Share your work, contribute, or help decide what we build next."
+                />
+                <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
+                    {ways.map((way) => {
+                        const WayIcon = way.icon;
 
-                            return (
-                                <Surface
-                                    variant="card"
-                                    key={way.label}
-                                    className="p-5 sm:p-6 xl:p-5"
-                                >
-                                    <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
-                                        <div className="flex flex-col gap-2.5">
-                                            <div className="flex items-center gap-1.5 text-theme-text-muted">
-                                                <WayIcon className="size-3.5" />
-                                                <Eyebrow>{way.label}</Eyebrow>
-                                            </div>
-                                            <h3 className="font-body text-xl font-semibold text-theme-text-strong">
-                                                {way.title}
-                                            </h3>
-                                            <p className="text-sm leading-relaxed text-theme-text-base">
-                                                {way.body}
-                                            </p>
+                        return (
+                            <Surface
+                                variant="card"
+                                key={way.label}
+                                className="p-5 sm:p-6 xl:p-5"
+                            >
+                                <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
+                                    <div className="flex flex-col gap-2.5">
+                                        <div className="flex items-center gap-1.5 text-theme-text-muted">
+                                            <WayIcon className="size-3.5" />
+                                            <Eyebrow>{way.label}</Eyebrow>
                                         </div>
-                                        <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
-                                            {way.metric && (
-                                                <dl className="flex flex-wrap gap-x-6 gap-y-3">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                            {way.metric
-                                                                .value ?? (
-                                                                <span
-                                                                    aria-hidden="true"
-                                                                    className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                                                />
-                                                            )}
-                                                        </dt>
-                                                        <dd className="text-xs text-theme-text-muted">
-                                                            {way.metric.label}
-                                                        </dd>
-                                                    </div>
-                                                </dl>
-                                            )}
-                                            <ExternalLinkButton
-                                                href={way.cta.href}
-                                                size="md"
-                                                intent="brand"
-                                                showIcon
-                                                className="whitespace-nowrap"
-                                            >
-                                                {way.cta.label}
-                                            </ExternalLinkButton>
-                                        </div>
+                                        <h3 className="font-body text-xl font-semibold text-theme-text-strong">
+                                            {way.title}
+                                        </h3>
+                                        <p className="text-sm leading-relaxed text-theme-text-base">
+                                            {way.body}
+                                        </p>
                                     </div>
-                                </Surface>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-5">
-                        <div className="min-w-0 flex-1 basis-80">
-                            {issues.length === 0 ? (
-                                <FeedState
-                                    loading={loading}
-                                    failed={failed}
-                                    what="Open votes"
-                                />
-                            ) : (
-                                <div className="flex flex-col gap-4">
-                                    {issues.map((issue) => (
-                                        <InlineLink
-                                            key={issue.number}
-                                            href={issue.url}
-                                            aria-label={`Open “${issue.title}” and add your vote`}
-                                            className="flex w-fit max-w-full items-center gap-2"
+                                    <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
+                                        {way.metric && (
+                                            <dl className="flex flex-wrap gap-x-6 gap-y-3">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                                        {way.metric.value ?? (
+                                                            <span
+                                                                aria-hidden="true"
+                                                                className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                            />
+                                                        )}
+                                                    </dt>
+                                                    <dd className="text-xs text-theme-text-muted">
+                                                        {way.metric.label}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                        )}
+                                        <ExternalLinkButton
+                                            href={way.cta.href}
+                                            size="md"
+                                            intent="brand"
+                                            showIcon
+                                            className="whitespace-nowrap"
                                         >
-                                            <MegaphoneIcon
-                                                aria-hidden="true"
-                                                className="size-4 shrink-0"
-                                            />
-                                            <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                                                <span className="font-semibold leading-snug text-theme-text-strong">
-                                                    {issue.title}
-                                                </span>
-                                                <span className="whitespace-nowrap text-xs text-theme-text-muted tabular-nums">
-                                                    {issue.reactions} reaction
-                                                    {issue.reactions === 1
-                                                        ? ""
-                                                        : "s"}
-                                                </span>
-                                            </span>
-                                        </InlineLink>
-                                    ))}
+                                            {way.cta.label}
+                                        </ExternalLinkButton>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                        <InlineLink
-                            href={LINKS.githubNewIssue}
-                            size="sm"
-                            tone="quiet"
-                        >
-                            Suggest an idea
-                        </InlineLink>
+                            </Surface>
+                        );
+                    })}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-5">
+                    <div className="min-w-0 flex-1 basis-80">
+                        {issues.length === 0 ? (
+                            <FeedState
+                                loading={loading}
+                                failed={failed}
+                                what="Open votes"
+                            />
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                {issues.map((issue) => (
+                                    <InlineLink
+                                        key={issue.number}
+                                        href={issue.url}
+                                        aria-label={`Open “${issue.title}” and add your vote`}
+                                        className="flex w-fit max-w-full items-center gap-2"
+                                    >
+                                        <MegaphoneIcon
+                                            aria-hidden="true"
+                                            className="size-4 shrink-0"
+                                        />
+                                        <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                                            <span className="font-semibold leading-snug text-theme-text-strong">
+                                                {issue.title}
+                                            </span>
+                                            <span className="whitespace-nowrap text-xs text-theme-text-muted tabular-nums">
+                                                {issue.reactions} reaction
+                                                {issue.reactions === 1
+                                                    ? ""
+                                                    : "s"}
+                                            </span>
+                                        </span>
+                                    </InlineLink>
+                                ))}
+                            </div>
+                        )}
                     </div>
+                    <InlineLink
+                        href={LINKS.githubNewIssue}
+                        size="sm"
+                        tone="quiet"
+                    >
+                        Suggest an idea
+                    </InlineLink>
                 </div>
                 <img
                     src={votesScene.src}
@@ -289,9 +282,9 @@ function CommunityParticipation() {
                     loading="lazy"
                     decoding="async"
                     fetchPriority="low"
-                    className="bottom-scene pointer-events-none mt-4 block h-[clamp(12rem,24vw,20rem)] w-full select-none object-cover object-bottom"
+                    className="bottom-scene pointer-events-none block h-[clamp(12rem,24vw,20rem)] w-full select-none rounded-3xl object-cover object-bottom sm:rounded-block"
                 />
-            </Surface>
+            </section>
         </>
     );
 }

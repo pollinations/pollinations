@@ -435,7 +435,6 @@ function FeatureGroup({
                 eyebrow={null}
                 title={title}
                 subtitle={description}
-                className="px-1"
             />
             {children}
         </section>

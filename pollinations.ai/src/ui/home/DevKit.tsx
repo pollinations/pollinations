@@ -11,6 +11,7 @@ import {
     ExternalLinkButton,
     Heading,
     type IconProps,
+    IconTile,
     ImageIcon,
     LinkCard,
     LockIcon,
@@ -233,7 +234,6 @@ function FeatureCard({
     feature: Feature;
     countLabel?: string;
 }) {
-    const Icon = feature.icon;
     const Detail = feature.detail;
 
     return (
@@ -242,9 +242,7 @@ function FeatureCard({
             className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
             <div className="flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
-                    <Icon className="size-6" />
-                </div>
+                <IconTile icon={feature.icon} />
                 <div className="flex min-w-0 flex-col gap-1">
                     <Heading as="h3" size="card">
                         {feature.title}

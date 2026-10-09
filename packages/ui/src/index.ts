@@ -151,6 +151,7 @@ export {
     type IconButtonProps,
     type IconButtonVariant,
 } from "./primitives/IconButton.tsx";
+export { IconTile, type IconTileProps } from "./primitives/IconTile.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";

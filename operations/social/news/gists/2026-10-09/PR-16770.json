@@ -1,0 +1,36 @@
+{
+  "pr_number": 16770,
+  "title": "fix(cli): document partial agent updates and check login in agents sync",
+  "author": "Connectslide121",
+  "url": "https://github.com/pollinations/pollinations/pull/16770",
+  "merged_at": "2026-10-09T09:39:35Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added a login check to `polli agents sync`, so logged-out users get `Not logged in. Run: polli auth login` instead of a raw 401. Updated SKILL.md to explain that prompt-agent updates merge with the existing config, so callers should send only the fields they want to change; its recipe now includes `polli agents sync <id>`. Bumped `@pollinations/cli` to 0.1.36.",
+    "keywords": [
+      "polli CLI",
+      "agents sync",
+      "authentication",
+      "prompt agents",
+      "documentation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16770.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli wears a tiny tool belt and points to a retro terminal showing a friendly login prompt beside a code-plant whose leaves are being updated one at a time. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, sharing the frame, never realistic, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) glow and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-09T09:40:52.317159+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "a26c91d0d1398fa23b454ba78ae337b8607d47ca",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

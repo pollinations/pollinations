@@ -2938,8 +2938,9 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
 });
 
 // 429: rate limited. 404: Azure lost the deployment (DeploymentNotFound).
+// 403: Azure blocked the resource.
 test.for([
-    429, 404,
+    429, 404, 403,
 ])("gpt-image-2 falls back to OpenAI direct on an Azure %i", async (azureStatus, {
     mocks,
 }) => {

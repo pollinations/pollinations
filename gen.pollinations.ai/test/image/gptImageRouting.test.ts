@@ -56,11 +56,20 @@ function successResponse(): Response {
     });
 }
 
-/** Client error and a timeout that may already have been billed. */
-const UPSTREAM_FAILURES = [400, 524];
+/** Client error, and timeouts or server errors that may already have been billed. */
+const UPSTREAM_FAILURES = [400, 408, 500, 524];
 
-/** Rate limit and missing deployment: Azure generated nothing. */
-const AZURE_REFUSALS = [429, 404];
+/** Bad key, quota, blocked resource, missing deployment, rate limit: Azure generated nothing. */
+const AZURE_REFUSALS = [401, 402, 403, 404, 429];
+
+/** Azure's per-resource abuse block, which quotes content-policy wording. */
+const AZURE_RESOURCE_BLOCK = JSON.stringify({
+    error: {
+        code: "403",
+        message:
+            "Your resource has been temporarily blocked because we detected behavior that may violate our content policy.",
+    },
+});
 
 syncImageEnv(AZURE_KEY_ENV as CloudflareBindings, AZURE_KEY_NAMES);
 
@@ -134,6 +143,41 @@ describe("openai/gpt-image-2 Azure routing", () => {
             expect(fetchMock).toHaveBeenCalledTimes(EXPECTED_HOSTS.size);
         });
     }
+
+    it("tries the other region when Azure blocks one resource", async () => {
+        const hosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            hosts.push(new URL(String(input)).host);
+            return hosts.length === 1
+                ? new Response(AZURE_RESOURCE_BLOCK, { status: 403 })
+                : successResponse();
+        });
+
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
+
+        expect(new Set(hosts)).toEqual(EXPECTED_HOSTS);
+    });
+
+    // Every region would refuse the same prompt, so a retry only adds a call.
+    it("fails a content-policy refusal without trying another region", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                {
+                    error: {
+                        code: "content_policy_violation",
+                        message:
+                            "Your request was rejected as a result of our safety system.",
+                    },
+                },
+                { status: 403 },
+            ),
+        );
+
+        await expect(
+            callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
+        ).rejects.toMatchObject({ upstreamStatus: 403 });
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
 });
 
 describe("GPT Image OpenAI fallback routing", () => {

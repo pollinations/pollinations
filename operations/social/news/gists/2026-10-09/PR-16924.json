@@ -1,0 +1,35 @@
+{
+  "pr_number": 16924,
+  "title": "fix(apps): correct two catalog languages",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16924",
+  "merged_at": "2026-10-09T15:35:46Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Corrected two app catalog language fields: Pollinations AI Studio is listed as Russian, and OpenCode Pollinations Plugin as English. Language information for those listings is now accurate; all 882 catalog entries validated.",
+    "keywords": [
+      "app catalog",
+      "language",
+      "Pollinations AI Studio",
+      "OpenCode Pollinations Plugin"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16924.jpg",
+    "prompt": "In a cozy app-catalog garden, two chunky pixel listing cards for Pollinations AI Studio and OpenCode Pollinations Plugin show Russian and English labels beside small flowers, against a prominent lime green (#ecf874) and warm cream backdrop; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. Polli, a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and rounded light blue translucent wings, wears tiny librarian glasses as she checks the labels."
+  },
+  "generated_at": "2026-10-09T15:37:06.399792+00:00",
+  "area": "App catalog & showcase",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "d90ebe37e50dc73714093f6504c1728c927e9e85",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

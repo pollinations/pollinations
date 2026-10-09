@@ -119,3 +119,25 @@ The `source=community` and `source=official` filters are equivalent source filte
 for discovery. Source, access, and status filters combine with AND semantics.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
+
+## Pollinations-imposed limits
+
+Pollinations sometimes exposes stricter limits than an upstream provider.
+Discovery responses carry the authoritative fields, so clients do not have to
+infer them from provider docs.
+
+## How to read limits from the API
+
+On `GET /models`, `GET /image/models`, `GET /text/models`, and related lists:
+
+| Field | Meaning |
+| --- | --- |
+| `max_duration` / `min_duration` / `allowed_durations` | Video length caps in seconds |
+| `resolutions` | Allowed output resolutions when Pollinations restricts them |
+| `per_user_rpm` | Per-user request rate limit (null/omit = no Pollinations RPM cap) |
+| `max_reference_images` | Max images accepted as references / vision inputs |
+
+Generation rejects values outside these ranges. Upstream may advertise wider
+options; the registry wins for Pollinations requests.
+
+For current per-model values, read the live [`GET /models`](https://gen.pollinations.ai/models) response instead of a copied table.

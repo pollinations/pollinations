@@ -1374,7 +1374,13 @@ export class Pollinations {
                       type: options.contentType || "application/octet-stream",
                   });
 
-        formData.append("file", blob, options.name || "upload");
+        // The media service detects the type from the filename when the part
+        // has none, so a File keeps its own name.
+        formData.append(
+            "file",
+            blob,
+            options.name || (blob as Partial<File>).name || "upload",
+        );
         if (options.tags?.length) {
             formData.append("tags", options.tags.join(","));
         }

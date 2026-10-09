@@ -238,11 +238,13 @@ const sync = new Command("sync")
     .description("Deploy the latest revision of a code agent")
     .argument("<id>", "Agent id")
     .action(async (id) => {
+        const key = requireKey();
         try {
             const result = await gen<{
                 updated: boolean;
                 deployedCommitSha: string;
             }>(`/account/agents/${encodeURIComponent(id)}/sync`, {
+                apiKey: key,
                 method: "POST",
             });
             if (getOutputMode() === "json") printResult(result);

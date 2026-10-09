@@ -4,9 +4,13 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
-## [5.1.0-alpha.18] - 2026-10-08
+### Added
+- `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
+  billed at the cache-write rate. Reads stay in `input_cached_tokens`.
 
 ### Fixed
+- `upload()` keeps an uploaded `File`'s name instead of always sending
+  `upload`, so the media service can detect its type from the extension.
 - `accountUsage({ format: "csv" })`, `accountUsageDaily({ format: "csv" })`,
   `getUsage()` and `getDailyUsage()` return the CSV export as a string instead
   of throwing a JSON `SyntaxError`.

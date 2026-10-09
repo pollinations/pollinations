@@ -84,10 +84,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     const hasModels =
         permissions.allowedModels === null ||
         permissions.allowedModels.length > 0;
-    const hasAccountCard =
-        visiblePermissions === undefined ||
-        visiblePermissions.size > 0 ||
-        accountAfter != null;
     const accountPermissionsInput = (
         <AccountPermissionsInput
             value={permissions.accountPermissions}
@@ -142,24 +138,19 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     );
     return (
         <div className="space-y-3">
-            <div
-                className={`grid items-start gap-3 [&_li>:first-child]:min-h-11 ${hasAccountCard ? "md:grid-cols-2" : ""}`}
-            >
-                <AuthInfoCard>
-                    <ul className="space-y-3 text-sm">
-                        {lead}
-                        {limitInputs}
-                    </ul>
-                </AuthInfoCard>
-                {hasAccountCard && (
-                    <AuthInfoCard>
-                        <ul className="space-y-3 text-sm">
-                            {accountPermissionsInput}
-                            {accountAfter}
-                        </ul>
-                    </AuthInfoCard>
+            <AuthInfoCard>
+                {/* The limits share one line where they fit and stack on phones. */}
+                <ul className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm [&>li]:w-full sm:[&>li]:w-auto">
+                    {limitInputs}
+                </ul>
+                <ul className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
+                    {lead}
+                    {accountPermissionsInput}
+                </ul>
+                {accountAfter != null && (
+                    <ul className="text-sm">{accountAfter}</ul>
                 )}
-            </div>
+            </AuthInfoCard>
             <AuthInfoCard>
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)]">
                     <div className="col-start-1 row-start-1 flex items-center">

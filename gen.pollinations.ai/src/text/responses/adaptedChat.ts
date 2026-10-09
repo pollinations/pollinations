@@ -354,7 +354,8 @@ function emptyPart(kind: PartKind): JsonObject {
  */
 function outputCollector(send: Send = () => {}) {
     const items: JsonObject[] = [];
-    const calls = new Map<number, FunctionCall>();
+    const calls: FunctionCall[] = [];
+    const callAt = new Map<number, FunctionCall>();
     let item: JsonObject | undefined;
     let part: { kind: PartKind; value: JsonObject; index: number } | undefined;
 
@@ -444,14 +445,14 @@ function outputCollector(send: Send = () => {}) {
             });
         },
         /**
-         * Streams a tool call's arguments as they arrive. Each call keeps its
-         * own item until the model stops, so interleaved parallel calls land
-         * on the right one.
+         * Streams a tool call's arguments as they arrive. Chunks find their
+         * call by index, but a new id starts a new call: Gemini sends every
+         * parallel call whole at index 0.
          */
         toolCall(index: number | undefined, delta: ToolCallDelta) {
-            const key = index ?? calls.size;
-            let call = calls.get(key);
-            if (!call) {
+            const key = index ?? callAt.size;
+            let call = callAt.get(key);
+            if (!call || (delta.id && delta.id !== call.call_id)) {
                 closeItem();
                 call = {
                     type: "function_call",
@@ -461,14 +462,15 @@ function outputCollector(send: Send = () => {}) {
                     arguments: "",
                     status: "in_progress",
                 };
-                calls.set(key, call);
+                callAt.set(key, call);
+                calls.push(call);
                 items.push(call);
                 send("response.output_item.added", {
                     output_index: items.length - 1,
                     item: { ...call },
                 });
             } else {
-                call.name += delta.name ?? "";
+                call.name ||= delta.name ?? "";
             }
             if (!delta.arguments) return;
             call.arguments += delta.arguments;
@@ -480,7 +482,7 @@ function outputCollector(send: Send = () => {}) {
         },
         finish(finishReason: string | null | undefined) {
             closeItem(isIncomplete(finishReason) ? "incomplete" : "completed");
-            for (const call of calls.values()) {
+            for (const call of calls) {
                 call.status = "completed";
                 const position = {
                     item_id: call.id,

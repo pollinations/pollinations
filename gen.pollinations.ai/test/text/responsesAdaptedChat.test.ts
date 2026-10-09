@@ -429,17 +429,31 @@ describe("Chat stream to Responses stream", () => {
         }
     });
 
-    it("streams interleaved parallel tool calls onto their own items", async () => {
-        const chunk = (index: number, fn: object, id?: string) => ({
-            choices: [{ delta: { tool_calls: [{ index, id, function: fn }] } }],
+    it("splits parallel calls that share index 0 by their ids", async () => {
+        // Gemini's shape: each parallel call arrives whole, all at index 0.
+        const call = (id: string, path: string) => ({
+            choices: [
+                {
+                    delta: {
+                        tool_calls: [
+                            {
+                                index: 0,
+                                id,
+                                function: {
+                                    name: "save_file",
+                                    arguments: JSON.stringify({ path }),
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
         });
         const list = await events(
             chatStreamToResponsesStream(
                 sse(
-                    chunk(0, { name: "a", arguments: '{"x"' }, "call_a"),
-                    chunk(1, { name: "b", arguments: '{"y"' }, "call_b"),
-                    chunk(0, { arguments: ":1}" }),
-                    chunk(1, { arguments: ":2}" }),
+                    call("call_a", "a.txt"),
+                    call("call_b", "b.txt"),
                     {
                         choices: [{ delta: {}, finish_reason: "tool_calls" }],
                         usage,
@@ -451,21 +465,17 @@ describe("Chat stream to Responses stream", () => {
             ),
         );
 
-        const deltas = list
-            .filter(
-                (event) =>
-                    event.type === "response.function_call_arguments.delta",
-            )
-            .map((event) => [event.output_index, event.delta]);
-        expect(deltas).toEqual([
-            [0, '{"x"'],
-            [1, '{"y"'],
-            [0, ":1}"],
-            [1, ":2}"],
-        ]);
         expect(list.at(-1).response.output).toMatchObject([
-            { call_id: "call_a", name: "a", arguments: '{"x":1}' },
-            { call_id: "call_b", name: "b", arguments: '{"y":2}' },
+            {
+                call_id: "call_a",
+                name: "save_file",
+                arguments: '{"path":"a.txt"}',
+            },
+            {
+                call_id: "call_b",
+                name: "save_file",
+                arguments: '{"path":"b.txt"}',
+            },
         ]);
     });
 

@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppsRouteImport } from './routes/apps'
 import { Route as CommunityRouteImport } from './routes/community'
-import { Route as DpaRouteImport } from './routes/dpa'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RefundsRouteImport } from './routes/refunds'
@@ -32,11 +31,6 @@ const AppsRoute = AppsRouteImport.update({
 const CommunityRoute = CommunityRouteImport.update({
   id: '/community',
   path: '/community',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DpaRoute = DpaRouteImport.update({
-  id: '/dpa',
-  path: '/dpa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlayRoute = PlayRouteImport.update({
@@ -69,7 +63,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/apps': typeof AppsRoute
   '/community': typeof CommunityRoute
-  '/dpa': typeof DpaRoute
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
@@ -80,7 +73,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/apps': typeof AppsRoute
   '/community': typeof CommunityRoute
-  '/dpa': typeof DpaRoute
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
@@ -92,7 +84,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/apps': typeof AppsRoute
   '/community': typeof CommunityRoute
-  '/dpa': typeof DpaRoute
   '/play': typeof PlayRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
@@ -105,7 +96,6 @@ export interface FileRouteTypes {
     | '/'
     | '/apps'
     | '/community'
-    | '/dpa'
     | '/play'
     | '/privacy'
     | '/refunds'
@@ -116,7 +106,6 @@ export interface FileRouteTypes {
     | '/'
     | '/apps'
     | '/community'
-    | '/dpa'
     | '/play'
     | '/privacy'
     | '/refunds'
@@ -127,7 +116,6 @@ export interface FileRouteTypes {
     | '/'
     | '/apps'
     | '/community'
-    | '/dpa'
     | '/play'
     | '/privacy'
     | '/refunds'
@@ -139,7 +127,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppsRoute: typeof AppsRoute
   CommunityRoute: typeof CommunityRoute
-  DpaRoute: typeof DpaRoute
   PlayRoute: typeof PlayRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
@@ -168,13 +155,6 @@ declare module '@tanstack/react-router' {
       path: '/community'
       fullPath: '/community'
       preLoaderRoute: typeof CommunityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dpa': {
-      id: '/dpa'
-      path: '/dpa'
-      fullPath: '/dpa'
-      preLoaderRoute: typeof DpaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/play': {
@@ -219,7 +199,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppsRoute: AppsRoute,
   CommunityRoute: CommunityRoute,
-  DpaRoute: DpaRoute,
   PlayRoute: PlayRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,

@@ -7,10 +7,6 @@ description: "Add, update, rename, reroute, price, or remove Pollinations text, 
 
 Use this workflow for every model change. Keep the implementation minimal, preserve the public contract unless the user explicitly approves a change, and prove provider behavior with real requests.
 
-For changes to providers, fallbacks, regions, GPU hosts, or data handling, follow
-[Data-processing documentation maintenance](../../../AGENTS.md#data-processing-documentation-maintenance)
-and update the legal register with the operational change.
-
 ## Load context first
 
 1. Read the repository `AGENTS.md`.

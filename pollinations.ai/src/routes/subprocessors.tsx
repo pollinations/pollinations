@@ -7,7 +7,7 @@ export const Route = createFileRoute("/subprocessors")({
     component: () => (
         <LegalPage
             markdownPath="/legal/SUBPROCESSORS.md"
-            errorLabel="sub-processor register"
+            errorLabel="service provider disclosure"
         />
     ),
 });

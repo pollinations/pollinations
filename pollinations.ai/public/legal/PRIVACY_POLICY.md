@@ -1,12 +1,12 @@
 # Privacy Policy
 
-**Updated: 2026-10-09**
+**Last updated: 2026-10-09**
 
 ## 1) Scope & Roles
 
 This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, and (c) the Polli Discord bot and its HTTP API. For Discord/GitHub use, their policies also apply.
 
-**Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we are processor under the applicable [DPA](/dpa). The proposed DPA and register are drafts pending legal and operational verification.
+**Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we act as processor. Our Terms do not currently incorporate a standard DPA; contact **hello@pollinations.ai** before using the Service for processing that requires one. Any separately agreed processing terms remain applicable.
 
 ## 2) Data We Process
 
@@ -59,9 +59,9 @@ We do not use third-party analytics or marketing cookies/SDKs. If we add any, we
 
 ## 8) Sharing & Recipients
 
-* **Service providers (sub-processors):** see the [Sub-processor Register](/subprocessors) for the named services, processing-location evidence, and outstanding verification. We give at least 14 days' prior notice of additions or replacements under the [DPA](/dpa).
+* **Service providers (sub-processors):** see [Service Providers](/subprocessors) for the named services, available location information, and verification limitations. We give at least 14 days' prior notice of material changes to sub-processors.
 
-**Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see the [register](/subprocessors)).**
+**Depending on your selected model, tool, and fallback route, request content and outputs may be sent to inference, search, connector, or sandbox services (see [Service Providers](/subprocessors)).** Provider retention and any abuse review depend on the service and account settings; transmission is not necessarily transient. Hosted connectors may also process the content and credentials of accounts you connect.
 
 * **Community providers:** when you use an externally hosted community model, your request is sent to its provider and any configured community fallback providers. These independent providers are responsible for their own endpoints and data practices.
 * **Authorized apps:** when you approve an app connection, we share the approved API key/token and authorization details with that app.
@@ -72,7 +72,7 @@ We do not sell personal data.
 
 ## 9) International Transfers
 
-Transfers outside the EEA require applicable GDPR safeguards, such as an adequacy decision or the appropriate EU Standard Contractual Clauses and supplementary measures. See the [DPA](/dpa) and [register](/subprocessors) for the proposed contractual terms, route-specific information, and outstanding verification; the draft does not certify that every configured provider has completed this verification.
+Processing locations depend on the service, route, and any fallback. Transfers outside the EEA require applicable GDPR safeguards, such as an adequacy decision or the appropriate EU Standard Contractual Clauses and supplementary measures. Our [provider disclosure](/subprocessors) identifies available location information and verification limitations; it does not certify that a particular safeguard applies to every listed route. Contact **hello@pollinations.ai** for information about the applicable arrangements and how to obtain a copy of any relevant safeguards before using a route with specific transfer requirements.
 
 Community providers may process data in other countries. Before sending personal data, check that the provider meets any residency or transfer requirements that apply to you.
 

@@ -29,13 +29,8 @@ export const ROUTE_META: Record<string, RouteMeta> = {
         title: "Privacy | pollinations.ai",
         description: "Privacy policy for pollinations.ai",
     },
-    "/dpa": {
-        title: "Data Processing Addendum | pollinations.ai",
-        description:
-            "Data processing agreement for Pollinations.ai API customers",
-    },
     "/subprocessors": {
-        title: "Sub-processors | pollinations.ai",
+        title: "Service Providers | pollinations.ai",
         description:
             "Pollinations.ai service providers and processing locations",
     },

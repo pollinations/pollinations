@@ -1,16 +1,20 @@
 # Data Processing Addendum
 
-**Version: 2026-10-09 — Draft for review; not yet effective.**
+**Version: 2026-10-09 — Internal draft; not part of the customer Terms.**
 
-Publication requires approval of this agreement and verification of the provider register, transfer safeguards, and operational measures in its annexes. This draft does not certify those arrangements as already implemented.
+This working document is excluded from the website. It is not offered to customers or incorporated into the Terms. Supplier coverage and operational measures have not been established; the public provider disclosure is an inventory, not an approved contractual annex.
+
+Before offering this agreement, establish applicable supplier processing terms and transfer safeguards, a deletion process covering untagged uploads and provider-held data, and the security/retention measures below. Standard electronic supplier terms may suffice; separate signed paperwork is not inherently required.
+
+Before deploying the revised public Terms and Privacy Policy, prepare the material-change notice required by those documents and record its delivery and effective date. The Terms already promise termination deletion within 30 days; moving this draft does not resolve the existing untagged-upload deletion gap. This repository change is not a customer notice or a website deployment.
 
 ## 1) Parties, acceptance, and scope
 
-This Data Processing Addendum ("DPA") forms part of the [Terms of Service](/terms) between the customer identified by its Pollinations.ai account ("Customer") and **Myceli.AI OÜ**, registry code 17186693, Tornimäe tn 5, 10145 Tallinn, Estonia ("Pollinations"). Each party's contact is its account contact or **hello@pollinations.ai**, respectively. An individual accepting for an organisation must have authority to bind it.
+This Data Processing Addendum ("DPA") forms part of the [Terms of Service](../../pollinations.ai/public/legal/TERMS_OF_SERVICE.md) between the customer identified by its Pollinations.ai account ("Customer") and **Myceli.AI OÜ**, registry code 17186693, Tornimäe tn 5, 10145 Tallinn, Estonia ("Pollinations"). Each party's contact is its account contact or **hello@pollinations.ai**, respectively. An individual accepting for an organisation must have authority to bind it.
 
-On publication of the approved version, acceptance of the Terms incorporates this DPA without a separate signature. It applies when Pollinations processes personal data in API prompts, messages, uploaded media, outputs, or related request data on Customer's behalf ("Customer Data"). Customer is controller, or processor acting on an authorised controller's instructions; Pollinations is processor, or sub-processor respectively. GDPR terms have their GDPR meanings.
+On publication of the approved version, acceptance of the Terms incorporates this DPA without a separate signature. It applies when Pollinations processes personal data in API prompts, messages, uploaded media, outputs, hosted tools, connected-account actions, sandboxes, or related request data on Customer's behalf ("Customer Data"). Customer is controller, or processor acting on an authorised controller's instructions; Pollinations is processor, or sub-processor respectively. GDPR terms have their GDPR meanings.
 
-Pollinations' independent controller activities, including account administration, payments, accounting, fraud prevention, and its own usage analytics, are described in the [Privacy Policy](/privacy). This DPA does not change those roles. Independently operated community endpoints and customer-selected third-party apps are described separately in the provider register; this DPA does not attest to their practices or establish a processing agreement with them. Pollinations remains responsible for its own processing and for providers it engages as sub-processors.
+Pollinations' independent controller activities, including account administration, payments, accounting, fraud prevention, and its own usage analytics, are described in the [Privacy Policy](../../pollinations.ai/public/legal/PRIVACY_POLICY.md). This DPA does not change those roles. Independently operated community endpoints and customer-selected third-party apps are described separately in the provider register; this DPA does not attest to their practices or establish a processing agreement with them. Pollinations remains responsible for its own processing and for providers it engages as sub-processors.
 
 This DPA prevails over conflicting Terms concerning Customer Data. Mandatory law and any applicable transfer clauses prevail over this DPA. The Terms otherwise continue to apply, without restricting statutory rights of data subjects or supervisory authorities.
 
@@ -38,11 +42,11 @@ Pollinations will notify Customer without undue delay after becoming aware of a 
 
 ## 5) Sub-processors
 
-Customer gives general written authorisation for the verified sub-processors listed in the [Sub-processor Register](/subprocessors), for the purposes and locations disclosed there. Entries marked unverified in this draft are an investigation inventory, not an approved list.
+Customer gives general written authorisation for the verified sub-processors listed in the [provider inventory](../../pollinations.ai/public/legal/SUBPROCESSORS.md), for the purposes and locations disclosed there. Entries marked unverified in this draft are an investigation inventory, not an approved list.
 
 Before engaging a new or replacement sub-processor, Pollinations will give affected Customers at least **14 days' prior notice** through their account contact or an in-product notice that identifies the change and links to its details. Merely editing the register is not notice. Customer may object on reasonable data-protection grounds within that period by contacting **hello@pollinations.ai**. The parties will work to resolve the objection; if they cannot, Customer may stop the affected processing and terminate the affected service before the change takes effect, with a refund of unused prepaid fees attributable to that service.
 
-Pollinations will impose substantially the same data-protection obligations on each sub-processor by written contract, verify sufficient guarantees, and remain fully liable to Customer for that sub-processor's performance of its obligations. It will provide information about downstream sub-processors needed for Customer's assessment on request.
+Pollinations will impose the same data-protection obligations in substance on each sub-processor by a binding written agreement, including electronic terms, verify sufficient guarantees, and remain fully liable to Customer for that sub-processor's performance of its obligations. It will provide information about downstream sub-processors needed for Customer's assessment on request.
 
 ## 6) Locations and international transfers
 
@@ -68,11 +72,11 @@ Pollinations will make available all information necessary to demonstrate compli
 
 | Item | Description |
 | --- | --- |
-| Subject matter and purpose | Delivery of Customer-requested AI inference, media handling, response delivery, and associated service security. |
-| Nature of operations | Receipt, transmission, inference, generation, temporary storage and caching, retrieval, and deletion. |
+| Subject matter and purpose | Delivery of Customer-requested AI inference, media handling, hosted tools, connected-account actions, code execution, response delivery, and associated service security. |
+| Nature of operations | Receipt, transmission, inference, generation, tool execution, storage and caching, retrieval, and deletion. |
 | Duration and frequency | On each API request during the service term, plus the applicable retention and deletion periods. |
 | Data subjects | Customer's users, staff, customers, and other people whose information Customer includes in requests. |
-| Personal-data categories | Customer-selected prompt/message text, images, audio, video, files, generated outputs, and associated request identifiers or technical metadata where personal. |
+| Personal-data categories | Customer-selected prompt/message text, images, audio, video, files, code, tool inputs and results, connected-account content and credentials, generated outputs, and associated request identifiers or technical metadata where personal. |
 | Sensitive data | Not authorised under this standard agreement; requires a separate written agreement. |
 | Customer's rights and obligations | Set lawful purposes and instructions, minimise data, assess selected routes, exercise rights and audits, and request return or deletion. |
 
@@ -82,6 +86,7 @@ The following reflects the published Privacy Policy and must be reconciled with 
 
 - Generated response caches: **typically up to 30 days**. This is not a universal maximum for provider logs or downstream public/browser caches.
 - Uploaded media: a **30-day lifecycle from upload or latest refresh**. A body retrieval refreshes it when the upload is at least 15 days old; actively accessed files can remain longer.
+- Publication blocker: account deletion does not currently identify and purge every untagged media upload. Lifecycle expiry and refresh do not fulfil the termination-deletion obligation in section 7; an effective deletion process is required before this agreement can take effect.
 - Provider prompt, output, safety-review, and request-log retention: **route-specific; verification pending in the register**. No blanket 30-day limit is established.
 - API usage metadata retained for Pollinations' controller purposes: **typically 24 months**; billing, wallet, and tax records: **up to 7 years where required**. These are not inference-content retention promises.
 - Restricted backups: published policy states a **30–90-day rotation**; coverage and enforcement must be confirmed.

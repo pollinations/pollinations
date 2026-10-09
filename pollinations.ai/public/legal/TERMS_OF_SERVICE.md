@@ -117,11 +117,11 @@ Each party protects the other's confidential information and uses it only for th
 
 ## 12) Term; Suspension; Termination
 
-Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. We may suspend an account and its API keys immediately, without that notice period, where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. On termination we delete/return Customer Data per the DPA within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
+Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. We may suspend an account and its API keys immediately, without that notice period, where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. On termination we delete/return Customer Data within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
 
 ## 13) Publicity; Export; Changes; Misc.
 
-We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If these Terms and the DPA conflict, the DPA controls for personal-data processing.
+We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If a separately agreed DPA conflicts with these Terms, that DPA controls for personal-data processing.
 
 ## 14) Governing Law & Venue
 
@@ -129,11 +129,11 @@ We may use your name/logo to identify you as a customer unless you opt out in wr
 
 ## 15) DPA and Sub-Processors
 
-When we process personal data on your behalf through the API, the [Data Processing Addendum](/dpa) forms part of these Terms. Acceptance of these Terms incorporates the approved DPA without a separate signature. You are controller (or an authorised processor), and Myceli.AI OÜ is processor (or sub-processor). The linked DPA and [Sub-processor Register](/subprocessors) are currently drafts and are not effective until their legal and operational review is complete and an approved version is published.
+When we process personal data on your behalf through the API, you are controller (or an authorised processor), and Myceli.AI OÜ is processor (or sub-processor). These Terms do not incorporate a standard Data Processing Addendum (DPA). Contact **hello@pollinations.ai** before using the Service for processing that requires a DPA; the provider list below does not replace that agreement. Any separately agreed processing terms remain applicable.
 
-The register identifies infrastructure and inference services, model-dependent processing locations, and independent community providers. Once verified, additions or replacements of sub-processors require at least **14 days' prior notice** and are subject to the DPA's objection procedure.
+The [Service Providers](/subprocessors) page identifies configured infrastructure, inference and hosted-tool services, available location information, and verification limitations. We give at least **14 days' prior notice** of material changes to sub-processors.
 
-**Data residency and transfers.** Locations depend on the selected route and its fallbacks; the standard service does not promise EEA-only processing. The DPA requires applicable international-transfer safeguards to be established before processing personal data on a covered route. It does not itself execute supplier transfer SCCs. See the register for verification status and contact **hello@pollinations.ai** for route-specific requirements.
+**Data residency and transfers.** Locations depend on the selected route and its fallbacks; the standard service does not promise EEA-only processing. Transfers of personal data outside the EEA require applicable legal safeguards. The provider list does not certify that those safeguards have been established for every route. Contact **hello@pollinations.ai** for information about the applicable arrangements and how to obtain a copy of any relevant safeguards before using a route with specific transfer requirements.
 
 ---
 

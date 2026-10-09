@@ -339,6 +339,75 @@ describe("System One adapter", () => {
         }
     });
 
+    it("keeps OpenAI refusals as typed answers and still bills reported usage", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () =>
+            Response.json({
+                model: "gpt-6-luna",
+                answers: [
+                    { name: "department", type: "refusal" },
+                    {
+                        name: "frustration",
+                        type: "score",
+                        score: 0,
+                        confidence: 0.9,
+                        probabilities: [
+                            { value: 0, label: "0", probability: 1 },
+                        ],
+                    },
+                    { name: "is_urgent", type: "predicate", probability: 0.1 },
+                ],
+                usage: { input_tokens: 61, output_tokens: 0 },
+            }),
+        );
+        const result = await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "openai/gpt-6-luna-decisions",
+                modelConfig: {
+                    ...findModelByName("openai/gpt-6-luna-decisions")?.config(),
+                    authKey: "test-key",
+                },
+            },
+            vi.fn(),
+        );
+        const content = JSON.parse(
+            String(result.choices?.[0]?.message?.content),
+        );
+        expect(content.department).toEqual({ type: "refusal" });
+        expect(content.is_urgent).toEqual({ type: "noul", noul: 0.1 });
+        expect(result.usage?.prompt_tokens).toBe(61);
+    });
+
+    it("rejects OpenAI answers that skip a requested question", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () =>
+            Response.json({
+                model: "gpt-6-luna",
+                answers: [
+                    { name: "is_urgent", type: "predicate", probability: 0.4 },
+                ],
+                usage: { input_tokens: 61, output_tokens: 0 },
+            }),
+        );
+        await expect(
+            generateTextPortkey(
+                [{ role: "user", content: nativeContent }],
+                {
+                    model: "openai/gpt-6-luna-decisions",
+                    modelConfig: {
+                        ...findModelByName(
+                            "openai/gpt-6-luna-decisions",
+                        )?.config(),
+                        authKey: "test-key",
+                    },
+                },
+                vi.fn(),
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "OpenAI returned incomplete decision answers.",
+        });
+    });
+
     it.each([
         { answers: [] },
         { answers: [], usage: { input_tokens: 61, output_tokens: 0 } },

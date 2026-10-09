@@ -35,7 +35,7 @@ import {
     VideoIcon,
     XIcon,
 } from "@pollinations/ui";
-import { categoryLabel } from "@pollinations/ui/gen";
+import { categoryLabel, ModalityTab } from "@pollinations/ui/gen";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type CSSProperties,
@@ -306,26 +306,24 @@ function ModalityTabs({
     onSelectCategory: (category: PlaygroundCategory) => void;
 }) {
     return (
+        // Phones: one row of three equal tabs instead of wrapping "Audio".
         <fieldset
             aria-label="Modality"
-            className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
+            className="m-0 grid min-w-0 grid-cols-3 gap-2 border-0 p-0 sm:flex sm:flex-wrap"
         >
-            {CATEGORY_ORDER.map((category) => {
-                const active = category === activeCategory;
-                const CategoryIcon = CATEGORY_ICON[category];
-                return (
-                    <TabButton
-                        key={category}
-                        active={active}
-                        size="lg"
-                        className="gap-2"
-                        onClick={() => onSelectCategory(category)}
-                    >
-                        <CategoryIcon className="h-4 w-4 shrink-0" />
-                        {categoryLabel(category)}
-                    </TabButton>
-                );
-            })}
+            {CATEGORY_ORDER.map((category) => (
+                <ModalityTab
+                    key={category}
+                    active={category === activeCategory}
+                    size="lg"
+                    modality={category}
+                    icon={CATEGORY_ICON[category]}
+                    className="max-sm:px-2"
+                    onClick={() => onSelectCategory(category)}
+                >
+                    {categoryLabel(category)}
+                </ModalityTab>
+            ))}
         </fieldset>
     );
 }

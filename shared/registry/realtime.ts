@@ -35,8 +35,8 @@ export const REALTIME_SERVICES = {
         publisher: "Microsoft",
         category: "realtime",
         addedDate: new Date("2026-10-08").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
+        paidOnly: false,
+        priceMultiplier: 0.75,
         // Introductory rate through 2026-12-31; subsequent rate is unpublished.
         cost: { promptAudioSeconds: 0.54 / 3600 },
         title: "MAI Transcribe 2 Streaming",

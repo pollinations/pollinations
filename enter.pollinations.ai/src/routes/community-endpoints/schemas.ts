@@ -188,6 +188,7 @@ export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 const EndpointAgentModalityFields = EndpointAgentListingPayloadSchema.pick({
     inputModalities: true,
     outputModalities: true,
+    capabilities: true,
 }).shape;
 
 export const CreateEndpointAgentSchema = z
@@ -260,6 +261,7 @@ const EndpointAgentUpdateSchema = z
 
 export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
     outputModalities: EndpointAgentModalityFields.outputModalities,
+    capabilities: EndpointAgentModalityFields.capabilities,
 });
 
 const UPDATE_SCHEMA_BY_TYPE = {

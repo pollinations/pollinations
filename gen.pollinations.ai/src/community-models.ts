@@ -205,6 +205,7 @@ async function queryCommunityModelRegistryEntries(
                     api: payload.api,
                     inputModalities: payload.inputModalities ?? null,
                     outputModalities: payload.outputModalities,
+                    capabilities: payload.capabilities,
                 };
                 break;
             }
@@ -246,6 +247,17 @@ async function queryCommunityModelRegistryEntries(
             community: true,
             agent: usesAgentRunToken(communityEndpoint),
         });
+        // Definitions carry only provider traits. An endpoint agent's own
+        // declared traits, such as calling Pollinations models through its
+        // tools, are listed as well so catalog filters can find them.
+        if (communityEndpoint.type === "endpoint_agent") {
+            info.capabilities = [
+                ...new Set([
+                    ...info.capabilities,
+                    ...(communityEndpoint.capabilities ?? []),
+                ]),
+            ];
+        }
         const pendingPayload = proxyState?.pending?.payload ?? null;
         if (
             proxyState?.pending &&

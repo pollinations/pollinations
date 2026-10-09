@@ -21,3 +21,9 @@ This folder contains migrations that have been intentionally deferred from autom
 }
 ```
 4. Run `npm run migrate:production`
+
+## official-agent-capabilities.sql - Floret and Polli catalog capabilities
+
+**Reason:** It writes the new endpoint-agent `capabilities` payload field, which the Gen and Enter versions deployed before it would reject. Run it only after both are deployed.
+
+**To apply:** run the file against production D1 (`wrangler d1 execute DB --remote --env production --file drizzle/deferred/official-agent-capabilities.sql`) and expect one changed row per statement. Then check `https://gen.pollinations.ai/models?capabilities=web_search` lists both agents. It is safe to run again: rows that already have capabilities are skipped.

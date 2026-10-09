@@ -51,50 +51,128 @@ function nudge(
         : `${target}.`;
 }
 
-function StandingRowView({ row, isYou }: { row: StandingRow; isYou: boolean }) {
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+/** Places moved since the start of today (UTC): ↑3, ↓1, or "new". */
+function Movement({
+    movement,
+    isYou,
+}: {
+    movement: number | null;
+    isYou: boolean;
+}) {
+    if (movement === 0) return null;
+    const [label, text, className] =
+        movement === null
+            ? ["New on the board today", "new", "text-theme-text-muted"]
+            : movement > 0
+              ? [
+                    `Up ${movement} since yesterday`,
+                    `↑${movement}`,
+                    "text-outcome-positive-text",
+                ]
+              : [
+                    `Down ${-movement} since yesterday`,
+                    `↓${-movement}`,
+                    "text-outcome-negative-text",
+                ];
+    return (
+        <span
+            title={label}
+            // The viewer row sits on the accent fill, where tone colours fade.
+            className={`shrink-0 text-xs font-semibold tabular-nums ${
+                isYou ? "text-theme-text-strong" : className
+            }`}
+        >
+            <span aria-hidden="true">{text}</span>
+            <span className="sr-only">{label}</span>
+        </span>
+    );
+}
+
+function StandingRowView({
+    row,
+    isYou,
+    gap,
+}: {
+    row: StandingRow;
+    isYou: boolean;
+    gap?: { aboveLogin: string; to: number; of: number } | null;
+}) {
+    const medal = MEDALS[row.rank - 1];
     return (
         <li
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 ${
+            className={`rounded-xl px-3 py-2 ${
                 isYou ? "bg-theme-bg-active" : ""
             }`}
         >
-            <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-theme-text-muted">
-                {row.rank}
-            </span>
-            <img
-                src={`https://github.com/${encodeURIComponent(row.githubLogin)}.png?size=64`}
-                alt=""
-                aria-hidden="true"
-                className="size-7 shrink-0 rounded-full bg-theme-bg-subtle"
-                loading="lazy"
-                width={28}
-                height={28}
-            />
-            <Text
-                as="span"
-                weight={isYou ? "bold" : "semibold"}
-                tone="strong"
-                className="min-w-0 truncate"
-            >
-                {isYou ? "You" : `@${row.githubLogin}`}
-            </Text>
-            {row.supporter && (
-                <span
-                    title="Pollen supporter"
-                    className="polli-wallet-chip-paid inline-flex size-5 shrink-0 items-center justify-center rounded-full"
-                >
-                    <CardIcon className="h-3 w-3" aria-hidden="true" />
-                    <span className="sr-only">Pollen supporter</span>
+            <div className="flex items-center gap-3">
+                <span className="w-6 shrink-0 text-right text-sm font-semibold tabular-nums text-theme-text-muted">
+                    {medal ? (
+                        <span
+                            role="img"
+                            aria-label={`Rank ${row.rank}`}
+                            className="text-base leading-none"
+                        >
+                            {medal}
+                        </span>
+                    ) : (
+                        row.rank
+                    )}
                 </span>
+                <img
+                    src={`https://github.com/${encodeURIComponent(row.githubLogin)}.png?size=64`}
+                    alt=""
+                    aria-hidden="true"
+                    className="size-7 shrink-0 rounded-full bg-theme-bg-subtle"
+                    loading="lazy"
+                    width={28}
+                    height={28}
+                />
+                <Text
+                    as="span"
+                    weight={isYou ? "bold" : "semibold"}
+                    tone="strong"
+                    className="min-w-0 truncate"
+                >
+                    {isYou ? "You" : `@${row.githubLogin}`}
+                </Text>
+                {row.supporter && (
+                    <span
+                        title="Pollen supporter"
+                        className="polli-wallet-chip-paid inline-flex size-5 shrink-0 items-center justify-center rounded-full"
+                    >
+                        <CardIcon className="h-3 w-3" aria-hidden="true" />
+                        <span className="sr-only">Pollen supporter</span>
+                    </span>
+                )}
+                <span className="ml-auto flex shrink-0 items-center gap-2">
+                    <Movement movement={row.movement} isYou={isYou} />
+                    <Text
+                        as="span"
+                        weight="semibold"
+                        tone="strong"
+                        className="tabular-nums"
+                    >
+                        {formatPollen(row.totalPollen)}
+                    </Text>
+                </span>
+            </div>
+            {gap && (
+                <div
+                    role="img"
+                    aria-label={`${formatPollen(gap.to - gap.of)} Pollen behind @${gap.aboveLogin}`}
+                    title={`${formatPollen(gap.to - gap.of)} Pollen behind @${gap.aboveLogin}`}
+                    className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-theme-bg-inset"
+                >
+                    <div
+                        className="h-full rounded-full bg-theme-text-muted/60"
+                        style={{
+                            width: `${Math.min(100, Math.round((gap.of / gap.to) * 100))}%`,
+                        }}
+                    />
+                </div>
             )}
-            <Text
-                as="span"
-                weight="semibold"
-                tone="strong"
-                className="ml-auto shrink-0 tabular-nums"
-            >
-                {formatPollen(row.totalPollen)}
-            </Text>
         </li>
     );
 }
@@ -112,6 +190,25 @@ export function QuestStandings({
     const youRank = standings.you?.rank ?? null;
     const line = nudge(standings, openQuests);
     const days = daysLeft(standings.endsAt, now);
+    // The viewer's distance to the row directly above, shown as a slim bar.
+    const youGap =
+        youRank === null
+            ? null
+            : (() => {
+                  const you = standings.rows.find(
+                      (row) => row.rank === youRank,
+                  );
+                  const above = standings.rows.find(
+                      (row) => row.rank === youRank - 1,
+                  );
+                  return you && above && you.totalPollen < above.totalPollen
+                      ? {
+                            aboveLogin: above.githubLogin,
+                            to: above.totalPollen,
+                            of: you.totalPollen,
+                        }
+                      : null;
+              })();
 
     return (
         <Section
@@ -146,6 +243,9 @@ export function QuestStandings({
                                     <StandingRowView
                                         row={row}
                                         isYou={row.rank === youRank}
+                                        gap={
+                                            row.rank === youRank ? youGap : null
+                                        }
                                     />
                                 </Fragment>
                             );

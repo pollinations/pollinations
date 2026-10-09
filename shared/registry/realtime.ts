@@ -34,7 +34,7 @@ export const REALTIME_SERVICES = {
         aliases: ["gpt-realtime-2.1", "gpt-realtime-2"],
         addedDate: new Date("2026-07-16").getTime(),
         // Azure retirement schedule; the model catalog says 2027-07-31.
-        retirementDate: new Date("2027-06-25").getTime(),
+        // Provider retires this route on 2027-06-25.
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
         title: "GPT Realtime 2.1",
@@ -48,7 +48,7 @@ export const REALTIME_SERVICES = {
         aliases: ["gpt-realtime-2.1-mini"],
         addedDate: new Date("2026-07-26").getTime(),
         // Azure retirement schedule; the model catalog says 2027-07-31.
-        retirementDate: new Date("2027-06-25").getTime(),
+        // Provider retires this route on 2027-06-25.
         paidOnly: false,
         cost: {
             promptTextTokens: 0.0000006,
@@ -101,7 +101,7 @@ export const REALTIME_SERVICES = {
         publisher: "OpenAI",
         category: "realtime",
         addedDate: new Date("2026-08-19").getTime(),
-        retirementDate: new Date("2028-02-01").getTime(),
+        // Provider retires this route on 2028-02-01.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {

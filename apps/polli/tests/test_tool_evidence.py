@@ -1,7 +1,6 @@
-import ast
 import unittest
-from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
 
 from src.context.evidence import MAX_RESULT_CHARS, ToolEvidenceStore
 
@@ -59,20 +58,39 @@ class ToolEvidenceStoreTests(unittest.TestCase):
         self.assertIn("[00:00 UTC] a(", store.render(1, 1))
 
 
-class BotWiringTests(unittest.TestCase):
-    def test_process_message_reads_records_and_clears_evidence(self):
-        source = (Path(__file__).parents[1] / "src" / "bot.py").read_text(encoding="utf-8")
-        tree = ast.parse(source)
-        function = next(
-            node for node in tree.body if isinstance(node, ast.AsyncFunctionDef) and node.name == "_process_message"
-        )
-        body = ast.unparse(function)
-        render = body.index("tool_evidence.render(session.thread_id, user.id)")
-        process = body.index("pollinations_client.process_with_tools(")
-        record = body.index("tool_evidence.record(session.thread_id, user.id, tool_calls, tool_results)")
-        self.assertLess(render, process)
-        self.assertLess(process, record)
-        self.assertIn("tool_evidence.clear(session.thread_id)", body)
+class BotFollowUpTests(unittest.IsolatedAsyncioTestCase):
+    async def test_follow_up_turn_sees_previous_tool_evidence(self):
+        from src import bot
+
+        store = ToolEvidenceStore()
+        session = SimpleNamespace(thread_id=42, channel_id=7, original_author_name="Ana")
+        channel = SimpleNamespace(id=42, guild=None)
+        user = SimpleNamespace(id=5, name="ana", display_name="Ana", roles=[])
+        turns = [
+            {
+                "response": "flux runs on io.net",
+                "tool_calls": [call("code_search")],
+                "tool_results": [{"provider": "io.net"}],
+            },
+            {"response": "still io.net", "tool_calls": [], "tool_results": []},
+        ]
+        process = AsyncMock(side_effect=turns)
+        with (
+            patch.object(bot, "tool_evidence", store),
+            patch.object(bot.pollinations_client, "process_with_tools", process),
+            patch.object(bot, "send_long_message", AsyncMock()),
+        ):
+            await bot._process_message(
+                channel, user, "which provider?", [], session, [{"role": "user", "content": "q"}]
+            )
+            await bot._process_message(channel, user, "are you sure?", [], session, [{"role": "user", "content": "q"}])
+
+        first, second = (c.kwargs["thread_history"] for c in process.await_args_list)
+        self.assertEqual(first, [{"role": "user", "content": "q"}])
+        self.assertEqual(second[0], {"role": "user", "content": "q"})
+        self.assertEqual(second[-1]["role"], "system")
+        self.assertIn('code_search({"query": "flux"}) → {"provider":"io.net"}', second[-1]["content"])
+        self.assertIsNone(store.render(42, 6))  # another requester in the thread sees nothing
 
 
 if __name__ == "__main__":

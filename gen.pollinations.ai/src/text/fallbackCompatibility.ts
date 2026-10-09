@@ -34,6 +34,41 @@ function countReferenceImages(value: unknown): number {
     );
 }
 
+function countInlineDocumentData(value: unknown): number {
+    if (Array.isArray(value)) {
+        return value.reduce(
+            (total, item) => total + countInlineDocumentData(item),
+            0,
+        );
+    }
+    if (!value || typeof value !== "object") return 0;
+
+    const record = value as Record<string, unknown>;
+    if (
+        record.type === "file" ||
+        record.type === "input_file" ||
+        record.type === "document"
+    ) {
+        // References (file_url, file_id) are routed by the provider or the
+        // large-body middleware; only inline payloads need parsing support.
+        const nested =
+            record.type === "file"
+                ? (record.file as Record<string, unknown> | undefined)
+                : record.type === "document"
+                  ? (record.source as Record<string, unknown> | undefined)
+                  : undefined;
+        const inline =
+            record.type === "input_file"
+                ? record.file_data
+                : (nested?.file_data ?? nested?.data);
+        if (typeof inline === "string" && inline.length > 0) return 1;
+        return 0;
+    }
+    return Object.values(record).reduce<number>(
+        (total, item) => total + countInlineDocumentData(item),
+        0,
+    );
+}
 function requestedCompletionTokens(request: Record<string, unknown>): number {
     return Math.max(
         0,
@@ -133,6 +168,14 @@ export function textCapabilityError(
         referenceImages > definition.maxReferenceImages
     )
         return `This model supports at most ${definition.maxReferenceImages} reference images`;
+
+    const inlineDocuments = countInlineDocumentData(request);
+    if (
+        !(communityEndpoint && usesAgentRunToken(communityEndpoint)) &&
+        inlineDocuments > 0 &&
+        definition.inputModalities?.includes("document") === false
+    )
+        return "This model does not support document input";
 }
 
 /** Whether a fallback route can honor this text request's public contract. */

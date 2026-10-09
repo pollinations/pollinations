@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
+import { requireFile } from "../lib/input-file.js";
 import { ExitSignal, setOutputMode } from "../lib/output.js";
 import { agentsCommand } from "./agents.js";
 import { createChatCommand } from "./gen/chat.js";
@@ -161,6 +162,10 @@ describe("CLI argument validation", () => {
             }),
         ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("lets pipes and devices such as /dev/stdin through", () => {
+        expect(requireFile("/dev/null")).toBe(0);
     });
 
     describe.each([

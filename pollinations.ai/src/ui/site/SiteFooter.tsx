@@ -1,4 +1,4 @@
-import { Button, Eyebrow, InlineLink } from "@pollinations/ui";
+import { Eyebrow, IconButton, InlineLink } from "@pollinations/ui";
 import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { Link } from "@tanstack/react-router";
 import { DOCS_URL, maskStyle, SOCIAL } from "./links";
@@ -54,19 +54,17 @@ export function SiteFooter() {
                     </p>
                     <nav aria-label="Social links" className="flex gap-1">
                         {SOCIAL.map(({ href, label, Icon }) => (
-                            <Button
+                            <IconButton
                                 key={href}
-                                as="a"
                                 href={href}
-                                size="sm"
-                                aria-label={label}
-                                title={label}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="site-external-link h-8 w-8 shrink-0 p-0"
+                                variant="ghost"
+                                size="md"
+                                aria-label={label}
                             >
                                 <Icon className="h-4 w-4" />
-                            </Button>
+                            </IconButton>
                         ))}
                     </nav>
                     <p className="text-xs text-theme-text-muted">

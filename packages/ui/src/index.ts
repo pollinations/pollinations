@@ -90,6 +90,10 @@ export {
     type PeriodPickerProps,
 } from "./compositions/PeriodPicker.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
+export {
+    SocialCount,
+    type SocialCountProps,
+} from "./compositions/SocialCount.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
 export {
     ToolCallDetails,

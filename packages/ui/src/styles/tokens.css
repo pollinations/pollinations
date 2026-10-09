@@ -42,6 +42,15 @@
     --polli-color-brand-dark: #110518;
     --polli-color-brand-accent: oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
 
+    /* Third-party brand colours for the social count pills. Fixed in both
+       modes: they are Discord's and GitHub's own colours, not our theme. */
+    --polli-color-social-discord: #5865f2;
+    --polli-color-social-discord-text: #ffffff;
+    --polli-color-social-github: #0d1117;
+    --polli-color-social-github-hover: #010409;
+    --polli-color-social-github-text: #f0f6fc;
+    --polli-color-social-github-border: rgb(240 246 252 / 14%);
+
     /* Level 0 — Desk (neutral, identical on every page) */
     --polli-color-app-bg:              oklch(0.902 0.013 80);
 

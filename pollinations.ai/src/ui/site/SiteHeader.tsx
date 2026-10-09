@@ -8,8 +8,10 @@ import {
     DropdownItem,
     ExternalLinkIcon,
     GitHubIcon,
+    IconButton,
     LogInIcon,
     MenuIcon,
+    SocialCount,
     StarIcon,
     TabButton,
     XIcon,
@@ -17,7 +19,7 @@ import {
 import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import markUrl from "@pollinations/ui/brand/mark.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { type CSSProperties, useState } from "react";
+import { useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
 import { compact } from "../../data/publicStats";
 import { DOCS_URL, maskStyle, SOCIAL } from "./links";
@@ -47,11 +49,6 @@ const ACCOUNT_ACTIONS = [
     },
 ] as const;
 
-const DISCORD_BLURPLE_STYLE = {
-    backgroundColor: "#5865F2",
-    color: "#FFFFFF",
-} satisfies CSSProperties;
-
 const MARK_STYLE = maskStyle(markUrl, 32, 32);
 const MOBILE_MENU_MARK_STYLE = maskStyle(markUrl, 26, 26);
 const DRAWER_MENU_LOCKUP_STYLE = maskStyle(lockupUrl, 174, 22);
@@ -78,7 +75,7 @@ function MenuUtilities({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={close}
-                className="site-drawer-social-link site-external-link"
+                className="site-drawer-social-link"
             >
                 <GitHubIcon className="h-4 w-4 shrink-0" />
                 <span className="site-drawer-social-label">{GITHUB.label}</span>
@@ -99,38 +96,32 @@ function MenuUtilities({
                         ? "Discord"
                         : `Discord — ${discordOnline.toLocaleString()} users online now`
                 }
-                className="site-drawer-social-link site-external-link"
+                className="site-drawer-social-link"
             >
                 <DiscordIcon className="h-4 w-4 shrink-0" />
                 <span className="site-drawer-social-label">
                     {DISCORD.label}
                 </span>
                 {discordOnline !== null && (
-                    <Chip
-                        size="sm"
-                        style={DISCORD_BLURPLE_STYLE}
-                        className="gap-1.5 px-1.5 drop-shadow-[0_0_0.3rem_#5865F2]"
-                    >
+                    <SocialCount as="span" network="discord" showIcon={false}>
                         {compact(discordOnline)} online
-                    </Chip>
+                    </SocialCount>
                 )}
             </DropdownItem>
             <footer className="mt-1 flex items-center gap-2 border-t border-theme-text-strong/10 px-2 pt-2">
                 {OTHER_SOCIAL.map(({ href, label, Icon }) => (
-                    <Button
+                    <IconButton
                         key={href}
-                        as="a"
                         href={href}
-                        size="sm"
-                        aria-label={label}
-                        title={label}
                         target="_blank"
                         rel="noopener noreferrer"
+                        variant="ghost"
+                        size="md"
+                        aria-label={label}
                         onClick={close}
-                        className="site-external-link h-8 w-8 shrink-0 p-0"
                     >
                         <Icon className="h-4 w-4" />
-                    </Button>
+                    </IconButton>
                 ))}
             </footer>
         </>
@@ -144,21 +135,17 @@ function GitHubStarsButton({ stars }: { stars: number | null }) {
     const label = `Star us on GitHub — ${stars.toLocaleString()} stars`;
 
     return (
-        <Button
-            as="a"
+        <SocialCount
+            network="github"
             href={GITHUB.href}
             target="_blank"
             rel="noopener noreferrer"
-            intent="neutral"
-            size="xs"
             aria-label={label}
             title={label}
-            className="site-github-stars hidden gap-2 px-3 min-[1120px]:inline-flex"
         >
-            <GitHubIcon className="h-3 w-3" />
             <span>{displayedStars}</span>
             <StarIcon filled className="h-2.5 w-2.5" />
-        </Button>
+        </SocialCount>
     );
 }
 
@@ -168,21 +155,16 @@ function DiscordLiveButton({ online }: { online: number | null }) {
     const label = `Join the Discord — ${online.toLocaleString()} users online now`;
 
     return (
-        <Button
-            as="a"
+        <SocialCount
+            network="discord"
             href={DISCORD.href}
             target="_blank"
             rel="noopener noreferrer"
-            intent="neutral"
-            size="xs"
             aria-label={label}
             title={label}
-            style={DISCORD_BLURPLE_STYLE}
-            className="hidden gap-2 px-3 min-[1120px]:inline-flex"
         >
-            <DiscordIcon className="h-3 w-3" />
-            <span>{compact(online)} online</span>
-        </Button>
+            {compact(online)} online
+        </SocialCount>
     );
 }
 
@@ -235,18 +217,22 @@ export function SiteHeader() {
                                     as={Link}
                                     to={item.to}
                                     variant="ghost"
+                                    intent="brand"
                                     active={isCurrent(item.to, pathname)}
-                                    className={`site-primary-nav-button ${
+                                    className={
                                         item.to === "/"
                                             ? "site-home-nav-button"
-                                            : ""
-                                    }`}
+                                            : undefined
+                                    }
                                 >
                                     {item.label}
                                 </TabButton>
                             ))}
-                            <DiscordLiveButton online={discordOnline} />
-                            <GitHubStarsButton stars={repoStars} />
+                            {/* Its own small group, at the colour toggle's height. */}
+                            <div className="hidden items-center gap-1.5 pl-1 min-[1120px]:flex">
+                                <DiscordLiveButton online={discordOnline} />
+                                <GitHubStarsButton stars={repoStars} />
+                            </div>
                         </nav>
                     </div>
                     <div className="pointer-events-auto flex items-center gap-2">
@@ -327,12 +313,13 @@ export function SiteHeader() {
                                                     as={Link}
                                                     to={item.to}
                                                     variant="ghost"
+                                                    intent="brand"
                                                     active={active}
                                                     size="lg"
                                                     onClick={() =>
                                                         setMobileMenuOpen(false)
                                                     }
-                                                    className="site-primary-nav-button w-full justify-start px-4"
+                                                    className="w-full justify-start px-4"
                                                 >
                                                     {item.label}
                                                 </TabButton>

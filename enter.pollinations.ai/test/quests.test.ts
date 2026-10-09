@@ -400,7 +400,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("connect_polli_cli", {
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 1,
         balanceBucket: "tier",
     });
     expectStableCatalogFields("join_discord", {
@@ -1224,7 +1224,7 @@ test("Polli CLI quest rewards its device-login keys, not other app keys", async 
         })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "connect_polli_cli"));
-    expect(rewards).toEqual([{ userId: polliUserId, amount: 2 }]);
+    expect(rewards).toEqual([{ userId: polliUserId, amount: 1 }]);
 });
 
 test("app milestones award their rewards at inclusive thresholds", async ({

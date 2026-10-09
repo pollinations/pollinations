@@ -5,10 +5,10 @@ import {
     InlineLink,
     LiveDot,
     RocketIcon,
-    Text,
-    UsageIcon,
+    StatCard,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useRequestsLastHour } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
@@ -67,33 +67,62 @@ function HelloPage() {
     );
 }
 
-/** Measured traffic; the line keeps its height while loading or on failure. */
+/**
+ * Measured traffic as the hero's proof point. The block keeps its height
+ * while loading or on failure, and the number counts up once when it lands;
+ * screen readers get the final value straight away.
+ */
 function RequestsLastHour() {
     const { data: requests } = useRequestsLastHour();
+    const shown = useCountUp(requests);
 
     return (
-        <Text
-            size="sm"
-            tone="muted"
-            className="flex min-h-5 items-center gap-2 tabular-nums"
-        >
+        <div className="min-h-[3.875rem]">
             {requests ? (
-                <>
-                    <UsageIcon aria-hidden="true" className="size-4 shrink-0" />
-                    <span>
-                        <Text
-                            as="strong"
-                            size="sm"
-                            tone="strong"
-                            weight="semibold"
-                        >
-                            {requests.toLocaleString()}
-                        </Text>{" "}
-                        requests in the last hour
-                    </span>
-                    <LiveDot />
-                </>
+                <StatCard
+                    variant="display"
+                    value={
+                        <>
+                            <span aria-hidden="true">
+                                {(shown ?? 0).toLocaleString()}
+                            </span>
+                            <span className="sr-only">
+                                {requests.toLocaleString()}
+                            </span>
+                        </>
+                    }
+                    label={
+                        <>
+                            requests in the last hour
+                            <LiveDot />
+                        </>
+                    }
+                />
             ) : null}
-        </Text>
+        </div>
     );
+}
+
+/** Eases from 0 to `target` over ~1s; jumps straight there under reduced motion. */
+function useCountUp(target: number | null) {
+    const [value, setValue] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (target === null) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setValue(target);
+            return;
+        }
+        const start = performance.now();
+        let frame = 0;
+        const tick = (now: number) => {
+            const progress = Math.min(1, (now - start) / 1000);
+            setValue(Math.round(target * (1 - (1 - progress) ** 3)));
+            if (progress < 1) frame = requestAnimationFrame(tick);
+        };
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+    }, [target]);
+
+    return value;
 }

@@ -1,0 +1,103 @@
+{
+  "pr_number": 16798,
+  "title": "feat: add MAI batch transcription with fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16798",
+  "merged_at": "2026-10-09T11:13:22Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added microsoft/mai-transcribe-2 to /v1/audio/transcriptions for multilingual file transcription with automatic language detection and timed segments. It has no aliases, accepts Quest or Paid Pollen with a 0.75 multiplier, and is priced per audio hour. Azure is the primary route, with a same-model Vercel Gateway fallback that also ultimately uses Azure; the gateway’s reported cost is preserved, and fallback retains the caller’s discounted quote. Tests cover three response formats, free identical cache hits, disconnect/rejoin, and a single debit and billing event.",
+    "keywords": [
+      "audio",
+      "transcription",
+      "MAI Transcribe 2",
+      "Azure",
+      "fallback",
+      "Quest Pollen"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16798.jpg",
+    "prompt": "In a cozy pixel art garden studio, a tiny audio file becomes a timestamped transcript beside two friendly route signs marked Azure and Vercel, with prominent lime green (#ecf874) glow, pastel flowers, and a warm cream background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and points at the transcript, small-to-medium sized and sharing the frame without dominating it, in strictly pixel art style, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T11:15:33.688612+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "842a8d29c4b97779b4ca0498da9a0d3a35069865",
+  "announcements": [
+    {
+      "id": "pr-16798:microsoft/mai-transcribe-2",
+      "model_id": "microsoft/mai-transcribe-2",
+      "title": "MAI Transcribe 2",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.000020833333"
+          }
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/v1/audio/transcriptions"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "842a8d29c4b97779b4ca0498da9a0d3a35069865^1",
+    "after_ref": "842a8d29c4b97779b4ca0498da9a0d3a35069865"
+  }
+}

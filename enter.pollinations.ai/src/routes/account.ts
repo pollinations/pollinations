@@ -8,6 +8,7 @@ import {
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
@@ -106,17 +107,7 @@ const CreateKeySchema = z.object({
         .describe(
             "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
         ),
-    expiresIn: z
-        .number()
-        .int()
-        .positive()
-        .refine(
-            (seconds) =>
-                Number.isFinite(
-                    new Date(Date.now() + seconds * 1000).getTime(),
-                ),
-            "Expiry is outside the supported date range",
-        )
+    expiresIn: apiKeyExpiresInSchema
         .optional()
         .describe("Expiry in seconds from now"),
     allowedModels: z
@@ -424,6 +415,7 @@ const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
     limit: z.coerce
         .number()
+        .int()
         .min(1)
         .max(MAX_USAGE_EXPORT_ROWS)
         .optional()
@@ -534,6 +526,7 @@ const USAGE_CSV_COLUMNS = [
     "meter_source",
     "input_text_tokens",
     "input_cached_tokens",
+    "input_cache_write_tokens",
     "input_audio_tokens",
     "input_audio_seconds",
     "input_image_tokens",
@@ -891,7 +884,14 @@ const usageRecordSchema = z.object({
             "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
-    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_cached_tokens: z
+        .number()
+        .describe("Number of input tokens read from the prompt cache"),
+    input_cache_write_tokens: z
+        .number()
+        .describe(
+            "Number of input tokens written to the prompt cache (billed at the cache-write rate)",
+        ),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
     input_audio_seconds: z
         .number()

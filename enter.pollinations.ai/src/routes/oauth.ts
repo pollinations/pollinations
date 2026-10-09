@@ -1,3 +1,4 @@
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { getRedirectUris } from "@shared/auth/api-key-metadata.ts";
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
@@ -64,7 +65,7 @@ const CreateCodeSchema = z.object({
     scope: z.string().optional(),
     codeChallenge: z.string().regex(PKCE_S256_CHALLENGE_REGEX),
     codeChallengeMethod: z.literal("S256"),
-    expiresIn: z.number().int().positive().nullish(),
+    expiresIn: apiKeyExpiresInSchema.nullish(),
 });
 
 /**

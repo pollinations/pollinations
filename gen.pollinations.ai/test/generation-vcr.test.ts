@@ -1499,6 +1499,8 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     expect(mocks.responsesDirect.state.requests[0].body).not.toHaveProperty(
         "messages",
     );
+    // A reasoning model on a Responses target keeps its own JSON transport.
+    expect(mocks.responsesDirect.state.requests[0].body.stream).not.toBe(true);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "openai/gpt-5.6-luna",

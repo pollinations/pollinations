@@ -108,6 +108,19 @@ export const portkeyConfig: PortkeyConfigMap = {
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "liquid/d1",
         }),
+    "gpt-6-luna-decisions": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.openai.com/v1/decisions",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-luna",
+        decisionsProtocol: "openai",
+    }),
+    "openai/gpt-6-luna-decisions:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "openai/gpt-6-luna-decisions",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -364,6 +377,35 @@ export const portkeyConfig: PortkeyConfigMap = {
                 providerOptions: { gateway: { only: ["novita"] } },
             },
         }),
+    "mistral-large-4": () =>
+        createMistralModelConfig({
+            model: "mistral-large-4",
+            directEndpoint: "https://api.mistral.ai/v1/chat/completions",
+            useMistralChatFormat: true,
+        }),
+    "mistral-large-4-vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "mistral/mistral-large-4",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["mistral"] } },
+            },
+        }),
+    // Nex returns a generic server error when it cannot fetch an image URL.
+    "nex-agi/nex-n2.5-mini": () => ({
+        ...createPinnedOpenRouterConfig(
+            "nex-agi/nex-n2.5-mini",
+            "nex-agi/bf16",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
+    "nex-agi/nex-n2.5-pro": () => ({
+        ...createPinnedOpenRouterConfig(
+            "nex-agi/nex-n2.5-pro",
+            "nex-agi/fp8",
+        )(),
+        requiresBase64ImageUrls: true,
+    }),
     "inclusionai/ling-3.0-flash-vl": createPinnedOpenRouterConfig(
         "inclusionai/ling-3.0-flash-vl",
         "deepinfra/fp16",
@@ -801,6 +843,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-haiku-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-haiku-5.5:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-haiku-5.5",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",
@@ -981,6 +1034,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "stepfun/step-3.5-flash": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
+        }),
+    "stepfun/step-5-preview": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-5-preview",
+        }),
+    "stepfun/step-5-preview:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-5-preview",
         }),
 
     // -- DeepInfra (StepFun) --------------------------------------------------

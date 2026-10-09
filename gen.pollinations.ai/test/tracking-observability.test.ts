@@ -2828,8 +2828,8 @@ describe("tracking observability", () => {
         const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
             bindings.GENERATION_COORDINATOR,
         );
-        const startAndWait = vi.fn(async (job) => {
-            await getByName("recovery-test").startAndWait(job);
+        const startAndWait = vi.fn(async (job, body) => {
+            await getByName("recovery-test").startAndWait(job, body);
             throw new Error(
                 "RPC connection lost after cache write and settlement",
             );

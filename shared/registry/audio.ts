@@ -178,18 +178,158 @@ export const GEMINI_TTS_VOICES = [
     "Sulafat",
 ] as const;
 
+// Microsoft MAI-Voice-2.1 voice ids without the model suffix; the upstream
+// (OpenRouter/Azure) expects `<id>:MAI-Voice-2.1` or `<id>:MAI-Voice-2.1-Flash`.
+// Source: OpenRouter models API supported_voices (identical 97 for both
+// variants), verified 2026-10-08.
+export const MAI_VOICE_21_VOICES = [
+    "cs-CZ-Grant",
+    "cs-CZ-Harper",
+    "da-DK-Grant",
+    "da-DK-Harper",
+    "de-DE-Grant",
+    "de-DE-Harper",
+    "de-DE-Klaus",
+    "de-DE-Mia",
+    "en-AU-Isla",
+    "en-GB-Emily",
+    "en-GB-Harry",
+    "en-IN-Dhruv",
+    "en-IN-Priya",
+    "en-US-Ethan",
+    "en-US-Grant",
+    "en-US-Harper",
+    "en-US-Iris",
+    "en-US-Jasper",
+    "en-US-Olivia",
+    "en-US-Sage",
+    "es-ES-Marta",
+    "es-MX-Alejo",
+    "es-MX-Grant",
+    "es-MX-Harper",
+    "es-MX-Valeria",
+    "fi-FI-Grant",
+    "fi-FI-Harper",
+    "fr-FR-Grant",
+    "fr-FR-Harper",
+    "fr-FR-Marc",
+    "fr-FR-Soleil",
+    "hi-IN-Arjun",
+    "hi-IN-Dhruv",
+    "hi-IN-Grant",
+    "hi-IN-Harper",
+    "hi-IN-Kavya",
+    "hi-IN-Priya",
+    "hu-HU-Bence",
+    "hu-HU-Grant",
+    "hu-HU-Harper",
+    "hu-HU-Levente",
+    "hu-HU-Lilla",
+    "hu-HU-Reka",
+    "id-ID-Grant",
+    "id-ID-Harper",
+    "it-IT-Grant",
+    "it-IT-Harper",
+    "it-IT-Luca",
+    "it-IT-Rosa",
+    "ko-KR-Grant",
+    "ko-KR-Haena",
+    "ko-KR-Harper",
+    "ko-KR-Junho",
+    "nb-NO-Grant",
+    "nb-NO-Harper",
+    "nl-NL-Grant",
+    "nl-NL-Harper",
+    "nl-NL-Sander",
+    "pl-PL-Grant",
+    "pl-PL-Harper",
+    "pt-BR-Caio",
+    "pt-BR-Grant",
+    "pt-BR-Harper",
+    "pt-BR-Luana",
+    "pt-BR-Pedro",
+    "pt-BR-Rafael",
+    "pt-PT-Grant",
+    "pt-PT-Harper",
+    "pt-PT-Rui",
+    "ro-RO-Andrei",
+    "ro-RO-Elena",
+    "ro-RO-Grant",
+    "ro-RO-Harper",
+    "ro-RO-Ioana",
+    "ro-RO-Radu",
+    "ru-RU-Grant",
+    "ru-RU-Harper",
+    "ru-RU-Lev",
+    "ru-RU-Masha",
+    "sv-SE-Grant",
+    "sv-SE-Harper",
+    "th-TH-Grant",
+    "th-TH-Harper",
+    "th-TH-Krit",
+    "th-TH-Nattapong",
+    "tr-TR-Aydin",
+    "tr-TR-Elif",
+    "tr-TR-Grant",
+    "tr-TR-Harper",
+    "vi-VN-Grant",
+    "vi-VN-Harper",
+    "zh-CN-Bo",
+    "zh-CN-Grant",
+    "zh-CN-Harper",
+    "zh-CN-Lan",
+    "zh-CN-Mei",
+    "zh-CN-Wei",
+] as const;
+
+// DashScope system voices; DashScope also accepts its base voices by name.
+export const QWEN_AUDIO_TTS_VOICES = [
+    "loongeva_v3.6",
+    "loongjohn",
+    "loongmary",
+    "longanfengyue",
+    "longanyuanfei",
+    "longanlingxi",
+    "longanxiaoxin",
+    "longanhuan_v3.6",
+    "longjielidou_v3.6",
+    "longpaopao_v3.6",
+    "longhuohuo_v3.6",
+    "longchuanshu_v3.6",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
     ...XAI_TTS_VOICES,
     ...GEMINI_TTS_VOICES,
+    ...MAI_VOICE_21_VOICES,
+    ...QWEN_AUDIO_TTS_VOICES,
 ];
 
 // Requests without a model must work on Quest Pollen, so the default stays
 // on a model that is not paid-only.
 export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
+    "microsoft/mai-transcribe-2": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "audio",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Promotional $0.10/hour; standard $0.36/hour, expiry unpublished.
+        // https://microsoft.ai/models/mai-transcribe-2/
+        cost: { promptAudioSeconds: 0.1 / 3600 },
+        title: "MAI Transcribe 2",
+        description:
+            "Multilingual file transcription with automatic language detection and timed segments",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "elevenlabs/eleven-v4": {
         aliases: [],
         provider: "elevenlabs",
@@ -546,7 +686,7 @@ const AUDIO_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
-        retirementDate: new Date("2028-02-01").getTime(),
+        // Provider retires this route on 2028-02-01.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -932,6 +1072,40 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
+    "microsoft/mai-voice-2.1": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "audio",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Direct Azure Speech list rate; Vercel matches it.
+        cost: { completionAudioTokens: 22 / 1_000_000 },
+        title: "MAI-Voice-2.1",
+        description:
+            "Expressive speech across 23 languages with consistent voices for long-form narration; mp3 or 24 kHz pcm",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...MAI_VOICE_21_VOICES],
+    },
+    "microsoft/mai-voice-2.1-flash": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "audio",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Direct Azure Speech list rate; Vercel matches it.
+        cost: { completionAudioTokens: 15 / 1_000_000 },
+        title: "MAI-Voice-2.1 Flash",
+        description:
+            "Low-latency expressive speech across 23 languages for voice agents; mp3 or 24 kHz pcm",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...MAI_VOICE_21_VOICES],
+    },
     "qwen/qwen3-tts-flash": {
         aliases: ["qwen3-tts", "qwen3-tts-flash", "qwen-tts"],
         provider: "alibaba",
@@ -950,8 +1124,10 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen/qwen3-tts-instruct-flash": {
+    "qwen/qwen-audio-3.0-tts-flash": {
+        // Replaces Qwen3-TTS Instruct Flash, which Alibaba retires on 2026-10-10 (notice 2009).
         aliases: [
+            "qwen/qwen3-tts-instruct-flash",
             "qwen3-tts-instruct",
             "qwen3-tts-instruct-flash",
             "qwen-tts-instruct",
@@ -959,20 +1135,19 @@ const AUDIO_BASE_SERVICES = {
         provider: "alibaba",
         publisher: "Qwen",
         category: "audio",
-        addedDate: new Date("2026-04-22").getTime(),
-        // Alibaba Model Studio notice 2009; its notice times are UTC+8.
-        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
+        addedDate: new Date("2026-10-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DashScope Qwen3-TTS-Instruct-Flash: $0.115 per 10K characters
-            completionAudioTokens: 0.0115 / 1000,
+            // DashScope Singapore: $0.15 per 10K characters
+            completionAudioTokens: 0.015 / 1000,
         },
-        title: "Qwen3-TTS Instruct Flash",
+        title: "Qwen-Audio 3.0 TTS Flash",
         description:
-            "Text-to-speech you can direct with emotion and style instructions",
+            "Low-latency speech you can direct with emotion, tone and dialect instructions",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        voices: [...QWEN_AUDIO_TTS_VOICES],
     },
     "sesame/csm-1b": {
         aliases: ["csm", "sesame-csm", "sesame-csm-1b", "csm-1b"],

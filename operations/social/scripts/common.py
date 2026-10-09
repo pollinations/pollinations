@@ -628,7 +628,6 @@ def gist_context(gist: Dict) -> Dict:
         **{key: ai.get(key) for key in (
             "summary", "category", "importance", "user_facing", "keywords"
         )},
-        "announcements": gist.get("announcements", []),
     }
 
 
@@ -753,29 +752,6 @@ def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> 
             return json.loads(content)
         except json.JSONDecodeError:
             pass
-    return None
-
-
-def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[str]:
-    """Read a text file from the news branch (local overlay first, GitHub API fallback)."""
-    # Try local first (workflow overlay)
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return f.read()
-        except OSError:
-            pass
-
-    # Fall back to GitHub API
-    import base64 as _b64
-    headers = _github_headers(github_token)
-    resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
-        headers=headers,
-    )
-    if resp.status_code == 200:
-        return _b64.b64decode(resp.json()["content"]).decode()
     return None
 
 
@@ -995,8 +971,8 @@ def commit_files_to_branch(
     owner: str,
     repo: str,
     label: str = "",
-) -> None:
-    """Commit JSON files to a branch.
+) -> bool:
+    """Commit JSON files to a branch. Returns False if any file failed.
 
     Args:
         files: list of (file_path, data_dict) tuples
@@ -1006,6 +982,7 @@ def commit_files_to_branch(
 
     headers = _github_headers(github_token)
 
+    ok = True
     for file_path, data in files:
         if data is None:
             continue
@@ -1038,6 +1015,8 @@ def commit_files_to_branch(
             print(f"  Committed {file_path}")
         else:
             print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
+            ok = False
+    return ok
 
 
 # ── VPS deployment ───────────────────────────────────────────────────

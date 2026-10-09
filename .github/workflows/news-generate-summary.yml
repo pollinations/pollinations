@@ -24,6 +24,7 @@ on:
           - weekly
           - weekly-generation-only
           - monthly
+          - site-stats
 
 jobs:
   generate-summary:
@@ -65,11 +66,13 @@ jobs:
           RUN_DAILY_BUFFER=false
           RUN_WEEKLY=false
           RUN_MONTHLY=false
+          RUN_SITE_STATS=false
           MONTHLY_TARGET="${{ github.event.inputs.target_month || '' }}"
           if [ "$MODE" = "auto" ]; then
             DOW=$(date -u +%u)  # 1=Monday, 7=Sunday
             DOM=$(date -u +%d)
             RUN_DAILY=true
+            RUN_SITE_STATS=true
             if [ "$DOW" = "7" ]; then
               RUN_WEEKLY=true
             else
@@ -87,13 +90,16 @@ jobs:
             RUN_WEEKLY=true
           elif [ "$MODE" = "monthly" ]; then
             RUN_MONTHLY=true
+          elif [ "$MODE" = "site-stats" ]; then
+            RUN_SITE_STATS=true
           fi
           echo "daily=$RUN_DAILY" >> "$GITHUB_OUTPUT"
           echo "daily_buffer=$RUN_DAILY_BUFFER" >> "$GITHUB_OUTPUT"
           echo "weekly=$RUN_WEEKLY" >> "$GITHUB_OUTPUT"
           echo "monthly=$RUN_MONTHLY" >> "$GITHUB_OUTPUT"
+          echo "site_stats=$RUN_SITE_STATS" >> "$GITHUB_OUTPUT"
           echo "monthly_target=$MONTHLY_TARGET" >> "$GITHUB_OUTPUT"
-          echo "Daily: $RUN_DAILY · Daily Buffer: $RUN_DAILY_BUFFER · Weekly: $RUN_WEEKLY · Monthly: $RUN_MONTHLY"
+          echo "Daily: $RUN_DAILY · Daily Buffer: $RUN_DAILY_BUFFER · Weekly: $RUN_WEEKLY · Monthly: $RUN_MONTHLY · Site stats: $RUN_SITE_STATS"
 
       # ── Daily: generate + stage to Buffer ──────────────────────────
       - name: Generate daily summary
@@ -149,6 +155,20 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           TARGET_MONTH: ${{ steps.mode.outputs.monthly_target }}
         run: python operations/social/scripts/generate_monthly.py
+
+      # ── Website: contributor wall + build-diary counts ─────────────
+      # Refreshed after the monthly step, so a new month's write-up is in.
+      # Independent of social posting: runs even if an earlier step failed.
+      - name: Refresh news branch for website stats
+        if: ${{ !cancelled() && steps.mode.outputs.site_stats == 'true' }}
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/
+
+      - name: Generate website stats
+        if: ${{ !cancelled() && steps.mode.outputs.site_stats == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python operations/social/scripts/generate_site_stats.py
 
       - name: Report failure as an issue
         if: failure()

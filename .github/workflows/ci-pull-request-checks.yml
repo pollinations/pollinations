@@ -35,7 +35,7 @@ jobs:
         run: pip install requests
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
-        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_gist_enrichment.py
+        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_gist_enrichment.py operations/social/scripts/test_site_stats.py
 
   gpu-tunnels:
     name: Test GPU tunnel recovery

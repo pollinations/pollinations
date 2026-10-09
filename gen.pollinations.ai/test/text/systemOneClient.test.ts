@@ -70,6 +70,29 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("allows a provider response to take longer than 30 seconds", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                await new Promise((resolve) => setTimeout(resolve, 31_000));
+                init?.signal?.throwIfAborted();
+                return Response.json({
+                    model: "jev-1.13.0",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            },
+        );
+        const completion = callSystemOne(
+            [{ role: "user", content: nativeContent }],
+            { modelConfig },
+        );
+        const assertion = expect(completion).resolves.toMatchObject({
+            usage: { prompt_tokens: 312, completion_tokens: 48 },
+        });
+        await vi.advanceTimersByTimeAsync(31_000);
+        await assertion;
+    });
     it.each([
         "typesafe/jev-1.13",
         "typesafe/jev",
@@ -227,7 +250,6 @@ describe("System One adapter", () => {
                 expect(new Headers(init?.headers).get("content-type")).toBe(
                     "application/json",
                 );
-                expect(init?.signal).toBeInstanceOf(AbortSignal);
                 expect(JSON.parse(String(init?.body))).toEqual({
                     model: "typesafe/jev-1.13",
                     state: nativeState,

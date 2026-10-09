@@ -288,6 +288,52 @@ describe("gen worker routing", () => {
         }
     });
 
+    it("publishes the polli skill through Agent Skills well-known discovery", async () => {
+        const index = await fetchWorker("/.well-known/agent-skills/index.json");
+        expect(index.status).toBe(200);
+        expect(index.headers.get("Content-Type")).toContain("application/json");
+        expect(index.headers.get("Access-Control-Allow-Origin")).toBe("*");
+        const body = (await index.json()) as {
+            $schema: string;
+            skills: {
+                name: string;
+                type: string;
+                description: string;
+                url: string;
+                digest: string;
+            }[];
+        };
+        expect(body.$schema).toBe(
+            "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+        );
+        expect(body.skills).toHaveLength(1);
+        const [skill] = body.skills;
+        expect(skill).toMatchObject({
+            name: "polli",
+            type: "skill-md",
+            url: "/.well-known/agent-skills/polli/SKILL.md",
+        });
+        expect(skill.description).toMatch(/^Generate images/);
+
+        const skillFile = await fetchWorker(skill.url);
+        expect(skillFile.status).toBe(200);
+        expect(skillFile.headers.get("Content-Type")).toContain(
+            "text/markdown",
+        );
+        const bytes = new Uint8Array(await skillFile.arrayBuffer());
+        expect(new TextDecoder().decode(bytes)).toMatch(/^---\nname: polli\n/);
+        const hash = await crypto.subtle.digest("SHA-256", bytes);
+        const hex = [...new Uint8Array(hash)]
+            .map((byte) => byte.toString(16).padStart(2, "0"))
+            .join("");
+        expect(skill.digest).toBe(`sha256:${hex}`);
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain(
+            "/.well-known/agent-skills/index.json",
+        );
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 
@@ -770,6 +816,24 @@ describe("model status", () => {
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({ error: "bad minutes" });
     });
+
+    it("serves the 7-day model usage stats the dashboard prices models with", async () => {
+        await env.KV.delete("model-stats-v3");
+        const stats = { data: [{ model: "test", avg_cost_usd: 0.001 }] };
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json(stats));
+
+        const response = await fetchWorker("/models/stats");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=300",
+        );
+        expect(await response.json()).toEqual(stats);
+        expect(String(upstream.mock.calls[0]?.[0])).toContain(
+            "/v0/pipes/public_model_stats.json",
+        );
+    });
 });
 
 fixtureTest(
@@ -1061,15 +1125,15 @@ fixtureTest(
 
                 if (
                     request.url ===
-                    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+                    "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer"
                 ) {
                     await expect(request.json()).resolves.toEqual({
-                        model: "qwen3-tts-instruct-flash",
+                        model: "qwen-audio-3.0-tts-flash",
                         input: {
                             text: "Hello Qwen",
-                            voice: "Serena",
+                            voice: "loongeva_v3.6",
                         },
-                        parameters: { instructions: "speak softly" },
+                        parameters: { instruction: "speak softly" },
                     });
 
                     return Response.json({
@@ -1124,18 +1188,18 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
         expect(response.headers.get("x-model-used")).toBe(
-            "qwen/qwen3-tts-instruct-flash",
+            "qwen/qwen-audio-3.0-tts-flash",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );
-        expect(response.headers.get("x-tts-voice")).toBe("Serena");
+        expect(response.headers.get("x-tts-voice")).toBe("loongeva_v3.6");
         await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
         expect(calls).toContain(
-            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
         );
         expect(
             calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),

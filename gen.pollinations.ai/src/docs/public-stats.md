@@ -13,7 +13,7 @@ p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMG
 
 | Endpoint | Params | Returns |
 |----------|--------|---------|
-| `GET /v0/pipes/public_model_stats.json` | `limit` (50) | Per-model usage over the last 7 days: request count, typical (median) cost, avg response time |
+| `GET /v0/pipes/public_model_stats.json` | `limit` (50) | Per-model usage over seven days, refreshed hourly: request count, typical (median) cost, avg response time |
 | `GET https://gen.pollinations.ai/models/status` | `minutes` (60, max 10080) | Per-model and per-route health in a recent window: 2xx/4xx/5xx counts, fallback rescues, latency p50/p95. A 60-second edge cache in front of the `model_route_health` pipe; prefer it over calling Tinybird directly. |
 | `GET /v0/pipes/weekly_health_stats.json` | `weeks_back` (12) | Weekly service availability (`2xx / (2xx + 5xx)`, cache excluded) and latency |
 | `GET /v0/pipes/app_top_weekly.json` | `limit` (10) | Listed apps ranked by successful, billable BYOP requests over the rolling last 7 days. Credits each registered App Key to the owner's catalog listing whose URL covers its redirect URI, or to the owner's only listing; excludes failed/unbilled requests and banned users. Returns catalog `app_url`, `app_name`, `owner`, `request_count`, and `last_seen` |

@@ -43,7 +43,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-1.5": {
@@ -51,7 +51,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-2": {
@@ -154,7 +154,7 @@ export const IMAGE_FALLBACKS = {
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
             // OpenRouter expiration_date.
-            retirementDate: new Date("2027-03-15").getTime(),
+            // Provider retires this route on 2027-03-15.
             cost: {
                 promptTextTokens: perMillion(0.3) * 1.055,
                 promptImageTokens: perMillion(0.3) * 1.055,
@@ -246,6 +246,24 @@ export const IMAGE_FALLBACKS = {
                 },
                 "1080p": {
                     completionVideoSeconds: 0.25,
+                },
+            },
+        },
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-06").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.03 * 1.055, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.02 * 1.055,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14 * 1.055,
                 },
             },
         },

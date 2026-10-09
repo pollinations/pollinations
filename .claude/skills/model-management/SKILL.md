@@ -103,6 +103,22 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 - For every addition or modification, run a fresh web search across provider catalogs and official documentation to discover viable fallback routes; do not rely only on repository integrations or remembered availability. Verify each serious candidate against its current official model page and pricing, then probe the exact route. Compare checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
 - Inspect provider-managed routing/fallback defaults and controls. Report identity, capability, pricing, residency, and observability tradeoffs.
 
+For direct Novita discovery, use the supported
+[model catalog](https://docs.novita.ai/api-reference/model-apis-llm-list-models)
+and [account quotas](https://docs.novita.ai/api-reference/quota-list) with an
+existing authorized key. Quota queries require `modal=llm`; query `RPM` and
+`TPM` separately with `productType=Public Endpoint` and the exact model as
+`quotaObject`, then check the returned identity. The OpenAI-compatible base is
+`https://api.novita.ai/openai/v1`; probe the exact upstream model using
+[Chat Completions](https://docs.novita.ai/api-reference/model-apis-llm-create-chat-completion).
+Request `stream_options.include_usage` for streaming and prove terminal usage,
+cache/reasoning billing, capabilities and burst capacity through local Gen
+before routing traffic. Gateway availability does not prove direct access or
+independent capacity: OpenRouter/Vercel routes backed by Novita can share the
+same upstream pool. Keep direct provider attribution and charges distinct from
+gateway-billed traffic; use the Economics Novita connector guide for supported
+billing sources. Preserve the existing public contract and fallback mechanism.
+
 ### 3. Confirm the contract
 
 Present the mandatory row and obtain explicit confirmation before editing. If a capability or access change is intentional, state it plainly.
@@ -220,6 +236,20 @@ Before publishing:
 - Review the complete diff for unrelated changes and dead code.
 - Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
+
+The PR description must include a user-visible change table for each affected model, using its public model ID:
+
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `<public ID>` | NEW / UPDATE / RETIRE | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
+
+- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability, in the PR that removes the model. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
+- Announce a retirement only once it is decided (no other provider will keep the model): merge a PR whose table has a `RETIRE` row with the future date and timezone in `Effective`, e.g. `2026-11-02 00:00 UTC`. News shows it as upcoming until the removal PR merges. To postpone, merge a new `RETIRE` row with the new date; to withdraw, use `Cancelled` as `Effective`. Avoid moving a date earlier.
+- Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
+- For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
+- For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.
+- A merge is not a deployment. Use `On production deployment (not live yet)` unless a scheduled date or verified deployment is known. Link an existing notice and its `notice_id` when applicable.
+- For a provider-only change with no user-visible difference, state that price, balance access, capabilities, and availability are unchanged instead of adding status rows. Keep provider and verification evidence separately below the summary.
 
 ## Completion gate
 

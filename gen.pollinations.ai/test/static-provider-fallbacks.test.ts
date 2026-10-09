@@ -454,11 +454,28 @@ describe("static provider fallbacks", () => {
             provider: "openrouter",
             fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
         });
+        const lite = IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite"];
+        const liteFallback =
+            IMAGE_SERVICES["x-ai/grok-imagine-video-1.5-lite:openrouter"];
+        expect(lite).toMatchObject({
+            provider: "xai",
+            aliases: [],
+            fallbacks: ["x-ai/grok-imagine-video-1.5-lite:openrouter"],
+        });
+        expect(liteFallback.provider).toBe("openrouter");
+        expect(liteFallback.cost).toEqual({
+            promptImageTokens: 0.01 * 1.055,
+            completionVideoSeconds: 0.03 * 1.055,
+        });
     });
 
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
-        const parent: ModelDefinition = TEXT_SERVICES[parentId];
+        const parent: ModelDefinition = {
+            ...TEXT_SERVICES[parentId],
+            // Isolate the synthetic pair from this model's live fallback list.
+            fallbacks: undefined,
+        };
         const studioId = `${parentId}:openrouter:ai-studio`;
         const vertexId = `${parentId}:openrouter:vertex`;
         const services = mergeFallbacks(
@@ -482,32 +499,6 @@ describe("static provider fallbacks", () => {
             expect(services[routeId].cost).toEqual(parent.cost);
         }
         expect(parent.fallbacks).toBeUndefined();
-    });
-
-    it("keeps a retirement date on the route that states it", () => {
-        const parentId = "google/gemini-2.5-flash-lite:search";
-        const parent: ModelDefinition = {
-            ...TEXT_SERVICES[parentId],
-            retirementDate: Date.UTC(2026, 9, 20),
-        };
-        const undatedId = `${parentId}:openrouter:ai-studio`;
-        const datedId = `${parentId}:openrouter:vertex`;
-        const services = mergeFallbacks(
-            { [parentId]: parent },
-            {
-                [parentId]: {
-                    [undatedId]: { provider: "openrouter" },
-                    [datedId]: {
-                        provider: "openrouter",
-                        retirementDate: Date.UTC(2027, 2, 15),
-                    },
-                },
-            },
-        );
-
-        expect(services[parentId].retirementDate).toBe(Date.UTC(2026, 9, 20));
-        expect(services[undatedId].retirementDate).toBeUndefined();
-        expect(services[datedId].retirementDate).toBe(Date.UTC(2027, 2, 15));
     });
 
     it("keeps D1 paid-only and charges its public quote on Vercel fallback", () => {
@@ -535,6 +526,148 @@ describe("static provider fallbacks", () => {
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
+    });
+
+    it("prices Claude Haiku 5.5 on Vercel exactly as on Bedrock, including the long-context tier", () => {
+        const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];
+        expect(primary).toMatchObject({
+            provider: "aws",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["anthropic/claude-haiku-5.5:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        for (const [promptTextTokens, expected] of [
+            [1000, (1000 * 0.1 + 1000 * 0.5) / 1e6],
+            [100_001, (100_001 * 0.5 + 1000 * 2.5) / 1e6],
+        ] as const) {
+            const billing = calculateUsageBilling({
+                model: "anthropic/claude-haiku-5.5",
+                usage: { promptTextTokens, completionTextTokens: 1000 },
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(expected, 9);
+        }
+    });
+
+    it("prices Step 5 Preview on Vercel at base rates and supports tool calls on that fallback", () => {
+        const primary = TEXT_SERVICES["stepfun/step-5-preview"];
+        const fallback = TEXT_SERVICES["stepfun/step-5-preview:vercel"];
+        expect(primary).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["stepfun/step-5-preview:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            tools: true,
+        });
+        expect(
+            findModelByName("stepfun/step-5-preview")?.config(),
+        ).toMatchObject({
+            provider: "openrouter",
+            model: "stepfun/step-5-preview",
+        });
+        expect(
+            findModelByName("stepfun/step-5-preview:vercel")?.config(),
+        ).toMatchObject({ model: "stepfun/step-5-preview" });
+        const billing = calculateUsageBilling({
+            model: "stepfun/step-5-preview",
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0037, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0039035, 12);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [{ role: "user", content: "hi" }],
+                tools: [{ type: "function", function: { name: "lookup" } }],
+            }),
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [
+                    {
+                        role: "assistant",
+                        tool_calls: [
+                            {
+                                id: "call_1",
+                                type: "function",
+                                function: { name: "lookup", arguments: "{}" },
+                            },
+                        ],
+                    },
+                    { role: "tool", tool_call_id: "call_1", content: "found" },
+                ],
+            }),
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [{ role: "user", content: "hi" }],
+            }),
+        ).toBe(true);
+    });
+
+    it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
+        const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "moonshotai/kimi-k3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.005985, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0063, 8);
+        expect(
+            findModelByName("moonshotai/kimi-k3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "moonshotai/Kimi-K3",
+        });
+    });
+
+    it("keeps the MiniMax M3 quote when DeepInfra serves cached and reasoning tokens", () => {
+        const primary = TEXT_SERVICES["minimax/minimax-m3"];
+        const fallback = TEXT_SERVICES["minimax/minimax-m3:deepinfra"];
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-m3",
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.000556, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.0006, 8);
+        expect(
+            findModelByName("minimax/minimax-m3:deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "MiniMaxAI/MiniMax-M3",
+        });
     });
 
     it("registers exact text routes as fallback-only inherited models", () => {
@@ -921,10 +1054,30 @@ describe("static provider fallbacks", () => {
         ).toBeUndefined();
     });
 
-    it("routes Ling fallback through Vercel Novita with launch pricing", () => {
+    it("orders Ling gateways behind direct Novita and keeps fallback costs separate", () => {
         const primary = "inclusionai/ling-3.1-flash";
         const route = `${primary}:vercel:novita`;
-        expect(TEXT_SERVICES[primary].fallbacks).toEqual([route]);
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([
+            `${primary}:openrouter:novita`,
+            route,
+        ]);
+        expect(TEXT_SERVICES[`${primary}:openrouter:novita`]).toMatchObject({
+            provider: "openrouter",
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            cost: {
+                promptTextTokens:
+                    TEXT_SERVICES[primary].cost.promptTextTokens * 1.055,
+                promptCachedTokens:
+                    TEXT_SERVICES[primary].cost.promptCachedTokens * 1.055,
+                completionTextTokens:
+                    TEXT_SERVICES[primary].cost.completionTextTokens * 1.055,
+            },
+        });
+        expect(getVisibleTextModels()).not.toContain(
+            `${primary}:openrouter:novita`,
+        );
         expect(TEXT_SERVICES[route]).toMatchObject({
             provider: "vercel",
             hidden: true,
@@ -944,6 +1097,14 @@ describe("static provider fallbacks", () => {
             },
         });
         expect(getVisibleTextModels()).not.toContain(route);
+        const billed = calculateUsageBilling({
+            model: primary,
+            usage: { promptTextTokens: 1000, completionTextTokens: 100 },
+            servedBy: TEXT_SERVICES[`${primary}:openrouter:novita`],
+            quotedBy: TEXT_SERVICES[primary],
+        });
+        expect(billed.cost.totalCost).toBe(0);
+        expect(billed.price.totalPrice).toBe(0);
     });
 
     it("uses the same primary and single fallback for both API formats", () => {
@@ -1041,6 +1202,30 @@ describe("static provider fallbacks", () => {
             model: "mistralai/mistral-small-2603",
             defaultOptions: { max_tokens: 64000 },
         });
+        expect(
+            findModelByName("mistralai/mistral-large-4")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.mistral.ai/v1",
+            model: "mistral-large-4",
+        });
+        expect(
+            findModelByName("mistralai/mistral-large-4:vercel")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            model: "mistral/mistral-large-4",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["mistral"] } },
+            },
+        });
+        for (const [unit, cost] of Object.entries(
+            TEXT_SERVICES["mistralai/mistral-large-4"].cost,
+        )) {
+            expect(
+                TEXT_SERVICES["mistralai/mistral-large-4:vercel"].cost[
+                    unit as keyof (typeof TEXT_SERVICES)["mistralai/mistral-large-4"]["cost"]
+                ],
+            ).toBeCloseTo(cost, 15);
+        }
         for (const [unit, cost] of Object.entries(
             TEXT_SERVICES["mistralai/mistral-small-4"].cost,
         )) {

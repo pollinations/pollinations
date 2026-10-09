@@ -838,6 +838,7 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image:openrouter:vertex-global":
         case "google/gemini-3.1-flash-image:openrouter:vertex-global":
+        case "google/gemini-nano-banana-2.1":
         case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
         case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(

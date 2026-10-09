@@ -3,7 +3,10 @@ import {
     longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
-import { openRouterGeminiBilling } from "./gemini-billing";
+import {
+    openRouterGeminiBilling,
+    VERCEL_EXA_SEARCH_BILLING,
+} from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
@@ -20,7 +23,28 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "stepfun/step-5-preview": {
+        // Same StepFun model through Vercel's AI Gateway at the posted base
+        // rates, without OpenRouter's credit fee.
+        "stepfun/step-5-preview:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(1),
+                promptCachedTokens: perMillion(0.05),
+                completionTextTokens: perMillion(2.7),
+            },
+        },
+    },
     "inclusionai/ling-3.1-flash": {
+        "inclusionai/ling-3.1-flash:openrouter:novita": {
+            provider: "openrouter",
+            // Free during the launch promotion, matching the public quote.
+            cost: {
+                promptTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                completionTextTokens: perMillion(0),
+            },
+        },
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
             // Same Novita checkpoint through a separate gateway. Both routes
@@ -51,13 +75,13 @@ export const TEXT_FALLBACKS = {
     "openai/gpt-5.3-codex": {
         "openai/gpt-5.3-codex:azure:sweden": {
             provider: "azure",
-            retirementDate: new Date("2027-08-24").getTime(),
+            // Provider retires this route on 2027-08-24.
         },
     },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",
-            retirementDate: new Date("2028-01-11").getTime(),
+            // Provider retires this route on 2028-01-11.
             // Same checkpoint, separate US Data Zone quota pool. The caller
             // keeps the Global quote; Pollinations absorbs the 10% premium.
             cost: {
@@ -89,7 +113,7 @@ export const TEXT_FALLBACKS = {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-06").getTime(),
-            retirementDate: new Date("2027-08-24").getTime(),
+            // Provider retires this route on 2027-08-24.
         },
         "x-ai/grok-4.6:xai": {
             provider: "xai",
@@ -159,6 +183,18 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.3) * 1.055,
                 promptCachedTokens: perMillion(0.06) * 1.055,
                 completionTextTokens: perMillion(1.2) * 1.055,
+            },
+        },
+    },
+    "minimax/minimax-m3": {
+        "minimax/minimax-m3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/MiniMaxAI/MiniMax-M3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(0.28),
+                promptCachedTokens: perMillion(0.056),
+                completionTextTokens: perMillion(1.1),
             },
         },
     },
@@ -283,7 +319,7 @@ export const TEXT_FALLBACKS = {
         "moonshotai/kimi-k2.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-23").getTime(),
-            retirementDate: new Date("2027-04-16").getTime(),
+            // Provider retires this route on 2027-04-16.
         },
         "moonshotai/kimi-k2.6:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -294,6 +330,18 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.15),
                 promptImageTokens: perMillion(0.75),
                 completionTextTokens: perMillion(3.5),
+            },
+        },
+    },
+    "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/moonshotai/Kimi-K3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(2.85),
+                promptCachedTokens: perMillion(0.285),
+                completionTextTokens: perMillion(14.25),
             },
         },
     },
@@ -318,6 +366,14 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
             },
+        },
+    },
+    "mistralai/mistral-large-4": {
+        // Both routes use Mistral infrastructure; this covers gateway failures.
+        "mistralai/mistral-large-4:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
+            provider: "vercel",
+            addedDate: new Date("2026-10-06").getTime(),
         },
     },
     "mistralai/mistral-small-3.2": {
@@ -442,6 +498,14 @@ export const TEXT_FALLBACKS = {
                 promptCacheWriteTokens: perMillion(1.25) * 1.055,
                 completionTextTokens: perMillion(5) * 1.055,
             },
+        },
+    },
+    "anthropic/claude-haiku-5.5": {
+        // Same model through Vercel's AI Gateway at Anthropic's list price,
+        // so it inherits the primary's rates and long-context tier.
+        "anthropic/claude-haiku-5.5:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-10-07").getTime(),
         },
     },
     "anthropic/claude-opus-5.5": {
@@ -611,6 +675,21 @@ export const TEXT_FALLBACKS = {
                 searchCostPerThousandRequests: 14 * 1.055,
                 storageCostPerMillionTokenHours: 1.0 * 1.055,
             }),
+        },
+    },
+    "google/gemini-2.5-flash-lite:search": {
+        "google/gemini-2.5-flash-lite:search:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptCacheWriteTokens: perMillion(0.1),
+                promptAudioTokens: perMillion(0.1),
+                promptImageTokens: perMillion(0.1),
+                promptVideoTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0.4),
+            },
+            billing: VERCEL_EXA_SEARCH_BILLING,
         },
     },
     "google/gemini-3.5-flash-lite": {

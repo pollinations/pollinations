@@ -1,5 +1,5 @@
 {
-  "version": 28,
+  "version": 30,
   "canonicalModelRenames": {
     "claude": "anthropic/claude-sonnet-4.6",
     "flux-2-pro": "black-forest-labs/flux.2-pro",
@@ -240,6 +240,7 @@
         }
       ],
       "modelLabels": {
+        "qwen-audio-3.0-tts-flash": "qwen/qwen-audio-3.0-tts-flash",
         "qwen-image-edit-plus": "qwen-image",
         "qwen-image-plus": "qwen-image",
         "qwen3-coder-next": "qwen-coder-large",
@@ -2166,6 +2167,36 @@
       "monthlyReview": false,
       "balanceTracking": false,
       "collectionMethod": null
+    },
+    {
+      "id": "novita",
+      "label": "Novita AI",
+      "category": "compute",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "novita",
+      "monthlyReview": true,
+      "activeFrom": "2026-10",
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "accounts": [
+        {
+          "id": "a3b3a59f-2ea2-4acb-811f-eb87dc4fec12",
+          "label": "Myceli.AI OÜ",
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-10",
+          "activeTo": null
+        }
+      ],
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://novita.ai/billing",
+          "accountId": "a3b3a59f-2ea2-4acb-811f-eb87dc4fec12",
+          "loginEmail": "elliot@myceli.ai"
+        }
+      ],
+      "modelLabels": {}
     },
     {
       "id": "openai",

@@ -6,7 +6,7 @@ import {
     callCohereAzureImageEmbed,
     extractCohereAzureUsage,
 } from "./cohereAzure.ts";
-import { callFireworksEmbed, extractFireworksUsage } from "./fireworks.ts";
+import { callHostedEmbed, extractHostedUsage } from "./hosted.ts";
 import {
     applyGeminiTaskInstruction,
     badRequest,
@@ -37,7 +37,9 @@ const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
     "openai/text-embedding-3-large": "text-embedding-3-large",
     "cohere/embed-v4.0": "embed-v-4-0",
     "cohere/embed-v4.0:azure:sweden": "embed-v-4-0",
-    "qwen/qwen3-embedding-8b": "accounts/fireworks/models/qwen3-embedding-8b",
+    "qwen/qwen3-embedding-8b": "Qwen/Qwen3-Embedding-8B",
+    "qwen/qwen3-embedding-8b:fireworks":
+        "accounts/fireworks/models/qwen3-embedding-8b",
 };
 
 export function getEmbeddingProviderModelId(modelName: string): string {
@@ -64,6 +66,7 @@ const EMBEDDING_DIMENSIONS: Record<
         allowed: [256, 512, 1024, 1536],
     },
     "qwen/qwen3-embedding-8b": { max: 4096 },
+    "qwen/qwen3-embedding-8b:fireworks": { max: 4096 },
 };
 
 export async function generateEmbeddings(
@@ -90,8 +93,16 @@ export async function generateEmbeddings(
         return await generateCohereAzureEmbeddings(env, request, responseModel);
     }
 
-    if (serviceDef.provider === "fireworks") {
-        return await generateFireworksEmbeddings(env, request, responseModel);
+    if (
+        serviceDef.provider === "fireworks" ||
+        serviceDef.provider === "deepinfra"
+    ) {
+        return await generateHostedEmbeddings(
+            env,
+            request,
+            responseModel,
+            serviceDef.provider,
+        );
     }
 
     throw new Error(`Unsupported embeddings provider: ${serviceDef.provider}`);
@@ -146,10 +157,11 @@ async function generateCohereAzureEmbeddings(
     return cohereEmbeddingsResponse(result, request, responseModel, "text");
 }
 
-async function generateFireworksEmbeddings(
+async function generateHostedEmbeddings(
     env: CloudflareBindings,
     request: EmbeddingRequest,
     responseModel: string,
+    provider: "fireworks" | "deepinfra",
 ): Promise<Response> {
     validateDimensions(request.dimensions, responseModel);
     if (request.task_type) {
@@ -164,13 +176,14 @@ async function generateFireworksEmbeddings(
         return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
     }
 
-    const result = await callFireworksEmbed(
+    const result = await callHostedEmbed(
         env,
+        provider,
         request.model,
         textInputs,
         request.dimensions,
     );
-    const usage = extractFireworksUsage(result);
+    const usage = extractHostedUsage(result);
 
     const data = toEmbeddingData(result.data, request.encoding_format);
 

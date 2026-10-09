@@ -23,6 +23,8 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import { publicChatChoices, publicChatStream } from "./chat/public.ts";
+import { completionToChatStream } from "./chat/stream.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -135,6 +137,30 @@ async function gatewayContext(
     };
 }
 
+/** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
+export async function generateChatAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    // An upstream without SSE is asked for JSON, then its answer is replayed
+    // as a stream.
+    const buffered =
+        requestData.stream === true &&
+        candidate.definition?.supportsStreaming === false;
+    const attemptData = buffered
+        ? { ...requestData, stream: false }
+        : requestData;
+    const result = await generateTextPortkey(
+        attemptData.messages,
+        await gatewayContext(c, attemptData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!attemptData.stream) requireChatCompletionUsage(result);
+    return buffered ? completionToChatStream(result) : result;
+}
+
 function withGatewayContext(c: TextContext, requestData: RequestData) {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
@@ -195,13 +221,18 @@ function publicCompletionUsage(
     return publicUsage;
 }
 
-function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
+function publicChatCompletion(
+    completion: ChatCompletion,
+    isVercel: boolean,
+): ChatCompletion {
     const usage = publicCompletionUsage(completion.usage);
-    if (usage === completion.usage) return completion;
-
+    if (!isVercel && usage === completion.usage) return completion;
     const publicCompletion = {
         ...completion,
         usage,
+        choices: isVercel
+            ? publicChatChoices(completion.choices)
+            : completion.choices,
     };
     if (completion.fallbackTarget !== undefined) {
         Object.defineProperty(publicCompletion, "fallbackTarget", {
@@ -348,7 +379,6 @@ async function generateTextResponse(
         );
         if (capabilityError)
             throw new UpstreamError(400, { message: capabilityError });
-        const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
                 ...candidate,
@@ -364,19 +394,7 @@ async function generateTextResponse(
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
-            async (attempt) => {
-                const result = await generateTextPortkey(
-                    requestData.messages,
-                    await gatewayContext(c, requestData, attempt),
-                    portkey
-                        ? (input, init) => portkey.fetch(input, init)
-                        : undefined,
-                );
-                if (!requestData.stream) {
-                    requireChatCompletionUsage(result);
-                }
-                return result;
-            },
+            (attempt) => generateChatAttempt(c, requestData, attempt),
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
@@ -390,6 +408,7 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
+        const isVercel = candidate.definition?.provider === "vercel";
         if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -398,7 +417,9 @@ async function generateTextResponse(
             const [clientBody, trackingBody] = requireChatStreamUsage(
                 completion.responseStream,
             ).tee();
-            completion.responseStream = clientBody;
+            completion.responseStream = isVercel
+                ? publicChatStream(clientBody)
+                : clientBody;
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),
@@ -408,7 +429,7 @@ async function generateTextResponse(
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);
-        const publicCompletion = publicChatCompletion(completion);
+        const publicCompletion = publicChatCompletion(completion, isVercel);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(

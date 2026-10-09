@@ -12,6 +12,59 @@ permissions:
 # request diff without fetching the full repository history.
 
 jobs:
+  project-manager:
+    name: Test PR classification and gist enrichment
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Check for project manager changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- operations/github operations/social/scripts .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v6
+        if: steps.changes.outputs.changed == 'true'
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: pip install requests
+      - name: Test PR classification and gist enrichment
+        if: steps.changes.outputs.changed == 'true'
+        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_gist_enrichment.py
+
+  gpu-tunnels:
+    name: Test GPU tunnel recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check for GPU or workflow changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- operations/infrastructure/gpu .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check GPU setup shell syntax
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          for script in operations/infrastructure/gpu/watch-tunnel.sh operations/infrastructure/gpu/*/setup-vast.sh; do
+            bash -n "$script" || exit
+          done
+
+      - name: Test tunnel watchdog thresholds and process isolation
+        if: steps.changes.outputs.changed == 'true'
+        run: python3 -m unittest operations/infrastructure/gpu/test_tunnel_watchdog.py
+
   lint:
     name: Lint and build
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-09T01:37:29.437218+00:00",
+  "generated_at": "2026-10-09T06:33:19.085468+00:00",
   "models": [
     {
       "id": "pr-14556:nvidia/asset-harvester",
@@ -7042,6 +7042,53 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-08",
+      "emoji": "🤖",
+      "title": "Two long-context text models",
+      "text": "Try `anthropic/claude-haiku-5.5` and `stepfun/step-5-preview` for text and image input, tool calls and 1M-token contexts. Both are paid-only models available through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        16713,
+        16796
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "🔗",
+      "title": "Responses for every Chat model",
+      "text": "Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16811
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "💡",
+      "title": "Publish non-streaming text models",
+      "text": "Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.",
+      "prs": [
+        16732
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "💻",
+      "title": "Pi in a browser workbench",
+      "text": "Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.",
+      "prs": [
+        16033
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "emoji": "✨",
+      "title": "Polish a Japanese memo",
+      "text": "Keigo Formatter turns rough Japanese notes into polite business Japanese using the Pollinations text API. [Try it](https://ucalis-uma.github.io/keigo-formatter).",
+      "prs": [
+        16810
+      ],
+      "app": true
+    },
     {
       "date": "2026-10-07",
       "emoji": "🤖",

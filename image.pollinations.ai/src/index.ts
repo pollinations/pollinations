@@ -14,6 +14,13 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.js";
 
 // Import shared utilities
 import { enqueue } from "../../shared/ipQueue.js";
+import {
+    MIGRATION_EXPOSED_HEADERS,
+    MIGRATION_LINK,
+    migrationHeaders,
+    migrationInfo,
+    signupUrl,
+} from "../../shared/legacy-migration.js";
 import { canAccessService } from "../../shared/registry/registry.ts";
 import { countFluxJobs, handleRegisterEndpoint } from "./availableServers.js";
 import { cacheImagePromise } from "./cacheGeneratedImages.js";
@@ -126,8 +133,29 @@ const setCORSHeaders = (res: ServerResponse) => {
         "X-Debug-Legacy-Token-Match",
         "X-Debug-Allowlist-Match",
         "X-Debug-User-Id",
+        "X-Error-Type",
+        "X-Error-Status",
+        "X-Error-Message",
+        "X-Rate-Limited",
+        ...MIGRATION_EXPOSED_HEADERS,
     ]);
+    // Machine-readable migration pointers on every response, errors included.
+    for (const [name, value] of Object.entries(migrationHeaders("image"))) {
+        res.setHeader(name, value);
+    }
+    res.setHeader("Link", MIGRATION_LINK);
 };
+
+/**
+ * Header-safe, single-line version of an error message so clients that embed
+ * the error JPEG can still read why the request failed.
+ */
+const toHeaderValue = (message: string): string =>
+    String(message || "")
+        .replace(/[^\x20-\x7E]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 500);
 
 /**
  * @async
@@ -454,12 +482,12 @@ const checkCacheAndGenerate = async (
                 
                 // Block models that are only available on enter.pollinations.ai
                 if (modelName === "nanobanana" || modelName === "kontext" || modelName === "gptimage" || modelName === "seedream") {
-                    throw new Error(`${modelName} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/?ref=image to get started.`);
+                    throw new Error(`${modelName} model is only available on gen.pollinations.ai. Get a key at ${signupUrl("image")} and see ${migrationInfo("image").docs}.`);
                 }
                 
                 // Block authenticated users (token or referrer) - they should use enter.pollinations.ai
                 if (hasValidToken || authResult.referrerAuth) {
-                    throw new Error("Authenticated users should use https://enter.pollinations.ai/?ref=image for image generation. This legacy endpoint is for anonymous requests only.");
+                    throw new Error(`Authenticated users should use https://gen.pollinations.ai/image/{prompt} (key: ${signupUrl("image")}, docs: ${migrationInfo("image").docs}). This legacy endpoint is for anonymous requests only.`);
                 }
                 
                 // Anonymous sana requests only
@@ -607,6 +635,8 @@ const checkCacheAndGenerate = async (
                 "Content-Type": "image/jpeg",
                 "Content-Length": imageBuffer.length,
                 "X-Error-Type": errorType,
+                "X-Error-Status": String(statusCode),
+                "X-Error-Message": toHeaderValue(error.message),
                 "X-Rate-Limited": statusCode === 429 ? "true" : "false",
                 "Cache-Control": "no-cache, no-store, must-revalidate",
             });
@@ -651,6 +681,7 @@ const checkCacheAndGenerate = async (
                 referrer,
             },
             queueInfo: null,
+            migration: migrationInfo("image"),
         };
 
         // Add queue info for 429 errors

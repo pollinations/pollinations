@@ -4,6 +4,11 @@
  */
 
 import crypto from "crypto";
+import {
+    GEN_DOCS_URL,
+    MIGRATION_GUIDE_URL,
+    signupUrl,
+} from "../shared/legacy-migration.js";
 
 // Generate a unique ID with pllns_ prefix
 function generatePollinationsId() {
@@ -15,7 +20,11 @@ const REDIRECT_MESSAGE = `⚠️ **IMPORTANT NOTICE** ⚠️
 
 The Pollinations legacy text API is being deprecated for **authenticated users**.
 
-Please migrate to our new service at https://enter.pollinations.ai for better performance and access to all the latest models.
+Please migrate to https://gen.pollinations.ai for better performance and access to all the latest models:
+
+- Get a key: ${signupUrl("text")}
+- Docs: ${GEN_DOCS_URL}
+- Route-by-route guide: ${MIGRATION_GUIDE_URL}
 
 Note: Anonymous requests to text.pollinations.ai are NOT affected and will continue to work normally.`;
 

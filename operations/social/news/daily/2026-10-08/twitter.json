@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-08",
+  "period_start": "2026-10-08",
+  "period_end": "2026-10-08",
+  "generated_at": "2026-10-09T06:32:03.630134+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-08/images/twitter.jpg"
+    }
+  ],
+  "text": "added /v1/responses for every Chat text model, including Claude, Gemini, community models and chat-only agents. Community endpoints can now return plain JSON; streaming clients still get valid events. less protocol paperwork."
+}

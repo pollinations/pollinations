@@ -1,0 +1,36 @@
+{
+  "pr_number": 16893,
+  "title": "fix: fall back when a provider rejects our region",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16893",
+  "merged_at": "2026-10-09T10:42:54Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "A provider 400 response saying `User location is not supported` now sends the request to the model’s next declared fallback target; other 400 responses still return to the caller. The fix applies to every model with a fallback, not just TTS. It addresses the failure path that stopped 208 `google/gemini-3.8-flash-tts` calls on 2026-10-03 from reaching their OpenRouter (AI Studio) fallback.",
+    "keywords": [
+      "fallback",
+      "provider routing",
+      "region restrictions",
+      "HTTP 400",
+      "Gemini TTS"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16893.jpg",
+    "prompt": "In a cozy pixel art garden, Polli guides a glowing request along a lime green (#ecf874) path around a gently closed regional gate toward a welcoming CRT monitor, with code-flowers beside the path. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-09T10:44:09.409676+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "8f98d530253cebc50ac2128712d62ae5ff4260ad",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

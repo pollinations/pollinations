@@ -134,6 +134,7 @@ describe("/openapi.json", () => {
             "text/event-stream",
         ]);
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
+        expect(schema.paths["/v1/models/{model}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
         expect(schema.paths["/alpha/audio/stem-separation"]).toBeDefined();

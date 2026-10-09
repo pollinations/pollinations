@@ -1,11 +1,18 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
 import { ExitSignal, setOutputMode } from "../lib/output.js";
 import { agentsCommand } from "./agents.js";
 import { createChatCommand } from "./gen/chat.js";
+import { createIsolateCommand } from "./gen/isolate.js";
 import { createTextCommand } from "./gen/text.js";
+import { createTranscribeCommand } from "./gen/transcribe.js";
+import { createVoiceChangeCommand } from "./gen/voice-change.js";
 import { keysCommand } from "./keys.js";
 import { modelsCommand } from "./models.js";
+import { uploadCommand } from "./upload.js";
 
 const originalStdinTTY = process.stdin.isTTY;
 
@@ -154,6 +161,40 @@ describe("CLI argument validation", () => {
             }),
         ).rejects.toThrow(ExitSignal);
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    describe.each([
+        ["upload", () => uploadCommand],
+        ["gen transcribe", createTranscribeCommand],
+        ["gen isolate", createIsolateCommand],
+        ["gen voice-change", createVoiceChangeCommand],
+    ])("%s input path", (_name, command) => {
+        it("rejects a directory as one CLI error before reading or fetching", async () => {
+            const folder = mkdtempSync(join(tmpdir(), "polli-input-dir-"));
+            try {
+                const fetch = prepare();
+                await expect(
+                    command().parseAsync([folder], { from: "user" }),
+                ).rejects.toThrow(ExitSignal);
+                expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+                    [expect.stringContaining(`Not a file: ${folder}`)],
+                ]);
+                expect(fetch).not.toHaveBeenCalled();
+            } finally {
+                rmSync(folder, { recursive: true });
+            }
+        });
+
+        it("rejects a missing path as one CLI error before fetching", async () => {
+            const fetch = prepare();
+            await expect(
+                command().parseAsync(["nope.mp3"], { from: "user" }),
+            ).rejects.toThrow(ExitSignal);
+            expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+                [expect.stringContaining("File not found: nope.mp3")],
+            ]);
+            expect(fetch).not.toHaveBeenCalled();
+        });
     });
 
     it("sends valid numeric options and an HTTP image URL", async () => {

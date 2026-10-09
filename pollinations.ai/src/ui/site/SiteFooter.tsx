@@ -76,12 +76,12 @@ export function SiteFooter() {
                         </span>
                         <span className="block">
                             Payments by Stripe ·{" "}
-                            <a
+                            <InlineLink
                                 href="mailto:hello@pollinations.ai"
-                                className="hover:text-theme-text-strong"
+                                tone="quiet"
                             >
                                 hello@pollinations.ai
-                            </a>
+                            </InlineLink>
                         </span>
                     </p>
                 </div>
@@ -92,20 +92,27 @@ export function SiteFooter() {
                             className="flex flex-col gap-2"
                         >
                             <Eyebrow size="chrome">{column.heading}</Eyebrow>
+                            {/* One quiet link style; ↗ marks only the ones that leave the site. */}
                             {column.links.map((link) =>
                                 "to" in link ? (
-                                    <Link
+                                    <InlineLink
                                         key={link.label}
+                                        as={Link}
                                         to={link.to}
-                                        className="text-sm text-theme-text-base hover:text-theme-text-strong"
+                                        external={false}
+                                        tone="quiet"
+                                        size="footer"
+                                        className="w-fit"
                                     >
                                         {link.label}
-                                    </Link>
+                                    </InlineLink>
                                 ) : (
                                     <InlineLink
                                         key={link.label}
                                         href={link.href}
-                                        className="text-sm font-normal text-theme-text-base"
+                                        tone="quiet"
+                                        size="footer"
+                                        className="w-fit"
                                     >
                                         {link.label}
                                     </InlineLink>

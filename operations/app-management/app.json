@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Keigo Formatter",
+    "url": "https://ucalis-uma.github.io/keigo-formatter",
+    "description": "Rough Japanese memos to polite business Japanese. Single-page static app (no build, GitHub Pages). Uses Pollinations text API ( POST /v1/chat/completions , default deepseek/deepseek-v4.1-flash ). BYOP",
+    "language": "ja",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "ucalis-uma",
+    "githubUserId": "213156820",
+    "repositoryUrl": "https://github.com/ucalis-uma/keigo-formatter",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-07",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16685",
+    "approvedDate": "2026-10-08",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/58d6e790-c717-4d41-a2f2-b7d004e1c803"
+  },
+  {
     "emoji": "🎬",
     "name": "Audio",
     "url": "https://dwikatmahmoud87-source.github.io/Gtdcg",

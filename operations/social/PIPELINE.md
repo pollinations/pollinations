@@ -112,7 +112,27 @@ All generated content lives on the **`news` branch**.
 New gists also carry `area`, `type` (Dev Work type), `source`, and `merge_commit_sha`.
 The project manager rechecks classification at merge using its existing brief and updates Dev before returning these values.
 `announcements[]` stores exact official-model deltas from the merged registry trees, with `model_id`, `action` (`NEW`, `UPDATE`, `RETIRE`), `changes` (each field's `before` and `after`), pricing units, and effective timing.
-`announcement_evidence` records the compared commit references. Merge time never proves production availability: immediate changes have `effective_at: null` and `effective_status: unconfirmed`; registry retirement dates create scheduled retirements.
+`announcement_evidence` records the compared commit references. Merge time never proves production availability: changes have `effective_at: null` and `effective_status: unconfirmed`. A model shows as retired when the PR that removes it merges.
+
+#### Model changes on Enter `/news`
+
+A merged PR is the only source. The gist job reads two things from it:
+
+| PR content | Gist announcement | Shown as |
+|---|---|---|
+| Registry diff: a model added, removed, or its price, Quest/Paid access or capabilities changed | `NEW` / `UPDATE` / `RETIRE`, `effective_status: unconfirmed` | New / Updated / Retired on the merge date |
+| A `RETIRE` row in the PR description's model-change table with a future `Effective` date | `RETIRE`, `effective_status: scheduled`, `source: pr_description` | Retiring on that date |
+| The same row with `Cancelled` as `Effective` | `effective_status: cancelled` | No longer retiring |
+
+Registry comments are never read. A provider's deadline (`// Provider retires this route on …`) is an internal reminder: most deadlines end in a reroute, not a retirement. Announce only a decided retirement, with a row such as:
+
+```
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `qwen/qwen3-tts-instruct-flash` | RETIRE | Availability | Available | Retired | 2026-10-09 16:00 UTC |
+```
+
+`Effective` takes `YYYY-MM-DD`, an optional `HH:MM` and a timezone (`UTC`, `Z` or `±HH:MM`; none means UTC). Rows for unknown model IDs, past dates or no date (the removal PR itself) are skipped. In `index.json` the latest announcement per model wins and keeps the earlier date as `previous_date`; the removal PR settles it, and a date that passes without a removal is hidden.
 `enrichment.classification` and `enrichment.models` report `complete` or `failed`. Classification/catalog enrichment failures leave unknown values while social publication continues. Fetching the PR and its complete file list is required. Manual dispatch regenerates text and images and posts Discord again; use local edits for enrichment-only repairs or backfills.
 Existing AI categories, text, images, and publish-tier rules remain available to social consumers.
 

@@ -5,6 +5,7 @@ import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { callChatViaResponses } from "./responses/chatClient.js";
 import { callSystemOne } from "./systemOneClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
+import { normalizeBedrockFileParts } from "./transforms/filePartsTransform.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
@@ -60,6 +61,7 @@ export async function generateTextPortkey(
         if (modelDef?.useSystemOneApi) {
             return callSystemOne(state.messages, state.options);
         }
+        state = normalizeBedrockFileParts(state.messages, state.options);
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
         state = await processParameters(state.messages, state.options);

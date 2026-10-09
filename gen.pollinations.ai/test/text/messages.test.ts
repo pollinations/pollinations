@@ -996,12 +996,17 @@ describe("POST /v1/messages", () => {
     });
 
     it("sends a PDF document to the provider as a Chat file part", async () => {
-        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        // gemini-2.5-flash-lite declares the file input modality and is
+        // served through a chat-completions gateway, so the translated file
+        // part reaches the provider unchanged.
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
         const { providerBodies } = mockUpstream();
         const { response, text } = await call(
             "/v1/messages",
             {
-                model,
+                model: "google/gemini-2.5-flash-lite",
                 max_tokens: 32,
                 messages: [
                     {
@@ -1037,6 +1042,85 @@ describe("POST /v1/messages", () => {
                 ],
             },
         ]);
+    });
+
+    it("normalizes PDF documents for Bedrock Claude models", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
+        const { providerBodies } = mockUpstream();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model: "anthropic/claude-sonnet-4.6",
+                max_tokens: 32,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "document",
+                                source: {
+                                    type: "base64",
+                                    media_type: "application/pdf",
+                                    data: "JVBERi0x",
+                                },
+                            },
+                            { type: "text", text: "What word is in this PDF?" },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        // Bedrock's Converse mapping needs bare base64 bytes, an explicit
+        // MIME type and a deterministic, charset-safe document name.
+        expect(providerBodies[0].messages).toEqual([
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "file",
+                        file: {
+                            file_data: "JVBERi0x",
+                            mime_type: "application/pdf",
+                            file_name: "document-1",
+                        },
+                    },
+                    { type: "text", text: "What word is in this PDF?" },
+                ],
+            },
+        ]);
+    });
+
+    it("rejects PDF documents on models without the file input modality", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        mockUpstream();
+        const { response, text } = await call(
+            "/v1/chat/completions",
+            {
+                model: "openai/gpt-5.4-nano",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                file: {
+                                    file_data:
+                                        "data:application/pdf;base64,JVBERi0x",
+                                },
+                            },
+                            { type: "text", text: "What word is in this PDF?" },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(400);
+        expect(text).toContain("does not support file input");
     });
 
     it("preserves thinking signatures through response validation", async () => {

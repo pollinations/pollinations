@@ -1113,6 +1113,105 @@ describe("static provider fallbacks", () => {
         ).toBeUndefined();
     });
 
+    it("gates file input on the file modality and passes undeclared definitions", () => {
+        const chat = {
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "What does this PDF say?" },
+                        {
+                            type: "file",
+                            file: {
+                                file_data:
+                                    "data:application/pdf;base64,JVBERi0xLjQK",
+                                file_name: "report.pdf",
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+        const responses = {
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_file",
+                            file_data:
+                                "data:application/pdf;base64,JVBERi0xLjQK",
+                            filename: "report.pdf",
+                        },
+                    ],
+                },
+            ],
+        };
+        for (const request of [chat, responses]) {
+            // Azure-chat GPT models declare no file modality.
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-5.4-nano"],
+                    request,
+                ),
+            ).toBe(
+                "This model does not support file input (e.g. PDF documents); choose a model with the file input modality",
+            );
+            // Claude (Bedrock) and Responses-routed GPT models do.
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["anthropic/claude-sonnet-4.6"],
+                    request,
+                ),
+            ).toBeUndefined();
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-6.1-sol"],
+                    request,
+                ),
+            ).toBeUndefined();
+            // Community-style definitions without declared modalities pass.
+            expect(
+                textCapabilityError(
+                    {
+                        ...TEXT_SERVICES["openai/gpt-5.4-nano"],
+                        inputModalities: undefined,
+                    },
+                    request,
+                ),
+            ).toBeUndefined();
+            // Community endpoints are exempt: the media-offload path forwards
+            // file parts to them and their upstream decides.
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-5.4-nano"],
+                    request,
+                    { modality: "text" } as never,
+                ),
+            ).toBeUndefined();
+        }
+        // Objects typed "file" outside message content are not file input.
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-5.4-nano"], {
+                messages: [{ role: "user", content: "Hello" }],
+                tools: [
+                    {
+                        type: "function",
+                        function: {
+                            name: "save",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    attachment: { type: "file" },
+                                },
+                            },
+                        },
+                    },
+                ],
+            }),
+        ).toBeUndefined();
+    });
+
     it("orders Ling gateways behind direct Novita and keeps fallback costs separate", () => {
         const primary = "inclusionai/ling-3.1-flash";
         const route = `${primary}:vercel:novita`;

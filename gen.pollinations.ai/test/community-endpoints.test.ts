@@ -8486,7 +8486,8 @@ fixtureTest(
         const ownerUserId = await createTestUser({
             githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
         });
-        const modalities: ModelInputModality[] = [
+        // Members of both unions: "file" is input-only, "3d"/"embedding" output-only.
+        const modalities: (ModelInputModality & ModelOutputModality)[] = [
             "text",
             "image",
             "audio",

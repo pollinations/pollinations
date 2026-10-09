@@ -1095,4 +1095,131 @@ describe("Chat Completions over Responses", () => {
         });
         expect(events).not.toContain("[DONE]");
     });
+    it("maps Chat file parts to Responses input_file items", () => {
+        const pdfDataUrl = "data:application/pdf;base64,JVBERi0xLjQK";
+        const request = chatToResponsesRequest(
+            [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "file",
+                            file: {
+                                file_data: pdfDataUrl,
+                                file_name: "report.pdf",
+                            },
+                        },
+                        { type: "text", text: "Summarize this PDF" },
+                    ],
+                },
+            ],
+            { model: "provider-model", modelConfig },
+        );
+        const input = request.input as Array<{
+            role: string;
+            content: Array<Record<string, unknown>>;
+        }>;
+        expect(input[0].content).toEqual([
+            {
+                type: "input_file",
+                filename: "report.pdf",
+                file_data: pdfDataUrl,
+            },
+            { type: "input_text", text: "Summarize this PDF" },
+        ]);
+    });
+
+    it("defaults the input_file filename and prefers file_data over file_url and file_id", () => {
+        const request = chatToResponsesRequest(
+            [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "file",
+                            file: {
+                                file_data: "JVBERi0xLjQK",
+                                file_url: "https://files.test/report.pdf",
+                                file_id: "file-123",
+                            },
+                        },
+                    ],
+                },
+            ],
+            { model: "provider-model", modelConfig },
+        );
+        const input = request.input as Array<{
+            content: Array<Record<string, unknown>>;
+        }>;
+        expect(input[0].content).toEqual([
+            {
+                type: "input_file",
+                filename: "document.pdf",
+                file_data: "JVBERi0xLjQK",
+            },
+        ]);
+    });
+
+    it("maps file_url and file_id when no inline data is present", () => {
+        const request = chatToResponsesRequest(
+            [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "file",
+                            file: { file_url: "https://files.test/a.pdf" },
+                        },
+                        { type: "file", file: { file_id: "file-abc" } },
+                    ],
+                },
+            ],
+            { model: "provider-model", modelConfig },
+        );
+        const input = request.input as Array<{
+            content: Array<Record<string, unknown>>;
+        }>;
+        expect(input[0].content).toEqual([
+            {
+                type: "input_file",
+                filename: "document.pdf",
+                file_url: "https://files.test/a.pdf",
+            },
+            {
+                type: "input_file",
+                filename: "document.pdf",
+                file_id: "file-abc",
+            },
+        ]);
+    });
+
+    it("rejects file parts without any source or outside user messages", () => {
+        expect(() =>
+            chatToResponsesRequest(
+                [
+                    {
+                        role: "user",
+                        content: [{ type: "file", file: {} }],
+                    },
+                ],
+                { model: "provider-model", modelConfig },
+            ),
+        ).toThrowError(/file_data, file_url or file_id/);
+        expect(() =>
+            chatToResponsesRequest(
+                [
+                    {
+                        role: "system",
+                        content: [
+                            {
+                                type: "file",
+                                file: { file_data: "JVBERi0xLjQK" },
+                            },
+                        ],
+                    },
+                ],
+                { model: "provider-model", modelConfig },
+            ),
+        ).toThrowError(/Unsupported Chat content part: file/);
+    });
 });

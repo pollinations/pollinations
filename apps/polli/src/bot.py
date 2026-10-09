@@ -13,6 +13,7 @@ import discord
 
 from .ai.client import pollinations_client
 from .context import ConversationSession, session_manager
+from .context.evidence import tool_evidence
 from .core.config import config
 from .discord.media import (
     BLOCK_LATEX_PATTERN,
@@ -1331,6 +1332,11 @@ async def _process_message(
         "discord_guild": channel.guild if hasattr(channel, "guild") else None,
     }
 
+    # Discord history only carries Polli's prose; hand back the lookups behind it.
+    evidence = tool_evidence.render(session.thread_id, user.id)
+    if evidence:
+        thread_history = [*(thread_history or []), {"role": "system", "content": evidence}]
+
     try:
         # Process with native tool calling
         # tool_context is passed to handlers for per-request permission checks (thread-safe)
@@ -1349,6 +1355,7 @@ async def _process_message(
         tool_calls = result.get("tool_calls", [])
         tool_results = result.get("tool_results", [])
         content_blocks = result.get("content_blocks", [])
+        tool_evidence.record(session.thread_id, user.id, tool_calls, tool_results)
 
         # Decode any base64 images from content_blocks (e.g., from code_execution)
         image_files = decode_base64_images(content_blocks, max_images=10)
@@ -1389,6 +1396,7 @@ async def _process_message(
 
                     # Clear session after successful creation
                     session_manager.clear_session(session)
+                    tool_evidence.clear(session.thread_id)
 
                     # Archive thread after issue creation
                     if response_text:

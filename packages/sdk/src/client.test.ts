@@ -1740,6 +1740,32 @@ describe("Pollinations.accountQuests", () => {
     });
 });
 
+describe("usage CSV export", () => {
+    const csv = "timestamp,model\n2026-10-08,openai\n";
+    const csvResponse = () =>
+        new Response(csv, { headers: { "content-type": "text/csv" } });
+
+    it("returns usage history CSV as text", async () => {
+        fetchMock.mockResolvedValueOnce(csvResponse());
+        const text: string = await newClient().accountUsage({ format: "csv" });
+        expect(text).toBe(csv);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/usage?format=csv",
+        );
+    });
+
+    it("returns daily usage CSV as text", async () => {
+        fetchMock.mockResolvedValueOnce(csvResponse());
+        const text: string = await newClient().accountUsageDaily({
+            format: "csv",
+        });
+        expect(text).toBe(csv);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/usage/daily?format=csv",
+        );
+    });
+});
+
 describe("response body cancellation", () => {
     let server: Server;
     let baseUrl: string;

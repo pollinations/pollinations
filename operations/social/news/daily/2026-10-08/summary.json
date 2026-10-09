@@ -1,0 +1,191 @@
+{
+  "date": "2026-10-08",
+  "period_start": "2026-10-08",
+  "period_end": "2026-10-08",
+  "title": "More models, with fewer media surprises",
+  "summary": "Two text models joined the catalog, the Responses API expanded to every Chat model, and community apps, Quests and developer tools all got attention.\n\nClaude Haiku 5.5 and StepFun Step 5 Preview were added as paid-only text models, both with 1M-token contexts, image input and tool calling. A Qwen-Audio 3.0 TTS Flash replacement was merged for October 9; existing Qwen TTS model IDs remain aliases. Video requests now pass the requested aspect ratio to p-video, Recraft vector accepts its supported ratios, and large audio and image-edit uploads no longer hit the coordinator’s 32 MiB RPC limit.\n\nEvery Chat Completions text model can now serve `/v1/responses`, including Claude, Gemini, community models and chat-only agents through a Chat-to-Responses adapter. Community publishers can also register JSON-only endpoints without SSE; streaming clients receive the completed answer as a valid event stream. Floret gained conversational Quest model preferences, while Gemini tool-call handling and the search-plus-JSON route received targeted fixes. Agents can discover the polli skill through well-known URLs.\n\nA Quest contribution added Pi Workbench, which runs upstream Pi in a browser workbench with a terminal, project files and Pollinations account connection. Keigo Formatter joined the writing app catalog for turning rough Japanese memos into polite business Japanese. The monthly Quest leaderboard now shows daily rank movement and podium medals; tied rows also show the positive Pollen gap needed to move ahead.",
+  "pr_count": 34,
+  "prs": [
+    {
+      "number": 15299,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16033,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16324,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16328,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16538,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16572,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16693,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16713,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16725,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16728,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16732,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16736,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16737,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16738,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16739,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16747,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16796,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16809,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16810,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16811,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16821,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16828,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16835,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16836,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16837,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16838,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16842,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16843,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16848,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16849,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16853,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16857,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16859,
+      "date": "2026-10-08"
+    },
+    {
+      "number": 16861,
+      "date": "2026-10-08"
+    }
+  ],
+  "generated_at": "2026-10-09T06:32:03.630134+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Two long-context text models",
+      "text": "Try `anthropic/claude-haiku-5.5` and `stepfun/step-5-preview` for text and image input, tool calls and 1M-token contexts. Both are paid-only models available through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
+      "prs": [
+        16713,
+        16796
+      ]
+    },
+    {
+      "emoji": "🔗",
+      "title": "Responses for every Chat model",
+      "text": "Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16811
+      ]
+    },
+    {
+      "emoji": "💡",
+      "title": "Publish non-streaming text models",
+      "text": "Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.",
+      "prs": [
+        16732
+      ]
+    },
+    {
+      "emoji": "💻",
+      "title": "Pi in a browser workbench",
+      "text": "Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.",
+      "prs": [
+        16033
+      ]
+    },
+    {
+      "emoji": "✨",
+      "title": "Polish a Japanese memo",
+      "text": "Keigo Formatter turns rough Japanese notes into polite business Japanese using the Pollinations text API. [Try it](https://ucalis-uma.github.io/keigo-formatter).",
+      "prs": [
+        16810
+      ],
+      "app": true
+    }
+  ]
+}

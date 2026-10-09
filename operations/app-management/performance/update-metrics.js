@@ -212,6 +212,13 @@ async function fetchTinybirdCounts(pipeName, keyField) {
     );
 }
 
+function countAppKeyRequests(appKeyIds, counts) {
+    return appKeyIds.reduce(
+        (sum, id) => sum + (Number(counts.get(id)) || 0),
+        0,
+    );
+}
+
 async function main() {
     console.log(`${colors.bold}📊 Apps Metrics Updater${colors.reset}\n`);
 
@@ -230,16 +237,19 @@ async function main() {
     let byopHostnames = new Set();
     let requestCounts = new Map();
     let byopRequestCounts = new Map();
+    let appKeyRequestCounts = new Map();
 
     if (hasTinybird) {
         console.log(
             `${colors.cyan}Fetching Tinybird metrics...${colors.reset}`,
         );
-        [byopHostnames, requestCounts, byopRequestCounts] = await Promise.all([
-            fetchTinybirdValues("app_byop_hostnames", "hostname"),
-            fetchTinybirdCounts("app_request_counts", "github_user_id"),
-            fetchTinybirdCounts("app_byop_request_counts", "hostname"),
-        ]);
+        [byopHostnames, requestCounts, byopRequestCounts, appKeyRequestCounts] =
+            await Promise.all([
+                fetchTinybirdValues("app_byop_hostnames", "hostname"),
+                fetchTinybirdCounts("app_request_counts", "github_user_id"),
+                fetchTinybirdCounts("app_byop_request_counts", "hostname"),
+                fetchTinybirdCounts("app_key_request_counts", "app_key_id"),
+            ]);
         console.log(
             `  BYOP hostnames: ${byopHostnames.size}, GitHub users with requests: ${requestCounts.size}, BYOP hostnames with requests: ${byopRequestCounts.size}\n`,
         );
@@ -333,13 +343,20 @@ async function main() {
         }
 
         // --- Requests ---
+        // Listed App Keys: count requests through exactly those keys
         // BYOP apps: count ALL requests through the app's API key (by hostname)
         // Non-BYOP apps: count requests by the developer's GitHub user ID
         if (hasTinybird) {
             const isBYOP = byopHostnames.has(app.webUrlHostname);
             let count = 0;
             let label = "";
-            if (isBYOP && app.webUrlHostname) {
+            if (app.catalogApp.appKeyIds) {
+                count = countAppKeyRequests(
+                    app.catalogApp.appKeyIds,
+                    appKeyRequestCounts,
+                );
+                label = app.catalogApp.name;
+            } else if (isBYOP && app.webUrlHostname) {
                 count = byopRequestCounts.get(app.webUrlHostname) || 0;
                 label = app.webUrlHostname;
             } else if (app.githubUserId) {

@@ -96,6 +96,25 @@ test("accepts an optional screenshot URL", () => {
     );
 });
 
+test("accepts optional App Key ids", () => {
+    const app = { ...APP, appKeyIds: ["key_abc123", "key-def456"] };
+    assert.deepEqual(validateApps([app]), [app]);
+    for (const appKeyIds of [
+        [],
+        "key_abc123",
+        [""],
+        ["key abc"],
+        [42],
+        ["key_abc123", "key_abc123"],
+        null,
+    ]) {
+        assert.throws(
+            () => validateApps([{ ...APP, appKeyIds }]),
+            /appKeyIds must be a non-empty array of unique App Key ids/,
+        );
+    }
+});
+
 test("rejects missing and wrong-typed fields", () => {
     assert.throws(
         () => validateApps([{ ...APP, name: "" }]),

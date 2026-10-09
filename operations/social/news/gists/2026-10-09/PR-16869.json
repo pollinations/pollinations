@@ -1,0 +1,38 @@
+{
+  "pr_number": 16869,
+  "title": "Add Fable Finder to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16869",
+  "merged_at": "2026-10-09T03:57:41Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added Fable Finder to the writing app catalog. Enter a lesson you keep forgetting, and it generates a four-line fable with a picture on the spot.",
+    "keywords": [
+      "Fable Finder",
+      "writing",
+      "fables",
+      "illustrations",
+      "app catalog"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16869.jpg",
+    "prompt": "In a cozy pixel art reading nook, Polli wears a tiny storyteller's hat and sits beside an open book showing a four-line fable and its little picture, with flowers growing around the shelves. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent soft lime green (#ecf874) glow and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-09T03:58:47.924995+00:00",
+  "app_name": "Fable Finder",
+  "app_url": "https://mhmdrizki803-boop.github.io/fable-finder",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "a392db8f1be2246fca9cb04c59b9c26a4ba2beae",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

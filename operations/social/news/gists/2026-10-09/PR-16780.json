@@ -1,0 +1,37 @@
+{
+  "pr_number": 16780,
+  "title": "fix: accept 1/yes/on for image and video boolean params",
+  "author": "Connectslide121",
+  "url": "https://github.com/pollinations/pollinations/pull/16780",
+  "merged_at": "2026-10-09T08:38:24Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed boolean query parameters on `/image/{prompt}` and `/video/{prompt}` so values such as `audio=1` and `transparent=yes` enable their options instead of being read as false. Image and video parameters now use the text route’s `parseBooleanLike()` helper: `1`, `yes`, `on`, and `TRUE` resolve to true, while `0`, `no`, `off`, and unrecognized values resolve to false. Omitted `audio` remains unset, preserving per-model defaults. Legacy `safe` uses the helper, but its accepted values are unchanged because `SafeSchema` still rejects `1` and `yes`.",
+    "keywords": [
+      "image API",
+      "video API",
+      "boolean parameters",
+      "audio",
+      "transparency",
+      "query parsing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16780.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny programmer glasses and taps glowing `audio=1` and `transparent=yes` switches beside a retro terminal, with flowers and code-plants growing around it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating, strictly pixel art style, never realistic, with a prominent soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky sprites, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T08:39:34.106715+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "e87f0d9b228abf1f4e8e21674bca7e8440a96fca",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

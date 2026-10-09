@@ -347,13 +347,6 @@ main > * {
     }
 }
 
-@media (width < 40rem) {
-    .play-parameter-row button[aria-pressed] {
-        padding-inline: 0.5rem;
-        font-size: 0.75rem;
-    }
-}
-
 .play-media-lightbox {
     background: transparent;
 }

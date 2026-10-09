@@ -196,6 +196,27 @@
     box-shadow: 0 0 0 2px var(--polli-color-danger-border);
 }
 
+/* Touch screens: every control gets at least a 44px tap area, without
+   changing how it looks or lays out. Layered, so a control placed with a
+   utility (polli:absolute) keeps that position. */
+@layer components {
+    @media (pointer: coarse) {
+        .polli-control {
+            position: relative;
+        }
+
+        .polli-control::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: max(100%, 44px);
+            height: max(100%, 44px);
+            translate: -50% -50%;
+        }
+    }
+}
+
 .polli-slider {
     --polli-slider-progress-value: var(--polli-slider-progress, 0%);
     --polli-slider-fill-value: var(

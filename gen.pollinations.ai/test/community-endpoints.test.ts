@@ -3072,7 +3072,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
 }
 
 fixtureTest(
-    "routes Chat through an exact community URL with its saved token and rejects Responses",
+    "routes Chat through an exact community URL with its saved token and adapts Responses",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
@@ -3111,12 +3111,25 @@ fixtureTest(
                 );
                 expect(request.headers.has("x-portkey-provider")).toBe(false);
                 expect(request.redirect).toBe("manual");
-                await expect(request.json()).resolves.toMatchObject({
-                    model: "gpt-4.1-mini",
-                    messages: [{ role: "user", content: "hello" }],
-                    max_tokens: 5,
-                    stream: false,
-                });
+                const upstreamBody = (await request.json()) as {
+                    max_tokens?: number;
+                };
+                if (upstreamBody.max_tokens === 5) {
+                    await expect(upstreamBody).toMatchObject({
+                        model: "gpt-4.1-mini",
+                        messages: [{ role: "user", content: "hello" }],
+                        max_tokens: 5,
+                        stream: false,
+                    });
+                } else {
+                    // The adapted Responses request, without max_output_tokens.
+                    await expect(upstreamBody).toMatchObject({
+                        model: "gpt-4.1-mini",
+                        messages: [{ role: "user", content: "hello" }],
+                        stream: false,
+                    });
+                    expect(upstreamBody.max_tokens).toBeUndefined();
+                }
 
                 return Response.json({
                     id: "chatcmpl_test",
@@ -3231,10 +3244,27 @@ fixtureTest(
                 body: JSON.stringify({ model: modelId, input: "hello" }),
             }),
         );
-        expect(responses.status).toBe(400);
-        expect(await responses.text()).toContain(
-            "does not support the stateless Responses API",
-        );
+        expect(responses.status).toBe(200);
+        // The Chat-only community endpoint serves Responses through the
+        // Chat adapter, with our model id in the billing header.
+        expect(responses.headers.get("x-model-used")).toBe(modelId);
+        await expect(responses.json()).resolves.toMatchObject({
+            object: "response",
+            status: "completed",
+            output: [
+                {
+                    type: "message",
+                    role: "assistant",
+                    status: "completed",
+                    content: [{ type: "output_text", text: "ok" }],
+                },
+            ],
+            usage: {
+                input_tokens: 2,
+                output_tokens: 3,
+                total_tokens: 5,
+            },
+        });
         const models = (await (
             await fetchGen("https://gen.pollinations.ai/v1/models")
         ).json()) as { data: { id: string; supported_endpoints?: string[] }[] };
@@ -3242,12 +3272,13 @@ fixtureTest(
             (model) => model.id === modelId,
         )?.supported_endpoints;
         expect(supportedEndpoints).toContain("/v1/chat/completions");
-        expect(supportedEndpoints).not.toContain("/v1/responses");
+        expect(supportedEndpoints).toContain("/v1/responses");
 
+        // Three Chat requests plus the adapted Responses request.
         const upstreamCalls = fetchMock.mock.calls.filter(
             ([input, init]) => new Request(input, init).url === chatUrl,
         );
-        expect(upstreamCalls).toHaveLength(3);
+        expect(upstreamCalls).toHaveLength(4);
     },
 );
 

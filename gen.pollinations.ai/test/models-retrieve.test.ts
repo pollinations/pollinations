@@ -548,19 +548,20 @@ test("keeps supported Chat parameters identical for aliases and list entries", a
     expect(alias).not.toHaveProperty("default_parameters");
 });
 
-test("advertises direct Responses support through supported_endpoints", async () => {
+test("advertises Responses support through supported_endpoints", async () => {
+    // Models with a direct Responses upstream...
     const supported = await fetchWorker("/v1/models/qwen-large");
     expect(supported.status).toBe(200);
     await expect(supported.json()).resolves.toMatchObject({
         supported_endpoints: expect.arrayContaining(["/v1/responses"]),
     });
 
-    const unsupported = await fetchWorker("/v1/models/claude");
-    expect(unsupported.status).toBe(200);
-    const unsupportedBody = (await unsupported.json()) as {
-        supported_endpoints?: string[];
-    };
-    expect(unsupportedBody.supported_endpoints).not.toContain("/v1/responses");
+    // ...and Chat-capable models, which run through the Chat adapter.
+    const adapted = await fetchWorker("/v1/models/claude");
+    expect(adapted.status).toBe(200);
+    await expect(adapted.json()).resolves.toMatchObject({
+        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
+    });
 });
 
 test("returns 404 for an unknown model", async () => {

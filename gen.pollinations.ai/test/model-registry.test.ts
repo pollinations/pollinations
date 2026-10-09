@@ -103,20 +103,22 @@ describe("getGenerationModelRegistry", () => {
         expect(model?.definition.provider).toBe("aws");
         expect(model?.definition.paidOnly).toBe(true);
         expect(model?.definition.fallbacks ?? []).toEqual([]);
-        expect(model?.supportedEndpoints).not.toContain("/v1/responses");
+        // Chat-only: served through the Chat adapter, advertised like Chat.
+        expect(model?.supportedEndpoints).toContain("/v1/responses");
         for (const parameter of ["seed", "logprobs", "stop"]) {
             expect(model?.info.supported_parameters).not.toContain(parameter);
         }
     });
 
-    it("advertises every configured direct Responses model", async () => {
+    it("advertises Responses on every Chat-capable text model", async () => {
         const registry = await getGenerationModelRegistry(env);
-        const configured = availableModels
+        const chatCapable = availableModels
             .filter(
                 (model) =>
                     registry.resolve(model.name)?.visible &&
-                    typeof model.config({ model: model.name })
-                        .responsesEndpoint === "string",
+                    registry
+                        .resolve(model.name)
+                        ?.supportedEndpoints.includes("/v1/chat/completions"),
             )
             .map((model) => model.name)
             .sort();
@@ -132,7 +134,9 @@ describe("getGenerationModelRegistry", () => {
             .map((entry) => entry.id)
             .sort();
 
-        expect(advertised).toEqual(configured);
+        // Models with a Responses upstream serve it directly; the rest run
+        // through the Chat adapter, so both sets advertise the endpoint.
+        expect(advertised).toEqual(chatCapable);
         for (const model of advertised) {
             expect(registry.resolve(model)?.info.supported_endpoints).toContain(
                 "/v1/responses",

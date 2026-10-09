@@ -33,6 +33,7 @@ import {
     textCapabilityError,
 } from "../fallbackCompatibility.js";
 import type { ServiceError } from "../types.js";
+import { callChatAdaptedResponses } from "./chatAdapterClient.js";
 import {
     callDirectResponses,
     type DirectResponsesTarget,
@@ -50,6 +51,8 @@ type ResponsesContext = Context<Env>;
 
 type DirectResponsesCandidate = FallbackCandidate & {
     responsesTarget?: DirectResponsesTarget;
+    /** Text model without a native Responses upstream: run via the Chat adapter. */
+    chatAdapted?: true;
     originalIndex: number;
 };
 
@@ -68,6 +71,8 @@ function directResponsesCandidates(
             `Model ${request.model} does not support the stateless Responses API`,
         );
     }
+    // null marks a Chat-only candidate: it stays in the list and runs through
+    // the Chat adapter instead of a direct Responses upstream.
     const targetFor = (
         candidate: FallbackCandidate,
     ): DirectResponsesTarget | null | undefined => {
@@ -79,16 +84,12 @@ function directResponsesCandidates(
             : null;
     };
     const primaryTarget = targetFor(primary);
-    if (primaryTarget === null) {
-        throw new ResponsesInvalidRequestError(
-            `Model ${request.model} does not support the stateless Responses API`,
-        );
-    }
 
     const supported: DirectResponsesCandidate[] = [
         {
             ...primary,
             ...(primaryTarget ? { responsesTarget: primaryTarget } : {}),
+            ...(primaryTarget === null ? { chatAdapted: true as const } : {}),
             originalIndex: 0,
         },
     ];
@@ -98,10 +99,10 @@ function directResponsesCandidates(
             continue;
         }
         const target = targetFor(candidate);
-        if (target === null) continue;
         supported.push({
             ...candidate,
             ...(target ? { responsesTarget: target } : {}),
+            ...(target === null ? { chatAdapted: true as const } : {}),
             originalIndex: index,
         });
     }
@@ -161,6 +162,9 @@ async function handleDirectResponse(
         const { result, candidate } = await withModelFallback(
             directResponsesCandidates(c, request),
             async (attempt): Promise<DirectResponsesResult> => {
+                if (attempt.chatAdapted) {
+                    return callChatAdaptedResponses(c, request, attempt);
+                }
                 const responsesClient = await responsesClientForAttempt(
                     c,
                     attempt,

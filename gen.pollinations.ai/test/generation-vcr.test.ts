@@ -1946,11 +1946,11 @@ test("direct Responses returns 400 for reusable input state", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(0);
 });
 
-test("Responses rejects models without a direct endpoint without calling Chat", async ({
+test("Responses adapts Chat-only models through the Chat pipeline", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
+    await mocks.enable("tinybird", "portkeyDirect");
     const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
@@ -1959,18 +1959,36 @@ test("Responses rejects models without a direct endpoint without calling Chat", 
         },
         body: JSON.stringify({
             model: "stepfun/step-3.7-flash",
-            input: "must not adapt to chat",
+            input: "adapt through chat",
         }),
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-        error: {
-            message: expect.stringContaining("stateless Responses API"),
+        object: "response",
+        status: "completed",
+        output: [
+            {
+                type: "message",
+                role: "assistant",
+                status: "completed",
+                content: [{ type: "output_text", text: "snapshot response" }],
+            },
+        ],
+        usage: {
+            input_tokens: 7,
+            output_tokens: 3,
+            total_tokens: 10,
         },
     });
     await wait();
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+    // The request ran as Chat: exactly one upstream call, carrying the
+    // translated messages.
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        messages: [{ role: "user", content: "adapt through chat" }],
+        stream: false,
+    });
 });
 
 test("canonical model headers preserve provider-reported payload models", async ({

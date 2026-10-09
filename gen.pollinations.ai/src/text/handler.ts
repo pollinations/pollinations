@@ -82,7 +82,7 @@ function prepareRequestParameters(
  * Built per attempt rather than once up front, so a delegating fallback mints
  * its own run token and no attempt ever carries another endpoint's credential.
  */
-async function gatewayContext(
+export async function gatewayContext(
     c: TextContext,
     requestData: RequestData,
     candidate: FallbackCandidate,

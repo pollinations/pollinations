@@ -219,25 +219,14 @@ export function SiteHeader() {
                     <div className="site-home-nav-group flex min-w-0 items-center gap-6">
                         <Link
                             to="/"
-                            className="site-home-logo group relative hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[780px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            className="site-home-logo hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[780px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                             aria-label="pollinations.ai — home"
                         >
-                            <span className="relative inline-flex">
-                                <span
-                                    aria-hidden="true"
-                                    style={MARK_STYLE}
-                                    className={`site-home-logo-accent absolute translate-x-[3px] translate-y-[3px] text-theme-bg-active transition-opacity duration-200 motion-reduce:transition-none ${
-                                        pathname === "/"
-                                            ? "opacity-100"
-                                            : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
-                                    }`}
-                                />
-                                <span
-                                    aria-hidden="true"
-                                    style={MARK_STYLE}
-                                    className="relative z-10 block shrink-0"
-                                />
-                            </span>
+                            <span
+                                aria-hidden="true"
+                                style={MARK_STYLE}
+                                className="block shrink-0"
+                            />
                         </Link>
                         <nav className="hidden gap-1.5 min-[780px]:flex">
                             {NAV.map((item) => (

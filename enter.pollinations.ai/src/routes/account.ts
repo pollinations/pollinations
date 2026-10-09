@@ -8,6 +8,7 @@ import {
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
@@ -106,17 +107,7 @@ const CreateKeySchema = z.object({
         .describe(
             "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
         ),
-    expiresIn: z
-        .number()
-        .int()
-        .positive()
-        .refine(
-            (seconds) =>
-                Number.isFinite(
-                    new Date(Date.now() + seconds * 1000).getTime(),
-                ),
-            "Expiry is outside the supported date range",
-        )
+    expiresIn: apiKeyExpiresInSchema
         .optional()
         .describe("Expiry in seconds from now"),
     allowedModels: z
@@ -185,7 +176,7 @@ const UpdateKeySchema = CreateKeySchema.pick({
     name: CreateKeySchema.shape.name.optional(),
     expiresAt: z
         .string()
-        .datetime()
+        .datetime({ offset: true })
         .nullable()
         .optional()
         .transform((val) => (val == null ? val : new Date(val)))
@@ -424,6 +415,7 @@ const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
     limit: z.coerce
         .number()
+        .int()
         .min(1)
         .max(MAX_USAGE_EXPORT_ROWS)
         .optional()
@@ -499,7 +491,11 @@ const earningsTransactionsQuerySchema = usageQuerySchema
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
-    date: z.string().describe("Date (YYYY-MM-DD format)"),
+    date: z
+        .string()
+        .describe(
+            "Date bucket: YYYY-MM-DD, or hourly YYYY-MM-DD HH:MM:SS (UTC) when `granularity=day`",
+        ),
     api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
         .string()
@@ -534,6 +530,7 @@ const USAGE_CSV_COLUMNS = [
     "meter_source",
     "input_text_tokens",
     "input_cached_tokens",
+    "input_cache_write_tokens",
     "input_audio_tokens",
     "input_audio_seconds",
     "input_image_tokens",
@@ -770,14 +767,14 @@ const profileResponseSchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "User's display name (only returned when the key has `account:profile` or `account:keys`)",
+            "User's display name (only returned when the key has `account:profile`)",
         ),
     email: z
         .email()
         .nullable()
         .optional()
         .describe(
-            "User's email address (only returned when the key has `account:profile` or `account:keys`)",
+            "User's email address (only returned when the key has `account:profile`)",
         ),
 });
 
@@ -891,7 +888,14 @@ const usageRecordSchema = z.object({
             "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
-    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_cached_tokens: z
+        .number()
+        .describe("Number of input tokens read from the prompt cache"),
+    input_cache_write_tokens: z
+        .number()
+        .describe(
+            "Number of input tokens written to the prompt cache (billed at the cache-write rate)",
+        ),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
     input_audio_seconds: z
         .number()

@@ -29,6 +29,11 @@ export const ROUTE_META: Record<string, RouteMeta> = {
         title: "Privacy | pollinations.ai",
         description: "Privacy policy for pollinations.ai",
     },
+    "/subprocessors": {
+        title: "Service Providers | pollinations.ai",
+        description:
+            "Pollinations.ai service providers and processing locations",
+    },
     "/refunds": {
         title: "Refunds | pollinations.ai",
         description: "Refunds and cancellations policy for pollinations.ai",

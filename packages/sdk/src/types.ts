@@ -284,7 +284,10 @@ export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (server default: 'openai') */
     model?: TextModel;
-    /** Per-capability downstream model overrides for router models. */
+    /**
+     * Per-capability downstream model overrides for router models. Sent as
+     * `metadata`, with `text` as `metadata.model`.
+     */
     routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
@@ -868,6 +871,7 @@ export interface UsageRecord {
     meter_source: string;
     input_text_tokens: number;
     input_cached_tokens: number;
+    input_cache_write_tokens: number;
     input_audio_tokens: number;
     input_audio_seconds: number;
     input_image_tokens: number;

@@ -213,6 +213,7 @@ const ChatCompletionMessageToolCallSchema = z.object({
     function: z.object({
         name: z.string(),
         arguments: z.string(),
+        thought_signature: z.string().optional(),
     }),
 });
 
@@ -764,6 +765,12 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        supports_streaming: z
+            .boolean()
+            .optional()
+            .describe(
+                "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+            ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),

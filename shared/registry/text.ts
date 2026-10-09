@@ -45,7 +45,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-09-21").getTime(),
+        // Provider retires this route on 2027-09-21.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -71,7 +71,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-02-09").getTime(),
+        // Provider retires this route on 2027-02-09.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -147,7 +147,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
-        retirementDate: new Date("2027-08-24").getTime(),
+        // Provider retires this route on 2027-08-24.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -182,7 +182,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-09-02").getTime(),
+        // Provider retires this route on 2027-09-02.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -241,7 +241,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
-        retirementDate: new Date("2027-09-21").getTime(),
+        // Provider retires this route on 2027-09-21.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -272,7 +272,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
-        retirementDate: new Date("2027-10-26").getTime(),
+        // Provider retires this route on 2027-10-26.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -329,7 +329,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         // OpenRouter's standard OpenAI endpoint discounts Azure output more
         // deeply than input/cache. One third matches its output rate and keeps
         // the other dimensions below that endpoint under a uniform multiplier.
@@ -388,7 +388,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -444,7 +444,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -500,7 +500,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
@@ -782,7 +782,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-07-30").getTime(),
         // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
         // 2026-10-13 and its retirement schedule 2026-10-16.
-        retirementDate: new Date("2026-10-09").getTime(),
+        // Provider retires this route on 2026-10-09.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -896,7 +896,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-06-15").getTime(),
+        // Provider retires this route on 2027-06-15.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -927,7 +927,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-04-02").getTime(),
-        retirementDate: new Date("2027-08-24").getTime(),
+        // Provider retires this route on 2027-08-24.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -1127,7 +1127,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         // Azure model catalog and retirement schedule (Preview).
-        retirementDate: new Date("2026-12-03").getTime(),
+        // Provider retires this route on 2026-12-03.
         priceMultiplier: 0.75,
         paidOnly: false,
         perUserRpm: 60,
@@ -1302,7 +1302,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
-        retirementDate: new Date("2027-04-06").getTime(),
+        // Provider retires this route on 2027-04-06.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -1327,7 +1327,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
-        retirementDate: new Date("2027-05-12").getTime(),
+        // Provider retires this route on 2027-05-12.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -1355,7 +1355,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        retirementDate: new Date("2027-08-24").getTime(),
+        // Provider retires this route on 2027-08-24.
         paidOnly: false,
         priceMultiplier: 0.75,
         // Microsoft Foundry Global Standard rates, published August 26, 2026.
@@ -1675,7 +1675,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         // Its Azure gpt-5.4-mini route.
-        retirementDate: new Date("2027-09-21").getTime(),
+        // Provider retires this route on 2027-09-21.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -1698,7 +1698,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         // Its Azure gpt-5.5 route.
-        retirementDate: new Date("2027-10-26").getTime(),
+        // Provider retires this route on 2027-10-26.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -1768,6 +1768,66 @@ const TEXT_BASE_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "anthropic/claude-haiku-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global standard rates (prompts up to 100K tokens);
+            // 5-minute cache writes.
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        // Prompts over 100K tokens bill every token of the request at 5x
+        // input and cache rates and 5x output.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.5),
+                    promptCachedTokens: perMillion(0.05),
+                    promptCacheWriteTokens: perMillion(0.625),
+                    completionTextTokens: perMillion(2.5),
+                },
+            },
+            longContextAbove(100_000),
+            {
+                long_context: {
+                    label: "Long context (>100K)",
+                    description:
+                        "More than 100,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+            "≤100K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤100K",
+                        "long_context": ">100K",
+                    },
+                },
+            ],
+        ),
+        title: "Claude Haiku 5.5",
+        description:
+            "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "anthropic/claude-sonnet-4.6": {
@@ -2074,7 +2134,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         // Azure model catalog and retirement schedule (Preview).
-        retirementDate: new Date("2027-04-16").getTime(),
+        // Provider retires this route on 2027-04-16.
         priceMultiplier: 1,
         paidOnly: false,
         // Azure Global Standard "K2.6 Thinking" meters (2026-09-23).
@@ -3506,7 +3566,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
         // Alibaba Model Studio notice on postponed legacy retirements.
-        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
+        // Provider retires this route on 2026-10-10T00:00:00+08:00.
         paidOnly: true,
         priceMultiplier: 1,
         category: "text",
@@ -3525,6 +3585,34 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 131072,
+        isSpecialized: false,
+    },
+    "stepfun/step-5-preview": {
+        supportedParameters: CHAT_PARAMETERS.step5,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "StepFun",
+        category: "text",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1, // Billed at cost, no margin.
+        cost: {
+            // OpenRouter stepfun/step-5-preview posted rates (2026-10-08):
+            // prompt $1.00/M, cache read $0.05/M, completion $2.70/M, plus
+            // OpenRouter's 5.5% credit fee.
+            promptTextTokens: perMillion(1) * 1.055,
+            promptCachedTokens: perMillion(0.05) * 1.055,
+            completionTextTokens: perMillion(2.7) * 1.055,
+        },
+        title: "StepFun Step 5 Preview",
+        description:
+            "Agentic coding and long-document analysis with tool calling and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        // Reasoning is mandatory, at low, medium or high effort (default medium).
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "stepfun/step-3.7-flash": {

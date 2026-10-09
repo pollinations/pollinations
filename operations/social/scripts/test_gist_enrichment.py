@@ -10,11 +10,14 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent))
 from common import filter_daily_gists, generate_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
-from generate_daily import generate_summary, load_gists_as_changelog
+from api_changes import api_changes, api_changes_for_pr, api_surface
+from build_news_index import api_entries, build_index, highlight_entries, model_entries
+from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
-from model_announcements import model_changes, pr_comparison_refs
+from model_announcements import announced_retirements, model_changes, pr_comparison_refs
+from update_readme import get_top_highlights
 
 
 class GistEnrichmentTest(unittest.TestCase):
@@ -33,23 +36,16 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(model_changes([old], [{**old, "health": {}}], {"number": 1}), [])
         self.assertEqual(model_changes([], [{**new, "community": True}], {"number": 1}), [])
 
-    def test_new_retired_and_scheduled_are_distinct(self):
+    def test_new_and_retired_are_distinct(self):
         model = {"name": "example/model", "paid_only": False, "capabilities": []}
         new = model_changes([], [model], {"number": 1})[0]
         self.assertEqual(new["action"], "NEW")
         self.assertEqual(new["changes"]["paid_only"], {"before": None, "after": False})
         removed = model_changes([model], [], {"number": 2})[0]
         self.assertEqual(removed["action"], "RETIRE")
-        scheduled = model_changes([model], [{**model, "retirement_at": "2026-10-10T00:00:00Z"}], {"number": 3})
-        self.assertEqual(len(scheduled), 1)
-        self.assertEqual(scheduled[0]["effective_status"], "scheduled")
-        self.assertEqual(scheduled[0]["action"], "RETIRE")
-        cancelled = model_changes([{**model, "retirement_at": "2026-10-10T00:00:00Z"}], [model], {"number": 4})[0]
-        self.assertEqual(cancelled["action"], "UPDATE")
-        self.assertEqual(cancelled["changes"]["retirement_at"]["after"], None)
 
     def test_rename_keeps_old_id_available_and_preserves_other_changes(self):
-        old = {"name": "kimi", "aliases": [], "paid_only": False,
+        old = {"name": "kimi", "title": "Kimi", "aliases": [], "paid_only": False,
                "pricing": {"currency": "pollen", "promptTextTokens": "0.000001"}}
         new = {**old, "name": "moonshot/kimi-k3", "aliases": ["kimi"], "paid_only": True}
         events = model_changes([old], [new], {"number": 1})
@@ -59,6 +55,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(events[0]["changes"]["model_id"], {"before": "kimi", "after": "moonshot/kimi-k3"})
         self.assertEqual(events[0]["changes"]["paid_only"], {"before": False, "after": True})
         self.assertNotIn("availability", events[0]["changes"])
+        self.assertEqual(events[0]["previous_title"], "Kimi")
         # Moving an ID onto an existing canonical model also preserves access.
         existing = {**new, "aliases": []}
         events = model_changes([old, existing], [new], {"number": 2})
@@ -162,11 +159,195 @@ class GistEnrichmentTest(unittest.TestCase):
         broken["gist"]["summary"] = ""
         self.assertIn("gist.summary must be non-empty text", validate_gist(broken))
         gist.update(app_name="Example app", app_url="https://example.com/app")
-        with patch("generate_daily.read_gists_for_date", return_value=[gist]):
-            changelog, count = load_gists_as_changelog("2026-10-07")
-        self.assertEqual(count, 1)
-        self.assertEqual(changelog.count("https://example.com/app"), 1)
-        self.assertNotIn('"announcements"', changelog)
+        with patch("generate_daily.call_pollinations_api", return_value="{}") as api:
+            generate_summary([gist], "2026-10-07", "test")
+        self.assertEqual(api.call_args.args[1].count("https://example.com/app"), 1)
+
+    def test_daily_summary_stores_its_highlights_for_the_index(self):
+        summary = {"arcs": [{"headline": "New speech", "summary": "Eleven v4 added."}],
+                   "highlights": [{"emoji": "🎵", "title": "Eleven v4", "text": "Generate speech.", "prs": [1]},
+                                  {"title": "No text"}, "not an item"]}
+        artifact = build_daily_summary_artifact(summary, [{"pr_number": 1}], "2026-10-06", "now")
+        self.assertEqual(artifact["highlights"], [summary["highlights"][0]])
+        quiet = build_daily_summary_artifact({"arcs": []}, [{"pr_number": 2}], "2026-10-07", "now")
+        self.assertEqual(quiet["highlights"], [])
+
+    def test_index_keeps_card_changes_and_skips_old_scheduled_retirements(self):
+        def gist(number, merged_at, *announcements):
+            return {"pr_number": number, "merged_at": merged_at, "announcements": list(announcements),
+                    "url": f"https://github.com/example/repo/pull/{number}"}
+        def event(model, action, changes, status="unconfirmed"):
+            return {"id": f"{model}:{action}", "model_id": model, "title": model, "action": action,
+                    "changes": changes, "effective_at": None, "effective_status": status}
+        retire = {"availability": {"before": "Available", "after": "Retired"}}
+        gists = [
+            gist(1, "2026-08-01T00:00:00Z", event("old", "NEW", {"paid_only": {"before": None, "after": True}})),
+            gist(2, "2026-10-01T00:00:00Z",
+                 event("dated", "RETIRE", retire, "scheduled"),
+                 event("removed", "RETIRE", retire),
+                 event("routed", "UPDATE", {"supported_endpoints": {"before": [], "after": ["/v1"]}}),
+                 event("priced", "UPDATE", {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}},
+                                            "supported_endpoints": {"before": [], "after": ["/v1"]}}),
+                 {**event("replaced", "UPDATE", {"model_id": {"before": "old/id", "after": "replaced"},
+                                                 "voices": {"before": ["a"], "after": ["b"]}}),
+                  "previous_title": "Old"}),
+        ]
+        entries = model_entries(gists, "2026-09-08", "2026-10-08")
+        self.assertEqual([e["model_id"] for e in entries], ["priced", "removed", "replaced"])
+        self.assertEqual(set(entries[2]["changes"]), {"model_id", "voices"})
+        self.assertEqual(entries[2]["previous_title"], "Old")
+        self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
+        self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
+
+    def test_api_changes_mark_what_breaks_existing_clients(self):
+        field = lambda type_, required=False: {"type": type_, "required": required}
+        before = {
+            "GET /old": {"parameters": {}, "body": {}},
+            "POST /v1/chat": {"parameters": {"query:debug": field("boolean")},
+                              "body": {"seed": field("integer|null"), "model": field("string")}},
+        }
+        after = {
+            "GET /new": {"parameters": {}, "body": {}},
+            "POST /v1/chat": {"parameters": {},
+                              "body": {"seed": field("integer|null|string"), "model": field("string", True),
+                                       "tools": field("array")}},
+        }
+        events = {e["endpoint"]: e for e in api_changes(before, after, {"number": 7})}
+        self.assertEqual({k: (e["action"], e["breaking"]) for k, e in events.items()},
+                         {"GET /new": ("ADD", False), "GET /old": ("REMOVE", True),
+                          "POST /v1/chat": ("CHANGE", True)})
+        chat = {c["field"]: c["breaking"] for c in events["POST /v1/chat"]["changes"]}
+        # removed parameter and newly required field break clients; a widened type and an optional field do not
+        self.assertEqual(chat, {"parameters:query:debug": True, "body:model": True,
+                                "body:seed": False, "body:tools": False})
+        self.assertEqual(events["GET /new"]["id"], "pr-7:GET /new")
+        # Documentation gaps: an undocumented body on one side, or a type lost to "any".
+        gap = api_changes(
+            {"POST /x": {"parameters": {}, "body": {"a": field("string", True)}},
+             "POST /y": {"parameters": {}, "body": {"b": field("string", True)}}},
+            {"POST /x": {"parameters": {}, "body": {}},
+             "POST /y": {"parameters": {}, "body": {"b": field("any")}}},
+            {"number": 8})
+        self.assertEqual(gap, [])
+
+    def test_docs_pr_reports_api_changes_from_apidocs(self):
+        docs = """## 🛠️ Endpoints
+
+#### `GET` `/a` — A
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `prompt` * | `path` | `string` | Prompt |
+| `seed` | `query` | `integer` \\| `null` | Seed |
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `audio` * | `string` | — |
+| `audio.voice` | `string` | nested, skipped |
+
+📤 **Response**
+
+| Field | Type | Description |
+|---|---|---|
+| `ignored` | `string` | — |
+"""
+        self.assertEqual(api_surface(docs), {"GET /a": {
+            "summary": "A",
+            "parameters": {"path:prompt": {"type": "string", "required": True},
+                           "query:seed": {"type": "integer|null", "required": False}},
+            "body": {"audio": {"type": "string", "required": True}}}})
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+            git("init", "-b", "main")
+            git("config", "user.name", "Test")
+            git("config", "user.email", "test@example.com")
+            (root / "APIDOCS.md").write_text(docs)
+            git("add", "APIDOCS.md")
+            git("commit", "-m", "docs: regenerate")
+            (root / "APIDOCS.md").write_text(docs.replace("`audio` *", "`file` *").replace("`/a`", "`/b`", 1))
+            git("commit", "-am", "docs: regenerate")
+            second = {"number": 2, "merge_commit_sha": git("rev-parse", "HEAD"), "commits": 1}
+            changes = api_changes_for_pr(second, root)
+        self.assertEqual([(e["action"], e["endpoint"], e["summary"]) for e in changes],
+                         [("REMOVE", "GET /a", "A"), ("ADD", "GET /b", "A")])
+        gist = {"pr_number": 2, "merged_at": "2026-10-08T00:00:00Z",
+                "url": "https://github.com/example/repo/pull/2", "api_changes": changes}
+        old_gist = {**gist, "pr_number": 1, "merged_at": "2026-08-01T00:00:00Z"}
+        entries = api_entries([old_gist, gist], "2026-09-08")
+        self.assertEqual([(e["endpoint"], e["pr"], e["date"]) for e in entries],
+                         [("GET /a", 2, "2026-10-08"), ("GET /b", 2, "2026-10-08")])
+
+    def test_pr_description_announces_retirements_from_its_change_table(self):
+        catalog = [{"name": "x-ai/grok-imagine", "title": "Grok Imagine", "category": "image"},
+                   {"name": "qwen/qwen3-vl", "title": "Qwen3 VL"}]
+        body = """Retires two models.
+
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `x-ai/grok-imagine` | RETIRE | Availability | Available | Retired | 2026-11-02 00:00 UTC |
+| `qwen/qwen3-vl` | RETIRE | Availability | Available | Retired | 2026-11-09 08:00 +08:00 |
+| `qwen/qwen3-vl` | RETIRE | Availability | Available | Retired | 2026-10-01 |
+| `unknown/model` | RETIRE | Availability | Available | Retired | 2026-12-01 |
+| `x-ai/grok-imagine` | RETIRE | Availability | Available | Retired | On production deployment |
+"""
+        pr = {"number": 5, "merged_at": "2026-10-08T00:00:00Z", "body": body}
+        events = announced_retirements(pr, catalog)
+        self.assertEqual([(e["model_id"], e["effective_at"], e["effective_status"]) for e in events],
+                         [("x-ai/grok-imagine", "2026-11-02T00:00:00Z", "scheduled"),
+                          ("qwen/qwen3-vl", "2026-11-09T00:00:00Z", "scheduled")])
+        self.assertEqual(events[0]["source"], "pr_description")
+        cancel = {**pr, "body": "| `x-ai/grok-imagine` | RETIRE | Availability | Retiring | Available | Cancelled |"}
+        self.assertEqual(announced_retirements(cancel, catalog)[0]["effective_status"], "cancelled")
+
+    def test_index_keeps_the_latest_announcement_until_the_model_is_removed(self):
+        def gist(number, merged_at, *announcements):
+            return {"pr_number": number, "merged_at": merged_at, "announcements": list(announcements),
+                    "url": f"https://github.com/example/repo/pull/{number}"}
+        def announced(model, status, effective_at=None):
+            return {"id": f"{model}:retirement", "model_id": model, "title": model, "action": "RETIRE",
+                    "changes": {}, "effective_at": effective_at, "effective_status": status,
+                    "source": "pr_description"}
+        removal = {"id": "gone:remove", "model_id": "gone", "title": "gone", "action": "RETIRE",
+                   "changes": {}, "effective_at": None, "effective_status": "unconfirmed"}
+        gists = [
+            gist(1, "2026-09-20T00:00:00Z", announced("moved", "scheduled", "2026-10-20T00:00:00Z"),
+                 announced("kept", "scheduled", "2026-10-25T00:00:00Z"),
+                 announced("gone", "scheduled", "2026-10-02T00:00:00Z"),
+                 announced("overdue", "scheduled", "2026-10-05T00:00:00Z"),
+                 announced("withdrawn", "scheduled", "2026-10-30T00:00:00Z")),
+            gist(2, "2026-10-01T00:00:00Z", announced("moved", "scheduled", "2026-12-01T00:00:00Z"),
+                 announced("withdrawn", "cancelled")),
+            gist(3, "2026-10-02T00:00:00Z", removal),
+        ]
+        entries = {e["model_id"]: e for e in model_entries(gists, "2026-09-08", "2026-10-08")}
+        self.assertEqual(entries["moved"]["date"], "2026-12-01")
+        self.assertEqual(entries["moved"]["previous_date"], "2026-10-20")
+        self.assertEqual(entries["kept"]["status"], "scheduled")
+        self.assertEqual(entries["withdrawn"]["status"], "cancelled")
+        self.assertEqual(entries["withdrawn"]["previous_date"], "2026-10-30")
+        self.assertNotIn("overdue", entries)
+        self.assertNotIn("status", entries["gone"])  # the removal itself, not the announcement
+
+    def test_index_highlights_cover_the_readme_and_feed_it(self):
+        summaries = [{"date": f"2026-09-{day:02d}", "highlights": [
+            {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"app": True} if day == 3 else {})}]}
+            for day in range(1, 13)]
+        self.assertEqual(len(highlight_entries(summaries, "2026-09-11")), 10)
+        self.assertEqual(highlight_entries(summaries, "2026-09-11")[0]["title"], "Item 12")
+        self.assertEqual(len(highlight_entries(summaries, "2026-09-01")), 12)
+        with tempfile.TemporaryDirectory() as directory:
+            news = Path(directory)
+            (news / "daily/2026-09-12").mkdir(parents=True)
+            (news / "daily/2026-09-12/summary.json").write_text(json.dumps(summaries[-1]))
+            index = build_index(news, "2026-09-13")
+        self.assertEqual(index["models"], [])
+        self.assertEqual(get_top_highlights(index), ["- **2026-09-12** – **🎨 Item 12** Try it."])
 
     def test_platform_posts_keep_arc_facts_and_distinguish_selected_counts(self):
         digest = {

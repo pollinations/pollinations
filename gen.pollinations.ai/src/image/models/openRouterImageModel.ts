@@ -28,13 +28,8 @@ const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
 const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
 // Docs show PNG, but the live endpoint returned WebP (2026-09-23).
-const RECRAFT_FLASH_ASPECT_RATIOS = [
-    "1:1",
-    "4:3",
-    "3:4",
-    "16:9",
-    "9:16",
-] as const;
+// Both Recraft V4.1 models accept these (and "auto"); 3:2 is rejected.
+const RECRAFT_ASPECT_RATIOS = ["1:1", "4:3", "3:4", "16:9", "9:16"] as const;
 const FLUX2_MAX_MODEL = "black-forest-labs/flux.2-max";
 const FLUX3_MODEL = "black-forest-labs/flux-3-image";
 const FLUX3_ASPECT_RATIOS = [
@@ -896,26 +891,19 @@ export async function callOpenRouterGeminiImageAPI(
     };
 }
 
-function resolveRecraftFlashAspectRatio(
-    safeParams: ImageParams,
-): (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number] | "auto" {
+// A requested ratio goes through as-is (Recraft rejects unsupported ones and
+// lists the accepted values); width/height snap to a ratio Recraft accepts.
+function resolveRecraftAspectRatio(safeParams: ImageParams): string {
     const requested = safeParams.aspectRatio;
-    if (!requested) {
-        return closestRatioLogSpace(
+    if (requested === "adaptive") return "auto";
+    return (
+        requested ??
+        closestRatioLogSpace(
             safeParams.width,
             safeParams.height,
-            RECRAFT_FLASH_ASPECT_RATIOS,
-        );
-    }
-    if (requested === "adaptive") return "auto";
-    if (
-        !(RECRAFT_FLASH_ASPECT_RATIOS as readonly string[]).includes(requested)
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `aspectRatio "${requested}" is not supported by Recraft V4.1 Flash. Supported: auto, ${RECRAFT_FLASH_ASPECT_RATIOS.join(", ")}.`,
-        });
-    }
-    return requested as (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number];
+            RECRAFT_ASPECT_RATIOS,
+        )
+    );
 }
 
 export async function callOpenRouterRecraftFlashAPI(
@@ -923,7 +911,7 @@ export async function callOpenRouterRecraftFlashAPI(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const aspectRatio = resolveRecraftFlashAspectRatio(safeParams);
+    const aspectRatio = resolveRecraftAspectRatio(safeParams);
     const data = await postOpenRouterImage(
         apiKey,
         {
@@ -967,14 +955,12 @@ export async function callOpenRouterRecraftVectorAPI(
         model: RECRAFT_VECTOR_MODEL,
         prompt,
         n: 1,
+        aspect_ratio: resolveRecraftAspectRatio(safeParams),
         provider: {
             only: ["recraft"],
             allow_fallbacks: false,
         },
     };
-
-    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
-    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
     if (referenceImage) {
         requestBody.input_references = [

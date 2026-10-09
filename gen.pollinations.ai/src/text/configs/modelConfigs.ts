@@ -843,6 +843,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-haiku-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-haiku-5.5:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-haiku-5.5",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",
@@ -1023,6 +1034,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "stepfun/step-3.5-flash": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
+        }),
+    "stepfun/step-5-preview": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-5-preview",
+        }),
+    "stepfun/step-5-preview:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-5-preview",
         }),
 
     // -- DeepInfra (StepFun) --------------------------------------------------

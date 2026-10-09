@@ -388,6 +388,16 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "stepfun/step-5-preview",
+        config: portkeyConfig["stepfun/step-5-preview"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "stepfun/step-5-preview:vercel",
+        config: portkeyConfig["stepfun/step-5-preview:vercel"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "mistralai/mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
@@ -514,6 +524,17 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-haiku-4.5:openrouter:vertex-global",
         config: portkeyConfig["claude-fast-openrouter-vertex"],
         transform: claudeManualThinking,
+    },
+    {
+        name: "anthropic/claude-haiku-5.5",
+        config: portkeyConfig["anthropic/claude-haiku-5.5"],
+        // Sampling parameters are rejected on this model.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-haiku-5.5:vercel",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:vercel"],
+        transform: omitClaudeSampling,
     },
     {
         name: "anthropic/claude-sonnet-4.6",

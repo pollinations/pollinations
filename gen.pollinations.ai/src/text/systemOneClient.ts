@@ -1,4 +1,5 @@
 import { ensureUpstreamOk } from "@shared/error.ts";
+import { completionToChatStream } from "./chat/stream.js";
 import { withUpstreamRequestUrl } from "./genericOpenAIClient.js";
 import type {
     ChatCompletion,
@@ -182,38 +183,6 @@ function parseNativeRequest(
     return { state: payload.state, questions: payload.questions };
 }
 
-// TypeSafe answers arrive in one piece, so the stream is the finished
-// completion re-emitted as chunks: content, then the usage chunk billing
-// requires, then the terminator.
-function toStreamedCompletion(completion: ChatCompletion): ChatCompletion {
-    const { id, created, model, choices, usage } = completion;
-    const chunk = { id, object: "chat.completion.chunk", created, model };
-    const body = [
-        {
-            ...chunk,
-            choices: [
-                {
-                    index: 0,
-                    delta: {
-                        role: "assistant",
-                        content: choices?.[0]?.message?.content ?? "",
-                    },
-                    finish_reason: "stop",
-                },
-            ],
-            usage: null,
-        },
-        { ...chunk, choices: [], usage },
-    ]
-        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
-        .join("");
-    return {
-        ...completion,
-        stream: true,
-        responseStream: new Blob([body, "data: [DONE]\n\n"]).stream(),
-    };
-}
-
 /**
  * The single upstream call, shared by the native `/alpha/decisions` route and
  * the chat-completions adapter below. Returns the provider's response along
@@ -325,7 +294,8 @@ export async function callSystemOne(
         },
     };
     return withUpstreamRequestUrl(
-        options.stream ? toStreamedCompletion(completion) : completion,
+        // TypeSafe answers arrive in one piece.
+        options.stream ? completionToChatStream(completion) : completion,
         requestUrl,
     );
 }

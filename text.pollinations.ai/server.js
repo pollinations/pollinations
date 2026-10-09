@@ -17,6 +17,14 @@ import {
     prepareModelsForOutput,
 } from "./requestUtils.js";
 import { sendRedirectConversationResponse } from "./authRedirect.js";
+import {
+    CORS_EXPOSED_HEADERS,
+    legacyMigrationHeaders,
+    migrationErrorFields,
+    modelNotFoundMessage,
+    sendMigrationGuide,
+} from "./legacyMigration.js";
+import { signupUrl } from "../shared/legacy-migration.js";
 
 // Import shared utilities
 import { enqueue } from "../shared/ipQueue.js";
@@ -98,14 +106,14 @@ app.use((req, res, next) => {
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: "20mb" }));
-app.use(cors({ exposedHeaders: ["Payment-Required", "Payment-Response"] }));
-// New route handler for root path
-app.get("/", (req, res) => {
-    res.redirect(
-        301,
-        "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
-    );
-});
+app.use(cors({ exposedHeaders: CORS_EXPOSED_HEADERS }));
+
+// Machine-readable migration pointers on every response, errors included.
+app.use(legacyMigrationHeaders);
+
+// Root: short route-by-route migration guide instead of the old APIDOCS.md
+// redirect (that file now documents the Gen API, not this host).
+app.get("/", sendMigrationGuide);
 
 // Serve crossdomain.xml for Flash connections
 app.get("/crossdomain.xml", (req, res) => {
@@ -177,7 +185,7 @@ async function handleRequest(req, res, requestData) {
 
             if (!hasAccess) {
                 const error = new Error(
-                    `Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. Get unlimited access at https://enter.pollinations.ai`,
+                    `Model not found or tier not high enough. Your tier: ${userTier}, required tier: ${model.tier}. Get a key at ${signupUrl("text")} and use https://gen.pollinations.ai`,
                 );
                 error.status = 402;
                 await sendErrorResponse(res, req, error, requestData, 402);
@@ -185,7 +193,7 @@ async function handleRequest(req, res, requestData) {
             }
         } else {
             log(`Model not found: ${requestData.model}`);
-            const error = new Error(`Model not found: ${requestData.model}. This is our legacy API - for the full model list and new features, visit https://enter.pollinations.ai`);
+            const error = new Error(modelNotFoundMessage(requestData.model));
             error.status = 404;
             await sendErrorResponse(res, req, error, requestData, 404);
             return;
@@ -306,9 +314,6 @@ async function handleRequest(req, res, requestData) {
     }
 }
 
-// Deprecation notice for error responses
-const DEPRECATION_NOTICE = "NOTE: The Pollinations legacy text API is being deprecated for authenticated users. Please migrate to https://enter.pollinations.ai for better performance and access to all the latest models. Anonymous requests to text.pollinations.ai are NOT affected.";
-
 // Helper function for consistent error responses
 export async function sendErrorResponse(
     res,
@@ -324,7 +329,7 @@ export async function sendErrorResponse(
     const errorResponse = {
         error: error.message || "An error occurred",
         status: responseStatus,
-        deprecation_notice: DEPRECATION_NOTICE,
+        ...migrationErrorFields(),
     };
 
     // Include detailed error information if available, without wrapping

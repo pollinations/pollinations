@@ -3,6 +3,10 @@ import { cors } from "hono/cors";
 import { proxy } from "hono/proxy";
 import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import {
+    MIGRATION_EXPOSED_HEADERS,
+    addMigrationHeaders,
+} from "../../../shared/legacy-migration.js";
+import {
     deleteCacheEntry,
     generateCacheKey,
     generateLegacyCacheKey,
@@ -21,7 +25,17 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
         allowHeaders: ["*"],
-        exposeHeaders: [...Object.keys(ATTRIBUTION_HEADERS), "Payment-Required", "Payment-Response"],
+        exposeHeaders: [
+            ...Object.keys(ATTRIBUTION_HEADERS),
+            ...MIGRATION_EXPOSED_HEADERS,
+            "Payment-Required",
+            "Payment-Response",
+            "X-Error-Type",
+            "X-Error-Status",
+            "X-Error-Message",
+            "X-Rate-Limited",
+            "X-Cache",
+        ],
     }),
 );
 
@@ -29,6 +43,14 @@ app.use("*", async (c, next) => {
     await next();
     if (c.res.ok) {
         addAttributionHeaders(c.res.headers);
+    }
+    // Cache hits and errors carry the migration pointers too.
+    try {
+        addMigrationHeaders(c.res.headers, "image");
+    } catch {
+        // Immutable headers (e.g. a raw cached Response): rebuild once.
+        c.res = new Response(c.res.body, c.res);
+        addMigrationHeaders(c.res.headers, "image");
     }
 });
 

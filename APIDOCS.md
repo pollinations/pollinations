@@ -312,11 +312,11 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 | `POST /v1/messages` | Anthropic Messages API — Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
-**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, liquid/d1, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, liquid/d1, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
 
 ### Responses API
 
-Use `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) to find models that advertise `/v1/responses`. This includes configured built-in providers, community text models with an exact Responses URL, external endpoint agents with an exact Responses URL, and managed prompt agents.
+Every text model that lists `/v1/chat/completions` in `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) also lists `/v1/responses`. Models with a Responses upstream (configured built-in providers, community models and endpoint agents registered with a Responses URL, managed prompt agents) call it directly. All other text models, including community models registered with Chat Completions, run each Responses request through the Chat Completions pipeline and translate the answer back, with the same billing, key permissions, safety, rate limits, caching and fallback as Chat Completions.
 
 ```bash
 curl https://gen.pollinations.ai/v1/responses \
@@ -333,7 +333,9 @@ The endpoint is deliberately stateless. `store` must be `false`; `previous_respo
 
 The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
 
-Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts both too: Responses requests run through its Chat Completions URL. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+
+On models served through Chat Completions, Responses supports text and image input, function tools and their outputs, `tool_choice`, `text.format` (JSON object and JSON schema), `reasoning.effort`, and streaming. Provider reasoning returns as `reasoning` items with `reasoning_text` content. `max_tool_calls`, `truncation: "auto"`, `top_logprobs`, logprob includes and hosted tools return HTTP 400. Streams end with `data: [DONE]` after the terminal event; a provider error or missing usage ends the stream with `error` and `response.failed`.
 
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 
@@ -720,7 +722,7 @@ curl -X POST "https://gen.pollinations.ai/alpha/decisions" \
 Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.
 JSON request bodies may be up to 32 MiB, including inline images.
 
-Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.
+Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Every other text model, including community models registered with Chat Completions, runs through the Chat Completions pipeline with the same billing, key permissions, safety, rate limits, caching and fallback; `max_tool_calls`, automatic `truncation`, `top_logprobs` and hosted tools return 400 on these models.
 
 OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.
 
@@ -1096,7 +1098,7 @@ Text-to-speech, music generation, and audio transcription.
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
 
-**Audio models:** elevenlabs/eleven-v4, elevenlabs/eleven-v4-turbo, elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/stem-separation, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, google/gemini-3.5-transcribe, x-ai/grok-tts, openai/tts-1, openai/tts-1-hd, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
+**Audio models:** elevenlabs/eleven-v4, elevenlabs/eleven-v4-turbo, elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/stem-separation, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, google/gemini-3.5-transcribe, x-ai/grok-tts, openai/tts-1, openai/tts-1-hd, google/gemini-3.8-flash-tts, google/gemini-3.8-flash-lite-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen-audio-3.0-tts-flash, sesame/csm-1b, hexgrad/kokoro-82m
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -1160,7 +1162,7 @@ Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-c
 
 For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.
 
-**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang, altair, ara, atlas, aurora, carina, castor, celeste, cosmo, eve, helios, helix, iris, kepler, leo, liora, lumen, luna, lux, naksh, orion, perseus, rex, rigel, sal, sirius, ursa, zagan, zenith, Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe, Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Rasalgethi, Laomedeia, Achernar, Alnilam, Schedar, Gacrux, Pulcherrima, Achird, Zubenelgenubi, Vindemiatrix, Sadachbia, Sadaltager, Sulafat
+**Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang, altair, ara, atlas, aurora, carina, castor, celeste, cosmo, eve, helios, helix, iris, kepler, leo, liora, lumen, luna, lux, naksh, orion, perseus, rex, rigel, sal, sirius, ursa, zagan, zenith, Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe, Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Rasalgethi, Laomedeia, Achernar, Alnilam, Schedar, Gacrux, Pulcherrima, Achird, Zubenelgenubi, Vindemiatrix, Sadachbia, Sadaltager, Sulafat, loongeva_v3.6, loongjohn, loongmary, longanfengyue, longanyuanfei, longanlingxi, longanxiaoxin, longanhuan_v3.6, longjielidou_v3.6, longpaopao_v3.6, longhuohuo_v3.6, longchuanshu_v3.6
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
@@ -1333,7 +1335,7 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 
 **Text-to-speech (default):** Returns spoken audio in the selected voice and format.
 
-**Known voice presets:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang, altair, ara, atlas, aurora, carina, castor, celeste, cosmo, eve, helios, helix, iris, kepler, leo, liora, lumen, luna, lux, naksh, orion, perseus, rex, rigel, sal, sirius, ursa, zagan, zenith, Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe, Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Rasalgethi, Laomedeia, Achernar, Alnilam, Schedar, Gacrux, Pulcherrima, Achird, Zubenelgenubi, Vindemiatrix, Sadachbia, Sadaltager, Sulafat. ElevenLabs models also accept a custom voice ID.
+**Known voice presets:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang, altair, ara, atlas, aurora, carina, castor, celeste, cosmo, eve, helios, helix, iris, kepler, leo, liora, lumen, luna, lux, naksh, orion, perseus, rex, rigel, sal, sirius, ursa, zagan, zenith, Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe, Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Rasalgethi, Laomedeia, Achernar, Alnilam, Schedar, Gacrux, Pulcherrima, Achird, Zubenelgenubi, Vindemiatrix, Sadachbia, Sadaltager, Sulafat, loongeva_v3.6, loongjohn, loongmary, longanfengyue, longanyuanfei, longanlingxi, longanxiaoxin, longanhuan_v3.6, longjielidou_v3.6, longpaopao_v3.6, longhuohuo_v3.6, longchuanshu_v3.6. ElevenLabs models also accept a custom voice ID.
 
 **Output formats:** Model-dependent. Defaults to mp3 except Gemini TTS (wav); Gemini TTS supports wav and raw 24 kHz pcm and rejects other explicit formats. Other available formats include opus, aac, and flac.
 
@@ -1354,7 +1356,7 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 | `steps` | `query` | `integer` | Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8) · range: `1…100` |
 | `negative_prompt` | `query` | `string` | Negative prompt for `stability-ai/stable-audio-3` |
 | `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` only) · default: `"false"` |
-| `instructions` | `query` | `string` | Emotion/style instruction (Gemini TTS and `qwen/qwen3-tts-instruct-flash`) |
+| `instructions` | `query` | `string` | Emotion/style instruction (Gemini TTS and `qwen/qwen-audio-3.0-tts-flash`) |
 | `loop` | `query` | `"true"` \| `"false"` | Loop the generated sound effect (`elevenlabs/eleven-text-to-sound-v2` only) |
 | `prompt_influence` | `query` | `string` | How strictly to follow the prompt, 0-1 (`elevenlabs/eleven-text-to-sound-v2` only) |
 | `seed` | `query` | `integer` | Seed passed to the model. Same seed + parameters return the same cached result while available. · range: `-1…4294967295` |
@@ -1742,6 +1744,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
 | `data[].reasoning` | `boolean` | — |
+| `data[].supports_streaming` | `boolean` | False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams. |
 | `data[].context_length` | `number` | — |
 | `data[].per_user_rpm` | `number` \| `null` | — |
 | `data[].health` | `object` | Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health. |
@@ -1847,6 +1850,7 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |
 | `reasoning` | `boolean` | — |
+| `supports_streaming` | `boolean` | False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams. |
 | `context_length` | `number` | — |
 | `per_user_rpm` | `number` \| `null` | — |
 | `health` | `object` | Recent gateway reliability: last 50 eligible final requests within seven days for community proxies, last 24 hours for other models. Refreshed roughly every 60s. Final 4xx are excluded; owner requests, monitor probes, and successful fallback rescues count. Not individual upstream health. |
@@ -2278,7 +2282,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/models" \
 
 #### `POST` `/account/my-models/test` — Test My Model Endpoint
 
-Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.
+Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage, except that an endpoint without SSE (a JSON reply or a 400/422 to `stream: true`) passes with `streaming: false` and is registered with `advertised.streaming: false`. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.
 
 📥 **Request body** · `application/json`
 
@@ -2293,6 +2297,8 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 | `imagePricing` | `"request"` \| `"tokens"` | Image tests only: pricing mode detected from the provider response. |
 | `imageEditError` | `string` | Image tests only: edit-test failure details. Generation succeeded; this does not establish that editing is unsupported. |
 | `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Image tests only: input types detected from generation and edit probes. |
+| `streaming` | `"false"` | Text tests only: the endpoint answered `stream: false` but sent no SSE. Register it with `advertised.streaming: false`. |
+| `streamingError` | `string` | Text tests only: why the streaming request found no SSE. |
 
 <sub>`*` = required field</sub>
 
@@ -2337,9 +2343,10 @@ Update a community model owned by the authenticated account. Code-agent names, t
 | `paidOnly` | `boolean` | Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost. |
 | `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
 | `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately. |
-| `advertised` | `object` | Owner-declared catalog metadata for text models. |
+| `advertised` | `object` | Owner-declared catalog metadata for text models. `streaming: false` marks an endpoint without SSE; the endpoint test detects it. |
 | `advertised.capabilities` | `"tool_calling"` \| `"reasoning"`[] | — |
 | `advertised.contextLength` | `integer` | max: `10000000` |
+| `advertised.streaming` | `"false"` | — |
 | `fallbacks` | `string`[] | Community model ids ("community/<owner>/<name>") tried in order when this model's upstream fails, or an empty array to clear them. Each must be another registered community model of the same modality, public or owned by you, and priced at or below this model on every price field. |
 | `promptTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
 | `promptCachedPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
@@ -2920,7 +2927,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000/metadat
 
 Self-service endpoints for the authenticated user. Endpoints require authentication (API key or session) unless their schema says otherwise. API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
-`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Agent run tokens (`ag_`) carry the same account permissions as the key the agent was called with.
+`account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` is account admin: a key with it can create keys with any limits, edit or revoke every key on the account, and, where enabled, manage my-models. Grant it only to tools that administer the account. These permissions are independent; request both when a client needs both. Agent run tokens (`ag_`) carry the same account permissions as the key the agent was called with.
 
 | Endpoint | Description |
 |----------|-------------|
@@ -2984,7 +2991,7 @@ See [Publish an Agent](/docs#tag/publish-an-agent) for dashboard, CLI, and API e
 
 ### /account/my-models
 
-Community text, image, video, speech-to-text, and text-to-speech model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers and endpoint agents declare one `api` (`chat_completions` or `responses`) and its exact `url`. Responses listings support both public text APIs through Gen; Chat Completions listings support Chat Completions only. Managed prompt agents use the local Responses runtime and require no endpoint URL. The text endpoint test checks JSON and streaming usage for the selected API; `/models` discovery is optional.
+Community text, image, video, speech-to-text, and text-to-speech model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers and endpoint agents declare one `api` (`chat_completions` or `responses`) and its exact `url`. Responses listings support both public text APIs through Gen; Chat Completions listings support Chat Completions only. Managed prompt agents use the local Responses runtime and require no endpoint URL. The text endpoint test checks JSON and streaming usage for the selected API; an endpoint without SSE passes with `streaming: false` and is registered with `advertised.streaming: false`, and Gen answers `stream: true` calls to it with the finished answer as one event stream. `/models` discovery is optional.
 
 Other model families retain `baseUrl`. Image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`; speech providers expose `/v1/audio/speech` and must return binary audio, which is billed by input character count. Video providers enter an exact endpoint URL that accepts `prompt`, optional `duration`, and optional `image` and `reference_*` URL arrays. Omitted duration uses the provider's default. Return completed MP4 media as `data[].b64_json` or `data[].url`, plus `usage.duration` in generated seconds. Billing uses reported duration, falling back to requested duration when usage is missing; at least one is required. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
 
@@ -3057,6 +3064,35 @@ curl "https://gen.pollinations.ai/account/quests" \
 
 ---
 
+#### `GET` `/account/quests/rewards` — Get Quest Rewards
+
+Returns every reward the account has earned, newest first, including claim state. API keys require the read-only `account:usage` permission.
+
+📤 **Response** · `200` · `application/json` — Quest rewards
+
+| Field | Type | Description |
+|---|---|---|
+| `rewards` * | `object`[] | — |
+| `rewards[].id` * | `string` | — |
+| `rewards[].questId` * | `any` | — |
+| `rewards[].title` * | `string` | — |
+| `rewards[].pollenAmount` * | `number` | — |
+| `rewards[].balanceBucket` * | `string` | — |
+| `rewards[].earnedAt` * | `string` | — |
+| `rewards[].claimedAt` * | `any` | — |
+| `rewards[].url` * | `any` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/account/quests/rewards" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
 #### `GET` `/account/balance` — Get Balance
 
 Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.
@@ -3116,7 +3152,8 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].api_key_type` * | `any` | Type of API key ('secret', 'publishable') |
 | `usage[].meter_source` * | `any` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
-| `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
+| `usage[].input_cached_tokens` * | `number` | Number of input tokens read from the prompt cache |
+| `usage[].input_cache_write_tokens` * | `number` | Number of input tokens written to the prompt cache (billed at the cache-write rate) |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
 | `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |
@@ -3327,6 +3364,12 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
+| `description` | `string` | Note shown with the key |
+| `consent` | `object` | Set by the consent screen when a user authorizes an app: binds the key to the app's publishable key and verifies the redirect URI or device code against it. |
+| `consent.requestedClientId` | `string` | — |
+| `consent.redirectUri` | `string` | — |
+| `consent.redirectOrigin` | `string` | — |
+| `consent.deviceUserCode` | `string` | — |
 
 <sub>`*` = required field</sub>
 
@@ -3339,6 +3382,47 @@ curl -X POST "https://gen.pollinations.ai/account/keys" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"my-app-backend","type":"secret","allowedModels":["openai/gpt-5.4-nano","black-forest-labs/flux.1-schnell"],"pollenBudget":100}'
+```
+
+---
+
+#### `PATCH` `/account/keys/{id}` — Update API Key
+
+Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `allowedModels` | `string`[] \| `null` | Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models |
+| `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
+| `questPollenOnly` | `boolean` | Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only |
+| `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
+| `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
+| `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
+| `description` | `string` | Note shown with the key |
+| `name` | `string` | Name for the API key · length: `1…253` |
+| `expiresAt` | `string · date-time` \| `null` | Expiry as an ISO 8601 timestamp. null = never expires |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` — Updated API key
+
+💻 **Example**
+
+```bash
+curl -X PATCH "https://gen.pollinations.ai/account/keys/key_abc123" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-renamed-key"}'
 ```
 
 ---
@@ -3452,7 +3536,8 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].api_key_type` * | `any` | Type of API key ('secret', 'publishable') |
 | `usage[].meter_source` * | `any` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
-| `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
+| `usage[].input_cached_tokens` * | `number` | Number of input tokens read from the prompt cache |
+| `usage[].input_cache_write_tokens` * | `number` | Number of input tokens written to the prompt cache (billed at the cache-write rate) |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
 | `usage[].input_audio_seconds` * | `number` | Duration of input audio in seconds (for transcription/STT) |
 | `usage[].input_image_tokens` * | `number` | Input image usage quantity (provider-specific tokens, images, or megapixels) |
@@ -3658,6 +3743,25 @@ curl "https://gen.pollinations.ai/models/status?traffic=all&minutes=60" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
+---
+
+#### `GET` `/models/stats` — Model Usage Stats
+
+Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.
+
+`avg_cost_usd` is the median Pollen of successful priced requests, 0 until a model has three. `user_count` counts distinct callers with a successful request. Models appear once they have three successful requests from at least two callers.
+
+Refreshed hourly.
+
+📤 **Response** · `200` — Raw Tinybird pipe rows
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/models/stats" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
 ### 3D
 
 Generate 3D models from text prompts and images via a simple GET request.
@@ -3774,6 +3878,7 @@ All endpoints return errors in this envelope:
 | `400` | `failed_to_download_image` | A supplied image URL could not be downloaded — host unreachable, DNS failure, a non-2xx response from the image host, or a body that ended mid-read. The host's status is reported in `details.upstreamStatus`. |
 | `400` | `image_too_large` | A supplied image exceeds the per-image size cap, or the request exceeds the per-request image size or count cap. |
 | `400` | `unsupported_image_media_type` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
+| `400` | `content_blocked` | The input safety check blocked the request before generation — enabled via `safe` / the `Pollinations-Safe` header, or required by the model (`required_safety`). `message` names the triggered categories, e.g. `Request blocked by safety filter: sexual`. Change the input rather than retrying it. |
 | `401` | `UNAUTHORIZED` | Missing or invalid API key. Provide via `Authorization: Bearer <key>` header or `?key=<key>` query param. |
 | `402` | `PAYMENT_REQUIRED` | Insufficient pollen balance or API key budget exhausted. |
 | `403` | `FORBIDDEN` | Access denied — insufficient permissions or paid-model access for this model. |

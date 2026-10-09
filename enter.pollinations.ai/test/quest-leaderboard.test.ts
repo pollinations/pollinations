@@ -153,13 +153,13 @@ test("rendered leaderboard shows its heading and CTA while loading", () => {
     expect(html).toContain('aria-busy="true"');
 });
 
-test("voodoohop is excluded from both quest leaderboards", async () => {
+test("voodoohop appears in both quest leaderboards", async () => {
     const db = drizzle(env.DB, { schema });
     await db.insert(schema.user).values([
         {
-            id: "excluded-leaderboard-user",
-            name: "Excluded user",
-            email: "excluded-leaderboard@example.com",
+            id: "voodoohop-leaderboard-user",
+            name: "VoodooHop",
+            email: "voodoohop-leaderboard@example.com",
             githubId: 8_999_998,
             githubUsername: "VoodooHop",
         },
@@ -173,11 +173,11 @@ test("voodoohop is excluded from both quest leaderboards", async () => {
     ]);
     await db.insert(schema.rewards).values([
         {
-            id: "excluded-leaderboard-reward",
-            idempotencyKey: "excluded-leaderboard-reward",
-            userId: "excluded-leaderboard-user",
+            id: "voodoohop-leaderboard-reward",
+            idempotencyKey: "voodoohop-leaderboard-reward",
+            userId: "voodoohop-leaderboard-user",
             questId: "github:issue:12345",
-            title: "Excluded quest",
+            title: "VoodooHop quest",
             pollenAmount: 10,
             balanceBucket: "tier",
         },
@@ -197,20 +197,26 @@ test("voodoohop is excluded from both quest leaderboards", async () => {
     );
     const leaderboard = (await response.json()) as ApiResponse;
     expect(leaderboard.leaderboard.map((row) => row.githubLogin)).toEqual([
+        "voodoohop",
         "included-builder",
     ]);
     expect(leaderboard.totals).toEqual({
-        contributors: 1,
-        completedQuests: 1,
-        totalPollen: 2,
+        contributors: 2,
+        completedQuests: 2,
+        totalPollen: 12,
     });
 
     const standings = await buildQuestStandings(env, "VoodooHop");
-    expect(standings.participants).toBe(1);
+    expect(standings.participants).toBe(2);
     expect(standings.rows.map((row) => row.githubLogin)).toEqual([
+        "voodoohop",
         "included-builder",
     ]);
-    expect(standings.you).toBeNull();
+    expect(standings.you).toEqual({
+        githubLogin: "voodoohop",
+        rank: 1,
+        totalPollen: 10,
+    });
 });
 
 test("monthly standings show the podium and the rows around the viewer", async ({

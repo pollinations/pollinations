@@ -12,7 +12,6 @@ import { TOP_UP_QUEST_IDS } from "../services/quests/groups/account-setup.ts";
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const LEADERBOARD_CACHE_TTL = 60;
 const LEADERBOARD_LIMIT = 50;
-const EXCLUDED_GITHUB_LOGIN = "voodoohop";
 
 const leaderboardEntrySchema = z.object({
     githubLogin: z.string(),
@@ -100,17 +99,11 @@ async function buildQuestLeaderboard(
         .groupBy(githubLogin);
 
     const contributors = rows
-        .flatMap((row) =>
-            row.githubLogin && row.githubLogin !== EXCLUDED_GITHUB_LOGIN
-                ? [
-                      {
-                          githubLogin: row.githubLogin,
-                          completedQuests: row.completedQuests,
-                          totalPollen: roundPollenLedgerAmount(row.totalPollen),
-                      },
-                  ]
-                : [],
-        )
+        .map((row) => ({
+            githubLogin: row.githubLogin,
+            completedQuests: row.completedQuests,
+            totalPollen: roundPollenLedgerAmount(row.totalPollen),
+        }))
         .sort(
             (a, b) =>
                 b.totalPollen - a.totalPollen ||
@@ -215,11 +208,7 @@ export async function buildQuestStandings(
                 githubLogin: row.githubLogin,
                 totalPollen: roundPollenLedgerAmount(pollen(row)),
             }))
-            .filter(
-                (row) =>
-                    row.totalPollen > 0 &&
-                    row.githubLogin !== EXCLUDED_GITHUB_LOGIN,
-            )
+            .filter((row) => row.totalPollen > 0)
             .sort(
                 (a, b) =>
                     b.totalPollen - a.totalPollen ||
@@ -280,13 +269,12 @@ export async function buildQuestStandings(
                 movement: before === undefined ? null : before - row.rank,
             };
         }),
-        you:
-            viewer && viewer !== EXCLUDED_GITHUB_LOGIN
-                ? {
-                      githubLogin: viewer,
-                      rank: viewerIndex >= 0 ? viewerIndex + 1 : null,
-                      totalPollen: ranking[viewerIndex]?.totalPollen ?? 0,
-                  }
-                : null,
+        you: viewer
+            ? {
+                  githubLogin: viewer,
+                  rank: viewerIndex >= 0 ? viewerIndex + 1 : null,
+                  totalPollen: ranking[viewerIndex]?.totalPollen ?? 0,
+              }
+            : null,
     };
 }

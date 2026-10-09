@@ -132,7 +132,6 @@ type RealtimeBillingContext = {
     deduction?: RealtimeDeduction;
     deductionAttempted: boolean;
     rateLimitConsumed: boolean;
-    maiAudioSeconds?: number;
 };
 
 async function createSafetyIdentifier(
@@ -802,16 +801,7 @@ async function settleRealtimeSession(
     if (tracking.settled) return;
     tracking.settlementAttempts += 1;
 
-    const usage = positiveEntries({
-        ...tracking.usage,
-        ...(tracking.maiAudioSeconds === undefined
-            ? {}
-            : {
-                  promptAudioSeconds:
-                      tracking.usage.promptAudioSeconds ??
-                      tracking.maiAudioSeconds,
-              }),
-    });
+    const usage = positiveEntries(tracking.usage);
     if (!hasPositiveUsage(usage)) {
         if (!tracking.deductionAttempted) {
             await handleBalanceDeduction({
@@ -1035,10 +1025,8 @@ function proxyRealtimeWebSockets(
         ? MAI_STREAMING_MODEL
         : "openai/gpt-live-transcribe";
     const deployment = REALTIME_ROUTES[transcriptionModel].deployment;
-    let maiRate = 24000;
     let maiStarted = false;
     let maiConfigured = false;
-    if (mai) tracking.maiAudioSeconds = 0;
 
     downstream.binaryType = "arraybuffer";
     collectBillingEvents(c, upstream, tracking);
@@ -1074,7 +1062,6 @@ function proxyRealtimeWebSockets(
                         input.noise_reduction !== null)
                 )
                     return "MAI supports manual commits; turn_detection and noise_reduction must be null.";
-                maiRate = numeric(format.rate);
                 maiConfigured = true;
                 return null;
             }
@@ -1098,17 +1085,7 @@ function proxyRealtimeWebSockets(
                       if (mai) {
                           const event = asRecord(parseEventData(data));
                           if (event.type === "input_audio_buffer.append") {
-                              const inspected = inspectAudioBase64(
-                                  event.audio,
-                                  "pcm_24000",
-                              );
-                              if (!("error" in inspected)) {
-                                  tracking.maiAudioSeconds =
-                                      (tracking.maiAudioSeconds ?? 0) +
-                                      (inspected.audioSeconds * 24000) /
-                                          maiRate;
-                                  maiStarted = true;
-                              }
+                              maiStarted = true;
                           }
                       }
                       return rewriteLiveTranscriptionModel(

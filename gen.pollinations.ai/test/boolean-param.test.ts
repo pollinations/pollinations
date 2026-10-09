@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { parseBooleanLike } from "@/util.ts";
 
@@ -54,5 +55,27 @@ describe("GenerateTextRequestQueryParamsSchema booleans", () => {
         expect(() =>
             GenerateTextRequestQueryParamsSchema.parse({ stream: "banana" }),
         ).toThrow();
+    });
+});
+
+describe("GenerateImageRequestQueryParamsSchema booleans", () => {
+    it("parses transparent and audio like the text route", () => {
+        const parsed = GenerateImageRequestQueryParamsSchema.parse({
+            transparent: "yes",
+            audio: "0",
+        });
+        expect(parsed.transparent).toBe(true);
+        expect(parsed.audio).toBe(false);
+        const defaults = GenerateImageRequestQueryParamsSchema.parse({});
+        expect(defaults.transparent).toBe(false);
+        expect(defaults.audio).toBeUndefined();
+    });
+
+    it("rejects unrecognized boolean values", () => {
+        for (const query of [{ transparent: "banana" }, { audio: "maybe" }]) {
+            expect(() =>
+                GenerateImageRequestQueryParamsSchema.parse(query),
+            ).toThrow();
+        }
     });
 });

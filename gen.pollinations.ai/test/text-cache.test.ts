@@ -614,6 +614,7 @@ describe("text cache", () => {
         const body = [
             '{"choices":[{"delta":{"role":"assistant","content":""}}]}',
             '{"choices":[{"delta":{"reasoning_content":"thinking"}}]}',
+            '{"choices":[{"delta":{"content_blocks":[{"delta":{"thinking":"more"}}]}}]}',
             '{"choices":[{"delta":{},"finish_reason":"length"}]}',
             '{"choices":[],"usage":{"completion_tokens":16}}',
             "[DONE]",

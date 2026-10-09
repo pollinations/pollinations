@@ -1612,6 +1612,56 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "inferenceport-ai/lightning-text-v2.1": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-10-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-10-02): $0.75 per
+            // million input and output tokens, no cache discount.
+            promptTextTokens: perMillion(0.75),
+            completionTextTokens: perMillion(0.75),
+        },
+        title: "Lightning Text v2.1",
+        description:
+            "Router that picks a fast model per prompt, serving Qwen3 27B in place of GPT-OSS, with image input, tools and JSON output",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "inferenceport-ai/lightning-text-v2": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-10-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-10-02): $0.75 per
+            // million input and output tokens, no cache discount.
+            promptTextTokens: perMillion(0.75),
+            completionTextTokens: perMillion(0.75),
+        },
+        title: "Lightning Text v2",
+        description:
+            "Router that picks a fast model per prompt, with image input, tools and JSON output",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

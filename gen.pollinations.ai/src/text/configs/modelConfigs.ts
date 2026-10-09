@@ -8,6 +8,7 @@ import {
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createInferencePortModelConfig,
     createMistralModelConfig,
     createNovitaModelConfig,
     createOpenRouterModelConfig,
@@ -1036,6 +1037,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "stepfun-ai/Step-3.7-Flash",
         }),
+
+    // -- InferencePort (Lightning routers) ------------------------------------
+    // "lightning" is the router id that `lightning-text-v2` aliases.
+    "inferenceport-lightning-text-v2": () =>
+        createInferencePortModelConfig({ model: "lightning" }),
+    "inferenceport-lightning-text-v2.1": () =>
+        createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
 
     // -- OVHcloud -------------------------------------------------------------
     "gpt-oss-20b": () =>

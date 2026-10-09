@@ -1691,6 +1691,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.02,
     },
   },
+  "inferenceport-ai/lightning-text-v2": {
+    "cost": {
+      "completionTextTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+    },
+    "price": {
+      "completionTextTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+    },
+  },
+  "inferenceport-ai/lightning-text-v2.1": {
+    "cost": {
+      "completionTextTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+    },
+    "price": {
+      "completionTextTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+    },
+  },
   "jaredpalmer/kev-4b": {
     "cost": {
       "completionTextTokens": 0,

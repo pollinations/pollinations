@@ -2,7 +2,7 @@
     "status": "blocked_pending_provider_confirmation",
     "runtime_change": false,
     "currency": "USD",
-    "price_multiplier": 1,
+    "price_multiplier": 0.75,
     "merge_policy": "Keep draft. Confirm effective date, timezone, serving-route rates and billing evidence; add registry changes and validate before merging.",
     "model": "microsoft/mai-transcribe-2",
     "feature_pr": "https://github.com/pollinations/pollinations/pull/16798",
@@ -22,6 +22,7 @@
     ],
     "required_changes": [
         "Update Azure and Vercel route costs from confirmed provider rates",
-        "Retain paidOnly and multiplier 1"
-    ]
+        "Retain paidOnly: false and priceMultiplier: 0.75"
+    ],
+    "paid_only": false
 }

@@ -176,6 +176,8 @@ test("Azure models use the approved public-price multipliers", () => {
         ["openai/gpt-6-luna", 1],
         ["openai/tts-1", 1],
         ["openai/tts-1-hd", 1],
+        // Grok 4.7 is sold at cost: approved 2026-10-09 with the Azure move.
+        ["x-ai/grok-4.7", 1],
         // Azure quota covers less than twice Kimi's peak, so overflow reaches
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],

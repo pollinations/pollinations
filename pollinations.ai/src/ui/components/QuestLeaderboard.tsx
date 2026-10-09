@@ -3,6 +3,7 @@ import {
     ContentHeader,
     ExternalLinkButton,
     Heading,
+    LinkCard,
     StatCard,
     Surface,
     Text,
@@ -38,10 +39,7 @@ export function QuestLeaderboard() {
             />
             {data ? (
                 <>
-                    <dl
-                        className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
-                        aria-label="Quest leaderboard totals"
-                    >
+                    <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3">
                         {(
                             [
                                 ["Participants", data.totals.contributors],
@@ -51,28 +49,23 @@ export function QuestLeaderboard() {
                         ).map(([label, value]) => (
                             <Surface key={label} as="div" variant="card">
                                 <StatCard
+                                    variant="display"
                                     label={label}
                                     value={formatNumber(value)}
-                                    className="flex flex-col"
-                                    labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
-                                    valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
                                 />
                             </Surface>
                         ))}
-                    </dl>
+                    </div>
 
                     <ol className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2">
                         {data.leaderboard
                             .slice(0, VISIBLE_CONTRIBUTORS)
                             .map((entry, index) => (
                                 <li key={entry.githubLogin}>
-                                    <Surface
-                                        as="a"
-                                        variant="card"
+                                    <LinkCard
                                         href={`https://github.com/${encodeURIComponent(entry.githubLogin)}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex h-full items-center gap-3 transition-colors hover:bg-theme-bg-subtle"
+                                        showIcon={false}
+                                        surfaceClassName="flex-row items-center gap-3 p-3.5 sm:p-4"
                                     >
                                         {/* The top three take the amber accent: a small podium. */}
                                         <Chip
@@ -133,7 +126,7 @@ export function QuestLeaderboard() {
                                                 </Text>
                                             </span>
                                         </span>
-                                    </Surface>
+                                    </LinkCard>
                                 </li>
                             ))}
                     </ol>

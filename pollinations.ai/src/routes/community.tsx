@@ -7,11 +7,14 @@ import {
     cn,
     ExternalLinkButton,
     Eyebrow,
+    Heading,
     InlineLink,
     LinkCard,
     LiveDot,
     MegaphoneIcon,
+    StatCard,
     Surface,
+    Text,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useArt } from "../art";
@@ -189,26 +192,25 @@ function CommunityParticipation() {
                                             <WayIcon className="size-3.5" />
                                             <Eyebrow>{way.label}</Eyebrow>
                                         </div>
-                                        <h3 className="font-body text-xl font-semibold text-theme-text-strong">
+                                        <Heading as="h3" size="card">
                                             {way.title}
-                                        </h3>
-                                        <p className="text-sm leading-relaxed text-theme-text-base">
-                                            {way.body}
-                                        </p>
+                                        </Heading>
+                                        <Text size="sm">{way.body}</Text>
                                     </div>
                                     <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
                                         {way.metric && (
-                                            <dl className="flex flex-wrap gap-x-6 gap-y-3">
-                                                <div className="flex flex-col gap-0.5">
-                                                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                        {way.metric.value ?? (
-                                                            <span
-                                                                aria-hidden="true"
-                                                                className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                                            />
-                                                        )}
-                                                    </dt>
-                                                    <dd className="flex items-center gap-1.5 text-xs text-theme-text-muted">
+                                            <StatCard
+                                                variant="display"
+                                                value={
+                                                    way.metric.value ?? (
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="block h-9 w-16 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                        />
+                                                    )
+                                                }
+                                                label={
+                                                    <>
                                                         {way.metric.label}
                                                         {way.metric.label ===
                                                             LIVE_METRIC &&
@@ -216,16 +218,19 @@ function CommunityParticipation() {
                                                                 .value && (
                                                                 <LiveDot />
                                                             )}
-                                                    </dd>
-                                                </div>
-                                            </dl>
+                                                    </>
+                                                }
+                                            />
                                         )}
+                                        {/* self-auto: follow the column's
+                                            left edge instead of Button's
+                                            default centring. */}
                                         <ExternalLinkButton
                                             href={way.cta.href}
                                             size="md"
                                             intent="brand"
                                             showIcon
-                                            className="whitespace-nowrap"
+                                            className="self-auto whitespace-nowrap"
                                         >
                                             {way.cta.label}
                                         </ExternalLinkButton>
@@ -327,7 +332,7 @@ function Contributors() {
                         key={person.login}
                         href={person.html_url}
                         showIcon={false}
-                        surfaceClassName="flex-row items-center gap-3.5 rounded-2xl p-4"
+                        surfaceClassName="flex-row items-center gap-3.5 p-4"
                     >
                         <img
                             src={`${person.avatar_url}&s=80`}
@@ -370,15 +375,12 @@ function CommunityPage() {
                 />
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3.5">
                     {SUPPORTERS.map((supporter) => (
-                        <Surface
-                            as="a"
-                            variant="card"
+                        <LinkCard
                             key={supporter.name}
                             href={supporter.url}
                             aria-label={supporter.name}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 rounded-2xl px-5 py-4 transition-colors hover:bg-theme-bg-subtle motion-reduce:transition-none"
+                            showIcon={false}
+                            surfaceClassName="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-0 px-5 py-4"
                         >
                             <span
                                 aria-hidden="true"
@@ -394,7 +396,7 @@ function CommunityPage() {
                             <span className="text-sm leading-snug text-theme-text-muted">
                                 {supporter.description}
                             </span>
-                        </Surface>
+                        </LinkCard>
                     ))}
                 </div>
             </section>

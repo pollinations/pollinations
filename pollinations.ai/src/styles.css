@@ -10,6 +10,12 @@
    the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
+/* Elastic overscroll (macOS, iOS) shows the root background: keep it the
+   desk, not the browser's white or black. */
+html {
+    background-color: var(--polli-color-app-bg);
+}
+
 /* The public website uses a wider sheet than apps and dashboards. This is
    site layout, not a reusable package component. Header, page and footer use
    the same two classes so their content stays on one axis. */

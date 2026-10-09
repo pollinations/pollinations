@@ -100,7 +100,7 @@ export function AppTile({
             tabIndex={tabIndex}
             showIcon={false}
             className="h-full w-full"
-            surfaceClassName="overflow-hidden rounded-2xl p-0"
+            surfaceClassName="overflow-hidden p-0"
         >
             <AppCoverImage src={app.screenshot_url} className="h-30" />
             <div className="flex flex-col gap-1.5 px-5 py-4">
@@ -146,7 +146,7 @@ export function SpotlightTile({
                     rel="noopener noreferrer"
                     aria-label={`Open ${app.name}`}
                     className={cn(
-                        "block focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-theme-border-strong",
+                        "block focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-theme-border",
                         slideClassName,
                     )}
                 >
@@ -168,7 +168,7 @@ export function SpotlightTile({
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="truncate rounded-sm font-body text-lg font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                            className="truncate rounded-sm font-body text-lg font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border"
                         >
                             {app.name}
                         </a>
@@ -200,7 +200,7 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                 <a
                     href={href}
                     aria-label={`Open ${app.name}`}
-                    className="overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                    className="overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border"
                 >
                     <AppCoverImage
                         src={app.screenshot_url}
@@ -213,7 +213,7 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                     {href ? (
                         <a
                             href={href}
-                            className="rounded-sm font-body text-base font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong sm:text-lg"
+                            className="rounded-sm font-body text-base font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border sm:text-lg"
                         >
                             {app.name}
                         </a>

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Fable Finder",
+    "url": "https://mhmdrizki803-boop.github.io/fable-finder",
+    "description": "Type the lesson you keep forgetting and get a four line fable with a picture, written on the spot.",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "mhmdrizki803-boop",
+    "githubUserId": "311199657",
+    "repositoryUrl": "https://github.com/mhmdrizki803-boop/fable-finder",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16815",
+    "approvedDate": "2026-10-09",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/1bec1085-d04e-48ad-9afa-e69856c5d861"
+  },
+  {
     "emoji": "🖼️",
     "name": "Create 3D (newapp)",
     "url": "https://ghiygren-code.github.io/Mahoraga-",

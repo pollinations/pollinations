@@ -48,7 +48,7 @@ function isStreamingErrorResponse(text: string): boolean {
     });
 }
 
-// Fields of a Chat Completions message or stream delta that carry output.
+// Fields of a Chat Completions stream delta that carry output.
 const CHAT_OUTPUT_FIELDS = [
     "content",
     "tool_calls",
@@ -58,13 +58,13 @@ const CHAT_OUTPUT_FIELDS = [
 ];
 
 /**
- * A Chat Completions body (JSON or SSE) whose choices carry no output, e.g.
- * a reasoning model that spent max_tokens on reasoning. Cached, it would be
- * replayed to every identical request without reaching a model (#14994).
+ * A Chat Completions stream whose choices carry no output, e.g. a reasoning
+ * model that spent max_tokens on reasoning. Cached, it would be replayed to
+ * every identical request without reaching a model (#14994).
  */
-function isEmptyChatCompletion(events: string[]): boolean {
+function isEmptyChatStream(text: string): boolean {
     let sawChoice = false;
-    for (const data of events) {
+    for (const data of sseData(text)) {
         if (data === "[DONE]") continue;
         let event: { choices?: unknown };
         try {
@@ -75,9 +75,8 @@ function isEmptyChatCompletion(events: string[]): boolean {
         if (!Array.isArray(event?.choices)) return false;
         for (const choice of event.choices) {
             sawChoice = true;
-            const part = choice?.message ?? choice?.delta;
             const hasOutput = CHAT_OUTPUT_FIELDS.some((field) => {
-                const value = part?.[field];
+                const value = choice?.delta?.[field];
                 return Array.isArray(value) ? value.length > 0 : Boolean(value);
             });
             if (hasOutput) return false;
@@ -86,21 +85,17 @@ function isEmptyChatCompletion(events: string[]): boolean {
     return sawChoice;
 }
 
-/** Bodies that must not be cached: stream errors and empty generations. */
-function isUncacheableBody(response: Response, body: Uint8Array): boolean {
-    if (body.byteLength === 0) return true;
-    const contentType = response.headers.get("content-type") ?? "";
-    if (contentType.includes("text/event-stream")) {
-        const text = new TextDecoder().decode(body);
-        return (
-            isStreamingErrorResponse(text) ||
-            isEmptyChatCompletion(sseData(text))
-        );
+/**
+ * Streams are not coordinated, so skipping their write only drops the cache
+ * entry. Non-streaming results must still be written: the generation
+ * coordinator delivers them by reading this entry back.
+ */
+function isUncacheableStream(response: Response, body: Uint8Array): boolean {
+    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+        return false;
     }
-    if (contentType.includes("json")) {
-        return isEmptyChatCompletion([new TextDecoder().decode(body)]);
-    }
-    return false;
+    const text = new TextDecoder().decode(body);
+    return isStreamingErrorResponse(text) || isEmptyChatStream(text);
 }
 
 function hasActiveSafety(value: unknown): boolean {
@@ -338,7 +333,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         offset += chunk.byteLength;
                     }
 
-                    if (isUncacheableBody(response, completeResponse)) {
+                    if (isUncacheableStream(response, completeResponse)) {
                         resolveWrite();
                         return;
                     }

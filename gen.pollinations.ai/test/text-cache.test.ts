@@ -610,34 +610,16 @@ describe("text cache", () => {
         expect(originHits).toBe(4);
     });
 
-    it("does not cache chat completions without output", async () => {
-        const bodies: Record<string, [string, string]> = {
-            json: [
-                "application/json",
-                JSON.stringify({
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            message: { role: "assistant", content: "" },
-                            finish_reason: "length",
-                        },
-                    ],
-                }),
-            ],
-            sse: [
-                "text/event-stream",
-                [
-                    '{"choices":[{"delta":{"role":"assistant","content":""}}]}',
-                    '{"choices":[{"delta":{"reasoning_content":"thinking"}}]}',
-                    '{"choices":[{"delta":{},"finish_reason":"length"}]}',
-                    '{"choices":[],"usage":{"completion_tokens":16}}',
-                    "[DONE]",
-                ]
-                    .map((data) => `data: ${data}\n\n`)
-                    .join(""),
-            ],
-            plain: ["text/plain", ""],
-        };
+    it("does not cache chat streams without output", async () => {
+        const body = [
+            '{"choices":[{"delta":{"role":"assistant","content":""}}]}',
+            '{"choices":[{"delta":{"reasoning_content":"thinking"}}]}',
+            '{"choices":[{"delta":{},"finish_reason":"length"}]}',
+            '{"choices":[],"usage":{"completion_tokens":16}}',
+            "[DONE]",
+        ]
+            .map((data) => `data: ${data}\n\n`)
+            .join("");
         let originHits = 0;
         const app = new Hono<TestEnv>()
             .use("*", async (c, next) => {
@@ -645,66 +627,32 @@ describe("text cache", () => {
                 c.set("requestId", "test-request");
                 await next();
             })
-            .get("/empty/:kind", textCache, (c) => {
+            .get("/empty", textCache, () => {
                 originHits += 1;
-                const [contentType, body] = bodies[c.req.param("kind")];
                 return new Response(body, {
-                    headers: { "Content-Type": contentType },
+                    headers: { "Content-Type": "text/event-stream" },
                 });
             });
         const env = createTextCacheEnv();
 
-        for (const kind of Object.keys(bodies)) {
-            const first = await dispatch(app, `/empty/${kind}`, undefined, env);
-            await consumeAndWait(first);
-            const second = await dispatch(
-                app,
-                `/empty/${kind}`,
-                undefined,
-                env,
-            );
-            await consumeAndWait(second);
-            expect(first.response.headers.get("X-Cache")).toBe("MISS");
-            expect(second.response.headers.get("X-Cache")).toBe("MISS");
-        }
-        expect(originHits).toBe(6);
+        const first = await dispatch(app, "/empty", undefined, env);
+        expect(await consumeAndWait(first)).toBe(body);
+        const second = await dispatch(app, "/empty", undefined, env);
+        await consumeAndWait(second);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(second.response.headers.get("X-Cache")).toBe("MISS");
+        expect(originHits).toBe(2);
     });
 
-    it("caches chat completions whose output is text or tool calls", async () => {
-        const bodies: Record<string, [string, string]> = {
-            content: [
-                "text/event-stream",
+    it("caches chat streams whose output is text or tool calls", async () => {
+        const bodies: Record<string, string> = {
+            content:
                 'data: {"choices":[{"delta":{"content":""}}]}\n\n' +
-                    'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n' +
-                    "data: [DONE]\n\n",
-            ],
-            tools: [
-                "application/json",
-                JSON.stringify({
-                    choices: [
-                        {
-                            message: {
-                                role: "assistant",
-                                content: null,
-                                tool_calls: [
-                                    {
-                                        id: "call_1",
-                                        type: "function",
-                                        function: {
-                                            name: "lookup",
-                                            arguments: "{}",
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    ],
-                }),
-            ],
-            embeddings: [
-                "application/json",
-                JSON.stringify({ object: "list", data: [] }),
-            ],
+                'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n' +
+                "data: [DONE]\n\n",
+            tools:
+                'data: {"choices":[{"delta":{"content":null,"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"lookup","arguments":"{}"}}]}}]}\n\n' +
+                "data: [DONE]\n\n",
         };
         let originHits = 0;
         const app = new Hono<TestEnv>()
@@ -715,9 +663,8 @@ describe("text cache", () => {
             })
             .get("/full/:kind", textCache, (c) => {
                 originHits += 1;
-                const [contentType, body] = bodies[c.req.param("kind")];
-                return new Response(body, {
-                    headers: { "Content-Type": contentType },
+                return new Response(bodies[c.req.param("kind")], {
+                    headers: { "Content-Type": "text/event-stream" },
                 });
             });
         const env = createTextCacheEnv();
@@ -726,11 +673,11 @@ describe("text cache", () => {
             const first = await dispatch(app, `/full/${kind}`, undefined, env);
             await consumeAndWait(first);
             const second = await dispatch(app, `/full/${kind}`, undefined, env);
-            expect(await consumeAndWait(second)).toBe(bodies[kind][1]);
+            expect(await consumeAndWait(second)).toBe(bodies[kind]);
             expect(first.response.headers.get("X-Cache")).toBe("MISS");
             expect(second.response.headers.get("X-Cache")).toBe("HIT");
         }
-        expect(originHits).toBe(3);
+        expect(originHits).toBe(2);
     });
 
     it("does not add text cache headers to routes without cache middleware", async () => {

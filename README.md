@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Create 3D (newapp)](https://ghiygren-code.github.io/Mahoraga-) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@ghiygren-code](https://github.com/ghiygren-code) |
 | [🎬 Video](https://mahmoudakrman97-lgtm.github.io/Video) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@mahmoudakrman97-lgtm](https://github.com/mahmoudakrman97-lgtm) |
 | [✍️ Keigo Formatter](https://ucalis-uma.github.io/keigo-formatter) | Rough Japanese memos to polite business Japanese. Single-page static app (no build, GitHub Pages). Uses Pollinations text API ( POST /v1/chat/completions , default deepseek/deepseek-v4.1-flash ). BYOP | [@ucalis-uma](https://github.com/ucalis-uma) |
 | [🎬 Audio](https://dwikatmahmoud87-source.github.io/Gtdcg) | Update: The TTS feature is implemented and gated behind login, which is standard for a BYOP app — an unauthenticated reviewer can only see the sign-in screen, since the feature lives inside a hidden d | [@dwikatmahmoud87-source](https://github.com/dwikatmahmoud87-source) |
@@ -37,7 +38,6 @@
 | [📚 Chorus](https://xiaotian1171.github.io/chorus) | Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [📚 Tunemory](https://tomdacatto.github.io/pollinations-tunemory) | Turn a fact, formula or word list into a short catchy song that helps you remember it. Paste your notes, pick a style, and get lyrics that keep every fact and number (checked in code before they are s | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Liar's Supper](https://xiaotian1171.github.io/liars-supper) | A party deduction game for one device passed around the table. The host sets a scene, deals every player a secret role, narrates three twists while the table argues on a timer, then takes a private vo | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

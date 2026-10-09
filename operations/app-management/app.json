@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Create 3D (newapp)",
+    "url": "https://ghiygren-code.github.io/Mahoraga-",
+    "description": "App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi",
+    "language": "ar",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "ghiygren-code",
+    "githubUserId": "318247921",
+    "repositoryUrl": "https://github.com/ghiygren-code/Mahoraga-",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16730",
+    "approvedDate": "2026-10-09",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/da099017-1f50-44d5-96b0-d5bd333dec46"
+  },
+  {
     "emoji": "🎬",
     "name": "Video",
     "url": "https://mahmoudakrman97-lgtm.github.io/Video",

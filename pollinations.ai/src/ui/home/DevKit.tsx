@@ -350,7 +350,7 @@ function Models() {
                             <LinkCard
                                 href={href}
                                 surfaceClassName="gap-0 p-3.5 sm:p-5"
-                                style={{ backgroundColor: background }}
+                                tint={background}
                             >
                                 <span
                                     className="flex items-center gap-2"
@@ -365,7 +365,7 @@ function Models() {
                                     </span>
                                 </span>
                                 <span
-                                    className="mt-1 min-h-9 font-bold text-4xl leading-none tracking-tight tabular-nums sm:min-h-12 sm:text-5xl"
+                                    className="mt-1 min-h-9 font-heading text-4xl leading-none tabular-nums sm:min-h-12 sm:text-5xl"
                                     style={{ color }}
                                 >
                                     {count}

@@ -2,7 +2,7 @@ import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
-import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
+import { normalizeSeed, parseBooleanLike, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
@@ -300,3 +300,67 @@ export const ImageParamsSchema = z
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;
+
+const BOOLEAN_PARAMS = ["safe", "transparent", "audio"] as const;
+
+type BooleanParamLog = {
+    warn: (message: string, fields?: Record<string, unknown>) => void;
+};
+
+/** Bounded, non-throwing rendering of a raw value for measurement logs. */
+function renderRawValue(value: unknown): string {
+    if (typeof value === "string") return value.slice(0, 32);
+    if (Array.isArray(value)) return "[array]";
+    if (typeof value === "object" && value !== null) return "[object]";
+    return String(value).slice(0, 32);
+}
+
+/**
+ * The OpenRouter-strict candidate rule: only real booleans or the exact
+ * strings "true"/"false" (it rejects "TRUE", "1", "" and friends).
+ */
+function isStrictBoolean(value: unknown): boolean {
+    return (
+        value === true ||
+        value === false ||
+        value === "true" ||
+        value === "false"
+    );
+}
+
+/**
+ * Measurement for the boolean-param policy decision (#16854): count requests
+ * whose boolean values a stricter rule would reject, WITHOUT changing any
+ * parsing behavior. One event per request, before validation, so raw counts
+ * are prevalence - correlate by requestId and exclude requests that already
+ * fail validation before calling it breakage. Values are truncated user
+ * input under normal log access/retention. Never throws.
+ */
+export function logNonStrictBooleanParams(
+    params: Record<string, unknown>,
+    log: BooleanParamLog,
+): void {
+    try {
+        const offenders: Record<string, unknown>[] = [];
+        for (const param of BOOLEAN_PARAMS) {
+            const value = params[param];
+            if (value === undefined || isStrictBoolean(value)) continue;
+            offenders.push({
+                param,
+                rawValue: renderRawValue(value),
+                valueType: Array.isArray(value) ? "array" : typeof value,
+                bucket:
+                    parseBooleanLike(value) === null
+                        ? "unrecognized"
+                        : "non-strict-token",
+            });
+        }
+        if (offenders.length === 0) return;
+        log.warn("Non-strict boolean parameter value", {
+            event: "image.boolean_param_non_strict",
+            offenders,
+        });
+    } catch {
+        // Measurement must never affect a request.
+    }
+}

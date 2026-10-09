@@ -1,6 +1,9 @@
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
-import { ImageParamsSchema } from "../../src/image/params.ts";
+import {
+    ImageParamsSchema,
+    logNonStrictBooleanParams,
+} from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
@@ -383,5 +386,200 @@ describe("ImageParamsSchema", () => {
             resolution: "720p",
         });
         expect(result.success).toBe(false);
+    });
+});
+
+describe("logNonStrictBooleanParams (#16854 measurement)", () => {
+    const fakeLog = () => {
+        const calls: { message: string; fields?: Record<string, unknown> }[] =
+            [];
+        return {
+            calls,
+            warn(message: string, fields?: Record<string, unknown>) {
+                calls.push({ message, fields });
+            },
+        };
+    };
+    const offendersOf = (log: ReturnType<typeof fakeLog>) =>
+        log.calls[0]?.fields?.offenders as Record<string, unknown>[];
+
+    it("logs unrecognized values in the unrecognized bucket", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams({ safe: "maybe" }, log);
+        expect(log.calls).toHaveLength(1);
+        expect(log.calls[0].fields?.event).toBe(
+            "image.boolean_param_non_strict",
+        );
+        expect(offendersOf(log)).toEqual([
+            {
+                param: "safe",
+                rawValue: "maybe",
+                valueType: "string",
+                bucket: "unrecognized",
+            },
+        ]);
+    });
+
+    it("logs recognized non-strict tokens in the non-strict-token bucket", () => {
+        for (const [param, value] of [
+            ["safe", "1"],
+            ["transparent", "yes"],
+            ["audio", "off"],
+            ["safe", ""],
+        ] as const) {
+            const log = fakeLog();
+            logNonStrictBooleanParams({ [param]: value }, log);
+            expect(offendersOf(log)).toEqual([
+                {
+                    param,
+                    rawValue: value,
+                    valueType: "string",
+                    bucket: "non-strict-token",
+                },
+            ]);
+        }
+    });
+
+    it("treats trim/case variants as non-strict (OpenRouter rejects them)", () => {
+        for (const value of ["TRUE", " true "]) {
+            const log = fakeLog();
+            logNonStrictBooleanParams({ safe: value }, log);
+            expect(offendersOf(log)[0]?.bucket).toBe("non-strict-token");
+        }
+    });
+
+    it("classifies numbers as non-strict tokens", () => {
+        for (const value of [0, 1, 2]) {
+            const log = fakeLog();
+            logNonStrictBooleanParams({ safe: value }, log);
+            expect(offendersOf(log)).toEqual([
+                {
+                    param: "safe",
+                    rawValue: String(value),
+                    valueType: "number",
+                    bucket: "non-strict-token",
+                },
+            ]);
+        }
+    });
+
+    it("stays silent for strict values and absent params", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams(
+            { safe: true, transparent: false, audio: "true" },
+            log,
+        );
+        logNonStrictBooleanParams({ safe: "false" }, log);
+        logNonStrictBooleanParams({}, log);
+        expect(log.calls).toHaveLength(0);
+    });
+
+    it("counts an explicit null as a sent unrecognized value", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams({ safe: null }, log);
+        expect(offendersOf(log)).toEqual([
+            {
+                param: "safe",
+                rawValue: "null",
+                valueType: "object",
+                bucket: "unrecognized",
+            },
+        ]);
+    });
+
+    it("renders arrays and objects as fixed placeholders", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams({ safe: [], transparent: {} }, log);
+        expect(offendersOf(log)).toEqual([
+            {
+                param: "safe",
+                rawValue: "[array]",
+                valueType: "array",
+                bucket: "unrecognized",
+            },
+            {
+                param: "transparent",
+                rawValue: "[object]",
+                valueType: "object",
+                bucket: "unrecognized",
+            },
+        ]);
+    });
+
+    it("truncates long values to 32 chars", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams({ safe: "x".repeat(100) }, log);
+        expect(offendersOf(log)[0]?.rawValue).toBe("x".repeat(32));
+    });
+
+    it("emits a single event for multiple offenders", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams(
+            { safe: "1", transparent: "banana", audio: true },
+            log,
+        );
+        expect(log.calls).toHaveLength(1);
+        expect(offendersOf(log).map((o) => o.bucket)).toEqual([
+            "non-strict-token",
+            "unrecognized",
+        ]);
+    });
+
+    it("never throws, even on pathological input", () => {
+        const evil = Object.create(null, {
+            safe: {
+                get() {
+                    throw new Error("boom");
+                },
+            },
+        }) as Record<string, unknown>;
+        const log = fakeLog();
+        expect(() => logNonStrictBooleanParams(evil, log)).not.toThrow();
+        expect(log.calls).toHaveLength(0);
+    });
+
+    it("bounds bigint, symbol and function representations too", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams(
+            {
+                safe: 12345678901234567890123456789012345678901234567890n,
+                transparent: Symbol("x".repeat(100)),
+                audio: function handler() {},
+            },
+            log,
+        );
+        for (const offender of offendersOf(log)) {
+            expect(String(offender.rawValue).length).toBeLessThanOrEqual(32);
+            expect(offender.bucket).toBe("unrecognized");
+        }
+    });
+
+    it("classifies NaN, infinities and negatives as non-strict tokens", () => {
+        for (const value of [Number.NaN, Number.POSITIVE_INFINITY, -3]) {
+            const log = fakeLog();
+            logNonStrictBooleanParams({ safe: value }, log);
+            expect(offendersOf(log)[0]?.bucket).toBe("non-strict-token");
+        }
+    });
+
+    it("treats an explicit undefined like absence", () => {
+        const log = fakeLog();
+        logNonStrictBooleanParams({ safe: undefined }, log);
+        expect(log.calls).toHaveLength(0);
+    });
+
+    it("parsing is unchanged even when the logger throws", () => {
+        const throwing = {
+            warn() {
+                throw new Error("logging is down");
+            },
+        };
+        logNonStrictBooleanParams({ safe: "1" }, throwing);
+        // Same coercion as before instrumentation.
+        const result = ImageParamsSchema.parse({
+            model: "black-forest-labs/flux.1-schnell",
+            safe: "1",
+        });
+        expect(result.safe).toBe(false);
     });
 });

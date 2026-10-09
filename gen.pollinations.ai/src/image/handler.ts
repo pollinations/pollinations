@@ -42,6 +42,7 @@ import {
     CommunityReferenceParamsSchema,
     type ImageParams,
     ImageParamsSchema,
+    logNonStrictBooleanParams,
 } from "./params.ts";
 import { sanitizeString } from "./util.ts";
 import {
@@ -156,6 +157,9 @@ function parseImageParams(
         delete mergedParams.reference_videos;
         delete mergedParams.reference_audios;
     }
+    // Measurement for #16854: count values a stricter boolean rule would
+    // reject; parsing behavior below is unchanged.
+    logNonStrictBooleanParams(mergedParams, c.var.log);
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {
         throw new UpstreamError(400, {

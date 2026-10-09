@@ -3,16 +3,17 @@ import { describe, expect, it } from "vitest";
 import { ApiUrlCard, apiExample } from "./ApiUrlCard";
 
 describe("API URL card", () => {
-    it.each(["image", "video", "audio"])(
-        "copies a GET URL for %s",
-        (category) => {
-            const url = `https://gen.pollinations.ai/${category}/hello%20%26%20world?model=vendor%2Fmodel&voice=nova&key=YOUR_API_KEY`;
-            const html = renderToStaticMarkup(<ApiUrlCard url={url} />);
-            expect(apiExample(url)).toBe(url);
-            expect(html).toContain("API quickstart");
-            expect(html).toContain("Copy API example");
-        },
-    );
+    it.each([
+        "image",
+        "video",
+        "audio",
+    ])("copies a GET URL for %s", (category) => {
+        const url = `https://gen.pollinations.ai/${category}/hello%20%26%20world?model=vendor%2Fmodel&voice=nova&key=YOUR_API_KEY`;
+        const html = renderToStaticMarkup(<ApiUrlCard url={url} />);
+        expect(apiExample(url)).toBe(url);
+        expect(html).toContain("API quickstart");
+        expect(html).toContain("Copy API example");
+    });
 
     it("copies a multipart transcription request", () => {
         const example = apiExample(

@@ -1,0 +1,35 @@
+{
+  "pr_number": 16788,
+  "title": "docs(sdk): imageGenerate returns one image per call",
+  "author": "Connectslide121",
+  "url": "https://github.com/pollinations/pollinations/pull/16788",
+  "merged_at": "2026-10-09T09:55:22Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Corrected the SDK README: `imageGenerate` returns one image per call, not multiple images via an `n` option, since 5.1.0-alpha.12. The documented option is `responseFormat`, matching `ImageGenerateV1Options`.",
+    "keywords": [
+      "SDK",
+      "documentation",
+      "imageGenerate",
+      "responseFormat"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16788.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli points to a single image emerging from an SDK terminal beside an open README, with lime green (#ecf874) code-plants and a warm cream backdrop. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and shares the scene with the terminal, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T09:56:38.479855+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "5fff83114df986fe4f8b493025c4d1a1dc37fe56",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

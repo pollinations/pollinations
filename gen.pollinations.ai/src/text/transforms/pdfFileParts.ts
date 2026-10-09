@@ -25,9 +25,15 @@ function pdfBase64(part: unknown): string | undefined {
 
 // Portkey maps a Bedrock file part to a Converse document block and sends
 // file_data as its raw bytes; Bedrock rejects a document name with a dot.
-const bedrockFile = (data: string) => ({
+// Without a name Portkey sends a random UUID, which breaks prompt caching.
+const bedrockFile = (
+    data: string,
+    _file: Record<string, unknown>,
+    index: number,
+) => ({
     file_data: data,
     mime_type: "application/pdf",
+    file_name: `document-${index}`,
 });
 
 // OpenAI and Azure take a data URL and require filename (without it they
@@ -40,7 +46,11 @@ const openAIFile = (data: string, file: Record<string, unknown>) => ({
 
 const FILE_SHAPES: Record<
     string,
-    (data: string, file: Record<string, unknown>) => Record<string, unknown>
+    (
+        data: string,
+        file: Record<string, unknown>,
+        index: number,
+    ) => Record<string, unknown>
 > = {
     bedrock: bedrockFile,
     "azure-openai": openAIFile,
@@ -54,6 +64,7 @@ export function pdfFileParts(
 ): TransformResult {
     const shape = FILE_SHAPES[String(options.modelConfig?.provider)];
     if (!shape) return { messages, options };
+    let index = 0;
     return {
         messages: messages.map((message) => {
             if (!Array.isArray(message.content)) return message;
@@ -63,7 +74,10 @@ export function pdfFileParts(
                     const data = pdfBase64(part);
                     if (data === undefined) return part;
                     const filePart = part as FilePart;
-                    return { ...filePart, file: shape(data, filePart.file) };
+                    return {
+                        ...filePart,
+                        file: shape(data, filePart.file, ++index),
+                    };
                 }),
             };
         }),

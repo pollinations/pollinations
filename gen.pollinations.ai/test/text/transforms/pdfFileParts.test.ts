@@ -38,7 +38,11 @@ describe("pdfFileParts", () => {
         const provider = createBedrockNativeConfig().provider;
         expect(filePart(provider, file)).toEqual({
             type: "file",
-            file: { file_data: PDF, mime_type: "application/pdf" },
+            file: {
+                file_data: PDF,
+                mime_type: "application/pdf",
+                file_name: "document-1",
+            },
             cache_control: { type: "ephemeral" },
         });
     });

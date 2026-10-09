@@ -1,0 +1,104 @@
+{
+  "pr_number": 16802,
+  "title": "feat: add MAI streaming transcription",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16802",
+  "merged_at": "2026-10-09T13:49:47Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added microsoft/mai-transcribe-2-streaming to /realtime and /v1/realtime for live transcription of mono 16 or 24 kHz PCM audio with manual commits. It uses Azure without a compatible fallback; Vercel uses a different streaming transport. Quest and Paid access is supported, with per-audio-hour billing based on Azure-reported duration rather than estimated input duration. The Azure deployment is configured for version 2026-08-06 on GlobalStandard capacity of 10 requests per minute, with automatic upgrades to new defaults. Azure lists December 4 as the model's retirement date and names no successor.",
+    "keywords": [
+      "MAI Transcribe",
+      "realtime",
+      "transcription",
+      "Azure",
+      "audio",
+      "billing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16802.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears tiny headphones and watches an audio waveform turn into text on a warm CRT screen, with lime green (#ecf874) code-plants growing around it. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T13:52:00.438006+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "d26c4645578f28ab786a0ce215ad7311a2a0a016",
+  "announcements": [
+    {
+      "id": "pr-16802:microsoft/mai-transcribe-2-streaming",
+      "model_id": "microsoft/mai-transcribe-2-streaming",
+      "title": "MAI Transcribe 2 Streaming",
+      "action": "NEW",
+      "category": "realtime",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "realtime"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptAudioSeconds": "0.0001125"
+          }
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/realtime",
+            "/v1/realtime"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "d26c4645578f28ab786a0ce215ad7311a2a0a016^1",
+    "after_ref": "d26c4645578f28ab786a0ce215ad7311a2a0a016"
+  }
+}

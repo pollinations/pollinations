@@ -2,6 +2,7 @@ import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
+    PROVIDER_BILLING_HEADERS,
 } from "@shared/registry/usage-headers.ts";
 import { z } from "zod";
 import { arrayBufferToBase64 } from "@/util.ts";
@@ -27,6 +28,9 @@ const azureTranscript = z.object({
 const gatewayTranscript = z.object({
     text: z.string(),
     durationInSeconds: z.number().positive(),
+    providerMetadata: z.object({
+        gateway: z.object({ cost: z.coerce.number().positive() }),
+    }),
     language: z.string().nullish(),
     segments: z
         .array(
@@ -150,9 +154,20 @@ export async function transcribeMai(opts: {
     return buildTranscriptionResponse({
         normalized,
         responseFormat: responseFormat || "json",
-        usageHeaders: buildUsageHeaders(
-            modelId,
-            createAudioSecondsUsage(normalized.duration),
-        ),
+        usageHeaders: {
+            ...buildUsageHeaders(
+                modelId,
+                createAudioSecondsUsage(normalized.duration),
+            ),
+            ...(gateway
+                ? {
+                      [PROVIDER_BILLING_HEADERS.units]: String(
+                          gatewayTranscript.parse(body).providerMetadata.gateway
+                              .cost,
+                      ),
+                      [PROVIDER_BILLING_HEADERS.unitCost]: "1",
+                  }
+                : {}),
+        },
     });
 }

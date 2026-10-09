@@ -218,7 +218,8 @@ export function createErrorResponseSchema(
                 z.string(),
             ]),
             timestamp: z.string(),
-            details: errorDetailsSchema,
+            // Only sent when there are details, e.g. validation or upstream errors.
+            details: errorDetailsSchema.optional(),
             requestId: z.string().optional(),
         }),
     });

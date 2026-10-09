@@ -282,6 +282,22 @@ export const MAI_VOICE_21_VOICES = [
     "zh-CN-Wei",
 ] as const;
 
+// DashScope system voices; DashScope also accepts its base voices by name.
+export const QWEN_AUDIO_TTS_VOICES = [
+    "loongeva_v3.6",
+    "loongjohn",
+    "loongmary",
+    "longanfengyue",
+    "longanyuanfei",
+    "longanlingxi",
+    "longanxiaoxin",
+    "longanhuan_v3.6",
+    "longjielidou_v3.6",
+    "longpaopao_v3.6",
+    "longhuohuo_v3.6",
+    "longchuanshu_v3.6",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
@@ -289,6 +305,7 @@ export const AUDIO_VOICES = [
     ...XAI_TTS_VOICES,
     ...GEMINI_TTS_VOICES,
     ...MAI_VOICE_21_VOICES,
+    ...QWEN_AUDIO_TTS_VOICES,
 ];
 
 // Requests without a model must work on Quest Pollen, so the default stays
@@ -651,7 +668,7 @@ const AUDIO_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
-        retirementDate: new Date("2028-02-01").getTime(),
+        // Provider retires this route on 2028-02-01.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -1089,8 +1106,10 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen/qwen3-tts-instruct-flash": {
+    "qwen/qwen-audio-3.0-tts-flash": {
+        // Replaces Qwen3-TTS Instruct Flash, which Alibaba retires on 2026-10-10 (notice 2009).
         aliases: [
+            "qwen/qwen3-tts-instruct-flash",
             "qwen3-tts-instruct",
             "qwen3-tts-instruct-flash",
             "qwen-tts-instruct",
@@ -1098,20 +1117,19 @@ const AUDIO_BASE_SERVICES = {
         provider: "alibaba",
         publisher: "Qwen",
         category: "audio",
-        addedDate: new Date("2026-04-22").getTime(),
-        // Alibaba Model Studio notice 2009; its notice times are UTC+8.
-        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
+        addedDate: new Date("2026-10-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DashScope Qwen3-TTS-Instruct-Flash: $0.115 per 10K characters
-            completionAudioTokens: 0.0115 / 1000,
+            // DashScope Singapore: $0.15 per 10K characters
+            completionAudioTokens: 0.015 / 1000,
         },
-        title: "Qwen3-TTS Instruct Flash",
+        title: "Qwen-Audio 3.0 TTS Flash",
         description:
-            "Text-to-speech you can direct with emotion and style instructions",
+            "Low-latency speech you can direct with emotion, tone and dialect instructions",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        voices: [...QWEN_AUDIO_TTS_VOICES],
     },
     "sesame/csm-1b": {
         aliases: ["csm", "sesame-csm", "sesame-csm-1b", "csm-1b"],

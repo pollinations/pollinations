@@ -32,7 +32,6 @@ import {
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
-import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
 // A static-only registry is cached briefly so the community models come back
@@ -117,13 +116,9 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
 const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const definition = getRegistryModelDefinition(modelName);
     const eventType = eventTypeForCategory(definition.category);
-    const baseEndpoints =
+    const supportedEndpoints =
         definition.supportedEndpoints ??
         supportedEndpointsForEventType(eventType);
-    const supportedEndpoints =
-        eventType === "generate.text" && supportsDirectResponses(modelName)
-            ? [...baseEndpoints, "/v1/responses"]
-            : baseEndpoints;
     const info = modelInfoFromDefinition(modelName, definition);
     return {
         id: modelName,
@@ -144,12 +139,6 @@ function communityEntryToGenerationEntry(
         entry.communityEndpoint.modality,
         entry.definition.inputModalities ?? [],
     );
-    if (
-        entry.communityEndpoint.modality === "text" &&
-        entry.communityEndpoint.api === "responses"
-    ) {
-        supportedEndpoints.push("/v1/responses");
-    }
     return {
         id: entry.id,
         aliases: entry.aliases,
@@ -216,8 +205,15 @@ function buildRegistry(
               ]
             : entry.eventType === "generate.text" &&
                 entry.supportedEndpoints.includes("/v1/chat/completions")
-              ? // /v1/messages runs as a chat request.
-                [...entry.supportedEndpoints, "/v1/messages"]
+              ? // Responses calls a native upstream or adapts to Chat;
+                // /v1/messages always runs as a Chat request.
+                [
+                    ...new Set([
+                        ...entry.supportedEndpoints,
+                        "/v1/responses",
+                        "/v1/messages",
+                    ]),
+                ]
               : entry.supportedEndpoints;
         // Refresh official metadata once per registry build so dated prices
         // update within the existing cache TTL without getters on every read.

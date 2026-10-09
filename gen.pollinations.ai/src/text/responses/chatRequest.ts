@@ -62,19 +62,6 @@ function withPromptCacheBreakpoint(
         : content;
 }
 
-function hasPromptCacheBreakpoint(items: JsonObject[]): boolean {
-    return items.some(
-        (item) =>
-            Array.isArray(item.content) &&
-            item.content.some(
-                (part) =>
-                    part != null &&
-                    typeof part === "object" &&
-                    "prompt_cache_breakpoint" in part,
-            ),
-    );
-}
-
 function messageContent(
     message: ChatMessage,
     output: boolean,
@@ -459,14 +446,15 @@ export function chatToResponsesRequest(
     if (typeof options.prompt_cache_key === "string") {
         request.prompt_cache_key = options.prompt_cache_key;
     }
+    // Without caller options, OpenAI's default mode honors the breakpoints and
+    // also looks back over earlier turns. Explicit mode would not: Claude Code
+    // moves its marker every turn, so earlier turns would never be read back.
     if (
         options.prompt_cache_options &&
         typeof options.prompt_cache_options === "object"
     ) {
         request.prompt_cache_options =
             options.prompt_cache_options as CreateResponseRequest["prompt_cache_options"];
-    } else if (hasPromptCacheBreakpoint(input)) {
-        request.prompt_cache_options = { mode: "explicit" };
     }
     if (typeof options.prompt_cache_retention === "string") {
         request.prompt_cache_retention =

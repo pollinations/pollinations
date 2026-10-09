@@ -27,6 +27,10 @@ const MIGRATION = {
 
 // Simulates text.pollinations.ai: valid tokens and registered referrers get
 // the non-cacheable migration error, everyone else gets a model answer.
+// With legacyMockOrigin = true it behaves like the old origin instead, which
+// answered authenticated callers with a cacheable 200 fake completion (e.g.
+// the worker is deployed before the origin).
+let legacyMockOrigin = false;
 function fakeOrigin(request, body) {
     const url = new URL(request.url);
     const auth =
@@ -39,6 +43,20 @@ function fakeOrigin(request, body) {
         body?.referrer ||
         request.headers.get("referer") ||
         "";
+    if ((auth || referrer.includes(REGISTERED_REFERRER)) && legacyMockOrigin) {
+        const payload = JSON.stringify({
+            object: "chat.completion",
+            choices: [{ message: { role: "assistant", content: "MIGRATION NOTICE" } }],
+        });
+        return new Response(payload, {
+            status: 200,
+            headers: {
+                "content-type": "application/json; charset=utf-8",
+                "content-length": String(Buffer.byteLength(payload)),
+                "cache-control": "public, max-age=31536000, immutable",
+            },
+        });
+    }
     if (auth || referrer.includes(REGISTERED_REFERRER)) {
         const payload = JSON.stringify(MIGRATION);
         return new Response(payload, {
@@ -98,6 +116,7 @@ const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
     originCalls = 0;
+    legacyMockOrigin = false;
     env = { ORIGIN_HOST: "origin.test", TEXT_BUCKET: createBucket() };
     globalThis.Request = TestRequest;
     globalThis.fetch = async (request) => {
@@ -194,6 +213,21 @@ for (const [name, makeAuthRequest] of credentialCases) {
         assert.equal(anon.response.status, 200);
         assert.match(anon.text, /anonymous answer/);
         assert.doesNotMatch(anon.text, /legacy_auth_migration_required/);
+        assert.equal(originCalls, 2);
+    });
+}
+
+for (const [name, makeAuthRequest] of credentialCases) {
+    test(`old origin mock completion (${name}) never reaches anonymous callers`, async () => {
+        legacyMockOrigin = true;
+        const authed = await send(makeAuthRequest());
+        assert.equal(authed.response.status, 200);
+        assert.match(authed.text, /MIGRATION NOTICE/);
+
+        const anon = await send(post());
+        assert.equal(anon.response.status, 200);
+        assert.notEqual(anon.response.headers.get("x-cache"), "HIT");
+        assert.match(anon.text, /anonymous answer/);
         assert.equal(originCalls, 2);
     });
 }

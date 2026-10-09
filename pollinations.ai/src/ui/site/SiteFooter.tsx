@@ -1,9 +1,6 @@
-import { Eyebrow, IconButton, InlineLink } from "@pollinations/ui";
-import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import { BrandMark, Eyebrow, IconButton, InlineLink } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
-import { DOCS_URL, maskStyle, SOCIAL } from "./links";
-
-const LOCKUP_STYLE = maskStyle(lockupUrl, 211, 26);
+import { DOCS_URL, SOCIAL } from "./links";
 
 const COLUMNS = [
     {
@@ -37,13 +34,12 @@ const COLUMNS = [
 
 export function SiteFooter() {
     return (
-        <footer className="site-shell hidden min-[780px]:block">
+        <footer className="site-shell hidden min-[880px]:block">
             <div className="site-gutter flex flex-wrap justify-between gap-10 pt-11 pb-14">
                 <div className="flex max-w-xs flex-col gap-4">
-                    <span
-                        aria-hidden="true"
-                        style={LOCKUP_STYLE}
-                        className="block shrink-0 text-theme-text-strong"
+                    <BrandMark
+                        variant="lockup"
+                        className="h-6.5 w-52.75 text-theme-text-strong"
                     />
                     <p className="text-sm text-theme-text-muted">
                         <span className="block">

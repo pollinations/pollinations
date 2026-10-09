@@ -66,7 +66,7 @@ html {
     translate: 0;
 }
 
-@media (min-width: 40rem) and (max-width: 48.749rem) {
+@media (min-width: 40rem) and (max-width: 54.999rem) {
     html {
         scrollbar-gutter: stable both-edges;
     }

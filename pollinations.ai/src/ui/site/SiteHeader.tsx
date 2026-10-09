@@ -1,12 +1,13 @@
 import {
     BookIcon,
+    BrandMark,
     Button,
     Chip,
     ColorModeToggle,
     DiscordIcon,
     Drawer,
     DropdownItem,
-    ExternalLinkIcon,
+    ExternalLinkButton,
     GitHubIcon,
     IconButton,
     LiveDot,
@@ -17,13 +18,11 @@ import {
     TabButton,
     XIcon,
 } from "@pollinations/ui";
-import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
-import markUrl from "@pollinations/ui/brand/mark.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
 import { compact } from "../../data/publicStats";
-import { DOCS_URL, maskStyle, SOCIAL } from "./links";
+import { DOCS_URL, SOCIAL } from "./links";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
 const NAV = [
@@ -42,20 +41,17 @@ const LEGAL = [
 
 const [GITHUB, DISCORD, ...OTHER_SOCIAL] = SOCIAL;
 
+// Docs is read beside the site, so it opens a new tab; Sign in moves you
+// into your account, so it stays in this one.
 const ACCOUNT_ACTIONS = [
-    { href: DOCS_URL, label: "Docs", Icon: BookIcon },
+    { href: DOCS_URL, label: "Docs", Icon: BookIcon, external: true },
     {
         href: "https://enter.pollinations.ai",
         label: "Sign in",
         Icon: LogInIcon,
+        external: false,
     },
 ] as const;
-
-const MARK_STYLE = maskStyle(markUrl, 32, 32);
-const MOBILE_MENU_MARK_STYLE = maskStyle(markUrl, 26, 26);
-const DRAWER_MENU_LOCKUP_STYLE = maskStyle(lockupUrl, 174, 22);
-const DESKTOP_ACTION_CLASS =
-    "hidden h-9 shrink-0 gap-1.5 bg-surface-opaque px-3 text-theme-text-strong min-[780px]:inline-flex";
 
 const isCurrent = (to: string, pathname: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -190,13 +186,13 @@ export function SiteHeader() {
 
     return (
         <header
-            className={`site-header pointer-events-none fixed inset-x-0 top-0 z-30 bg-transparent py-4 transition-transform duration-300 min-[780px]:pointer-events-auto min-[780px]:sticky sm:py-5 motion-reduce:transition-none ${
+            className={`site-header pointer-events-none fixed inset-x-0 top-0 z-30 bg-transparent py-4 transition-transform duration-300 min-[880px]:pointer-events-auto min-[880px]:sticky sm:py-5 motion-reduce:transition-none ${
                 hidden ? "-translate-y-full" : "translate-y-0"
             }`}
         >
             <div
                 aria-hidden="true"
-                className={`site-header-dissolve pointer-events-none absolute inset-x-0 top-0 hidden h-40 transition-opacity duration-300 min-[780px]:block motion-reduce:transition-none ${
+                className={`site-header-dissolve pointer-events-none absolute inset-x-0 top-0 hidden h-40 transition-opacity duration-300 min-[880px]:block motion-reduce:transition-none ${
                     scrolled && !hidden ? "opacity-100" : "opacity-0"
                 }`}
             />
@@ -205,16 +201,12 @@ export function SiteHeader() {
                     <div className="site-home-nav-group flex min-w-0 items-center gap-6">
                         <Link
                             to="/"
-                            className="site-home-logo hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[780px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            className="site-home-logo hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[880px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                             aria-label="pollinations.ai — home"
                         >
-                            <span
-                                aria-hidden="true"
-                                style={MARK_STYLE}
-                                className="block shrink-0"
-                            />
+                            <BrandMark className="size-8" />
                         </Link>
-                        <nav className="hidden gap-1.5 min-[780px]:flex">
+                        <nav className="hidden gap-1.5 min-[880px]:flex">
                             {NAV.map((item) => (
                                 <TabButton
                                     key={item.to}
@@ -240,22 +232,21 @@ export function SiteHeader() {
                         </nav>
                     </div>
                     <div className="pointer-events-auto flex items-center gap-2">
-                        {ACCOUNT_ACTIONS.map(({ href, label, Icon }) => (
-                            <Button
-                                key={href}
-                                as="a"
-                                href={href}
-                                size="sm"
-                                aria-label={label}
-                                title={label}
-                                className={DESKTOP_ACTION_CLASS}
-                            >
-                                <Icon className="h-4 w-4" />
-                                <span>{label}</span>
-                                <ExternalLinkIcon className="h-3.5 w-3.5 opacity-60" />
-                            </Button>
-                        ))}
-                        <div className="hidden h-9 items-center min-[780px]:flex">
+                        {ACCOUNT_ACTIONS.map(
+                            ({ href, label, Icon, external }) => (
+                                <ExternalLinkButton
+                                    key={href}
+                                    href={href}
+                                    external={external}
+                                    intent="surface"
+                                    icon={<Icon className="h-4 w-4" />}
+                                    className="hidden shrink-0 min-[880px]:inline-flex"
+                                >
+                                    {label}
+                                </ExternalLinkButton>
+                            ),
+                        )}
+                        <div className="hidden h-9 items-center min-[880px]:flex">
                             <ColorModeToggle />
                         </div>
                         <Button
@@ -263,13 +254,9 @@ export function SiteHeader() {
                             aria-expanded={mobileMenuOpen}
                             aria-controls="mobile-site-menu"
                             onClick={() => setMobileMenuOpen(true)}
-                            className="mt-2 h-11 min-w-[5.5rem] gap-2 px-3 min-[780px]:hidden [&>svg]:size-6"
+                            className="mt-2 h-11 min-w-[5.5rem] gap-2 px-3 min-[880px]:hidden [&>svg]:size-6"
                         >
-                            <span
-                                aria-hidden="true"
-                                style={MOBILE_MENU_MARK_STYLE}
-                                className="block shrink-0"
-                            />
+                            <BrandMark className="size-6.5" />
                             <MenuIcon />
                         </Button>
 
@@ -287,10 +274,9 @@ export function SiteHeader() {
                                         onClick={() => setMobileMenuOpen(false)}
                                         className="h-11 w-full justify-between gap-2 px-3 [&>svg]:size-6 [&>svg]:shrink-0"
                                     >
-                                        <span
-                                            aria-hidden="true"
-                                            style={DRAWER_MENU_LOCKUP_STYLE}
-                                            className="block min-w-0"
+                                        <BrandMark
+                                            variant="lockup"
+                                            className="h-5.5 w-43.5 min-w-0 shrink"
                                         />
                                         <XIcon />
                                     </Button>
@@ -338,21 +324,26 @@ export function SiteHeader() {
                                         }`}
                                     >
                                         {ACCOUNT_ACTIONS.map(
-                                            ({ href, label, Icon }) => (
-                                                <Button
+                                            ({
+                                                href,
+                                                label,
+                                                Icon,
+                                                external,
+                                            }) => (
+                                                <ExternalLinkButton
                                                     key={href}
-                                                    as="a"
                                                     href={href}
-                                                    size="md"
+                                                    external={external}
+                                                    icon={
+                                                        <Icon className="h-4 w-4 shrink-0" />
+                                                    }
                                                     onClick={() =>
                                                         setMobileMenuOpen(false)
                                                     }
-                                                    className="w-full gap-2 px-3"
+                                                    className="w-full px-3"
                                                 >
-                                                    <Icon className="h-4 w-4 shrink-0" />
                                                     {label}
-                                                    <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
-                                                </Button>
+                                                </ExternalLinkButton>
                                             ),
                                         )}
                                     </div>

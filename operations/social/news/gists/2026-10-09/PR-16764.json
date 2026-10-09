@@ -1,0 +1,40 @@
+{
+  "pr_number": 16764,
+  "title": "fix: document error details as optional",
+  "author": "Connectslide121",
+  "url": "https://github.com/pollinations/pollinations/pull/16764",
+  "merged_at": "2026-10-09T08:33:16Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Corrected the OpenAPI error schema so `error.details` is optional, matching `createErrorResponse()`, which includes it only when details exist. The correction applies to every route using `errorResponseDescriptions()`; for example, `/v1/models/{model}` 404 responses now require `code`, `message`, and `timestamp`, but not `details`. Added a regression test for the 404 schema.",
+    "keywords": [
+      "OpenAPI",
+      "error schema",
+      "validation",
+      "API",
+      "404"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16764.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny librarian glasses and checks an error-schema card beside a glowing terminal, with a lime green (#ecf874) code-plant growing nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T08:35:12.849470+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "f61c1545463bf4d3c9d259f823e0ca71b7140dcf",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "f61c1545463bf4d3c9d259f823e0ca71b7140dcf^1",
+    "after_ref": "f61c1545463bf4d3c9d259f823e0ca71b7140dcf"
+  }
+}

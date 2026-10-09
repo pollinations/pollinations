@@ -320,7 +320,15 @@ export function chatUsageToResponsesUsage(
 }
 
 type PartKind = "reasoning" | "text" | "refusal";
-type ToolCall = { id?: string; name: string; arguments: string };
+type ToolCallDelta = { id?: string; name?: string; arguments?: string };
+type FunctionCall = {
+    type: "function_call";
+    id: string;
+    call_id: string;
+    name: string;
+    arguments: string;
+    status: "in_progress" | "completed";
+};
 
 const PART_EVENTS: Record<PartKind, { delta: string; done: string }> = {
     reasoning: {
@@ -346,6 +354,8 @@ function emptyPart(kind: PartKind): JsonObject {
  */
 function outputCollector(send: Send = () => {}) {
     const items: JsonObject[] = [];
+    const calls: FunctionCall[] = [];
+    const callAt = new Map<number, FunctionCall>();
     let item: JsonObject | undefined;
     let part: { kind: PartKind; value: JsonObject; index: number } | undefined;
 
@@ -434,37 +444,57 @@ function outputCollector(send: Send = () => {}) {
                 ...(kind === "text" ? { logprobs: [] } : {}),
             });
         },
-        finish(finishReason: string | null | undefined, calls: ToolCall[]) {
-            closeItem(isIncomplete(finishReason) ? "incomplete" : "completed");
-            for (const call of calls) {
-                const value = {
+        /**
+         * Streams a tool call's arguments as they arrive. Chunks find their
+         * call by index, but a new id starts a new call: Gemini sends every
+         * parallel call whole at index 0.
+         */
+        toolCall(index: number | undefined, delta: ToolCallDelta) {
+            const key = index ?? callAt.size;
+            let call = callAt.get(key);
+            if (!call || (delta.id && delta.id !== call.call_id)) {
+                closeItem();
+                call = {
                     type: "function_call",
                     id: `fc_${crypto.randomUUID()}`,
-                    call_id: call.id || `call_${crypto.randomUUID()}`,
-                    name: call.name,
-                    arguments: call.arguments,
-                    status: "completed",
+                    call_id: delta.id || `call_${crypto.randomUUID()}`,
+                    name: delta.name ?? "",
+                    arguments: "",
+                    status: "in_progress",
                 };
-                items.push(value);
-                const position = {
-                    item_id: value.id,
-                    output_index: items.length - 1,
-                };
+                callAt.set(key, call);
+                calls.push(call);
+                items.push(call);
                 send("response.output_item.added", {
-                    output_index: position.output_index,
-                    item: { ...value, arguments: "", status: "in_progress" },
+                    output_index: items.length - 1,
+                    item: { ...call },
                 });
-                send("response.function_call_arguments.delta", {
-                    ...position,
-                    delta: value.arguments,
-                });
+            } else {
+                call.name ||= delta.name ?? "";
+            }
+            if (!delta.arguments) return;
+            call.arguments += delta.arguments;
+            send("response.function_call_arguments.delta", {
+                item_id: call.id,
+                output_index: items.indexOf(call),
+                delta: delta.arguments,
+            });
+        },
+        finish(finishReason: string | null | undefined) {
+            closeItem(isIncomplete(finishReason) ? "incomplete" : "completed");
+            for (const call of calls) {
+                call.status = "completed";
+                const position = {
+                    item_id: call.id,
+                    output_index: items.indexOf(call),
+                };
                 send("response.function_call_arguments.done", {
                     ...position,
-                    arguments: value.arguments,
+                    arguments: call.arguments,
                 });
                 send("response.output_item.done", {
                     output_index: position.output_index,
-                    item: value,
+                    item: call,
                 });
             }
             return items;
@@ -599,14 +629,16 @@ export function chatCompletionToResponse(
     );
     output.delta("text", messageText(message.content));
     output.delta("refusal", message.refusal);
-    const calls = ((message.tool_calls ?? []) as JsonObject[]).map((call) => {
+    for (const [index, call] of (
+        (message.tool_calls ?? []) as JsonObject[]
+    ).entries()) {
         const fn = (call.function ?? {}) as JsonObject;
-        return {
+        output.toolCall(index, {
             id: typeof call.id === "string" ? call.id : undefined,
             name: String(fn.name ?? ""),
             arguments: toolArguments(fn.arguments),
-        };
-    });
+        });
+    }
     return responseObject(
         request,
         model,
@@ -616,7 +648,7 @@ export function chatCompletionToResponse(
             status: isIncomplete(choice.finish_reason)
                 ? "incomplete"
                 : "completed",
-            output: output.finish(choice.finish_reason, calls),
+            output: output.finish(choice.finish_reason),
             usage: chatUsageToResponsesUsage(usage.data),
             finishReason: choice.finish_reason,
         },
@@ -639,9 +671,8 @@ type ChatChunk = {
 };
 
 /**
- * Responses SSE for a usage-validated Chat SSE stream. Text and reasoning
- * stream as they arrive; tool calls are emitted whole when the model stops,
- * because providers may interleave the arguments of parallel calls.
+ * Responses SSE for a usage-validated Chat SSE stream. Text, reasoning and
+ * tool-call arguments stream as they arrive.
  */
 export function chatStreamToResponsesStream(
     body: ReadableStream<Uint8Array>,
@@ -652,7 +683,6 @@ export function chatStreamToResponsesStream(
     const decoder = new TextDecoder();
     const responseId = `resp_${crypto.randomUUID()}`;
     const createdAt = Math.floor(Date.now() / 1000);
-    const calls = new Map<number, ToolCall>();
     let finishReason: string | null | undefined;
     let usage: unknown;
     let sequenceNumber = 0;
@@ -706,7 +736,7 @@ export function chatStreamToResponsesStream(
             );
             return;
         }
-        const items = output.finish(finishReason, [...calls.values()]);
+        const items = output.finish(finishReason);
         const status = isIncomplete(finishReason) ? "incomplete" : "completed";
         send(`response.${status}`, {
             response: snapshot({
@@ -744,12 +774,7 @@ export function chatStreamToResponsesStream(
         output.delta("text", delta.content);
         output.delta("refusal", delta.refusal);
         for (const call of delta.tool_calls ?? []) {
-            const index = call.index ?? calls.size;
-            const current = calls.get(index) ?? { name: "", arguments: "" };
-            current.id ||= call.id;
-            current.name += call.function?.name ?? "";
-            current.arguments += call.function?.arguments ?? "";
-            calls.set(index, current);
+            output.toolCall(call.index, { id: call.id, ...call.function });
         }
     };
     const parser = createParser({

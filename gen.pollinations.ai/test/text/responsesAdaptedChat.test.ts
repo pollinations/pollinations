@@ -391,6 +391,7 @@ describe("Chat stream to Responses stream", () => {
             "response.output_item.done",
             "response.output_item.added",
             "response.function_call_arguments.delta",
+            "response.function_call_arguments.delta",
             "response.function_call_arguments.done",
             "response.output_item.done",
             "response.completed",
@@ -399,7 +400,8 @@ describe("Chat stream to Responses stream", () => {
             list.map((_, index) => index),
         );
         expect(list[12]).toMatchObject({ output_index: 1, text: "Hello" });
-        expect(list[17]).toMatchObject({
+        expect(list[16]).toMatchObject({ output_index: 2, delta: '{"ci' });
+        expect(list[18]).toMatchObject({
             output_index: 2,
             arguments: '{"city":"Oslo"}',
         });
@@ -425,6 +427,56 @@ describe("Chat stream to Responses stream", () => {
             );
             expect(done.item).toEqual(item);
         }
+    });
+
+    it("splits parallel calls that share index 0 by their ids", async () => {
+        // Gemini's shape: each parallel call arrives whole, all at index 0.
+        const call = (id: string, path: string) => ({
+            choices: [
+                {
+                    delta: {
+                        tool_calls: [
+                            {
+                                index: 0,
+                                id,
+                                function: {
+                                    name: "save_file",
+                                    arguments: JSON.stringify({ path }),
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
+        });
+        const list = await events(
+            chatStreamToResponsesStream(
+                sse(
+                    call("call_a", "a.txt"),
+                    call("call_b", "b.txt"),
+                    {
+                        choices: [{ delta: {}, finish_reason: "tool_calls" }],
+                        usage,
+                    },
+                    "[DONE]",
+                ),
+                request({ input: "hi", stream: true }),
+                "m",
+            ),
+        );
+
+        expect(list.at(-1).response.output).toMatchObject([
+            {
+                call_id: "call_a",
+                name: "save_file",
+                arguments: '{"path":"a.txt"}',
+            },
+            {
+                call_id: "call_b",
+                name: "save_file",
+                arguments: '{"path":"b.txt"}',
+            },
+        ]);
     });
 
     it.each([

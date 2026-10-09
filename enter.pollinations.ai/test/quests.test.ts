@@ -2151,6 +2151,7 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
 
 test("the maintainer does not re-earn reported-issue rewards", async ({
     mocks,
+    sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();

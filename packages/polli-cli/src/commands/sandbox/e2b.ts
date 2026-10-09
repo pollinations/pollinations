@@ -30,10 +30,16 @@ export interface LogEntry {
 }
 
 // Paused, not killed, when its paid time runs out.
-export const createSandbox = (templateID: string) =>
+// Gen renews a kept sandbox every hour, paid by the key that creates it.
+export const createSandbox = (templateID: string, keep = false) =>
     gen<Connection>(`${E2B_PATH}/sandboxes`, {
         method: "POST",
-        body: { templateID, timeout: LEASE_SECONDS, autoPause: true },
+        body: {
+            templateID,
+            timeout: LEASE_SECONDS,
+            autoPause: true,
+            ...(keep && { metadata: { pollinations_keep: "true" } }),
+        },
     });
 
 // Running and paused ones.

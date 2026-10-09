@@ -53,7 +53,10 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         vi.stubGlobal("fetch", fetch);
         const { sandboxCommand } = await import("./index.js");
         return {
-            run: () => sandboxCommand.parseAsync(["create"], { from: "user" }),
+            run: (...args: string[]) =>
+                sandboxCommand.parseAsync(["create", ...args], {
+                    from: "user",
+                }),
             output: () => ({ stdout, stderr }),
             fetch,
         };
@@ -120,6 +123,31 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         expect(readFileSync(join(home, ".ssh", "config"), "utf8")).toBe(
             "Include ~/.pollinations/ssh/config\n\nHost existing.example\n",
         );
+    });
+
+    it("asks gen to keep the sandbox with --keep", async () => {
+        const command = await prepare(
+            Response.json({ sandboxID: "created123" }),
+        );
+
+        await command.run("--keep");
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes"),
+            expect.objectContaining({
+                body: JSON.stringify({
+                    templateID: "pollinations",
+                    timeout: 600,
+                    autoPause: true,
+                    metadata: { pollinations_keep: "true" },
+                }),
+            }),
+        );
+        if (mode === "human") {
+            expect(command.output().stderr).toContain(
+                "It runs until you pause or kill it",
+            );
+        }
     });
 
     it("reports a remote creation failure without running SSH setup", async () => {

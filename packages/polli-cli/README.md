@@ -192,6 +192,7 @@ Linux VMs from E2B, paid from your wallet (alpha).
 polli sandbox create              # prints the id and sets up ssh
 ssh <id>.polli                    # scp and rsync work too
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
+polli sandbox create --keep       # keep it running until you stop it
 polli sandbox kill <id>
 ```
 

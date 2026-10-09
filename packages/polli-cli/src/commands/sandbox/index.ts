@@ -52,10 +52,14 @@ export const sandboxCommand = new Command("sandbox")
         new Command("create")
             .description("Start a sandbox you can ssh into")
             .argument("[template]", "E2B template", "pollinations")
-            .action(async (template: string) => {
+            .option(
+                "--keep",
+                "Keep it running until you pause or kill it, paying for an hour at a time",
+            )
+            .action(async (template: string, { keep }: { keep?: boolean }) => {
                 requireKey();
                 try {
-                    const { sandboxID } = await createSandbox(template);
+                    const { sandboxID } = await createSandbox(template, keep);
                     try {
                         setupSsh();
                     } catch (err) {
@@ -66,7 +70,9 @@ export const sandboxCommand = new Command("sandbox")
                         );
                     }
                     printSuccess(
-                        `Sandbox ${sandboxID} created. It pauses after ${LEASE_SECONDS / 60} minutes without an ssh session.`,
+                        keep
+                            ? `Sandbox ${sandboxID} created. It runs until you pause or kill it.`
+                            : `Sandbox ${sandboxID} created. It pauses after ${LEASE_SECONDS / 60} minutes without an ssh session.`,
                     );
                     printResult({
                         id: sandboxID,

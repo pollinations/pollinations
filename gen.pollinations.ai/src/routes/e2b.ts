@@ -1,21 +1,33 @@
+import { getLogger } from "@logtape/logtape";
 import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
-import { extractApiKey } from "@shared/auth/api-key.ts";
+import {
+    extractApiKey,
+    loadActiveApiKeyAuthResult,
+} from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
+import { ensureConfigured } from "@shared/logger.ts";
+import { requestId } from "@shared/middleware/request-id.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { type Context, Hono, type Next } from "hono";
+import { type Context, Hono, type MiddlewareHandler, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
-import { auth, keyPermissionsLink } from "@/middleware/auth.ts";
+import {
+    auth,
+    authFromSnapshot,
+    type GenerationAuthSnapshot,
+    keyPermissionsLink,
+} from "@/middleware/auth.ts";
+import { logger } from "@/middleware/logger.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 import { requireFunds } from "@/utils/generation-access.ts";
@@ -42,6 +54,20 @@ const DEFAULT_TIMEOUT_SECONDS = 300;
 const LOGGED_IN_TEMPLATE = "pollinations";
 // What `polli auth login` asks for.
 const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
+// Created with this metadata set to "true", a sandbox is kept running: gen's
+// cron renews it with the key that created it, named in PAYER_KEY. One E2B
+// team serves staging and production, so ENV_KEY names the one that keeps it.
+const KEEP_KEY = "pollinations_keep";
+const PAYER_KEY = "pollinations_key";
+const ENV_KEY = "pollinations_env";
+// The cron runs every 10 minutes and renews a kept sandbox for an hour once
+// less than 15 minutes of its lease are left.
+const KEEP_LEASE_SECONDS = 3600;
+const KEEP_RENEW_WITHIN_MS = 15 * 60_000;
+// E2B ends a run 24 hours after it started (Pro plan) and shortens leases
+// past that. Pausing and resuming starts a new run with the same memory and
+// processes.
+const MAX_RUN_MS = 24 * 60 * 60_000;
 
 type SandboxDetail = {
     sandboxID: string;
@@ -69,19 +95,26 @@ type CreatedSandbox = {
 
 type E2bContext = Context<Env>;
 
-function e2b(c: E2bContext, path: string, init: RequestInit = {}) {
+function e2b(env: CloudflareBindings, path: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers);
-    headers.set("x-api-key", c.env.E2B_API_KEY ?? "");
+    headers.set("x-api-key", env.E2B_API_KEY ?? "");
     return fetch(`${E2B_API}${path}`, { ...init, headers });
 }
 
 // Relays the caller's request with the team key in place of theirs.
 async function forward(c: E2bContext, search = new URL(c.req.url).search) {
     const body = c.req.method === "GET" ? "" : await c.req.text();
-    const response = await e2b(c, c.req.path.slice(E2B_PATH.length) + search, {
-        method: c.req.method,
-        ...(body && { headers: { "content-type": "application/json" }, body }),
-    });
+    const response = await e2b(
+        c.env,
+        c.req.path.slice(E2B_PATH.length) + search,
+        {
+            method: c.req.method,
+            ...(body && {
+                headers: { "content-type": "application/json" },
+                body,
+            }),
+        },
+    );
     return new Response(response.body, response);
 }
 
@@ -107,7 +140,7 @@ async function getSandbox(
     c: E2bContext,
     id: string,
 ): Promise<SandboxDetail | null> {
-    const response = await e2b(c, `/sandboxes/${encodeURIComponent(id)}`);
+    const response = await e2b(c.env, `/sandboxes/${encodeURIComponent(id)}`);
     if (response.status === 404) return null;
     if (!response.ok) throw await upstreamError(response);
     return response.json<SandboxDetail>();
@@ -134,7 +167,7 @@ async function requireCapacity(c: E2bContext) {
         state: "running",
         limit: String(MAX_RUNNING_PER_USER),
     });
-    const response = await e2b(c, `/v2/sandboxes?${query}`);
+    const response = await e2b(c.env, `/v2/sandboxes?${query}`);
     if (!response.ok) throw await upstreamError(response);
     if ((await response.json<unknown[]>()).length >= MAX_RUNNING_PER_USER) {
         throw new HTTPException(429, {
@@ -240,14 +273,26 @@ async function extendLease(
             ? Math.max(Date.parse(sandbox.endAt), now)
             : now;
     const endAt = now + timeout * 1000;
-    const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
-    const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
+    const quote = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
+    if (quote.price > 0) await requireFunds(c, quote.price, "sandbox lease");
+    const response = await e2b(c.env, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ timeout }),
     });
-    if (response.ok && bill.price > 0) await charge(c, bill, startTime);
+    if (response.ok && quote.price > 0) {
+        // E2B silently shortens a lease past the end of the sandbox's 24-hour
+        // run, so pay only for the lease it set.
+        const updated = await getSandbox(c, sandbox.sandboxID).catch(
+            () => null,
+        );
+        const granted =
+            updated?.state === "running"
+                ? Math.min(endAt, Date.parse(updated.endAt))
+                : endAt;
+        const bill = lease(sandbox, Math.max(0, granted - paidUntil) / 1000);
+        if (bill.price > 0) await charge(c, bill, startTime);
+    }
     return new Response(response.body, response);
 }
 
@@ -323,128 +368,265 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     await next();
 }
 
-export const e2bRoutes = new Hono<Env>()
-    .use("*", edgeRateLimit, auth(), requireSandboxAccess)
-    // E2B's CLI still creates and connects through the deprecated v1 paths,
-    // which take the same bodies as v2.
-    .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
-        const startTime = new Date();
-        const body = await readJson<NewSandbox>(c);
-        if (body.autoResume?.enabled) {
-            throw new HTTPException(400, {
-                message:
-                    "autoResume is not supported. Resume a paused sandbox with connect.",
-            });
-        }
-        if (body.iam || body.volumeMounts?.length) {
-            throw new HTTPException(400, {
-                message: "iam and volumeMounts are not supported.",
-            });
-        }
-        // An empty wallet cannot pay for any lease.
-        await requireFunds(c, 0, "sandbox lease");
-        await requireCapacity(c);
+// E2B's API under a Pollinations key: a caller's own, or for the keeper the
+// key that created a kept sandbox.
+const sandboxApi = (...authenticate: MiddlewareHandler[]) =>
+    new Hono<Env>()
+        .use("*", ...authenticate, requireSandboxAccess)
+        // E2B's CLI still creates and connects through the deprecated v1 paths,
+        // which take the same bodies as v2.
+        .on("POST", ["/sandboxes", "/v2/sandboxes"], async (c) => {
+            const startTime = new Date();
+            const body = await readJson<NewSandbox>(c);
+            if (body.autoResume?.enabled) {
+                throw new HTTPException(400, {
+                    message:
+                        "autoResume is not supported. Resume a paused sandbox with connect.",
+                });
+            }
+            if (body.iam || body.volumeMounts?.length) {
+                throw new HTTPException(400, {
+                    message: "iam and volumeMounts are not supported.",
+                });
+            }
+            const keep = body.metadata?.[KEEP_KEY] === "true";
+            const payer = c.var.auth.apiKey?.id;
+            if (keep && !payer) {
+                throw new HTTPException(400, {
+                    message:
+                        "A kept sandbox is paid by the API key that creates it. Create it with a key.",
+                });
+            }
+            // An empty wallet cannot pay for any lease.
+            await requireFunds(c, 0, "sandbox lease");
+            await requireCapacity(c);
 
-        const response = await e2b(c, c.req.path.slice(E2B_PATH.length), {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-                ...body,
-                // Otherwise envd lets anyone who knows the sandbox ID run
-                // commands and read files in it.
-                secure: true,
-                metadata: {
-                    ...body.metadata,
-                    [OWNER_KEY]: c.var.auth.requireUser().id,
+            const response = await e2b(
+                c.env,
+                c.req.path.slice(E2B_PATH.length),
+                {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        ...body,
+                        // An unpaid kept sandbox pauses instead of being killed.
+                        ...(keep && { autoPause: true }),
+                        // Otherwise envd lets anyone who knows the sandbox ID run
+                        // commands and read files in it.
+                        secure: true,
+                        metadata: {
+                            ...body.metadata,
+                            [OWNER_KEY]: c.var.auth.requireUser().id,
+                            ...(keep && {
+                                [PAYER_KEY]: payer,
+                                [ENV_KEY]: c.env.ENVIRONMENT,
+                            }),
+                        },
+                    }),
                 },
-            }),
-        });
-        if (!response.ok) return new Response(response.body, response);
-        const created = await response.json<CreatedSandbox>();
-
-        // The template sets the size, so the price is known only now.
-        let bill: Lease;
-        try {
-            const sandbox = await getSandbox(c, created.sandboxID);
-            if (!sandbox) {
-                throw new HTTPException(502, {
-                    message: `Sandbox ${created.sandboxID} vanished after create`,
-                });
-            }
-            bill = lease(
-                sandbox,
-                (Date.parse(sandbox.endAt) - Date.parse(sandbox.startedAt)) /
-                    1000,
             );
-            await requireFunds(c, bill.price, "sandbox lease");
-        } catch (error) {
-            // Never leave an unpaid sandbox running.
-            await e2b(c, `/sandboxes/${created.sandboxID}`, {
-                method: "DELETE",
-            });
-            throw error;
-        }
-        await charge(c, bill, startTime);
-        if (body.templateID === LOGGED_IN_TEMPLATE) {
+            if (!response.ok) return new Response(response.body, response);
+            const created = await response.json<CreatedSandbox>();
+
+            // The template sets the size, so the price is known only now.
+            let bill: Lease;
             try {
-                await logIn(c, created);
+                const sandbox = await getSandbox(c, created.sandboxID);
+                if (!sandbox) {
+                    throw new HTTPException(502, {
+                        message: `Sandbox ${created.sandboxID} vanished after create`,
+                    });
+                }
+                bill = lease(
+                    sandbox,
+                    (Date.parse(sandbox.endAt) -
+                        Date.parse(sandbox.startedAt)) /
+                        1000,
+                );
+                await requireFunds(c, bill.price, "sandbox lease");
             } catch (error) {
-                // The sandbox still works; `polli auth login` in it logs in.
-                c.var.log.error("Sandbox login failed: {error}", {
-                    error:
-                        error instanceof Error ? error.message : String(error),
+                // Never leave an unpaid sandbox running.
+                await e2b(c.env, `/sandboxes/${created.sandboxID}`, {
+                    method: "DELETE",
+                });
+                throw error;
+            }
+            await charge(c, bill, startTime);
+            if (body.templateID === LOGGED_IN_TEMPLATE) {
+                try {
+                    await logIn(c, created);
+                } catch (error) {
+                    // The sandbox still works; `polli auth login` in it logs in.
+                    c.var.log.error("Sandbox login failed: {error}", {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    });
+                }
+            }
+            return c.json(created, 201);
+        })
+        .get("/v2/sandboxes", (c) => {
+            // Listing is scoped to the caller's sandboxes, whatever they filter.
+            const url = new URL(c.req.url);
+            const metadata = new URLSearchParams(
+                url.searchParams.get("metadata") ?? "",
+            );
+            metadata.set(OWNER_KEY, c.var.auth.requireUser().id);
+            url.searchParams.set("metadata", metadata.toString());
+            return forward(c, url.search);
+        })
+        .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
+        .delete("/sandboxes/:id", ownerOnly)
+        .get("/sandboxes/:id/metrics", ownerOnly)
+        // `e2b sandbox logs` reads this deprecated v1 path.
+        .get("/sandboxes/:id/logs", ownerOnly)
+        .post("/sandboxes/:id/pause", ownerOnly)
+        .put("/sandboxes/:id/network", ownerOnly)
+        .post("/sandboxes/:id/timeout", async (c) => {
+            const sandbox = await ownedSandbox(c);
+            const { timeout } = await readJson<{ timeout: number }>(c);
+            return extendLease(c, sandbox, timeout);
+        })
+        .on(
+            "POST",
+            ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
+            async (c) => {
+                const sandbox = await ownedSandbox(c);
+                if (sandbox.state === "paused") await requireCapacity(c);
+                const { timeout } = await readJson<{ timeout: number }>(c);
+                return extendLease(
+                    c,
+                    sandbox,
+                    timeout ?? DEFAULT_TIMEOUT_SECONDS,
+                );
+            },
+        )
+        // Everything else (templates, snapshots, forks, volumes, secrets,
+        // webhooks, ...) stays closed until someone reviews how it is billed.
+        .all("*", () => {
+            throw new HTTPException(403, {
+                message:
+                    "This E2B endpoint is not available through Pollinations.",
+            });
+        })
+        // E2B's SDKs read `message` from the top level of an error body.
+        .onError(async (error, c) => {
+            const response = await handleError(error, c);
+            const { error: details } = await response.json<{
+                error: { message: string };
+            }>();
+            return c.json(
+                { code: response.status, message: details.message },
+                response.status as ContentfulStatusCode,
+            );
+        });
+
+export const e2bRoutes = sandboxApi(edgeRateLimit, auth());
+
+// Running kept sandboxes of this environment.
+async function keptSandboxes(env: CloudflareBindings) {
+    const query = new URLSearchParams({
+        metadata: new URLSearchParams({
+            [KEEP_KEY]: "true",
+            [ENV_KEY]: env.ENVIRONMENT,
+        }).toString(),
+        state: "running",
+        limit: "100",
+    });
+    const sandboxes: SandboxDetail[] = [];
+    for (;;) {
+        const response = await e2b(env, `/v2/sandboxes?${query}`);
+        if (!response.ok) throw await upstreamError(response);
+        sandboxes.push(...(await response.json<SandboxDetail[]>()));
+        const next = response.headers.get("x-next-token");
+        if (!next) return sandboxes;
+        query.set("nextToken", next);
+    }
+}
+
+// Read again for every renewal, so deleting the key, letting it expire,
+// removing its machines permission or banning the account ends them.
+async function loadPayer(
+    env: CloudflareBindings,
+    apiKeyId = "",
+): Promise<GenerationAuthSnapshot | null> {
+    const result = await loadActiveApiKeyAuthResult({
+        apiKeyId,
+        rawApiKey: "",
+        env,
+    }).catch(() => null);
+    if (!result?.user) return null;
+    const { rawKey: _rawKey, ...apiKey } = result.apiKey;
+    return { user: { id: result.user.id, tier: result.user.tier }, apiKey };
+}
+
+/**
+ * Renews each kept sandbox whose lease is about to end, through this API as
+ * the key that created it: the renewal is checked and charged like the
+ * owner's own. An unpaid sandbox pauses when its lease ends; connect resumes
+ * it, and the cron keeps it again. Before E2B would end its 24-hour run, a
+ * pause and resume starts a new one instead, giving up the rest of the lease
+ * like any pause.
+ */
+export async function keepSandboxes(
+    env: CloudflareBindings,
+    ctx: ExecutionContext,
+) {
+    if (!env.E2B_API_KEY) return;
+    await ensureConfigured({
+        level: env.LOG_LEVEL || "debug",
+        format: env.LOG_FORMAT || "text",
+    });
+    const log = getLogger(["gen", "sandbox-keeper"]);
+    const now = Date.now();
+    const due = (await keptSandboxes(env)).filter(
+        (sandbox) => Date.parse(sandbox.endAt) - now < KEEP_RENEW_WITHIN_MS,
+    );
+    await Promise.all(
+        due.map(async ({ sandboxID, startedAt, metadata }) => {
+            const payer = await loadPayer(env, metadata?.[PAYER_KEY]);
+            if (!payer) {
+                log.info("Not renewing sandbox {sandboxID}: its key is gone", {
+                    sandboxID,
+                });
+                return;
+            }
+            const api = new Hono<Env>()
+                .use("*", requestId())
+                .use("*", logger)
+                .route(E2B_PATH, sandboxApi(authFromSnapshot(payer)));
+            const post = (action: string, body = {}) =>
+                api.fetch(
+                    new Request(
+                        `${PUBLIC_URLS.gen.production}${E2B_PATH}/sandboxes/${sandboxID}/${action}`,
+                        {
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify(body),
+                        },
+                    ),
+                    env,
+                    ctx,
+                );
+            const restart =
+                Date.parse(startedAt) + MAX_RUN_MS <
+                now + KEEP_LEASE_SECONDS * 1000;
+            const responses = [
+                ...(restart ? [await post("pause")] : []),
+                await post(restart ? "connect" : "timeout", {
+                    timeout: KEEP_LEASE_SECONDS,
+                }),
+            ];
+            const failed = responses.find((response) => !response.ok);
+            if (failed) {
+                log.info("Not renewing sandbox {sandboxID}: {status} {body}", {
+                    sandboxID,
+                    status: failed.status,
+                    body: (await failed.text()).slice(0, 300),
                 });
             }
-        }
-        return c.json(created, 201);
-    })
-    .get("/v2/sandboxes", (c) => {
-        // Listing is scoped to the caller's sandboxes, whatever they filter.
-        const url = new URL(c.req.url);
-        const metadata = new URLSearchParams(
-            url.searchParams.get("metadata") ?? "",
-        );
-        metadata.set(OWNER_KEY, c.var.auth.requireUser().id);
-        url.searchParams.set("metadata", metadata.toString());
-        return forward(c, url.search);
-    })
-    .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
-    .delete("/sandboxes/:id", ownerOnly)
-    .get("/sandboxes/:id/metrics", ownerOnly)
-    // `e2b sandbox logs` reads this deprecated v1 path.
-    .get("/sandboxes/:id/logs", ownerOnly)
-    .post("/sandboxes/:id/pause", ownerOnly)
-    .put("/sandboxes/:id/network", ownerOnly)
-    .post("/sandboxes/:id/timeout", async (c) => {
-        const sandbox = await ownedSandbox(c);
-        const { timeout } = await readJson<{ timeout: number }>(c);
-        return extendLease(c, sandbox, timeout);
-    })
-    .on(
-        "POST",
-        ["/sandboxes/:id/connect", "/v2/sandboxes/:id/connect"],
-        async (c) => {
-            const sandbox = await ownedSandbox(c);
-            if (sandbox.state === "paused") await requireCapacity(c);
-            const { timeout } = await readJson<{ timeout: number }>(c);
-            return extendLease(c, sandbox, timeout ?? DEFAULT_TIMEOUT_SECONDS);
-        },
-    )
-    // Everything else (templates, snapshots, forks, volumes, secrets,
-    // webhooks, ...) stays closed until someone reviews how it is billed.
-    .all("*", () => {
-        throw new HTTPException(403, {
-            message: "This E2B endpoint is not available through Pollinations.",
-        });
-    })
-    // E2B's SDKs read `message` from the top level of an error body.
-    .onError(async (error, c) => {
-        const response = await handleError(error, c);
-        const { error: details } = await response.json<{
-            error: { message: string };
-        }>();
-        return c.json(
-            { code: response.status, message: details.message },
-            response.status as ContentfulStatusCode,
-        );
-    });
+        }),
+    );
+}

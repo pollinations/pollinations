@@ -90,6 +90,10 @@ run_worker_first = ["/", "/manifest.webmanifest"]
 [env.production.images]
 binding = "IMAGES"
 
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.production.triggers]
+crons = ["*/10 * * * *"]
+
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
 zone_name = "myceli.ai"
@@ -204,6 +208,10 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 
 [env.staging.images]
 binding = "IMAGES"
+
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.staging.triggers]
+crons = ["*/10 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"

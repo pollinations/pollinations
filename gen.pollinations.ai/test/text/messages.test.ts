@@ -242,6 +242,96 @@ describe("Messages request translation", () => {
         });
     });
 
+    it("sends documents as Chat file and text parts, also from tool results", () => {
+        const pdf = {
+            type: "document",
+            source: {
+                type: "base64",
+                media_type: "application/pdf",
+                data: "JVBERi0=",
+            },
+        };
+        const chat = messagesToChatRequest(
+            request({
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                // Claude Code's Read tool returns a PDF this way.
+                                type: "tool_result",
+                                tool_use_id: "toolu_1",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "PDF file read: a.pdf",
+                                    },
+                                    pdf,
+                                    {
+                                        type: "document",
+                                        source: {
+                                            type: "text",
+                                            media_type: "text/plain",
+                                            data: "notes",
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                ...pdf,
+                                title: "b.pdf",
+                                cache_control: { type: "ephemeral" },
+                            },
+                            { type: "text", text: "Compare them." },
+                        ],
+                    },
+                ],
+            }),
+        );
+        const filePart = {
+            type: "file",
+            file: { file_data: "data:application/pdf;base64,JVBERi0=" },
+        };
+        expect(chat.messages).toEqual([
+            {
+                role: "tool",
+                tool_call_id: "toolu_1",
+                content: [
+                    { type: "text", text: "PDF file read: a.pdf" },
+                    { type: "text", text: "notes" },
+                ],
+            },
+            {
+                // Tool messages carry text only; the result's PDF leads.
+                role: "user",
+                content: [
+                    filePart,
+                    { ...filePart, cache_control: { type: "ephemeral" } },
+                    { type: "text", text: "Compare them." },
+                ],
+            },
+        ]);
+    });
+
+    it.each([
+        { type: "url", url: "https://example.test/a.pdf" },
+        { type: "content", content: "inline" },
+        { type: "file", file_id: "file_1" },
+    ])("rejects a document with a $type source by name", (source) => {
+        expect(() =>
+            messagesToChatRequest(
+                request({
+                    messages: [
+                        {
+                            role: "user",
+                            content: [{ type: "document", source }],
+                        },
+                    ],
+                }),
+            ),
+        ).toThrow(`A document with a ${source.type} source is not supported`);
+    });
+
     it.each([
         [{ type: "disabled" }, undefined, "none"],
         [{ type: "enabled", budget_tokens: 1024 }, undefined, "low"],
@@ -903,6 +993,50 @@ describe("POST /v1/messages", () => {
                         : "invalid_request_error",
             },
         });
+    });
+
+    it("sends a PDF document to the provider as a Chat file part", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        const { providerBodies } = mockUpstream();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model,
+                max_tokens: 32,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "document",
+                                source: {
+                                    type: "base64",
+                                    media_type: "application/pdf",
+                                    data: "JVBERi0x",
+                                },
+                            },
+                            { type: "text", text: "What word is in this PDF?" },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        expect(providerBodies[0].messages).toEqual([
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "file",
+                        file: {
+                            file_data: "data:application/pdf;base64,JVBERi0x",
+                        },
+                    },
+                    { type: "text", text: "What word is in this PDF?" },
+                ],
+            },
+        ]);
     });
 
     it("preserves thinking signatures through response validation", async () => {

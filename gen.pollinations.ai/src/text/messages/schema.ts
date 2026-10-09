@@ -32,6 +32,23 @@ const ImageBlockSchema = z
     })
     .passthrough();
 
+const DocumentBlockSchema = z
+    .object({
+        type: z.literal("document"),
+        source: z.discriminatedUnion("type", [
+            z.object({
+                type: z.literal("base64"),
+                media_type: z.string(),
+                data: z.string(),
+            }),
+            z.object({ type: z.literal("text"), data: z.string() }),
+            // Chat has no equivalent; translation rejects them by name.
+            z.object({ type: z.enum(["url", "content", "file"]) }),
+        ]),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
+
 const ToolUseBlockSchema = z
     .object({
         type: z.literal("tool_use"),
@@ -49,7 +66,13 @@ const ToolResultBlockSchema = z
         content: z
             .union([
                 z.string(),
-                z.array(z.union([TextBlockSchema, ImageBlockSchema])),
+                z.array(
+                    z.union([
+                        TextBlockSchema,
+                        ImageBlockSchema,
+                        DocumentBlockSchema,
+                    ]),
+                ),
             ])
             .optional(),
         is_error: z.boolean().optional(),
@@ -72,6 +95,7 @@ const RedactedThinkingBlockSchema = z
 export const MessagesContentBlockSchema = z.discriminatedUnion("type", [
     TextBlockSchema,
     ImageBlockSchema,
+    DocumentBlockSchema,
     ToolUseBlockSchema,
     ToolResultBlockSchema,
     ThinkingBlockSchema,

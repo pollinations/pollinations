@@ -531,8 +531,14 @@ export async function getBalance(): Promise<AccountBalance> {
 /**
  * Get usage history
  */
-export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
-    return getClient().accountUsage(options);
+export async function getUsage(
+    options: UsageOptions & { format: "csv" },
+): Promise<string>;
+export async function getUsage(options?: UsageOptions): Promise<UsageResponse>;
+export async function getUsage(
+    options?: UsageOptions,
+): Promise<UsageResponse | string> {
+    return getClient().accountUsage(options as UsageOptions);
 }
 
 /**
@@ -548,9 +554,15 @@ export async function getKeyUsage(
  * Get daily usage summary
  */
 export async function getDailyUsage(
+    options: DailyUsageOptions & { format: "csv" },
+): Promise<string>;
+export async function getDailyUsage(
     options?: DailyUsageOptions,
-): Promise<DailyUsageResponse> {
-    return getClient().accountUsageDaily(options);
+): Promise<DailyUsageResponse>;
+export async function getDailyUsage(
+    options?: DailyUsageOptions,
+): Promise<DailyUsageResponse | string> {
+    return getClient().accountUsageDaily(options as DailyUsageOptions);
 }
 
 /**

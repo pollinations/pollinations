@@ -137,9 +137,8 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
             expect.objectContaining({
                 body: JSON.stringify({
                     templateID: "pollinations",
-                    timeout: 600,
+                    timeout: 2 ** 31 - 1,
                     autoPause: true,
-                    metadata: { pollinations_keep: "true" },
                 }),
             }),
         );

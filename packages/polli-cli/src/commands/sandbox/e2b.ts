@@ -30,15 +30,17 @@ export interface LogEntry {
 }
 
 // Paused, not killed, when its paid time runs out.
-// Gen renews a kept sandbox every hour, paid by the key that creates it.
+// E2B's largest timeout, about 68 years. Past 24 hours, gen keeps the
+// sandbox running, renewing it every hour with the key that creates it.
+const KEEP_SECONDS = 2 ** 31 - 1;
+
 export const createSandbox = (templateID: string, keep = false) =>
     gen<Connection>(`${E2B_PATH}/sandboxes`, {
         method: "POST",
         body: {
             templateID,
-            timeout: LEASE_SECONDS,
+            timeout: keep ? KEEP_SECONDS : LEASE_SECONDS,
             autoPause: true,
-            ...(keep && { metadata: { pollinations_keep: "true" } }),
         },
     });
 

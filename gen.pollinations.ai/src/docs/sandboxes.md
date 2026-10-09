@@ -15,7 +15,7 @@ polli sandbox kill <id>
 
 - A sandbox pauses about 10 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it.
 - To keep it running without ssh, pay for the time up front with `polli sandbox timeout <id> <seconds>`, up to 24 hours at a time. It also resumes a paused sandbox.
-- A sandbox created with `--keep` runs until you stop it. Every hour, gen pays for the next hour with the key that created it, so renewals stop when that key is deleted, expires or runs out of budget, or the wallet runs out. For a sandbox that should run for weeks, create it with a key that has no expiry date or budget.
+- A sandbox created with `--keep` runs until you stop it: polli asks for the longest timeout E2B takes, and past 24 hours gen keeps the sandbox running until then. Every hour, gen pays for the next hour with the key that created it, so renewals stop when that key is deleted, expires or runs out of budget, or the wallet runs out. For a sandbox that should run for weeks, create it with a key that has no expiry date or budget.
 - E2B ends a run after 24 hours, so once a day gen pauses and resumes a kept sandbox. Its files, memory and processes stay; open connections drop.
 - To stop a kept sandbox, end its lease with `polli sandbox timeout <id> 0`: it pauses, and stays paused until something resumes it. A resumed kept sandbox is kept again. `polli sandbox kill <id>` deletes it.
 - The first `ssh` allows only polli's key, `~/.pollinations/ssh/id_ed25519`. On other templates than the default, it first installs `sshd`, `rsync` and `websocat` (Debian-based templates only).
@@ -41,4 +41,4 @@ export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
 export E2B_API_KEY=sk_...
 ```
 
-Run `polli sandbox ssh-config` once to ssh into the sandboxes they create. To keep a sandbox, create it with a key and the metadata `pollinations_keep: "true"`. Auto-resume, snapshots, forks, IAM and volume mounts are not available.
+Run `polli sandbox ssh-config` once to ssh into the sandboxes they create. A timeout over 24 hours, set when you create a sandbox with a key, keeps it running until then, as on an E2B team with a longer limit: gen renews it an hour at a time with that key and restarts its run once a day. Set `lifecycle: { onTimeout: "pause" }` so a lease that goes unpaid pauses the sandbox instead of killing it. `setTimeout` on an existing sandbox still ends with its 24-hour run. Auto-resume, snapshots, forks, IAM and volume mounts are not available.

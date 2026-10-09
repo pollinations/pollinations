@@ -54,20 +54,24 @@ const DEFAULT_TIMEOUT_SECONDS = 300;
 const LOGGED_IN_TEMPLATE = "pollinations";
 // What `polli auth login` asks for.
 const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
-// Created with this metadata set to "true", a sandbox is kept running: gen's
-// cron renews it with the key that created it, named in PAYER_KEY. One E2B
-// team serves staging and production, so ENV_KEY names the one that keeps it.
-const KEEP_KEY = "pollinations_keep";
-const PAYER_KEY = "pollinations_key";
-const ENV_KEY = "pollinations_env";
-// The cron runs every 10 minutes and renews a kept sandbox for an hour once
-// less than 15 minutes of its lease are left.
-const KEEP_LEASE_SECONDS = 3600;
-const KEEP_RENEW_WITHIN_MS = 15 * 60_000;
 // E2B ends a run 24 hours after it started (Pro plan) and shortens leases
 // past that. Pausing and resuming starts a new run with the same memory and
 // processes.
 const MAX_RUN_MS = 24 * 60 * 60_000;
+// E2B takes a timeout as 32-bit seconds.
+const MAX_TIMEOUT_SECONDS = 2 ** 31 - 1;
+// Created with a timeout past the 24-hour run, a sandbox is kept, as on an E2B
+// team with a longer limit: gen's cron renews it until UNTIL_KEY with the key
+// that created it, named in PAYER_KEY. One E2B team serves staging and
+// production, so ENV_KEY names the one that keeps it; only kept sandboxes
+// have it.
+const UNTIL_KEY = "pollinations_until";
+const PAYER_KEY = "pollinations_key";
+const ENV_KEY = "pollinations_env";
+// The cron runs every 10 minutes and renews a kept sandbox for up to an hour
+// once less than 15 minutes of its lease are left.
+const KEEP_LEASE_SECONDS = 3600;
+const KEEP_RENEW_WITHIN_MS = 15 * 60_000;
 
 type SandboxDetail = {
     sandboxID: string;
@@ -81,6 +85,7 @@ type SandboxDetail = {
 
 type NewSandbox = {
     templateID?: string;
+    timeout?: number;
     metadata?: Record<string, string>;
     autoResume?: { enabled?: boolean };
     iam?: unknown;
@@ -389,12 +394,14 @@ const sandboxApi = (...authenticate: MiddlewareHandler[]) =>
                     message: "iam and volumeMounts are not supported.",
                 });
             }
-            const keep = body.metadata?.[KEEP_KEY] === "true";
+            const timeout = body.timeout ?? 0;
+            const keep =
+                timeout * 1000 > MAX_RUN_MS && timeout <= MAX_TIMEOUT_SECONDS;
             const payer = c.var.auth.apiKey?.id;
             if (keep && !payer) {
                 throw new HTTPException(400, {
                     message:
-                        "A kept sandbox is paid by the API key that creates it. Create it with a key.",
+                        "A sandbox with a timeout over 24 hours is renewed with the API key that creates it. Create it with a key.",
                 });
             }
             // An empty wallet cannot pay for any lease.
@@ -409,8 +416,7 @@ const sandboxApi = (...authenticate: MiddlewareHandler[]) =>
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({
                         ...body,
-                        // An unpaid kept sandbox pauses instead of being killed.
-                        ...(keep && { autoPause: true }),
+                        ...(keep && { timeout: KEEP_LEASE_SECONDS }),
                         // Otherwise envd lets anyone who knows the sandbox ID run
                         // commands and read files in it.
                         secure: true,
@@ -418,6 +424,9 @@ const sandboxApi = (...authenticate: MiddlewareHandler[]) =>
                             ...body.metadata,
                             [OWNER_KEY]: c.var.auth.requireUser().id,
                             ...(keep && {
+                                [UNTIL_KEY]: new Date(
+                                    startTime.getTime() + timeout * 1000,
+                                ).toISOString(),
                                 [PAYER_KEY]: payer,
                                 [ENV_KEY]: c.env.ENVIRONMENT,
                             }),
@@ -529,7 +538,6 @@ export const e2bRoutes = sandboxApi(edgeRateLimit, auth());
 async function keptSandboxes(env: CloudflareBindings) {
     const query = new URLSearchParams({
         metadata: new URLSearchParams({
-            [KEEP_KEY]: "true",
             [ENV_KEY]: env.ENVIRONMENT,
         }).toString(),
         state: "running",
@@ -563,12 +571,12 @@ async function loadPayer(
 }
 
 /**
- * Renews each kept sandbox whose lease is about to end, through this API as
- * the key that created it: the renewal is checked and charged like the
- * owner's own. An unpaid sandbox pauses when its lease ends; connect resumes
- * it, and the cron keeps it again. Before E2B would end its 24-hour run, a
- * pause and resume starts a new one instead, giving up the rest of the lease
- * like any pause.
+ * Renews each kept sandbox whose lease is about to end, for up to an hour and
+ * never past its timeout, through this API as the key that created it: the
+ * renewal is checked and charged like the owner's own. An unpaid lease ends
+ * as the sandbox's `onTimeout` says; a paused sandbox that connect resumes is
+ * kept again. Before E2B would end its 24-hour run, a pause and resume starts
+ * a new one instead, giving up the rest of the lease like any pause.
  */
 export async function keepSandboxes(
     env: CloudflareBindings,
@@ -581,11 +589,18 @@ export async function keepSandboxes(
     });
     const log = getLogger(["gen", "sandbox-keeper"]);
     const now = Date.now();
-    const due = (await keptSandboxes(env)).filter(
-        (sandbox) => Date.parse(sandbox.endAt) - now < KEEP_RENEW_WITHIN_MS,
-    );
+    const due = (await keptSandboxes(env)).flatMap((sandbox) => {
+        const endAt = Date.parse(sandbox.endAt);
+        const renewTo = Math.min(
+            now + KEEP_LEASE_SECONDS * 1000,
+            Date.parse(sandbox.metadata?.[UNTIL_KEY] ?? ""),
+        );
+        return endAt - now < KEEP_RENEW_WITHIN_MS && renewTo > endAt
+            ? [{ ...sandbox, timeout: Math.ceil((renewTo - now) / 1000) }]
+            : [];
+    });
     await Promise.all(
-        due.map(async ({ sandboxID, startedAt, metadata }) => {
+        due.map(async ({ sandboxID, startedAt, metadata, timeout }) => {
             const payer = await loadPayer(env, metadata?.[PAYER_KEY]);
             if (!payer) {
                 log.info("Not renewing sandbox {sandboxID}: its key is gone", {
@@ -611,13 +626,10 @@ export async function keepSandboxes(
                     ctx,
                 );
             const restart =
-                Date.parse(startedAt) + MAX_RUN_MS <
-                now + KEEP_LEASE_SECONDS * 1000;
+                Date.parse(startedAt) + MAX_RUN_MS < now + timeout * 1000;
             const responses = [
                 ...(restart ? [await post("pause")] : []),
-                await post(restart ? "connect" : "timeout", {
-                    timeout: KEEP_LEASE_SECONDS,
-                }),
+                await post(restart ? "connect" : "timeout", { timeout }),
             ];
             const failed = responses.find((response) => !response.ok);
             if (failed) {

@@ -1,0 +1,356 @@
+{
+  "pr_number": 16800,
+  "title": "feat: add MAI voice with discounted Azure prices and fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16800",
+  "merged_at": "2026-10-09T10:54:58Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added MAI-Voice-2.1 and MAI-Voice-2.1 Flash for text-to-speech, with 97 voices per model, MP3 and 24 kHz PCM output, and Quest Pollen access; neither model has an alias. Azure is the primary route, with a Vercel fallback that ultimately also uses Azure and preserves the caller price. The caller price uses a 0.75 multiplier and is billed per UTF-16 character; Gateway cost receipts are preserved. OpenRouter was not added as a route because its TTS billing records could not be reconciled. Validation covered both public speech endpoints, streaming and non-streaming Chat and Responses requests, 10,000-character inputs, bursts, Quest-only access, disconnect/rejoin, one debit per event, and free cache retrieval.",
+    "keywords": [
+      "MAI-Voice",
+      "text-to-speech",
+      "Azure",
+      "Vercel",
+      "audio",
+      "Quest Pollen"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16800.jpg",
+    "prompt": "In a cozy pixel art recording nook, Polli wears tiny headphones beside two retro microphones labeled MAI-Voice-2.1 and Flash, while a CRT monitor robot watches soft sound waves curl around code-plants and a prominent lime green (#ecf874) glow warms the pastel room. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, sharing the frame rather than dominating it, strictly pixel art and never realistic, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T10:56:58.870328+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "a59677ba1f38c57e701aa8b21d8f731fb433f152",
+  "announcements": [
+    {
+      "id": "pr-16800:microsoft/mai-voice-2.1",
+      "model_id": "microsoft/mai-voice-2.1",
+      "title": "MAI-Voice-2.1",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.0000165"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "cs-CZ-Grant",
+            "cs-CZ-Harper",
+            "da-DK-Grant",
+            "da-DK-Harper",
+            "de-DE-Grant",
+            "de-DE-Harper",
+            "de-DE-Klaus",
+            "de-DE-Mia",
+            "en-AU-Isla",
+            "en-GB-Emily",
+            "en-GB-Harry",
+            "en-IN-Dhruv",
+            "en-IN-Priya",
+            "en-US-Ethan",
+            "en-US-Grant",
+            "en-US-Harper",
+            "en-US-Iris",
+            "en-US-Jasper",
+            "en-US-Olivia",
+            "en-US-Sage",
+            "es-ES-Marta",
+            "es-MX-Alejo",
+            "es-MX-Grant",
+            "es-MX-Harper",
+            "es-MX-Valeria",
+            "fi-FI-Grant",
+            "fi-FI-Harper",
+            "fr-FR-Grant",
+            "fr-FR-Harper",
+            "fr-FR-Marc",
+            "fr-FR-Soleil",
+            "hi-IN-Arjun",
+            "hi-IN-Dhruv",
+            "hi-IN-Grant",
+            "hi-IN-Harper",
+            "hi-IN-Kavya",
+            "hi-IN-Priya",
+            "hu-HU-Bence",
+            "hu-HU-Grant",
+            "hu-HU-Harper",
+            "hu-HU-Levente",
+            "hu-HU-Lilla",
+            "hu-HU-Reka",
+            "id-ID-Grant",
+            "id-ID-Harper",
+            "it-IT-Grant",
+            "it-IT-Harper",
+            "it-IT-Luca",
+            "it-IT-Rosa",
+            "ko-KR-Grant",
+            "ko-KR-Haena",
+            "ko-KR-Harper",
+            "ko-KR-Junho",
+            "nb-NO-Grant",
+            "nb-NO-Harper",
+            "nl-NL-Grant",
+            "nl-NL-Harper",
+            "nl-NL-Sander",
+            "pl-PL-Grant",
+            "pl-PL-Harper",
+            "pt-BR-Caio",
+            "pt-BR-Grant",
+            "pt-BR-Harper",
+            "pt-BR-Luana",
+            "pt-BR-Pedro",
+            "pt-BR-Rafael",
+            "pt-PT-Grant",
+            "pt-PT-Harper",
+            "pt-PT-Rui",
+            "ro-RO-Andrei",
+            "ro-RO-Elena",
+            "ro-RO-Grant",
+            "ro-RO-Harper",
+            "ro-RO-Ioana",
+            "ro-RO-Radu",
+            "ru-RU-Grant",
+            "ru-RU-Harper",
+            "ru-RU-Lev",
+            "ru-RU-Masha",
+            "sv-SE-Grant",
+            "sv-SE-Harper",
+            "th-TH-Grant",
+            "th-TH-Harper",
+            "th-TH-Krit",
+            "th-TH-Nattapong",
+            "tr-TR-Aydin",
+            "tr-TR-Elif",
+            "tr-TR-Grant",
+            "tr-TR-Harper",
+            "vi-VN-Grant",
+            "vi-VN-Harper",
+            "zh-CN-Bo",
+            "zh-CN-Grant",
+            "zh-CN-Harper",
+            "zh-CN-Lan",
+            "zh-CN-Mei",
+            "zh-CN-Wei"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-16800:microsoft/mai-voice-2.1-flash",
+      "model_id": "microsoft/mai-voice-2.1-flash",
+      "title": "MAI-Voice-2.1 Flash",
+      "action": "NEW",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "audio"
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": false
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00001125"
+          }
+        },
+        "voices": {
+          "before": null,
+          "after": [
+            "cs-CZ-Grant",
+            "cs-CZ-Harper",
+            "da-DK-Grant",
+            "da-DK-Harper",
+            "de-DE-Grant",
+            "de-DE-Harper",
+            "de-DE-Klaus",
+            "de-DE-Mia",
+            "en-AU-Isla",
+            "en-GB-Emily",
+            "en-GB-Harry",
+            "en-IN-Dhruv",
+            "en-IN-Priya",
+            "en-US-Ethan",
+            "en-US-Grant",
+            "en-US-Harper",
+            "en-US-Iris",
+            "en-US-Jasper",
+            "en-US-Olivia",
+            "en-US-Sage",
+            "es-ES-Marta",
+            "es-MX-Alejo",
+            "es-MX-Grant",
+            "es-MX-Harper",
+            "es-MX-Valeria",
+            "fi-FI-Grant",
+            "fi-FI-Harper",
+            "fr-FR-Grant",
+            "fr-FR-Harper",
+            "fr-FR-Marc",
+            "fr-FR-Soleil",
+            "hi-IN-Arjun",
+            "hi-IN-Dhruv",
+            "hi-IN-Grant",
+            "hi-IN-Harper",
+            "hi-IN-Kavya",
+            "hi-IN-Priya",
+            "hu-HU-Bence",
+            "hu-HU-Grant",
+            "hu-HU-Harper",
+            "hu-HU-Levente",
+            "hu-HU-Lilla",
+            "hu-HU-Reka",
+            "id-ID-Grant",
+            "id-ID-Harper",
+            "it-IT-Grant",
+            "it-IT-Harper",
+            "it-IT-Luca",
+            "it-IT-Rosa",
+            "ko-KR-Grant",
+            "ko-KR-Haena",
+            "ko-KR-Harper",
+            "ko-KR-Junho",
+            "nb-NO-Grant",
+            "nb-NO-Harper",
+            "nl-NL-Grant",
+            "nl-NL-Harper",
+            "nl-NL-Sander",
+            "pl-PL-Grant",
+            "pl-PL-Harper",
+            "pt-BR-Caio",
+            "pt-BR-Grant",
+            "pt-BR-Harper",
+            "pt-BR-Luana",
+            "pt-BR-Pedro",
+            "pt-BR-Rafael",
+            "pt-PT-Grant",
+            "pt-PT-Harper",
+            "pt-PT-Rui",
+            "ro-RO-Andrei",
+            "ro-RO-Elena",
+            "ro-RO-Grant",
+            "ro-RO-Harper",
+            "ro-RO-Ioana",
+            "ro-RO-Radu",
+            "ru-RU-Grant",
+            "ru-RU-Harper",
+            "ru-RU-Lev",
+            "ru-RU-Masha",
+            "sv-SE-Grant",
+            "sv-SE-Harper",
+            "th-TH-Grant",
+            "th-TH-Harper",
+            "th-TH-Krit",
+            "th-TH-Nattapong",
+            "tr-TR-Aydin",
+            "tr-TR-Elif",
+            "tr-TR-Grant",
+            "tr-TR-Harper",
+            "vi-VN-Grant",
+            "vi-VN-Harper",
+            "zh-CN-Bo",
+            "zh-CN-Grant",
+            "zh-CN-Harper",
+            "zh-CN-Lan",
+            "zh-CN-Mei",
+            "zh-CN-Wei"
+          ]
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "a59677ba1f38c57e701aa8b21d8f731fb433f152^1",
+    "after_ref": "a59677ba1f38c57e701aa8b21d8f731fb433f152"
+  }
+}

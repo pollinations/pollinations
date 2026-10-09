@@ -1022,6 +1022,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
         }),
+    "stepfun/step-5-preview": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-5-preview",
+        }),
+    "stepfun/step-5-preview:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-5-preview",
+        }),
 
     // -- DeepInfra (StepFun) --------------------------------------------------
     "stepfun-ai/Step-3.7-Flash": () =>

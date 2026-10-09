@@ -2756,7 +2756,7 @@ const TEXT_BASE_SERVICES = {
         title: "Nova 2 Lite",
         description:
             "Budget-friendly reasoning with room for very long documents",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,

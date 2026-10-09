@@ -1,0 +1,36 @@
+{
+  "pr_number": 16884,
+  "title": "fix: reject unknown transparent and audio values on image and video",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16884",
+  "merged_at": "2026-10-09T09:10:06Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The `/image/{prompt}` and `/video/{prompt}` routes now return HTTP 400 for unknown `transparent` or `audio` query values instead of silently treating them as `false`. Both parameters reuse the text route’s BooleanQueryParamSchema: `true/1/yes/on` and `false/0/no/off` remain accepted. `safe` is unchanged because it already rejects unknown values. Two regression tests cover the new behavior.",
+    "keywords": [
+      "API",
+      "image",
+      "video",
+      "query parameters",
+      "validation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16884.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli sorts tiny `yes`, `no`, and `?` query-value tiles beside an image-and-video terminal, placing the unknown tile next to a small pixel-font `400`; lime green (#ecf874) code-plants glow against warm cream and pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny debugging glasses, stays small-to-medium in the scene, and is strictly pixel art, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-09T09:11:13.636698+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "1c084a01ffec0d601febddfc614d2d5e03accb16",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

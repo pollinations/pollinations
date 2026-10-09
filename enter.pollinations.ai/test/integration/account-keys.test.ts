@@ -512,4 +512,125 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(404);
         });
     });
+
+    describe("POST /api/account/keys/:id/rotate", () => {
+        const rotate = (id: string, token: string) =>
+            SELF.fetch(`http://localhost:3000/api/account/keys/${id}/rotate`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+        const keyInfo = (key: string) =>
+            SELF.fetch("http://localhost:3000/api/account/key", {
+                headers: { Authorization: `Bearer ${key}` },
+            });
+
+        test("issues a new secret, keeps the settings and revokes the old one", async ({
+            accountToken,
+        }) => {
+            const created = await createApiKeyViaApi(accountToken, {
+                name: "rotate-me",
+                allowedModels: ["openai/gpt-5.4-nano"],
+                pollenBudget: 7,
+                accountPermissions: ["usage"],
+                questPollenOnly: true,
+            });
+            const expiresAt = "2030-01-01T00:00:00.000Z";
+            const patch = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${created.id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accountToken}`,
+                    },
+                    body: JSON.stringify({
+                        expiresAt,
+                        description: "used by the backend",
+                    }),
+                },
+            );
+            expect(patch.status).toBe(200);
+            const before = await patch.json();
+
+            const response = await rotate(created.id, accountToken);
+            expect(response.status).toBe(200);
+            const rotated = await response.json();
+
+            expect(rotated.key.startsWith("sk_")).toBe(true);
+            expect(rotated.key).not.toBe(created.key);
+            expect(rotated.start).toBe(rotated.key.slice(0, 10));
+            expect(rotated).toMatchObject({
+                id: created.id,
+                name: "rotate-me",
+                prefix: "sk",
+                expiresAt,
+                permissions: { models: ["text"], account: ["usage"] },
+                pollenBalance: 7,
+                questPollenOnly: true,
+                createdAt: before.createdAt,
+                metadata: before.metadata,
+            });
+
+            expect((await keyInfo(created.key)).status).toBe(401);
+            const info = await keyInfo(rotated.key);
+            expect(info.status).toBe(200);
+            expect(await info.json()).toMatchObject({
+                id: created.id,
+                valid: true,
+                pollenBudget: 7,
+            });
+
+            // Still one row: the list shows the key once, with its new start.
+            const list = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                { headers: { Authorization: `Bearer ${accountToken}` } },
+            );
+            const listed = (await list.json()).data.filter(
+                (key: { id: string }) => key.id === created.id,
+            );
+            expect(listed).toHaveLength(1);
+            expect(listed[0].start).toBe(rotated.start);
+            expect(listed[0]).not.toHaveProperty("key");
+        });
+
+        test("lets a key with account:keys rotate itself", async ({
+            accountToken,
+        }) => {
+            const created = await createApiKeyViaApi(accountToken, {
+                name: "self-rotate",
+                accountPermissions: ["keys"],
+            });
+
+            const response = await rotate(created.id, created.key);
+            expect(response.status).toBe(200);
+            const rotated = await response.json();
+            expect((await keyInfo(created.key)).status).toBe(401);
+            expect((await keyInfo(rotated.key)).status).toBe(200);
+        });
+
+        test("rejects a key without account:keys permission", async ({
+            accountToken,
+            apiKey,
+        }) => {
+            const created = await createApiKeyViaApi(accountToken, {
+                name: "not-rotatable-by-child",
+            });
+            expect((await rotate(created.id, apiKey)).status).toBe(403);
+            expect((await keyInfo(created.key)).status).toBe(200);
+        });
+
+        test("rejects publishable keys", async ({ accountToken }) => {
+            const created = await createApiKeyViaApi(accountToken, {
+                name: "app-key",
+                type: "publishable",
+            });
+            expect((await rotate(created.id, accountToken)).status).toBe(400);
+        });
+
+        test("returns 404 for a missing key", async ({ accountToken }) => {
+            expect((await rotate("nonexistent-id", accountToken)).status).toBe(
+                404,
+            );
+        });
+    });
 });

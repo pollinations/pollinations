@@ -85,6 +85,16 @@ function KeysPage() {
         await refreshKeys();
     }
 
+    async function handleRotateApiKey(id: string): Promise<string> {
+        const response = await accountClient.keys[":id"].rotate.$post({
+            param: { id },
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        const { key } = await response.json();
+        await refreshKeys();
+        return key;
+    }
+
     async function handleUpdateApiKey(
         id: string,
         updates: ApiKeyUpdateParams,
@@ -105,6 +115,7 @@ function KeysPage() {
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
+                    onRotate={handleRotateApiKey}
                     onRetry={refreshKeys}
                 />
             )}

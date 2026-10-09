@@ -8,7 +8,7 @@ const genericFailures = new Set([
 
 /** Consistent action feedback while keeping the server's validation details. */
 export function resourceActionError(
-    action: "create" | "save" | "delete" | "update",
+    action: "create" | "save" | "delete" | "update" | "rotate",
     subject: string,
     error?: unknown,
 ): string {

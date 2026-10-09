@@ -1875,6 +1875,54 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-transcribe-2": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000208333333333333,
+    },
+  },
+  "microsoft/mai-transcribe-2:vercel": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000208333333333333,
+    },
+  },
+  "microsoft/mai-voice-2.1": {
+    "cost": {
+      "completionAudioTokens": 0.000022,
+    },
+    "price": {
+      "completionAudioTokens": 0.0000165,
+    },
+  },
+  "microsoft/mai-voice-2.1-flash": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.00001125,
+    },
+  },
+  "microsoft/mai-voice-2.1-flash:vercel": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.00001125,
+    },
+  },
+  "microsoft/mai-voice-2.1:vercel": {
+    "cost": {
+      "completionAudioTokens": 0.000022,
+    },
+    "price": {
+      "completionAudioTokens": 0.0000165,
+    },
+  },
   "microsoft/trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,
@@ -2526,6 +2574,32 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
+  "openai/gpt-6-luna-decisions": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0,
+        "promptTextTokens": 0.0000002,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "openai/gpt-6-luna-decisions:openrouter": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001055,
+    },
+  },
   "openai/gpt-6-luna:openai": {
     "cost": {
       "completionTextTokens": 0.0000005,
@@ -3027,6 +3101,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.02,
     },
   },
+  "qwen/qwen-audio-3.0-tts-flash": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.000015,
+    },
+  },
   "qwen/qwen-image": {
     "cost": {
       "completionImageTokens": 0.025,
@@ -3157,14 +3239,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionAudioTokens": 0.00001,
-    },
-  },
-  "qwen/qwen3-tts-instruct-flash": {
-    "cost": {
-      "completionAudioTokens": 0.0000115,
-    },
-    "price": {
-      "completionAudioTokens": 0.0000115,
     },
   },
   "qwen/qwen3-vl-235b-a22b-thinking": {
@@ -3560,6 +3634,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000115,
       "promptCachedTokens": 0.00000004,
       "promptTextTokens": 0.0000002,
+    },
+  },
+  "stepfun/step-5-preview": {
+    "cost": {
+      "completionTextTokens": 0.0000028485,
+      "promptCachedTokens": 0.00000005275,
+      "promptTextTokens": 0.000001055,
+    },
+    "price": {
+      "completionTextTokens": 0.0000028485,
+      "promptCachedTokens": 0.00000005275,
+      "promptTextTokens": 0.000001055,
+    },
+  },
+  "stepfun/step-5-preview:vercel": {
+    "cost": {
+      "completionTextTokens": 0.0000027,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.0000027,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.000001,
     },
   },
   "tencent/hy3": {

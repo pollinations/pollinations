@@ -108,6 +108,19 @@ export const portkeyConfig: PortkeyConfigMap = {
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "liquid/d1",
         }),
+    "gpt-6-luna-decisions": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.openai.com/v1/decisions",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-luna",
+        decisionsProtocol: "openai",
+    }),
+    "openai/gpt-6-luna-decisions:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "openai/gpt-6-luna-decisions",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -1021,6 +1034,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "stepfun/step-3.5-flash": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
+        }),
+    "stepfun/step-5-preview": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-5-preview",
+        }),
+    "stepfun/step-5-preview:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-5-preview",
         }),
 
     // -- DeepInfra (StepFun) --------------------------------------------------

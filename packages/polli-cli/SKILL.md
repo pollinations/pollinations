@@ -68,7 +68,7 @@ Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its 
 ```bash
 polli gen image "a fox reading a book, studio ghibli style" --output fox.png
 ```
-Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
+Defaults: `zimage`, 1024x1024. Without `--output` the file is `image.<ext>`, with the extension inferred from the response's `Content-Type` (`zimage` and `flux` return JPEG, so `image.jpg`); an explicit `--output` is used as given. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
 
 ### Upload a local file to get a public URL
 ```bash
@@ -107,7 +107,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
+Without `--voice`, the API uses the model's default voice. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
 
 ### Generate music (elevenmusic)
 ```bash
@@ -227,9 +227,10 @@ polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
+polli agents sync <id>
 polli agents delete <id>
 ```
-Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Prompt-agent updates replace the complete runtime configuration.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 

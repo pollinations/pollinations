@@ -16,6 +16,17 @@ const MAX_MEDIA_DATA_URL = 20 * 1024 * 1024;
 const MAX_UNOFFLOADED_BYTES = MAX_REWRITTEN_BODY + MAX_MEDIA_DATA_URL;
 const PARSE_CHUNK_SIZE = 64 * 1024;
 
+/** 413 that states the limit, and the received size when Content-Length gives it. */
+export function bodyTooLarge(limit: number, received?: number) {
+    const message = `Request body exceeds the ${limit / 1024 / 1024} MiB limit (${limit} bytes)`;
+    return new HTTPException(413, {
+        message:
+            received === undefined
+                ? message
+                : `${message}; received ${received} bytes`,
+    });
+}
+
 type InlineMedia = {
     type: "image_url" | "video_url" | "file" | "input_audio";
     container: Record<string, unknown>;
@@ -95,6 +106,7 @@ export async function readLargeChatBody(
         dataUrl: string,
         type: InlineMedia["type"],
     ) => Promise<string>,
+    received?: number,
 ): Promise<string> {
     const parser = new JSONParser({
         paths: ["$.messages.*.content.*", "$"],
@@ -135,9 +147,7 @@ export async function readLargeChatBody(
             if (done) break;
             totalBytes += value.byteLength;
             if (totalBytes > MAX_LARGE_CHAT_BODY) {
-                throw new HTTPException(413, {
-                    message: "Request body exceeds the 100 MiB limit",
-                });
+                throw bodyTooLarge(MAX_LARGE_CHAT_BODY, received);
             }
             for (
                 let offset = 0;
@@ -164,9 +174,7 @@ export async function readLargeChatBody(
                     offloadedBytes += dataUrl.length;
                 }
                 if (parsedBytes - offloadedBytes > MAX_UNOFFLOADED_BYTES) {
-                    throw new HTTPException(413, {
-                        message: "Request body exceeds the 32 MiB limit",
-                    });
+                    throw bodyTooLarge(EXISTING_CHAT_BODY_LIMIT, received);
                 }
             }
         }
@@ -207,11 +215,12 @@ export async function readLargeChatBody(
     }
     const body = JSON.stringify(parsed);
     if (body.length > MAX_REWRITTEN_BODY) {
+        if (offloadedBytes === 0) {
+            throw bodyTooLarge(EXISTING_CHAT_BODY_LIMIT, received);
+        }
         throw new HTTPException(413, {
             message:
-                offloadedBytes > 0
-                    ? "Chat content exceeds the 16 MiB limit after media offload"
-                    : "Request body exceeds the 32 MiB limit",
+                "Chat content exceeds the 16 MiB limit after media offload",
         });
     }
     return body;
@@ -227,55 +236,60 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
         return next();
     }
     if (contentLength > MAX_LARGE_CHAT_BODY) {
-        throw new HTTPException(413, {
-            message: "Request body exceeds the 100 MiB limit",
-        });
+        throw bodyTooLarge(MAX_LARGE_CHAT_BODY, contentLength);
     }
     const stream = c.req.raw.body;
     if (!stream) return next();
 
-    const body = await readLargeChatBody(stream, async (dataUrl, type) => {
-        const user = c.var.auth.requireUser();
-        const match =
-            /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
-                dataUrl,
+    const body = await readLargeChatBody(
+        stream,
+        async (dataUrl, type) => {
+            const user = c.var.auth.requireUser();
+            const match =
+                /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+                    dataUrl,
+                );
+            if (!match) {
+                throw new HTTPException(400, {
+                    message: "Invalid inline media data URL",
+                });
+            }
+            if (
+                (type === "image_url" &&
+                    !/^image\/(?:jpeg|png|webp|gif)$/.test(match[1])) ||
+                (type === "video_url" && !match[1].startsWith("video/")) ||
+                (type === "input_audio" && !match[1].startsWith("audio/"))
+            ) {
+                throw new HTTPException(400, {
+                    message: "Invalid inline media data URL",
+                });
+            }
+            const bytes = Buffer.from(match[2], "base64");
+            const id = createHmac("sha256", c.env.BETTER_AUTH_SECRET)
+                .update("chat-input\0")
+                .update(user.id)
+                .update("\0")
+                .update(match[1])
+                .update("\0")
+                .update(bytes)
+                .digest("hex");
+            if (await c.env.MEDIA.has(id)) {
+                return `https://media.pollinations.ai/${id}`;
+            }
+            const upload = await c.env.MEDIA.upload(
+                new Blob([bytes]).stream(),
+                {
+                    id,
+                    contentType: match[1],
+                    size: bytes.byteLength,
+                    uploadedBy: user.id,
+                    keyType: "chat-input",
+                },
             );
-        if (!match) {
-            throw new HTTPException(400, {
-                message: "Invalid inline media data URL",
-            });
-        }
-        if (
-            (type === "image_url" &&
-                !/^image\/(?:jpeg|png|webp|gif)$/.test(match[1])) ||
-            (type === "video_url" && !match[1].startsWith("video/")) ||
-            (type === "input_audio" && !match[1].startsWith("audio/"))
-        ) {
-            throw new HTTPException(400, {
-                message: "Invalid inline media data URL",
-            });
-        }
-        const bytes = Buffer.from(match[2], "base64");
-        const id = createHmac("sha256", c.env.BETTER_AUTH_SECRET)
-            .update("chat-input\0")
-            .update(user.id)
-            .update("\0")
-            .update(match[1])
-            .update("\0")
-            .update(bytes)
-            .digest("hex");
-        if (await c.env.MEDIA.has(id)) {
-            return `https://media.pollinations.ai/${id}`;
-        }
-        const upload = await c.env.MEDIA.upload(new Blob([bytes]).stream(), {
-            id,
-            contentType: match[1],
-            size: bytes.byteLength,
-            uploadedBy: user.id,
-            keyType: "chat-input",
-        });
-        return upload.url;
-    });
+            return upload.url;
+        },
+        contentLength,
+    );
 
     const headers = new Headers(c.req.raw.headers);
     headers.set(

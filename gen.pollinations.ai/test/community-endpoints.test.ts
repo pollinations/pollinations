@@ -4190,7 +4190,7 @@ fixtureTest(
         const oversized = await send("{}", 100 * 1024 * 1024 + 1);
         expect(oversized.status).toBe(413);
         expect(oversized.text).toContain(
-            "Request body exceeds the 100 MiB limit",
+            "Request body exceeds the 100 MiB limit (104857600 bytes); received 104857601 bytes",
         );
     },
 );

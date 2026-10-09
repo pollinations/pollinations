@@ -159,7 +159,9 @@ describe("gen worker routing", () => {
 
         expect(response.status).toBe(413);
         await expect(response.json()).resolves.toMatchObject({
-            error: { message: "Request body exceeds the 32 MiB limit" },
+            error: {
+                message: `Request body exceeds the 32 MiB limit (33554432 bytes); received ${body.length} bytes`,
+            },
         });
     });
 

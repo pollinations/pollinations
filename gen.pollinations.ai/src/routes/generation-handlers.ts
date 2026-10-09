@@ -7,7 +7,6 @@ import {
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import {
@@ -26,15 +25,21 @@ import {
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
+import { bodyTooLarge } from "../middleware/large-chat-body.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../utils/upstream-response.ts";
 
+const TEXT_BODY_LIMIT = 32 * 1024 * 1024;
+
 export const textBodyLimit = bodyLimit({
-    maxSize: 32 * 1024 * 1024,
-    onError: () => {
-        throw new HTTPException(413, {
-            message: "Request body exceeds the 32 MiB limit",
-        });
+    maxSize: TEXT_BODY_LIMIT,
+    onError: (c) => {
+        // Chunked bodies have no Content-Length, so only the limit is known.
+        const received = Number(c.req.header("content-length"));
+        throw bodyTooLarge(
+            TEXT_BODY_LIMIT,
+            received > TEXT_BODY_LIMIT ? received : undefined,
+        );
     },
 });
 

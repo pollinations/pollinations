@@ -185,6 +185,191 @@ describe("System One adapter", () => {
         }
     });
 
+    it("routes openai/gpt-6-luna-decisions:openrouter to the decisions endpoint with its own id", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/alpha/decisions",
+                );
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "openai/gpt-6-luna-decisions",
+                });
+                return Response.json({
+                    model: "openai/gpt-6-luna-decisions-20261006",
+                    answers,
+                    usage: { input_tokens: 61, output_tokens: 0 },
+                });
+            });
+        await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "openai/gpt-6-luna-decisions:openrouter",
+                modelConfig: {
+                    ...modelConfig,
+                    model: "openai/gpt-6-luna-decisions",
+                },
+            },
+            vi.fn(),
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("translates direct OpenAI decisions without losing confidence or legends (stream=%s)", async (stream) => {
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://api.openai.com/v1/decisions",
+                );
+                expect(new Headers(init?.headers).get("authorization")).toBe(
+                    "Bearer test-key",
+                );
+                const request = JSON.parse(String(init?.body));
+                expect(request.model).toBe("gpt-6-luna");
+                expect(request.input).toBe(JSON.stringify(nativeState));
+                expect(request.questions).toEqual([
+                    {
+                        name: "department",
+                        type: "choice",
+                        instructions: nativeQuestions.department.instructions,
+                        choices: [
+                            { value: "billing", description: "Payment issues" },
+                            {
+                                value: "technical",
+                                description: "Product failures",
+                            },
+                        ],
+                    },
+                    {
+                        name: "frustration",
+                        type: "score",
+                        instructions: JSON.stringify(
+                            nativeQuestions.frustration.instructions,
+                        ),
+                        levels: nativeQuestions.frustration.criteria.map(
+                            (criterion, index) => ({
+                                label: String(index),
+                                description:
+                                    typeof criterion === "string"
+                                        ? criterion
+                                        : JSON.stringify(criterion),
+                            }),
+                        ),
+                    },
+                    {
+                        name: "is_urgent",
+                        type: "predicate",
+                        instructions: `${nativeQuestions.is_urgent.instructions}\n${JSON.stringify(nativeQuestions.is_urgent.criteria)}`,
+                    },
+                ]);
+                return Response.json({
+                    model: "gpt-6-luna",
+                    answers: [
+                        {
+                            name: "department",
+                            type: "choice",
+                            choice: "technical",
+                            confidence: 0.85,
+                            probabilities: [
+                                { value: "billing", probability: 0.08 },
+                                { value: "technical", probability: 0.92 },
+                            ],
+                        },
+                        {
+                            name: "frustration",
+                            type: "score",
+                            score: 1.6,
+                            confidence: 0.78,
+                            probabilities: [
+                                { value: 0, label: "0", probability: 0.1 },
+                                { value: 1, label: "1", probability: 0.2 },
+                                { value: 2, label: "2", probability: 0.7 },
+                            ],
+                        },
+                        {
+                            name: "is_urgent",
+                            type: "predicate",
+                            probability: 0.98,
+                        },
+                    ],
+                    usage: { input_tokens: 61, output_tokens: 0 },
+                });
+            },
+        );
+        const result = await generateTextPortkey(
+            [{ role: "user", content: nativeContent }],
+            {
+                model: "openai/gpt-6-luna-decisions",
+                stream,
+                modelConfig: {
+                    ...findModelByName("openai/gpt-6-luna-decisions")?.config(),
+                    authKey: "test-key",
+                },
+            },
+            vi.fn(),
+        );
+        expect(
+            JSON.parse(String(result.choices?.[0]?.message?.content)),
+        ).toEqual({
+            ...answers,
+            frustration: {
+                ...answers.frustration,
+                legend: Object.fromEntries(
+                    nativeQuestions.frustration.criteria.map(
+                        (criterion, index) => [String(index), criterion],
+                    ),
+                ),
+            },
+        });
+        expect(result.usage).toEqual({
+            prompt_tokens: 61,
+            completion_tokens: 0,
+            total_tokens: 61,
+        });
+        if (stream) {
+            if (!result.responseStream) throw new Error("Missing stream");
+            const text = await new Response(
+                requireChatStreamUsage(result.responseStream),
+            ).text();
+            expect(text).toContain('"prompt_tokens":61');
+            expect(text).toContain("data: [DONE]");
+        }
+    });
+
+    it.each([
+        { answers: [] },
+        { answers: [], usage: { input_tokens: 61, output_tokens: 0 } },
+        { answers: {}, usage: { input_tokens: 61, output_tokens: 0 } },
+        {
+            answers: [
+                { name: "is_urgent", type: "predicate", probability: 0.98 },
+            ],
+            usage: { input_tokens: -1, output_tokens: 0 },
+        },
+    ])("rejects invalid OpenAI answers or usage", async (response) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(response),
+        );
+        await expect(
+            generateTextPortkey(
+                [{ role: "user", content: nativeContent }],
+                {
+                    model: "openai/gpt-6-luna-decisions",
+                    modelConfig: {
+                        ...findModelByName(
+                            "openai/gpt-6-luna-decisions",
+                        )?.config(),
+                        authKey: "test-key",
+                    },
+                },
+                vi.fn(),
+            ),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
     it("routes jaredpalmer/kev-4b to the decisions endpoint with its own id", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

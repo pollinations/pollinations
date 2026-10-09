@@ -528,6 +528,65 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
+        const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
+        const fallback =
+            TEXT_SERVICES["openai/gpt-6-luna-decisions:openrouter"];
+        expect(primary).toMatchObject({
+            provider: "openai",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["openai/gpt-6-luna-decisions:openrouter"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(
+            findModelByName("openai/gpt-6-luna-decisions")?.config(),
+        ).toMatchObject({
+            model: "gpt-6-luna",
+            directEndpoint: "https://api.openai.com/v1/decisions",
+            decisionsProtocol: "openai",
+        });
+        expect(
+            findModelByName("openai/gpt-6-luna-decisions:openrouter")?.config(),
+        ).toMatchObject({
+            model: "openai/gpt-6-luna-decisions",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        });
+        for (const promptTextTokens of [
+            1000, 272_000, 272_001, 900_000, 900_001,
+        ]) {
+            const usage = { promptTextTokens, completionTextTokens: 0 };
+            const quote =
+                (promptTextTokens * (promptTextTokens > 272_000 ? 0.2 : 0.1)) /
+                1_000_000;
+            const direct = calculateUsageBilling({
+                model: "openai/gpt-6-luna-decisions",
+                usage,
+                servedBy: primary,
+                quotedBy: primary,
+            });
+            const viaOpenRouter = calculateUsageBilling({
+                model: "openai/gpt-6-luna-decisions",
+                usage,
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(direct.cost.totalCost).toBeCloseTo(quote, 12);
+            expect(direct.price.totalPrice).toBeCloseTo(quote, 8);
+            expect(viaOpenRouter.cost.totalCost).toBeCloseTo(
+                (promptTextTokens * 0.1055) / 1_000_000,
+                12,
+            );
+            expect(viaOpenRouter.price.totalPrice).toBeCloseTo(quote, 8);
+        }
+    });
+
     it("prices Claude Haiku 5.5 on Vercel exactly as on Bedrock, including the long-context tier", () => {
         const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
         const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];

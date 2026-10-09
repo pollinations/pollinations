@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import {
+    existsSync,
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+} from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -327,8 +333,9 @@ describe("against a local fake gen", () => {
         );
     });
 
-    test("the CLI saves references and a human-review report", async () => {
+    test("the CLI saves references and a human-review report", async (t) => {
         const out = mkdtempSync(join(tmpdir(), "fingerprint-"));
+        t.after(() => rmSync(out, { recursive: true, force: true }));
         const previousBase = process.env.POLLINATIONS_BASE_URL;
         const log = console.log;
         const lines = [];

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-09T06:33:19.085468+00:00",
+  "generated_at": "2026-10-09T09:53:48.479992+00:00",
   "models": [
     {
       "id": "pr-14556:nvidia/asset-harvester",
@@ -5312,6 +5312,54 @@
             "promptTextTokens": "0.000001055",
             "promptCachedTokens": "0.00000005275",
             "completionTextTokens": "0.0000028485"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16701:openai/gpt-6-luna-decisions",
+      "model_id": "openai/gpt-6-luna-decisions",
+      "title": "GPT-6 Luna Decisions",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-09",
+      "pr": 16701,
+      "url": "https://github.com/pollinations/pollinations/pull/16701",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 1050000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000001"
           }
         }
       }

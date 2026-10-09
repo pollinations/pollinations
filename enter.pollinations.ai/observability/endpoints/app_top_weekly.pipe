@@ -83,7 +83,7 @@ SQL >
     FROM registered_apps registered
     INNER JOIN latest_users users ON registered.owner_user_id = users.user_id
     INNER JOIN catalog_apps catalog ON users.github_user_id = catalog.github_user_id
-    WHERE registered.app_key_id NOT IN (SELECT app_key_id FROM listed_keys)
+    WHERE registered.app_key_id NOT IN (SELECT arrayJoin(app_key_ids) FROM app_directory)
     GROUP BY registered.app_key_id
     HAVING (url_matches = 1 OR owner_listings = 1) AND NOT has_listed_keys
 

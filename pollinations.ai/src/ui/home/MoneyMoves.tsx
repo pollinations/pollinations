@@ -42,14 +42,14 @@ export function MoneyMoves() {
                                 size="lg"
                                 className="bg-brand-accent font-semibold text-brand-dark"
                             >
-                                1 Pollen = $1
+                                1 pollen = $1
                             </Chip>
                         }
                     >
                         Top up any time and pay only for what you use.
                     </Item>
                     <Item icon={TargetIcon} tone="tier" title="Free credits">
-                        Get free Quest Pollen for solving GitHub Quests, trying
+                        Get free Quest pollen for solving GitHub Quests, trying
                         models, or building an app or agent.{" "}
                         {quests ? (
                             <>
@@ -58,7 +58,7 @@ export function MoneyMoves() {
                                 {Math.floor(
                                     quests.totals.totalPollen,
                                 ).toLocaleString()}{" "}
-                                Pollen from GitHub Quests so far.{" "}
+                                pollen from GitHub Quests so far.{" "}
                             </>
                         ) : null}
                         <InlineLink href="https://enter.pollinations.ai/quests">

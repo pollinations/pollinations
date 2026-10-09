@@ -43,7 +43,7 @@ function AppSignals({ app }: { app: DirectoryApp }) {
                 </span>
             ) : null}
             {isPollen(app) ? (
-                <span role="img" title="Pollen Pay" aria-label="Pollen Pay">
+                <span role="img" title="pollen pay" aria-label="pollen pay">
                     <WalletIcon className="size-4" />
                 </span>
             ) : null}

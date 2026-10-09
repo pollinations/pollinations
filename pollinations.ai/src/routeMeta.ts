@@ -9,7 +9,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/play": {
         title: "Play | pollinations.ai",
         description:
-            "Chat with agents or generate images, video and audio in your browser using your own Pollen.",
+            "Chat with agents or generate images, video and audio in your browser using your own pollen.",
     },
     "/apps": {
         title: "Apps | pollinations.ai",

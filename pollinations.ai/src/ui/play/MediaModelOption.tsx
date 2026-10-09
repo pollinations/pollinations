@@ -12,8 +12,8 @@ export function MediaModelOption({
                 role="img"
                 aria-label={
                     model.paidOnly
-                        ? "Paid Pollen required"
-                        : "Works with Paid or Quest Pollen"
+                        ? "Paid pollen required"
+                        : "Works with Paid or Quest pollen"
                 }
                 className="inline-flex shrink-0"
             >

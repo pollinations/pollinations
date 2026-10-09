@@ -199,7 +199,7 @@ const PUBLISH_FEATURES: Feature[] = [
         body: (
             <>
                 Connect your endpoint and <Em>set your price</Em>. Each call
-                adds Pollen to your balance.
+                adds pollen to your balance.
             </>
         ),
         links: [

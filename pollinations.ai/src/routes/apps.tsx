@@ -122,7 +122,7 @@ type AppFilterDraft = {
 
 const APP_FILTER_LABELS: Record<AppFilterKey, string> = {
     platform: "Platform",
-    "pollen-pay": "Pollen Pay",
+    "pollen-pay": "pollen pay",
 };
 
 function AppSearchInput({
@@ -326,10 +326,10 @@ function AppSearchInput({
                         ))}
                         {showPollenToken && (
                             <EditableComboboxToken
-                                label="Pollen Pay"
+                                label="pollen pay"
                                 value={pollenLabel}
                                 highlighted={pendingRemoval === "pollen-pay"}
-                                aria-label={`Change Pollen Pay filter: ${pollenLabel}`}
+                                aria-label={`Change pollen pay filter: ${pollenLabel}`}
                                 onClick={editPollenPay}
                             />
                         )}
@@ -453,8 +453,8 @@ function AppsPage() {
                     <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
                         <ContentHeader
                             eyebrow="Last 7 days"
-                            title="Most-used Pollen Pay apps"
-                            subtitle="Ranked by successful, billable requests through Pollen Pay."
+                            title="Most-used pollen pay apps"
+                            subtitle="Ranked by successful, billable requests through pollen pay."
                         />
                     </div>
                     {spotlightLoading ? (

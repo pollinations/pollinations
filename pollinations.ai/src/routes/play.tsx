@@ -41,7 +41,7 @@ function PlayPage() {
                     <ContentHeader
                         eyebrow="Models in the browser"
                         title="Try it out."
-                        subtitle="Create images, video and audio. Connect your account to use your own Pollen."
+                        subtitle="Create images, video and audio. Connect your account to use your own pollen."
                         variant="page"
                     />
                     <div className="self-start">

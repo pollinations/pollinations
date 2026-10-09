@@ -25,7 +25,7 @@ export function QuestLeaderboard() {
             <ContentHeader
                 eyebrow={null}
                 title="Quest leaderboard"
-                subtitle="Pollen earned by completing Quests and contributing to Pollinations."
+                subtitle="pollen earned by completing Quests and contributing to Pollinations."
                 action={
                     <ExternalLinkButton
                         href={QUESTS_PAGE_URL}
@@ -46,7 +46,7 @@ export function QuestLeaderboard() {
                             [
                                 ["Participants", data.totals.contributors],
                                 ["Rewards earned", data.totals.completedQuests],
-                                ["Pollen earned", data.totals.totalPollen],
+                                ["pollen earned", data.totals.totalPollen],
                             ] as const
                         ).map(([label, value]) => (
                             <Surface key={label} as="div" variant="card">
@@ -129,7 +129,7 @@ export function QuestLeaderboard() {
                                                     {formatNumber(
                                                         entry.totalPollen,
                                                     )}{" "}
-                                                    Pollen earned
+                                                    pollen earned
                                                 </Text>
                                             </span>
                                         </span>

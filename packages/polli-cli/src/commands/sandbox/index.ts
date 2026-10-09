@@ -1,11 +1,13 @@
 import { Command, InvalidArgumentError } from "commander";
-import { requireKey } from "../../lib/api.js";
+import { ApiError, requireKey } from "../../lib/api.js";
 import {
     fail,
     getOutputMode,
+    printInfo,
     printResult,
     printSuccess,
     printTable,
+    printWarn,
 } from "../../lib/output.js";
 import {
     connectSandbox,
@@ -15,6 +17,7 @@ import {
     LEASE_SECONDS,
     type LogEntry,
     listSandboxes,
+    RENEW_MS,
     sandboxLogs,
 } from "./e2b.js";
 import { proxy, setupSsh } from "./ssh.js";
@@ -27,6 +30,8 @@ function parseSeconds(value: string): number {
     }
     return seconds;
 }
+
+const RETRY_MS = 60_000;
 
 // E2B's tracing fields mean nothing to a user.
 const TRACE_FIELDS = ["edge_trace_id", "trace_id", "span_id", "source_type"];
@@ -122,6 +127,42 @@ export const sandboxCommand = new Command("sandbox")
                     );
                 } catch (err) {
                     fail(`Failed to set the timeout of sandbox ${id}`, err);
+                }
+            }),
+    )
+    .addCommand(
+        new Command("keep")
+            .description(
+                "Keep a sandbox running until you stop this command, paying for 10 minutes ahead; resumes a paused one",
+            )
+            .argument("<id>")
+            .action(async (id: string) => {
+                requireKey();
+                for (;;) {
+                    let wait = RETRY_MS;
+                    try {
+                        await connectSandbox(id);
+                        const { endAt } = await getSandbox(id);
+                        printInfo(
+                            `Sandbox ${id} runs until ${new Date(endAt).toLocaleString()}`,
+                        );
+                        // E2B ends a run 24 hours after it started: it cuts
+                        // the lease short, then pauses the sandbox with its
+                        // memory and processes. Renewing just after resumes it.
+                        wait = Math.min(
+                            RENEW_MS,
+                            Math.max(0, Date.parse(endAt) - Date.now()) + 5_000,
+                        );
+                    } catch (err) {
+                        // A killed sandbox cannot come back.
+                        if (err instanceof ApiError && err.status === 404) {
+                            fail(`Sandbox ${id} is gone`, err);
+                        }
+                        printWarn(
+                            `Renewing sandbox ${id} failed, retrying in a minute: ${err instanceof Error ? err.message : err}`,
+                        );
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, wait));
                 }
             }),
     )

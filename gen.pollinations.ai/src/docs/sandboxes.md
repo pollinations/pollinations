@@ -9,11 +9,13 @@ polli sandbox create              # prints the id and sets up ssh
 ssh <id>.polli                    # scp, sftp and rsync work too
 polli sandbox list
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
+polli sandbox keep <id>           # keep it running until you stop this command
 polli sandbox kill <id>
 ```
 
 - A sandbox pauses about 10 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it.
 - To keep it running without ssh, pay for the time up front with `polli sandbox timeout <id> <seconds>`, up to 24 hours at a time. It also resumes a paused sandbox.
+- `polli sandbox keep <id>` keeps a sandbox running for as long as the command runs, paying 10 minutes ahead every 5 minutes. E2B pauses a sandbox after 24 hours of running, with its memory and processes, and `keep` resumes it right after. Run `keep` outside the sandbox, for example on a server: inside, it pauses along with the sandbox.
 - The first `ssh` allows only polli's key, `~/.pollinations/ssh/id_ed25519`. On other templates than the default, it first installs `sshd`, `rsync` and `websocat` (Debian-based templates only).
 - The default template, `pollinations` (2 vCPU, 2 GB), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi, Hermes Agent and OpenClaw.
 - It comes logged in when the key that creates it has the `keys` permission, as polli's own key does. polli inside uses a key of the sandbox's own, `polli-sandbox-<id>`, created like any other key, with polli's usual permissions. Killing the sandbox leaves the key. Your first interactive `ssh` connects each harness to Pollinations with a key of its own, `polli-harness-<harness>`.
@@ -23,7 +25,7 @@ polli sandbox kill <id>
 
 ### Cost and limits
 
-- Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, paid in advance: 10 minutes at creation, 10 minutes at a time while an ssh session is open, and the time you add with `polli sandbox timeout`.
+- Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, paid in advance: 10 minutes at creation, 10 minutes at a time while an ssh session is open or `polli sandbox keep` runs, and the time you add with `polli sandbox timeout`.
 - Unused time is not refunded. Pausing a sandbox early, or shortening its timeout, gives up the rest of its paid time; resuming pays again. To stop paying, let the paid time run out or kill the sandbox.
 - A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
 - At most 3 sandboxes run at once per account.

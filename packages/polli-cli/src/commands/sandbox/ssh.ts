@@ -11,7 +11,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { fail, printInfo } from "../../lib/output.js";
 import bootstrap from "./bootstrap.sh?raw";
-import { type Connection, connectSandbox } from "./e2b.js";
+import { type Connection, connectSandbox, RENEW_MS } from "./e2b.js";
 
 const SSH_DIR = join(homedir(), ".pollinations", "ssh");
 const SSH_KEY = join(SSH_DIR, "id_ed25519");
@@ -20,8 +20,6 @@ const USER_SSH_CONFIG = join(homedir(), ".ssh", "config");
 const INCLUDE = "Include ~/.pollinations/ssh/config";
 // websocat in the sandbox relays this port's WebSocket to sshd.
 const SSH_PORT = 8022;
-// Renews the lease well before it runs out while a connection is open.
-const RENEW_MS = 300_000;
 
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
     `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;

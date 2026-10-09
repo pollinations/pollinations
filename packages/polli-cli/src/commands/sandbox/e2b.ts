@@ -4,6 +4,8 @@ import { gen, genText } from "../../lib/api.js";
 const E2B_PATH = "/alpha/e2b";
 // Each create or connect keeps the sandbox paid for this long.
 export const LEASE_SECONDS = 600;
+// Renews the lease well before it runs out.
+export const RENEW_MS = 300_000;
 
 export interface Connection {
     sandboxID: string;

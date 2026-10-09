@@ -140,3 +140,49 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         );
     });
 });
+
+describe("sandbox keep", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("renews every 5 minutes, resumes after E2B ends a run, and stops when the sandbox is gone", async () => {
+        vi.useFakeTimers();
+        const { setKeyOverride } = await import("../../lib/config.js");
+        setKeyOverride("sk_test");
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        // Gen grants 10 minutes, then E2B cuts the next lease to 2 minutes.
+        const leases = [600_000, 120_000];
+        let connects = 0;
+        const fetch = vi.fn(async (_url: string, init: RequestInit) => {
+            if (init.method !== "POST") {
+                const endAt = Date.now() + (leases.shift() ?? 0);
+                return Response.json({ endAt: new Date(endAt).toISOString() });
+            }
+            return ++connects < 3
+                ? Response.json({ sandboxID: "box1" })
+                : new Response("not found", { status: 404 });
+        });
+        vi.stubGlobal("fetch", fetch);
+        const { sandboxCommand } = await import("./index.js");
+
+        const run = sandboxCommand.parseAsync(["keep", "box1"], {
+            from: "user",
+        });
+        const stopped = expect(run).rejects.toMatchObject({ code: 1 });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(connects).toBe(1);
+        expect(fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes/box1/connect"),
+            expect.objectContaining({ body: JSON.stringify({ timeout: 600 }) }),
+        );
+        await vi.advanceTimersByTimeAsync(299_999);
+        expect(connects).toBe(1);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(connects).toBe(2);
+        // The cut-short lease is renewed 5 s after it ends, not 5 minutes on.
+        await vi.advanceTimersByTimeAsync(125_000);
+        expect(connects).toBe(3);
+        await stopped;
+    });
+});

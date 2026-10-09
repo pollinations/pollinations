@@ -163,6 +163,14 @@ const worker = {
                 return await proxyRequest(request, env);
             }
 
+            // Token callers get the origin's migration notice. Check this
+            // before touching the shared cache so they never read an
+            // anonymous answer and nothing they receive is ever stored.
+            if (await hasLegacyToken(request)) {
+                log("cache", "Token request, bypassing shared cache");
+                return await proxyRequest(request, env);
+            }
+
             // Generate a cache key for the request
             const key = await generateCacheKey(request);
             log("cache", `Key: ${key}`);
@@ -200,13 +208,13 @@ const worker = {
             // Forward the request to the origin server
             const originResp = await proxyRequest(request, env);
 
-            // Don't cache error responses
-            if (originResp.status >= 401) {
+            // Don't cache error responses or responses the origin marked as
+            // private / no-store (e.g. the authenticated migration notice)
+            if (!isCacheableResponse(originResp)) {
                 log(
                     "cache",
-                    `Not caching error response with status ${originResp.status}`,
+                    `Not caching response with status ${originResp.status} (cache-control: ${originResp.headers.get("cache-control") || "not set"})`,
                 );
-
 
                 return originResp;
             }
@@ -462,10 +470,90 @@ async function proxyRequest(request, env) {
     return await fetch(originRequest);
 }
 
+// Request fields the legacy origin reads an API token from
+// (TOKEN_FIELDS in shared/extractFromRequest.js).
+const TOKEN_QUERY_PARAMS = ["token"];
+const TOKEN_HEADERS = ["authorization", "x-pollinations-token"];
+const TOKEN_BODY_FIELDS = ["token"];
+
+async function readJsonBody(request) {
+    if (
+        (request.method !== "POST" && request.method !== "PUT") ||
+        !request.body
+    ) {
+        return null;
+    }
+    try {
+        const body = JSON.parse(await request.clone().text());
+        return body && typeof body === "object" && !Array.isArray(body)
+            ? body
+            : null;
+    } catch {
+        return null; // Not JSON: the origin cannot read credentials from it
+    }
+}
+
+/**
+ * True when the request carries an API token. The origin answers valid
+ * tokens with the migration notice, so these requests must neither read nor
+ * write the shared anonymous cache.
+ */
+export async function hasLegacyToken(request) {
+    const url = new URL(request.url);
+    for (const name of TOKEN_QUERY_PARAMS) {
+        if (url.searchParams.get(name)) return true;
+    }
+    for (const name of TOKEN_HEADERS) {
+        if (request.headers.get(name)) return true;
+    }
+    if (request.method === "POST") {
+        const body = await readJsonBody(request);
+        if (body && TOKEN_BODY_FIELDS.some((name) => body[name])) return true;
+    }
+    return false;
+}
+
+/**
+ * The referrer the origin would authenticate against, in the same priority
+ * order as extractReferrer() in shared/extractFromRequest.js (query, body,
+ * Referer/Origin headers), normalised to a lower-case host.
+ * Returns "" for requests without any referrer.
+ */
+export async function getReferrerIdentity(request) {
+    const url = new URL(request.url);
+    const body = await readJsonBody(request);
+    const raw =
+        url.searchParams.get("referrer") ||
+        url.searchParams.get("referer") ||
+        (body?.referrer ? String(body.referrer) : "") ||
+        (body?.referer ? String(body.referer) : "") ||
+        request.headers.get("referer") ||
+        request.headers.get("referrer") ||
+        request.headers.get("origin") ||
+        "";
+    if (!raw) return "";
+    try {
+        return new URL(raw).hostname.toLowerCase();
+    } catch {
+        return raw.trim().toLowerCase();
+    }
+}
+
+/**
+ * Only successful, publicly cacheable origin responses may enter the cache.
+ */
+export function isCacheableResponse(response) {
+    if (response.status >= 401) return false;
+    const cacheControl = (
+        response.headers.get("cache-control") || ""
+    ).toLowerCase();
+    return !/\b(no-store|private)\b/.test(cacheControl);
+}
+
 /**
  * Generate a cache key for the request
  */
-async function generateCacheKey(request) {
+export async function generateCacheKey(request) {
     // Authentication parameters to exclude from cache key
     const AUTH_PARAMS = ["token", "referrer", "referer", "nofeed", "no-cache"];
 
@@ -488,6 +576,15 @@ async function generateCacheKey(request) {
         url.pathname,
         filteredParams.toString(), // Only include non-auth query params
     ];
+
+    // A registered referrer is authenticated by the origin, so answers must
+    // never be shared across referrers: an authenticated app must not receive
+    // an anonymous cached answer. Requests without a referrer keep the
+    // original key, so existing anonymous cache entries stay valid.
+    const referrer = await getReferrerIdentity(request);
+    if (referrer) {
+        parts.push(`referrer:${referrer}`);
+    }
 
     // Add filtered body for POST/PUT requests
     if (

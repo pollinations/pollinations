@@ -16,7 +16,7 @@ import {
     getRequestData,
     prepareModelsForOutput,
 } from "./requestUtils.js";
-import { sendRedirectConversationResponse } from "./authRedirect.js";
+import { sendLegacyAuthMigrationResponse } from "./authRedirect.js";
 
 // Import shared utilities
 import { enqueue } from "../shared/ipQueue.js";
@@ -579,7 +579,7 @@ async function processRequest(req, res, requestData) {
     const isFromEnter = isEnterRequest(req);
     if ((isTokenAuthenticated || hasReferrer) && !isFromEnter) {
         authLog(`Redirecting ${isTokenAuthenticated ? 'token' : 'referrer'}-authenticated user to enter.pollinations.ai (user: ${authResult.username || 'unknown'})`);
-        return await sendRedirectConversationResponse(res, req, requestData, sendContentResponse, sendOpenAIResponse);
+        return sendLegacyAuthMigrationResponse(res, requestData);
     }
 
     // Determine queue configuration based on authentication

@@ -1,79 +1,59 @@
 /**
- * Authentication redirect utilities for Pollinations text service
- * Handles redirecting authenticated users to enter.pollinations.ai
+ * Migration response for authenticated callers of the legacy text service.
+ *
+ * Authenticated requests (API token or registered referrer) are no longer
+ * served by text.pollinations.ai. They get an explicit, non-cacheable error
+ * that points to enter.pollinations.ai. It is deliberately NOT shaped like a
+ * chat completion, so clients cannot mistake it for model output and the
+ * shared cache never stores it as a successful answer.
  */
 
-import crypto from "crypto";
+export const MIGRATION_URL = "https://enter.pollinations.ai";
+export const MIGRATION_ERROR_CODE = "legacy_auth_migration_required";
+export const MIGRATION_STATUS = 403;
 
-// Generate a unique ID with pllns_ prefix
-function generatePollinationsId() {
-    const hash = crypto.randomBytes(16).toString("hex");
-    return `pllns_${hash}`;
-}
-
-const REDIRECT_MESSAGE = `⚠️ **IMPORTANT NOTICE** ⚠️
-
-The Pollinations legacy text API is being deprecated for **authenticated users**.
-
-Please migrate to our new service at https://enter.pollinations.ai for better performance and access to all the latest models.
-
-Note: Anonymous requests to text.pollinations.ai are NOT affected and will continue to work normally.`;
+const MIGRATION_MESSAGE =
+    "Authenticated requests are no longer served by the legacy text API (text.pollinations.ai). " +
+    `Please migrate to ${MIGRATION_URL} for access to all the latest models. ` +
+    "Anonymous requests to text.pollinations.ai are not affected.";
 
 /**
- * Send redirect conversation response for authenticated users
- * Returns a mock conversation response redirecting users to enter.pollinations.ai
- * Handles both streaming and non-streaming responses, adapts to endpoint type
- * 
- * @param {Object} res - Express response object
- * @param {Object} req - Express request object
- * @param {Object} requestData - Request data including model and stream flag
- * @param {Function} sendContentResponse - Helper for plain text responses
- * @param {Function} sendOpenAIResponse - Helper for OpenAI JSON responses
+ * Machine-readable migration error. Keeps the legacy error shape
+ * (`error` + `status`) and adds a stable `code` and the migration URL.
  */
-export async function sendRedirectConversationResponse(res, req, requestData, sendContentResponse, sendOpenAIResponse) {
-    const model = requestData.model || "openai-fast";
-    
-    const mockCompletion = {
-        id: generatePollinationsId(),
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model,
-        choices: [{
-            index: 0,
-            message: { role: "assistant", content: REDIRECT_MESSAGE },
-            finish_reason: "stop"
-        }],
-        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+export function buildMigrationError() {
+    return {
+        error: MIGRATION_MESSAGE,
+        status: MIGRATION_STATUS,
+        code: MIGRATION_ERROR_CODE,
+        migration_url: MIGRATION_URL,
     };
+}
 
-    if (requestData.stream) {
-        // Handle SSE Streaming redirect
+/**
+ * Send the migration response to an authenticated legacy caller.
+ *
+ * - Streaming requests keep the SSE framing: one `data:` event carrying the
+ *   error object, then `data: [DONE]`, so stream readers stop cleanly.
+ * - Non-streaming requests (GET and POST) get the JSON error, like every
+ *   other legacy error response.
+ * Both use a non-2xx status and `Cache-Control: private, no-store`.
+ *
+ * @param {Object} res - Express response object
+ * @param {Object} requestData - Request data including the stream flag
+ */
+export function sendLegacyAuthMigrationResponse(res, requestData = {}) {
+    const body = buildMigrationError();
+    res.status(MIGRATION_STATUS);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Pollinations-Migration", MIGRATION_URL);
+
+    if (requestData?.stream) {
         res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
-        res.flushHeaders();
-        
-        const chunk = {
-            id: mockCompletion.id,
-            object: "chat.completion.chunk",
-            created: mockCompletion.created,
-            model,
-            choices: [{ index: 0, delta: { role: "assistant", content: REDIRECT_MESSAGE }, finish_reason: null }]
-        };
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-        
-        const stopChunk = { ...chunk, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] };
-        res.write(`data: ${JSON.stringify(stopChunk)}\n\n`);
+        res.write(`data: ${JSON.stringify(body)}\n\n`);
         res.write("data: [DONE]\n\n");
         return res.end();
     }
 
-    // Handle non-streaming responses based on endpoint type
-    if (req.method === "GET" || req.path === "/") {
-        return sendContentResponse(res, mockCompletion);
-    } else {
-        return sendOpenAIResponse(res, mockCompletion);
-    }
+    return res.json(body);
 }
-
-export { REDIRECT_MESSAGE };

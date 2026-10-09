@@ -5,7 +5,7 @@
         "start": "tsx startServer.js",
         "type-check": "tsc --noEmit",
         "validate-configs": "tsx configs/validateConfigKeys.ts",
-        "test": "tsx --test test/gen-bridge.test.js test/weft-paywall.test.js",
+        "test": "tsx --test test/gen-bridge.test.js test/weft-paywall.test.js test/auth-migration.test.js",
         "dev": "clear && DEBUG=pollinations:* tsx startServer.js"
     },
     "keywords": [],

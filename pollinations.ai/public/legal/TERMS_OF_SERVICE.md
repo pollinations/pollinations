@@ -1,14 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-09-16**
-
-_2026-09-16 — Accounts may be suspended immediately where we reasonably believe there is payment fraud or abuse._
-
-_2026-09-04 — Added terms for the Polli Discord bot and related assistant service._
-
-_2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
-
-_2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
+**Last updated: 2026-10-09**
 
 ## About Pollinations
 
@@ -125,11 +117,11 @@ Each party protects the other's confidential information and uses it only for th
 
 ## 12) Term; Suspension; Termination
 
-Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. We may suspend an account and its API keys immediately, without that notice period, where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. On termination we delete/return Customer Data per the DPA within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
+Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. We may suspend an account and its API keys immediately, without that notice period, where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. On termination we delete/return Customer Data within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
 
 ## 13) Publicity; Export; Changes; Misc.
 
-We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If these Terms and the DPA conflict, the DPA controls for personal-data processing.
+We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If a separately agreed DPA conflicts with these Terms, that DPA controls for personal-data processing.
 
 ## 14) Governing Law & Venue
 
@@ -137,17 +129,11 @@ We may use your name/logo to identify you as a customer unless you opt out in wr
 
 ## 15) DPA and Sub-Processors
 
-When we process personal data on your behalf, you are the **controller** and we are the **processor** under our Data Processing Addendum (DPA). The DPA (including EU Standard Contractual Clauses for international transfers) is maintained at this location. Categories of **sub-processors** we may use are listed below. The full named list is available on request, and we provide at least **14 days'** prior notice of material changes to sub-processors.
+When we process personal data on your behalf through the API, you are controller (or an authorised processor), and Myceli.AI OÜ is processor (or sub-processor). These Terms do not incorporate a standard Data Processing Addendum (DPA). Contact **hello@pollinations.ai** before using the Service for processing that requires a DPA; the provider list below does not replace that agreement. Any separately agreed processing terms remain applicable.
 
-**Categories of sub-processors** we may use to deliver the Service:
+The [Service Providers](/subprocessors) page identifies configured infrastructure, inference and hosted-tool services, available location information, and verification limitations. We give at least **14 days' prior notice** of material changes to sub-processors.
 
-- **Payments / Merchant of Record** (also delivers purchase invoices by email on our behalf)
-- **CDN/WAF & edge routing**
-- **Cloud infrastructure & storage**
-- **Analytics / data pipeline**
-- **Model / inference compute providers** (for text/image/video generation)
-
-**Data residency.** Depending on the selected model, provider, and availability, Customer Data may be processed in the EEA, the United States, or other locations where our model and infrastructure providers operate. Where personal data leaves the EEA, we use approved safeguards such as EU Standard Contractual Clauses and appropriate supplementary measures.
+**Data residency and transfers.** Locations depend on the selected route and its fallbacks; the standard service does not promise EEA-only processing. Transfers of personal data outside the EEA require applicable legal safeguards. The provider list does not certify that those safeguards have been established for every route. Contact **hello@pollinations.ai** for information about the applicable arrangements and how to obtain a copy of any relevant safeguards before using a route with specific transfer requirements.
 
 ---
 

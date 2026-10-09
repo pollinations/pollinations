@@ -1,0 +1,981 @@
+{
+  "pi": "0.87.1",
+  "sdk": "0.19.0",
+  "runs": [
+    {
+      "startedAt": "2026-09-30T16:48:49.687Z",
+      "model": "openai/gpt-5.4-nano",
+      "prompt": "Create greeting.js that exports greet(name), write a small test using Node's assert module, and run the test with bash. Then edit the greeting to say \"Hello from Pi\" and rerun the test. Show the results.",
+      "optionalTools": {
+        "exa": false,
+        "computer": false
+      },
+      "tools": [
+        {
+          "id": "call_9vPreSDnOlQ5IyBTQ5NqPaxv",
+          "name": "write",
+          "arguments": {
+            "path": "greeting.js",
+            "content": "function greet(name) {\n  return `Hello, ${name}!`;\n}\n\nmodule.exports = { greet };\n"
+          },
+          "result": "Successfully wrote to greeting.js",
+          "isError": false
+        },
+        {
+          "id": "call_9P0nXZDBhzZVq0AHni2x0jED",
+          "name": "write",
+          "arguments": {
+            "path": "greeting.test.js",
+            "content": "const assert = require('assert');\nconst { greet } = require('./greeting');\n\nassert.strictEqual(greet('Pi'), 'Hello, Pi!');\nconsole.log('All tests passed');\n"
+          },
+          "result": "Successfully wrote to greeting.test.js",
+          "isError": false
+        },
+        {
+          "id": "call_srxzQQydYVxSt6SmZ6cW7tsY",
+          "name": "bash",
+          "arguments": {
+            "command": "node greeting.test.js",
+            "timeout": 10
+          },
+          "result": "All tests passed\n",
+          "isError": false
+        },
+        {
+          "id": "call_TI3QB3F2gjExMpynJrSlnO4Y",
+          "name": "edit",
+          "arguments": {
+            "path": "greeting.js",
+            "edits": [
+              {
+                "oldText": "  return `Hello, ${name}!`;",
+                "newText": "  return `Hello from Pi ${name}!`;"
+              }
+            ]
+          },
+          "result": "Successfully replaced 1 block(s) in greeting.js.",
+          "isError": false
+        },
+        {
+          "id": "call_zJCr6BUgDrmJliJD2Jt0Lq3k",
+          "name": "bash",
+          "arguments": {
+            "command": "node greeting.test.js",
+            "timeout": 10
+          },
+          "result": "Failed to execute builtin 'internal/main/run_main_module':\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Hello from Pi Pi!'\n- 'Hello, Pi!'\n        ^\n\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 'Hello from Pi Pi!',\n  expected: 'Hello, Pi!',\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.13.2\n\n\nCommand exited with code 1",
+          "isError": true
+        },
+        {
+          "id": "call_BNjVmqfK8mExbVWUUXRif1Qz",
+          "name": "edit",
+          "arguments": {
+            "path": "greeting.test.js",
+            "edits": [
+              {
+                "oldText": "assert.strictEqual(greet('Pi'), 'Hello, Pi!');",
+                "newText": "assert.strictEqual(greet('Pi'), 'Hello from Pi Pi!');"
+              }
+            ]
+          },
+          "result": "Successfully replaced 1 block(s) in greeting.test.js.",
+          "isError": false
+        },
+        {
+          "id": "call_zod4CcRUzokTQM6sRY1KyAYO",
+          "name": "bash",
+          "arguments": {
+            "command": "node greeting.test.js",
+            "timeout": 10
+          },
+          "result": "All tests passed\n",
+          "isError": false
+        }
+      ],
+      "messages": [
+        {
+          "responseId": "chatcmpl-ETrmDTPFFKmPdtS3Oh2OgcUzYWGud",
+          "usage": {
+            "input": 1147,
+            "output": 49,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1196,
+            "cost": {
+              "input": 0.00017204999999999998,
+              "output": 4.59375e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.00021798749999999998
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrmGZGVDEkV7IHFiwUhArMzMqmJc",
+          "usage": {
+            "input": 59,
+            "output": 69,
+            "cacheRead": 1152,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1280,
+            "cost": {
+              "input": 8.85e-06,
+              "output": 6.468750000000001e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 7.35375e-05
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrmJoANOnQP5Yj9OrfawFq5cVCIN",
+          "usage": {
+            "input": 144,
+            "output": 24,
+            "cacheRead": 1152,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1320,
+            "cost": {
+              "input": 2.16e-05,
+              "output": 2.25e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 4.41e-05
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrmNrkV8gxIcJJURie3v3ftpqmNV",
+          "usage": {
+            "input": 182,
+            "output": 50,
+            "cacheRead": 1152,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1384,
+            "cost": {
+              "input": 2.73e-05,
+              "output": 4.6875e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 7.4175e-05
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrmQEVp9mErYNSsGclL50au8fqe6",
+          "usage": {
+            "input": 1405,
+            "output": 24,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1429,
+            "cost": {
+              "input": 0.00021075,
+              "output": 2.25e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.00023325
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrmUBFWtlfh8rVh8h5PeejnAWhBA",
+          "usage": {
+            "input": 2055,
+            "output": 61,
+            "cacheRead": 1152,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 3268,
+            "cost": {
+              "input": 0.00030825,
+              "output": 5.71875e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.0003654375
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrmYVA3GmGlbGqnbPROHeCwJTd1f",
+          "usage": {
+            "input": 90,
+            "output": 24,
+            "cacheRead": 3200,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 3314,
+            "cost": {
+              "input": 1.35e-05,
+              "output": 2.25e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 3.6e-05
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrmb3LRS5SvsgjqZnvKX63pHUP0z",
+          "usage": {
+            "input": 128,
+            "output": 153,
+            "cacheRead": 3200,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 3481,
+            "cost": {
+              "input": 1.92e-05,
+              "output": 0.0001434375,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.00016263750000000002
+            }
+          },
+          "stopReason": "stop",
+          "text": "Created `greeting.js` and `greeting.test.js`, then ran the tests, updated `greeting.js`, and reran.\n\n## Test run #1\nCommand:\n```bash\nnode greeting.test.js\n```\nOutput:\n```text\nAll tests passed\n```\n\n## Edit: `greeting.js` changed to include \u201cHello from Pi\u201d\nUpdated `greeting.js` so `greet(name)` returns:\n- `Hello from Pi ${name}!`\n\n## Test run #2\nCommand:\n```bash\nnode greeting.test.js\n```\nOutput:\n```text\nAll tests passed\n```\n\n(For the second run, I also updated the expected string in `greeting.test.js` to match the new greeting.)"
+        }
+      ],
+      "receipts": [
+        {
+          "responseId": "chatcmpl-ETrmDTPFFKmPdtS3Oh2OgcUzYWGud",
+          "usage": {
+            "completion_tokens": 49,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1147,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1196
+          },
+          "balanceAfter": 4.86094007,
+          "pollenSinceRunStart": 0.0002179900000003343
+        },
+        {
+          "responseId": "chatcmpl-ETrmGZGVDEkV7IHFiwUhArMzMqmJc",
+          "usage": {
+            "completion_tokens": 69,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1211,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 1152
+            },
+            "total_tokens": 1280
+          },
+          "balanceAfter": 4.86084925,
+          "pollenSinceRunStart": 0.0003088099999999372
+        },
+        {
+          "responseId": "chatcmpl-ETrmJoANOnQP5Yj9OrfawFq5cVCIN",
+          "usage": {
+            "completion_tokens": 24,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1296,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 1152
+            },
+            "total_tokens": 1320
+          },
+          "balanceAfter": 4.86078787,
+          "pollenSinceRunStart": 0.00037018999999993696
+        },
+        {
+          "responseId": "chatcmpl-ETrmNrkV8gxIcJJURie3v3ftpqmNV",
+          "usage": {
+            "completion_tokens": 50,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1334,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 1152
+            },
+            "total_tokens": 1384
+          },
+          "balanceAfter": 4.86069641,
+          "pollenSinceRunStart": 0.00046165000000009115
+        },
+        {
+          "responseId": "chatcmpl-ETrmQEVp9mErYNSsGclL50au8fqe6",
+          "usage": {
+            "completion_tokens": 24,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1405,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1429
+          },
+          "balanceAfter": 4.86046316,
+          "pollenSinceRunStart": 0.0006949000000000538
+        },
+        {
+          "responseId": "chatcmpl-ETrmUBFWtlfh8rVh8h5PeejnAWhBA",
+          "usage": {
+            "completion_tokens": 61,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 3207,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 1152
+            },
+            "total_tokens": 3268
+          },
+          "balanceAfter": 4.86008044,
+          "pollenSinceRunStart": 0.0010776200000002234
+        },
+        {
+          "responseId": "chatcmpl-ETrmYVA3GmGlbGqnbPROHeCwJTd1f",
+          "usage": {
+            "completion_tokens": 24,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 3290,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 3200
+            },
+            "total_tokens": 3314
+          },
+          "balanceAfter": 4.85999644,
+          "pollenSinceRunStart": 0.0011616200000004184
+        },
+        {
+          "responseId": "chatcmpl-ETrmb3LRS5SvsgjqZnvKX63pHUP0z",
+          "usage": {
+            "completion_tokens": 153,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 3328,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 3200
+            },
+            "total_tokens": 3481
+          },
+          "balanceAfter": 4.8597858,
+          "pollenSinceRunStart": 0.001372260000000125
+        }
+      ],
+      "balanceBefore": 4.86115806,
+      "exitCode": 0,
+      "files": {
+        "hello.js": "console.log('Hello from browser Pi');\n",
+        "greeting.js": "function greet(name) {\n  return `Hello from Pi ${name}!`;\n}\n\nmodule.exports = { greet };\n",
+        "greeting.test.js": "const assert = require('assert');\nconst { greet } = require('./greeting');\n\nassert.strictEqual(greet('Pi'), 'Hello from Pi Pi!');\nconsole.log('All tests passed');\n"
+      },
+      "finishedAt": "2026-09-30T16:49:24.600Z",
+      "pollenSpent": 0.001372260000000125
+    },
+    {
+      "startedAt": "2026-09-30T16:51:55.388Z",
+      "model": "openai/gpt-5.4-nano",
+      "prompt": "Test the optional tools: use web_search_exa exactly once with query \"Pi coding agent earendil works GitHub\" and numResults 2. Use computer_bash exactly once with command \"printf PI_REMOTE_MCP_OK\". Then write sources.txt in the LOCAL browser project with one returned source URL and the remote output. Do not modify anything else.",
+      "optionalTools": {
+        "exa": true,
+        "computer": true
+      },
+      "tools": [
+        {
+          "id": "call_SYeLixEvViKabmRNoWStZSs3",
+          "name": "web_search_exa",
+          "arguments": {
+            "query": "Pi coding agent earendil works GitHub",
+            "numResults": 2
+          },
+          "result": {
+            "sourceUrls": [
+              "https://github.com/earendil-works/pi/",
+              "https://github.com/earendil-works/pi/blob/refs/heads/main/packages/coding-agent/README.md"
+            ],
+            "note": "Full search highlights retained in the local raw receipt; omitted here."
+          },
+          "isError": false
+        },
+        {
+          "id": "call_E5QRe4FsD0ISn45S7OUwwB7o",
+          "name": "computer_bash",
+          "arguments": {
+            "command": "printf PI_REMOTE_MCP_OK"
+          },
+          "result": "PI_REMOTE_MCP_OK",
+          "isError": false
+        },
+        {
+          "id": "call_Muqb9E7uMvjISKfIKmiSErVC",
+          "name": "bash",
+          "arguments": {
+            "command": "ls"
+          },
+          "result": "greeting.js\ngreeting.test.js\nhello.js\n",
+          "isError": false
+        },
+        {
+          "id": "call_RWBF8nnvMPep3QpZns9upnpf",
+          "name": "write",
+          "arguments": {
+            "path": "sources.txt",
+            "content": "https://github.com/earendil-works/pi/\nPI_REMOTE_MCP_OK"
+          },
+          "result": "Successfully wrote to sources.txt",
+          "isError": false
+        }
+      ],
+      "messages": [
+        {
+          "responseId": "chatcmpl-ETrpBUXXUdYyL79gTDsFZRDcRYriE",
+          "usage": {
+            "input": 1336,
+            "output": 32,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1368,
+            "cost": {
+              "input": 0.0002004,
+              "output": 3e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.0002304
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrpK3jByV8Zd2AVszenw0Ye1OOe8",
+          "usage": {
+            "input": 1389,
+            "output": 24,
+            "cacheRead": 1152,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 2565,
+            "cost": {
+              "input": 0.00020835,
+              "output": 2.25e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.00023085
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrpQySvQ5xVGZkCZFkFB4NOFlXu5",
+          "usage": {
+            "input": 150,
+            "output": 17,
+            "cacheRead": 2432,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 2599,
+            "cost": {
+              "input": 2.2499999999999998e-05,
+              "output": 1.59375e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 3.84375e-05
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrpTttEtNr41wBrZlEr6a3ayCttI",
+          "usage": {
+            "input": 189,
+            "output": 38,
+            "cacheRead": 2432,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 2659,
+            "cost": {
+              "input": 2.8349999999999998e-05,
+              "output": 3.5625e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 6.3975e-05
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETrpXQA2zSMEHqHCxQGHns6AxUNVV",
+          "usage": {
+            "input": 242,
+            "output": 25,
+            "cacheRead": 2432,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 2699,
+            "cost": {
+              "input": 3.63e-05,
+              "output": 2.34375e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 5.97375e-05
+            }
+          },
+          "stopReason": "stop",
+          "text": "Done. Wrote `sources.txt` in the local workspace with one returned source URL and the remote output."
+        }
+      ],
+      "receipts": [
+        {
+          "responseId": "chatcmpl-ETrpBUXXUdYyL79gTDsFZRDcRYriE",
+          "usage": {
+            "completion_tokens": 32,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1336,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1368
+          },
+          "balanceAfter": 4.8595554,
+          "pollenSinceRunStart": 0.00023040000000040806
+        },
+        {
+          "tool": "web_search_exa",
+          "result": {
+            "sourceUrls": [
+              "https://github.com/earendil-works/pi/",
+              "https://github.com/earendil-works/pi/blob/refs/heads/main/packages/coding-agent/README.md"
+            ]
+          },
+          "balanceAfter": 4.8525554,
+          "pollenSinceRunStart": 0.007230400000000081
+        },
+        {
+          "responseId": "chatcmpl-ETrpK3jByV8Zd2AVszenw0Ye1OOe8",
+          "usage": {
+            "completion_tokens": 24,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 2541,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 1152
+            },
+            "total_tokens": 2565
+          },
+          "balanceAfter": 4.85230727,
+          "pollenSinceRunStart": 0.007478530000000205
+        },
+        {
+          "tool": "bash",
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "PI_REMOTE_MCP_OK"
+              }
+            ],
+            "isError": false
+          },
+          "balanceAfter": 4.85210727,
+          "pollenSinceRunStart": 0.007678529999999739
+        },
+        {
+          "responseId": "chatcmpl-ETrpQySvQ5xVGZkCZFkFB4NOFlXu5",
+          "usage": {
+            "completion_tokens": 17,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 2582,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 2432
+            },
+            "total_tokens": 2599
+          },
+          "balanceAfter": 4.85203235,
+          "pollenSinceRunStart": 0.007753450000000051
+        },
+        {
+          "responseId": "chatcmpl-ETrpTttEtNr41wBrZlEr6a3ayCttI",
+          "usage": {
+            "completion_tokens": 38,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 2621,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 2432
+            },
+            "total_tokens": 2659
+          },
+          "balanceAfter": 4.85193189,
+          "pollenSinceRunStart": 0.007853909999999686
+        },
+        {
+          "responseId": "chatcmpl-ETrpXQA2zSMEHqHCxQGHns6AxUNVV",
+          "usage": {
+            "completion_tokens": 25,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 2674,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 2432
+            },
+            "total_tokens": 2699
+          },
+          "balanceAfter": 4.85183567,
+          "pollenSinceRunStart": 0.007950130000000222
+        }
+      ],
+      "balanceBefore": 4.8597858,
+      "exitCode": 0,
+      "files": {
+        "hello.js": "console.log('Hello from browser Pi');\n",
+        "greeting.js": "function greet(name) {\n  return `Hello from Pi ${name}!`;\n}\n\nmodule.exports = { greet };\n",
+        "greeting.test.js": "const assert = require('assert');\nconst { greet } = require('./greeting');\n\nassert.strictEqual(greet('Pi'), 'Hello from Pi Pi!');\nconsole.log('All tests passed');\n",
+        "sources.txt": "https://github.com/earendil-works/pi/\nPI_REMOTE_MCP_OK"
+      },
+      "finishedAt": "2026-09-30T16:52:25.045Z",
+      "pollenSpent": 0.007950130000000222
+    },
+    {
+      "startedAt": "2026-09-30T18:08:26.429Z",
+      "model": "openai/gpt-5.4-nano",
+      "prompt": "Write public-proof.js containing console.log(\"PI_PUBLIC_HOST_OK\") and run it with the local bash tool using node public-proof.js. Also call web_fetch_exa exactly once on https://github.com/earendil-works/pi/ and report that source URL with one short factual sentence. Do not use web_search_exa and do not modify other files.",
+      "optionalTools": {
+        "exa": true,
+        "computer": false
+      },
+      "tools": [
+        {
+          "id": "call_zo99el1BGJICsl0XrbJLTXfa",
+          "name": "write",
+          "arguments": {
+            "path": "public-proof.js",
+            "content": "console.log(\"PI_PUBLIC_HOST_OK\");\n"
+          },
+          "result": "Successfully wrote to public-proof.js",
+          "isError": false
+        },
+        {
+          "id": "call_C7sJRQc3QAzAlzKxPN1h3bdN",
+          "name": "bash",
+          "arguments": {
+            "command": "node public-proof.js"
+          },
+          "result": "PI_PUBLIC_HOST_OK\n",
+          "isError": false
+        },
+        {
+          "id": "call_slMd3ujHiZ8IvE7va3Q0unD7",
+          "name": "web_fetch_exa",
+          "arguments": {
+            "urls": [
+              "https://github.com/earendil-works/pi/"
+            ]
+          },
+          "result": {
+            "sourceUrls": [
+              "https://github.com/earendil-works/pi"
+            ],
+            "note": "Full page response retained in local raw evidence."
+          },
+          "isError": false
+        }
+      ],
+      "messages": [
+        {
+          "responseId": "chatcmpl-ETt1FvdcdMTcdQU5iUiUbnrFi3k4F",
+          "usage": {
+            "input": 1284,
+            "output": 32,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1316,
+            "cost": {
+              "input": 0.0001926,
+              "output": 3e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.0002226
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETt1IHE8BNpvzIPY4kbgsTCvW5txW",
+          "usage": {
+            "input": 1332,
+            "output": 20,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1352,
+            "cost": {
+              "input": 0.00019979999999999998,
+              "output": 1.8750000000000002e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.00021854999999999997
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETt1PPlbF6NwYdJXThmXtx2xnPUkP",
+          "usage": {
+            "input": 215,
+            "output": 31,
+            "cacheRead": 1152,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 1398,
+            "cost": {
+              "input": 3.225e-05,
+              "output": 2.90625e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 6.13125e-05
+            }
+          },
+          "stopReason": "toolUse",
+          "text": ""
+        },
+        {
+          "responseId": "chatcmpl-ETt1Upum7TaiiuIO6ET2bA8jb6YkR",
+          "usage": {
+            "input": 1330,
+            "output": 50,
+            "cacheRead": 1152,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 2532,
+            "cost": {
+              "input": 0.0001995,
+              "output": 4.6875e-05,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.000246375
+            }
+          },
+          "stopReason": "stop",
+          "text": "- Ran `node public-proof.js` and got: `PI_PUBLIC_HOST_OK`\n- Source: https://github.com/earendil-works/pi/ \u2014 This is the GitHub repository for the pi agent harness mono repo."
+        }
+      ],
+      "receipts": [
+        {
+          "responseId": "chatcmpl-ETt1FvdcdMTcdQU5iUiUbnrFi3k4F",
+          "usage": {
+            "completion_tokens": 32,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1284,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1316
+          },
+          "balanceAfter": 4.85161307,
+          "pollenSinceRunStart": 0.0002225999999998507
+        },
+        {
+          "responseId": "chatcmpl-ETt1IHE8BNpvzIPY4kbgsTCvW5txW",
+          "usage": {
+            "completion_tokens": 20,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1332,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1352
+          },
+          "balanceAfter": 4.85139452,
+          "pollenSinceRunStart": 0.00044114999999944615
+        },
+        {
+          "responseId": "chatcmpl-ETt1PPlbF6NwYdJXThmXtx2xnPUkP",
+          "usage": {
+            "completion_tokens": 31,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1367,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 1152
+            },
+            "total_tokens": 1398
+          },
+          "balanceAfter": 4.85131593,
+          "pollenSinceRunStart": 0.0005197399999996577
+        },
+        {
+          "tool": "web_fetch_exa",
+          "result": {
+            "sourceUrls": [
+              "https://github.com/earendil-works/pi"
+            ]
+          },
+          "balanceAfter": 4.85031593,
+          "pollenSinceRunStart": 0.0015197399999999917
+        },
+        {
+          "responseId": "chatcmpl-ETt1Upum7TaiiuIO6ET2bA8jb6YkR",
+          "usage": {
+            "completion_tokens": 50,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 2482,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cached_tokens": 1152
+            },
+            "total_tokens": 2532
+          },
+          "balanceAfter": 4.85005227,
+          "pollenSinceRunStart": 0.0017833999999998795
+        }
+      ],
+      "balanceBefore": 4.85183567,
+      "exitCode": 0,
+      "files": {
+        "hello.js": "console.log('Hello from browser Pi');\n",
+        "public-proof.js": "console.log(\"PI_PUBLIC_HOST_OK\");\n"
+      },
+      "finishedAt": "2026-09-30T18:08:50.891Z",
+      "pollenSpent": 0.0017833999999998795,
+      "location": "https://pi-workbench-metamysteries8.endoxidev.chatgpt.site/"
+    }
+  ],
+  "validation": {
+    "location": "http://127.0.0.1:8768/",
+    "actualPiVersion": "0.87.1",
+    "actualNodeVersion": "24.13.2",
+    "freeFixture": "Upstream Pi performed read/write/edit/bash; result.txt changed from before to after; Node printed Hello from browser Pi.",
+    "independentShellCommand": "node greeting.test.js && cat sources.txt",
+    "independentShellOutput": "All tests passed\nhttps://github.com/earendil-works/pi/\nPI_REMOTE_MCP_OK\n[exit 0]",
+    "keyDisconnectedAfterTest": true,
+    "publicRun": {
+      "independentShellCommand": "node public-proof.js",
+      "output": "PI_PUBLIC_HOST_OK\n[exit 0]",
+      "keyDisconnectedAfterTest": true
+    },
+    "nativeTerminal": {
+      "paidCalls": 0,
+      "actualPiVersion": "0.87.1",
+      "nativeBashCommand": "!node --version",
+      "output": "v24.13.2-pre",
+      "nativeConfiguration": "/model showed the Pollinations catalog; automatic compaction enabled and 400k context from catalog; no app token/context override",
+      "marker": "PI_NATIVE_TTY_OK",
+      "cleanExit": "/quit returned to guided view with project retained",
+      "downloadWhileActive": {
+        "individualBytes": 3145728,
+        "zipBytesMatch": true,
+        "sha256": "908b6cfc9aef496dd5ab5c5540d80c6383ed6e92f86044574c996315381bc064"
+      }
+    }
+  }
+}

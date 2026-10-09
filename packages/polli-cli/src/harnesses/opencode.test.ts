@@ -198,6 +198,18 @@ describe("opencode harness", () => {
         expect(existsSync(opencodeFile())).toBe(false);
     });
 
+    it("keeps edits made between repeated on runs", () => {
+        configureOpenCode(ctx, settings);
+        const edited = readJsonFile(opencodeFile());
+        edited.autoupdate = false;
+        writeFileSync(opencodeFile(), JSON.stringify(edited, null, 2));
+        configureOpenCode(ctx, { ...settings, model: "kimi" });
+
+        expect(disableOpenCode(ctx).outcome).toBe("stripped");
+        expect(readJsonFile(opencodeFile()).autoupdate).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
     it("honors OPENCODE_CONFIG", () => {
         const custom = join(home, "custom", "my-opencode.json");
         configureOpenCode({ home, env: { OPENCODE_CONFIG: custom } }, settings);

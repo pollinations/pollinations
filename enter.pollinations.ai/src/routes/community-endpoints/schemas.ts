@@ -47,7 +47,9 @@ export const RequiredSafetyFeaturesSchema = z
 const AdvertisedSchema = z
     .object(CommunityEndpointAdvertisedSchema.shape)
     .strict()
-    .describe("Owner-declared catalog metadata for text models.");
+    .describe(
+        "Owner-declared catalog metadata for text models. `streaming: false` marks an endpoint without SSE; the endpoint test detects it.",
+    );
 const PriceSchema = z
     .number()
     .finite()
@@ -460,6 +462,18 @@ export const CommunityEndpointTestResponseSchema = z
             .optional()
             .describe(
                 "Image tests only: input types detected from generation and edit probes.",
+            ),
+        streaming: z
+            .literal(false)
+            .optional()
+            .describe(
+                "Text tests only: the endpoint answered `stream: false` but sent no SSE. Register it with `advertised.streaming: false`.",
+            ),
+        streamingError: z
+            .string()
+            .optional()
+            .describe(
+                "Text tests only: why the streaming request found no SSE.",
             ),
     })
     .passthrough();

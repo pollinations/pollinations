@@ -1,0 +1,36 @@
+{
+  "pr_number": 16882,
+  "title": "fix: news highlight links point to Enter models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16882",
+  "merged_at": "2026-10-09T08:41:41Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Updated daily-highlight prompts so model links point to Enter’s /models page, or /models?q=<model id> for a specific model, instead of the raw JSON at gen.pollinations.ai/v1/models. Highlight text now ends with at most one link in its own sentence, matching how Enter News places links beneath titles. Renamed “API Docs (Swagger)” to “API Docs” because the page uses Scalar. These prompt changes affect only newly generated daily summaries; existing highlights remain unchanged.",
+    "keywords": [
+      "daily highlights",
+      "Enter News",
+      "model links",
+      "API Docs",
+      "social prompts"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-09/PR-16882.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli wears a tiny editor’s visor and points from a cluttered JSON printout to a friendly Enter models page on a glowing CRT, while a code-plant blooms beside the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green #ecf874, warm cream and lavender tones, and dark purple #110518 outlines."
+  },
+  "generated_at": "2026-10-09T08:42:46.843689+00:00",
+  "area": "Brand & news",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "41faab6e93968a8e1317fafbb09fcd33c6fb971f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

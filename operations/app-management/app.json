@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Video",
+    "url": "https://mahmoudakrman97-lgtm.github.io/Video",
+    "description": "A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s",
+    "language": "ar",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "mahmoudakrman97-lgtm",
+    "githubUserId": "307994354",
+    "repositoryUrl": "https://github.com/mahmoudakrman97-lgtm/Video",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16791",
+    "approvedDate": "2026-10-09",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a606ffcb-4592-40fc-a060-4ed43006c5ca"
+  },
+  {
     "emoji": "✍️",
     "name": "Keigo Formatter",
     "url": "https://ucalis-uma.github.io/keigo-formatter",

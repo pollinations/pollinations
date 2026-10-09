@@ -32,6 +32,8 @@ const NAV = [
 
 const LEGAL = [
     { to: "/terms", label: "Terms" },
+    { to: "/dpa", label: "DPA" },
+    { to: "/subprocessors", label: "Sub-processors" },
     { to: "/privacy", label: "Privacy" },
     { to: "/refunds", label: "Refunds" },
 ] as const;

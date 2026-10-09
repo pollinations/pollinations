@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-09-16**
+**Updated: 2026-10-09**
+
+_2026-10-09 — Proposed DPA incorporation and named provider register; draft pending legal and operational review._
 
 _2026-09-16 — Accounts may be suspended immediately where we reasonably believe there is payment fraud or abuse._
 
@@ -137,17 +139,11 @@ We may use your name/logo to identify you as a customer unless you opt out in wr
 
 ## 15) DPA and Sub-Processors
 
-When we process personal data on your behalf, you are the **controller** and we are the **processor** under our Data Processing Addendum (DPA). The DPA (including EU Standard Contractual Clauses for international transfers) is maintained at this location. Categories of **sub-processors** we may use are listed below. The full named list is available on request, and we provide at least **14 days'** prior notice of material changes to sub-processors.
+When we process personal data on your behalf through the API, the [Data Processing Addendum](/dpa) forms part of these Terms. Acceptance of these Terms incorporates the approved DPA without a separate signature. You are controller (or an authorised processor), and Myceli.AI OÜ is processor (or sub-processor). The linked DPA and [Sub-processor Register](/subprocessors) are currently drafts and are not effective until their legal and operational review is complete and an approved version is published.
 
-**Categories of sub-processors** we may use to deliver the Service:
+The register identifies infrastructure and inference services, model-dependent processing locations, and independent community providers. Once verified, additions or replacements of sub-processors require at least **14 days' prior notice** and are subject to the DPA's objection procedure.
 
-- **Payments / Merchant of Record** (also delivers purchase invoices by email on our behalf)
-- **CDN/WAF & edge routing**
-- **Cloud infrastructure & storage**
-- **Analytics / data pipeline**
-- **Model / inference compute providers** (for text/image/video generation)
-
-**Data residency.** Depending on the selected model, provider, and availability, Customer Data may be processed in the EEA, the United States, or other locations where our model and infrastructure providers operate. Where personal data leaves the EEA, we use approved safeguards such as EU Standard Contractual Clauses and appropriate supplementary measures.
+**Data residency and transfers.** Locations depend on the selected route and its fallbacks; the standard service does not promise EEA-only processing. The DPA requires applicable international-transfer safeguards to be established before processing personal data on a covered route. It does not itself execute supplier transfer SCCs. See the register for verification status and contact **hello@pollinations.ai** for route-specific requirements.
 
 ---
 

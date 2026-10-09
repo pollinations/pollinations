@@ -28,6 +28,8 @@ const COLUMNS = [
         links: [
             { to: "/privacy", label: "Privacy" },
             { to: "/terms", label: "Terms" },
+            { to: "/dpa", label: "DPA" },
+            { to: "/subprocessors", label: "Sub-processors" },
             // Payment providers generally require this to be reachable.
             { to: "/refunds", label: "Refunds" },
         ],

@@ -11,6 +11,10 @@ Treat
 live inventory and each model directory as the source of truth for its setup
 and verification commands.
 
+For changes to providers, fallbacks, regions, GPU hosts, or data handling, follow
+[Data-processing documentation maintenance](../../../AGENTS.md#data-processing-documentation-maintenance)
+and update the legal register with the operational change.
+
 ## Establish authority
 
 Read the repository `AGENTS.md` and `GPU_INSTANCES.md` before using provider

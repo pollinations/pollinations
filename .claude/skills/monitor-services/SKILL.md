@@ -7,6 +7,10 @@ description: Check the active Pollinations GPU backends and recover a confirmed 
 
 Read the repository `AGENTS.md`, the current [GPU inventory](../../../operations/infrastructure/gpu/GPU_INSTANCES.md), and the affected model's code before acting. Discover live instances and routes from the provider and Gen; documented instance IDs, addresses, prices, and retired services are historical until verified. Keep scheduling and alert thresholds in the task that invokes this skill.
 
+For changes to providers, fallbacks, regions, GPU hosts, or data handling, follow
+[Data-processing documentation maintenance](../../../AGENTS.md#data-processing-documentation-maintenance)
+and update the legal register with the operational change.
+
 ## Check the current fleet
 
 1. Reconcile the inventory with current Gen routes, live provider instances, and `GET https://gen.pollinations.ai/register` (listing needs no token). Check every active GPU route; flag a routed service missing from the inventory, and skip historical services without an active route.

@@ -1,12 +1,12 @@
 # Privacy Policy
 
-**Updated: 2026-09-28**
+**Updated: 2026-10-09**
 
 ## 1) Scope & Roles
 
 This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, and (c) the Polli Discord bot and its HTTP API. For Discord/GitHub use, their policies also apply.
 
-**Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we are processor under the DPA.
+**Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we are processor under the applicable [DPA](/dpa). The proposed DPA and register are drafts pending legal and operational verification.
 
 ## 2) Data We Process
 
@@ -59,9 +59,9 @@ We do not use third-party analytics or marketing cookies/SDKs. If we add any, we
 
 ## 8) Sharing & Recipients
 
-* **Service providers (sub-processors):** we use the **categories** described at /terms#15-dpa-and-sub-processors. **Full named list available on request; we give at least 14 days' prior notice of material changes.**
+* **Service providers (sub-processors):** see the [Sub-processor Register](/subprocessors) for the named services, processing-location evidence, and outstanding verification. We give at least 14 days' prior notice of additions or replacements under the [DPA](/dpa).
 
-**Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see categories at /terms#15-dpa-and-sub-processors).**
+**Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see the [register](/subprocessors)).**
 
 * **Community providers:** when you use an externally hosted community model, your request is sent to its provider and any configured community fallback providers. These independent providers are responsible for their own endpoints and data practices.
 * **Authorized apps:** when you approve an app connection, we share the approved API key/token and authorization details with that app.
@@ -72,7 +72,7 @@ We do not sell personal data.
 
 ## 9) International Transfers
 
-Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contractual Clauses) and appropriate supplementary measures.
+Transfers outside the EEA require applicable GDPR safeguards, such as an adequacy decision or the appropriate EU Standard Contractual Clauses and supplementary measures. See the [DPA](/dpa) and [register](/subprocessors) for the proposed contractual terms, route-specific information, and outstanding verification; the draft does not certify that every configured provider has completed this verification.
 
 Community providers may process data in other countries. Before sending personal data, check that the provider meets any residency or transfer requirements that apply to you.
 

@@ -24,6 +24,117 @@ type SystemOneRequest = {
     questions: Record<string, unknown>;
 };
 
+function decisionText(value: unknown): string {
+    return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function toOpenAIQuestions(questions: Record<string, unknown>) {
+    return Object.entries(questions).map(([name, question]) => {
+        if (!isPlainObject(question))
+            throw nativeRequestError("Invalid question.");
+        const instructions = decisionText(question.instructions);
+        if (question.type === "noul") {
+            return {
+                name,
+                type: "predicate",
+                instructions: question.criteria
+                    ? `${instructions}\n${decisionText(question.criteria)}`
+                    : instructions,
+            };
+        }
+        if (question.type === "choice" && isPlainObject(question.criteria)) {
+            return {
+                name,
+                type: "choice",
+                instructions,
+                choices: Object.entries(question.criteria).map(
+                    ([value, description]) => ({
+                        value,
+                        ...(description === null
+                            ? {}
+                            : { description: decisionText(description) }),
+                    }),
+                ),
+            };
+        }
+        if (question.type === "score" && Array.isArray(question.criteria)) {
+            return {
+                name,
+                type: "score",
+                instructions,
+                levels: question.criteria.map((description, index) => ({
+                    label: String(index),
+                    description: decisionText(description),
+                })),
+            };
+        }
+        throw nativeRequestError("Unsupported decision question.");
+    });
+}
+
+function fromOpenAIResponse(
+    body: unknown,
+    questions: Record<string, unknown>,
+): SystemOneResponse {
+    if (!isPlainObject(body) || !Array.isArray(body.answers)) {
+        throw serviceError("OpenAI returned invalid decision answers.", 502);
+    }
+    const answers = Object.fromEntries(
+        body.answers.map((entry) => {
+            if (!isPlainObject(entry) || typeof entry.name !== "string") {
+                throw serviceError(
+                    "OpenAI returned an invalid decision answer.",
+                    502,
+                );
+            }
+            const { name, type, ...answer } = entry;
+            if (type === "predicate")
+                return [name, { type: "noul", noul: answer.probability }];
+            const question = questions[name];
+            return [
+                name,
+                {
+                    ...answer,
+                    type,
+                    ...(Array.isArray(answer.probabilities) && {
+                        probabilities: Object.fromEntries(
+                            answer.probabilities.map((probability) => {
+                                if (!isPlainObject(probability))
+                                    throw serviceError(
+                                        "OpenAI returned invalid probabilities.",
+                                        502,
+                                    );
+                                return [
+                                    String(probability.value),
+                                    probability.probability,
+                                ];
+                            }),
+                        ),
+                    }),
+                    ...(type === "score" &&
+                        isPlainObject(question) &&
+                        Array.isArray(question.criteria) && {
+                            legend: Object.fromEntries(
+                                question.criteria.map((criterion, index) => [
+                                    String(index),
+                                    criterion,
+                                ]),
+                            ),
+                        }),
+                },
+            ];
+        }),
+    );
+    if (!Object.keys(questions).every((name) => Object.hasOwn(answers, name))) {
+        throw serviceError("OpenAI returned incomplete decision answers.", 502);
+    }
+    return {
+        model: body.model,
+        answers,
+        usage: body.usage,
+    } as SystemOneResponse;
+}
+
 function serviceError(message: string, status: number): ServiceError {
     const error = new Error(message) as ServiceError;
     error.status = status;
@@ -91,6 +202,7 @@ export async function requestDecision(
             500,
         );
     }
+    const openai = options.modelConfig?.decisionsProtocol === "openai";
     const requestUrl = new URL(endpoint);
     try {
         const response = await fetch(requestUrl, {
@@ -99,15 +211,30 @@ export async function requestDecision(
                 Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ state, model, questions }),
+            body: JSON.stringify(
+                openai
+                    ? {
+                          model,
+                          input: decisionText(state),
+                          questions: toOpenAIQuestions(questions),
+                      }
+                    : { state, model, questions },
+            ),
         });
         await ensureUpstreamOk(response, requestUrl);
-        const result = (await response.json()) as SystemOneResponse;
+        const body = await response.json();
+        const result = openai
+            ? fromOpenAIResponse(body, questions)
+            : (body as SystemOneResponse);
         // Billable responses must carry usage; reject rather than bill zero.
         if (
             !isPlainObject(result?.answers) ||
-            typeof result?.usage?.input_tokens !== "number" ||
-            typeof result?.usage?.output_tokens !== "number"
+            ![result?.usage?.input_tokens, result?.usage?.output_tokens].every(
+                (count) =>
+                    typeof count === "number" &&
+                    Number.isSafeInteger(count) &&
+                    count >= 0,
+            )
         ) {
             throw serviceError(
                 `${model} returned a response without valid answers or usage.`,

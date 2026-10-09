@@ -30,11 +30,33 @@ function imagePart(block: Extract<MessagesContentBlock, { type: "image" }>) {
     return { type: "image_url", image_url: { url }, ...cacheControl(block) };
 }
 
+function documentPart(
+    block: Extract<MessagesContentBlock, { type: "document" }>,
+): ChatPart {
+    const { source } = block;
+    if (source.type === "base64") {
+        return {
+            type: "file",
+            file: {
+                file_data: `data:${source.media_type};base64,${source.data}`,
+            },
+            ...cacheControl(block),
+        };
+    }
+    if (source.type === "text") {
+        return { type: "text", text: source.data, ...cacheControl(block) };
+    }
+    throw new MessagesRequestError(
+        `A document with a ${source.type} source is not supported; send PDFs as base64 and text as a text source`,
+    );
+}
+
 function contentPart(block: MessagesContentBlock): ChatPart {
     if (block.type === "text") {
         return { type: "text", text: block.text, ...cacheControl(block) };
     }
     if (block.type === "image") return imagePart(block);
+    if (block.type === "document") return documentPart(block);
     throw new MessagesRequestError(
         `A ${block.type} block is not allowed in this message`,
     );
@@ -43,9 +65,10 @@ function contentPart(block: MessagesContentBlock): ChatPart {
 function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
     // Chat carries each tool result as its own `tool` message; Anthropic puts
     // them at the start of the user turn, so they keep their order. Chat tool
-    // messages carry text only, so a result's images open the user message.
+    // messages carry text only, so a result's images and PDFs open the user
+    // message.
     const toolMessages: ChatMessage[] = [];
-    const toolImages: ChatPart[] = [];
+    const toolMedia: ChatPart[] = [];
     const parts: ChatPart[] = [];
     for (const block of content) {
         if (block.type !== "tool_result") {
@@ -53,19 +76,13 @@ function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
             continue;
         }
         const result = block.content ?? "";
+        const resultParts =
+            typeof result === "string" ? [] : result.map(contentPart);
         const text =
             typeof result === "string"
                 ? result
-                : result
-                      .filter((part) => part.type === "text")
-                      .map(contentPart);
-        if (typeof result !== "string") {
-            toolImages.push(
-                ...result.flatMap((part) =>
-                    part.type === "image" ? [imagePart(part)] : [],
-                ),
-            );
-        }
+                : resultParts.filter((part) => part.type === "text");
+        toolMedia.push(...resultParts.filter((part) => part.type !== "text"));
         toolMessages.push({
             role: "tool",
             tool_call_id: block.tool_use_id,
@@ -73,7 +90,7 @@ function userMessages(content: MessagesContentBlock[]): ChatMessage[] {
             ...cacheControl(block),
         } as ChatMessage);
     }
-    const userParts = [...toolImages, ...parts];
+    const userParts = [...toolMedia, ...parts];
     return [
         ...toolMessages,
         ...(userParts.length

@@ -66,7 +66,6 @@ const answers = {
 
 afterEach(() => {
     vi.restoreAllMocks();
-    vi.useRealTimers();
 });
 
 describe("System One adapter", () => {
@@ -412,7 +411,6 @@ describe("System One adapter", () => {
                 expect(new Headers(init?.headers).get("content-type")).toBe(
                     "application/json",
                 );
-                expect(init?.signal).toBeInstanceOf(AbortSignal);
                 expect(JSON.parse(String(init?.body))).toEqual({
                     model: "typesafe/jev-1.13",
                     state: nativeState,

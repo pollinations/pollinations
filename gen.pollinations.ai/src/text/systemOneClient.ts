@@ -204,8 +204,6 @@ export async function requestDecision(
     }
     const openai = options.modelConfig?.decisionsProtocol === "openai";
     const requestUrl = new URL(endpoint);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
         const response = await fetch(requestUrl, {
             method: "POST",
@@ -222,7 +220,6 @@ export async function requestDecision(
                       }
                     : { state, model, questions },
             ),
-            signal: controller.signal,
         });
         await ensureUpstreamOk(response, requestUrl);
         const body = await response.json();
@@ -250,11 +247,9 @@ export async function requestDecision(
             thrown instanceof Error
                 ? (thrown as ServiceError)
                 : (new Error(String(thrown)) as ServiceError);
-        error.status ??= controller.signal.aborted ? 504 : 502;
+        error.status ??= 502;
         error.requestUrl = requestUrl;
         throw error;
-    } finally {
-        clearTimeout(timeout);
     }
 }
 

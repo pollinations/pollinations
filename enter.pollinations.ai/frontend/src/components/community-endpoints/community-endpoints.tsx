@@ -35,6 +35,7 @@ import { AgentDialog } from "./agent-dialog.tsx";
 import { CommunityEndpointCard } from "./community-endpoint-card.tsx";
 import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete-confirmation.tsx";
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
+import { IconUploadButton } from "./icon-upload-button.tsx";
 import {
     type AgentFormState,
     type CommunityEndpoint,
@@ -65,11 +66,13 @@ function ProviderProfileField({
     icon,
     label,
     help,
+    action,
     children,
 }: {
     icon: ReactElement;
     label: string;
     help: string;
+    action?: ReactElement;
     children: ReactElement;
 }) {
     return (
@@ -88,7 +91,12 @@ function ProviderProfileField({
                     <InfoTip text={help} label={`${label} information`} />
                 </span>
             </span>
-            <Field.Input asChild>{children}</Field.Input>
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="min-w-0 flex-1">
+                    <Field.Input asChild>{children}</Field.Input>
+                </div>
+                {action}
+            </div>
         </Field.Root>
     );
 }
@@ -497,7 +505,12 @@ export function CommunityEndpoints({
                             <ProviderProfileField
                                 icon={<ImageIcon />}
                                 label="Brand icon URL"
-                                help="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                help="Used in place of your profile image. Upload an .svg to media.pollinations.ai or paste the returned URL."
+                                action={
+                                    <IconUploadButton
+                                        onUploaded={setProviderIconUrl}
+                                    />
+                                }
                             >
                                 <Input
                                     type="url"

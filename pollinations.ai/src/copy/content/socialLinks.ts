@@ -51,8 +51,6 @@ export const LINKS = {
     docsImage: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image",
     docsAudio: "https://gen.pollinations.ai/docs#tag/-audio",
     docsAuth: "https://gen.pollinations.ai/docs#tag/-authentication",
-    highlightsSource:
-        "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md",
     polliCli:
         "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

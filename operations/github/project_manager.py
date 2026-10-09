@@ -406,6 +406,11 @@ def main():
     elif answer["type"]:
         set_issue_type(answer["type"])
 
+    # The gist pipeline consumes the same classification after the project update.
+    if output := os.getenv("CLASSIFICATION_OUTPUT"):
+        with open(output, "w") as stream:
+            json.dump({"area": answer["area"], "type": answer["type"], "source": source}, stream)
+
 
 if __name__ == "__main__":
     main()

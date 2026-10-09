@@ -237,6 +237,20 @@ Before publishing:
 - Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
 
+The PR description must include a user-visible change table for each affected model, using its public model ID:
+
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `<public ID>` | NEW / UPDATE / RETIRE | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
+
+- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability, in the PR that removes the model. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
+- Announce a retirement only once it is decided (no other provider will keep the model): merge a PR whose table has a `RETIRE` row with the future date and timezone in `Effective`, e.g. `2026-11-02 00:00 UTC`. News shows it as upcoming until the removal PR merges. To postpone, merge a new `RETIRE` row with the new date; to withdraw, use `Cancelled` as `Effective`. Avoid moving a date earlier.
+- Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
+- For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
+- For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.
+- A merge is not a deployment. Use `On production deployment (not live yet)` unless a scheduled date or verified deployment is known. Link an existing notice and its `notice_id` when applicable.
+- For a provider-only change with no user-visible difference, state that price, balance access, capabilities, and availability are unchanged instead of adding status rows. Keep provider and verification evidence separately below the summary.
+
 ## Completion gate
 
 A model change is not complete until all applicable statements are true:

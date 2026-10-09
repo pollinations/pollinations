@@ -1,9 +1,14 @@
 import type { Logger } from "@logtape/logtape";
 import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
+import {
     type ApiKeyType,
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
@@ -39,10 +44,6 @@ import {
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
-import {
-    hasAccountPermission,
-    requireAccountPermission,
-} from "./account-permissions.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
 
@@ -106,17 +107,7 @@ const CreateKeySchema = z.object({
         .describe(
             "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
         ),
-    expiresIn: z
-        .number()
-        .int()
-        .positive()
-        .refine(
-            (seconds) =>
-                Number.isFinite(
-                    new Date(Date.now() + seconds * 1000).getTime(),
-                ),
-            "Expiry is outside the supported date range",
-        )
+    expiresIn: apiKeyExpiresInSchema
         .optional()
         .describe("Expiry in seconds from now"),
     allowedModels: z
@@ -534,6 +525,7 @@ const USAGE_CSV_COLUMNS = [
     "meter_source",
     "input_text_tokens",
     "input_cached_tokens",
+    "input_cache_write_tokens",
     "input_audio_tokens",
     "input_audio_seconds",
     "input_image_tokens",
@@ -891,7 +883,14 @@ const usageRecordSchema = z.object({
             "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
-    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_cached_tokens: z
+        .number()
+        .describe("Number of input tokens read from the prompt cache"),
+    input_cache_write_tokens: z
+        .number()
+        .describe(
+            "Number of input tokens written to the prompt cache (billed at the cache-write rate)",
+        ),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
     input_audio_seconds: z
         .number()
@@ -936,11 +935,12 @@ const usageResponseSchema = z.object({
 });
 
 /**
- * Account routes - profile, balance and usage endpoints.
- * Supports both session cookies and API keys with permission checks.
+ * Account routes - profile, balance and usage endpoints, served publicly as
+ * gen.pollinations.ai/account. Bearer-only: apps use API keys with permission
+ * checks; the dashboard uses a session token minted from its cookie.
  */
 export const accountRoutes = new Hono<Env>()
-    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     // Account responses are per-user and must never be cached by browsers or
     // intermediary proxies. Applied once here so nested routes (agents,
     // my-models, keys, ...) inherit it without repeating it per handler.

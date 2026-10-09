@@ -181,6 +181,35 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("keeps UTF-8 intact through command substitution", async () => {
+        const client = await connect("user-substitution");
+        // "Época" is 6 bytes; each line prints the byte count of $x.
+        const count = '; printf "%s" "$x" | wc -c';
+        const result = await bash(
+            client,
+            [
+                `printf '{"t":"\\\\u00c9poca"}' > e.json`,
+                `x=$(printf '\\303\\211poca')${count}`,
+                `x=$(jq -r .t e.json)${count}`,
+                `x=$(jq -r .t e.json | cat)${count}`,
+                `x=$(base64 -d <<< w4lwb2Nh)${count}`,
+                `f() { printf 'Época'; }; x=$(f)${count}`,
+                `x=$(printf 'Época'; exit 3); echo "$?"`,
+                'echo "A $(jq -r .t e.json)" | jq -R .',
+            ].join("\n"),
+            undefined,
+            "/workspace/substitution",
+        );
+        expect(result.isError, result.text).toBe(false);
+        expect(result.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(5).fill("6"),
+            "3",
+            '"A Época"',
+            "",
+        ]);
+        await client.close();
+    });
+
     it("empties /tmp after every call", async () => {
         const client = await connect("user-tmp");
         const write = await bash(

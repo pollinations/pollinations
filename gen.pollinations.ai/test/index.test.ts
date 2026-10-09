@@ -143,12 +143,15 @@ describe("gen worker routing", () => {
         expect(response.status).toBe(401);
     });
 
-    it("reports the 32 MiB limit for oversized chat bodies", async () => {
+    it.each([
+        "/v1/chat/completions",
+        "/v1/responses",
+    ])("reports the 32 MiB limit and received size for oversized %s bodies", async (path) => {
         const body = JSON.stringify({
             model: "openai/gpt-5-nano",
             messages: [{ role: "user", content: "A".repeat(33 * 1024 * 1024) }],
         });
-        const response = await fetchWorker("/v1/chat/completions", env, {
+        const response = await fetchWorker(path, env, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

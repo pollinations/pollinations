@@ -241,55 +241,49 @@ export const largeChatBody = createMiddleware<Env>(async (c, next) => {
     const stream = c.req.raw.body;
     if (!stream) return next();
 
-    const body = await readLargeChatBody(
-        stream,
-        async (dataUrl, type) => {
-            const user = c.var.auth.requireUser();
-            const match =
-                /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
-                    dataUrl,
-                );
-            if (!match) {
-                throw new HTTPException(400, {
-                    message: "Invalid inline media data URL",
-                });
-            }
-            if (
-                (type === "image_url" &&
-                    !/^image\/(?:jpeg|png|webp|gif)$/.test(match[1])) ||
-                (type === "video_url" && !match[1].startsWith("video/")) ||
-                (type === "input_audio" && !match[1].startsWith("audio/"))
-            ) {
-                throw new HTTPException(400, {
-                    message: "Invalid inline media data URL",
-                });
-            }
-            const bytes = Buffer.from(match[2], "base64");
-            const id = createHmac("sha256", c.env.BETTER_AUTH_SECRET)
-                .update("chat-input\0")
-                .update(user.id)
-                .update("\0")
-                .update(match[1])
-                .update("\0")
-                .update(bytes)
-                .digest("hex");
-            if (await c.env.MEDIA.has(id)) {
-                return `https://media.pollinations.ai/${id}`;
-            }
-            const upload = await c.env.MEDIA.upload(
-                new Blob([bytes]).stream(),
-                {
-                    id,
-                    contentType: match[1],
-                    size: bytes.byteLength,
-                    uploadedBy: user.id,
-                    keyType: "chat-input",
-                },
+    const uploadMedia = async (dataUrl: string, type: InlineMedia["type"]) => {
+        const user = c.var.auth.requireUser();
+        const match =
+            /^data:([\w.+-]+\/[\w.+-]+);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+                dataUrl,
             );
-            return upload.url;
-        },
-        contentLength,
-    );
+        if (!match) {
+            throw new HTTPException(400, {
+                message: "Invalid inline media data URL",
+            });
+        }
+        if (
+            (type === "image_url" &&
+                !/^image\/(?:jpeg|png|webp|gif)$/.test(match[1])) ||
+            (type === "video_url" && !match[1].startsWith("video/")) ||
+            (type === "input_audio" && !match[1].startsWith("audio/"))
+        ) {
+            throw new HTTPException(400, {
+                message: "Invalid inline media data URL",
+            });
+        }
+        const bytes = Buffer.from(match[2], "base64");
+        const id = createHmac("sha256", c.env.BETTER_AUTH_SECRET)
+            .update("chat-input\0")
+            .update(user.id)
+            .update("\0")
+            .update(match[1])
+            .update("\0")
+            .update(bytes)
+            .digest("hex");
+        if (await c.env.MEDIA.has(id)) {
+            return `https://media.pollinations.ai/${id}`;
+        }
+        const upload = await c.env.MEDIA.upload(new Blob([bytes]).stream(), {
+            id,
+            contentType: match[1],
+            size: bytes.byteLength,
+            uploadedBy: user.id,
+            keyType: "chat-input",
+        });
+        return upload.url;
+    };
+    const body = await readLargeChatBody(stream, uploadMedia, contentLength);
 
     const headers = new Headers(c.req.raw.headers);
     headers.set(

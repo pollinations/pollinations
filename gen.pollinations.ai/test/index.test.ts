@@ -377,6 +377,27 @@ describe("gen worker routing", () => {
         expect(await llms.text()).toContain("/.well-known/api-catalog");
     });
 
+    it("serves Markdown at the docs landing for agents that ask for it", async () => {
+        const agentHome = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown" },
+        });
+        expect(agentHome.status).toBe(200);
+        expect(agentHome.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+        expect(agentHome.headers.get("Vary")).toBe("Accept");
+        expect(
+            Number(agentHome.headers.get("x-markdown-tokens")),
+        ).toBeGreaterThan(0);
+        expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
+
+        const browserHome = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
+        });
+        expect(browserHome.headers.get("Content-Type")).toContain("text/html");
+        expect(browserHome.headers.get("Vary")).toBe("Accept");
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 

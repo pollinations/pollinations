@@ -360,6 +360,70 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     sandboxes: SANDBOXES_SECTION,
 };
 
+// Content negotiation (RFC 9110 §12.5.1) for agents: a client that prefers
+// text/markdown gets the plain-text guide instead of the Scalar HTML shell.
+// Same convention as Cloudflare's "Markdown for Agents":
+// https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/
+export function servesMarkdown(accept: string | null | undefined): boolean {
+    if (!accept) return false;
+    const ranges: { type: string; quality: number }[] = [];
+    for (const entry of accept.split(",")) {
+        // RFC 9110 §5.6.3 allows optional whitespace around the ";" separator.
+        const [rawType, ...params] = entry.trim().toLowerCase().split(";");
+        const type = rawType.trim();
+        if (!type) continue;
+        let quality = 1;
+        for (const param of params) {
+            const [name, value] = param.split("=").map((part) => part.trim());
+            if (name === "q") {
+                quality = Math.min(
+                    Math.max(Number.parseFloat(value) || 0, 0),
+                    1,
+                );
+            }
+        }
+        ranges.push({ type, quality });
+    }
+    // Only our two representations count: the HTML reference and the Markdown
+    // guide. application/xhtml+xml is not served here, so it must not pick HTML.
+    return (
+        acceptedQuality(ranges, "text/markdown") >
+        acceptedQuality(ranges, "text/html")
+    );
+}
+
+// Each representation takes the quality of its most specific matching range
+// (RFC 9110 §12.5.1): exact type beats `text/*`, which beats `*/*`.
+function acceptedQuality(
+    ranges: { type: string; quality: number }[],
+    target: string,
+): number {
+    const group = `${target.split("/")[0]}/*`;
+    let quality = 0;
+    let specificity = 0;
+    for (const range of ranges) {
+        const match =
+            range.type === target
+                ? 3
+                : range.type === group
+                  ? 2
+                  : range.type === "*/*"
+                    ? 1
+                    : 0;
+        if (match > specificity) {
+            specificity = match;
+            quality = range.quality;
+        }
+    }
+    return quality;
+}
+
+// Estimated tokens for the x-markdown-tokens header (chars / 4), the same
+// approximation Cloudflare's Markdown for Agents reports.
+export function estimateTokens(text: string): number {
+    return Math.ceil(text.length / 4);
+}
+
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "connect-user-wallets",
@@ -942,6 +1006,21 @@ export async function buildMergedOpenApiSpec(
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            c.header("Vary", "Accept", { append: true });
+            if (servesMarkdown(c.req.header("accept"))) {
+                // Cloudflare ignores Vary (except Accept-Encoding) on cached
+                // responses, so the negotiated body must stay out of shared
+                // caches: a URL-keyed edge cache could otherwise serve the
+                // Markdown guide to a browser (and vice versa).
+                c.header("Cache-Control", "private, max-age=3600");
+                c.header(
+                    "x-markdown-tokens",
+                    String(estimateTokens(LLM_DOC_TEXT)),
+                );
+                return c.body(LLM_DOC_TEXT, 200, {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                });
+            }
             const response = await Scalar<Env>({
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,

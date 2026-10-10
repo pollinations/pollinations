@@ -17,6 +17,7 @@ import {
     formatMcpCall,
     McpCallSchema,
 } from "../agents/mcp.ts";
+import { finalMidiJourneyMessage } from "../midijourney.ts";
 import type { ChatCompletion, ChatMessage, ServiceError } from "../types.js";
 
 type JsonObject = Record<string, unknown>;
@@ -240,7 +241,7 @@ export function responsesToChatCompletion(
     value: unknown,
     requestedModel: string,
     requestUrl: URL,
-    options: { requireUsage?: boolean } = {},
+    options: { requireUsage?: boolean; legacyMidi?: boolean } = {},
 ): ChatCompletion {
     if (!value || typeof value !== "object") {
         throw serviceError(
@@ -275,6 +276,15 @@ export function responsesToChatCompletion(
     }
 
     const message = responseMessage(data.output, requestUrl);
+    if (options.legacyMidi) {
+        if (data.status !== "completed" || message.tool_calls?.length) {
+            throw serviceError(
+                "MIDIjourney did not finish its musical result",
+                requestUrl,
+            );
+        }
+        message.content = finalMidiJourneyMessage(data.output);
+    }
     return withUpstreamRequestUrl(
         {
             id: data.id ?? `chatcmpl-${crypto.randomUUID()}`,

@@ -14,6 +14,7 @@ import {
 } from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
+import { isLegacyMidiJourney } from "../text/midijourney.ts";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
@@ -70,6 +71,7 @@ export async function generateCacheKey(
     requiredSafetyFeatures: readonly SafetyFeature[] = [],
 ): Promise<string> {
     const url = new URL(request.url);
+    let model = url.searchParams.get("model") ?? undefined;
 
     // Filter query parameters, excluding auth params, and sort by key so
     // equivalent URLs reuse the same cache entry regardless of parameter order.
@@ -99,6 +101,7 @@ export async function generateCacheKey(
         try {
             // Try to parse as JSON and filter auth fields
             const bodyObj = JSON.parse(bodyText);
+            if (typeof bodyObj.model === "string") model = bodyObj.model;
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
             const filteredBody: Record<string, unknown> = {};
@@ -131,6 +134,8 @@ export async function generateCacheKey(
         parts.push(SAFETY_CACHE_VERSION);
     }
     if (partition) parts.push(`partition:${partition}`);
+    // Old legacy cache entries may contain fences or mixed agent transcripts.
+    if (isLegacyMidiJourney(model)) parts.push("midijourney-yaml-v1");
 
     // Generate a hash of all parts using Web Crypto API
     const text = parts.join("|");

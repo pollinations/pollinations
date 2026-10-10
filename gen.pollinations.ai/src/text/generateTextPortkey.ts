@@ -1,7 +1,13 @@
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
+import { completionToChatStream } from "./chat/stream.ts";
+import { requireChatCompletionUsage } from "./chat/usage.ts";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import {
+    formatMidiJourneyCompletion,
+    isLegacyMidiJourney,
+} from "./midijourney.ts";
 import { callChatViaResponses } from "./responses/chatClient.js";
 import { callSystemOne } from "./systemOneClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
@@ -34,6 +40,25 @@ function buildEndpoint(gatewayUrl: unknown): string {
 }
 
 export async function generateTextPortkey(
+    messages: ChatMessage[],
+    options: TransformOptions = {},
+    portkeyFetcher?: OpenAIClientConfig["fetcher"],
+): Promise<ChatCompletion> {
+    if (!isLegacyMidiJourney(options.model))
+        return generate(messages, options, portkeyFetcher);
+    // A partial document cannot be validated. Reuse the existing buffered SSE
+    // envelope, including terminal usage and [DONE], after validating the result.
+    const completion = await generate(
+        messages,
+        { ...options, stream: false },
+        portkeyFetcher,
+    );
+    requireChatCompletionUsage(completion);
+    formatMidiJourneyCompletion(completion);
+    return options.stream ? completionToChatStream(completion) : completion;
+}
+
+async function generate(
     messages: ChatMessage[],
     options: TransformOptions = {},
     portkeyFetcher?: OpenAIClientConfig["fetcher"],

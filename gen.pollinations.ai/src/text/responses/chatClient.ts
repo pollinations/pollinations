@@ -1,3 +1,5 @@
+import { completionToChatStream } from "../chat/stream.ts";
+import { isLegacyMidiJourney } from "../midijourney.ts";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -38,7 +40,11 @@ export async function callChatViaResponses(
         );
     }
 
-    const request = chatToResponsesRequest(messages, options);
+    const legacyMidi = isLegacyMidiJourney(options.requestedModel);
+    const request = chatToResponsesRequest(
+        messages,
+        legacyMidi ? { ...options, stream: false } : options,
+    );
     const { response, requestUrl } = await callDirectResponses(
         request,
         target,
@@ -73,5 +79,10 @@ export async function callChatViaResponses(
         error.details = cause;
         throw error;
     }
-    return responsesToChatCompletion(data, model, requestUrl);
+    const completion = responsesToChatCompletion(data, model, requestUrl, {
+        legacyMidi,
+    });
+    return legacyMidi && options.stream
+        ? completionToChatStream(completion)
+        : completion;
 }

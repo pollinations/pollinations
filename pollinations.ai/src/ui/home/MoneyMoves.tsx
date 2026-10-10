@@ -32,7 +32,7 @@ export function MoneyMoves() {
                 />
                 <ul className="flex flex-col gap-6">
                     {/* Paid gold and Quest green, as on the wallet; earnings
-                        land in both, so that row stays neutral. */}
+                        land in both, so that row takes the info blue. */}
                     <Item
                         icon={CardIcon}
                         tone="paid"
@@ -65,7 +65,7 @@ export function MoneyMoves() {
                             Explore Quests
                         </InlineLink>
                     </Item>
-                    <Item icon={EarningsIcon} title="Earnings">
+                    <Item icon={EarningsIcon} tone="info" title="Earnings">
                         Get a share of what others spend on your{" "}
                         <InlineLink href="https://gen.pollinations.ai/docs#tag/publish-a-model">
                             models

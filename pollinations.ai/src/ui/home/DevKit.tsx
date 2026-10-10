@@ -9,6 +9,7 @@ import {
     ContentHeader,
     cn,
     ExternalLinkButton,
+    type ExternalLinkButtonProps,
     Heading,
     type IconProps,
     IconTile,
@@ -230,9 +231,11 @@ const PUBLISH_FEATURES: Feature[] = [
 function FeatureCard({
     feature,
     countLabel,
+    linkIntent = "neutral",
 }: {
     feature: Feature;
     countLabel?: string;
+    linkIntent?: ExternalLinkButtonProps["intent"];
 }) {
     const Detail = feature.detail;
 
@@ -270,7 +273,7 @@ function FeatureCard({
                         key={link.href}
                         href={link.href}
                         size="md"
-                        intent="neutral"
+                        intent={linkIntent}
                         icon={
                             link.href.startsWith(
                                 "https://gen.pollinations.ai/docs",
@@ -473,7 +476,11 @@ export function DevKit({ className }: { className?: string }) {
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (
-                        <FeatureCard key={feature.title} feature={feature} />
+                        <FeatureCard
+                            key={feature.title}
+                            feature={feature}
+                            linkIntent="paid"
+                        />
                     ))}
                 </div>
             </FeatureGroup>

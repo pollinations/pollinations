@@ -51,7 +51,7 @@ Hosted access to model-powered APIs and tools per your plan, balance, and usage 
 
 **Managed agents.** Pollinations hosts these agents, and publishing one does not give its creator access to caller requests. Selected models and tools may still process those requests, and public agent instructions may be inferred or extracted. Creators must not include credentials or confidential data in agent instructions.
 
-We may change or discontinue models and features, for example when providers change or retire them.
+We may change or discontinue models and features, for example when providers change or retire them. Where consumer law requires notice of a change, or lets you end the contract and get a refund of unused Paid Pollen, those rights apply.
 
 ## 4) Customer Data & Privacy
 

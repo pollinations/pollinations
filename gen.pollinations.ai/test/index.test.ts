@@ -377,6 +377,33 @@ describe("gen worker routing", () => {
         expect(await llms.text()).toContain("/.well-known/api-catalog");
     });
 
+    it("serves AGENTS.md with agent onboarding instructions", async () => {
+        const response = await fetchWorker("/AGENTS.md");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/plain");
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body).not.toContain("<html");
+        // Points back at the agent index so discovery is bidirectional.
+        expect(body).toContain("/llms.txt");
+        // OpenAI-compatible quick start with the required auth header.
+        expect(body).toContain("/v1/chat/completions");
+        expect(body).toContain("Authorization: Bearer");
+        // Onboarding for the agent-facing toolchain.
+        expect(body).toContain("@pollinations/cli");
+        expect(body).toContain("/.well-known/agent-skills/index.json");
+        expect(body).toContain("/.well-known/api-catalog");
+        expect(body).toContain("/openapi.json");
+    });
+
+    it("links AGENTS.md from llms.txt for agent discovery", async () => {
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain("/AGENTS.md");
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🤖",
+    "name": "MebelSmetaBot",
+    "url": "https://t.me/MebelSmetaBot",
+    "description": "Telegram bot for furniture projects: the user sends a phone photo of a kitchen or room, and the bot generates a visualization of the new furniture in that space using the Pollinations image API. It al",
+    "language": "ru",
+    "category": "bots",
+    "platform": "telegram",
+    "githubUsername": "druzhininige-dotcom",
+    "githubUserId": "326755797",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "artem9287",
+    "other": null,
+    "submittedDate": "2026-10-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16877",
+    "approvedDate": "2026-10-10",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/8ac17ea7-539a-451d-a444-118317a7d5a0"
+  },
+  {
     "emoji": "✍️",
     "name": "Nice No",
     "url": "https://nice-no.maxtoms21.chatgpt.site",

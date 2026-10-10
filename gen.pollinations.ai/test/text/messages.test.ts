@@ -1006,8 +1006,13 @@ describe("POST /v1/messages", () => {
         },
         {
             model: "anthropic/claude-haiku-4.5",
-            // Portkey passes file_data to Bedrock as raw document bytes.
-            file: { file_data: "JVBERi0x", mime_type: "application/pdf" },
+            // Portkey passes file_data to Bedrock as raw document bytes and names
+            // the document with a random UUID unless file_name is set.
+            file: {
+                file_data: "JVBERi0x",
+                mime_type: "application/pdf",
+                file_name: "document-1",
+            },
         },
     ])("sends a PDF document to $model in the shape its provider reads", async ({
         model,
@@ -1051,6 +1056,55 @@ describe("POST /v1/messages", () => {
                 ],
             },
         ]);
+    });
+
+    it("reads raw base64 PDFs from Chat file parts and rejects models that cannot", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
+        const { providerBodies } = mockUpstream();
+        const chat = (model: string) =>
+            call(
+                "/v1/chat/completions",
+                {
+                    model,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "file",
+                                    file: {
+                                        file_data: "JVBERi0x",
+                                        mime_type: "application/pdf",
+                                    },
+                                },
+                                { type: "text", text: "Which word?" },
+                            ],
+                        },
+                    ],
+                },
+                caller.key,
+            );
+
+        const claude = await chat("anthropic/claude-haiku-4.5");
+        expect(claude.response.status, claude.text).toBe(200);
+        expect(
+            (providerBodies[0].messages as { content: unknown[] }[])[0]
+                .content[0],
+        ).toEqual({
+            type: "file",
+            file: {
+                file_data: "JVBERi0x",
+                mime_type: "application/pdf",
+                file_name: "document-1",
+            },
+        });
+
+        const unsupported = await chat("x-ai/grok-4.3");
+        expect(unsupported.response.status).toBe(400);
+        expect(unsupported.text).toContain("does not support PDF input");
+        expect(providerBodies).toHaveLength(1);
     });
 
     it("preserves thinking signatures through response validation", async () => {

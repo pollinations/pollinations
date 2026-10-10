@@ -1113,7 +1113,7 @@ describe("static provider fallbacks", () => {
         ).toBeUndefined();
     });
 
-    it("rejects PDF input only for models without image input", () => {
+    it("rejects PDF input only for models that do not read PDFs", () => {
         const pdf = "data:application/pdf;base64,JVBERi0x";
         const requests = [
             {
@@ -1137,12 +1137,15 @@ describe("static provider fallbacks", () => {
         const openRouterTextModel = Object.keys(definitions).find(
             (name) =>
                 definitions[name].provider === "openrouter" &&
-                definitions[name].inputModalities?.includes("image") === false,
+                definitions[name].inputModalities?.includes("pdf") === false,
         );
         for (const request of requests) {
-            expect(
-                textCapabilityError(definitions["openai/gpt-oss-20b"], request),
-            ).toBe("This model does not support PDF input");
+            // Models with image input but no PDF input are rejected too.
+            for (const model of ["openai/gpt-oss-20b", "x-ai/grok-4.3"]) {
+                expect(textCapabilityError(definitions[model], request)).toBe(
+                    "This model does not support PDF input",
+                );
+            }
             for (const model of [
                 "openai/gpt-5.4-nano",
                 "anthropic/claude-sonnet-4.6",

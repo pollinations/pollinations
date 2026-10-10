@@ -17,10 +17,14 @@ describe("pdfFileParts", () => {
     it.each([
         { file_data: DATA_URL },
         { file_data: PDF, mime_type: "application/pdf" },
-    ])("gives Bedrock bare base64 and the PDF type (%o)", async (file) => {
+    ])("gives Bedrock bare base64, the PDF type and a stable name (%o)", async (file) => {
         expect(await filePart("bedrock", file)).toEqual({
             type: "file",
-            file: { file_data: PDF, mime_type: "application/pdf" },
+            file: {
+                file_data: PDF,
+                mime_type: "application/pdf",
+                file_name: "document-1",
+            },
             extra: 1,
         });
     });

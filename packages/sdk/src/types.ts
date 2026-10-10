@@ -1088,7 +1088,7 @@ export const MODEL_CATEGORIES = [
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
 /** Inputs accepted by a model */
-export type ModelInputModality = "text" | "image" | "audio" | "video";
+export type ModelInputModality = "text" | "image" | "audio" | "video" | "pdf";
 
 /** Outputs produced by a model */
 export type ModelOutputModality =

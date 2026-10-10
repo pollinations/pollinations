@@ -122,16 +122,17 @@ export function textCapabilityError(
         return `This model supports at most ${definition.maxCompletionTokens} output tokens`;
     const referenceImages = countParts(request, ["image_url", "input_image"]);
     // Agents hand images to their own base model or code, which decides.
-    const agent = communityEndpoint && usesAgentRunToken(communityEndpoint);
-    const textOnly = definition.inputModalities?.includes("image") === false;
-    if (!agent && referenceImages > 0 && textOnly)
-        return "This model does not support image input";
-    // Every model that reads PDFs also reads images, and OpenRouter parses
-    // PDFs to text for any model.
     if (
-        !agent &&
-        textOnly &&
+        !(communityEndpoint && usesAgentRunToken(communityEndpoint)) &&
+        referenceImages > 0 &&
+        definition.inputModalities?.includes("image") === false
+    )
+        return "This model does not support image input";
+    // OpenRouter parses PDFs to text for any model; community upstreams decide.
+    if (
+        !communityEndpoint &&
         definition.provider !== "openrouter" &&
+        definition.inputModalities?.includes("pdf") === false &&
         countParts([request.messages, request.input], ["file", "input_file"]) >
             0
     )

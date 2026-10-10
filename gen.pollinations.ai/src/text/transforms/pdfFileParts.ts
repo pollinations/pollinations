@@ -21,13 +21,19 @@ export function pdfBase64({
 }
 
 // Portkey hands a Bedrock file part's file_data to Converse as raw document
-// bytes, so a data URL fails there. Azure OpenAI wants the data URL and
-// reports a missing file_id when filename is absent.
+// bytes, so a data URL fails there, and names the document with a random UUID
+// unless file_name is set, which would change the prompt on every request and
+// defeat caching. Azure OpenAI wants the data URL and reports a missing
+// file_id when filename is absent.
 const FILE_FIELDS: Record<
     string,
-    (base64: string, file: FileFields) => Record<string, unknown>
+    (base64: string, file: FileFields, index: number) => Record<string, unknown>
 > = {
-    bedrock: (base64) => ({ file_data: base64, mime_type: "application/pdf" }),
+    bedrock: (base64, _file, index) => ({
+        file_data: base64,
+        mime_type: "application/pdf",
+        file_name: `document-${index}`,
+    }),
     "azure-openai": (base64, { file_name }) => ({
         file_data: PDF_DATA_URL + base64,
         filename: typeof file_name === "string" ? file_name : "document.pdf",
@@ -38,6 +44,7 @@ const FILE_FIELDS: Record<
 export const pdfFileParts: TransformFn = (messages, options) => {
     const fileFields = FILE_FIELDS[String(options.modelConfig?.provider)];
     if (!fileFields) return { messages, options };
+    let documents = 0;
     return {
         options,
         messages: messages.map((message) =>
@@ -52,7 +59,10 @@ export const pdfFileParts: TransformFn = (messages, options) => {
                           const base64 =
                               part.type === "file" && file && pdfBase64(file);
                           return file && base64
-                              ? { ...part, file: fileFields(base64, file) }
+                              ? {
+                                    ...part,
+                                    file: fileFields(base64, file, ++documents),
+                                }
                               : part;
                       }),
                   }

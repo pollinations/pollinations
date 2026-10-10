@@ -8493,7 +8493,10 @@ fixtureTest(
             "video",
         ];
         const outputModalities: ModelOutputModality[] = [
-            ...modalities,
+            "text",
+            "image",
+            "audio",
+            "video",
             "3d",
             "embedding",
         ];

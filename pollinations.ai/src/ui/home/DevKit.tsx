@@ -11,6 +11,7 @@ import {
     ExternalLinkButton,
     Heading,
     type IconProps,
+    IconTile,
     ImageIcon,
     LinkCard,
     LockIcon,
@@ -198,7 +199,7 @@ const PUBLISH_FEATURES: Feature[] = [
         body: (
             <>
                 Connect your endpoint and <Em>set your price</Em>. Each call
-                adds Pollen to your balance.
+                adds pollen to your balance.
             </>
         ),
         links: [
@@ -233,7 +234,6 @@ function FeatureCard({
     feature: Feature;
     countLabel?: string;
 }) {
-    const Icon = feature.icon;
     const Detail = feature.detail;
 
     return (
@@ -242,9 +242,7 @@ function FeatureCard({
             className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
             <div className="flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
-                    <Icon className="size-6" />
-                </div>
+                <IconTile icon={feature.icon} />
                 <div className="flex min-w-0 flex-col gap-1">
                     <Heading as="h3" size="card">
                         {feature.title}
@@ -350,7 +348,7 @@ function Models() {
                             <LinkCard
                                 href={href}
                                 surfaceClassName="gap-0 p-3.5 sm:p-5"
-                                style={{ backgroundColor: background }}
+                                tint={background}
                             >
                                 <span
                                     className="flex items-center gap-2"
@@ -365,7 +363,7 @@ function Models() {
                                     </span>
                                 </span>
                                 <span
-                                    className="mt-1 min-h-9 font-bold text-4xl leading-none tracking-tight tabular-nums sm:min-h-12 sm:text-5xl"
+                                    className="mt-1 min-h-9 font-heading text-4xl leading-none tabular-nums sm:min-h-12 sm:text-5xl"
                                     style={{ color }}
                                 >
                                     {count}
@@ -437,7 +435,6 @@ function FeatureGroup({
                 eyebrow={null}
                 title={title}
                 subtitle={description}
-                className="px-1"
             />
             {children}
         </section>

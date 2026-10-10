@@ -1,4 +1,9 @@
-import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from "react";
+import {
+    type AnchorHTMLAttributes,
+    type ButtonHTMLAttributes,
+    forwardRef,
+    type ReactNode,
+} from "react";
 import { cn } from "../lib/cn.ts";
 import { Tooltip } from "./Tooltip.tsx";
 
@@ -40,6 +45,10 @@ export type IconButtonProps = Omit<
     children: ReactNode;
     className?: string;
     size?: "sm" | "md";
+    /** Renders a link with the same look, e.g. a social icon. */
+    href?: string;
+    target?: string;
+    rel?: string;
 };
 
 const sizeClasses = {
@@ -61,32 +70,48 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
             className,
             size = "sm",
             disabled = false,
+            href,
+            target,
+            rel,
             ...buttonProps
         },
         ref,
     ) => {
-        const button = (
+        const shared = {
+            "aria-label": buttonProps["aria-label"] ?? title,
+            "data-intent": intent,
+            className: cn(
+                "polli-control polli:inline-flex polli:items-center polli:justify-center polli:transition-colors",
+                disabled
+                    ? "polli:cursor-not-allowed polli:opacity-50"
+                    : "polli:cursor-pointer",
+                sizeClasses[size],
+                intent ? intentClasses[intent] : variantClasses[variant],
+                !disabled &&
+                    (intent
+                        ? intentHoverClasses[intent]
+                        : variantHoverClasses[variant]),
+                className,
+            ),
+        };
+        const button = href ? (
+            <a
+                {...(buttonProps as AnchorHTMLAttributes<HTMLAnchorElement>)}
+                {...shared}
+                href={href}
+                target={target}
+                rel={rel}
+            >
+                {children}
+            </a>
+        ) : (
             <button
                 {...buttonProps}
+                {...shared}
                 ref={ref}
                 type="button"
                 disabled={disabled}
-                aria-label={buttonProps["aria-label"] ?? title}
                 aria-pressed={pressed}
-                data-intent={intent}
-                className={cn(
-                    "polli-control polli:inline-flex polli:items-center polli:justify-center polli:transition-colors",
-                    disabled
-                        ? "polli:cursor-not-allowed polli:opacity-50"
-                        : "polli:cursor-pointer",
-                    sizeClasses[size],
-                    intent ? intentClasses[intent] : variantClasses[variant],
-                    !disabled &&
-                        (intent
-                            ? intentHoverClasses[intent]
-                            : variantHoverClasses[variant]),
-                    className,
-                )}
             >
                 {children}
             </button>

@@ -14,6 +14,10 @@ Must run from the `pollinations` repo root.
 
 ---
 
+For changes to providers, fallbacks, regions, GPU hosts, or data handling, follow
+[Data-processing documentation maintenance](../../../AGENTS.md#data-processing-documentation-maintenance)
+and update the legal register with the operational change.
+
 # Architecture Overview
 
 | Environment | Gateway (Cloudflare Worker) | Generation |

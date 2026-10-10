@@ -5,12 +5,18 @@ import {
     CodeIcon,
     ContentHeader,
     cn,
+    EmptyState,
     ExternalLinkButton,
     Eyebrow,
+    Heading,
     InlineLink,
     LinkCard,
+    LiveDot,
     MegaphoneIcon,
+    Skeleton,
+    StatCard,
     Surface,
+    Text,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useArt } from "../art";
@@ -88,22 +94,18 @@ function FeedState({
     failed: boolean;
     what: string;
 }) {
-    if (loading) {
-        return (
-            <div
-                aria-busy="true"
-                className="h-14 animate-pulse rounded-2xl bg-theme-bg-subtle"
-            />
-        );
-    }
+    if (loading) return <Skeleton className="h-14" />;
     return (
-        <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
+        <EmptyState>
             {failed
                 ? `${what} couldn’t be loaded right now.`
                 : `No ${what.toLowerCase()} yet.`}
-        </p>
+        </EmptyState>
     );
 }
+
+// Only the Discord count is "right now"; the other metrics are totals.
+const LIVE_METRIC = "online in Discord";
 
 /** A live count hides when its feed fails and shows a skeleton while loading. */
 function liveMetric<T>(
@@ -129,12 +131,12 @@ function CommunityParticipation() {
     const ways = [
         liveMetric("listed apps", { ...apps, data: apps.data.length }, String),
         liveMetric("community models and agents", platform, (stats) =>
-            compact(stats.community),
+            compact(stats.community + stats.agents),
         ),
         liveMetric("PRs merged", pullRequests, compact),
         // The widget only exposes who is online now; a member total needs
         // a bot token, so this is the one live number the card can show.
-        liveMetric("online in Discord", online, compact),
+        liveMetric(LIVE_METRIC, online, compact),
     ].map((metric, index) => ({ ...WAYS_IN[index], metric }));
 
     return (
@@ -156,127 +158,128 @@ function CommunityParticipation() {
                 />
             </HeroScene>
 
-            <Surface
-                variant="panel"
+            {/* No panel here: the sheet is already the block, so a panel only
+                cut a seam through the hero art and indented the headings. */}
+            <section
                 className={cn(
                     postHeroSpacingClassName,
-                    "overflow-hidden polli:p-0 polli:sm:p-0",
+                    "flex flex-col gap-6 pt-5 sm:pt-6",
                 )}
             >
-                <div className="flex flex-col gap-6 p-5 pb-0 sm:p-6 sm:pb-0">
-                    <div className="flex max-w-xl flex-col gap-2">
-                        <Eyebrow>Get involved</Eyebrow>
-                        <h2 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
-                            Help shape Pollinations
-                        </h2>
-                        <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
-                            Share your work, contribute, or help decide what we
-                            build next.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
-                        {ways.map((way) => {
-                            const WayIcon = way.icon;
+                <ContentHeader
+                    eyebrow="Get involved"
+                    title="Help shape Pollinations"
+                    subtitle="Share your work, contribute, or help decide what we build next."
+                />
+                <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
+                    {ways.map((way) => {
+                        const WayIcon = way.icon;
 
-                            return (
-                                <Surface
-                                    variant="card"
-                                    key={way.label}
-                                    className="p-5 sm:p-6 xl:p-5"
-                                >
-                                    <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
-                                        <div className="flex flex-col gap-2.5">
-                                            <div className="flex items-center gap-1.5 text-theme-text-muted">
-                                                <WayIcon className="size-3.5" />
-                                                <Eyebrow>{way.label}</Eyebrow>
-                                            </div>
-                                            <h3 className="font-body text-xl font-semibold text-theme-text-strong">
-                                                {way.title}
-                                            </h3>
-                                            <p className="text-sm leading-relaxed text-theme-text-base">
-                                                {way.body}
-                                            </p>
+                        return (
+                            <Surface
+                                variant="card"
+                                key={way.label}
+                                className="p-5 sm:p-6 xl:p-5"
+                            >
+                                <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
+                                    <div className="flex flex-col gap-2.5">
+                                        <div className="flex items-center gap-1.5 text-theme-text-muted">
+                                            <WayIcon className="size-3.5" />
+                                            <Eyebrow>{way.label}</Eyebrow>
                                         </div>
-                                        <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
-                                            {way.metric && (
-                                                <dl className="flex flex-wrap gap-x-6 gap-y-3">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                            {way.metric
-                                                                .value ?? (
-                                                                <span
-                                                                    aria-hidden="true"
-                                                                    className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                                                />
-                                                            )}
-                                                        </dt>
-                                                        <dd className="text-xs text-theme-text-muted">
-                                                            {way.metric.label}
-                                                        </dd>
-                                                    </div>
-                                                </dl>
-                                            )}
-                                            <ExternalLinkButton
-                                                href={way.cta.href}
-                                                size="md"
-                                                intent="brand"
-                                                showIcon
-                                                className="whitespace-nowrap"
-                                            >
-                                                {way.cta.label}
-                                            </ExternalLinkButton>
-                                        </div>
+                                        <Heading as="h3" size="card">
+                                            {way.title}
+                                        </Heading>
+                                        <Text size="sm">{way.body}</Text>
                                     </div>
-                                </Surface>
-                            );
-                        })}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-5">
-                        <div className="min-w-0 flex-1 basis-80">
-                            {issues.length === 0 ? (
-                                <FeedState
-                                    loading={loading}
-                                    failed={failed}
-                                    what="Open votes"
-                                />
-                            ) : (
-                                <div className="flex flex-col gap-4">
-                                    {issues.map((issue) => (
-                                        <InlineLink
-                                            key={issue.number}
-                                            href={issue.url}
-                                            aria-label={`Open “${issue.title}” and add your vote`}
-                                            className="flex w-fit max-w-full items-center gap-2"
-                                        >
-                                            <MegaphoneIcon
-                                                aria-hidden="true"
-                                                className="size-4 shrink-0"
+                                    <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
+                                        {way.metric && (
+                                            <StatCard
+                                                variant="display"
+                                                value={
+                                                    way.metric.value ?? (
+                                                        <Skeleton
+                                                            shape="text"
+                                                            className="h-9 w-16"
+                                                        />
+                                                    )
+                                                }
+                                                label={
+                                                    <>
+                                                        {way.metric.label}
+                                                        {way.metric.label ===
+                                                            LIVE_METRIC &&
+                                                            way.metric
+                                                                .value && (
+                                                                <LiveDot />
+                                                            )}
+                                                    </>
+                                                }
                                             />
-                                            <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                                                <span className="font-semibold leading-snug text-theme-text-strong">
-                                                    {issue.title}
-                                                </span>
-                                                <span className="whitespace-nowrap text-xs text-theme-text-muted tabular-nums">
-                                                    {issue.reactions} reaction
-                                                    {issue.reactions === 1
-                                                        ? ""
-                                                        : "s"}
-                                                </span>
-                                            </span>
-                                        </InlineLink>
-                                    ))}
+                                        )}
+                                        {/* self-auto: follow the column's
+                                            left edge instead of Button's
+                                            default centring. */}
+                                        <ExternalLinkButton
+                                            href={way.cta.href}
+                                            size="md"
+                                            intent="brand"
+                                            showIcon
+                                            className="self-auto whitespace-nowrap"
+                                        >
+                                            {way.cta.label}
+                                        </ExternalLinkButton>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                        <InlineLink
-                            href={LINKS.githubNewIssue}
-                            size="sm"
-                            tone="quiet"
-                        >
-                            Suggest an idea
-                        </InlineLink>
+                            </Surface>
+                        );
+                    })}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-5">
+                    <div className="min-w-0 flex-1 basis-80">
+                        {issues.length === 0 ? (
+                            <FeedState
+                                loading={loading}
+                                failed={failed}
+                                what="Open votes"
+                            />
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                {issues.map((issue) => (
+                                    <InlineLink
+                                        key={issue.number}
+                                        href={issue.url}
+                                        aria-label={`Open “${issue.title}” and add your vote`}
+                                        className="flex w-fit max-w-full items-center gap-2"
+                                    >
+                                        <MegaphoneIcon
+                                            aria-hidden="true"
+                                            className="size-4 shrink-0"
+                                        />
+                                        <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                                            <span className="font-semibold leading-snug text-theme-text-strong">
+                                                {issue.title}
+                                            </span>
+                                            <span className="whitespace-nowrap text-xs text-theme-text-muted tabular-nums">
+                                                {issue.reactions} reaction
+                                                {issue.reactions === 1
+                                                    ? ""
+                                                    : "s"}
+                                            </span>
+                                        </span>
+                                    </InlineLink>
+                                ))}
+                            </div>
+                        )}
                     </div>
+                    <InlineLink
+                        href={LINKS.githubNewIssue}
+                        size="sm"
+                        tone="quiet"
+                    >
+                        Suggest an idea
+                    </InlineLink>
                 </div>
                 <img
                     src={votesScene.src}
@@ -289,9 +292,9 @@ function CommunityParticipation() {
                     loading="lazy"
                     decoding="async"
                     fetchPriority="low"
-                    className="bottom-scene pointer-events-none mt-4 block h-[clamp(12rem,24vw,20rem)] w-full select-none object-cover object-bottom"
+                    className="bottom-scene pointer-events-none block h-[clamp(12rem,24vw,20rem)] w-full select-none rounded-3xl object-cover object-bottom sm:rounded-block"
                 />
-            </Surface>
+            </section>
         </>
     );
 }
@@ -304,7 +307,7 @@ function Contributors() {
             <ContentHeader
                 eyebrow="Contributors"
                 title="Top code contributors"
-                subtitle="These contributors have helped build and improve the platform. Want to join them?"
+                subtitle="The top 20 by commits, people and agents alike. Want to join them?"
                 action={
                     <InlineLink href={SOCIAL_LINKS.github.url}>
                         Open the repository
@@ -324,10 +327,10 @@ function Contributors() {
                         key={person.login}
                         href={person.html_url}
                         showIcon={false}
-                        surfaceClassName="flex-row items-center gap-3.5 rounded-2xl p-4"
+                        surfaceClassName="flex-row items-center gap-3.5 p-4"
                     >
                         <img
-                            src={`${person.avatar_url}&s=80`}
+                            src={person.avatar_url}
                             alt=""
                             aria-hidden="true"
                             loading="lazy"
@@ -365,33 +368,27 @@ function CommunityPage() {
                     title="Who keeps the GPUs warm"
                     subtitle="Their credits and infrastructure help keep Pollinations running."
                 />
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3.5">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                     {SUPPORTERS.map((supporter) => (
-                        <Surface
-                            as="a"
-                            variant="card"
+                        <LinkCard
                             key={supporter.name}
                             href={supporter.url}
                             aria-label={supporter.name}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 rounded-2xl px-5 py-4 transition-colors hover:bg-theme-bg-subtle motion-reduce:transition-none"
+                            showIcon={false}
+                            surfaceClassName="flex-row items-center gap-2.5 px-3.5 py-2.5"
                         >
                             <span
                                 aria-hidden="true"
-                                className="row-span-2 h-9 w-9 bg-theme-text-strong"
+                                className="size-5 shrink-0 bg-theme-text-strong"
                                 style={{
                                     WebkitMask: `url(${supporter.logo}) center / contain no-repeat`,
                                     mask: `url(${supporter.logo}) center / contain no-repeat`,
                                 }}
                             />
-                            <span className="font-body text-base font-semibold text-theme-text-strong">
+                            <span className="truncate font-body text-sm font-semibold text-theme-text-strong">
                                 {supporter.name}
                             </span>
-                            <span className="text-sm leading-snug text-theme-text-muted">
-                                {supporter.description}
-                            </span>
-                        </Surface>
+                        </LinkCard>
                     ))}
                 </div>
             </section>

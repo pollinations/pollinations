@@ -1883,6 +1883,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000208333333333333,
     },
   },
+  "microsoft/mai-transcribe-2-streaming": {
+    "cost": {
+      "promptAudioSeconds": 0.00015,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0001125,
+    },
+  },
   "microsoft/mai-transcribe-2:vercel": {
     "cost": {
       "promptAudioSeconds": 0.0000277777777777778,
@@ -3271,12 +3279,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3-vl-30b-a3b-instruct": {
     "cost": {
-      "completionTextTokens": 0.0000005486,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.000000633,
+      "promptTextTokens": 0.00000015825,
     },
     "price": {
-      "completionTextTokens": 0.0000005486,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.000000633,
+      "promptTextTokens": 0.00000015825,
     },
   },
   "qwen/qwen3.7-flash": {

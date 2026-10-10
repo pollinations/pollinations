@@ -391,7 +391,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily outcome of every regular request from generation_usage_hourly; the three bars add up to all calls. Served: successful calls. Rejected for lack of Pollen: requests with no meter (about 99.7% are HTTP 402). Failed after the balance check: funded requests that did not succeed; the hourly table has no status column, so 4xx and 5xx are counted together. Users hitting a 402 (right axis): approximate unique users per day with a request that had no meter. Per-model 5xx health is in Model Monitor.",
+      "description": "Daily outcome of every regular request from generation_usage_hourly; the three bars add up to all calls. Served: successful calls. Rejected for lack of Pollen: requests with no meter (almost all HTTP 402, a few 403). Failed after the balance check: funded requests that did not succeed; the hourly table has no status column, so 4xx and 5xx are counted together. Users with an unfunded request (right axis): approximate unique users per day with a request that had no meter. Per-model 5xx health is in Model Monitor.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -471,12 +471,12 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "users_hitting_402"
+              "options": "unfunded_users"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Users hitting a 402"
+                "value": "Users with an unfunded request"
               },
               {
                 "id": "color",
@@ -550,7 +550,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(successful_calls) AS served,\n  sumMergeIf(all_calls, funding_source = 'unfunded') - sumMergeIf(successful_calls, funding_source = 'unfunded') AS rejected_no_pollen,\n  sumMergeIf(all_calls, funding_source != 'unfunded') - sumMergeIf(successful_calls, funding_source != 'unfunded') AS failed_after_balance_check,\n  uniqMergeIf(users, funding_source = 'unfunded') AS users_hitting_402\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(successful_calls) AS served,\n  sumMergeIf(all_calls, funding_source = 'unfunded') - sumMergeIf(successful_calls, funding_source = 'unfunded') AS rejected_no_pollen,\n  sumMergeIf(all_calls, funding_source != 'unfunded') - sumMergeIf(successful_calls, funding_source != 'unfunded') AS failed_after_balance_check,\n  uniqMergeIf(users, funding_source = 'unfunded') AS unfunded_users\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -562,7 +562,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Top 30 models by funded requests that failed after the balance check over the selected range: regular traffic, 4xx and 5xx together (the hourly table has no status column), 402 rejections excluded. Only models with at least 1,000 funded requests are listed, so a model with a handful of calls cannot top a sort by failure rate. Users are approximate unique users with a funded request to the model. Per-model 5xx health is in Model Monitor.",
+      "description": "Top 30 models by funded requests that failed after the balance check over the selected range: regular traffic, 4xx and 5xx together (the hourly table has no status column), 402 rejections excluded. Users are approximate unique users with a funded request to the model. Per-model 5xx health is in Model Monitor.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -639,7 +639,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  model,\n  if(is_community, 'Community', 'Pollinations') AS source,\n  sumMergeIf(all_calls, funding_source != 'unfunded') - sumMergeIf(successful_calls, funding_source != 'unfunded') AS failed,\n  sumMergeIf(successful_calls, funding_source != 'unfunded') AS served,\n  round(failed / (failed + served), 3) AS failure_rate,\n  uniqMergeIf(users, funding_source != 'unfunded') AS users\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY model, is_community\nHAVING failed + served >= 1000\nORDER BY failed DESC\nLIMIT 30",
+          "rawSql": "SELECT\n  model,\n  if(is_community, 'Community', 'Pollinations') AS source,\n  sumMergeIf(all_calls, funding_source != 'unfunded') - sumMergeIf(successful_calls, funding_source != 'unfunded') AS failed,\n  sumMergeIf(successful_calls, funding_source != 'unfunded') AS served,\n  round(failed / nullIf(failed + served, 0), 3) AS failure_rate,\n  uniqMergeIf(users, funding_source != 'unfunded') AS users\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY model, is_community\nORDER BY failed DESC\nLIMIT 30",
           "refId": "A"
         }
       ],

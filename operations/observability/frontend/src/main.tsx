@@ -90,7 +90,10 @@ function DashboardPicker({
                     ariaLabel={`Select dashboard, showing ${title}`}
                     className="gap-2"
                 >
-                    <span className="truncate">{title}</span>
+                    <StableLabel
+                        text={title}
+                        options={dashboards.map((dashboard) => dashboard.title)}
+                    />
                     <ChevronIcon expanded={open} />
                 </TabButton>
             )}

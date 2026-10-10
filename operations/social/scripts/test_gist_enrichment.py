@@ -304,6 +304,14 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(events[0]["source"], "pr_description")
         cancel = {**pr, "body": "| `x-ai/grok-imagine` | RETIRE | Availability | Retiring | Available | Cancelled |"}
         self.assertEqual(announced_retirements(cancel, catalog)[0]["effective_status"], "cancelled")
+        # The note that carries a cancellation is valid, so the PR still gets its note and post.
+        ai = dict(category="improvement", user_facing=True, publish_tier="daily", importance="minor",
+                  summary="Grok Imagine stays available.", keywords=[], image_prompt="Bee keeping a lamp lit")
+        note = build_full_gist({**cancel, "title": "Cancel retirement", "html_url": "https://github.com/example/repo/pull/5",
+                                "labels": []}, ai, [])
+        note.update(enrichment={"classification": "failed", "models": "complete"},
+                    announcements=announced_retirements(cancel, catalog))
+        self.assertEqual(validate_gist(note), [])
 
     def test_index_keeps_the_latest_announcement_until_the_model_is_removed(self):
         def gist(number, merged_at, *announcements):

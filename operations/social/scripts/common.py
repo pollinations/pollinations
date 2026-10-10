@@ -612,7 +612,7 @@ def validate_gist(gist: Dict) -> List[str]:
                 errors.append("invalid announcement action")
             if not event.get("model_id") or not isinstance(event.get("changes"), dict):
                 errors.append("announcement requires model_id and changes")
-            if event.get("effective_status") not in {"unconfirmed", "scheduled"}:
+            if event.get("effective_status") not in {"unconfirmed", "scheduled", "cancelled"}:
                 errors.append("invalid announcement effective_status")
 
     return errors

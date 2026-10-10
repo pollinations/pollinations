@@ -9,7 +9,6 @@ import { cn } from "../lib/cn.ts";
 type ButtonIntent =
     | "danger"
     | "info"
-    | "paid"
     | "neutral"
     | "brand"
     | "commit"
@@ -62,8 +61,6 @@ const intentClasses: Record<ButtonIntent, string> = {
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
-    // The wallet's Paid gold, for links that should stand out.
-    paid: "polli:bg-paid-pale polli:text-paid-deep polli:hover:bg-paid-soft/50 polli:transition-colors",
     // A quiet white pill on the desk, like the colour toggle; hover previews
     // the accent as the ambient button does.
     surface:

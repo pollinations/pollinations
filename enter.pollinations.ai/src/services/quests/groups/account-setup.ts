@@ -14,7 +14,7 @@ import {
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
  *   - connect_polli_cli -> apikey.byop_client_key_id (Polli device login,
- *                          account 7+ days old)
+ *                          account 3+ days old)
  *   - early_adopter  -> user.created_at           (registered 9+ months ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
@@ -66,10 +66,10 @@ const connectPolliCliQuest: QuestDefinition = {
     id: "connect_polli_cli",
     title: "Connect Polli CLI",
     description:
-        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`. Your account must be at least 7 days old.",
+        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`. Your account must be at least 3 days old.",
     category: "setup",
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 1,
     balanceBucket: "tier",
 };
 
@@ -212,7 +212,7 @@ export async function evaluateUser(
         LIMIT 1`)
             : [],
         // The age floor stops fresh accounts from farming the reward;
-        // newer accounts earn it once they turn 7 days old.
+        // newer accounts earn it once they turn 3 days old.
         rewardableQuestIds.has(connectPolliCliQuest.id)
             ? db.all<SetupQuestRow>(sql`
         SELECT apikey.user_id AS userId
@@ -220,7 +220,7 @@ export async function evaluateUser(
         JOIN "user" ON "user".id = apikey.user_id
         WHERE apikey.user_id = ${user.id}
           AND apikey.byop_client_key_id = ${POLLI_CLIENT_KEY_ID}
-          AND "user".created_at <= CAST(strftime('%s', 'now', '-7 days') AS integer)
+          AND "user".created_at <= CAST(strftime('%s', 'now', '-3 days') AS integer)
         LIMIT 1`)
             : [],
         rewardableQuestIds.has(earlyAdopterQuest.id)

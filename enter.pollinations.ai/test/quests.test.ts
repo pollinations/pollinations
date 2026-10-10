@@ -400,7 +400,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("connect_polli_cli", {
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 1,
         balanceBucket: "tier",
     });
     expectStableCatalogFields("join_discord", {
@@ -1190,7 +1190,7 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
     ]);
 });
 
-test("Polli CLI quest rewards device-login keys on accounts 7+ days old", async ({
+test("Polli CLI quest rewards device-login keys on accounts 3+ days old", async ({
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
@@ -1207,10 +1207,10 @@ test("Polli CLI quest rewards device-login keys on accounts 7+ days old", async 
         .where(
             inArray(schema.apikey.referenceId, [polliUserId, freshPolliUserId]),
         );
-    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
     await db
         .update(schema.user)
-        .set({ createdAt: eightDaysAgo })
+        .set({ createdAt: fourDaysAgo })
         .where(inArray(schema.user.id, [polliUserId, otherUserId]));
 
     for (const userId of [
@@ -1231,7 +1231,7 @@ test("Polli CLI quest rewards device-login keys on accounts 7+ days old", async 
         })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "connect_polli_cli"));
-    expect(rewards).toEqual([{ userId: polliUserId, amount: 2 }]);
+    expect(rewards).toEqual([{ userId: polliUserId, amount: 1 }]);
 });
 
 test("app milestones award their rewards at inclusive thresholds", async ({

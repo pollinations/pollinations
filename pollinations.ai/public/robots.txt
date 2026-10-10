@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 
 Sitemap: https://pollinations.ai/sitemap.xml

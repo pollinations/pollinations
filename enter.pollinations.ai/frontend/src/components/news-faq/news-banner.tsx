@@ -3,6 +3,7 @@ import {
     Chip,
     ExternalLinkButton,
     Eyebrow,
+    GlobeIcon,
     Heading,
     IconTile,
     type IconTileProps,
@@ -61,6 +62,18 @@ const ANNOUNCEMENTS: Announcement[] = [
         cta: {
             label: "Set up Connect User Wallets",
             href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        },
+    },
+    {
+        date: "2026-10-10",
+        until: "2026-10-24",
+        label: "New",
+        title: "A new pollinations.ai",
+        text: "The website is rebuilt: generate images, video and audio on Play, browse community apps, and see what the community is building.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit pollinations.ai",
+            href: "https://pollinations.ai",
         },
     },
     {

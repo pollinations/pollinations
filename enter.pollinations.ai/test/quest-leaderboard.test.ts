@@ -163,70 +163,58 @@ test("rendered leaderboard shows its heading and CTA while loading", () => {
     expect(html).toContain('aria-busy="true"');
 });
 
-test("voodoohop appears in both quest leaderboards", async () => {
+test("admins are left out of both quest leaderboards", async () => {
     const db = drizzle(env.DB, { schema });
-    await db.insert(schema.user).values([
-        {
-            id: "voodoohop-leaderboard-user",
-            name: "VoodooHop",
-            email: "voodoohop-leaderboard@example.com",
-            githubId: 8_999_998,
-            githubUsername: "VoodooHop",
-        },
-        {
-            id: "included-leaderboard-user",
-            name: "Included user",
-            email: "included-leaderboard@example.com",
-            githubId: 8_999_999,
-            githubUsername: "included-builder",
-        },
-    ]);
-    await db.insert(schema.rewards).values([
-        {
-            id: "voodoohop-leaderboard-reward",
-            idempotencyKey: "voodoohop-leaderboard-reward",
-            userId: "voodoohop-leaderboard-user",
-            questId: "github:issue:12345",
-            title: "VoodooHop quest",
-            pollenAmount: 10,
-            balanceBucket: "tier",
-        },
-        {
-            id: "included-leaderboard-reward",
-            idempotencyKey: "included-leaderboard-reward",
-            userId: "included-leaderboard-user",
-            questId: "github:issue:12346",
-            title: "Included quest",
-            pollenAmount: 2,
-            balanceBucket: "tier",
-        },
-    ]);
+    await db.insert(schema.user).values(
+        [
+            ["admin-role-user", "staff-admin", "admin"],
+            ["multi-role-user", "staff-multi", "user, admin"],
+            ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv", "staff-by-id", null],
+            ["community-user", "community-builder", "user"],
+        ].map(([id, githubUsername, role], index) => ({
+            id: id as string,
+            name: githubUsername as string,
+            email: `${githubUsername}@example.com`,
+            githubId: 8_800_000 + index,
+            githubUsername,
+            role,
+        })),
+    );
+    await db.insert(schema.rewards).values(
+        [
+            ["admin-role-user", 100],
+            ["multi-role-user", 50],
+            ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv", 25],
+            ["community-user", 3],
+        ].map(([userId, pollenAmount]) => ({
+            id: `admin-test-${userId}`,
+            idempotencyKey: `admin-test-${userId}`,
+            userId: userId as string,
+            questId: "first_top_up",
+            title: "Top up",
+            pollenAmount: pollenAmount as number,
+            balanceBucket: "tier" as const,
+        })),
+    );
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/leaderboard",
     );
     const leaderboard = (await response.json()) as ApiResponse;
     expect(leaderboard.leaderboard.map((row) => row.githubLogin)).toEqual([
-        "voodoohop",
-        "included-builder",
+        "community-builder",
     ]);
     expect(leaderboard.totals).toEqual({
-        contributors: 2,
-        completedQuests: 2,
-        totalPollen: 12,
+        contributors: 1,
+        completedQuests: 1,
+        totalPollen: 3,
     });
 
-    const standings = await buildQuestStandings(env, "VoodooHop");
-    expect(standings.participants).toBe(2);
+    const standings = await buildQuestStandings(env, null);
+    expect(standings.participants).toBe(1);
     expect(standings.rows.map((row) => row.githubLogin)).toEqual([
-        "voodoohop",
-        "included-builder",
+        "community-builder",
     ]);
-    expect(standings.you).toEqual({
-        githubLogin: "voodoohop",
-        rank: 1,
-        totalPollen: 10,
-    });
 });
 
 test("monthly standings show the podium and the rows around the viewer", async ({

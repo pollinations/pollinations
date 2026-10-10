@@ -2,12 +2,12 @@ import {
     AppIcon,
     BeakerIcon,
     Callout,
+    Chip,
     CodeIcon,
     ContentHeader,
     cn,
     EmptyState,
     ExternalLinkButton,
-    Eyebrow,
     Heading,
     InlineLink,
     LinkCard,
@@ -183,10 +183,14 @@ function CommunityParticipation() {
                             >
                                 <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
                                     <div className="flex flex-col gap-2.5">
-                                        <div className="flex items-center gap-1.5 text-theme-text-muted">
+                                        <Chip
+                                            intent="neutral"
+                                            size="sm"
+                                            className="self-start"
+                                        >
                                             <WayIcon className="size-3.5" />
-                                            <Eyebrow>{way.label}</Eyebrow>
-                                        </div>
+                                            {way.label}
+                                        </Chip>
                                         <Heading as="h3" size="card">
                                             {way.title}
                                         </Heading>
@@ -307,7 +311,7 @@ function Contributors() {
             <ContentHeader
                 eyebrow="Contributors"
                 title="Top code contributors"
-                subtitle="The top 20 by commits, people and agents alike. Want to join them?"
+                subtitle="The top 20 by pull requests merged in the last 6 months, people and agents alike. Want to join them?"
                 action={
                     <InlineLink href={SOCIAL_LINKS.github.url}>
                         Open the repository
@@ -324,8 +328,8 @@ function Contributors() {
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(190px,100%),1fr))] gap-3.5">
                 {people.map((person) => (
                     <LinkCard
-                        key={person.login}
-                        href={person.html_url}
+                        key={person.id}
+                        href={person.url}
                         showIcon={false}
                         surfaceClassName="flex-row items-center gap-3.5 p-4"
                     >
@@ -339,11 +343,18 @@ function Contributors() {
                             className="size-10 shrink-0 rounded-[10px] bg-theme-bg-subtle"
                         />
                         <span className="flex min-w-0 flex-col">
-                            <span className="truncate font-semibold text-sm text-theme-text-strong">
-                                {person.login}
+                            <span className="flex min-w-0 items-center gap-1.5">
+                                <span className="truncate font-semibold text-sm text-theme-text-strong">
+                                    {person.login.replace(/\[bot\]$/, "")}
+                                </span>
+                                {person.login.endsWith("[bot]") && (
+                                    <Chip intent="neutral" size="sm">
+                                        Agent
+                                    </Chip>
+                                )}
                             </span>
                             <span className="text-xs text-theme-text-muted tabular-nums">
-                                {person.contributions.toLocaleString()} commits
+                                {person.prs.toLocaleString()} merged PRs
                             </span>
                         </span>
                     </LinkCard>

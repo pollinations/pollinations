@@ -5,10 +5,12 @@ import {
     BeakerIcon,
     BookIcon,
     ChatIcon,
+    Chip,
     CloudUploadIcon,
     ContentHeader,
     cn,
     ExternalLinkButton,
+    ExternalLinkIcon,
     Heading,
     type IconProps,
     IconTile,
@@ -43,7 +45,12 @@ type Feature = {
     links: { label: string; href: string }[];
     icon: ComponentType<IconProps>;
     /** Live detail shown between the header and the body. */
-    detail?: ComponentType;
+    detail?: ComponentType<{ color?: string }>;
+    /** The icon's colour, from the Models cards; without one the card takes
+     * the wallet's paid gold, like the Community card. */
+    color?: string;
+    /** A Models-card background, for the publish cards. */
+    tint?: string;
 };
 
 /** The phrase a skimming reader should catch in a card's copy. */
@@ -76,6 +83,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: RobotIcon,
+        color: "var(--polli-color-modality-audio)",
     },
     {
         title: "Hosted MCP tools",
@@ -92,6 +100,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: McpIcon,
+        color: "var(--polli-color-modality-video)",
         detail: McpServers,
     },
     {
@@ -115,9 +124,11 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: TerminalIcon,
+        color: "var(--polli-color-modality-text)",
     },
     {
         title: "Users pay",
+        chips: ["BYOP", "Earnings"],
         body: (
             <>
                 Your users sign in with Pollinations and set a spending limit.{" "}
@@ -134,6 +145,7 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Media storage",
+        chips: ["Images", "Audio", "Video"],
         body: (
             <>
                 <Em>Upload images, audio and video</Em> to get a link for model
@@ -147,6 +159,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: CloudUploadIcon,
+        color: "var(--polli-color-modality-image)",
     },
     {
         title: "Safety checks",
@@ -165,6 +178,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: LockIcon,
+        color: "var(--polli-color-modality-embedding)",
     },
 ];
 
@@ -193,6 +207,8 @@ const PUBLISH_FEATURES: Feature[] = [
         ),
         links: [{ label: "Submit your app", href: LINKS.githubSubmitApp }],
         icon: AppIcon,
+        color: modalityTextColor("video"),
+        tint: modalityBgVar("video"),
     },
     {
         title: "Publish a model",
@@ -209,6 +225,8 @@ const PUBLISH_FEATURES: Feature[] = [
             },
         ],
         icon: BeakerIcon,
+        color: modalityTextColor("text"),
+        tint: modalityBgVar("text"),
     },
     {
         title: "Publish an agent",
@@ -224,6 +242,8 @@ const PUBLISH_FEATURES: Feature[] = [
             },
         ],
         icon: RobotIcon,
+        color: modalityTextColor("audio"),
+        tint: modalityBgVar("audio"),
     },
 ];
 
@@ -242,7 +262,11 @@ function FeatureCard({
             className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
             <div className="flex items-center gap-3">
-                <IconTile icon={feature.icon} />
+                <IconTile
+                    icon={feature.icon}
+                    color={feature.color}
+                    tone="paid"
+                />
                 <div className="flex min-w-0 flex-col gap-1">
                     <Heading as="h3" size="card">
                         {feature.title}
@@ -259,8 +283,10 @@ function FeatureCard({
                 </div>
             </div>
 
-            {feature.chips ? <ChipList names={feature.chips} /> : null}
-            {Detail ? <Detail /> : null}
+            {feature.chips ? (
+                <ChipList names={feature.chips} color={feature.color} />
+            ) : null}
+            {Detail ? <Detail color={feature.color} /> : null}
 
             <Text size="sm">{feature.body}</Text>
 
@@ -402,21 +428,72 @@ function Models() {
 }
 
 /** The hosted servers, live from gen. Nothing shows until they load. */
-function McpServers() {
+function McpServers({ color }: { color?: string }) {
     const { data: servers } = useMcpServers();
     if (servers.length === 0) return null;
-    return <ChipList names={servers} />;
+    return <ChipList names={servers} color={color} />;
 }
 
-function ChipList({ names }: { names: string[] }) {
+/** Labels in the card's icon colour: the icon tile's wash, darker text. */
+function ChipList({ names, color }: { names: string[]; color?: string }) {
     return (
         <ul className="flex flex-wrap gap-2">
             {names.map((name) => (
                 <li key={name}>
-                    <PaidChip size="md">{name}</PaidChip>
+                    {color ? (
+                        <Chip
+                            size="md"
+                            style={{
+                                backgroundColor: `color-mix(in oklab, ${color} 14%, transparent)`,
+                                color: `color-mix(in oklab, ${color} 60%, var(--polli-color-text-strong))`,
+                            }}
+                        >
+                            {name}
+                        </Chip>
+                    ) : (
+                        <PaidChip size="md">{name}</PaidChip>
+                    )}
                 </li>
             ))}
         </ul>
+    );
+}
+
+/**
+ * A publish card, a link like the Models cards: tinted, its icon in the
+ * card's colour, the whole card clickable with its call to action on top.
+ */
+function PublishCard({ feature }: { feature: Feature }) {
+    const Icon = feature.icon;
+    const [link] = feature.links;
+
+    return (
+        <LinkCard
+            href={link.href}
+            tint={feature.tint}
+            showIcon={false}
+            surfaceClassName="gap-3 p-5 sm:p-6"
+        >
+            {/* The call to action and its arrow, top right. */}
+            <div className="mb-1 flex items-start justify-between gap-2">
+                <Icon
+                    aria-hidden="true"
+                    className="size-10 shrink-0"
+                    style={{ color: feature.color }}
+                />
+                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-soft">
+                    {link.label}
+                    <ExternalLinkIcon
+                        aria-hidden="true"
+                        className="size-3.5 shrink-0"
+                    />
+                </span>
+            </div>
+            <Heading as="h3" size="card">
+                {feature.title}
+            </Heading>
+            <Text size="sm">{feature.body}</Text>
+        </LinkCard>
     );
 }
 
@@ -473,7 +550,7 @@ export function DevKit({ className }: { className?: string }) {
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (
-                        <FeatureCard key={feature.title} feature={feature} />
+                        <PublishCard key={feature.title} feature={feature} />
                     ))}
                 </div>
             </FeatureGroup>

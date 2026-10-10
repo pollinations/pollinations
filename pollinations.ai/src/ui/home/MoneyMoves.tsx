@@ -7,8 +7,8 @@ import {
     IconTile,
     type IconTileProps,
     InlineLink,
+    SproutIcon,
     Surface,
-    TargetIcon,
     Text,
 } from "@pollinations/ui";
 import type { ReactNode } from "react";
@@ -48,7 +48,7 @@ export function MoneyMoves() {
                     >
                         Top up any time and pay only for what you use.
                     </Item>
-                    <Item icon={TargetIcon} tone="tier" title="Free credits">
+                    <Item icon={SproutIcon} tone="tier" title="Free credits">
                         Get free Quest pollen for solving GitHub Quests, trying
                         models, or building an app or agent.{" "}
                         {quests ? (

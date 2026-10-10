@@ -1,0 +1,36 @@
+{
+  "pr_number": 16985,
+  "title": "fix: play in one page card like the rest of the site",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16985",
+  "merged_at": "2026-10-10T17:31:14Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Play now places the “Try it out” hero, playground, and bottom scene inside the same single page card used by other routes. When disconnected, “Connect your account” in the hero sentence starts the connect flow instead of a separate button; Generate also starts that flow. When connected, the account menu appears below the sentence. The root layout’s /play exception and the unused PageCard component were removed.",
+    "keywords": [
+      "Play",
+      "page card",
+      "playground",
+      "account connection",
+      "layout"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16985.jpg",
+    "prompt": "In a cozy pixel art scene, Polli points to a single warm-cream page card holding a tiny playground and garden scene, while a retro monitor shows “Try it out” and lime green (#ecf874) flowers grow around its base. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses, stays small within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-10T17:32:25.927572+00:00",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "0b7f38825b784f24039b8436a7a863af676b2dbf",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

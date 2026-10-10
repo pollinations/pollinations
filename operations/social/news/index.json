@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T09:59:06.598015+00:00",
+  "generated_at": "2026-10-10T16:42:14.890249+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -7431,6 +7431,78 @@
       "date": "2026-10-08",
       "pr": 16809,
       "url": "https://github.com/pollinations/pollinations/pull/16809"
+    },
+    {
+      "id": "pr-16982:GET /account/earnings/transactions",
+      "endpoint": "GET /account/earnings/transactions",
+      "summary": "Get Earnings Transactions",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:query:limit",
+          "before": {
+            "type": "number",
+            "required": false
+          },
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-10",
+      "pr": 16982,
+      "url": "https://github.com/pollinations/pollinations/pull/16982"
+    },
+    {
+      "id": "pr-16982:GET /account/key/usage",
+      "endpoint": "GET /account/key/usage",
+      "summary": "Get API Key Usage",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:query:limit",
+          "before": {
+            "type": "number",
+            "required": false
+          },
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-10",
+      "pr": 16982,
+      "url": "https://github.com/pollinations/pollinations/pull/16982"
+    },
+    {
+      "id": "pr-16982:GET /account/usage",
+      "endpoint": "GET /account/usage",
+      "summary": "Get Usage History",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "parameters:query:limit",
+          "before": {
+            "type": "number",
+            "required": false
+          },
+          "after": {
+            "type": "integer",
+            "required": false
+          },
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-10",
+      "pr": 16982,
+      "url": "https://github.com/pollinations/pollinations/pull/16982"
     }
   ],
   "highlights": [

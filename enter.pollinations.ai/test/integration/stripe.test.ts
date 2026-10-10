@@ -801,11 +801,24 @@ test("POST /api/stripe/billing/portal opens adding a card and comes back to the 
         (await open({ return: "top-up", flow: "card", pack: "p50" })).status,
     ).toBe(200);
     // Anything else opens the portal's home page; an unknown pack is dropped.
-    expect((await open({ flow: "details", pack: "p7" })).status).toBe(200);
+    expect((await open({ flow: "default", pack: "p7" })).status).toBe(200);
+    expect(
+        (await open({ return: "top-up", flow: "details", pack: "p20" })).status,
+    ).toBe(200);
 
-    const [card, other] = mocks.stripe.state.requests.filter(
+    const [card, other, details] = mocks.stripe.state.requests.filter(
         (request) => request.path === "/v1/billing_portal/sessions",
     );
+    // Auto top-up with missing details opens them directly, then comes back.
+    expect(details?.body["flow_data[type]"]).toBe("customer_update");
+    expect(details?.body["flow_data[after_completion][type]"]).toBe("redirect");
+    const detailsBack = new URL(
+        String(
+            details?.body["flow_data[after_completion][redirect][return_url]"],
+        ),
+    );
+    expect(detailsBack.pathname).toBe("/top-up");
+    expect(detailsBack.searchParams.get("pack")).toBe("p20");
     expect(card?.body["flow_data[type]"]).toBe("payment_method_update");
     expect(card?.body["flow_data[after_completion][type]"]).toBe("redirect");
     const back = new URL(
@@ -4136,7 +4149,7 @@ test("wallet and hosted checkout create the same session apart from how Stripe r
     expect(
         hostedShared["saved_payment_method_options[payment_method_save]"],
     ).toBe("enabled");
-    expect(ui_mode).toBe("custom");
+    expect(ui_mode).toBe("elements");
     // Redirect-based methods come back to the same page as hosted success.
     expect(return_url).toBe(success_url);
     expect(return_url).toContain("session_id={CHECKOUT_SESSION_ID}");

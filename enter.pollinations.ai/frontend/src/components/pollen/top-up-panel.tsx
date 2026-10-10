@@ -150,8 +150,8 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const hasDefault = billing ? hasDefaultPaymentMethod(billing) : false;
     // Auto top-up charges the default card and taxes by the billing
     // address. Missing either, the switch first opens Stripe for it (adding
-    // a card, or the portal where the details are); back here the buyer
-    // turns it on themselves.
+    // a card, or editing the billing details); back here the buyer turns it
+    // on themselves.
     const needsCard = Boolean(billing) && !hasDefault;
     const needsDetails =
         Boolean(billing) && hasDefault && !billing?.billingDetailsComplete;
@@ -214,7 +214,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         if (enabled) {
             if (!selectedRefillPack) return;
             if (needsCard) openPortal("card");
-            else if (needsDetails) openPortal();
+            else if (needsDetails) openPortal("details");
             else void saveAutoTopUp(true, selectedRefillPack.amountUsd);
         } else {
             void saveAutoTopUp(false, billing.autoTopUp.packAmountUsd);

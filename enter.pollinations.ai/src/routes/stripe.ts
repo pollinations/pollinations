@@ -62,7 +62,7 @@ export const stripeRoutes = new Hono<Env>()
      * with Stripe.js paying through the buyer's saved card.
      */
     .post("/checkout/:packKey/session", async (c) => {
-        const session = await createPackCheckoutSession(c, "custom");
+        const session = await createPackCheckoutSession(c, "elements");
         if (session instanceof Response) return session;
         return c.json({
             clientSecret: session.client_secret as string,
@@ -162,8 +162,9 @@ export const stripeRoutes = new Hono<Env>()
     /**
      * POST /api/stripe/billing/portal
      * Create a Stripe Customer Portal session for billing management.
-     * `flow: "card"` opens adding a card (made the default) and returns
-     * once it is done. Without it, the portal's home page.
+     * `flow: "card"` opens adding a card (made the default), `flow:
+     * "details"` the billing details; either returns once it is done.
+     * Without it, the portal's home page.
      */
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
@@ -191,7 +192,9 @@ export const stripeRoutes = new Hono<Env>()
                             ? body.pack
                             : undefined,
                 },
-                body?.flow === "card" ? "card" : undefined,
+                body?.flow === "card" || body?.flow === "details"
+                    ? body.flow
+                    : undefined,
             );
 
             if (!session.url) {
@@ -283,9 +286,9 @@ export const stripeRoutes = new Hono<Env>()
 
 /**
  * How the session is shown: Stripe's hosted page, or our pay modal
- * (`custom`: the saved card, rendered by Stripe.js).
+ * (`elements`: the saved card, rendered by Stripe.js).
  */
-type CheckoutUiMode = "hosted" | "custom";
+type CheckoutUiMode = "hosted" | "elements";
 
 /**
  * Create a pack Checkout Session for the signed-in buyer. Every UI mode
@@ -461,7 +464,7 @@ async function createPackCheckoutSession(
                 : {
                       // Payments finish inside the modal; only methods that
                       // need a redirect come back through return_url.
-                      ui_mode: "custom",
+                      ui_mode: "elements",
                       return_url: successUrl,
                   }),
         });

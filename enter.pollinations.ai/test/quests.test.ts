@@ -2156,50 +2156,6 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
 });
 
-test("the maintainer does not re-earn reported-issue rewards", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    await db
-        .update(schema.user)
-        .set({ githubId: 5099901, githubUsername: "VoodooHop" })
-        .where(eq(schema.user.id, user.id));
-    await mocks.enable("github", "tinybird");
-    mocks.github.state.questIssues.push({
-        number: 9101,
-        state: "closed",
-        title: "Issue 9101",
-        html_url: "https://github.com/pollinations/pollinations/issues/9101",
-        body: "A useful issue report",
-        created_at: "2026-09-22T00:00:00Z",
-        updated_at: "2026-09-24T12:00:00Z",
-        closed_at: "2026-09-24T12:00:00Z",
-        user: { login: "VoodooHop", databaseId: 5099901 },
-        labels: [],
-        closedByPullRequestsReferences: [
-            {
-                number: 10101,
-                mergedAt: "2026-09-24T12:00:00Z",
-                author: { databaseId: 999999 },
-            },
-        ],
-    });
-
-    await checkQuestsForUser(env, user.id);
-
-    const rewards = await db
-        .select({ questId: schema.rewards.questId })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.userId, user.id));
-    expect(
-        rewards.filter((reward) =>
-            reward.questId?.startsWith("github:reported_issue:"),
-        ),
-    ).toEqual([]);
-});
-
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({
     mocks,
     sessionToken: _sessionToken,

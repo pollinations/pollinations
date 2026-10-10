@@ -58,23 +58,57 @@ export function useDiscordPresence(options?: UseAsyncOptions) {
 
 /* ── Contributors ───────────────────────────────────────────────────────── */
 
-/** GitHub's contributor list: all-time commits on main, people and agents alike. */
+/** Merged PRs per account, one file per finished month (news branch). */
+const NEWS_MONTHLY =
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/monthly";
+const CONTRIBUTOR_MONTHS = 6;
+
 type Contributor = {
+    id: number;
     login: string;
     avatar_url: string;
-    html_url: string;
-    contributions: number;
+    url: string;
+    prs: number;
 };
 
-export function useContributors() {
-    // One request, already ranked by commit count.
-    return useAsync<Contributor[]>(
-        async () =>
-            (await loadGithub(
-                `/repos/${REPO}/contributors?per_page=20`,
-            )) as Contributor[],
-        [],
+/** A finished month's counts, or null until the monthly job writes it. */
+const loadMonth = cachePublic(async (month: string) => {
+    const response = await fetch(`${NEWS_MONTHLY}/${month}/contributors.json`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`news ${month}: ${response.status}`);
+    return (await response.json()) as { contributors: Contributor[] };
+});
+
+/**
+ * Merged PRs over the six latest written months, people and bots alike.
+ * Accounts merge by id, oldest month first, so the newest login and avatar win.
+ */
+async function loadContributors(): Promise<Contributor[]> {
+    const now = new Date();
+    // From last month back; two spare months cover a month not written yet.
+    const months = Array.from({ length: CONTRIBUTOR_MONTHS + 2 }, (_, i) =>
+        new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1 - i, 1))
+            .toISOString()
+            .slice(0, 7),
     );
+    const found = (await Promise.all(months.map((month) => loadMonth(month))))
+        .filter((month) => month !== null)
+        .slice(0, CONTRIBUTOR_MONTHS)
+        .reverse();
+    const people = new Map<number, Contributor>();
+    for (const month of found) {
+        for (const person of month.contributors) {
+            const prs = (people.get(person.id)?.prs ?? 0) + person.prs;
+            people.set(person.id, { ...person, prs });
+        }
+    }
+    return [...people.values()]
+        .sort((a, b) => b.prs - a.prs || a.login.localeCompare(b.login))
+        .slice(0, 20);
+}
+
+export function useContributors() {
+    return useAsync<Contributor[]>(loadContributors, []);
 }
 
 /* ── Pull requests and open votes ───────────────────────────────────────── */

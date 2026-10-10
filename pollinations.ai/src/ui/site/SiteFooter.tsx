@@ -25,7 +25,6 @@ const COLUMNS = [
         links: [
             { to: "/privacy", label: "Privacy" },
             { to: "/terms", label: "Terms" },
-            { to: "/subprocessors", label: "Service Providers" },
             // Payment providers generally require this to be reachable.
             { to: "/refunds", label: "Refunds" },
         ],

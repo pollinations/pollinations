@@ -68,7 +68,8 @@
       "prs": [
         14874
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -77,7 +78,8 @@
       "prs": [
         14871
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -85,7 +87,8 @@
       "text": "Install `llm-pollinations` to use chat-capable Pollinations models in LLM 0.35 as `pollinations/<model-id>`, with catalog-driven vision, tool, and reasoning support.",
       "prs": [
         14808
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -93,7 +96,8 @@
       "text": "The shared UI now displays images, audio, and video inline—even when generated-media URLs have no file extension. Code blocks are labelled, wrap long lines, and can be copied.",
       "prs": [
         14843
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -101,7 +105,8 @@
       "text": "Use a qualifying agent for a one-time 0.25 Pollen quest, or create an agent that gets used to qualify for a 2 Pollen quest.",
       "prs": [
         14841
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

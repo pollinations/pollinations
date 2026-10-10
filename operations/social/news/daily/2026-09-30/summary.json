@@ -127,7 +127,8 @@
       "text": "Use `openai/gpt-6.1-sol` for text and chat, including with Quest Pollen. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15960
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
@@ -135,7 +136,8 @@
       "text": "The SDK adds `audioTransform()` for voice-changing and voice-isolation requests. Speech requests also accept duration, seed, and reference audio. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         15917
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -144,7 +146,8 @@
       "prs": [
         15997,
         15919
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -153,7 +156,8 @@
       "prs": [
         15931
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "💡",
@@ -161,7 +165,8 @@
       "text": "Eligible Pollen buyers can answer a survey about purchases and usage for a 10 Quest Pollen reward. The Bee Census is paused.",
       "prs": [
         15934
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

@@ -76,7 +76,8 @@
       "prs": [
         14919
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "💡",
@@ -85,7 +86,8 @@
       "prs": [
         14920
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -93,7 +95,8 @@
       "text": "Filter model catalogs by official or community source, opt into reliability filtering, and inspect 24-hour health fields in the results. [Explore the models API](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14553
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🤖",
@@ -101,7 +104,8 @@
       "text": "The new `/v1/models/status/routes` endpoint reports primary-versus-fallback traffic, rescue counts, and per-attempt upstream latency. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14861
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🚀",
@@ -109,7 +113,8 @@
       "text": "If you installed the CLI globally, run `polli update` to install the latest `@pollinations/cli`. Local and `npx` installs get guidance instead. [View the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         14883
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

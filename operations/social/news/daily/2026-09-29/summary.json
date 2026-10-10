@@ -179,7 +179,8 @@
       "text": "Generate images from a prompt, with guidance from up to two reference images, using `inferenceport-ai/lightning-image-turbo`. [Explore image models](https://gen.pollinations.ai/image/models).",
       "prs": [
         14797
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
@@ -189,7 +190,8 @@
         15497,
         15512,
         15814
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -198,7 +200,8 @@
       "prs": [
         15671,
         15680
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
@@ -207,7 +210,8 @@
       "prs": [
         15541,
         15601
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -217,7 +221,8 @@
         15775,
         15785
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

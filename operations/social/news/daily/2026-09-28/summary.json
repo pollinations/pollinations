@@ -75,7 +75,8 @@
       "text": "Give prompt agents caller-defined function tools alongside server-side MCP tools. Client-executed calls and their results can flow through Responses or Chat Completions using the existing SDK loop. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15655
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🔗",
@@ -83,7 +84,8 @@
       "text": "Use `polli harness codex` or `polli harness claude-code` to connect those coding tools to Pollinations and choose a model. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15289
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -91,7 +93,8 @@
       "text": "The community agent `community/fadyabohamza-netizen/frugal` ranks models for coding requests by estimated cost, recent health, and conversation needs. [Explore available models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15213
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🤖",
@@ -99,7 +102,8 @@
       "text": "`cesus-agent/prism-code-review-router` sorts review requests into fast, balanced, or deep tiers, then chooses a compatible model using health data and a wallet-based spend cap. [Explore available models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15226
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

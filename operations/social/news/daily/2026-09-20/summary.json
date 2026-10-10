@@ -36,7 +36,8 @@
       "prs": [
         15207
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🤖",
@@ -44,7 +45,8 @@
       "text": "Send typed state and questions to `POST /alpha/decisions` and get answers with token usage. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15217
-      ]
+      ],
+      "kind": "api"
     }
   ]
 }

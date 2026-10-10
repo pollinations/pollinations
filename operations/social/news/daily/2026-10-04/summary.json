@@ -163,7 +163,8 @@
       "text": "Try a video model or a community model to earn 0.25 Pollen for each Setup Quest. Community-model publishers can earn 2 Pollen when others spend more than 0.5 Paid Pollen across their models.",
       "prs": [
         15732
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -172,7 +173,8 @@
       "prs": [
         16425
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎵",
@@ -182,7 +184,8 @@
         16417,
         16418
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎵",
@@ -192,7 +195,8 @@
         16376,
         16377
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -200,7 +204,8 @@
       "text": "Polli’s Claude Code setup now connects directly to Gen’s `/v1/messages` instead of using Claude Code Router. See the [Polli CLI package](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16311
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

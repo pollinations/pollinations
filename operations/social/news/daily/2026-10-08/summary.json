@@ -152,7 +152,8 @@
       "prs": [
         16713,
         16796
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
@@ -160,7 +161,8 @@
       "text": "Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16811
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "💡",
@@ -168,7 +170,8 @@
       "text": "Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.",
       "prs": [
         16732
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "💻",
@@ -176,7 +179,8 @@
       "text": "Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.",
       "prs": [
         16033
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -185,7 +189,8 @@
       "prs": [
         16810
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

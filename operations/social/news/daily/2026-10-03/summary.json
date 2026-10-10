@@ -63,7 +63,8 @@
       "text": "Send inline PDF data to OpenRouter chat models or base64 audio to `thinkingmachines/inkling`; large inputs are stored and forwarded as media URLs within the existing size limits. [See the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16308
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🎨",
@@ -72,7 +73,8 @@
       "prs": [
         16299
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -81,7 +83,8 @@
       "prs": [
         16301
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -89,7 +92,8 @@
       "text": "MCP clients can now request usage, earnings, and quests, or list, create, and revoke API keys. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15731
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🚀",
@@ -97,7 +101,8 @@
       "text": "`polli` 0.1.23 includes commands to create, list, and terminate sandboxes, plus SSH configuration. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16296
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

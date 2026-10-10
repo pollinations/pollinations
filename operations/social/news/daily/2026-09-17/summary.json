@@ -70,7 +70,8 @@
         15101,
         15104
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🤖",
@@ -80,7 +81,8 @@
         15106,
         15107
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -88,7 +90,8 @@
       "text": "See your display name and current key and account Pollen status together in the updated account and app menus. [Open Enter](https://enter.pollinations.ai/keys).",
       "prs": [
         14951
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -96,7 +99,8 @@
       "text": "Check model health at [`/models/status`](https://gen.pollinations.ai/models/status). Health data has moved out of `/models`, so model listings and status checks now have separate endpoints.",
       "prs": [
         15052
-      ]
+      ],
+      "kind": "api"
     }
   ]
 }

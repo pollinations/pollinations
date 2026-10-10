@@ -59,7 +59,8 @@
       "text": "Endpoint agents can declare supported inputs and multiple outputs, including 3D. Those capabilities appear in [model listings](https://gen.pollinations.ai/v1/models), making agents easier to discover by what they handle.",
       "prs": [
         14800
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🤖",
@@ -67,7 +68,8 @@
       "text": "Gen endpoint agents now accept an optional `agent_model`, letting an agent use a different underlying model while callers keep using the same agent model ID. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14799
-      ]
+      ],
+      "kind": "api"
     }
   ]
 }

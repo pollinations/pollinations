@@ -71,7 +71,8 @@
       "text": "`minimax/minimax-h3-max` was added for video generation from text, start and end frames, or reference media, with synchronized audio. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         15392
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
@@ -79,7 +80,8 @@
       "text": "Generate speech with `google/gemini-3.8-flash-tts` or `google/gemini-3.8-flash-lite-tts`. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
         15395
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
@@ -87,7 +89,8 @@
       "text": "`google/lyria-3.5` was added for song generation through the audio API. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         15491
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -95,7 +98,8 @@
       "text": "`openai/gpt-6-sol` and `openai/gpt-6-luna` were added for text and image-input requests through the unified API. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15457
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "📱",
@@ -104,7 +108,8 @@
       "prs": [
         15470
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

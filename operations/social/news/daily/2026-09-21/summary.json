@@ -83,7 +83,8 @@
       "text": "Try paid-only `x-ai/grok-4.7` with image input, reasoning, tools, structured outputs, and a 500K context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15278
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎯",
@@ -93,7 +94,8 @@
         15041,
         15069,
         15141
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -101,7 +103,8 @@
       "text": "Use `polli mcp` to discover, install, check, and remove MCP servers across 13 coding clients. [Find the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15032
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -110,7 +113,8 @@
       "prs": [
         15246
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -119,7 +123,8 @@
       "prs": [
         15270,
         15286
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

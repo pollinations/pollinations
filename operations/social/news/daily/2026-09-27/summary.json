@@ -87,7 +87,8 @@
       "text": "Include a Quest number when submitting an app. If the app is approved, the Quest closes and its reward is attributed to you.",
       "prs": [
         15566
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -96,7 +97,8 @@
       "prs": [
         15522
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -105,7 +107,8 @@
       "prs": [
         15523
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

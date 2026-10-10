@@ -83,7 +83,8 @@
       "text": "Try `deepseek/deepseek-v4.1-flash` for reasoning and tool use, with a 1,048,576-token context window. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14736
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
@@ -91,7 +92,8 @@
       "text": "List up to four models in a comma-separated `model` parameter, such as `?model=a,b`, to give generation requests an ordered fallback chain. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14784
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "💡",
@@ -99,7 +101,8 @@
       "text": "The built-in `/mcp/computer` server gives agents a private persistent filesystem and a bash tool for working across files. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         14741
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -107,7 +110,8 @@
       "text": "Generate 1080p video with `minimax/minimax-h3-max-turbo` from text or first and last frames. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14747
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "📱",
@@ -116,7 +120,8 @@
       "prs": [
         14750
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

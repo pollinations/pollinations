@@ -51,7 +51,8 @@
       "text": "Use the paid-only `openai/gpt-6-sol` and `openai/gpt-6-luna` models through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15312
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "✨",
@@ -59,7 +60,8 @@
       "text": "Try `anthropic/claude-opus-5.5` with image input, adaptive thinking, automatic tools, and a 1M-token context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15309
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -67,7 +69,8 @@
       "text": "Send text or images to the paid-only `z-ai/glm-5.3-flashx` model, with a 1M-token context window. Explore it through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15178
-      ]
+      ],
+      "kind": "model"
     }
   ]
 }

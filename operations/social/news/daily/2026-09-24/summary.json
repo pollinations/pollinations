@@ -59,7 +59,8 @@
       "text": "Send `video_url` content to the paid-only `inclusionai/ling-3.0-flash-vl` model through the [Text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15327
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -68,7 +69,8 @@
       "prs": [
         15398
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

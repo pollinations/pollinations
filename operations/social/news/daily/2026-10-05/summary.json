@@ -160,7 +160,8 @@
       "prs": [
         16245,
         16248
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -169,7 +170,8 @@
       "prs": [
         16244,
         16250
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎯",
@@ -177,7 +179,8 @@
       "text": "Call the existing decisions endpoint through `@pollinations/sdk` with typed `decision({ state, questions, model? })` inputs and responses. [See the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         15410
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -186,7 +189,8 @@
       "prs": [
         16246,
         16450
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "💡",
@@ -195,7 +199,8 @@
       "prs": [
         16448
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

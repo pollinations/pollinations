@@ -59,7 +59,8 @@
       "text": "Create a managed code agent from a public GitHub repository’s root `agent.ts`, with a commit-pinned runtime and caller-funded AI SDK helpers.",
       "prs": [
         14622
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -67,7 +68,8 @@
       "text": "Chat model listings now show verified `supported_parameters`, so you can check a model’s options before sending a request. [Browse models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14640
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🎨",
@@ -75,7 +77,8 @@
       "text": "Polli gained Visual Studio rendering, complexity-based model routing, and full-page image capture.",
       "prs": [
         14722
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "📱",
@@ -84,7 +87,8 @@
       "prs": [
         14724
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -93,7 +97,8 @@
       "prs": [
         14733
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

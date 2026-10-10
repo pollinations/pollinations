@@ -159,7 +159,8 @@
       "text": "Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         16800
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎵",
@@ -168,7 +169,8 @@
       "prs": [
         16798,
         16802
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -176,7 +178,8 @@
       "text": "Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
       "prs": [
         16701
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -185,7 +188,8 @@
       "prs": [
         16869
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -194,7 +198,8 @@
       "prs": [
         16871
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

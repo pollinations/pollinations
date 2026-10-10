@@ -107,7 +107,8 @@
       "text": "Generate images or edit them using up to 10 reference images with `qwen/qwen-image-2.1`. [Explore the image API](https://gen.pollinations.ai/docs).",
       "prs": [
         15236
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -115,7 +116,8 @@
       "text": "Make text-to-image creations with `recraft/recraft-v4.1-flash`. [Explore the image API](https://gen.pollinations.ai/docs).",
       "prs": [
         15357
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -127,7 +129,8 @@
         15223,
         15408,
         15419
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎵",
@@ -136,7 +139,8 @@
       "prs": [
         15424
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🔗",
@@ -144,7 +148,8 @@
       "text": "Find Ask Jev in the hosted MCP catalog at `/mcp/ask-jev`. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15445
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

@@ -144,7 +144,8 @@
       "prs": [
         15968,
         15970
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -154,7 +155,8 @@
         15578,
         16120
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🚀",
@@ -162,7 +164,8 @@
       "text": "Stream FormData or raw files up to 400 MiB through [the media store](https://media.pollinations.ai) without changing your existing upload requests. Base64 JSON uploads remain capped at 100 MiB.",
       "prs": [
         15956
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
@@ -172,7 +175,8 @@
         16176,
         16177,
         16184
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💡",
@@ -182,7 +186,8 @@
         15093,
         15160,
         15257
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

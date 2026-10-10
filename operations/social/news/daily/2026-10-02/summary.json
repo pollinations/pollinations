@@ -91,7 +91,8 @@
       "text": "Use E2B-compatible sandboxes through `/alpha/e2b`, or manage them with `polli sandbox` and SSH into a template with five coding agents.",
       "prs": [
         15656
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "✨",
@@ -100,7 +101,8 @@
       "prs": [
         16199,
         16267
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🎯",
@@ -109,7 +111,8 @@
       "prs": [
         15674,
         16251
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -118,7 +121,8 @@
       "prs": [
         16211
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -127,7 +131,8 @@
       "prs": [
         16258
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

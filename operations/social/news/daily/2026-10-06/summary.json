@@ -188,7 +188,8 @@
       "prs": [
         16581,
         16582
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -196,7 +197,8 @@
       "text": "Generate or edit images with `google/gemini-nano-banana-2.1`, using up to 14 reference images. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         16609
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -204,7 +206,8 @@
       "text": "Create 1–15 second clips from text or a starting image with `x-ai/grok-imagine-video-1.5-lite`, at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         16640
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🔗",
@@ -212,7 +215,8 @@
       "text": "Give an API key access to a category such as image or audio instead of updating its model list whenever a new model is added. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         16462
-      ]
+      ],
+      "kind": "api"
     }
   ]
 }

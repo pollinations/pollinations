@@ -163,7 +163,8 @@
       "text": "Generate music with `elevenlabs/music-v2.5`, including reference-plan extraction and inpainting. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
         15042
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -172,7 +173,8 @@
       "prs": [
         14869,
         14957
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🤖",
@@ -181,7 +183,8 @@
       "prs": [
         14945
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -190,7 +193,8 @@
       "prs": [
         14947
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "💡",
@@ -199,7 +203,8 @@
       "prs": [
         14972
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

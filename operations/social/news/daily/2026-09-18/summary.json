@@ -55,7 +55,8 @@
       "text": "Generate images with `black-forest-labs/flux.2-max` using up to eight reference images. It’s a paid-only model in the [image API](https://gen.pollinations.ai/docs).",
       "prs": [
         14811
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -65,7 +66,8 @@
         14791,
         14798,
         14812
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎯",
@@ -73,7 +75,8 @@
       "text": "Use `typesafe/jev` in Chat Completions for decisions expressed as `state` and `questions`, or call `jev_decide` through the new MCP server. See the [API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15111
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "💡",
@@ -81,7 +84,8 @@
       "text": "Filter `polli usage --history` and `--daily` by key, model, or day range, then export the results as CSV. Less scrolling, more answers.",
       "prs": [
         15045
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

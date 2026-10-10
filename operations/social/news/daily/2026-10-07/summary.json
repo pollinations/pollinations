@@ -80,7 +80,8 @@
       "prs": [
         16340,
         16341
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -88,7 +89,8 @@
       "text": "Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         16606
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🎨",
@@ -96,7 +98,8 @@
       "text": "Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         16705
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "✨",
@@ -105,7 +108,8 @@
       "prs": [
         16664
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎵",
@@ -114,7 +118,8 @@
       "prs": [
         16665
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

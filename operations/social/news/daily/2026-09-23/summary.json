@@ -89,7 +89,8 @@
         15320,
         15331,
         15333
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "🤖",
@@ -98,7 +99,8 @@
       "prs": [
         15304,
         15311
-      ]
+      ],
+      "kind": "model"
     },
     {
       "emoji": "✨",
@@ -106,7 +108,8 @@
       "text": "Floret now supports downloadable 3D generation and uses shared MCP media tools.",
       "prs": [
         15298
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "📱",
@@ -115,7 +118,8 @@
       "prs": [
         15330
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "emoji": "🎯",
@@ -123,7 +127,8 @@
       "text": "Public model discovery now considers recent success rates for community proxy models. Need the complete catalog? Use `reliability=all`. [Browse text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15279
-      ]
+      ],
+      "kind": "api"
     }
   ]
 }

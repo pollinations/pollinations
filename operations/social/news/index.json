@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T17:22:46.196313+00:00",
+  "generated_at": "2026-10-10T22:19:33.008971+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -5675,6 +5675,34 @@
             "zh-CN-Lan",
             "zh-CN-Mei",
             "zh-CN-Wei"
+          ]
+        }
+      }
+    },
+    {
+      "id": "pr-16925:amazon/nova-2-lite-v1",
+      "model_id": "amazon/nova-2-lite-v1",
+      "title": "Nova 2 Lite",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-10",
+      "pr": 16925,
+      "url": "https://github.com/pollinations/pollinations/pull/16925",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "input_modalities": {
+          "before": [
+            "text",
+            "image"
+          ],
+          "after": [
+            "text",
+            "image",
+            "video"
           ]
         }
       }

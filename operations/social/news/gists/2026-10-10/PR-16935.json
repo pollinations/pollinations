@@ -1,0 +1,36 @@
+{
+  "pr_number": 16935,
+  "title": "chore(apps): correct URLs and remove 25 unavailable apps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16935",
+  "merged_at": "2026-10-10T00:13:55Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Removed 25 catalog entries whose app links still failed after a third scoped check more than eight hours after the first, with no working listed repository; the checks do not establish permanent abandonment. Cleared failed app links for 7 entries with working repositories, removed AINewsForge’s “Not public” placeholder and 2 website addresses incorrectly listed as repositories, corrected 3 website URLs to HTTPS, and updated 1 transferred GitHub repository URL. Previously recovered apps were unchanged. Validation passed across the 857-entry catalog.",
+    "keywords": [
+      "app catalog",
+      "showcase",
+      "broken links",
+      "repositories",
+      "HTTPS"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16935.jpg",
+    "prompt": "In a cozy pixel art garden catalog, Polli tends lime green (#ecf874) code-plants beside a retro screen showing tidy app cards, while a small stack of outdated cards rests off to the side; soft pastel gradients and warm lighting give the scene a cozy pixel art, 8-bit aesthetic with retro gaming vibes. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny gardener’s gloves, stays small within the scene, and is strictly pixel art, never realistic."
+  },
+  "generated_at": "2026-10-10T00:15:00.166873+00:00",
+  "area": "App catalog & showcase",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "bf118d6ca65e64517c2a9fea53f082f996a8ac47",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

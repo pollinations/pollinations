@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T16:42:14.890249+00:00",
+  "generated_at": "2026-10-10T17:22:46.196313+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -7513,7 +7513,8 @@
       "text": "Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).",
       "prs": [
         16800
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-09",
@@ -7523,7 +7524,8 @@
       "prs": [
         16798,
         16802
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-09",
@@ -7532,7 +7534,8 @@
       "text": "Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
       "prs": [
         16701
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-09",
@@ -7542,7 +7545,8 @@
       "prs": [
         16869
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-09",
@@ -7552,7 +7556,8 @@
       "prs": [
         16871
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-08",
@@ -7562,7 +7567,8 @@
       "prs": [
         16713,
         16796
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-08",
@@ -7571,7 +7577,8 @@
       "text": "Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16811
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-08",
@@ -7580,7 +7587,8 @@
       "text": "Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.",
       "prs": [
         16732
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-08",
@@ -7589,7 +7597,8 @@
       "text": "Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.",
       "prs": [
         16033
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-08",
@@ -7599,7 +7608,8 @@
       "prs": [
         16810
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-07",
@@ -7609,7 +7619,8 @@
       "prs": [
         16340,
         16341
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-07",
@@ -7618,7 +7629,8 @@
       "text": "Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         16606
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-07",
@@ -7627,7 +7639,8 @@
       "text": "Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         16705
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-07",
@@ -7637,7 +7650,8 @@
       "prs": [
         16664
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-07",
@@ -7647,7 +7661,8 @@
       "prs": [
         16665
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-06",
@@ -7657,7 +7672,8 @@
       "prs": [
         16581,
         16582
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-06",
@@ -7666,7 +7682,8 @@
       "text": "Generate or edit images with `google/gemini-nano-banana-2.1`, using up to 14 reference images. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         16609
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-06",
@@ -7675,7 +7692,8 @@
       "text": "Create 1–15 second clips from text or a starting image with `x-ai/grok-imagine-video-1.5-lite`, at up to 1080p. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         16640
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-06",
@@ -7684,7 +7702,8 @@
       "text": "Give an API key access to a category such as image or audio instead of updating its model list whenever a new model is added. [Manage API keys](https://enter.pollinations.ai/keys).",
       "prs": [
         16462
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-05",
@@ -7694,7 +7713,8 @@
       "prs": [
         16245,
         16248
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-05",
@@ -7704,7 +7724,8 @@
       "prs": [
         16244,
         16250
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-05",
@@ -7713,7 +7734,8 @@
       "text": "Call the existing decisions endpoint through `@pollinations/sdk` with typed `decision({ state, questions, model? })` inputs and responses. [See the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         15410
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-05",
@@ -7723,7 +7745,8 @@
       "prs": [
         16246,
         16450
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-05",
@@ -7733,7 +7756,8 @@
       "prs": [
         16448
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-04",
@@ -7742,7 +7766,8 @@
       "text": "Try a video model or a community model to earn 0.25 Pollen for each Setup Quest. Community-model publishers can earn 2 Pollen when others spend more than 0.5 Paid Pollen across their models.",
       "prs": [
         15732
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-04",
@@ -7752,7 +7777,8 @@
       "prs": [
         16425
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-04",
@@ -7763,7 +7789,8 @@
         16417,
         16418
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-04",
@@ -7774,7 +7801,8 @@
         16376,
         16377
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-04",
@@ -7783,7 +7811,8 @@
       "text": "Polli’s Claude Code setup now connects directly to Gen’s `/v1/messages` instead of using Claude Code Router. See the [Polli CLI package](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16311
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-03",
@@ -7792,7 +7821,8 @@
       "text": "Send inline PDF data to OpenRouter chat models or base64 audio to `thinkingmachines/inkling`; large inputs are stored and forwarded as media URLs within the existing size limits. [See the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16308
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-03",
@@ -7802,7 +7832,8 @@
       "prs": [
         16299
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-03",
@@ -7812,7 +7843,8 @@
       "prs": [
         16301
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-03",
@@ -7821,7 +7853,8 @@
       "text": "MCP clients can now request usage, earnings, and quests, or list, create, and revoke API keys. [Explore the MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15731
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-03",
@@ -7830,7 +7863,8 @@
       "text": "`polli` 0.1.23 includes commands to create, list, and terminate sandboxes, plus SSH configuration. [Get the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         16296
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-02",
@@ -7839,7 +7873,8 @@
       "text": "Use E2B-compatible sandboxes through `/alpha/e2b`, or manage them with `polli sandbox` and SSH into a template with five coding agents.",
       "prs": [
         15656
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-02",
@@ -7849,7 +7884,8 @@
       "prs": [
         16199,
         16267
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-02",
@@ -7859,7 +7895,8 @@
       "prs": [
         15674,
         16251
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-02",
@@ -7869,7 +7906,8 @@
       "prs": [
         16211
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-02",
@@ -7879,7 +7917,8 @@
       "prs": [
         16258
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-01",
@@ -7889,7 +7928,8 @@
       "prs": [
         15968,
         15970
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-10-01",
@@ -7900,7 +7940,8 @@
         15578,
         16120
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-10-01",
@@ -7909,7 +7950,8 @@
       "text": "Stream FormData or raw files up to 400 MiB through [the media store](https://media.pollinations.ai) without changing your existing upload requests. Base64 JSON uploads remain capped at 100 MiB.",
       "prs": [
         15956
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-01",
@@ -7920,7 +7962,8 @@
         16176,
         16177,
         16184
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-01",
@@ -7931,7 +7974,8 @@
         15093,
         15160,
         15257
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-30",
@@ -7940,7 +7984,8 @@
       "text": "Use `openai/gpt-6.1-sol` for text and chat, including with Quest Pollen. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15960
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-30",
@@ -7949,7 +7994,8 @@
       "text": "The SDK adds `audioTransform()` for voice-changing and voice-isolation requests. Speech requests also accept duration, seed, and reference audio. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
       "prs": [
         15917
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-30",
@@ -7959,7 +8005,8 @@
       "prs": [
         15997,
         15919
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-30",
@@ -7969,7 +8016,8 @@
       "prs": [
         15931
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-30",
@@ -7978,7 +8026,8 @@
       "text": "Eligible Pollen buyers can answer a survey about purchases and usage for a 10 Quest Pollen reward. The Bee Census is paused.",
       "prs": [
         15934
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-29",
@@ -7987,7 +8036,8 @@
       "text": "Generate images from a prompt, with guidance from up to two reference images, using `inferenceport-ai/lightning-image-turbo`. [Explore image models](https://gen.pollinations.ai/image/models).",
       "prs": [
         14797
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-29",
@@ -7998,7 +8048,8 @@
         15497,
         15512,
         15814
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-29",
@@ -8008,7 +8059,8 @@
       "prs": [
         15671,
         15680
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-29",
@@ -8018,7 +8070,8 @@
       "prs": [
         15541,
         15601
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-29",
@@ -8029,7 +8082,8 @@
         15775,
         15785
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-28",
@@ -8038,7 +8092,8 @@
       "text": "Give prompt agents caller-defined function tools alongside server-side MCP tools. Client-executed calls and their results can flow through Responses or Chat Completions using the existing SDK loop. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15655
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-28",
@@ -8047,7 +8102,8 @@
       "text": "Use `polli harness codex` or `polli harness claude-code` to connect those coding tools to Pollinations and choose a model. [Find Polli on npm](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15289
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-28",
@@ -8056,7 +8112,8 @@
       "text": "The community agent `community/fadyabohamza-netizen/frugal` ranks models for coding requests by estimated cost, recent health, and conversation needs. [Explore available models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15213
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-28",
@@ -8065,7 +8122,8 @@
       "text": "`cesus-agent/prism-code-review-router` sorts review requests into fast, balanced, or deep tiers, then chooses a compatible model using health data and a wallet-based spend cap. [Explore available models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15226
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-27",
@@ -8074,7 +8132,8 @@
       "text": "Include a Quest number when submitting an app. If the app is approved, the Quest closes and its reward is attributed to you.",
       "prs": [
         15566
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-27",
@@ -8084,7 +8143,8 @@
       "prs": [
         15522
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-27",
@@ -8094,7 +8154,8 @@
       "prs": [
         15523
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-26",
@@ -8103,7 +8164,8 @@
       "text": "`minimax/minimax-h3-max` was added for video generation from text, start and end frames, or reference media, with synchronized audio. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         15392
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-26",
@@ -8112,7 +8174,8 @@
       "text": "Generate speech with `google/gemini-3.8-flash-tts` or `google/gemini-3.8-flash-lite-tts`. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
         15395
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-26",
@@ -8121,7 +8184,8 @@
       "text": "`google/lyria-3.5` was added for song generation through the audio API. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         15491
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-26",
@@ -8130,7 +8194,8 @@
       "text": "`openai/gpt-6-sol` and `openai/gpt-6-luna` were added for text and image-input requests through the unified API. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15457
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-26",
@@ -8140,7 +8205,8 @@
       "prs": [
         15470
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-25",
@@ -8149,7 +8215,8 @@
       "text": "Generate images or edit them using up to 10 reference images with `qwen/qwen-image-2.1`. [Explore the image API](https://gen.pollinations.ai/docs).",
       "prs": [
         15236
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-25",
@@ -8158,7 +8225,8 @@
       "text": "Make text-to-image creations with `recraft/recraft-v4.1-flash`. [Explore the image API](https://gen.pollinations.ai/docs).",
       "prs": [
         15357
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-25",
@@ -8171,7 +8239,8 @@
         15223,
         15408,
         15419
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-25",
@@ -8181,7 +8250,8 @@
       "prs": [
         15424
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-25",
@@ -8190,7 +8260,8 @@
       "text": "Find Ask Jev in the hosted MCP catalog at `/mcp/ask-jev`. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         15445
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-24",
@@ -8199,7 +8270,8 @@
       "text": "Send `video_url` content to the paid-only `inclusionai/ling-3.0-flash-vl` model through the [Text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15327
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-24",
@@ -8209,7 +8281,8 @@
       "prs": [
         15398
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-23",
@@ -8220,7 +8293,8 @@
         15320,
         15331,
         15333
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-23",
@@ -8230,7 +8304,8 @@
       "prs": [
         15304,
         15311
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-23",
@@ -8239,7 +8314,8 @@
       "text": "Floret now supports downloadable 3D generation and uses shared MCP media tools.",
       "prs": [
         15298
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-23",
@@ -8249,7 +8325,8 @@
       "prs": [
         15330
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-23",
@@ -8258,7 +8335,8 @@
       "text": "Public model discovery now considers recent success rates for community proxy models. Need the complete catalog? Use `reliability=all`. [Browse text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15279
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-22",
@@ -8267,7 +8345,8 @@
       "text": "Use the paid-only `openai/gpt-6-sol` and `openai/gpt-6-luna` models through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15312
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-22",
@@ -8276,7 +8355,8 @@
       "text": "Try `anthropic/claude-opus-5.5` with image input, adaptive thinking, automatic tools, and a 1M-token context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15309
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-22",
@@ -8285,7 +8365,8 @@
       "text": "Send text or images to the paid-only `z-ai/glm-5.3-flashx` model, with a 1M-token context window. Explore it through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15178
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-21",
@@ -8294,7 +8375,8 @@
       "text": "Try paid-only `x-ai/grok-4.7` with image input, reasoning, tools, structured outputs, and a 500K context window through the [text API](https://gen.pollinations.ai/v1/chat/completions).",
       "prs": [
         15278
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-21",
@@ -8305,7 +8387,8 @@
         15041,
         15069,
         15141
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-21",
@@ -8314,7 +8397,8 @@
       "text": "Use `polli mcp` to discover, install, check, and remove MCP servers across 13 coding clients. [Find the CLI](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         15032
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-21",
@@ -8324,7 +8408,8 @@
       "prs": [
         15246
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-21",
@@ -8334,7 +8419,8 @@
       "prs": [
         15270,
         15286
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-20",
@@ -8344,7 +8430,8 @@
       "prs": [
         15207
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-20",
@@ -8353,7 +8440,8 @@
       "text": "Send typed state and questions to `POST /alpha/decisions` and get answers with token usage. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15217
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-19",
@@ -8363,7 +8451,8 @@
       "prs": [
         15194
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-19",
@@ -8373,7 +8462,8 @@
       "prs": [
         15196
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-19",
@@ -8383,7 +8473,8 @@
       "prs": [
         15198
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-19",
@@ -8392,7 +8483,8 @@
       "text": "Model discovery responses now include 24-hour status, success rate, and request count by default. Check the [available text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         15157
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-18",
@@ -8401,7 +8493,8 @@
       "text": "Generate images with `black-forest-labs/flux.2-max` using up to eight reference images. It’s a paid-only model in the [image API](https://gen.pollinations.ai/docs).",
       "prs": [
         14811
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-18",
@@ -8412,7 +8505,8 @@
         14791,
         14798,
         14812
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-18",
@@ -8421,7 +8515,8 @@
       "text": "Use `typesafe/jev` in Chat Completions for decisions expressed as `state` and `questions`, or call `jev_decide` through the new MCP server. See the [API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         15111
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-18",
@@ -8430,7 +8525,8 @@
       "text": "Filter `polli usage --history` and `--daily` by key, model, or day range, then export the results as CSV. Less scrolling, more answers.",
       "prs": [
         15045
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-17",
@@ -8442,7 +8538,8 @@
         15101,
         15104
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-17",
@@ -8453,7 +8550,8 @@
         15106,
         15107
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-17",
@@ -8462,7 +8560,8 @@
       "text": "See your display name and current key and account Pollen status together in the updated account and app menus. [Open Enter](https://enter.pollinations.ai/keys).",
       "prs": [
         14951
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-17",
@@ -8471,7 +8570,8 @@
       "text": "Check model health at [`/models/status`](https://gen.pollinations.ai/models/status). Health data has moved out of `/models`, so model listings and status checks now have separate endpoints.",
       "prs": [
         15052
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-16",
@@ -8480,7 +8580,8 @@
       "text": "Generate music with `elevenlabs/music-v2.5`, including reference-plan extraction and inpainting. [Explore the audio API](https://gen.pollinations.ai/docs).",
       "prs": [
         15042
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-16",
@@ -8490,7 +8591,8 @@
       "prs": [
         14869,
         14957
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-16",
@@ -8500,7 +8602,8 @@
       "prs": [
         14945
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-16",
@@ -8510,7 +8613,8 @@
       "prs": [
         14947
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-16",
@@ -8520,7 +8624,8 @@
       "prs": [
         14972
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-15",
@@ -8530,7 +8635,8 @@
       "prs": [
         14919
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-15",
@@ -8540,7 +8646,8 @@
       "prs": [
         14920
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-15",
@@ -8549,7 +8656,8 @@
       "text": "Filter model catalogs by official or community source, opt into reliability filtering, and inspect 24-hour health fields in the results. [Explore the models API](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14553
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-15",
@@ -8558,7 +8666,8 @@
       "text": "The new `/v1/models/status/routes` endpoint reports primary-versus-fallback traffic, rescue counts, and per-attempt upstream latency. [Explore the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         14861
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-15",
@@ -8567,7 +8676,8 @@
       "text": "If you installed the CLI globally, run `polli update` to install the latest `@pollinations/cli`. Local and `npx` installs get guidance instead. [View the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         14883
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-14",
@@ -8577,7 +8687,8 @@
       "prs": [
         14874
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-14",
@@ -8587,7 +8698,8 @@
       "prs": [
         14871
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-14",
@@ -8596,7 +8708,8 @@
       "text": "Install `llm-pollinations` to use chat-capable Pollinations models in LLM 0.35 as `pollinations/<model-id>`, with catalog-driven vision, tool, and reasoning support.",
       "prs": [
         14808
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-14",
@@ -8605,7 +8718,8 @@
       "text": "The shared UI now displays images, audio, and video inline—even when generated-media URLs have no file extension. Code blocks are labelled, wrap long lines, and can be copied.",
       "prs": [
         14843
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-14",
@@ -8614,7 +8728,8 @@
       "text": "Use a qualifying agent for a one-time 0.25 Pollen quest, or create an agent that gets used to qualify for a 2 Pollen quest.",
       "prs": [
         14841
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-13",
@@ -8623,7 +8738,8 @@
       "text": "Endpoint agents can declare supported inputs and multiple outputs, including 3D. Those capabilities appear in [model listings](https://gen.pollinations.ai/v1/models), making agents easier to discover by what they handle.",
       "prs": [
         14800
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-13",
@@ -8632,7 +8748,8 @@
       "text": "Gen endpoint agents now accept an optional `agent_model`, letting an agent use a different underlying model while callers keep using the same agent model ID. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14799
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-12",
@@ -8641,7 +8758,8 @@
       "text": "Try `deepseek/deepseek-v4.1-flash` for reasoning and tool use, with a 1,048,576-token context window. [Explore text models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14736
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-12",
@@ -8650,7 +8768,8 @@
       "text": "List up to four models in a comma-separated `model` parameter, such as `?model=a,b`, to give generation requests an ordered fallback chain. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14784
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-12",
@@ -8659,7 +8778,8 @@
       "text": "The built-in `/mcp/computer` server gives agents a private persistent filesystem and a bash tool for working across files. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
       "prs": [
         14741
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-12",
@@ -8668,7 +8788,8 @@
       "text": "Generate 1080p video with `minimax/minimax-h3-max-turbo` from text or first and last frames. [Explore the API](https://gen.pollinations.ai/docs).",
       "prs": [
         14747
-      ]
+      ],
+      "kind": "model"
     },
     {
       "date": "2026-09-12",
@@ -8678,7 +8799,8 @@
       "prs": [
         14750
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-11",
@@ -8687,7 +8809,8 @@
       "text": "Create a managed code agent from a public GitHub repository’s root `agent.ts`, with a commit-pinned runtime and caller-funded AI SDK helpers.",
       "prs": [
         14622
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-11",
@@ -8696,7 +8819,8 @@
       "text": "Chat model listings now show verified `supported_parameters`, so you can check a model’s options before sending a request. [Browse models](https://gen.pollinations.ai/v1/models).",
       "prs": [
         14640
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-09-11",
@@ -8705,7 +8829,8 @@
       "text": "Polli gained Visual Studio rendering, complexity-based model routing, and full-page image capture.",
       "prs": [
         14722
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-11",
@@ -8715,7 +8840,8 @@
       "prs": [
         14724
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-11",
@@ -8725,7 +8851,8 @@
       "prs": [
         14733
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-10",
@@ -8735,7 +8862,8 @@
       "prs": [
         14669
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-10",
@@ -8745,7 +8873,8 @@
       "prs": [
         14694
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     },
     {
       "date": "2026-09-10",
@@ -8754,7 +8883,8 @@
       "text": "Use `polli harness bloom on|status|off` for reversible Pollinations setup in Bloom CLI. [See the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
       "prs": [
         14670
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-09-10",
@@ -8764,7 +8894,8 @@
       "prs": [
         14677
       ],
-      "app": true
+      "app": true,
+      "kind": "product"
     }
   ]
 }

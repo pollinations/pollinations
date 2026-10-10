@@ -717,6 +717,9 @@ describe("POST /v1/messages", () => {
                     );
                     return Response.json({});
                 }
+                if (new URL(upstream.url).pathname === "/openai/files") {
+                    return Response.json({ id: "file-test-pdf" });
+                }
                 const body = (await upstream.json().catch(() => null)) as {
                     messages?: unknown;
                     stream?: boolean;
@@ -1029,9 +1032,7 @@ describe("POST /v1/messages", () => {
                 content: [
                     {
                         type: "file",
-                        file: {
-                            file_data: "data:application/pdf;base64,JVBERi0x",
-                        },
+                        file: { file_id: "file-test-pdf" },
                     },
                     { type: "text", text: "What word is in this PDF?" },
                 ],

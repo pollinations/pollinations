@@ -145,6 +145,36 @@ function messageContent(
                 ),
             ];
         }
+        if (
+            !output &&
+            allowImages &&
+            part.type === "file" &&
+            part.file &&
+            typeof part.file === "object"
+        ) {
+            const file = part.file as JsonObject;
+            return [
+                withPromptCacheBreakpoint(
+                    {
+                        type: "input_file",
+                        ...(typeof file.file_data === "string"
+                            ? { file_data: file.file_data }
+                            : {}),
+                        ...(typeof file.file_id === "string"
+                            ? { file_id: file.file_id }
+                            : {}),
+                        ...(typeof file.file_url === "string"
+                            ? { file_url: file.file_url }
+                            : {}),
+                        ...(typeof file.file_name === "string"
+                            ? { filename: file.file_name }
+                            : {}),
+                    },
+                    part,
+                ),
+            ];
+        }
+
         return invalidRequest(
             "messages",
             `Unsupported Chat content part: ${String(part.type ?? "unknown")}`,

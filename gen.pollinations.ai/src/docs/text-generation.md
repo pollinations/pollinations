@@ -89,6 +89,30 @@ Image, video, audio and 3D models that advertise these endpoints in [`/models`](
 
 Text models with `video` under `input_modalities` (for example `inclusionai/ling-3.0-flash-vl`) accept `video_url` parts the same way they accept `image_url`: a public `https://` URL or a `data:video/...;base64,...` data URI (Gemini models also accept YouTube and `gs://` URLs). Video usage is metered from the provider's reported `video_tokens` detail and billed against the model's video prompt rate.
 
+### File and PDF input
+
+Text models with `document` under `input_modalities` (all Claude models and GPT models) read PDF documents the way they read images. Send a base64 PDF as a Chat Completions `file` part, an `input_file` item in Responses, or a base64 `document` block in `/v1/messages`; billing, key permissions and caching behave as for images.
+
+```bash
+PDF_B64=$(base64 -w0 page.pdf)
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"claude\",
+    \"messages\": [{
+      \"role\": \"user\",
+      \"content\": [
+        {\"type\": \"file\", \"file\": {\"file_data\": \"data:application/pdf;base64,$PDF_B64\", \"file_name\": \"page.pdf\"}},
+        {\"type\": \"text\", \"text\": \"Summarize this document.\"}
+      ]
+    }]
+  }"
+```
+
+A `file` part takes `file_data` (a `data:` URL or bare base64) plus an optional `file_name`; `file_url` and `file_id` references pass through untouched. On Bedrock routes the gateway forwards raw base64 with a Bedrock-safe document name; on Azure routes it uploads the PDF to Azure Files and forwards the `file_id`. Models without the `document` modality return HTTP 400 for inline PDF data instead of a provider error.
+
+
 Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Reference-required models return their normal missing-input error.
 
 Dialogue models expect one `<voice>: <text>` turn per line, just like `/audio`. Community speech models available only through `/v1/audio/speech` are not included.

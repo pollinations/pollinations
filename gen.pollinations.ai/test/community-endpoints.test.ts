@@ -8493,7 +8493,10 @@ fixtureTest(
             "video",
         ];
         const outputModalities: ModelOutputModality[] = [
-            ...modalities,
+            ...modalities.filter(
+                (m): m is Exclude<ModelInputModality, "document"> =>
+                    m !== "document",
+            ),
             "3d",
             "embedding",
         ];

@@ -65,6 +65,7 @@ def models_news_staged_files(date_str: str) -> list[tuple[str, str]]:
 
 # Image generation
 IMAGE_SIZE = 2048
+CHARACTER_SHEET_URL = "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/characters-ref.jpg"
 # Style suffix appended to every image prompt — ensures consistent pixel art style
 # regardless of what the text AI writes in image_prompt fields
 IMAGE_STYLE_SUFFIX = (
@@ -73,7 +74,7 @@ IMAGE_STYLE_SUFFIX = (
     "Lime green #ecf874 used BOLDLY. "
     "Tiny pixel sparkles and glowing particles floating in the air. Magical warm atmosphere. "
     "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike. "
-    "The attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
+    "The first attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
     "proportions, and art style consistency. Do NOT copy the layout or background from it. "
     "Only draw the characters mentioned in the prompt above, not all characters from the sheet."
 )
@@ -388,8 +389,11 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:
-    """Generate a single image via the pollinations.ai image API."""
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None, references: List[str] = ()) -> tuple[Optional[bytes], Optional[str]]:
+    """Generate a single image via the pollinations.ai image API.
+
+    `references` are image URLs attached after the character sheet, in order.
+    """
     use_model = model or IMAGE_MODEL
 
     # Append character descriptions if not already present (loaded from prompt file)
@@ -420,7 +424,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
             "quality": "hd",
             "seed": seed,
             "key": token,
-            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/characters-ref.jpg",
+            "image": "|".join([CHARACTER_SHEET_URL, *references]),
         }
 
         if attempt == 0:
@@ -880,6 +884,11 @@ def normalize_platform_post(
         text = (raw_post.get("body") or raw_post.get("text") or "").strip()
     elif platform == "discord":
         text = (raw_post.get("message") or "").strip()
+    elif platform == "website":
+        title = (raw_post.get("title") or "").strip()
+        text = (raw_post.get("summary") or "").strip()
+        # Where the picture book stands; next month's cover carries it on.
+        metadata["story"] = (raw_post.get("story") or "").strip()
     else:
         text = (raw_post.get("text") or "").strip()
         title = (raw_post.get("title") or "").strip()

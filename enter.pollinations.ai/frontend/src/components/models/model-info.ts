@@ -21,6 +21,7 @@ const BRAND_LOGOS: Record<string, string> = {
     InferencePort: "inferenceport",
     inclusionAI: "inclusionai",
     "Jared Palmer": "jared-palmer",
+    "Kandinsky Lab": "kandinsky",
     Krea: "krea",
     "Liquid AI": "liquid-ai",
     Lykon: "lykon",

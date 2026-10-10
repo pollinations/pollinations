@@ -5,7 +5,6 @@ Reads gists and daily summaries from the news branch checkout and keeps:
 - `models`: official model announcements from recent gists
 - `api`: API changes from the post-deploy docs PRs
 - `highlights`: the items each daily summary picked for users
-- `contributors`: merged PRs per author over a rolling six months, bots included
 
     python build_news_index.py --news-dir <checkout>/operations/social/news [--publish]
 
@@ -16,19 +15,15 @@ to the news branch.
 import argparse
 import json
 import sys
-from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
-from urllib.parse import quote
 
 from common import GISTS_BRANCH, NEWS_REL_DIR, OWNER, REPO, commit_files_to_branch, get_env, get_repo_root
 
 INDEX_PATH = f"{NEWS_REL_DIR}/index.json"
 RECENT_DAYS = 30
 README_ITEMS = 10
-CONTRIBUTOR_DAYS = 183  # a rolling six months
-CONTRIBUTORS = 20
 # Announcement changes the model cards show; everything else stays in the gist.
 CARD_FIELDS = ("pricing", "paid_only", "capabilities", "input_modalities", "output_modalities",
                "context_length", "per_user_rpm", "max_reference_images", "model_id", "voices")
@@ -106,26 +101,8 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
     return items[:README_ITEMS] if len(recent) < README_ITEMS else recent
 
 
-def contributor_entries(gists: List[Dict], since: str) -> List[Dict]:
-    """Merged PRs per author since `since`, most first; bots count like people."""
-    counts = Counter(gist["author"] for gist in gists if gist.get("author") and gist["merged_at"][:10] >= since)
-    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0].lower()))
-    return [
-        {
-            "login": login,
-            "prs": prs,
-            # Works for bot accounts too, unlike github.com/<login>.png.
-            "avatar_url": f"https://avatars.githubusercontent.com/{quote(login)}?s=80",
-            "url": f"https://github.com/apps/{login.removesuffix('[bot]')}" if login.endswith("[bot]")
-            else f"https://github.com/{login}",
-        }
-        for login, prs in ranked[:CONTRIBUTORS]
-    ]
-
-
 def build_index(news_dir: Path, today: str) -> Dict:
     since = (datetime.fromisoformat(today) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%d")
-    contributors_since = (datetime.fromisoformat(today) - timedelta(days=CONTRIBUTOR_DAYS)).strftime("%Y-%m-%d")
     gists = read_json(news_dir.glob("gists/*/PR-*.json"))
     return {
         "schema_version": 1,
@@ -133,7 +110,6 @@ def build_index(news_dir: Path, today: str) -> Dict:
         "models": model_entries(gists, since, today),
         "api": api_entries(gists, since),
         "highlights": highlight_entries(read_json(news_dir.glob("daily/*/summary.json")), since),
-        "contributors": contributor_entries(gists, contributors_since),
     }
 
 
@@ -147,8 +123,7 @@ def main():
     index_file = args.news_dir / "index.json"
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     index = build_index(args.news_dir, today)
-    print(f"Index: {len(index['models'])} model announcements, {len(index['highlights'])} highlights, "
-          f"{len(index['contributors'])} contributors")
+    print(f"Index: {len(index['models'])} model announcements, {len(index['highlights'])} highlights")
 
     previous = json.loads(index_file.read_text()) if index_file.exists() else {}
     if {**previous, "generated_at": None} == {**index, "generated_at": None}:

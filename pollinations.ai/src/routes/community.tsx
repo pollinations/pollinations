@@ -328,7 +328,7 @@ function Contributors() {
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(190px,100%),1fr))] gap-3.5">
                 {people.map((person) => (
                     <LinkCard
-                        key={person.login}
+                        key={person.id}
                         href={person.url}
                         showIcon={false}
                         surfaceClassName="flex-row items-center gap-3.5 p-4"

@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from common import filter_daily_gists, generate_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from api_changes import api_changes, api_changes_for_pr, api_surface
-from build_news_index import api_entries, build_index, contributor_entries, highlight_entries, model_entries
+from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
@@ -198,24 +198,6 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(entries[2]["previous_title"], "Old")
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
         self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
-
-    def test_index_ranks_six_months_of_merged_prs_per_author_bots_included(self):
-        merged = [
-            ("voodoohop", "2026-09-01"), ("voodoohop", "2026-10-01"),
-            ("pollinations-ai[bot]", "2026-08-01"), ("pollinations-ai[bot]", "2026-08-02"),
-            ("pollinations-ai[bot]", "2026-08-03"),
-            ("ElliotEtag", "2026-03-01"),  # before the window
-            ("ale-rls", "2026-05-01"), (None, "2026-09-02"),
-        ] + [(f"builder-{n:02d}", "2026-06-01") for n in range(20)]
-        gists = [{"author": author, "merged_at": f"{day}T00:00:00Z"} for author, day in merged]
-        ranked = contributor_entries(gists, "2026-04-10")
-        self.assertEqual([(row["login"], row["prs"]) for row in ranked[:3]],
-                         [("pollinations-ai[bot]", 3), ("voodoohop", 2), ("ale-rls", 1)])
-        self.assertEqual(ranked[0]["avatar_url"], "https://avatars.githubusercontent.com/pollinations-ai%5Bbot%5D?s=80")
-        self.assertEqual(ranked[0]["url"], "https://github.com/apps/pollinations-ai")
-        self.assertEqual(ranked[1]["url"], "https://github.com/voodoohop")
-        self.assertEqual(len(ranked), 20)
-        self.assertNotIn("ElliotEtag", [row["login"] for row in ranked])
 
     def test_api_changes_mark_what_breaks_existing_clients(self):
         field = lambda type_, required=False: {"type": type_, "required": required}

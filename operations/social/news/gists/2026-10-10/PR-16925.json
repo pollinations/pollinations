@@ -1,0 +1,68 @@
+{
+  "pr_number": 16925,
+  "title": "fix(text): pass video parts to Nova 2 Lite and refuse its audio",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16925",
+  "merged_at": "2026-10-10T22:17:01Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Nova 2 Lite now converts `video_url` parts into the video file format its Bedrock adapter accepts, so clips reach the model instead of producing text-only answers. Video URLs and data URIs use the existing guarded fetch path and 20 MiB limit. The transform maps standard video MIME types to Bedrock-compatible names; a caller-supplied `mime_type` takes precedence over the host’s content type. Unsupported video formats and `input_audio` return HTTP 400 rather than being silently dropped. The model registry now lists video as an input modality.",
+    "keywords": [
+      "Nova 2 Lite",
+      "video input",
+      "Bedrock",
+      "MIME types",
+      "audio input"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16925.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears tiny director’s headphones and helps a cheerful CRT monitor robot feed a little filmstrip into a glowing lime green (#ecf874) terminal, with code-plants growing beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never dominating the scene, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender around the dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-10T22:18:56.878627+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "507b11302baf12ae6e066df45c4e7811de12f9ba",
+  "announcements": [
+    {
+      "id": "pr-16925:amazon/nova-2-lite-v1",
+      "model_id": "amazon/nova-2-lite-v1",
+      "title": "Nova 2 Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "input_modalities": {
+          "before": [
+            "text",
+            "image"
+          ],
+          "after": [
+            "text",
+            "image",
+            "video"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "507b11302baf12ae6e066df45c4e7811de12f9ba^1",
+    "after_ref": "507b11302baf12ae6e066df45c4e7811de12f9ba"
+  }
+}

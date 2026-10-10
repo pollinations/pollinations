@@ -1,10 +1,10 @@
 # Refunds & Cancellations
 
-**Updated: 2026-10-05**
+**Updated: 2026-10-10**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
-**Scope.** This policy applies to paid Pollen packs/top-ups used to call the Pollinations API and to any paid subscriptions we may introduce in the future.
+**Scope.** This policy applies to paid Pollen packs/top-ups used to call the Pollinations API.
 
 ## 1) Pollen Is Digital API Credit
 
@@ -45,20 +45,16 @@ We do not currently collect a separate immediate-delivery waiver at checkout. Re
 
 This policy does not limit any non-waivable statutory rights for non-conforming digital services.
 
-## 5) Subscriptions
-
-If we introduce paid subscriptions, cancellation stops future renewals. It does not refund prior periods, consumed usage, or already-provisioned Pollen unless required by law or expressly approved by us.
-
-## 6) Chargebacks & Payment Fraud
+## 5) Chargebacks & Payment Fraud
 
 If a chargeback or payment dispute is filed, or we reasonably believe a payment was unauthorized or fraudulent, we may suspend access while it is investigated. Pollen, credits, benefits, and developer earnings tied to that payment may be manually reviewed and reversed or adjusted; where the Pollen has already been spent, reversal can leave a negative balance.
 
-## 7) B2B Purchases
+## 6) B2B Purchases
 
 If you provide a valid VAT ID or purchase for business use, consumer withdrawal rules generally do not apply. We may request reasonable evidence to classify a purchase.
 
-## 8) How to Request Review
+## 7) How to Request Review
 
-Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid. Business days are calculated in EET/EEST (Tallinn).
+Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid.
 
 Crypto payments follow the same refund policy. Approved crypto refunds are processed by Stripe and returned as stablecoins to the wallet used for the original payment.

@@ -136,6 +136,7 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
         file_id: z.string().optional(),
         file_name: z.string().optional(),
         file_url: z.string().optional(),
+        filename: z.string().optional(),
         mime_type: z.string().optional(),
     }),
     cache_control: CacheControlSchema,

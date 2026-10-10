@@ -1023,7 +1023,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "qwen/qwen3-vl-30b-a3b-instruct": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-30b-a3b-instruct",
-        "alibaba",
+        "deepinfra/fp8",
     ),
     "qwen3-vl-235b-a22b-thinking": () =>
         createAlibabaModelConfig({

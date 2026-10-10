@@ -334,6 +334,49 @@ describe("gen worker routing", () => {
         );
     });
 
+    it("publishes an RFC 9727 API catalog and links it from llms.txt", async () => {
+        const catalog = await fetchWorker("/.well-known/api-catalog");
+        expect(catalog.status).toBe(200);
+        expect(catalog.headers.get("Content-Type")).toContain(
+            "application/linkset+json",
+        );
+        const body = (await catalog.json()) as {
+            linkset: {
+                anchor: string;
+                "service-desc": { href: string; type: string }[];
+                "service-doc": { href: string; type: string }[];
+            }[];
+        };
+        expect(body.linkset).toHaveLength(1);
+        const [linkset] = body.linkset;
+        // The origin follows the serving host (the test worker serves staging).
+        const origin = "https://staging.gen.pollinations.ai";
+        expect(linkset.anchor).toBe(origin);
+        expect(linkset["service-desc"]).toEqual([
+            { href: `${origin}/openapi.json`, type: "application/json" },
+        ]);
+        expect(linkset["service-doc"]).toEqual([
+            { href: `${origin}/docs/llm.txt`, type: "text/plain" },
+        ]);
+        expect(catalog.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        expect(catalog.headers.get("Access-Control-Allow-Origin")).toBe("*");
+
+        const head = await fetchWorker(
+            "/.well-known/api-catalog",
+            envWithEnter(),
+            { method: "HEAD" },
+        );
+        expect(head.status).toBe(200);
+        expect(head.headers.get("Link")).toBe(
+            `<${origin}/.well-known/api-catalog>; rel="api-catalog"`,
+        );
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain("/.well-known/api-catalog");
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 

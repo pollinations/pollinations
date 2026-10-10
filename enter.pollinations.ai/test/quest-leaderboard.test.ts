@@ -90,16 +90,26 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         },
     ]);
 
-    // A large product reward must not affect the public GitHub quest board.
-    await db.insert(schema.rewards).values({
-        id: "leaderboard-non-github-reward",
-        idempotencyKey: "quest:first_top_up:leaderboard-user-51",
-        userId: "leaderboard-user-51",
-        questId: "first_top_up",
-        title: "First top up",
-        pollenAmount: 1_000,
-        balanceBucket: "tier",
-    });
+    // Every quest reward counts except BYOP app growth and BYOM model/agent use.
+    await db.insert(schema.rewards).values(
+        [
+            { questId: "merged_pr", pollenAmount: 5 },
+            { questId: "github:reported_issue:40001", pollenAmount: 3 },
+            { questId: "app_listed", pollenAmount: 10 },
+            { questId: "first_top_up", pollenAmount: 1_000 },
+            { questId: "use_image_model", pollenAmount: 500 },
+            { questId: "app_active", pollenAmount: 700 },
+            { questId: "create_used_community_model", pollenAmount: 200 },
+        ].map(({ questId, pollenAmount }) => ({
+            id: `leaderboard-51-${questId}`,
+            idempotencyKey: `quest:${questId}:leaderboard-user-51`,
+            userId: "leaderboard-user-51",
+            questId,
+            title: questId,
+            pollenAmount,
+            balanceBucket: "tier" as const,
+        })),
+    );
 
     // A GitHub-shaped reward without a public GitHub login must stay private.
     await db.insert(schema.user).values({
@@ -128,8 +138,8 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
     expect(payload.leaderboard).toHaveLength(50);
     expect(payload.leaderboard[0]).toEqual({
         githubLogin: "builder-51",
-        completedQuests: 3,
-        totalPollen: 51.8,
+        completedQuests: 8,
+        totalPollen: 1569.8,
     });
     expect(payload.leaderboard.at(-1)).toEqual({
         githubLogin: "builder-2",
@@ -137,12 +147,12 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         totalPollen: 2,
     });
 
-    // 1 + ... + 51 + 0.1 + 0.2 + 0.5 = 1326.8. The bonus contributes
-    // Pollen without counting the same quest twice.
+    // 1 + ... + 51 + 0.1 + 0.2 + 0.5 + 5 + 3 + 10 + 1000 + 500 = 2844.8.
+    // The bonus contributes Pollen without counting the same quest twice.
     expect(payload.totals).toEqual({
         contributors: 51,
-        completedQuests: 53,
-        totalPollen: 1326.8,
+        completedQuests: 58,
+        totalPollen: 2844.8,
     });
 });
 
@@ -153,70 +163,58 @@ test("rendered leaderboard shows its heading and CTA while loading", () => {
     expect(html).toContain('aria-busy="true"');
 });
 
-test("voodoohop appears in both quest leaderboards", async () => {
+test("admins are left out of both quest leaderboards", async () => {
     const db = drizzle(env.DB, { schema });
-    await db.insert(schema.user).values([
-        {
-            id: "voodoohop-leaderboard-user",
-            name: "VoodooHop",
-            email: "voodoohop-leaderboard@example.com",
-            githubId: 8_999_998,
-            githubUsername: "VoodooHop",
-        },
-        {
-            id: "included-leaderboard-user",
-            name: "Included user",
-            email: "included-leaderboard@example.com",
-            githubId: 8_999_999,
-            githubUsername: "included-builder",
-        },
-    ]);
-    await db.insert(schema.rewards).values([
-        {
-            id: "voodoohop-leaderboard-reward",
-            idempotencyKey: "voodoohop-leaderboard-reward",
-            userId: "voodoohop-leaderboard-user",
-            questId: "github:issue:12345",
-            title: "VoodooHop quest",
-            pollenAmount: 10,
-            balanceBucket: "tier",
-        },
-        {
-            id: "included-leaderboard-reward",
-            idempotencyKey: "included-leaderboard-reward",
-            userId: "included-leaderboard-user",
-            questId: "github:issue:12346",
-            title: "Included quest",
-            pollenAmount: 2,
-            balanceBucket: "tier",
-        },
-    ]);
+    await db.insert(schema.user).values(
+        [
+            ["admin-role-user", "staff-admin", "admin"],
+            ["multi-role-user", "staff-multi", "user, admin"],
+            ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv", "staff-by-id", null],
+            ["community-user", "community-builder", "user"],
+        ].map(([id, githubUsername, role], index) => ({
+            id: id as string,
+            name: githubUsername as string,
+            email: `${githubUsername}@example.com`,
+            githubId: 8_800_000 + index,
+            githubUsername,
+            role,
+        })),
+    );
+    await db.insert(schema.rewards).values(
+        [
+            ["admin-role-user", 100],
+            ["multi-role-user", 50],
+            ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv", 25],
+            ["community-user", 3],
+        ].map(([userId, pollenAmount]) => ({
+            id: `admin-test-${userId}`,
+            idempotencyKey: `admin-test-${userId}`,
+            userId: userId as string,
+            questId: "first_top_up",
+            title: "Top up",
+            pollenAmount: pollenAmount as number,
+            balanceBucket: "tier" as const,
+        })),
+    );
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/leaderboard",
     );
     const leaderboard = (await response.json()) as ApiResponse;
     expect(leaderboard.leaderboard.map((row) => row.githubLogin)).toEqual([
-        "voodoohop",
-        "included-builder",
+        "community-builder",
     ]);
     expect(leaderboard.totals).toEqual({
-        contributors: 2,
-        completedQuests: 2,
-        totalPollen: 12,
+        contributors: 1,
+        completedQuests: 1,
+        totalPollen: 3,
     });
 
-    const standings = await buildQuestStandings(env, "VoodooHop");
-    expect(standings.participants).toBe(2);
+    const standings = await buildQuestStandings(env, null);
+    expect(standings.participants).toBe(1);
     expect(standings.rows.map((row) => row.githubLogin)).toEqual([
-        "voodoohop",
-        "included-builder",
+        "community-builder",
     ]);
-    expect(standings.you).toEqual({
-        githubLogin: "voodoohop",
-        rank: 1,
-        totalPollen: 10,
-    });
 });
 
 test("monthly standings show the podium and the rows around the viewer", async ({

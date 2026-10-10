@@ -13,7 +13,8 @@ import {
  * D1 setup group: account-setup quests sourced from D1 source tables.
  *   - first_api_key  -> apikey                    (one key per user)
  *   - use_app        -> apikey.byop_client_key_id (one BYOP login per user)
- *   - connect_polli_cli -> apikey.byop_client_key_id (Polli device login)
+ *   - connect_polli_cli -> apikey.byop_client_key_id (Polli device login,
+ *                          account 3+ days old)
  *   - early_adopter  -> user.created_at           (registered 9+ months ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
@@ -25,10 +26,6 @@ import {
 
 type SetupQuestRow = {
     userId: string;
-};
-
-type ByopLoginRow = SetupQuestRow & {
-    connectedPolli: number;
 };
 
 type TopUpSummaryRow = SetupQuestRow & {
@@ -69,10 +66,10 @@ const connectPolliCliQuest: QuestDefinition = {
     id: "connect_polli_cli",
     title: "Connect Polli CLI",
     description:
-        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`.",
+        "Install the [Polli CLI](https://www.npmjs.com/package/@pollinations/cli) and connect your account with `polli auth login`. Your account must be at least 3 days old.",
     category: "setup",
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 1,
     balanceBucket: "tier",
 };
 
@@ -172,18 +169,23 @@ export async function evaluateUser(
     const rewardableQuestIds = new Set(
         rewardableQuests(EVALUATED_QUESTS).map((quest) => quest.id),
     );
-    const [apiKeyRows, topUpSummaryRows, byopLoginRows, earlyAdopterRows] =
-        await Promise.all([
-            rewardableQuestIds.has(firstApiKeyQuest.id)
-                ? db.all<SetupQuestRow>(sql`
+    const [
+        apiKeyRows,
+        topUpSummaryRows,
+        byopLoginRows,
+        polliCliRows,
+        earlyAdopterRows,
+    ] = await Promise.all([
+        rewardableQuestIds.has(firstApiKeyQuest.id)
+            ? db.all<SetupQuestRow>(sql`
         SELECT apikey.user_id AS userId
         FROM apikey
         WHERE apikey.user_id = ${user.id}
         LIMIT 1`)
-                : [],
-            rewardableQuestIds.has(topUpSinceLaunchQuest.id) ||
-            rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id)
-                ? db.all<TopUpSummaryRow>(sql`
+            : [],
+        rewardableQuestIds.has(topUpSinceLaunchQuest.id) ||
+        rewardableQuestIds.has(overHundredPollenSinceLaunchQuest.id)
+            ? db.all<TopUpSummaryRow>(sql`
         SELECT stripe_checkout_credits.user_id AS userId,
                SUM(stripe_checkout_credits.pollen_credited) AS totalPollen
         FROM stripe_checkout_credits
@@ -200,27 +202,36 @@ export async function evaluateUser(
           )
         GROUP BY stripe_checkout_credits.user_id
         LIMIT 1`)
-                : [],
-            rewardableQuestIds.has(byopLoginQuest.id) ||
-            rewardableQuestIds.has(connectPolliCliQuest.id)
-                ? db.all<ByopLoginRow>(sql`
-        SELECT apikey.user_id AS userId,
-               MAX(apikey.byop_client_key_id = ${POLLI_CLIENT_KEY_ID}) AS connectedPolli
+            : [],
+        rewardableQuestIds.has(byopLoginQuest.id)
+            ? db.all<SetupQuestRow>(sql`
+        SELECT apikey.user_id AS userId
         FROM apikey
         WHERE apikey.user_id = ${user.id}
           AND apikey.byop_client_key_id IS NOT NULL
-        GROUP BY apikey.user_id
         LIMIT 1`)
-                : [],
-            rewardableQuestIds.has(earlyAdopterQuest.id)
-                ? db.all<SetupQuestRow>(sql`
+            : [],
+        // The age floor stops fresh accounts from farming the reward;
+        // newer accounts earn it once they turn 3 days old.
+        rewardableQuestIds.has(connectPolliCliQuest.id)
+            ? db.all<SetupQuestRow>(sql`
+        SELECT apikey.user_id AS userId
+        FROM apikey
+        JOIN "user" ON "user".id = apikey.user_id
+        WHERE apikey.user_id = ${user.id}
+          AND apikey.byop_client_key_id = ${POLLI_CLIENT_KEY_ID}
+          AND "user".created_at <= CAST(strftime('%s', 'now', '-3 days') AS integer)
+        LIMIT 1`)
+            : [],
+        rewardableQuestIds.has(earlyAdopterQuest.id)
+            ? db.all<SetupQuestRow>(sql`
         SELECT "user".id AS userId
         FROM "user"
         WHERE "user".id = ${user.id}
           AND "user".created_at <= CAST(strftime('%s', 'now', '-9 months') AS integer)
         LIMIT 1`)
-                : [],
-        ]);
+            : [],
+    ]);
 
     const totalPollen = topUpSummaryRows[0]?.totalPollen ?? 0;
     const proposals = [
@@ -232,12 +243,10 @@ export async function evaluateUser(
             quest: byopLoginQuest,
             userId: row.userId,
         })),
-        ...byopLoginRows
-            .filter((row) => row.connectedPolli === 1)
-            .map((row) => ({
-                quest: connectPolliCliQuest,
-                userId: row.userId,
-            })),
+        ...polliCliRows.map((row) => ({
+            quest: connectPolliCliQuest,
+            userId: row.userId,
+        })),
         ...earlyAdopterRows.map((row) => ({
             quest: earlyAdopterQuest,
             userId: row.userId,

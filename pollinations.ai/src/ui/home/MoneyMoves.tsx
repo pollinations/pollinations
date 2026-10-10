@@ -4,12 +4,14 @@ import {
     ContentHeader,
     EarningsIcon,
     Heading,
+    IconTile,
+    type IconTileProps,
     InlineLink,
+    SproutIcon,
     Surface,
-    TargetIcon,
     Text,
 } from "@pollinations/ui";
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useArt } from "../../art";
 import { useQuestLeaderboard } from "../../data/community";
 
@@ -29,22 +31,25 @@ export function MoneyMoves() {
                     title="One credit for every model, agent and tool."
                 />
                 <ul className="flex flex-col gap-6">
+                    {/* Paid gold and Quest green, as on the wallet; earnings
+                        land in both, so that row takes the info blue. */}
                     <Item
                         icon={CardIcon}
+                        tone="paid"
                         title="Pay as you go"
                         badge={
                             <Chip
                                 size="lg"
                                 className="bg-brand-accent font-semibold text-brand-dark"
                             >
-                                1 Pollen = $1
+                                1 pollen = $1
                             </Chip>
                         }
                     >
                         Top up any time and pay only for what you use.
                     </Item>
-                    <Item icon={TargetIcon} title="Free credits">
-                        Get free Quest Pollen for solving GitHub Quests, trying
+                    <Item icon={SproutIcon} tone="tier" title="Free credits">
+                        Get free Quest pollen for solving GitHub Quests, trying
                         models, or building an app or agent.{" "}
                         {quests ? (
                             <>
@@ -53,14 +58,14 @@ export function MoneyMoves() {
                                 {Math.floor(
                                     quests.totals.totalPollen,
                                 ).toLocaleString()}{" "}
-                                Pollen from GitHub Quests so far.{" "}
+                                pollen from GitHub Quests so far.{" "}
                             </>
                         ) : null}
                         <InlineLink href="https://enter.pollinations.ai/quests">
                             Explore Quests
                         </InlineLink>
                     </Item>
-                    <Item icon={EarningsIcon} title="Earnings">
+                    <Item icon={EarningsIcon} tone="info" title="Earnings">
                         Get a share of what others spend on your{" "}
                         <InlineLink href="https://gen.pollinations.ai/docs#tag/publish-a-model">
                             models
@@ -95,21 +100,21 @@ export function MoneyMoves() {
 }
 
 function Item({
-    icon: Icon,
+    icon,
+    tone,
     title,
     badge,
     children,
 }: {
-    icon: ComponentType<{ className?: string }>;
+    icon: IconTileProps["icon"];
+    tone?: IconTileProps["tone"];
     title: string;
     badge?: ReactNode;
     children: ReactNode;
 }) {
     return (
         <li className="flex gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
-                <Icon className="size-6" />
-            </div>
+            <IconTile icon={icon} tone={tone} />
             <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <Heading as="h3" size="card">

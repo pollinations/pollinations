@@ -1113,6 +1113,53 @@ describe("static provider fallbacks", () => {
         ).toBeUndefined();
     });
 
+    it("rejects PDF file parts only for models without image input", () => {
+        const pdf = "data:application/pdf;base64,JVBERi0x";
+        const chat = {
+            messages: [
+                {
+                    role: "user",
+                    content: [{ type: "file", file: { file_data: pdf } }],
+                },
+            ],
+        };
+        const responses = {
+            input: [
+                {
+                    role: "user",
+                    content: [{ type: "input_file", file_data: pdf }],
+                },
+            ],
+        };
+        for (const request of [chat, responses]) {
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-oss-20b"],
+                    request,
+                ),
+            ).toBe(
+                "This model does not support PDF or file input; choose a model with image input",
+            );
+            const definitions: Record<string, ModelDefinition> = TEXT_SERVICES;
+            const openRouterTextModel = Object.keys(definitions).find(
+                (name) =>
+                    definitions[name].provider === "openrouter" &&
+                    !definitions[name].inputModalities?.includes("image"),
+            );
+            for (const model of [
+                "openai/gpt-5.4-nano",
+                "anthropic/claude-sonnet-4.6",
+                // OpenRouter parses PDFs to text for any model.
+                openRouterTextModel ?? "",
+            ]) {
+                expect(definitions[model]).toBeDefined();
+                expect(
+                    textCapabilityError(definitions[model], request),
+                ).toBeUndefined();
+            }
+        }
+    });
+
     it("orders Ling gateways behind direct Novita and keeps fallback costs separate", () => {
         const primary = "inclusionai/ling-3.1-flash";
         const route = `${primary}:vercel:novita`;

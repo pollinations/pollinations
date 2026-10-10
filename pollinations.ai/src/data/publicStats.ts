@@ -173,8 +173,8 @@ export function useWeeklyApps() {
     return useAsync<DirectoryApp[]>(loadWeeklyApps, []);
 }
 
-const loadNewestApps = cachePublic(async () =>
-    [...(await loadDirectory())].sort(newestFirst).slice(0, 8),
+export const loadNewestApps = cachePublic(async () =>
+    (await loadDirectory()).filter(isEnglish).sort(newestFirst).slice(0, 8),
 );
 
 export function useNewestApps() {

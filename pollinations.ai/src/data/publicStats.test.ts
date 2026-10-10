@@ -180,6 +180,27 @@ describe("weekly featured apps", () => {
         ).toEqual([]);
     });
 
+    it("lists only English apps as newest", async () => {
+        vi.resetModules();
+        const { loadNewestApps } = await import("./publicStats");
+        const dated = (name: string, language: string, approved_date: string) =>
+            ({ ...app(name), language, approved_date }) as DirectoryApp;
+        const catalog = [
+            dated("Old", "en", "2026-01-01"),
+            dated("Japanese", "ja", "2026-03-01"),
+            dated("New", "en-US", "2026-02-01"),
+            dated("Untagged", "", "2026-04-01"),
+        ];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ data: catalog })),
+        );
+        expect((await loadNewestApps()).map((item) => item.name)).toEqual([
+            "New",
+            "Old",
+        ]);
+    });
+
     it("requests a wider weekly ranking, shares the catalog, and retries failed rankings", async () => {
         vi.resetModules();
         const { loadWeeklyApps } = await import("./publicStats");

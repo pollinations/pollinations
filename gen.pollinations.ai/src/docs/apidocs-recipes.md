@@ -190,6 +190,28 @@ curl "https://gen.pollinations.ai/v1/chat/completions" \
 
 For audio or video input, swap in `input_audio` or `video_url` parts on models that advertise the matching capability in their `/v1/models` entry. `video_url.url` accepts a public `https://` URL or a `data:video/...;base64,...` data URI; Gemini models additionally accept YouTube and `gs://` URLs.
 
+## 📄 Documents: passing PDFs into chat
+
+Models that list `pdf` under `input_modalities` (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.7-flash`, …) read PDF documents through a `file` content part.
+
+```bash
+curl "https://gen.pollinations.ai/v1/chat/completions" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "anthropic/claude-sonnet-4.6",
+    "messages": [{
+      "role": "user",
+      "content": [
+        {"type": "file", "file": {"file_data": "data:application/pdf;base64,JVBERi0xLjQK…", "file_name": "report.pdf"}},
+        {"type": "text", "text": "Summarize this report in three bullets."}
+      ]
+    }]
+  }'
+```
+
+`file.file_data` accepts bare base64 or a `data:application/pdf;base64,...` data URI; `file_url` accepts a public `https://` URL instead. Inline documents are capped at 20 MB of decoded bytes per request, and models without `pdf` under `input_modalities` return HTTP 400 for `file` parts.
+
 ## 📤 Multipart uploads in depth
 
 Three endpoints accept `multipart/form-data` request bodies. Each has its own field set.

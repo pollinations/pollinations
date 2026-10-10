@@ -89,6 +89,8 @@ Image, video, audio and 3D models that advertise these endpoints in [`/models`](
 
 Text models with `video` under `input_modalities` (for example `inclusionai/ling-3.0-flash-vl`) accept `video_url` parts the same way they accept `image_url`: a public `https://` URL or a `data:video/...;base64,...` data URI (Gemini models also accept YouTube and `gs://` URLs). Video usage is metered from the provider's reported `video_tokens` detail and billed against the model's video prompt rate.
 
+Text models with `pdf` under `input_modalities` (the GPT, Claude and Gemini families) read PDF documents from Chat `file` parts or Responses `input_file` parts; `/v1/messages` document blocks take the same path. `file_data` accepts bare base64 or a `data:application/pdf;base64,...` data URI, `file_url` accepts a public `https://` URL, and optional `mime_type` and `file_name` fields are forwarded. Inline documents are capped at 20 MB of decoded bytes per request; other file types and models without `pdf` under `input_modalities` return HTTP 400.
+
 Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Reference-required models return their normal missing-input error.
 
 Dialogue models expect one `<voice>: <text>` turn per line, just like `/audio`. Community speech models available only through `/v1/audio/speech` are not included.

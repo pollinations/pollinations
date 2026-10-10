@@ -1016,6 +1016,79 @@ describe("Chat Completions over Responses", () => {
         expect(options.seed).toBe(42);
     });
 
+    it("translates user file parts to input_file with data URLs", () => {
+        const request = chatToResponsesRequest(
+            [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: "Summarize this" },
+                        {
+                            type: "file",
+                            file: {
+                                file_data:
+                                    "data:application/pdf;base64,JVBERiBleHRyYWN0",
+                                file_name: "invoice.pdf",
+                            },
+                        },
+                        {
+                            type: "file",
+                            file: {
+                                // Bare base64 gets wrapped into a data URL.
+                                file_data: "JVBERiBiYXJl",
+                                mime_type: "application/pdf",
+                            },
+                        },
+                    ],
+                },
+            ],
+            { model: "provider-model" },
+        );
+        expect(request.input).toEqual([
+            {
+                role: "user",
+                content: [
+                    { type: "input_text", text: "Summarize this" },
+                    {
+                        type: "input_file",
+                        file: {
+                            file_data:
+                                "data:application/pdf;base64,JVBERiBleHRyYWN0",
+                            filename: "invoice.pdf",
+                        },
+                    },
+                    {
+                        type: "input_file",
+                        file: {
+                            file_data:
+                                "data:application/pdf;base64,JVBERiBiYXJl",
+                            filename: "document.pdf",
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("rejects file parts without file_data", () => {
+        expect(() =>
+            chatToResponsesRequest(
+                [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                file: { file_id: "file-123" },
+                            },
+                        ],
+                    },
+                ],
+                { model: "provider-model" },
+            ),
+        ).toThrow(/file_data/);
+    });
+
     it("accepts named messages and drops the unsupported name field", () => {
         expect(
             chatToResponsesRequest(

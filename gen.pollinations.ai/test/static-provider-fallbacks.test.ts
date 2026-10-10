@@ -1064,6 +1064,63 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("rejects PDF file input only for models without the pdf modality", () => {
+        const filePart = {
+            type: "file",
+            file: { file_data: "data:application/pdf;base64,JVBERiAx" },
+        };
+        const chat = {
+            messages: [{ role: "user", content: [filePart] }],
+        };
+        const responses = {
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_file",
+                            file: {
+                                file_data:
+                                    "data:application/pdf;base64,JVBERiAx",
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+        for (const request of [chat, responses]) {
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-oss-20b"],
+                    request,
+                ),
+            ).toBe("This model does not support PDF file input");
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["anthropic/claude-sonnet-4.6"],
+                    request,
+                ),
+            ).toBeUndefined();
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-5.4-nano"],
+                    request,
+                ),
+            ).toBeUndefined();
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["google/gemini-2.5-flash-lite"],
+                    request,
+                ),
+            ).toBeUndefined();
+        }
+        expect(
+            textCapabilityError(TEXT_SERVICES["openai/gpt-oss-20b"], {
+                messages: [{ role: "user", content: "Hello" }],
+            }),
+        ).toBeUndefined();
+    });
+
     it("rejects image input only for models without image input", () => {
         const chat = {
             messages: [

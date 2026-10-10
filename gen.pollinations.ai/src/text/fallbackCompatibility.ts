@@ -34,6 +34,21 @@ function countReferenceImages(value: unknown): number {
     );
 }
 
+/** Chat `file` and Responses `input_file` parts, which carry PDF input. */
+function countFileInputs(value: unknown): number {
+    if (Array.isArray(value)) {
+        return value.reduce((total, item) => total + countFileInputs(item), 0);
+    }
+    if (!value || typeof value !== "object") return 0;
+
+    const record = value as Record<string, unknown>;
+    if (record.type === "file" || record.type === "input_file") return 1;
+    return Object.values(record).reduce<number>(
+        (total, item) => total + countFileInputs(item),
+        0,
+    );
+}
+
 function requestedCompletionTokens(request: Record<string, unknown>): number {
     return Math.max(
         0,
@@ -133,6 +148,15 @@ export function textCapabilityError(
         referenceImages > definition.maxReferenceImages
     )
         return `This model supports at most ${definition.maxReferenceImages} reference images`;
+    // Community upstreams decide file support themselves; their `file` parts
+    // pass through, so only registry models are gated on the pdf modality.
+    const fileInputs = countFileInputs(request);
+    if (
+        !communityEndpoint &&
+        fileInputs > 0 &&
+        definition.inputModalities?.includes("pdf") === false
+    )
+        return "This model does not support PDF file input";
 }
 
 /** Whether a fallback route can honor this text request's public contract. */

@@ -656,6 +656,7 @@ describe("gen worker routing", () => {
             "image",
             "audio",
             "video",
+            "pdf",
         ]);
     });
 

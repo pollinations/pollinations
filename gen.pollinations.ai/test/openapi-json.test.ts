@@ -286,7 +286,7 @@ describe("/openapi.json", () => {
                     items?: { enum?: string[] };
                 }
             ).items?.enum,
-        ).toEqual(["text", "image", "audio", "video"]);
+        ).toEqual(["text", "image", "audio", "video", "pdf"]);
         expect(
             (
                 modelProperties.output_modalities as {

@@ -5,6 +5,11 @@ import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { callChatViaResponses } from "./responses/chatClient.js";
 import { callSystemOne } from "./systemOneClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
+import {
+    fileDataTransform,
+    hasChatFileParts,
+    inlineChatFileData,
+} from "./transforms/fileDataTransform.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
@@ -62,6 +67,7 @@ export async function generateTextPortkey(
         }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
+        state = await fileDataTransform(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }
 
@@ -98,9 +104,31 @@ export async function generateTextPortkey(
     const communityResponsesEndpoint =
         !modelDef &&
         typeof state.options.modelConfig?.responsesEndpoint === "string";
+    // Azure Chat Completions cannot carry `file` parts; providers that opted
+    // in via `fileInputsViaResponses` route file-bearing chat requests
+    // through the Responses API's input_file instead.
+    const fileViaResponses =
+        !modelDef?.useResponsesApi &&
+        !communityResponsesEndpoint &&
+        (state.options.modelConfig as Record<string, unknown> | undefined)
+            ?.fileInputsViaResponses === true &&
+        hasChatFileParts(state.messages);
     if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
         return await callChatViaResponses(
             state.messages,
+            state.options,
+            responsesFetcher,
+        );
+    }
+    if (fileViaResponses) {
+        // input_file carries a base64 data URL, unlike Chat file parts,
+        // which may hold bare base64 or a remote URL.
+        const inlineMessages = await inlineChatFileData(
+            state.messages,
+            "data-url",
+        );
+        return await callChatViaResponses(
+            inlineMessages,
             state.options,
             responsesFetcher,
         );

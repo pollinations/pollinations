@@ -83,6 +83,29 @@ Requests run as Chat Completions requests: balance checks, key permissions, rate
 
 Claude Code sends `cache_control` automatically. Fireworks-hosted models that reject this field cannot currently be used with Claude Code; see [the compatibility issue](https://github.com/pollinations/pollinations/issues/15682).
 
+### File and PDF input
+
+Text models with `file` under `input_modalities` in [`/v1/models`](/v1/models) read PDF documents, exactly like they read images. Send a base64 PDF as a Chat Completions `file` part, an `input_file` item in Responses, or a base64 `document` block in `/v1/messages`; billing, key permissions and caching behave as for images.
+
+```bash
+PDF_B64=$(base64 -w0 page.pdf)
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"claude\",
+    \"messages\": [{
+      \"role\": \"user\",
+      \"content\": [
+        {\"type\": \"file\", \"file\": {\"file_data\": \"data:application/pdf;base64,$PDF_B64\", \"file_name\": \"page.pdf\"}},
+        {\"type\": \"text\", \"text\": \"Summarize this document.\"}
+      ]
+    }]
+  }"
+```
+
+A `file` part takes `file_data` (a `data:` URL or bare base64), `file_url` or `file_id`, plus an optional `file_name`; Responses `input_file` items use the same fields with `filename`. Models without the `file` modality return HTTP 400 for file input instead of a provider error. Inline bodies above 16 MiB are offloaded to media storage as `file_url`, which large PDFs currently support only on OpenRouter-routed models (HTTP 413 otherwise).
+
 ### Media models in conversations
 
 Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message is used; history, instructions and text-generation settings are ignored. Its text parts (or a string Responses `input`) form the prompt. Image parts (`image_url` in Chat, `input_image` in Responses, as URLs or data URIs) are the source images of image models and the start frame of video models that list `image` under `input_modalities`, exactly as `/v1/images/edits` does; other models, including 3D, return HTTP 400 for them, and any other attachment type returns HTTP 400. Use the native media endpoints for generation settings.

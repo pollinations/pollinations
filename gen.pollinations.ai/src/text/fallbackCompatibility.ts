@@ -34,6 +34,23 @@ function countReferenceImages(value: unknown): number {
     );
 }
 
+function countReferenceFiles(value: unknown): number {
+    if (Array.isArray(value)) {
+        return value.reduce(
+            (total, item) => total + countReferenceFiles(item),
+            0,
+        );
+    }
+    if (!value || typeof value !== "object") return 0;
+
+    const record = value as Record<string, unknown>;
+    if (record.type === "file" || record.type === "input_file") return 1;
+    return Object.values(record).reduce<number>(
+        (total, item) => total + countReferenceFiles(item),
+        0,
+    );
+}
+
 function requestedCompletionTokens(request: Record<string, unknown>): number {
     return Math.max(
         0,
@@ -120,6 +137,21 @@ export function textCapabilityError(
         requestedCompletionTokens(request) > definition.maxCompletionTokens
     )
         return `This model supports at most ${definition.maxCompletionTokens} output tokens`;
+    // Scan message/input content only: tool schemas and other request fields
+    // may carry unrelated objects typed "file".
+    const referenceFiles =
+        countReferenceFiles(request.messages) +
+        countReferenceFiles(request.input);
+    // Opt-in capability for built-in models. Community endpoints keep their
+    // current behavior: the platform's media-offload path forwards file parts
+    // to them and their upstream decides.
+    if (
+        !communityEndpoint &&
+        referenceFiles > 0 &&
+        definition.inputModalities != null &&
+        !definition.inputModalities.includes("file")
+    )
+        return "This model does not support file input (e.g. PDF documents); choose a model with the file input modality";
     const referenceImages = countReferenceImages(request);
     // Agents hand images to their own base model or code, which decides.
     if (

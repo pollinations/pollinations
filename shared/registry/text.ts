@@ -161,7 +161,7 @@ const TEXT_BASE_SERVICES = {
         title: "GPT-5.3 Codex",
         description:
             "Coding-focused reasoner for complex software engineering and agentic tasks",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
         maxCompletionTokens: 128000,
@@ -373,7 +373,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-5.6 Sol",
         description: "Frontier reasoning for complex multimodal tasks",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
         tools: true,
@@ -429,7 +429,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-5.6 Terra",
         description: "Balanced reasoning for general multimodal tasks",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
         tools: true,
@@ -485,7 +485,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-5.6 Luna",
         description: "Fast low-cost reasoning for everyday multimodal tasks",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
         tools: true,
@@ -542,7 +542,7 @@ const TEXT_BASE_SERVICES = {
         title: "GPT-6 Astra",
         description:
             "Frontier reasoning for complex agentic, coding, and multimodal work",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 10,
         tools: true,
@@ -599,7 +599,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Sol",
         description: "Reasoning for complex coding and agentic workflows",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -657,7 +657,7 @@ const TEXT_BASE_SERVICES = {
         title: "GPT-6.1 Sol",
         description:
             "Faster near-Astra reasoning for coding, agents, and professional work",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -713,7 +713,7 @@ const TEXT_BASE_SERVICES = {
         ),
         title: "GPT-6 Luna",
         description: "Efficient reasoning for focused, high-volume tasks",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -970,7 +970,7 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 3 Flash Preview",
         description:
             "Pro-grade reasoning at high speed, with web search and a huge context window",
-        inputModalities: ["text", "image", "audio", "video"],
+        inputModalities: ["text", "image", "audio", "video", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -1003,7 +1003,7 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
-        inputModalities: ["text", "image", "audio", "video"],
+        inputModalities: ["text", "image", "audio", "video", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -1035,7 +1035,7 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 3.8 Flash",
         description:
             "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
-        inputModalities: ["text", "image", "audio", "video"],
+        inputModalities: ["text", "image", "audio", "video", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -1073,7 +1073,7 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 3.5 Flash Lite",
         description:
             "Fast multimodal reasoning for high-throughput agents and data processing",
-        inputModalities: ["text", "image", "audio", "video"],
+        inputModalities: ["text", "image", "audio", "video", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -1103,7 +1103,7 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
-        inputModalities: ["text", "image", "audio", "video"],
+        inputModalities: ["text", "image", "audio", "video", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -1475,7 +1475,7 @@ const TEXT_BASE_SERVICES = {
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
-        inputModalities: ["text", "image", "video"],
+        inputModalities: ["text", "image", "video", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
@@ -1763,7 +1763,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Haiku 4.5",
         description:
             "Quick, capable chat and coding at low cost; great for high-volume tasks",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -1822,7 +1822,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Haiku 5.5",
         description:
             "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -1849,7 +1849,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Sonnet 4.6",
         description:
             "Excellent writing, coding and analysis with balanced speed and cost",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -1875,7 +1875,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Sonnet 5",
         description:
             "Sharp reasoning with fast responses — a strong default for most work",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -1901,7 +1901,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Sonnet 5.5",
         description:
             "Fast adaptive reasoning for everyday coding, agentic tool use and long-context work",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -1928,7 +1928,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Opus 4.6",
         description:
             "Deep analysis and careful reasoning for tough problems; slower and premium-priced",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -1954,7 +1954,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Opus 4.7",
         description:
             "Heavyweight reasoning and analysis; built for hard problems, not quick replies",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -1985,7 +1985,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Opus 5",
         description:
             "Frontier reasoning for coding, complex analysis and long-running agents",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -2012,7 +2012,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Opus 5.5",
         description:
             "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -2038,7 +2038,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Fable 5",
         description:
             "Frontier intelligence for complex reasoning and long agentic work; the priciest tier",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -2064,7 +2064,7 @@ const TEXT_BASE_SERVICES = {
         title: "Claude Fable 5.1",
         description:
             "Frontier intelligence for complex reasoning, coding and long-running agents",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -2455,7 +2455,7 @@ const TEXT_BASE_SERVICES = {
         title: "Inkling Small",
         description:
             "Multimodal reasoning for agents, coding, image analysis and audio understanding",
-        inputModalities: ["text", "image", "audio"],
+        inputModalities: ["text", "image", "audio", "file"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -2482,7 +2482,7 @@ const TEXT_BASE_SERVICES = {
         title: "Inkling",
         description:
             "Flagship million-token multimodal reasoning for agents, coding, visual analysis and audio understanding",
-        inputModalities: ["text", "image", "audio"],
+        inputModalities: ["text", "image", "audio", "file"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -2700,7 +2700,7 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 3.1 Pro Preview",
         description:
             "Top-tier multimodal reasoning over huge documents, images and video",
-        inputModalities: ["text", "image", "audio", "video"],
+        inputModalities: ["text", "image", "audio", "video", "file"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.

@@ -62,10 +62,45 @@ function withPromptCacheBreakpoint(
         : content;
 }
 
+function inputFileContent(part: JsonObject): JsonObject {
+    const file = part.file;
+    if (!file || typeof file !== "object" || Array.isArray(file)) {
+        invalidRequest("messages", "Chat file content requires a file object");
+    }
+    const source = file as JsonObject;
+    const fileData =
+        typeof source.file_data === "string" ? source.file_data : undefined;
+    const fileUrl =
+        typeof source.file_url === "string" ? source.file_url : undefined;
+    const fileId =
+        typeof source.file_id === "string" ? source.file_id : undefined;
+    if (!fileData && !fileUrl && !fileId) {
+        invalidRequest(
+            "messages",
+            "Chat file content requires file_data, file_url or file_id",
+        );
+    }
+    const filename =
+        typeof source.file_name === "string" && source.file_name
+            ? source.file_name
+            : "document.pdf";
+    return {
+        type: "input_file",
+        filename,
+        // Priority mirrors Chat clients: inline data, then URL, then file_id.
+        ...(fileData
+            ? { file_data: fileData }
+            : fileUrl
+              ? { file_url: fileUrl }
+              : { file_id: fileId }),
+    };
+}
+
 function messageContent(
     message: ChatMessage,
     output: boolean,
     allowImages = false,
+    allowFiles = false,
 ): JsonObject[] {
     if (typeof message.content === "string") {
         return message.content
@@ -145,6 +180,9 @@ function messageContent(
                 ),
             ];
         }
+        if (!output && allowFiles && part.type === "file") {
+            return [withPromptCacheBreakpoint(inputFileContent(part), part)];
+        }
         return invalidRequest(
             "messages",
             `Unsupported Chat content part: ${String(part.type ?? "unknown")}`,
@@ -196,7 +234,12 @@ function functionCalls(message: ChatMessage): JsonObject[] {
 
 function messageItems(message: ChatMessage): JsonObject[] {
     if (["system", "developer", "user"].includes(message.role)) {
-        const content = messageContent(message, false, message.role === "user");
+        const content = messageContent(
+            message,
+            false,
+            message.role === "user",
+            message.role === "user",
+        );
         const messageBreakpoint = promptCacheBreakpoint(message);
         if (messageBreakpoint && content.length) {
             content[content.length - 1].prompt_cache_breakpoint =

@@ -444,8 +444,10 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
+    // A claimed quest no longer needs its progress bar — the reward is banked,
+    // so the "N / N" count is done and just adds noise.
     const progress =
-        !card.comingSoon && card.progress ? (
+        !card.comingSoon && !claimed && card.progress ? (
             <QuestProgressBar progress={card.progress} />
         ) : null;
     const rewardAmount = earned

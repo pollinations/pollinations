@@ -1,4 +1,5 @@
 import { Button, ContentHeader, cn } from "@pollinations/ui";
+import polliUrl from "@pollinations/ui/brand/polli/polli.png";
 import {
     createRootRoute,
     HeadContent,
@@ -17,19 +18,34 @@ export const Route = createRootRoute({
     notFoundComponent: NotFoundPage,
 });
 
+/**
+ * Polli, the package's bee, keeps the lost visitor company: a still image,
+ * tilted a little. On phones she sits above the copy, left, clear of the
+ * floating menu pill.
+ */
 function NotFoundPage() {
     return (
-        <section className="flex min-h-[28rem] flex-col justify-center gap-8">
-            <ContentHeader
-                eyebrow="404"
-                title="That page flew away."
-                subtitle="The link may be outdated, or the page may have moved."
-                variant="page"
+        <section className="flex min-h-[28rem] flex-col justify-center gap-8 sm:flex-row sm:items-center sm:justify-between">
+            <img
+                src={polliUrl}
+                alt=""
+                aria-hidden="true"
+                width={540}
+                height={527}
+                className="h-auto w-[7.5rem] -rotate-6 select-none max-sm:mt-10 sm:order-last sm:w-[13.75rem] sm:shrink-0"
             />
-            <div>
-                <Button as="a" href="/" intent="brand" size="lg">
-                    Back to Pollinations
-                </Button>
+            <div className="flex flex-col gap-8">
+                <ContentHeader
+                    eyebrow="404"
+                    title="That page flew away."
+                    subtitle="The link may be outdated, or the page may have moved."
+                    variant="page"
+                />
+                <div>
+                    <Button as="a" href="/" intent="brand" size="lg">
+                        Back to Pollinations
+                    </Button>
+                </div>
             </div>
         </section>
     );

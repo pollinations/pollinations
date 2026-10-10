@@ -217,6 +217,10 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   fallbacks need explicit costs when inheritance would add or omit the fee.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
+- Adding or removing a registry `provider` changes the public
+  [Service Providers](../../../pollinations.ai/public/legal/SUBPROCESSORS.md)
+  page. Update its model-provider line in the same PR;
+  `gen.pollinations.ai/test/service-providers.test.ts` fails until it matches.
 
 ### 5. Verify end to end
 

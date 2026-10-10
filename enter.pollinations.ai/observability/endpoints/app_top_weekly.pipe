@@ -1,10 +1,12 @@
 DESCRIPTION >
     Listed apps ranked by successful, billable Pollen Pay (BYOP) requests in
-    the rolling last 7 days. A registered App Key is credited to the one
-    catalog listing of the same owner whose URL covers the key's redirect URI.
-    Without a URL match, it is credited to the owner's listing only when the
-    owner has exactly one. Ambiguous keys are excluded. Multiple keys for one
-    listing are combined before ranking.
+    the rolling last 7 days. An App Key listed in a catalog entry's
+    `appKeyIds` (app.json) is credited to that listing. Other registered App
+    Keys fall back to a guess: the one catalog listing of the same owner whose
+    URL covers the key's redirect URI, or, without a URL match, the owner's
+    only listing. Guesses never land on a listing that declares its keys.
+    Ambiguous keys are excluded. Multiple keys for one listing are combined
+    before ranking.
     Returns catalog URLs and names, public owner handles, and aggregate counts
     only. No user IDs, App Keys, wallet, revenue, or cost data is exposed.
 
@@ -38,17 +40,31 @@ SQL >
         AND prefix = 'pk'
         AND JSONExtractString(metadata, 'keyType') = 'publishable'
 
+NODE listed_keys
+SQL >
+    SELECT
+        app_key_id,
+        any(web_url) AS app_url,
+        any(name) AS app_name,
+        any(github_username) AS owner
+    FROM app_directory
+    ARRAY JOIN app_key_ids AS app_key_id
+    WHERE name != ''
+    GROUP BY app_key_id
+    HAVING uniqExact(tuple(web_url, name)) = 1
+
 NODE catalog_apps
 SQL >
     SELECT
-        name, web_url, github_user_id, github_username, replaceRegexpOne(web_url, '/+$', '') AS base_url
+        name, web_url, github_user_id, github_username, replaceRegexpOne(web_url, '/+$', '') AS base_url,
+        notEmpty(app_key_ids) AS has_listed_keys
     FROM app_directory
     WHERE
         github_user_id != ''
         AND name != ''
         AND (startsWith(web_url, 'https://') OR startsWith(web_url, 'http://'))
 
-NODE matched_apps
+NODE guessed_apps
 SQL >
     SELECT
         registered.app_key_id,
@@ -62,12 +78,20 @@ SQL >
         uniqExact(tuple(catalog.web_url, catalog.name)) AS owner_listings,
         if(url_matches = 1, anyIf(catalog.web_url, url_match), any(catalog.web_url)) AS app_url,
         if(url_matches = 1, anyIf(catalog.name, url_match), any(catalog.name)) AS app_name,
-        any(catalog.github_username) AS owner
+        any(catalog.github_username) AS owner,
+        if(url_matches = 1, anyIf(catalog.has_listed_keys, url_match), any(catalog.has_listed_keys)) AS has_listed_keys
     FROM registered_apps registered
     INNER JOIN latest_users users ON registered.owner_user_id = users.user_id
     INNER JOIN catalog_apps catalog ON users.github_user_id = catalog.github_user_id
+    WHERE registered.app_key_id NOT IN (SELECT arrayJoin(app_key_ids) FROM app_directory)
     GROUP BY registered.app_key_id
-    HAVING url_matches = 1 OR owner_listings = 1
+    HAVING (url_matches = 1 OR owner_listings = 1) AND NOT has_listed_keys
+
+NODE matched_apps
+SQL >
+    SELECT app_key_id, app_url, app_name, owner FROM listed_keys
+    UNION ALL
+    SELECT app_key_id, app_url, app_name, owner FROM guessed_apps
 
 NODE app_top_weekly_node
 SQL >

@@ -7,6 +7,7 @@ import {
     IconTile,
     type IconTileProps,
     InlineLink,
+    KeyIcon,
     Surface,
     TerminalIcon,
     Text,
@@ -36,10 +37,12 @@ export const NEWS_MORE_URL =
 /** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
 
-/** A launch pinned by hand; it shows until `until` (UTC day). */
+/** A launch or change pinned by hand; it shows until `until` (UTC day). */
 type Announcement = {
+    /** The day it shipped or takes effect. */
     date: string;
     until: string;
+    label: "New" | "Changing";
     title: string;
     text: string;
     icon: IconTileProps["icon"];
@@ -49,8 +52,21 @@ type Announcement = {
 /** Newest first. */
 const ANNOUNCEMENTS: Announcement[] = [
     {
+        date: "2026-11-01",
+        until: "2026-11-15",
+        label: "Changing",
+        title: "Publishable keys stop spending Pollen",
+        text: "From November 1, publishable (pk_) keys can no longer pay for generations. They still identify your app, like an app ID: with Connect User Wallets, your users sign in and pay with their own Pollen.",
+        icon: KeyIcon,
+        cta: {
+            label: "Set up Connect User Wallets",
+            href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        },
+    },
+    {
         date: "2026-10-06",
         until: "2026-10-20",
+        label: "New",
         title: "Pay with crypto",
         text: "Buy Pollen packs with USDC. Pick a pack in Pollen, then choose Pay with Crypto.",
         icon: WalletIcon,
@@ -59,6 +75,7 @@ const ANNOUNCEMENTS: Announcement[] = [
     {
         date: "2026-10-02",
         until: "2026-10-16",
+        label: "New",
         title: "Sandboxes",
         text: "Create E2B-compatible sandboxes through the API or polli sandbox, then connect over SSH.",
         icon: TerminalIcon,
@@ -292,19 +309,21 @@ export const Changelog: FC<{ index?: NewsIndex }> = ({ index }) => {
     );
 };
 
-/** Hand-picked launches as tinted feature cards, side by side. */
+/** Hand-picked launches and changes as tinted feature cards that share each row. */
 export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
-    <ul className="grid gap-3 sm:grid-cols-2">
+    <ul className="flex flex-wrap gap-3">
         {items.map((item) => (
             <Surface
                 as="li"
                 key={item.title}
                 variant="card-themed"
-                className="flex flex-col gap-3 p-5 sm:p-6"
+                className="flex grow basis-72 flex-col gap-3 p-5 sm:p-6"
             >
                 <div className="flex items-center gap-3">
                     <IconTile icon={item.icon} />
-                    <Eyebrow>New · {formatNewsDate(item.date)}</Eyebrow>
+                    <Eyebrow>
+                        {item.label} · {formatNewsDate(item.date)}
+                    </Eyebrow>
                 </div>
                 <Heading as="h3" size="subsection">
                     {item.title}

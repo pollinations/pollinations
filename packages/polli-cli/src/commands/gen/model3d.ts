@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { numberOption } from "../../lib/number-option.js";
 import { fail, getOutputMode, printInfo, printMeta } from "../../lib/output.js";
 
 // The response's Content-Type, not the model name, decides the file
@@ -50,7 +51,13 @@ export function createModel3dCommand() {
 
             const params = new URLSearchParams({ model });
             if (opts.resolution) params.set("resolution", opts.resolution);
-            if (opts.seed) params.set("seed", opts.seed);
+            if (opts.seed !== undefined)
+                params.set(
+                    "seed",
+                    String(
+                        numberOption("--seed", opts.seed, -1, 2147483647, true),
+                    ),
+                );
             if (images.length) params.set("image", images.join("|"));
 
             const encodedPrompt = encodeURIComponent(promptArg || "model");

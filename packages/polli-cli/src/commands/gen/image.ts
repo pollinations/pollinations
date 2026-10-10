@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { numberOption } from "../../lib/number-option.js";
 import {
     ExitSignal,
     getOutputMode,
@@ -39,10 +40,20 @@ export function createImageCommand() {
 
             const params = new URLSearchParams({
                 model: opts.model,
-                width: opts.width,
-                height: opts.height,
+                width: String(
+                    numberOption("--width", opts.width, 1, 4096, true),
+                ),
+                height: String(
+                    numberOption("--height", opts.height, 1, 4096, true),
+                ),
             });
-            if (opts.seed) params.set("seed", opts.seed);
+            if (opts.seed !== undefined)
+                params.set(
+                    "seed",
+                    String(
+                        numberOption("--seed", opts.seed, -1, 2147483647, true),
+                    ),
+                );
             if (opts.safe) params.set("safe", "true");
             if (opts.transparent) params.set("transparent", "true");
             if (opts.image?.length) {

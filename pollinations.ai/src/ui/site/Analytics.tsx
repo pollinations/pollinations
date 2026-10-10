@@ -49,9 +49,14 @@ function tagEnterLink(event: Event) {
     // Referrer-Policy sends only the origin. noopener stays.
     link.relList.remove("noreferrer");
     const { referrer_host, ...tags } = SOURCE;
+    // Our own hosts are not a source: Enter → site → Enter keeps Enter's own.
+    const external =
+        referrer_host && !/(^|\.)pollinations\.ai$/.test(referrer_host)
+            ? referrer_host
+            : undefined;
     const url = new URL(link.href);
     for (const [key, value] of Object.entries({
-        utm_source: referrer_host,
+        utm_source: external,
         ...tags,
     }))
         if (value && !url.searchParams.has(key))

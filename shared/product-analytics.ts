@@ -42,15 +42,18 @@ export const productPageViewSchema = z.strictObject({
 
 // The pollinations.ai website's routes (pollinations.ai/src/routes), recorded
 // as website_page_viewed so its "/" and legal pages never mix with Enter's.
-export const websitePageViewSchema = productPageViewSchema.extend({
-    page: z.enum([
-        "/",
-        "/apps",
-        "/community",
-        "/play",
-        "/privacy",
-        "/refunds",
-        "/subprocessors",
-        "/terms",
-    ]),
-});
+// The website never sends an app id, so a forged view cannot carry one.
+export const websitePageViewSchema = productPageViewSchema
+    .omit({ client_id: true })
+    .extend({
+        page: z.enum([
+            "/",
+            "/apps",
+            "/community",
+            "/play",
+            "/privacy",
+            "/refunds",
+            "/subprocessors",
+            "/terms",
+        ]),
+    });

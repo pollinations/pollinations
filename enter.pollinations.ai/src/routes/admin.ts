@@ -14,6 +14,7 @@ import {
     exportD1TinybirdPage,
     isD1TinybirdDatasource,
 } from "../services/d1-tinybird-sync.ts";
+import { promoCodeAdminRoutes } from "./promo-codes.ts";
 import { questGrantAdminRoutes } from "./quest-grants.ts";
 import { statusNoticeAdminRoutes } from "./status-notice.ts";
 
@@ -119,7 +120,8 @@ export const adminRoutes = new Hono<Env>()
         return c.json({ redeployed: rows.length - failed.length, failed });
     })
     .route("/status-notice", statusNoticeAdminRoutes)
-    .route("/quest-grants", questGrantAdminRoutes);
+    .route("/quest-grants", questGrantAdminRoutes)
+    .route("/promo-codes", promoCodeAdminRoutes);
 
 async function sha256(value: string): Promise<string> {
     const bytes = new TextEncoder().encode(value);

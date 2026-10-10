@@ -18,7 +18,6 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
 import { createFileRoute } from "@tanstack/react-router";
 import { useArt } from "../art";
 import { LINKS, SOCIAL_LINKS } from "../copy/content/socialLinks";
@@ -49,10 +48,6 @@ const WAYS_IN = [
     {
         label: "Apps",
         icon: AppIcon,
-        // Badge colours reuse the home page Models cards' modality tints;
-        // the amber stays with the numbers.
-        color: modalityTextColor("video"),
-        tint: modalityBgVar("video"),
         title: "List your app",
         body: "Share what you built, get feedback, and help users discover it.",
         cta: {
@@ -63,8 +58,6 @@ const WAYS_IN = [
     {
         label: "Models & agents",
         icon: BeakerIcon,
-        color: modalityTextColor("image"),
-        tint: modalityBgVar("image"),
         title: "Publish a model or agent",
         body: "Bring your own model or managed agent to the public catalog and make it available to builders.",
         cta: {
@@ -75,9 +68,6 @@ const WAYS_IN = [
     {
         label: "Code",
         icon: CodeIcon,
-        // GitHub's merged purple.
-        color: modalityTextColor("audio"),
-        tint: modalityBgVar("audio"),
         title: "Improve code and docs",
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         cta: {
@@ -88,9 +78,6 @@ const WAYS_IN = [
     {
         label: "Talk",
         icon: MegaphoneIcon,
-        // Closest to Discord's blurple.
-        color: modalityTextColor("text"),
-        tint: modalityBgVar("text"),
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
         cta: { label: "Join the Discord", href: SOCIAL_LINKS.discord.url },
@@ -197,12 +184,9 @@ function CommunityParticipation() {
                                 <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
                                     <div className="flex flex-col gap-2.5">
                                         <Chip
+                                            intent="neutral"
                                             size="sm"
                                             className="self-start"
-                                            style={{
-                                                backgroundColor: way.tint,
-                                                color: way.color,
-                                            }}
                                         >
                                             <WayIcon className="size-3.5" />
                                             {way.label}

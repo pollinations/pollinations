@@ -169,7 +169,11 @@ export function textCapabilityError(
     )
         return `This model supports at most ${definition.maxReferenceImages} reference images`;
 
-    const inlineDocuments = countInlineDocumentData(request);
+    // Only message/input content is scanned, so tool schemas never trip the gate.
+    const inlineDocuments = countInlineDocumentData({
+        messages: request.messages,
+        input: request.input,
+    });
     if (
         !(communityEndpoint && usesAgentRunToken(communityEndpoint)) &&
         inlineDocuments > 0 &&

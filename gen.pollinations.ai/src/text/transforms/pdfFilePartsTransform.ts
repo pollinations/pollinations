@@ -86,6 +86,29 @@ export const pdfFilePartsTransform: TransformFn = async (messages, options) => {
         return { messages, options };
     }
     log(`Normalizing PDF file parts for ${provider}`);
+    let documentIndex = 0;
+    const usedDocumentNames = new Set<string>();
+    // Bedrock Converse document names must be charset-safe and stable for
+    // prompt caching, so user names are sanitized and missing names get
+    // deterministic document-N defaults (unique within the request).
+    function bedrockDocumentName(rawName: unknown): string {
+        const clean =
+            typeof rawName === "string"
+                ? rawName
+                      .replace(/[^A-Za-z0-9-_]+/g, "-")
+                      .replace(/^-+|-+$/g, "")
+                : "";
+        documentIndex += 1;
+        const base = clean || `document-${documentIndex}`;
+        let name = base;
+        let suffix = 1;
+        while (usedDocumentNames.has(name)) {
+            suffix += 1;
+            name = `${base}-${suffix}`;
+        }
+        usedDocumentNames.add(name);
+        return name;
+    }
     const out = [];
     for (const message of messages) {
         if (!Array.isArray(message.content)) {
@@ -121,22 +144,26 @@ export const pdfFilePartsTransform: TransformFn = async (messages, options) => {
                 continue;
             }
             const b64 = parsed ? parsed.b64 : file.file_data;
-            const name =
-                (typeof file.file_name === "string" && file.file_name) ||
-                "document.pdf";
             if (provider === "bedrock") {
                 content.push({
                     ...(raw as Record<string, unknown>),
-                    file: { file_data: b64, mime_type: mime, file_name: name },
+                    file: {
+                        file_data: b64,
+                        mime_type: mime,
+                        file_name: bedrockDocumentName(file.file_name),
+                    },
                 });
                 continue;
             }
+            const uploadName =
+                (typeof file.file_name === "string" && file.file_name) ||
+                "document.pdf";
             const id = await uploadPdfToAzureFiles(
                 base64ToBytes(b64),
-                name,
+                uploadName,
                 config,
             );
-            log(`Uploaded PDF ${name} to Azure Files`);
+            log(`Uploaded PDF ${uploadName} to Azure Files`);
             content.push({
                 ...(raw as Record<string, unknown>),
                 file: { file_id: id },

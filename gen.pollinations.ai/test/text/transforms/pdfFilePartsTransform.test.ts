@@ -35,13 +35,13 @@ describe("pdfFilePartsTransform", () => {
                 file: {
                     file_data: PDF_B64,
                     mime_type: "application/pdf",
-                    file_name: "document.pdf",
+                    file_name: "document-1",
                 },
             },
         ]);
     });
 
-    it("keeps an explicit bedrock filename and raw base64", async () => {
+    it("sanitizes an explicit bedrock filename to the Bedrock charset", async () => {
         const { messages: out } = await pdfFilePartsTransform(
             userMessage([
                 {
@@ -61,10 +61,28 @@ describe("pdfFilePartsTransform", () => {
                 file: {
                     file_data: PDF_B64,
                     mime_type: "application/pdf",
-                    file_name: "lap.pdf",
+                    file_name: "lap-pdf",
                 },
             },
         ]);
+    });
+
+    it("assigns unique deterministic names to unnamed bedrock PDFs", async () => {
+        const { messages: out } = await pdfFilePartsTransform(
+            userMessage([
+                { type: "file", file: { file_data: DATA_URL } },
+                {
+                    type: "file",
+                    file: { file_data: PDF_B64, file_name: "my report v2.pdf" },
+                },
+                { type: "file", file: { file_data: DATA_URL } },
+            ]),
+            { modelConfig: { provider: "bedrock" } },
+        );
+        const names = (out[0].content as { file: { file_name: string } }[]).map(
+            (part) => part.file.file_name,
+        );
+        expect(names).toEqual(["document-1", "my-report-v2-pdf", "document-3"]);
     });
 
     it("leaves file_id, file_url, text and image parts alone", async () => {

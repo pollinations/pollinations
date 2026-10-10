@@ -41,7 +41,10 @@ export function audioInputError(
     return null;
 }
 
-/** Use the catalog's endpoint contract; never discard a selected file. */
+/**
+ * Use the catalog's endpoint contract; never discard a selected file.
+ * Callers check audioInputError first.
+ */
 export async function generatePlaygroundAudio(
     client: Pollinations,
     model: AudioModel,
@@ -61,8 +64,6 @@ export async function generatePlaygroundAudio(
 ): Promise<
     { type: "text"; text: string } | ({ type: "audio" } & AudioBinaryResponse)
 > {
-    const error = audioInputError(model, prompt, file);
-    if (error) throw new Error(error);
     const endpoint = audioEndpoint(model);
     if (endpoint === "/v1/audio/transcriptions" && file) {
         const result = await client.transcribe(file, {

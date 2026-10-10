@@ -148,36 +148,26 @@ describe("catalog-driven audio requests", () => {
         }
     });
 
-    it("blocks missing or unsupported inputs before uploading or generating", async () => {
-        const fetchRequest = vi.fn();
-        vi.stubGlobal("fetch", fetchRequest);
+    it("reports missing or unsupported inputs", () => {
         expect(audioInputError(model("/v1/audio/voice-changer"), "")).toContain(
             "Upload",
         );
         expect(
             audioInputError(model("/v1/audio/transcriptions"), "", file),
         ).toBeNull();
-        await expect(
-            generatePlaygroundAudio(client, model("/future/audio"), {
-                prompt: "",
-                file,
-            }),
-        ).rejects.toThrow("not supported");
-        await expect(
-            generatePlaygroundAudio(
-                client,
-                model("/v1/audio/speech", ["text"]),
-                { prompt: "hello", file },
-            ),
-        ).rejects.toThrow("does not accept");
-        await expect(
-            generatePlaygroundAudio(
-                client,
+        expect(audioInputError(model("/future/audio"), "", file)).toContain(
+            "not supported",
+        );
+        expect(
+            audioInputError(model("/v1/audio/speech", ["text"]), "hello", file),
+        ).toContain("does not accept");
+        expect(
+            audioInputError(
                 model("/v1/audio/speech", ["text", "audio"]),
-                { prompt: "", file },
+                "",
+                file,
             ),
-        ).rejects.toThrow("Add text");
-        expect(fetchRequest).not.toHaveBeenCalled();
+        ).toContain("Add text");
     });
 
     it("does not generate without the reference if its upload fails", async () => {

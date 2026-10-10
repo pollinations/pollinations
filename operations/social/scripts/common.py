@@ -280,7 +280,7 @@ def load_format(platform: str) -> str:
     """Load the ## {platform} section from prompts/format.md.
 
     Args:
-        platform: 'Twitter', 'LinkedIn', 'Instagram', 'Reddit', 'Discord', 'Realtime'
+        platform: 'Twitter', 'LinkedIn', 'Instagram', 'Discord', 'Realtime'
 
     Returns:
         The section content (without the ## heading)
@@ -766,7 +766,7 @@ def generate_platform_post(
     """Generate a platform post from a summary/digest.
 
     Args:
-        platform: 'twitter', 'instagram', 'reddit', 'linkedin', 'discord'
+        platform: 'twitter', 'instagram', 'linkedin', 'discord'
         summary: The summary or digest dict (must have 'arcs' and optionally 'pr_summary', 'pr_count')
         token: Pollinations API token
         preamble: The opening instruction line (e.g. "Write a tweet about today's shipped work.")
@@ -875,9 +875,6 @@ def normalize_platform_post(
         metadata["post_type"] = (
             "carousel" if len(extract_generated_post_image_urls(raw_post)) > 1 else "post"
         )
-    elif platform == "reddit":
-        title = (raw_post.get("title") or "").strip()
-        text = (raw_post.get("body") or raw_post.get("text") or "").strip()
     elif platform == "discord":
         text = (raw_post.get("message") or "").strip()
     else:
@@ -1017,111 +1014,3 @@ def commit_files_to_branch(
             print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
             ok = False
     return ok
-
-
-# ── VPS deployment ───────────────────────────────────────────────────
-
-def deploy_reddit_news_post(
-    post_dir: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[bool]:
-    """Deploy reddit.json when the shared VPS configuration is available."""
-    vps_host = get_env("REDDIT_VPS_HOST", required=False)
-    vps_user = get_env("REDDIT_VPS_USER", required=False)
-    vps_ssh_key = (get_env("REDDIT_VPS_SSH_KEY", required=False) or "").strip()
-    if not (vps_host and vps_user and vps_ssh_key):
-        print("  Reddit VPS credentials not configured — skipping")
-        return None
-
-    import base64
-    import io
-    import paramiko
-
-    private_key = base64.b64decode(vps_ssh_key).decode("utf-8")
-    pkey = paramiko.Ed25519Key.from_private_key(io.StringIO(private_key))
-    reddit_data = read_news_file(
-        os.path.join(post_dir, "reddit.json"), github_token, owner, repo
-    )
-    if not reddit_data:
-        print("  No reddit.json — skipping")
-        return None
-
-    print("  Reddit...")
-    return deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
-
-
-def deploy_reddit_post(
-    reddit_data: Dict,
-    vps_host: str,
-    vps_user: str,
-    pkey,
-) -> bool:
-    import paramiko
-
-    title = reddit_data.get("title", "")
-    image_urls = get_post_image_urls(reddit_data)
-    image_url = image_urls[0] if image_urls else ""
-
-    if not all([title, image_url, vps_host, vps_user, pkey]):
-        print("  VPS: Missing required arguments")
-        return False
-
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        print(f"  VPS: Connecting to {vps_user}@{vps_host}...")
-
-        ssh.connect(
-            hostname=vps_host,
-            username=vps_user,
-            pkey=pkey,
-            timeout=30,
-            allow_agent=False,
-            look_for_keys=False,
-        )
-
-        base_cmd = "cd /root/reddit_post_automation"
-
-        # Sanitize for unquoted heredoc (shell expansion active)
-        # Also strip newlines to prevent breaking TypeScript syntax
-        def _sanitize(s: str) -> str:
-            return (s
-                .replace('\n', ' ').replace('\r', '')
-                .replace('LINKEOF', '')
-                .replace('\\', '\\\\')
-                .replace('"', '\\"')
-                .replace('$', '\\$')
-                .replace('`', '\\`'))
-
-        sanitized_url = _sanitize(image_url)
-        sanitized_title = _sanitize(title)
-
-        update_link_cmd = f"""{base_cmd} && cat > src/link.ts << LINKEOF
-const LINK = "{sanitized_url}";
-const TITLE = "{sanitized_title}";
-export {{LINK, TITLE}};
-LINKEOF
-"""
-
-        print("  VPS: Updating link.ts...")
-        _stdin, _stdout, stderr = ssh.exec_command(update_link_cmd)
-        err = stderr.read().decode().strip()
-        if err:
-            print(f"  VPS: link.ts write warning: {err[:200]}")
-
-        deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 &"
-
-        print("  VPS: Running deploy.sh...")
-        ssh.exec_command(deploy_cmd)  # fire-and-forget by design (nohup)
-        ssh.close()
-
-        print("  VPS: Deployment script triggered successfully")
-        print("  VPS: Logs will be available at /root/reddit_post_automation/deploy.log")
-        return True
-
-    except Exception as e:
-        print(f"  VPS: {type(e).__name__}: {e}")
-        return False

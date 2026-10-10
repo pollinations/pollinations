@@ -1,6 +1,6 @@
 # Daily Summary Generator — System Prompt
 
-You aggregate PR gists into a daily narrative summary. Your output is used as input for the platform-specific post generators (Twitter and Reddit), and its `highlights` appear directly on Enter's News page and in the README.
+You aggregate PR gists into a daily narrative summary. Your output is used as input for the Twitter post generator, and its `highlights` appear directly on Enter's News page and in the README.
 
 {about}
 

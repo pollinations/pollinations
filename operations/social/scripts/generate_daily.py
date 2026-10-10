@@ -6,8 +6,8 @@ At 06:00 UTC daily:
   1. Read gists for yesterday (by merged_at date)
   2. Filter to publish_tier >= "daily"
   3. AI clusters gists into 3-5 narrative arcs
-  4. Generate platform posts using existing prompts: twitter.json, reddit.json
-  5. Generate platform images (1 twitter + 1 reddit)
+  4. Generate the platform post using the existing prompt: twitter.json
+  5. Generate its image
   Note: LinkedIn and Instagram are weekly-only — no daily posts.
   6. Commit all content (summary with highlights, posts, images) to the news branch
 
@@ -134,10 +134,6 @@ def generate_twitter_post(summary: Dict, token: str) -> Optional[Dict]:
     return generate_platform_post("twitter", summary, token,
         "Write a tweet about today's shipped work.", temperature=0.8)
 
-def generate_reddit_post(summary: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("reddit", summary, token,
-        "Create a Reddit post for today's update.")
-
 
 # ── Step 3: Generate platform images ────────────────────────────────
 
@@ -149,12 +145,11 @@ def generate_platform_images(
     owner: str,
     repo: str,
     branch: str,
-    reddit_post: Optional[Dict] = None,
 ) -> Dict[str, List[str]]:
     """Generate images for all platforms. Returns {platform: [urls]}.
     Note: LinkedIn and Instagram are weekly-only, with no daily image generation."""
     image_dir = f"{DAILY_REL_DIR}/{date_str}/images"
-    urls = {"twitter": [], "reddit": []}
+    urls = {"twitter": []}
 
     # Twitter: 1 image
     if twitter_post and twitter_post.get("image_prompt"):
@@ -173,23 +168,6 @@ def generate_platform_images(
         urls["twitter"].append(url)
         twitter_post["image"] = {"url": url, "prompt": twitter_post["image_prompt"]}
 
-    # Reddit: 1 image
-    if reddit_post and reddit_post.get("image_prompt"):
-        print("  Generating Reddit image...")
-        img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if not img_bytes:
-            print("  FATAL: Daily Reddit image generation failed")
-            sys.exit(1)
-        url = commit_image_to_branch(
-            img_bytes, f"{image_dir}/reddit.jpg", branch,
-            github_token, owner, repo
-        )
-        if not url:
-            print("  FATAL: Daily Reddit image commit failed")
-            sys.exit(1)
-        urls["reddit"].append(url)
-        reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
-
     return urls
 
 
@@ -203,7 +181,6 @@ def commit_daily_to_news(
     github_token: str,
     owner: str,
     repo: str,
-    reddit_post: Optional[Dict] = None,
 ) -> bool:
     """Commit all daily content directly to the news branch. Returns True on success."""
     base_path = f"{DAILY_REL_DIR}/{date_str}"
@@ -214,7 +191,6 @@ def commit_daily_to_news(
         twitter_post,
         date_str, get_env("POLLINATIONS_TOKEN"),
         github_token, owner, repo, GISTS_BRANCH,
-        reddit_post=reddit_post,
     )
 
     # Collect files to commit
@@ -232,24 +208,8 @@ def commit_daily_to_news(
                 raw_post=twitter_post,
             ),
         ))
-    if reddit_post:
-        files_to_commit.append((
-            f"{base_path}/reddit.json",
-            normalize_platform_post(
-                platform="reddit",
-                scope="daily",
-                date=date_str,
-                period_start=date_str,
-                period_end=date_str,
-                generated_at=generated_at,
-                raw_post=reddit_post,
-            ),
-        ))
-    if not files_to_commit:
-        print("  No files to commit")
+    if not commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for {date_str}"):
         return False
-
-    commit_files_to_branch(files_to_commit, GISTS_BRANCH, github_token, owner, repo, label=f"for {date_str}")
     print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
     return True
 
@@ -339,16 +299,6 @@ def main():
     tweet = twitter_post.get("tweet", "")
     print(f"  Twitter: {tweet[:80]}... ({len(tweet)} chars)")
 
-    print("  Reddit...")
-    reddit_post = generate_reddit_post(summary, pollinations_token)
-    if not reddit_post:
-        print("  FATAL: Daily Reddit post generation failed")
-        sys.exit(1)
-    if not reddit_post.get("image_prompt"):
-        print("  FATAL: Daily Reddit post is missing image_prompt")
-        sys.exit(1)
-    print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
-
     # ── Commit daily content to news branch ──────────────────────────
     print(f"\n[4/4] Committing daily content to news branch...")
     success = commit_daily_to_news(
@@ -357,7 +307,6 @@ def main():
         twitter_post,
         generated_at,
         github_token, owner, repo,
-        reddit_post=reddit_post,
     )
 
     if not success:

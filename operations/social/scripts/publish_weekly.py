@@ -4,7 +4,7 @@ Tier 3: Weekly Publish
 
 Publishes weekly content from the news branch. Two modes via PUBLISH_MODE env var:
   - "buffer": Stage Twitter + LinkedIn + Instagram to Buffer (called by news-generate-summary.yml after generation)
-  - "direct": Deploy Reddit to VPS + Discord webhook (called by news-publish-social.yml cron at 18:00 UTC Sunday)
+  - "direct": Discord webhook (called by news-publish-social.yml cron at 18:00 UTC Sunday)
   - "all" (default): Both
 
 See operations/social/PIPELINE.md for full architecture.
@@ -26,7 +26,6 @@ from buffer_publish import (
 from common import (
     post_discord_webhook,
     DISCORD_CHUNK_SIZE,
-    deploy_reddit_news_post,
     get_env,
     get_post_image_urls,
     NEWS_REL_DIR,
@@ -185,17 +184,9 @@ def main():
             status = "OK" if success else "FAILED"
             print(f"  {platform}: {status}")
 
-    # ── Direct channels (Reddit + Discord) ────────────────────────
+    # ── Direct channel (Discord) ──────────────────────────────────
     if publish_mode in ("direct", "all"):
-        print("\n[Direct] Publishing direct channels...")
-
-        reddit_result = deploy_reddit_news_post(
-            weekly_dir, github_token, owner, repo
-        )
-        if reddit_result is not None:
-            results["reddit"] = reddit_result
-
-        # Discord
+        print("\n[Direct] Publishing to Discord...")
         discord_webhook = get_env("DISCORD_WEEKLY_WEBHOOK_URL", required=False)
         if discord_webhook:
             discord_path = os.path.join(weekly_dir, "discord.json")

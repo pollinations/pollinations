@@ -149,7 +149,7 @@ class GistEnrichmentTest(unittest.TestCase):
                          '"type": "Task"', '"source": "Team"'):
                 self.assertIn(fact, new_prompt)
             self.assertNotIn("Old excerpt", new_prompt)
-            # Only Discord states model prices; recaps feeding X/Reddit/LinkedIn/Instagram never see them.
+            # Only Discord states model prices; recaps feeding X/LinkedIn/Instagram never see them.
             check = self.assertIn if module == "publish_realtime" else self.assertNotIn
             for value in ('"announcements"', '"image": "2"'):
                 check(value, new_prompt)

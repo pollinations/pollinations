@@ -5,12 +5,12 @@ Tier 3: Weekly Digest Generator
 Sunday 06:00 UTC:
   1. Read gists for the past 7 days (Sun→Sat)
   2. AI synthesizes weekly themes
-  3. Generate platform posts (Twitter, LinkedIn, Instagram, Reddit, Discord)
-  4. Generate 7 platform images (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
+  3. Generate platform posts (Twitter, LinkedIn, Instagram, Discord)
+  4. Generate 6 platform images (1 twitter + 1 linkedin + 3 instagram + 1 discord)
   5. Commit all content directly to the news branch
 
 Buffer staging happens immediately after in news-generate-summary.yml.
-Direct channels (Reddit, Discord) publish via news-publish-social.yml cron.
+Discord publishes via news-publish-social.yml cron.
 
 See operations/social/PIPELINE.md for full architecture.
 """
@@ -239,11 +239,6 @@ def generate_instagram_post(digest: Dict, token: str) -> Optional[Dict]:
         "Create a cozy pixel art post about this week's updates.",
         extra_context=_weekly_image_context())
 
-def generate_reddit_post(digest: Dict, token: str) -> Optional[Dict]:
-    return generate_platform_post("reddit", digest, token,
-        "Create a Reddit post for this week's update.",
-        extra_context=_weekly_image_context())
-
 
 def generate_discord_post(
     digest: Dict, token: str, publish_date: str
@@ -283,7 +278,6 @@ def generate_platform_images(
     owner: str,
     repo: str,
     branch: str,
-    reddit_post: Optional[Dict] = None,
     discord_post: Optional[Dict] = None,
 ) -> None:
     """Generate images for all platforms and commit to branch."""
@@ -343,22 +337,6 @@ def generate_platform_images(
             img_info["url"] = url
             time.sleep(3)
 
-    # Reddit: 1 image
-    if reddit_post and reddit_post.get("image_prompt"):
-        print("  Generating Reddit image...")
-        img_bytes, _ = generate_image(reddit_post["image_prompt"], token, IMAGE_SIZE, IMAGE_SIZE)
-        if not img_bytes:
-            print("  FATAL: Weekly Reddit image generation failed")
-            sys.exit(1)
-        url = commit_image_to_branch(
-            img_bytes, f"{image_dir}/reddit.jpg", branch,
-            github_token, owner, repo
-        )
-        if not url:
-            print("  FATAL: Weekly Reddit image commit failed")
-            sys.exit(1)
-        reddit_post["image"] = {"url": url, "prompt": reddit_post["image_prompt"]}
-
     # Discord: 1 image
     if discord_post and discord_post.get("image_prompt"):
         print("  Generating Discord image...")
@@ -391,7 +369,6 @@ def commit_weekly_to_news(
     github_token: str,
     owner: str,
     repo: str,
-    reddit_post: Optional[Dict] = None,
 ) -> bool:
     """Commit all weekly content directly to the news branch. Returns True on success."""
     base_path = f"{WEEKLY_REL_DIR}/{weekly_date}"
@@ -403,7 +380,6 @@ def commit_weekly_to_news(
         twitter_post, linkedin_post, instagram_post,
         weekly_date, pollinations_token,
         github_token, owner, repo, GISTS_BRANCH,
-        reddit_post=reddit_post,
         discord_post=discord_post,
     )
 
@@ -413,7 +389,6 @@ def commit_weekly_to_news(
         ("twitter", twitter_post, "twitter.json"),
         ("linkedin", linkedin_post, "linkedin.json"),
         ("instagram", instagram_post, "instagram.json"),
-        ("reddit", reddit_post, "reddit.json"),
         ("discord", discord_post, "discord.json"),
     ]:
         if not post:
@@ -440,18 +415,15 @@ def commit_weekly_to_news(
             ),
         ))
 
-    if not files_to_commit:
-        print("  No files to commit")
-        return False
-
-    commit_files_to_branch(
+    if not commit_files_to_branch(
         files_to_commit,
         GISTS_BRANCH,
         github_token,
         owner,
         repo,
         label=f"for weekly publish {weekly_date}",
-    )
+    ):
+        return False
     print(f"  Committed {len(files_to_commit)} files to {GISTS_BRANCH} branch")
     return True
 
@@ -529,15 +501,6 @@ def main():
         print("  FATAL: Weekly Instagram post has an image without a prompt")
         sys.exit(1)
 
-    print("  Reddit...")
-    reddit_post = generate_reddit_post(digest, pollinations_token)
-    if not reddit_post:
-        print("  FATAL: Weekly Reddit post generation failed")
-        sys.exit(1)
-    if not reddit_post.get("image_prompt"):
-        print("  FATAL: Weekly Reddit post is missing image_prompt")
-        sys.exit(1)
-
     print("  Discord...")
     discord_post = generate_discord_post(digest, pollinations_token, publish_date)
     if not discord_post:
@@ -560,7 +523,6 @@ def main():
         twitter_post, linkedin_post, instagram_post, discord_post,
         generated_at,
         github_token, owner, repo,
-        reddit_post=reddit_post,
     )
 
     if success:

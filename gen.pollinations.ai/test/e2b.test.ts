@@ -33,6 +33,9 @@ type WrittenFile = {
 const inSeconds = (seconds: number) =>
     new Date(Date.now() + seconds * 1000).toISOString();
 
+// E2B ends a run 24 hours after it started.
+const RUN_MS = 86_400_000;
+
 // A tiny in-memory E2B control API that also records Tinybird events and
 // files written into sandboxes. Everything else goes to the real fetch, which
 // the test environment needs.
@@ -134,14 +137,24 @@ function stubE2b() {
             return new Response(null, { status: 204 });
         }
         if (call === "POST /timeout") {
-            // Like E2B, refuse a lease longer than the plan allows.
-            if ((body.timeout ?? 0) > 86_400) {
+            // Like E2B, end the lease with the run at the latest, and refuse
+            // to renew a paused sandbox or a run past its end (keep_alive.go).
+            if (sandbox.state !== "running") {
                 return Response.json(
-                    { code: 400, message: "Timeout too long" },
+                    { code: 404, message: "Sandbox not found" },
+                    { status: 404 },
+                );
+            }
+            const runEnd = Date.parse(sandbox.startedAt) + RUN_MS;
+            if (Date.now() > runEnd) {
+                return Response.json(
+                    { code: 400, message: "Max instance length exceeded" },
                     { status: 400 },
                 );
             }
-            sandbox.endAt = inSeconds(body.timeout ?? 0);
+            sandbox.endAt = new Date(
+                Math.min(Date.now() + (body.timeout ?? 0) * 1000, runEnd),
+            ).toISOString();
             return new Response(null, { status: 204 });
         }
         if (call === "GET /logs") {
@@ -157,6 +170,8 @@ function stubE2b() {
         if (call === "POST /connect") {
             const endAt = inSeconds(body.timeout ?? 300);
             const resumed = sandbox.state === "paused";
+            // Like E2B, resuming starts a new run (create_instance.go).
+            if (resumed) sandbox.startedAt = inSeconds(0);
             sandbox.state = "running";
             sandbox.endAt =
                 resumed || endAt > sandbox.endAt ? endAt : sandbox.endAt;
@@ -320,14 +335,44 @@ test("E2B errors reach the caller and cost nothing", async () => {
 
     const created = await createSandbox(owner.key);
     const { sandboxID } = await created.json<{ sandboxID: string }>();
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
     const extended = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
-        timeout: 100_000,
+        timeout: 600,
     });
-    expect(extended.status).toBe(400);
+    expect(extended.status).toBe(404);
 
     // Only the lease E2B actually granted is paid for.
     expect(await questPollen(owner.userId)).toBeCloseTo(10 - LEASE_300S, 8);
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(1));
+});
+
+test("a lease runs to the end of E2B's 24-hour run at the latest; resuming starts a new run", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const created = await createSandbox(owner.key);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    // The run ends 600 s from now: an hour's lease gets 300 s past the paid 300.
+    e2b.sandboxes[0].startedAt = new Date(
+        Date.now() - RUN_MS + 600_000,
+    ).toISOString();
+
+    const extended = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
+        timeout: 3600,
+    });
+    expect(extended.status).toBe(204);
+
+    // E2B pauses the sandbox when the run ends; resuming pays a whole lease.
+    await post(owner.key, `/sandboxes/${sandboxID}/pause`);
+    e2b.sandboxes[0].startedAt = new Date(Date.now() - RUN_MS).toISOString();
+    const resumed = await post(owner.key, `/sandboxes/${sandboxID}/connect`, {
+        timeout: 300,
+    });
+    expect(resumed.status).toBe(201);
+
+    await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
+    expect(e2b.leases()[1].totalPrice).toBeCloseTo(LEASE_300S, 5);
+    expect(e2b.leases()[2].totalPrice).toBeCloseTo(LEASE_300S, 5);
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 3 * LEASE_300S, 5);
 });
 
 test("refuses keys without the scope, unpaid leases and closed endpoints", async () => {

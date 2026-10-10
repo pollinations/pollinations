@@ -116,7 +116,8 @@ Return ONLY the JSON object. No markdown fences, no explanation.
 - Title: 3-8 words naming the month's main story. No month name or date; the page shows those.
 - Summary: one plain paragraph, 2-3 sentences, 250-420 characters. What people can do now, with the specific names.
 - Image: the next page of the picture book. Follow the Monthly Story rules below.
-- Story: 2-3 sentences describing the scene as it now stands: every landmark built so far (carry last month's forward and add this month's), who is there, and one thing left open, started or hinted at, so next month's cover can follow it up.
+- Story: 2-3 sentences describing the scene as it now stands: every landmark built so far (carry last month's forward and add this month's), who lives there (say when the cosmic cat has moved in), and one thing left open, started or hinted at, so next month's cover can follow it up.
+- Creatures: the creatures besides Polli, the robot and Nomnom who appear in this cover. Only "cosmic-cat" exists, and only from the month it moves in; otherwise an empty list.
 
 Output Format (JSON only):
 {
@@ -124,6 +125,7 @@ Output Format (JSON only):
     "summary": "One plain paragraph about what changed for people this month.",
     "image_prompt": "Wide 16:9 pixel art scene that continues last month's cover. Follow the shared visual style.",
     "story": "Where the picture book stands after this month.",
+    "creatures": [],
     "reasoning": "Why this angle — be brief"
 }
 

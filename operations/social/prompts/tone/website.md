@@ -33,7 +33,7 @@ Think: the closing paragraph of a small team's month, written for people who use
 - One big, visible change that shows this month's main story
 
 ### What to AVOID:
-- Humans or people of any kind: the only characters are Polli, the monitor robot and Nomnom
+- Humans or people of any kind, and copies of Polli, the monitor robot or Nomnom (no extra bees or robots)
 - Text, dates, numbers, logos and dashboards in the image
 - Busy collages of every update
 - Starting over somewhere new: the world grows, it does not move

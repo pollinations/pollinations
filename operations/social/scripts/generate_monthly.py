@@ -59,12 +59,22 @@ COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
 # blurs a little more each month. The story text carries the garden's growth.
 PAGE_ONE_COVER = (
     "The second attached image is page one of this picture book: keep its art style, "
-    "crisp pixels, palette, characters and first buildings, but draw the garden as it "
-    "stands now, grown well beyond page one as described above."
+    "crisp pixels, palette and first buildings, but draw the garden as it stands now, "
+    "grown well beyond page one as described above. Do not copy its characters where they "
+    "stand: draw them only where the description places them."
 )
-ONLY_OUR_CAST = (
-    "No humans or people anywhere, not even small in the background: the only characters "
-    "are the bee mascot, the monitor robot and the round Nomnom creature."
+ONE_OF_EACH = (
+    "The bee mascot, the monitor robot and the round Nomnom creature each appear at most once: "
+    "no copies, no extra bees or robots, no toy robots, statues or screens with faces. "
+    "No humans or people anywhere, not even small in the background."
+)
+# Creatures that live in the garden besides the three, by the id the website post lists.
+CREATURES = {
+    "cosmic-cat": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/creatures/cosmic-cat.png",
+}
+COSMIC_CAT = (
+    "The last attached image is the cosmic cat, who lives in the garden: draw it exactly once, "
+    "true to its look."
 )
 
 # Every merged PR by anyone, agents and bots included, on any base branch. Release
@@ -349,9 +359,15 @@ def main():
         sys.exit(1)
 
     page_one_cover = get_post_image_urls(earlier_pages[0])[:1] if earlier_pages else []
-    prompt = " ".join([post["image_prompt"], *([PAGE_ONE_COVER] if page_one_cover else []), ONLY_OUR_CAST])
+    creatures = [CREATURES[name] for name in post.get("creatures") or [] if name in CREATURES]
+    prompt = " ".join([
+        post["image_prompt"],
+        *([PAGE_ONE_COVER] if page_one_cover else []),
+        *([COSMIC_CAT] if creatures else []),
+        ONE_OF_EACH,
+    ])
     image_bytes, _ = generate_image(
-        prompt, pollinations_token, COVER_WIDTH, COVER_HEIGHT, references=page_one_cover
+        prompt, pollinations_token, COVER_WIDTH, COVER_HEIGHT, references=page_one_cover + creatures
     )
     if not image_bytes:
         print("  FATAL: Monthly cover generation failed")

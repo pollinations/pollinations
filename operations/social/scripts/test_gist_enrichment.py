@@ -398,7 +398,7 @@ class GistEnrichmentTest(unittest.TestCase):
         }
         prs = [
             {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
-             # On a person's own PR a trailer without an id is a local git setting: not trusted.
+             # A trailer without an id whose login belongs to a stranger who never opened anything here.
              "mergeCommit": {"message": "fix: one\n\nCo-authored-by: Thomas <thomash@users.noreply.github.com>"}},
             {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
                         "url": "https://github.com/apps/pollinations-ai"},
@@ -418,9 +418,11 @@ class GistEnrichmentTest(unittest.TestCase):
              "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
             {"author": None, "mergeCommit": None},
         ]
-        with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)):
-            ranked = rank_contributors(prs, "test")
-        # No credit: thomash (an id-less line on a person's own PR), the placeholder account
+        opened_issues = {"Tolerable"}  # submitters open an issue; the stranger ThomasH never did
+        with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)), \
+             patch("generate_monthly.opened_here", side_effect=lambda login, _repo, _token: login in opened_issues):
+            ranked = rank_contributors(prs, "pollinations/pollinations", "test")
+        # No credit: thomash (an id-less line for a stranger), the placeholder account
         # (sharktide's 909) and the app's own bot as a co-author (bots count as PR authors only).
         self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
                          [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),

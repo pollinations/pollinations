@@ -148,6 +148,7 @@ query($q: String!, $after: String) {
 """
 # Co-authored-by trailers with a GitHub noreply address name the account:
 # "Name <12345+login@users.noreply.github.com>". Bot accounts ("login[bot]@…") don't match.
+PARTICIPATION_QUERY = "query($q: String!) { search(query: $q, type: ISSUE, first: 1) { issueCount } }"
 NOREPLY_COAUTHOR = re.compile(
     r"^co-authored-by:[^<\n]*<(?:(\d+)\+)?([A-Za-z0-9-]+)@users\.noreply\.github\.com>",
     re.IGNORECASE | re.MULTILINE,
@@ -244,17 +245,33 @@ def github_account(path: str, token: str) -> Optional[Dict]:
     return response.json()
 
 
-def coauthor(user_id: str, login: str, token: str, by_bot: bool) -> Optional[Dict]:
+@lru_cache(maxsize=None)
+def opened_here(login: str, repository: str, token: str) -> bool:
+    """Whether an account ever opened an issue or PR in the repository. Mentions and comments
+    are not enough: people @-mention the wrong account with a similar name, and it replies."""
+    response = github_api_request(
+        "POST", f"{GITHUB_API_BASE}/graphql", headers=_github_headers(token),
+        json={"query": PARTICIPATION_QUERY, "variables": {"q": f"repo:{repository} author:{login}"}},
+    )
+    payload = response.json()
+    if response.status_code != 200 or payload.get("errors"):
+        raise RuntimeError(f"GitHub search author:{login}: {response.status_code} {payload.get('errors')}")
+    return payload["data"]["search"]["issueCount"] > 0
+
+
+def coauthor(user_id: str, login: str, repository: str, token: str) -> Optional[Dict]:
     """The person behind a noreply co-author trailer, or None. Agent-written trailers sometimes
     pair a login with someone else's id, so the id counts only if it belongs to that login, or
-    to a renamed account whose old login is gone. A trailer without an id counts only on a PR
-    a bot opened for someone, which names them by their current login; on a person's own PR
-    it is a local git setting and can belong to a stranger. Bots get credit as PR authors only,
-    so a trailer naming an app's own bot (by its id, with or without "[bot]") is skipped;
-    organisations, placeholders and deleted accounts get no credit."""
+    to a renamed account whose old login is gone. A trailer without an id (app submissions
+    name the submitter that way) counts for that login only if the account has opened an
+    issue or PR here; otherwise it may be a stranger who holds the name. Bots get credit as PR
+    authors only, so a trailer naming an app's own bot (by its id, with or without "[bot]")
+    is skipped; organisations, placeholders and deleted accounts get no credit."""
     if not user_id:
-        person = github_account(f"users/{login}", token) if by_bot else None
-        return person if person and person.get("type") == "User" else None
+        person = github_account(f"users/{login}", token)
+        if person and person.get("type") == "User" and opened_here(person["login"], repository, token):
+            return person
+        return None
     by_id = github_account(f"user/{user_id}", token)
     if by_id and by_id.get("type") == "Bot" and by_id["login"].lower().removesuffix("[bot]") == login.lower():
         return None
@@ -267,7 +284,7 @@ def coauthor(user_id: str, login: str, token: str, by_bot: bool) -> Optional[Dic
     return person  # renamed since: the id is right, the login is old
 
 
-def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
+def rank_contributors(prs: List[Dict], repository: str, token: str) -> List[Dict]:
     """Merged PRs per GitHub account id, which stays the same when an account is renamed:
     authors (people, agents and bots) plus noreply co-authors."""
     people = {}
@@ -283,7 +300,7 @@ def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
             accounts[author["databaseId"]] = (login, author.get("avatarUrl"), author.get("url"))
         message = (pr.get("mergeCommit") or {}).get("message") or ""
         for user_id, login in NOREPLY_COAUTHOR.findall(message):
-            person = coauthor(user_id, login, token, by_bot=author.get("__typename") == "Bot")
+            person = coauthor(user_id, login, repository, token)
             if person:
                 accounts.setdefault(person["id"], (person["login"], person.get("avatar_url"), person.get("html_url")))
         for user_id, (login, avatar_url, url) in accounts.items():
@@ -451,7 +468,7 @@ def main():
     # Recorded on their own first, so a failed page or cover never loses them.
     print("\n[1/5] Counting merged PRs and contributors...")
     merged = merged_prs(month, github_token, repository)
-    contributors = rank_contributors(merged, github_token)
+    contributors = rank_contributors(merged, repository, github_token)
     print(f"  {len(merged)} merged PRs, {len(contributors)} contributors")
     counts = {"month": month, "merged_prs": len(merged), "contributors": contributors}
     if not commit_files_to_branch([(f"{base_path}/contributors.json", counts)], GISTS_BRANCH,

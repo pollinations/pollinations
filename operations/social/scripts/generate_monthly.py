@@ -128,9 +128,8 @@ RESIDENTS = {
                        "look": "a purple crystal creature with a dark face, green eyes and round purple arms"},
 }
 
-# Every merged PR by anyone, agents and bots included, on any base branch. Release
-# PRs into production are left out: they copy work already merged into main.
-MERGED_PRS = "is:pr is:merged -base:production"
+# Every PR merged into main by anyone, agents and bots included.
+MERGED_PRS = "is:pr is:merged base:main"
 SEARCH_CAP = 1000  # GitHub search returns at most this many results per query
 SEARCH_QUERY = """
 query($q: String!, $after: String) {

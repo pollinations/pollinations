@@ -267,7 +267,7 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Monthly: `operations/social/news/monthly/YYYY-MM/`
 
-- `summary.json` — canonical monthly summary plus `merged_prs` and `contributors`. Both count every PR merged in the month on any base branch except `production` (release PRs copy work already in `main`), by anyone: people, agents and bots. An account gets credit as the PR author or through a `Co-authored-by` trailer with a GitHub noreply address in the merge commit message; bot co-authors are skipped.
+- `summary.json` — canonical monthly summary plus `merged_prs` and `contributors`. Both count every PR merged into `main` in the month, by anyone: people, agents and bots. An account gets credit as the PR author or through a `Co-authored-by` trailer with a GitHub noreply address in the merge commit message; bot co-authors are skipped. Accounts are keyed by their numeric GitHub `id`, which survives renames.
 - `website.json` — simplified platform envelope; `metadata.story` lists every landmark built so far and one open thread, for next month's cover
 - `images/website.jpg` — the 16:9 cover
 

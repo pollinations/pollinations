@@ -139,7 +139,7 @@ query($q: String!, $after: String) {
     nodes {
       ... on PullRequest {
         number
-        author { login avatarUrl(size: 80) url ... on User { databaseId } ... on Bot { databaseId } }
+        author { __typename login avatarUrl(size: 80) url ... on User { databaseId } ... on Bot { databaseId } }
         mergeCommit { message }
       }
     }
@@ -233,19 +233,29 @@ def merged_prs(month: str, token: str, repository: str) -> List[Dict]:
 
 @lru_cache(maxsize=None)
 def github_account(path: str, token: str) -> Optional[Dict]:
-    """A GitHub account by `user/<id>` or `users/<login>`; None when it does not exist."""
+    """A GitHub account by `user/<id>` or `users/<login>`; None only when GitHub says it does
+    not exist. Any other failure (a rate limit, an outage) stops the run rather than dropping
+    someone's credit."""
     response = github_api_request("GET", f"{GITHUB_API_BASE}/{path}", headers=_github_headers(token))
-    return response.json() if response.status_code == 200 else None
+    if response.status_code == 404:
+        return None
+    if response.status_code != 200:
+        raise RuntimeError(f"GitHub {path}: {response.status_code} {response.text[:200]}")
+    return response.json()
 
 
 def coauthor(user_id: str, login: str, token: str) -> Optional[Dict]:
     """The person behind a noreply co-author trailer, or None. Agent-written trailers sometimes
     pair a login with someone else's id, so the id counts only if it belongs to that login, or
-    to a renamed account whose old login is gone. Lines without an id cannot be tied to one
-    account and are skipped; organisations, placeholders and deleted accounts get no credit."""
+    to a renamed account whose old login is gone. Bots get credit as PR authors only, so a
+    trailer naming an app's own bot (by its id, with or without "[bot]") is skipped. Lines
+    without an id cannot be tied to one account; organisations, placeholders and deleted
+    accounts get no credit."""
     if not user_id:
         return None
     by_id = github_account(f"user/{user_id}", token)
+    if by_id and by_id.get("type") == "Bot" and by_id["login"].lower().removesuffix("[bot]") == login.lower():
+        return None
     person = by_id if by_id and by_id.get("type") == "User" else None
     if person and person["login"].lower() == login.lower():
         return person
@@ -263,7 +273,12 @@ def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
         accounts = {}
         author = pr.get("author") or {}  # null for deleted accounts
         if author.get("databaseId"):
-            accounts[author["databaseId"]] = (author["login"], author.get("avatarUrl"), author.get("url"))
+            # Bots under GitHub's own login ("name[bot]"), linking to their app page, as the
+            # repository's contributor list shows them.
+            login = author["login"]
+            if author.get("__typename") == "Bot":
+                login = f"{login.removesuffix('[bot]')}[bot]"
+            accounts[author["databaseId"]] = (login, author.get("avatarUrl"), author.get("url"))
         message = (pr.get("mergeCommit") or {}).get("message") or ""
         for user_id, login in NOREPLY_COAUTHOR.findall(message):
             person = coauthor(user_id, login, token)

@@ -17,8 +17,8 @@ from build_news_index import api_entries, build_index, highlight_entries, model_
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_monthly import (
-    MOMENTS, NO_CAST, RESIDENTS, community_size, count_cast, draw_checked, generate_website_post, rank_contributors,
-    read_previous_page, residents,
+    MOMENTS, NO_CAST, RESIDENTS, community_size, count_cast, draw_checked, generate_website_post, github_account,
+    rank_contributors, read_previous_page, residents,
 )
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
@@ -391,11 +391,13 @@ class GistEnrichmentTest(unittest.TestCase):
             "users/GoodCoder": user(173, "GoodCoder"),            # ...so the login's own account gets it
             "user/808": user(808, "TechMitten"),                  # renamed: the old login is gone
             "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
+            "user/160": user(160, "mentatbot[bot]", "Bot"),       # an app's bot signing as "MentatBot"
+            "users/MentatBot": user(173, "MentatBot"),            # an unrelated user with that name
         }
         prs = [
             {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
              "mergeCommit": {"message": "fix: one"}},
-            {"author": {"login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
+            {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
                         "url": "https://github.com/apps/pollinations-ai"},
              "mergeCommit": {"message": (
                  "Add app\n\n"
@@ -406,6 +408,7 @@ class GistEnrichmentTest(unittest.TestCase):
                  "Co-authored-by: Good <555+GoodCoder@users.noreply.github.com>\n"
                  "Co-authored-by: Tech <808+techcow2@users.noreply.github.com>\n"
                  "Co-authored-by: Shark <909+sharktide@users.noreply.github.com>\n"
+                 "Co-authored-by: MentatBot <160+MentatBot@users.noreply.github.com>\n"
              )}},
             # The same account under an earlier login still counts once, by its id.
             {"author": {"login": "VoodooHop-old", "databaseId": 1, "avatarUrl": "a", "url": "u"},
@@ -414,13 +417,22 @@ class GistEnrichmentTest(unittest.TestCase):
         ]
         with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)):
             ranked = rank_contributors(prs, "test")
-        # No credit: the line without an id (thomash) and the placeholder account (sharktide's 909).
+        # No credit: the line without an id (thomash), the placeholder account (sharktide's 909)
+        # and the app's own bot as a co-author (bots count as PR authors only).
         self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
                          [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
-                          (99, "pollinations-ai", 1), (808, "TechMitten", 1)])
+                          (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1)])
         self.assertEqual(ranked[1]["avatar_url"], "av12345")
         self.assertEqual(ranked[4]["url"], "gh/TechMitten")
         self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")
+
+        # A rate limit or outage stops the count; only a 404 means the account is gone.
+        with patch("generate_monthly.github_api_request") as api:
+            api.return_value.status_code = 403
+            with self.assertRaises(RuntimeError):
+                github_account("user/403-test", "test")
+            api.return_value.status_code = 404
+            self.assertIsNone(github_account("user/404-test", "test"))
 
     def test_monthly_story_follows_the_latest_page(self):
         page = lambda month, story: normalize_platform_post(

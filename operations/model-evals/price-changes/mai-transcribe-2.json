@@ -1,0 +1,28 @@
+{
+    "status": "blocked_pending_provider_confirmation",
+    "runtime_change": false,
+    "currency": "USD",
+    "price_multiplier": 0.75,
+    "merge_policy": "Keep draft. Confirm effective date, timezone, serving-route rates and billing evidence; add registry changes and validate before merging.",
+    "model": "microsoft/mai-transcribe-2",
+    "feature_pr": "https://github.com/pollinations/pollinations/pull/16798",
+    "current_price": {
+        "per_audio_hour": 0.1
+    },
+    "next_price": {
+        "per_audio_hour": 0.36
+    },
+    "merge_on": null,
+    "unknowns": [
+        "Promotion end date and timezone",
+        "Matching Vercel fallback rate on effective date"
+    ],
+    "sources": [
+        "https://github.com/microsoft-foundry/model-releases/blob/main/models/microsoft-ai/mai-transcribe-2/README.md"
+    ],
+    "required_changes": [
+        "Update Azure and Vercel route costs from confirmed provider rates",
+        "Retain paidOnly: false and priceMultiplier: 0.75"
+    ],
+    "paid_only": false
+}

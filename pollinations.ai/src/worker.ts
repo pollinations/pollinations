@@ -6,7 +6,7 @@
  * the publishable BYOP app key (see src/config.ts).
  */
 
-import { getJsonLd, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
+import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
@@ -57,18 +57,12 @@ export default {
             return response;
         }
 
-        const path = url.pathname;
-        // Normalize: strip trailing slash (except root). The router matches
-        // paths case-insensitively, so the meta lookup must too.
-        const normalizedPath = (
-            path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path
-        ).toLowerCase();
-        const knownRoute = normalizedPath in ROUTE_META;
-        const meta = knownRoute ? ROUTE_META[normalizedPath] : NOT_FOUND_META;
-        const canonical = `https://pollinations.ai${normalizedPath === "/" ? "" : normalizedPath}`;
-        const jsonLd = getJsonLd(normalizedPath);
+        const page = knownPage(url.pathname);
+        const meta = page ? ROUTE_META[page] : NOT_FOUND_META;
+        const canonical = `https://pollinations.ai${page === "/" ? "" : page}`;
+        const jsonLd = page ? getJsonLd(page) : null;
 
-        const htmlResponse = knownRoute
+        const htmlResponse = page
             ? response
             : new Response(response.body, {
                   status: 404,
@@ -97,9 +91,7 @@ export default {
         ]) {
             rewriter.on(selector, {
                 element: (el) =>
-                    knownRoute
-                        ? el.setAttribute(attribute, canonical)
-                        : el.remove(),
+                    page ? el.setAttribute(attribute, canonical) : el.remove(),
             });
         }
         if (jsonLd) {

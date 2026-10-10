@@ -2,7 +2,6 @@
   "target": "worker",
   "credentials": "myceli",
   "subdomain": "floret",
-  "docker": true,
   "install": "npm ci --workspaces=false",
   "deploy": "npm run deploy",
   "verify": [

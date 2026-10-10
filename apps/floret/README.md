@@ -11,10 +11,16 @@ Given a prompt like *"make a 20-second continuous video of a paper boat drifting
 - **Brain**: an OpenAI-compatible tool-calling model (default `z-ai/glm-5.3-flash`) drives the loop in `agent.py`, calling tools until it produces a final answer. Repeated identical tool calls or consecutive tool errors inject corrective guidance instead of killing the run; a final answer that references unpublished workspace files is rejected until the agent actually uploads them.
 - **Tools** (`tools/`): `generate_image`, `edit_image` (real img2img), `generate_video` (text-to-video, image-to-video, start+end-frame interpolation), `text_to_speech` (verbatim narration), `transcribe`, `web_search`, `bash` (sandboxed shell with ffmpeg), `upload_media`/`fetch_media` (Pollinations media hosting — the plumbing that lets edited images and extracted frames flow back into video generation as public URLs).
 - **API** (`api.py`): FastAPI app exposing `/v1/chat/completions` (OpenAI-compatible request/response, SSE streaming with keepalives for long multi-clip runs), `/v1/models`, `/health`.
-- **Hosted shell**: each Bash call uses a fresh container. Workspace files return to the agent after execution; background processes do not persist between calls. The shell receives no caller credentials.
-- **Catalog**: a shared Durable Object refreshes public model metadata. The agent reads its latest snapshot before each request. Automated advisory reviews are not triggered by caller requests; enabling them requires a separately approved funding model.
+- **Hosted runs**: the Cloudflare entrypoint creates a private E2B VM for each request, installs the bundled Floret source, and forwards the call to its FastAPI server. Bash runs in that same VM: files and background processes survive across calls. The VM is deleted after completion, failure or disconnect. Active runs renew their prepaid 10-minute lease every 5 minutes.
+- **Catalog**: the existing Durable Object maintains public model metadata. Each VM receives its immutable snapshot; caller-visible model filtering remains per request.
 
 ## Running
+
+Hosted deployment uses `npm run deploy` (use `-- --dry-run` to validate locally). It packages only the Python sources, pyproject and README; no `.env`, credentials or test files enter the Worker bundle. The `base` template avoids creating harness keys. Cold starts currently install dependencies and ffmpeg; use a prebuilt template if measured startup time warrants it.
+
+For a live test with an existing key (never paste it into a command), set `FLORET_TEST_KEY` in the environment or use the saved Polli login, then run `npm test` and `node scripts/test-sandbox.mjs`. The live check runs the deployment bundle in local workerd against production services, buys three separate 10-minute sandbox leases, and verifies completion and disconnect cleanup.
+
+For local Python development:
 
 ```bash
 pip install -e ".[dev]"
@@ -52,7 +58,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   }'
 ```
 
-Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway usually calls Floret with a short-lived internal `ag_` token; Floret also accepts those user keys directly and lets gen authenticate them.
+Users authenticate to `gen.pollinations.ai` with a `pk_` or `sk_` key that has the `machines` account permission. Each run pays for its own E2B lease from that caller's wallet; at most three VMs may run per account. Gateway `ag_` tokens need the permissions inheritance change in #16413 deployed. The gateway usually calls Floret with a short-lived internal `ag_` token; Floret also accepts those user keys directly and lets gen authenticate them.
 
 Non-streaming responses keep `choices[0].message.content` as Markdown text. Ordered typed media attachments are available in `message.content_blocks`. Set `stream_options: {"include_usage": true}` to receive a terminal usage chunk before `[DONE]`; Floret reports zero wrapper usage because downstream generation is accounted for separately.
 
@@ -67,7 +73,7 @@ For `metadata`:
 - Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.
 - Explicit selections override any tool model proposed by the brain.
 - `audio` is TTS/audio generation, not transcription.
-- Invalid/incompatible IDs return 422 before work begins.
+- Invalid/incompatible IDs return 422 before media generation; the VM startup lease is already paid.
 
 ## Configuration
 

@@ -1,9 +1,6 @@
-import { Button, Eyebrow, InlineLink } from "@pollinations/ui";
-import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import { BrandMark, Eyebrow, IconButton, InlineLink } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
-import { DOCS_URL, maskStyle, SOCIAL } from "./links";
-
-const LOCKUP_STYLE = maskStyle(lockupUrl, 211, 26);
+import { DOCS_URL, SOCIAL } from "./links";
 
 const COLUMNS = [
     {
@@ -36,13 +33,12 @@ const COLUMNS = [
 
 export function SiteFooter() {
     return (
-        <footer className="site-shell hidden min-[780px]:block">
+        <footer className="site-shell hidden min-[880px]:block">
             <div className="site-gutter flex flex-wrap justify-between gap-10 pt-11 pb-14">
                 <div className="flex max-w-xs flex-col gap-4">
-                    <span
-                        aria-hidden="true"
-                        style={LOCKUP_STYLE}
-                        className="block shrink-0 text-theme-text-strong"
+                    <BrandMark
+                        variant="lockup"
+                        className="h-6.5 w-52.75 text-theme-text-strong"
                     />
                     <p className="text-sm text-theme-text-muted">
                         <span className="block">
@@ -54,19 +50,17 @@ export function SiteFooter() {
                     </p>
                     <nav aria-label="Social links" className="flex gap-1">
                         {SOCIAL.map(({ href, label, Icon }) => (
-                            <Button
+                            <IconButton
                                 key={href}
-                                as="a"
                                 href={href}
-                                size="sm"
-                                aria-label={label}
-                                title={label}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="site-external-link h-8 w-8 shrink-0 p-0"
+                                variant="ghost"
+                                size="md"
+                                aria-label={label}
                             >
                                 <Icon className="h-4 w-4" />
-                            </Button>
+                            </IconButton>
                         ))}
                     </nav>
                     <p className="text-xs text-theme-text-muted">
@@ -76,12 +70,12 @@ export function SiteFooter() {
                         </span>
                         <span className="block">
                             Payments by Stripe ·{" "}
-                            <a
+                            <InlineLink
                                 href="mailto:hello@pollinations.ai"
-                                className="hover:text-theme-text-strong"
+                                tone="quiet"
                             >
                                 hello@pollinations.ai
-                            </a>
+                            </InlineLink>
                         </span>
                     </p>
                 </div>
@@ -92,20 +86,27 @@ export function SiteFooter() {
                             className="flex flex-col gap-2"
                         >
                             <Eyebrow size="chrome">{column.heading}</Eyebrow>
+                            {/* One quiet link style; ↗ marks only the ones that leave the site. */}
                             {column.links.map((link) =>
                                 "to" in link ? (
-                                    <Link
+                                    <InlineLink
                                         key={link.label}
+                                        as={Link}
                                         to={link.to}
-                                        className="text-sm text-theme-text-base hover:text-theme-text-strong"
+                                        external={false}
+                                        tone="quiet"
+                                        size="footer"
+                                        className="w-fit"
                                     >
                                         {link.label}
-                                    </Link>
+                                    </InlineLink>
                                 ) : (
                                     <InlineLink
                                         key={link.label}
                                         href={link.href}
-                                        className="text-sm font-normal text-theme-text-base"
+                                        tone="quiet"
+                                        size="footer"
+                                        className="w-fit"
                                     >
                                         {link.label}
                                     </InlineLink>

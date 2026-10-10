@@ -528,6 +528,65 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
+        const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
+        const fallback =
+            TEXT_SERVICES["openai/gpt-6-luna-decisions:openrouter"];
+        expect(primary).toMatchObject({
+            provider: "openai",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["openai/gpt-6-luna-decisions:openrouter"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(
+            findModelByName("openai/gpt-6-luna-decisions")?.config(),
+        ).toMatchObject({
+            model: "gpt-6-luna",
+            directEndpoint: "https://api.openai.com/v1/decisions",
+            decisionsProtocol: "openai",
+        });
+        expect(
+            findModelByName("openai/gpt-6-luna-decisions:openrouter")?.config(),
+        ).toMatchObject({
+            model: "openai/gpt-6-luna-decisions",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        });
+        for (const promptTextTokens of [
+            1000, 272_000, 272_001, 900_000, 900_001,
+        ]) {
+            const usage = { promptTextTokens, completionTextTokens: 0 };
+            const quote =
+                (promptTextTokens * (promptTextTokens > 272_000 ? 0.2 : 0.1)) /
+                1_000_000;
+            const direct = calculateUsageBilling({
+                model: "openai/gpt-6-luna-decisions",
+                usage,
+                servedBy: primary,
+                quotedBy: primary,
+            });
+            const viaOpenRouter = calculateUsageBilling({
+                model: "openai/gpt-6-luna-decisions",
+                usage,
+                servedBy: fallback,
+                quotedBy: primary,
+            });
+            expect(direct.cost.totalCost).toBeCloseTo(quote, 12);
+            expect(direct.price.totalPrice).toBeCloseTo(quote, 8);
+            expect(viaOpenRouter.cost.totalCost).toBeCloseTo(
+                (promptTextTokens * 0.1055) / 1_000_000,
+                12,
+            );
+            expect(viaOpenRouter.price.totalPrice).toBeCloseTo(quote, 8);
+        }
+    });
+
     it("prices Claude Haiku 5.5 on Vercel exactly as on Bedrock, including the long-context tier", () => {
         const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
         const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];
@@ -1052,6 +1111,53 @@ describe("static provider fallbacks", () => {
                 messages: [{ role: "user", content: "Hello" }],
             }),
         ).toBeUndefined();
+    });
+
+    it("rejects PDF file parts only for models without image input", () => {
+        const pdf = "data:application/pdf;base64,JVBERi0x";
+        const chat = {
+            messages: [
+                {
+                    role: "user",
+                    content: [{ type: "file", file: { file_data: pdf } }],
+                },
+            ],
+        };
+        const responses = {
+            input: [
+                {
+                    role: "user",
+                    content: [{ type: "input_file", file_data: pdf }],
+                },
+            ],
+        };
+        for (const request of [chat, responses]) {
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["openai/gpt-oss-20b"],
+                    request,
+                ),
+            ).toBe(
+                "This model does not support PDF or file input; choose a model with image input",
+            );
+            const definitions: Record<string, ModelDefinition> = TEXT_SERVICES;
+            const openRouterTextModel = Object.keys(definitions).find(
+                (name) =>
+                    definitions[name].provider === "openrouter" &&
+                    !definitions[name].inputModalities?.includes("image"),
+            );
+            for (const model of [
+                "openai/gpt-5.4-nano",
+                "anthropic/claude-sonnet-4.6",
+                // OpenRouter parses PDFs to text for any model.
+                openRouterTextModel ?? "",
+            ]) {
+                expect(definitions[model]).toBeDefined();
+                expect(
+                    textCapabilityError(definitions[model], request),
+                ).toBeUndefined();
+            }
+        }
     });
 
     it("orders Ling gateways behind direct Novita and keeps fallback costs separate", () => {

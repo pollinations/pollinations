@@ -176,7 +176,7 @@ const UpdateKeySchema = CreateKeySchema.pick({
     name: CreateKeySchema.shape.name.optional(),
     expiresAt: z
         .string()
-        .datetime()
+        .datetime({ offset: true })
         .nullable()
         .optional()
         .transform((val) => (val == null ? val : new Date(val)))
@@ -415,6 +415,7 @@ const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
     limit: z.coerce
         .number()
+        .int()
         .min(1)
         .max(MAX_USAGE_EXPORT_ROWS)
         .optional()
@@ -490,7 +491,11 @@ const earningsTransactionsQuerySchema = usageQuerySchema
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
-    date: z.string().describe("Date (YYYY-MM-DD format)"),
+    date: z
+        .string()
+        .describe(
+            "Date bucket: YYYY-MM-DD, or hourly YYYY-MM-DD HH:MM:SS (UTC) when `granularity=day`",
+        ),
     api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
         .string()
@@ -762,14 +767,14 @@ const profileResponseSchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "User's display name (only returned when the key has `account:profile` or `account:keys`)",
+            "User's display name (only returned when the key has `account:profile`)",
         ),
     email: z
         .email()
         .nullable()
         .optional()
         .describe(
-            "User's email address (only returned when the key has `account:profile` or `account:keys`)",
+            "User's email address (only returned when the key has `account:profile`)",
         ),
 });
 

@@ -372,6 +372,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.base_model && {
             base_model: entry.info.base_model,
         }),
+        paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
         supported_parameters: entry.info.supported_parameters,
@@ -416,7 +417,9 @@ export const proxyRoutes = new Hono<Env>()
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
-    .use("/v1/models/:model", auth())
+    // Canonical IDs contain slashes (`openai/gpt-5-nano`), so match the rest
+    // of the path instead of one segment.
+    .use("/v1/models/:model{.+}", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
     .use("/video/models", auth())
@@ -463,7 +466,7 @@ export const proxyRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/v1/models/:model",
+        "/v1/models/:model{.+}",
         describeRoute({
             tags: ["🤖 Models"],
             summary: "Retrieve Model (OpenAI-compatible)",

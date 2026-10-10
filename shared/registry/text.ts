@@ -1612,6 +1612,61 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "openai/gpt-6-luna-decisions": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        priceMultiplier: 1, // Public pricing follows the direct OpenAI rate.
+        paidOnly: true,
+        cost: {
+            // Direct OpenAI Decisions: $0.10/M input through 272K tokens.
+            // Output and cache are free; the long-context tier is below.
+            promptTextTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 input tokens; OpenAI doubles the input rate for the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    key: "context",
+                    label: "Context",
+                    unit: "tokens",
+                    values: { "": "≤272K", long_context: ">272K" },
+                },
+            ],
+        ),
+        title: "GPT-6 Luna Decisions",
+        description:
+            "Typed answers with probabilities and confidence instead of " +
+            "generated text, billed on input tokens only; post state and " +
+            "questions to /alpha/decisions, or send the same JSON in the " +
+            "last user message on /v1/chat/completions. Text state only",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 1050000,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],
@@ -3485,8 +3540,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.52) * 1.055,
+            promptTextTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:

@@ -10,11 +10,22 @@ export type FieldStackProps = {
     action?: ReactNode;
     error?: ReactNode;
     alignLabelRow?: boolean;
+    /**
+     * `inline` puts the label in a fixed column to the left of the control
+     * (6.5rem, 5.5rem on phones), for dense settings panels whose rows
+     * should line up.
+     */
+    orientation?: "stacked" | "inline";
     className?: string;
     labelClassName?: string;
     helperClassName?: string;
     errorClassName?: string;
 };
+
+const orientationClasses = {
+    stacked: "polli:flex polli:flex-col polli:gap-2",
+    inline: "polli:grid polli:grid-cols-[6.5rem_minmax(0,1fr)] polli:items-center polli:gap-x-4 polli:gap-y-2 polli:max-sm:grid-cols-[5.5rem_minmax(0,1fr)] polli:max-sm:gap-x-2 polli:[&>*:not(:first-child)]:col-start-2 polli:[&>*:not(:first-child)]:min-w-0",
+} as const;
 
 export function FieldStack({
     label,
@@ -23,6 +34,7 @@ export function FieldStack({
     action,
     error,
     alignLabelRow = false,
+    orientation = "stacked",
     className,
     labelClassName,
     helperClassName,
@@ -31,7 +43,8 @@ export function FieldStack({
     return (
         <Field.Root
             className={cn(
-                "polli:flex polli:flex-col polli:gap-2 polli:font-body",
+                orientationClasses[orientation],
+                "polli:font-body",
                 className,
             )}
             invalid={Boolean(error)}

@@ -1,72 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-09T13:52:45.136683+00:00",
+  "generated_at": "2026-10-10T00:15:38.913921+00:00",
   "models": [
-    {
-      "id": "pr-14556:nvidia/asset-harvester",
-      "model_id": "nvidia/asset-harvester",
-      "title": "NVIDIA Asset Harvester",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "3d",
-      "date": "2026-09-09",
-      "pr": 14556,
-      "url": "https://github.com/pollinations/pollinations/pull/14556",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": []
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "image"
-          ]
-        },
-        "max_reference_images": {
-          "before": null,
-          "after": 1
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "3d"
-          ]
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "completionImageTokens": "0.07"
-          }
-        }
-      }
-    },
-    {
-      "id": "pr-14627:nvidia/asset-harvester",
-      "model_id": "nvidia/asset-harvester",
-      "title": "NVIDIA Asset Harvester",
-      "previous_title": null,
-      "action": "UPDATE",
-      "category": "3d",
-      "date": "2026-09-09",
-      "pr": 14627,
-      "url": "https://github.com/pollinations/pollinations/pull/14627",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "paid_only": {
-          "before": false,
-          "after": true
-        }
-      }
-    },
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
       "model_id": "deepseek/deepseek-v4.1-flash",
@@ -8681,53 +8616,6 @@
         14677
       ],
       "app": true
-    },
-    {
-      "date": "2026-09-09",
-      "emoji": "🎨",
-      "title": "Media through chat APIs",
-      "text": "Generate images, video, audio, and 3D through `/v1/chat/completions` or `/v1/responses`. Supported media workflows also accept image URLs or data URIs as inputs. [Explore the API](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14618,
-        14648
-      ]
-    },
-    {
-      "date": "2026-09-09",
-      "emoji": "✨",
-      "title": "Images become Gaussian splats",
-      "text": "Give `nvidia/asset-harvester` one image and get a Gaussian-splat PLY through the 3D API. [Explore the API](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14556
-      ]
-    },
-    {
-      "date": "2026-09-09",
-      "emoji": "🎨",
-      "title": "Pollinations in GIMP 3",
-      "text": "A GIMP 3 plug-in adds image generation and editing, with controls that adapt to each model’s capabilities.",
-      "prs": [
-        14569
-      ]
-    },
-    {
-      "date": "2026-09-09",
-      "emoji": "🎯",
-      "title": "Blind image model battles",
-      "text": "PolliArena lets you compare secretly randomized Pollinations image models side by side, with support for connecting your own wallet. [Try it](https://polli-arena.cloudbr.eu.org).",
-      "prs": [
-        14639
-      ],
-      "app": true
-    },
-    {
-      "date": "2026-09-09",
-      "emoji": "🤖",
-      "title": "Embeddings in the SDK",
-      "text": "Call `embeddings()` from the Pollinations SDK for text, batch, or multimodal inputs, with typed responses. [View the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
-      "prs": [
-        14450
-      ]
     }
   ]
 }

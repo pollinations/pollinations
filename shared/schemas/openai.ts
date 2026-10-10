@@ -755,6 +755,11 @@ export const OpenAIModelSchema = z
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional(),
         base_model: z.string().optional(),
+        paid_only: z
+            .boolean()
+            .describe(
+                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+            ),
         pricing: z.record(z.string(), z.string()).optional(),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z

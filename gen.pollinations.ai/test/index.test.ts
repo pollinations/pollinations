@@ -546,6 +546,24 @@ describe("gen worker routing", () => {
         }
     });
 
+    it("marks paid-only models on the OpenAI-compatible model list", async () => {
+        const response = await fetchWorker("/v1/models", envWithEnter());
+        const models = (await response.json()) as {
+            data: { id: string; paid_only: boolean }[];
+        };
+        const paidOnly = (id: string) =>
+            models.data.find((model) => model.id === id)?.paid_only;
+
+        expect(paidOnly("anthropic/claude-haiku-5.5")).toBe(true);
+        expect(paidOnly("openai/gpt-6-luna")).toBe(false);
+
+        const retrieved = await fetchWorker(
+            "/v1/models/anthropic/claude-haiku-5.5",
+            envWithEnter(),
+        );
+        expect(await retrieved.json()).toMatchObject({ paid_only: true });
+    });
+
     it.each([
         "/models",
         "/audio/models",

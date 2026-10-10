@@ -1,12 +1,9 @@
-import type { TransformFn } from "../types.js";
+import type { ChatMessage, TransformFn } from "../types.js";
 
 export const PDF_DATA_URL = "data:application/pdf;base64,";
 
-type FileFields = {
-    file_data?: unknown;
-    mime_type?: unknown;
-    file_name?: unknown;
-};
+type FileFields = { file_data?: unknown; mime_type?: unknown };
+type FilePart = { type?: unknown; file?: FileFields };
 
 /** Base64 bytes of a PDF sent as a data URL or as raw base64 plus mime_type. */
 export function pdfBase64({
@@ -20,30 +17,29 @@ export function pdfBase64({
         return file_data;
 }
 
-// Portkey hands a Bedrock file part's file_data to Converse as raw document
-// bytes, so a data URL fails there, and names the document with a random UUID
-// unless file_name is set, which would change the prompt on every request and
-// defeat caching. Azure OpenAI wants the data URL and reports a missing
-// file_id when filename is absent.
-const FILE_FIELDS: Record<
-    string,
-    (base64: string, file: FileFields, index: number) => Record<string, unknown>
-> = {
-    bedrock: (base64, _file, index) => ({
-        file_data: base64,
-        mime_type: "application/pdf",
-        file_name: `document-${index}`,
-    }),
-    "azure-openai": (base64, { file_name }) => ({
-        file_data: PDF_DATA_URL + base64,
-        filename: typeof file_name === "string" ? file_name : "document.pdf",
-    }),
-};
+/** Whether any message carries a base64 PDF `file` part. */
+export function hasPdfPart(messages: ChatMessage[]): boolean {
+    return messages.some(
+        ({ content }) =>
+            Array.isArray(content) &&
+            (content as FilePart[]).some(
+                (part) =>
+                    part.type === "file" &&
+                    part.file !== undefined &&
+                    pdfBase64(part.file) !== undefined,
+            ),
+    );
+}
 
-/** Rewrites base64 PDF `file` parts into the fields the provider accepts. */
-export const pdfFileParts: TransformFn = (messages, options) => {
-    const fileFields = FILE_FIELDS[String(options.modelConfig?.provider)];
-    if (!fileFields) return { messages, options };
+/**
+ * Portkey hands a Bedrock file part's file_data to Converse as raw document
+ * bytes, so a data URL fails there, and names the document with a random UUID
+ * unless file_name is set, which would change the prompt on every request and
+ * defeat caching.
+ */
+export const bedrockPdfParts: TransformFn = (messages, options) => {
+    if (options.modelConfig?.provider !== "bedrock")
+        return { messages, options };
     let documents = 0;
     return {
         options,
@@ -51,17 +47,19 @@ export const pdfFileParts: TransformFn = (messages, options) => {
             Array.isArray(message.content)
                 ? {
                       ...message,
-                      content: message.content.map((raw) => {
-                          const part = raw as Record<string, unknown> & {
-                              file?: FileFields;
-                          };
-                          const { file } = part;
+                      content: (message.content as FilePart[]).map((part) => {
                           const base64 =
-                              part.type === "file" && file && pdfBase64(file);
-                          return file && base64
+                              part.type === "file" &&
+                              part.file &&
+                              pdfBase64(part.file);
+                          return base64
                               ? {
                                     ...part,
-                                    file: fileFields(base64, file, ++documents),
+                                    file: {
+                                        file_data: base64,
+                                        mime_type: "application/pdf",
+                                        file_name: `document-${++documents}`,
+                                    },
                                 }
                               : part;
                       }),

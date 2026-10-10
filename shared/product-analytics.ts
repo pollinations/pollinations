@@ -39,3 +39,18 @@ export const productPageViewSchema = z.strictObject({
     utm_medium: z.string().max(100).optional(),
     utm_campaign: z.string().max(100).optional(),
 });
+
+// The pollinations.ai website's routes (pollinations.ai/src/routes), recorded
+// as website_page_viewed so its "/" and legal pages never mix with Enter's.
+export const websitePageViewSchema = productPageViewSchema.extend({
+    page: z.enum([
+        "/",
+        "/apps",
+        "/community",
+        "/play",
+        "/privacy",
+        "/refunds",
+        "/subprocessors",
+        "/terms",
+    ]),
+});

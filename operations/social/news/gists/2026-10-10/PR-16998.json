@@ -1,0 +1,36 @@
+{
+  "pr_number": 16998,
+  "title": "docs: define model PR merge holds and date prefixes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16998",
+  "merged_at": "2026-10-10T20:12:59Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Documented `MERGE-HOLD` and the `🕒 YYYY-MM-DD |` and `🕒 DATE TBD |` prefixes for model PRs, following the convention used in #16256. Lifting a hold requires explicit release conditions and verified successor pricing; a scheduled date does not authorize an automatic merge. This is workflow guidance only, with no model or billing changes.",
+    "keywords": [
+      "model management",
+      "merge hold",
+      "release conditions",
+      "pricing verification",
+      "documentation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16998.jpg",
+    "prompt": "In a cozy pixel art garden workspace, a small bee wearing a tiny librarian scarf checks a calendar beside a held model-PR folder, while code-plants grow around a lime green (#ecf874) terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she shares the scene with the folder and plants, strictly pixel art, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes and a warm cream background."
+  },
+  "generated_at": "2026-10-10T20:14:06.310408+00:00",
+  "area": "Internal automation",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "f8a09c131dbe797906894a235a2cf8a46d784e60",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

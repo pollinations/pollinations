@@ -585,6 +585,11 @@ const models: ModelDefinition[] = [
         transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-opus-5.5:fast",
+        config: portkeyConfig["claude-opus-5.5-fast-openrouter-anthropic-fast"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-fable-5",
         config: portkeyConfig["claude-fable-5"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),

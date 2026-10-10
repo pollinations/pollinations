@@ -13,6 +13,15 @@ describe("Button appearances", () => {
         expect(html).not.toContain("polli:border-r-[3px]");
     });
 
+    test("paints the surface intent as a white pill without the accent fill", () => {
+        const html = renderToStaticMarkup(
+            <Button intent="surface">Docs</Button>,
+        );
+
+        expect(html).toContain("polli:bg-surface-opaque");
+        expect(html).not.toContain("polli:bg-theme-bg-active");
+    });
+
     test("preserves an explicit submit type", () => {
         const html = renderToStaticMarkup(
             <Button type="submit">Submit</Button>,

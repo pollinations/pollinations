@@ -64,4 +64,42 @@ export const wellKnownRoutes = new Hono<Env>()
         c.header("Content-Type", "text/markdown; charset=utf-8");
         c.header("Cache-Control", "public, max-age=3600");
         return c.body(CLI_SKILL);
+    })
+    .get("/api-catalog", (c) => {
+        // RFC 9727 API catalog (linkset): lets agents discover the OpenAPI
+        // schema and the plain-text API guide without prior URL knowledge.
+        // The origin follows the serving host (staging serves staging), like
+        // llms.txt.
+        const origin = getPublicOrigin(c);
+        c.header(
+            "Content-Type",
+            'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
+        );
+        c.header("Cache-Control", "public, max-age=3600");
+        // RFC 9727 section 2: HEAD must answer with an api-catalog Link.
+        c.header(
+            "Link",
+            `<${origin}/.well-known/api-catalog>; rel="api-catalog"`,
+        );
+        return c.body(
+            JSON.stringify({
+                linkset: [
+                    {
+                        anchor: origin,
+                        "service-desc": [
+                            {
+                                href: `${origin}/openapi.json`,
+                                type: "application/json",
+                            },
+                        ],
+                        "service-doc": [
+                            {
+                                href: `${origin}/docs/llm.txt`,
+                                type: "text/plain",
+                            },
+                        ],
+                    },
+                ],
+            }),
+        );
     });

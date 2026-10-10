@@ -55,7 +55,17 @@ MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
 # PR gists began on 2026-02-05; earlier months, February included, read daily summaries.
 FIRST_GIST_MONTH = "2026-03"
 COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
+# One cover a month: the full Nano Banana 2 draws them at 2K, sharper than the Lite
+# model the daily and weekly posts use.
+COVER_MODEL = "nanobanana-2"
 COVER_TRIES = 3
+# Covers sit on the Community page, so they use the website's own art style and
+# start from its Community artwork, Lantern Hill.
+COMMUNITY_ART_URL = "https://raw.githubusercontent.com/pollinations/pollinations/main/pollinations.ai/public/art/community-hero-day.webp"
+PAGE_ONE_WORLD = (
+    "The second attached image is the Community page's artwork, Lantern Hill: draw this same "
+    "place in exactly its style and palette, closer in, as a young village green with room to grow."
+)
 # Later covers are drawn from page one's garden with its characters removed: last
 # month's cover would blur a little more each month, and page one itself makes the
 # image model copy its characters where they stand. The story carries the growth.
@@ -348,12 +358,20 @@ def count_cast(image_bytes: bytes, token: str) -> Optional[Dict]:
     return counts
 
 
+def website_art(section: str) -> str:
+    """One section (Style or Cast) of the website's art style, prompts/brand/website-art.md."""
+    text = load_prompt("brand/website-art")
+    return text.split(f"## {section}\n", 1)[1].split("\n## ", 1)[0].strip()
+
+
 def draw_checked(prompt: str, token: str, references: List[str], limits: Dict[str, int],
                  cast: bool = True) -> Optional[bytes]:
     """Draw until the counted cast fits `limits`, so no cover shows a character twice."""
+    style = website_art("Style") + (f" {website_art('Cast')}" if cast else "")
     for attempt in range(1, COVER_TRIES + 1):
         image_bytes, _ = generate_image(
-            prompt, token, COVER_WIDTH, COVER_HEIGHT, references=references, cast=cast
+            prompt, token, COVER_WIDTH, COVER_HEIGHT, model=COVER_MODEL,
+            references=references, cast=cast, style=style,
         )
         if not image_bytes:
             continue
@@ -424,17 +442,18 @@ def main():
         print(f"  FATAL: Monthly website post is missing {', '.join(missing)}")
         sys.exit(1)
 
-    garden = [earlier_pages[0]["metadata"]["garden"]] if earlier_pages else []
+    # Page one starts from the Community artwork; later pages from page one's garden.
+    anchor = [earlier_pages[0]["metadata"]["garden"]] if earlier_pages else [COMMUNITY_ART_URL]
     creatures = [CREATURES[name] for name in post.get("creatures") or [] if name in CREATURES]
     prompt = " ".join([
         post["image_prompt"],
-        *([PAGE_ONE_GARDEN] if garden else []),
+        PAGE_ONE_GARDEN if earlier_pages else PAGE_ONE_WORLD,
         *([COSMIC_CAT] if creatures else []),
         ONE_OF_EACH,
     ])
     limits = {**NO_CAST, "bees": 1, "monitor_robots": 1, "nomnom": 1,
               "black_cats": int(CREATURES["cosmic-cat"] in creatures)}
-    image_bytes = draw_checked(prompt, pollinations_token, garden + creatures, limits)
+    image_bytes = draw_checked(prompt, pollinations_token, anchor + creatures, limits)
     if not image_bytes:
         print(f"  FATAL: No cover with one of each character after {COVER_TRIES} tries")
         sys.exit(1)

@@ -45,9 +45,10 @@ Return ONLY the JSON object. No markdown fences, no explanation.
 
 ## Monthly Story
 
-The monthly covers are one picture book about one place: the Pollinations garden. Each month is the next page. Flipped through in order, the pages show the garden growing as the project grows.
+The monthly covers are one picture book about one place: Lantern Hill, the Community land of the website's art. Each month is the next page. Flipped through in order, the pages show the village growing as the project grows.
 
-- **The same garden, growing outward.** Keep the garden, its style and the cast, and never start over somewhere new. Each page steps a little further back or further along the path, so earlier places stay in view, smaller or at the side, while new ground opens up. Flipping through, the garden should visibly get bigger.
+- **Lantern Hill, seen up close.** A hilltop village green with a noticeboard, raised idea beds, a vote box and a long table, ringed by a string of round bulbs, with the Hive glowing small in the valley below. Keep the place, its style and the cast, and never start over somewhere new. Frame each page as a medium shot: Polli, the robot and Nomnom are large enough to read clearly, with earlier places behind and beside them. The village shows its growth through each month's new thing, not by zooming out.
+- **The website's palette.** Amber is the only light: honey sun glints, lit windows and the bulbs. Heather violet and lilac in the shadows and distant hills, sage grass, a few apricot blossoms; lilac only near the horizon, never in the upper sky. No lime, no mint or teal cast, no glow.
 - **Everything stays.** What earlier pages built remains somewhere in the picture: paths, buildings, machines, plants. It can look lived in, busier or a season older.
 - **One new thing, big and clear.** Add one change that stands for this month's main story: a new building, path, machine, bridge or greenhouse. It is the largest new element and the focal point, impossible to miss at a glance.
 - **Time passes.** Light, weather and seasons can change from page to page.
@@ -57,4 +58,4 @@ The monthly covers are one picture book about one place: the Pollinations garden
 - **Follow up.** Pick up where last month's page left off: finish what was started, or let something that was set up pay off.
 - **Fill the frame.** One clear focal point, and the garden reaches every edge: no empty, faded or plain panel. The page's text sits beside the picture, never on it.
 - **No words in the picture.** No text, dates, numbers, logos, dashboards or signs with writing.
-- **Page one.** When there is no earlier page, establish a small young garden with a workshop, with plenty of room for later pages to grow into.
+- **Page one.** When there is no earlier page, draw Lantern Hill young and small, as on the Community page's artwork, with room for later pages to grow into. Every later cover takes its look from page one.

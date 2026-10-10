@@ -1,0 +1,41 @@
+{
+  "pr_number": 16898,
+  "title": "feat: read base64 PDFs on Claude (Bedrock) and GPT (Azure/OpenAI) models",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16898",
+  "merged_at": "2026-10-10T11:04:06Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Base64 PDFs in Chat `file` parts, including `/v1/messages` document blocks converted to file parts, can now reach Claude on Bedrock and GPT on Azure/OpenAI; previously only Gemini read them. The provider-specific transform sends Bedrock raw base64 with `mime_type: application/pdf` and omits `file_name`, while Azure/OpenAI receives a PDF data URI and a `filename` taken from `file_name` or defaulted to `document.pdf`. Other providers’ messages remain unchanged. GPT models using the Responses API, including `gpt-5.3-codex` and `gpt-5.6-*`, now convert transformed file parts to `input_file` while retaining cache breakpoints instead of rejecting them as unsupported Chat content. Fallback compatibility, documentation, schemas and tests were updated alongside the PDF handling.",
+    "keywords": [
+      "PDF",
+      "base64",
+      "Claude",
+      "Bedrock",
+      "GPT",
+      "Responses API"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16898.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and helps a cheerful CRT monitor robot sort a PDF page between two glowing terminals, with code-plants growing beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, never oversized or dominating, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and dark purple (#110518) accents."
+  },
+  "generated_at": "2026-10-10T11:06:11.158631+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "dbe1501fd519355f95f9e8dfb62b10191bd302f9",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "dbe1501fd519355f95f9e8dfb62b10191bd302f9^1",
+    "after_ref": "dbe1501fd519355f95f9e8dfb62b10191bd302f9"
+  }
+}

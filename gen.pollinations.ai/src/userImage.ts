@@ -32,58 +32,67 @@ export class UserImageError extends UpstreamError {
 /** Max bytes we will read for a single user-supplied image: 20MB. */
 export const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 
+/** What the caller fetched, so error messages name it. */
+type MediaKind = "image" | "video";
+
+const capitalize = (word: string) => word[0].toUpperCase() + word.slice(1);
+
 /** Maps the shared user-media URL policy to the image API's error contract. */
-function assertAllowedImageUrl(value: string): URL {
+function assertAllowedImageUrl(value: string, kind: MediaKind): URL {
     const validation = validateUserMediaUrl(value);
     if (validation.ok) return validation.url;
 
     if (validation.reason === "invalid") {
         throw new UserImageError(
-            `Invalid image URL ${value}: expected a valid HTTP(S) URL.`,
+            `Invalid ${kind} URL ${value}: expected a valid HTTP(S) URL.`,
             "invalid_image_url",
         );
     }
 
     if (validation.reason === "protocol") {
         throw new UserImageError(
-            `Invalid image URL ${value}: only HTTP(S) image URLs can be fetched.`,
+            `Invalid ${kind} URL ${value}: only HTTP(S) ${kind} URLs can be fetched.`,
             "invalid_image_url",
         );
     }
 
     throw new UserImageError(
-        `Invalid image URL ${value}: private or credentialed image URLs are not allowed.`,
+        `Invalid ${kind} URL ${value}: private or credentialed ${kind} URLs are not allowed.`,
         "invalid_image_url",
     );
 }
 
 /** The image host's own status, phrased as something the caller can act on. */
-function unreachableMessage(url: string, response: Response): string {
-    const base = `Failed to fetch image from ${url}: HTTP ${response.status} ${response.statusText || "Unknown error"}`;
+function unreachableMessage(
+    url: string,
+    response: Response,
+    kind: MediaKind,
+): string {
+    const base = `Failed to fetch ${kind} from ${url}: HTTP ${response.status} ${response.statusText || "Unknown error"}`;
     switch (response.status) {
         case 401:
         case 403:
-            return `${base}. The image requires authentication or is forbidden. Please use a publicly accessible image URL.`;
+            return `${base}. The ${kind} requires authentication or is forbidden. Please use a publicly accessible ${kind} URL.`;
         case 404:
-            return `${base}. The image was not found. Please check the URL is correct.`;
+            return `${base}. The ${kind} was not found. Please check the URL is correct.`;
         case 429:
-            return `${base}. The image server is rate limiting requests. Please try a different image source or wait before retrying.`;
+            return `${base}. The ${kind} server is rate limiting requests. Please try a different ${kind} source or wait before retrying.`;
         default:
             return base;
     }
 }
 
-function transportMessage(url: string, error: Error): string {
+function transportMessage(url: string, error: Error, kind: MediaKind): string {
     const message = error.message || "Unknown error";
     if (error instanceof TypeError) {
         if (/dns|domain|not found|resolve/i.test(message)) {
-            return `Invalid image URL ${url}: The domain could not be found. Please check the URL is correct.`;
+            return `Invalid ${kind} URL ${url}: The domain could not be found. Please check the URL is correct.`;
         }
         if (/connect|refused|unreachable/i.test(message)) {
-            return `Cannot connect to image server ${url}: Connection refused. The server may be down.`;
+            return `Cannot connect to ${kind} server ${url}: Connection refused. The server may be down.`;
         }
     }
-    return `Failed to fetch image from ${url}: ${message}`;
+    return `Failed to fetch ${kind} from ${url}: ${message}`;
 }
 
 export type FetchUserImageOptions = {
@@ -96,6 +105,8 @@ export type FetchUserImageOptions = {
      */
     redirect?: RequestRedirect;
     signal?: AbortSignal;
+    /** Names the media in error messages. Defaults to `"image"`. */
+    kind?: MediaKind;
 };
 
 /**
@@ -125,12 +136,16 @@ function resolveMimeType(
  * reaches here (see the `/v1/images/edits` form parser). The bytes are already
  * in hand, so only the size cap and the media type apply.
  */
-function decodeDataUri(imageUrl: string, maxBytes: number): Uint8Array {
+function decodeDataUri(
+    imageUrl: string,
+    maxBytes: number,
+    kind: MediaKind,
+): Uint8Array {
     const comma = imageUrl.indexOf(",");
     const header = comma < 0 ? "" : imageUrl.slice(0, comma);
     if (comma < 0 || !/;base64$/i.test(header)) {
         throw new UserImageError(
-            "Invalid image data URI: expected base64-encoded image data.",
+            `Invalid ${kind} data URI: expected base64-encoded ${kind} data.`,
             "invalid_image_url",
         );
     }
@@ -140,14 +155,14 @@ function decodeDataUri(imageUrl: string, maxBytes: number): Uint8Array {
         binary = atob(imageUrl.slice(comma + 1));
     } catch {
         throw new UserImageError(
-            "Invalid image data URI: the base64 payload could not be decoded.",
+            `Invalid ${kind} data URI: the base64 payload could not be decoded.`,
             "invalid_image_url",
         );
     }
 
     if (binary.length > maxBytes) {
         throw new UserImageError(
-            `Image too large: ${binary.length} bytes (max ${maxBytes} bytes remaining). Please use a smaller image.`,
+            `${capitalize(kind)} too large: ${binary.length} bytes (max ${maxBytes} bytes remaining). Please use a smaller ${kind}.`,
             "image_too_large",
         );
     }
@@ -170,12 +185,18 @@ export async function fetchUserImage(
     imageUrl: string,
     options: FetchUserImageOptions = {},
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
-    const { maxBytes = MAX_IMAGE_SIZE, redirect, signal } = options;
+    const {
+        maxBytes = MAX_IMAGE_SIZE,
+        redirect,
+        signal,
+        kind = "image",
+    } = options;
 
     if (imageUrl.startsWith("data:")) {
         const bytes = decodeDataUri(
             imageUrl,
             Math.min(MAX_IMAGE_SIZE, maxBytes),
+            kind,
         );
         const mimeType = resolveMimeType(
             bytes,
@@ -183,14 +204,14 @@ export async function fetchUserImage(
         );
         if (!mimeType) {
             throw new UserImageError(
-                "Invalid image data URI: it declares no media type and its payload is not a recognised image.",
+                `Invalid ${kind} data URI: it declares no media type and its payload is not a recognised ${kind}.`,
                 "unsupported_image_media_type",
             );
         }
         return { bytes, mimeType };
     }
 
-    const url = assertAllowedImageUrl(imageUrl);
+    const url = assertAllowedImageUrl(imageUrl, kind);
 
     let response: Response;
     try {
@@ -203,7 +224,7 @@ export async function fetchUserImage(
         const error =
             thrown instanceof Error ? thrown : new Error(String(thrown));
         throw new UserImageError(
-            transportMessage(imageUrl, error),
+            transportMessage(imageUrl, error, kind),
             "failed_to_download_image",
             url,
         );
@@ -215,7 +236,7 @@ export async function fetchUserImage(
         response.status < 400
     ) {
         throw new UserImageError(
-            `Image URL ${imageUrl} redirects. Please provide a direct public image URL.`,
+            `${capitalize(kind)} URL ${imageUrl} redirects. Please provide a direct public ${kind} URL.`,
             "invalid_image_url",
             url,
             response.status,
@@ -224,7 +245,7 @@ export async function fetchUserImage(
 
     if (!response.ok) {
         throw new UserImageError(
-            unreachableMessage(imageUrl, response),
+            unreachableMessage(imageUrl, response, kind),
             "failed_to_download_image",
             url,
             response.status,
@@ -234,7 +255,7 @@ export async function fetchUserImage(
     const cap = Math.min(MAX_IMAGE_SIZE, maxBytes);
     if (cap <= 0) {
         throw new UserImageError(
-            `Too many image bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
+            `Too many ${kind} bytes in request (max ${MAX_IMAGE_SIZE} bytes).`,
             "image_too_large",
         );
     }
@@ -246,7 +267,7 @@ export async function fetchUserImage(
             cap,
             (total) =>
                 new UserImageError(
-                    `Image too large: ${total} bytes (max ${cap} bytes remaining). Please use a smaller image.`,
+                    `${capitalize(kind)} too large: ${total} bytes (max ${cap} bytes remaining). Please use a smaller ${kind}.`,
                     "image_too_large",
                 ),
         );
@@ -258,7 +279,7 @@ export async function fetchUserImage(
         // point, so blaming it would send callers looking at an image we never
         // actually read.
         throw new UserImageError(
-            `Failed to read image ${imageUrl}: ${error.message}`,
+            `Failed to read ${kind} ${imageUrl}: ${error.message}`,
             "failed_to_download_image",
             url,
         );
@@ -270,7 +291,7 @@ export async function fetchUserImage(
     );
     if (!mimeType) {
         throw new UserImageError(
-            `Unsupported image format from ${imageUrl}: the response carries no content-type and its body is not a recognised image.`,
+            `Unsupported ${kind} format from ${imageUrl}: the response carries no content-type and its body is not a recognised ${kind}.`,
             "unsupported_image_media_type",
             url,
         );

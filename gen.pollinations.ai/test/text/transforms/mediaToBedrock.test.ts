@@ -100,8 +100,26 @@ describe("Nova 2 Lite media input", () => {
 
         await expect(
             transform(videoMessage("http://127.0.0.1/clip.mp4"), {}),
-        ).rejects.toMatchObject({ status: 400 });
+        ).rejects.toMatchObject({
+            status: 400,
+            message:
+                "Invalid video URL http://127.0.0.1/clip.mp4: private or credentialed video URLs are not allowed.",
+        });
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("names the video when its host cannot serve it", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("missing", { status: 404, statusText: "Not Found" }),
+        );
+
+        await expect(
+            transform(videoMessage("https://example.com/clip.mp4"), {}),
+        ).rejects.toMatchObject({
+            status: 400,
+            message:
+                "Failed to fetch video from https://example.com/clip.mp4: HTTP 404 Not Found. The video was not found. Please check the URL is correct.",
+        });
     });
 
     it("refuses audio instead of letting Bedrock drop it", async () => {

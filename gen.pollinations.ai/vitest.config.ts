@@ -117,6 +117,36 @@ export default defineConfig(async ({ mode }) => {
         footer: { js: "export default {};" },
     }).outputFiles[0].text;
 
+    // User-scoped MCP stub: echoes the forwarded user and rejects caller credentials.
+    const echoMcpUser = async (request: Request) => {
+        if (
+            request.headers.has("authorization") ||
+            request.headers.has("cookie") ||
+            !request.headers.has("x-pollinations-user-id")
+        ) {
+            return new Response("Caller identity was not forwarded safely", {
+                status: 500,
+            });
+        }
+        const payload = (await request.json()) as {
+            jsonrpc: string;
+            id?: string | number;
+        };
+        const identity = request.headers.get("x-pollinations-user-id");
+        return Response.json({
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            result: {
+                content: [
+                    {
+                        type: "text",
+                        text: identity,
+                    },
+                ],
+            },
+        });
+    };
+
     return {
         ...baseConfig,
         test: {
@@ -344,39 +374,8 @@ export default defineConfig(async ({ mode }) => {
                                     { headers },
                                 );
                             },
-                            COMPOSIO_MCP: async (request: Request) => {
-                                if (
-                                    request.headers.has("authorization") ||
-                                    request.headers.has("cookie") ||
-                                    !request.headers.has(
-                                        "x-pollinations-user-id",
-                                    )
-                                ) {
-                                    return new Response(
-                                        "Caller identity was not forwarded safely",
-                                        { status: 500 },
-                                    );
-                                }
-                                const payload = (await request.json()) as {
-                                    jsonrpc: string;
-                                    id?: string | number;
-                                };
-                                const identity = request.headers.get(
-                                    "x-pollinations-user-id",
-                                );
-                                return Response.json({
-                                    jsonrpc: payload.jsonrpc,
-                                    id: payload.id,
-                                    result: {
-                                        content: [
-                                            {
-                                                type: "text",
-                                                text: identity,
-                                            },
-                                        ],
-                                    },
-                                });
-                            },
+                            COMPOSIO_MCP: echoMcpUser,
+                            VAULT_MCP: echoMcpUser,
                             COMPUTER_MCP: async (request: Request) => {
                                 if (
                                     request.headers.has("authorization") ||

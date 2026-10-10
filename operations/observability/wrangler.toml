@@ -27,7 +27,7 @@ tag = "v1"
 new_sqlite_classes = ["ObservabilityGrafana"]
 
 [triggers]
-crons = ["*/5 * * * *"]
+crons = []
 
 [vars]
 GF_SERVER_ROOT_URL = "https://observability.pollinations.ai"
@@ -35,11 +35,12 @@ GF_ADMIN_USER = "admin"
 GF_ADMIN_EMAIL = "hi@myceli.ai"
 POLLINATIONS_OAUTH_CLIENT_ID = "pk_vVa38CFt1R1gGScW"
 
-# Secrets:
+# Worker secrets pushed by scripts/push-secrets.mjs:
+# - POLLINATIONS_AUTH_SESSION_SECRET
 # - GF_ADMIN_PASSWORD
 # - TINYBIRD_READ_TOKEN
-# - TINYBIRD_LEGACY_READ_TOKEN
-# - DISCORD_WEBHOOK_URL
+# - TINYBIRD_LEGACY_READ_TOKEN (unused, removal pending approval)
+# - DISCORD_WEBHOOK_URL (unused, removal pending approval)
 
 [assets]
 binding = "ASSETS"

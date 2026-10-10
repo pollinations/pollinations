@@ -35,23 +35,24 @@ const SOURCE = ((): Record<string, string> => {
     return source;
 })();
 
-// A link to Enter carries the visit's source, so a signup or purchase there is
-// credited to where the visitor came from rather than to pollinations.ai.
-// Enter reads utm_* from its landing URL; an organic referrer travels as
-// utm_source because the hop replaces document.referrer with this site.
+// The visit's source as Enter reads it from its landing URL, carried on links
+// to Enter and on Play's sign-in, so a signup or purchase there is credited to
+// where the visitor came from rather than to pollinations.ai. An organic
+// referrer travels as utm_source because the hop replaces document.referrer
+// with this site.
+const { referrer_host, ...tags } = SOURCE;
+export const ENTER_SOURCE_PARAMS: Record<string, string> = referrer_host
+    ? { utm_source: referrer_host, ...tags }
+    : tags;
+
 function tagEnterLink(event: Event) {
     const link = (event.target as Element).closest?.<HTMLAnchorElement>(
         "a[href]",
     );
     if (!link?.hostname?.endsWith("enter.pollinations.ai")) return;
-    const { referrer_host, ...tags } = SOURCE;
     const url = new URL(link.href);
-    for (const [key, value] of Object.entries({
-        utm_source: referrer_host,
-        ...tags,
-    }))
-        if (value && !url.searchParams.has(key))
-            url.searchParams.set(key, value);
+    for (const [key, value] of Object.entries(ENTER_SOURCE_PARAMS))
+        if (!url.searchParams.has(key)) url.searchParams.set(key, value);
     link.href = url.href;
 }
 

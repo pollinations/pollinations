@@ -5,6 +5,8 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `PolliProvider` `authorizeParams`: extra query parameters on the authorize
+  URL, such as `utm_*` campaign tags. OAuth parameters always take precedence.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.
 

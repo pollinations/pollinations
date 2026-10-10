@@ -51,6 +51,7 @@ async function loadPromptAgentRuntime(
         apiKey,
         genBaseUrl: new URL(c.req.url).origin,
         fetcher,
+        loader: c.env.LOADER,
     };
 }
 

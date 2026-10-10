@@ -97,6 +97,7 @@ const UpdateAgentEnvelopeSchema = z
         systemPrompt: z.unknown().optional(),
         baseModel: z.unknown().optional(),
         mcpServers: z.unknown().optional(),
+        codemode: z.unknown().optional(),
     })
     .strict();
 
@@ -116,6 +117,7 @@ const AgentResponseSchema = z.discriminatedUnion("type", [
         systemPrompt: z.string(),
         baseModel: z.string(),
         mcpServers: z.array(BuiltinMcpServerIdSchema),
+        codemode: z.boolean().optional(),
     }),
     AgentResponseBaseSchema.extend({
         type: z.literal("code_agent"),
@@ -532,6 +534,7 @@ export const agentsRoutes = new Hono<Env>()
                     systemPrompt: data.systemPrompt,
                     baseModel: data.baseModel,
                     mcpServers: data.mcpServers,
+                    codemode: data.codemode,
                 });
             }
             await requireAgentWriteAccess(

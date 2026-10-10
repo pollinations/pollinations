@@ -16,7 +16,7 @@ from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
-from generate_monthly import generate_website_post, rank_contributors, read_previous_page
+from generate_monthly import generate_website_post, rank_contributors, read_earlier_pages
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import announced_retirements, model_changes, pr_comparison_refs
@@ -397,7 +397,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(ranked[1]["avatar_url"], "https://github.com/FabioArieiraBaia.png?size=80")
         self.assertEqual(ranked[2]["url"], "https://github.com/apps/pollinations-ai")
 
-    def test_monthly_cover_continues_the_latest_earlier_page(self):
+    def test_monthly_story_follows_the_latest_page_and_covers_start_from_page_one(self):
         page = lambda month, story: normalize_platform_post(
             platform="website", scope="monthly", date=f"{month}-28", period_start=f"{month}-01",
             period_end=f"{month}-28", generated_at="now",
@@ -406,10 +406,12 @@ class GistEnrichmentTest(unittest.TestCase):
             for month, story in (("2026-07", "A greenhouse frame stands."), ("2026-09", "The greenhouse glows.")):
                 (Path(root) / f"operations/social/news/monthly/{month}").mkdir(parents=True)
                 (Path(root) / f"operations/social/news/monthly/{month}/website.json").write_text(json.dumps(page(month, story)))
-            self.assertIsNone(read_previous_page("2026-07", root))
-            self.assertEqual(read_previous_page("2026-09", root)["metadata"]["story"], "A greenhouse frame stands.")
-            previous = read_previous_page("2026-10", root)
-        self.assertEqual(previous["images"], [{"url": "https://x/2026-09.jpg"}])
+            self.assertEqual(read_earlier_pages("2026-07", root), [])
+            self.assertEqual([p["metadata"]["story"] for p in read_earlier_pages("2026-09", root)],
+                             ["A greenhouse frame stands."])
+            first, previous = read_earlier_pages("2026-10", root)
+        self.assertEqual(first["images"], [{"url": "https://x/2026-07.jpg"}])
+        self.assertEqual(previous["metadata"]["story"], "The greenhouse glows.")
 
         digest = {"pr_count": 1, "arcs": [{"headline": "Apps", "summary": "A new Apps directory."}]}
         for previous_page, expected in ((previous, "The greenhouse glows."), (None, "this cover is page one")):

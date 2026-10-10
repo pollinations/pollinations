@@ -30,7 +30,7 @@ TIER 3: WEEKLY (Sunday 06:00 UTC)
 
 TIER 4: MONTHLY (1st of the month 06:00 UTC)
   Read month's gists directly → count merged PRs + contributors on GitHub → synthesize monthly themes
-  → website post (title, summary, story) + one cover continuing last month's cover
+  → website post (title, summary, story) + one cover drawn from page one's cover and last month's story
   → commit to news branch under the month → index.json feeds the website's build diary
 ```
 
@@ -116,13 +116,13 @@ PR merge ──→ generate_realtime.py
                                    ├──→ GitHub search: merged PRs + contributors
                                    ├──→ summary.json  (themes + merged_prs + contributors)
                                    ├──→ website.json  + 🎨 GENERATE 1 cover (16:9)
-                                   │      references: character sheet + last month's cover
+                                   │      references: character sheet + page one's cover
                                    │
                                    └──→ Commit all to news branch
                                          → news-build-index.yml → index.json months/contributors
 
              Images generated: 1 (the cover)
-             Images reused:    last month's cover, as a reference
+             Images reused:    page one's cover, as a reference
 ```
 
 ---
@@ -270,10 +270,10 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 ### Monthly: `operations/social/news/monthly/YYYY-MM/`
 
 - `summary.json` — canonical monthly summary plus `merged_prs` and `contributors`. Both count every PR merged in the month on any base branch except `production` (release PRs copy work already in `main`), by anyone: people, agents and bots. An account gets credit as the PR author or through a `Co-authored-by` trailer with a GitHub noreply address in the merge commit message; bot co-authors are skipped.
-- `website.json` — simplified platform envelope; `metadata.story` says where the picture book stands, for next month's cover
+- `website.json` — simplified platform envelope; `metadata.story` lists every landmark built so far and one open thread, for next month's cover
 - `images/website.jpg` — the 16:9 cover
 
-Each cover is the next page of one picture book: the same garden, growing month by month. The generator attaches the latest earlier cover as a second reference image and passes its story to the post prompt, so a missed month never restarts the story. Generate months one at a time, oldest first, and wait for each run to finish before starting the next: parallel runs read the news branch before the earlier months exist, so each would start the story over.
+Each cover is the next page of one picture book: the same garden, growing month by month. Every cover is drawn from page one's cover (the second reference image) and the latest earlier page's story, never from last month's cover: copying a copy blurs a little more each month. The story carries the growth, and a missed month never restarts it. Covers show only Polli, the monitor robot and Nomnom: no people. Generate months one at a time, oldest first, and wait for each run to finish before starting the next: parallel runs read the news branch before the earlier months exist, so each would start the story over.
 
 ### Platform Envelope
 
@@ -333,7 +333,7 @@ This makes all generated content available locally for scripts that read files (
 | `generate_daily.py` | Daily: read gists → summary with highlights + platform posts (X, Reddit) + images → commit to news |
 | `build_news_index.py` | Rebuilds `index.json` (model announcements, highlights, months, contributors) for Enter `/news`, the README and the website |
 | `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → all 5 platform posts + images → commit to news |
-| `generate_monthly.py` | Monthly: read gists directly → GitHub merged PRs + contributors → themes → website post + cover continuing last month's → commit to news |
+| `generate_monthly.py` | Monthly: read gists directly → GitHub merged PRs + contributors → themes → website post + cover drawn from page one and last month's story → commit to news |
 | `publish_daily.py` | PUBLISH_MODE=buffer: stage X to Buffer. PUBLISH_MODE=direct: Reddit VPS deployment. |
 | `publish_weekly.py` | PUBLISH_MODE=buffer: stage X + LI + IG to Buffer. PUBLISH_MODE=direct: Reddit VPS + Discord webhook. |
 | `update_readme.py` | README Latest News from `index.json`: `get_top_highlights()`, `update_readme_news_section()` (called by `docs-update-readme-news.yml`) |
@@ -448,12 +448,12 @@ There are **4 independent families of images**. Each tier generates its own imag
 | **Per-PR pixel art** | `generate_realtime.py` | Tier 1 (on PR merge) | 8-bit pixel art | 1 per PR | Discord post |
 | **Daily platform images** | `generate_daily.py` | Tier 2 (06:00 UTC) | Brand pixel art (from `brand/visual.md`) | 1 Twitter + 1 Reddit = **2 per day** | Twitter and Reddit daily posts (LinkedIn and Instagram = weekly only) |
 | **Weekly platform images** | `generate_weekly.py` | Tier 3 (Sunday 06:00 UTC) | Brand pixel art (from `brand/visual.md`) | 1 Twitter + 1 LinkedIn + 3 Instagram + 1 Reddit + 1 Discord = **7 per week** | Twitter, LinkedIn, Instagram, Reddit, Discord weekly posts |
-| **Monthly cover** | `generate_monthly.py` | Tier 4 (1st of the month 06:00 UTC) | Brand pixel art, 16:9, continues last month's cover | **1 per month** | Website build diary |
+| **Monthly cover** | `generate_monthly.py` | Tier 4 (1st of the month 06:00 UTC) | Brand pixel art, 16:9, drawn from page one's cover | **1 per month** | Website build diary |
 
 **Key points:**
 
 - **Daily, weekly and monthly images are freshly generated** from the daily narrative / weekly / monthly summary. They are NOT the per-PR pixel art images. The AI creates images that illustrate the aggregated story, not individual PRs.
-- **Monthly covers are one picture book** — each cover takes the previous one as a second reference image, so the same garden grows from page to page.
+- **Monthly covers are one picture book** — each cover takes page one as a second reference image and last month's story as its brief, so the same garden grows from page to page without blurring.
 
 ---
 
@@ -485,7 +485,7 @@ AI calls scale as N+3 (N per-PR gists + summary with highlights + two platform p
 10. **Publish tier gating**: Merge a non-user-facing PR → verify `publish_tier: discord_only` → verify absent from daily summary
 11. **Clustering**: Day with 5+ related PRs → verify daily summary groups them into narrative arcs (not a flat list)
 12. **Concurrent merges**: Merge 3 PRs within 30 seconds → verify all 3 gists committed without conflicts
-13. **Tier 4 — happy path**: Trigger `mode: monthly` for two consecutive months, oldest first → verify `summary.json`, `website.json` and `images/website.jpg` for each, the second cover continues the first, and `index.json` lists both months
+13. **Tier 4 — happy path**: Trigger `mode: monthly` for two consecutive months, oldest first → verify `summary.json`, `website.json` and `images/website.jpg` for each, the second cover keeps page one's landmarks and last month's story, and `index.json` lists both months
 
 ---
 

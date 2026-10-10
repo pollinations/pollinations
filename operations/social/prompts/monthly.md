@@ -47,10 +47,12 @@ Return ONLY the JSON object. No markdown fences, no explanation.
 
 The monthly covers are one picture book about one place: the Pollinations garden. Each month is the next page. Flipped through in order, the pages show the garden growing as the project grows.
 
-- **Same place, same view.** Keep the garden and a similar wide viewpoint every month, so the pages line up. Never start over somewhere new.
-- **Everything stays.** What earlier pages built remains visible: paths, buildings, machines, plants. It can look lived in, busier or a season older.
-- **One new thing.** Add one clear change that stands for this month's main story: a new building, path, machine, bridge, greenhouse or visitor. Make it the focal point.
+- **The same garden, growing outward.** Keep the garden, its style and the cast, and never start over somewhere new. Each page steps a little further back or further along the path, so earlier places stay in view, smaller or at the side, while new ground opens up. Flipping through, the garden should visibly get bigger.
+- **Everything stays.** What earlier pages built remains somewhere in the picture: paths, buildings, machines, plants. It can look lived in, busier or a season older.
+- **One new thing, big and clear.** Add one change that stands for this month's main story: a new building, path, machine, bridge, greenhouse or visitor. It is the largest new element and the focal point, impossible to miss at a glance.
+- **Time passes.** Light, weather and seasons can change from page to page.
 - **The cast is busy with it.** Polli and her companions are building, tending or celebrating that change.
+- **Only our cast.** Polli, the monitor robot and Nomnom are the only characters: no humans or people anywhere, not even small in the background. Show the community through what it builds and leaves behind, such as new stalls, lanterns, plots and more little bees.
 - **Follow up.** Pick up where last month's page left off: finish what was started, or let something that was set up pay off.
 - **Fill the frame.** One clear focal point, and the garden reaches every edge: no empty, faded or plain panel. The page's text sits beside the picture, never on it.
 - **No words in the picture.** No text, dates, numbers, logos, dashboards or signs with writing.

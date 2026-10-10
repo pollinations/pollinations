@@ -29,10 +29,11 @@ Think: the closing paragraph of a small team's month, written for people who use
 
 ### What to Include:
 - One wide 16:9 scene with a single readable focal point
-- The same place every month, seen from a similar viewpoint, so flipping between months feels like time passing
-- One visible change that shows this month's main story
+- The same garden every month, seen from a little further back or further along the path as it grows, so flipping between months shows it getting bigger
+- One big, visible change that shows this month's main story
 
 ### What to AVOID:
+- Humans or people of any kind: the only characters are Polli, the monitor robot and Nomnom
 - Text, dates, numbers, logos and dashboards in the image
 - Busy collages of every update
 - Starting over somewhere new: the world grows, it does not move

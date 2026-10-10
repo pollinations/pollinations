@@ -7,7 +7,7 @@ Tier 4: Monthly Website Page
   2. Count the month's merged PRs and contributors on GitHub
   3. AI synthesizes the month's themes
   4. Generate the website post: title, summary, cover prompt and story
-  5. Generate one cover that continues the previous month's cover
+  5. Generate one cover drawn from page one's cover and the previous month's story
   6. Commit everything directly to the news branch
 
 The website's build diary reads it through index.json (build_news_index.py).
@@ -55,9 +55,16 @@ MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
 # PR gists began on 2026-02-05; earlier months, February included, read daily summaries.
 FIRST_GIST_MONTH = "2026-03"
 COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
-CONTINUE_COVER = (
-    "The second attached image is last month's cover: keep its place, viewpoint, "
-    "palette and characters, and show what changed since."
+# Every cover is drawn from page one, never from last month's cover: copying a copy
+# blurs a little more each month. The story text carries the garden's growth.
+PAGE_ONE_COVER = (
+    "The second attached image is page one of this picture book: keep its art style, "
+    "crisp pixels, palette, characters and first buildings, but draw the garden as it "
+    "stands now, grown well beyond page one as described above."
+)
+ONLY_OUR_CAST = (
+    "No humans or people anywhere, not even small in the background: the only characters "
+    "are the bee mascot, the monitor robot and the round Nomnom creature."
 )
 
 # Every merged PR by anyone, agents and bots included, on any base branch. Release
@@ -123,11 +130,15 @@ def read_daily_summaries(month: str, repo_root: Optional[str] = None) -> List[Di
     ]
 
 
-def read_previous_page(month: str, repo_root: Optional[str] = None) -> Optional[Dict]:
-    """The latest website page before `month`, so a missed month never restarts the story."""
+def read_earlier_pages(month: str, repo_root: Optional[str] = None) -> List[Dict]:
+    """Website pages before `month`, oldest first: page one anchors every cover, the
+    latest carries the story, so a missed month never restarts it."""
     monthly_root = Path(repo_root or get_repo_root()) / MONTHLY_REL_DIR
-    pages = sorted(path for path in monthly_root.glob("*/website.json") if path.parent.name < month)
-    return json.loads(pages[-1].read_text(encoding="utf-8")) if pages else None
+    return [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in sorted(monthly_root.glob("*/website.json"))
+        if path.parent.name < month
+    ]
 
 
 # ── Step 1: Count merged PRs and contributors ───────────────────────
@@ -325,7 +336,8 @@ def main():
 
     # ── Generate the website post and its cover ──────────────────────
     print("\n[4/5] Generating the website page...")
-    previous_page = read_previous_page(month)
+    earlier_pages = read_earlier_pages(month)
+    previous_page = earlier_pages[-1] if earlier_pages else None
     print(f"  Continues: {previous_page['period_start'][:7] if previous_page else 'nothing, page one'}")
     post = generate_website_post(digest, pollinations_token, previous_page)
     if not post:
@@ -336,10 +348,10 @@ def main():
         print(f"  FATAL: Monthly website post is missing {', '.join(missing)}")
         sys.exit(1)
 
-    previous_cover = get_post_image_urls(previous_page)[:1] if previous_page else []
-    prompt = f"{post['image_prompt']} {CONTINUE_COVER}" if previous_cover else post["image_prompt"]
+    page_one_cover = get_post_image_urls(earlier_pages[0])[:1] if earlier_pages else []
+    prompt = " ".join([post["image_prompt"], *([PAGE_ONE_COVER] if page_one_cover else []), ONLY_OUR_CAST])
     image_bytes, _ = generate_image(
-        prompt, pollinations_token, COVER_WIDTH, COVER_HEIGHT, references=previous_cover
+        prompt, pollinations_token, COVER_WIDTH, COVER_HEIGHT, references=page_one_cover
     )
     if not image_bytes:
         print("  FATAL: Monthly cover generation failed")

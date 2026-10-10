@@ -53,6 +53,11 @@ export const wellKnownRoutes = new Hono<Env>()
             'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
         );
         c.header("Cache-Control", "public, max-age=3600");
+        // RFC 9727 section 2: HEAD must answer with an api-catalog Link.
+        c.header(
+            "Link",
+            `<${origin}/.well-known/api-catalog>; rel="api-catalog"`,
+        );
         return c.body(
             JSON.stringify({
                 linkset: [

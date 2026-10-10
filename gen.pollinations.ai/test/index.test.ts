@@ -363,6 +363,16 @@ describe("gen worker routing", () => {
         );
         expect(catalog.headers.get("Access-Control-Allow-Origin")).toBe("*");
 
+        const head = await fetchWorker(
+            "/.well-known/api-catalog",
+            envWithEnter(),
+            { method: "HEAD" },
+        );
+        expect(head.status).toBe(200);
+        expect(head.headers.get("Link")).toBe(
+            `<${origin}/.well-known/api-catalog>; rel="api-catalog"`,
+        );
+
         const llms = await fetchWorker("/llms.txt");
         expect(await llms.text()).toContain("/.well-known/api-catalog");
     });

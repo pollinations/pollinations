@@ -9,6 +9,7 @@ import {
     KeyIcon,
     PencilIcon,
     PlusIcon,
+    RefreshIcon,
     Section,
     Surface,
     TerminalIcon,
@@ -24,6 +25,7 @@ import { ResourceCardHeader } from "../resource-card-header.tsx";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
+import { RotateKeyDialog } from "./key-rotate-dialog.tsx";
 import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
@@ -41,6 +43,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onRotate,
 }) => {
     const [keyCreateOpen, setKeyCreateOpen] = useState(false);
     const [appCreateOpen, setAppCreateOpen] = useState(false);
@@ -48,6 +51,32 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [rotatingKey, setRotatingKey] = useState<ApiKey | null>(null);
+    const [rotatedSecret, setRotatedSecret] = useState<string | null>(null);
+    const [rotateError, setRotateError] = useState<string | null>(null);
+    const [isRotating, setIsRotating] = useState(false);
+
+    async function handleRotate(): Promise<void> {
+        if (!rotatingKey || isRotating) return;
+        setIsRotating(true);
+        setRotateError(null);
+        try {
+            setRotatedSecret(await onRotate(rotatingKey.id));
+        } catch (error) {
+            setRotateError(
+                resourceActionError("rotate", "the secret key", error),
+            );
+        } finally {
+            setIsRotating(false);
+        }
+    }
+
+    function closeRotate(): void {
+        if (isRotating) return;
+        setRotatingKey(null);
+        setRotatedSecret(null);
+        setRotateError(null);
+    }
 
     async function handleDelete(): Promise<void> {
         if (!deletingKey || isDeleting) return;
@@ -131,6 +160,23 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             >
                                 <PencilIcon className="h-4 w-4" />
                             </IconButton>
+                            {!isPublishable && (
+                                <IconButton
+                                    intent="info"
+                                    title="Rotate secret key"
+                                    tooltip="Rotate secret key"
+                                    tooltipAlign="center"
+                                    tooltipClampToViewport={false}
+                                    aria-haspopup="dialog"
+                                    onClick={() => {
+                                        setRotateError(null);
+                                        setRotatedSecret(null);
+                                        setRotatingKey(apiKey);
+                                    }}
+                                >
+                                    <RefreshIcon className="h-4 w-4" />
+                                </IconButton>
+                            )}
                             <IconButton
                                 intent="danger"
                                 title={`Delete ${keyLabel}`}
@@ -394,6 +440,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         setDeleteError(null);
                     }
                 }}
+            />
+            <RotateKeyDialog
+                open={rotatingKey !== null}
+                secret={rotatedSecret}
+                error={rotateError}
+                pending={isRotating}
+                onConfirm={handleRotate}
+                onClose={closeRotate}
+                onCopyError={() =>
+                    setRotateError(
+                        "Couldn’t copy the key. Select it and copy it manually before closing.",
+                    )
+                }
             />
             {editingKey && (
                 <EditApiKeyDialog

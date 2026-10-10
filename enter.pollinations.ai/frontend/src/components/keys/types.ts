@@ -29,6 +29,8 @@ export interface ApiKeyManagerProps {
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+    /** Replaces a secret key's value and returns the new secret. */
+    onRotate: (id: string) => Promise<string>;
 }
 
 export type CreateApiKey = {

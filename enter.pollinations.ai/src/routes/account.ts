@@ -1,8 +1,10 @@
+import { defaultKeyHasher } from "@better-auth/api-key";
 import type { Logger } from "@logtape/logtape";
 import {
     hasAccountPermission,
     requireAccountPermission,
 } from "@shared/auth/account-permissions.ts";
+import { API_KEY_START_LENGTH, generateApiKey } from "@shared/auth/api-key.ts";
 import {
     type ApiKeyType,
     createApiKeyForUser,
@@ -1822,6 +1824,92 @@ export const accountRoutes = new Hono<Env>()
                 .returning();
 
             return c.json(formatKey(updated));
+        },
+    )
+    .post(
+        "/keys/:id/rotate",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Rotate API Key",
+            description:
+                "Replace a secret key's value with a new one. The key keeps its ID, name, model access, budget, account permissions, expiry and description; the previous value stops working immediately. The new value is returned only once. Requires `account:keys` permission when using API keys.",
+            responses: {
+                200: { description: "Rotated API key with its new secret" },
+                400: {
+                    description:
+                        "Not a secret key, or the key is disabled or expired",
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Key not found" },
+                409: { description: "The key was rotated concurrently" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+
+            const { id } = c.req.param();
+            const db = drizzle(c.env.DB);
+            const key = await db
+                .select()
+                .from(apikeyTable)
+                .where(
+                    and(
+                        eq(apikeyTable.id, id),
+                        eq(apikeyTable.referenceId, user.id),
+                    ),
+                )
+                .get();
+            if (!key) {
+                throw new HTTPException(404, { message: "API key not found" });
+            }
+            if (key.prefix !== "sk") {
+                throw new HTTPException(400, {
+                    message: "Only secret keys can be rotated",
+                });
+            }
+            if (
+                key.enabled === false ||
+                (key.expiresAt && key.expiresAt <= new Date())
+            ) {
+                throw new HTTPException(400, {
+                    message: "Disabled or expired keys can't be rotated",
+                });
+            }
+            // As on creation and PATCH: a key can't hand out spending it
+            // doesn't have, so it can't take over a key that spends paid Pollen.
+            if (c.var.auth.apiKey?.questPollenOnly && !key.questPollenOnly) {
+                throw new HTTPException(403, {
+                    message:
+                        "A Quest Pollen only key can't rotate a key that spends paid Pollen",
+                });
+            }
+
+            // Swapping the stored hash on the same row keeps every setting
+            // and the key's usage history, and invalidates the old value in
+            // one write. Matching the old hash makes concurrent rotations
+            // fail instead of returning a secret that was already replaced.
+            const secret = generateApiKey("sk");
+            const [rotated] = await db
+                .update(apikeyTable)
+                .set({
+                    key: await defaultKeyHasher(secret),
+                    start: secret.slice(0, API_KEY_START_LENGTH),
+                    updatedAt: new Date(),
+                })
+                .where(
+                    and(eq(apikeyTable.id, id), eq(apikeyTable.key, key.key)),
+                )
+                .returning();
+            if (!rotated) {
+                throw new HTTPException(409, {
+                    message: "This key was just rotated. Reload and try again.",
+                });
+            }
+
+            return c.json({ ...formatKey(rotated), key: secret });
         },
     )
     .post(

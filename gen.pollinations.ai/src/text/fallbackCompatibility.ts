@@ -17,19 +17,19 @@ function forcesToolChoice(toolChoice: unknown): boolean {
     );
 }
 
-function countReferenceImages(value: unknown): number {
+function countParts(value: unknown, types: string[]): number {
     if (Array.isArray(value)) {
         return value.reduce(
-            (total, item) => total + countReferenceImages(item),
+            (total, item) => total + countParts(item, types),
             0,
         );
     }
     if (!value || typeof value !== "object") return 0;
 
     const record = value as Record<string, unknown>;
-    if (record.type === "image_url" || record.type === "input_image") return 1;
+    if (types.includes(record.type as string)) return 1;
     return Object.values(record).reduce<number>(
-        (total, item) => total + countReferenceImages(item),
+        (total, item) => total + countParts(item, types),
         0,
     );
 }
@@ -120,14 +120,22 @@ export function textCapabilityError(
         requestedCompletionTokens(request) > definition.maxCompletionTokens
     )
         return `This model supports at most ${definition.maxCompletionTokens} output tokens`;
-    const referenceImages = countReferenceImages(request);
+    const referenceImages = countParts(request, ["image_url", "input_image"]);
     // Agents hand images to their own base model or code, which decides.
-    if (
-        !(communityEndpoint && usesAgentRunToken(communityEndpoint)) &&
-        referenceImages > 0 &&
-        definition.inputModalities?.includes("image") === false
-    )
+    const agent = communityEndpoint && usesAgentRunToken(communityEndpoint);
+    const textOnly = definition.inputModalities?.includes("image") === false;
+    if (!agent && referenceImages > 0 && textOnly)
         return "This model does not support image input";
+    // Every model that reads PDFs also reads images, and OpenRouter parses
+    // PDFs to text for any model.
+    if (
+        !agent &&
+        textOnly &&
+        definition.provider !== "openrouter" &&
+        countParts([request.messages, request.input], ["file", "input_file"]) >
+            0
+    )
+        return "This model does not support PDF input";
     if (
         definition.maxReferenceImages !== undefined &&
         referenceImages > definition.maxReferenceImages

@@ -995,8 +995,27 @@ describe("POST /v1/messages", () => {
         });
     });
 
-    it("sends a PDF document to the provider as a Chat file part", async () => {
-        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+    it.each([
+        {
+            model,
+            // Azure reports a missing file_id when filename is absent.
+            file: {
+                file_data: "data:application/pdf;base64,JVBERi0x",
+                filename: "document.pdf",
+            },
+        },
+        {
+            model: "anthropic/claude-haiku-4.5",
+            // Portkey passes file_data to Bedrock as raw document bytes.
+            file: { file_data: "JVBERi0x", mime_type: "application/pdf" },
+        },
+    ])("sends a PDF document to $model in the shape its provider reads", async ({
+        model,
+        file,
+    }) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
         const { providerBodies } = mockUpstream();
         const { response, text } = await call(
             "/v1/messages",
@@ -1027,12 +1046,7 @@ describe("POST /v1/messages", () => {
             {
                 role: "user",
                 content: [
-                    {
-                        type: "file",
-                        file: {
-                            file_data: "data:application/pdf;base64,JVBERi0x",
-                        },
-                    },
+                    { type: "file", file },
                     { type: "text", text: "What word is in this PDF?" },
                 ],
             },

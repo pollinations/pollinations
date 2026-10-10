@@ -8,6 +8,7 @@ import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
+import { pdfFileParts } from "./transforms/pdfFileParts.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -62,6 +63,7 @@ export async function generateTextPortkey(
         }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
+        state = await pdfFileParts(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }
 

@@ -26,6 +26,8 @@ const SKIPPED_CONFIG_KEYS = new Set([
     "useUserApiKey",
     "defaultOptions",
     "requiresBase64ImageUrls",
+    "inlineFileData",
+    "fileInputsViaResponses",
     "supportsMaxCompletionTokens",
     "supportsStreamOptions",
 ]);

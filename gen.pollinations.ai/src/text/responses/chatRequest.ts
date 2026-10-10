@@ -145,6 +145,42 @@ function messageContent(
                 ),
             ];
         }
+        if (!output && allowImages && part.type === "file") {
+            const file = part.file as JsonObject | undefined;
+            const fileData =
+                typeof file?.file_data === "string"
+                    ? file.file_data
+                    : undefined;
+            if (!fileData) {
+                invalidRequest(
+                    "messages.content.file",
+                    "Chat file content requires file_data",
+                );
+            }
+            // Responses input_file takes a base64 data URL; normalize bare
+            // base64 so a provider-specific request still works.
+            const normalized = fileData.startsWith("data:")
+                ? fileData
+                : `data:${typeof file?.mime_type === "string" && file.mime_type ? file.mime_type : "application/pdf"};base64,${fileData}`;
+            const filename =
+                typeof file?.file_name === "string" && file.file_name
+                    ? file.file_name
+                    : typeof file?.filename === "string" && file.filename
+                      ? file.filename
+                      : "document.pdf";
+            return [
+                withPromptCacheBreakpoint(
+                    {
+                        type: "input_file",
+                        file: {
+                            file_data: normalized,
+                            filename,
+                        },
+                    },
+                    part,
+                ),
+            ];
+        }
         return invalidRequest(
             "messages",
             `Unsupported Chat content part: ${String(part.type ?? "unknown")}`,

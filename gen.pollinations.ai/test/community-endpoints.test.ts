@@ -8493,7 +8493,8 @@ fixtureTest(
             "video",
         ];
         const outputModalities: ModelOutputModality[] = [
-            ...modalities,
+            // "pdf" is an input-only modality.
+            ...modalities.filter((modality) => modality !== "pdf"),
             "3d",
             "embedding",
         ];

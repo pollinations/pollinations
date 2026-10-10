@@ -39,6 +39,8 @@ export const MODEL_INPUT_MODALITIES = [
     "image",
     "audio",
     "video",
+    // PDF documents via Chat `file` parts and Messages document blocks.
+    "pdf",
 ] as const;
 
 export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];

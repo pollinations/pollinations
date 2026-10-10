@@ -80,6 +80,9 @@ export function createAzureResponsesModelConfig(
     return createAzureModelConfig(apiKey, endpoint, {
         responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
         responsesAuthHeader: "api-key",
+        // Azure Chat Completions rejects `file` parts (file_id required), so
+        // file-bearing chat requests ride the Responses API's input_file.
+        fileInputsViaResponses: true,
         ...overrides,
     });
 }
@@ -90,6 +93,8 @@ export function createBedrockNativeConfig(
     return {
         provider: "bedrock",
         requiresBase64ImageUrls: true,
+        // Bedrock Converse document blocks take raw base64 bytes, not data URLs.
+        inlineFileData: "base64",
         "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
         "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
         "aws-region": process.env.AWS_REGION || "us-east-1",

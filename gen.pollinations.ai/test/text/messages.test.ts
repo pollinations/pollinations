@@ -719,10 +719,38 @@ describe("POST /v1/messages", () => {
                 }
                 const body = (await upstream.json().catch(() => null)) as {
                     messages?: unknown;
+                    input?: unknown;
                     stream?: boolean;
                 } | null;
-                if (!body?.messages) return Response.json({ data: [] });
+                if (!body?.messages && !Array.isArray(body?.input)) {
+                    return Response.json({ data: [] });
+                }
                 providerBodies.push(body);
+                if (Array.isArray(body.input)) {
+                    // Native Responses upstream: answer in Responses shape.
+                    return Response.json({
+                        object: "response",
+                        id: "resp_test",
+                        status: "completed",
+                        model,
+                        output: [
+                            {
+                                type: "message",
+                                role: "assistant",
+                                content: [
+                                    { type: "output_text", text: "Hello" },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 120,
+                            input_tokens_details: { cached_tokens: 100 },
+                            output_tokens: 30,
+                            output_tokens_details: { reasoning_tokens: 0 },
+                            total_tokens: 150,
+                        },
+                    });
+                }
                 if (body.stream) {
                     return new Response(
                         sse([
@@ -774,6 +802,7 @@ describe("POST /v1/messages", () => {
     ) {
         const bindings = {
             ...withInlineGenerationCoordinator(env),
+            AZURE_MYCELI_PROD_API_KEY: "azure-test-key",
             TINYBIRD_INGEST_URL:
                 "https://tinybird.test/v0/events?name=generation_event_v2",
         };
@@ -995,7 +1024,56 @@ describe("POST /v1/messages", () => {
         });
     });
 
-    it("sends a PDF document to the provider as a Chat file part", async () => {
+    it("sends a PDF document to Bedrock as bare base64 file data", async () => {
+        // Claude models are paid-only, so the wallet needs pack balance.
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
+        const { providerBodies } = mockUpstream();
+        const { response, text } = await call(
+            "/v1/messages",
+            {
+                model: "anthropic/claude-haiku-4.5",
+                max_tokens: 32,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "document",
+                                source: {
+                                    type: "base64",
+                                    media_type: "application/pdf",
+                                    data: "JVBERi0x",
+                                },
+                            },
+                            { type: "text", text: "What word is in this PDF?" },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
+        // Bedrock Converse document blocks carry raw bytes, not data URLs.
+        expect(providerBodies[0].messages).toEqual([
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "file",
+                        file: {
+                            file_data: "JVBERi0x",
+                            mime_type: "application/pdf",
+                        },
+                    },
+                    { type: "text", text: "What word is in this PDF?" },
+                ],
+            },
+        ]);
+    });
+
+    it("routes GPT PDF documents through the Responses API as input_file", async () => {
         const caller = await createTestApiKey({ user: { tierBalance: 100 } });
         const { providerBodies } = mockUpstream();
         const { response, text } = await call(
@@ -1023,6 +1101,52 @@ describe("POST /v1/messages", () => {
             caller.key,
         );
         expect(response.status, text).toBe(200);
+        expect(providerBodies[0].input).toEqual([
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "input_file",
+                        file: {
+                            file_data: "data:application/pdf;base64,JVBERi0x",
+                            filename: "document.pdf",
+                        },
+                    },
+                    { type: "input_text", text: "What word is in this PDF?" },
+                ],
+            },
+        ]);
+    });
+
+    it("sends Chat Completions file parts to Bedrock as bare base64", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
+        const { providerBodies } = mockUpstream();
+        const { response, text } = await call(
+            "/v1/chat/completions",
+            {
+                model: "anthropic/claude-haiku-4.5",
+                max_tokens: 32,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                file: {
+                                    file_data:
+                                        "data:application/pdf;base64,JVBERi0x",
+                                },
+                            },
+                            { type: "text", text: "What word is in this PDF?" },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(200);
         expect(providerBodies[0].messages).toEqual([
             {
                 role: "user",
@@ -1030,13 +1154,43 @@ describe("POST /v1/messages", () => {
                     {
                         type: "file",
                         file: {
-                            file_data: "data:application/pdf;base64,JVBERi0x",
+                            file_data: "JVBERi0x",
+                            mime_type: "application/pdf",
                         },
                     },
                     { type: "text", text: "What word is in this PDF?" },
                 ],
             },
         ]);
+    });
+
+    it("rejects file parts on models without the pdf modality", async () => {
+        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+        mockUpstream();
+        const { response, text } = await call(
+            "/v1/chat/completions",
+            {
+                model: "openai/gpt-oss-20b",
+                max_tokens: 32,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                file: {
+                                    file_data:
+                                        "data:application/pdf;base64,JVBERi0x",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+            caller.key,
+        );
+        expect(response.status, text).toBe(400);
+        expect(text).toContain("does not support PDF file input");
     });
 
     it("preserves thinking signatures through response validation", async () => {

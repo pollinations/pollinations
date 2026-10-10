@@ -229,6 +229,60 @@ test("voodoohop appears in both quest leaderboards", async () => {
     });
 });
 
+test("admins are left out of both quest leaderboards", async () => {
+    const db = drizzle(env.DB, { schema });
+    await db.insert(schema.user).values(
+        [
+            ["admin-role-user", "staff-admin", "admin"],
+            ["multi-role-user", "staff-multi", "user, admin"],
+            ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv", "staff-by-id", null],
+            ["community-user", "community-builder", "user"],
+        ].map(([id, githubUsername, role], index) => ({
+            id: id as string,
+            name: githubUsername as string,
+            email: `${githubUsername}@example.com`,
+            githubId: 8_800_000 + index,
+            githubUsername,
+            role,
+        })),
+    );
+    await db.insert(schema.rewards).values(
+        [
+            ["admin-role-user", 100],
+            ["multi-role-user", 50],
+            ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv", 25],
+            ["community-user", 3],
+        ].map(([userId, pollenAmount]) => ({
+            id: `admin-test-${userId}`,
+            idempotencyKey: `admin-test-${userId}`,
+            userId: userId as string,
+            questId: "first_top_up",
+            title: "Top up",
+            pollenAmount: pollenAmount as number,
+            balanceBucket: "tier" as const,
+        })),
+    );
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/quests/leaderboard",
+    );
+    const leaderboard = (await response.json()) as ApiResponse;
+    expect(leaderboard.leaderboard.map((row) => row.githubLogin)).toEqual([
+        "community-builder",
+    ]);
+    expect(leaderboard.totals).toEqual({
+        contributors: 1,
+        completedQuests: 1,
+        totalPollen: 3,
+    });
+
+    const standings = await buildQuestStandings(env, null);
+    expect(standings.participants).toBe(1);
+    expect(standings.rows.map((row) => row.githubLogin)).toEqual([
+        "community-builder",
+    ]);
+});
+
 test("monthly standings show the podium and the rows around the viewer", async ({
     sessionToken,
 }) => {

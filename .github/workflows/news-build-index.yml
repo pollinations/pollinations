@@ -21,6 +21,9 @@ concurrency:
 
 jobs:
   build:
+    # Gist runs for closed, unmerged PRs finish as skipped: nothing new to index.
+    # A failed run is picked up by the 06:30 rebuild.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

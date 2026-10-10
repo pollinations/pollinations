@@ -29,10 +29,9 @@ export interface LogEntry {
     fields: Record<string, string>;
 }
 
-// Paused, not killed, when its paid time runs out.
 // E2B's largest timeout, about 68 years. Past 24 hours, gen keeps the
-// sandbox running, renewing it every hour with the key that creates it.
-const KEEP_SECONDS = 2 ** 31 - 1;
+// sandbox running, renewing it every hour with the key that set it.
+export const KEEP_SECONDS = 2 ** 31 - 1;
 
 export const createSandbox = (templateID: string, keep = false) =>
     gen<Connection>(`${E2B_PATH}/sandboxes`, {
@@ -61,6 +60,11 @@ export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
         method: "POST",
         body: { timeout },
     });
+
+// Paused sandboxes keep their files and memory and cost nothing. A pause ends
+// a keep.
+export const pauseSandbox = (id: string) =>
+    genText(`${E2B_PATH}/sandboxes/${id}/pause`, { method: "POST" });
 
 // E2B's system log: sandbox start, and each process started through it.
 export const sandboxLogs = (id: string) =>

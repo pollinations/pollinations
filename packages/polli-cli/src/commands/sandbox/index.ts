@@ -11,10 +11,12 @@ import {
     connectSandbox,
     createSandbox,
     getSandbox,
+    KEEP_SECONDS,
     killSandbox,
     LEASE_SECONDS,
     type LogEntry,
     listSandboxes,
+    pauseSandbox,
     sandboxLogs,
 } from "./e2b.js";
 import { proxy, setupSsh } from "./ssh.js";
@@ -128,6 +130,42 @@ export const sandboxCommand = new Command("sandbox")
                     );
                 } catch (err) {
                     fail(`Failed to set the timeout of sandbox ${id}`, err);
+                }
+            }),
+    )
+    .addCommand(
+        new Command("keep")
+            .description(
+                "Keep a sandbox running until you pause or kill it, paying for an hour at a time; resumes a paused one",
+            )
+            .argument("<id>")
+            .action(async (id: string) => {
+                requireKey();
+                try {
+                    await connectSandbox(id, KEEP_SECONDS);
+                    printSuccess(
+                        `Sandbox ${id} runs until you pause or kill it.`,
+                    );
+                } catch (err) {
+                    fail(`Failed to keep sandbox ${id}`, err);
+                }
+            }),
+    )
+    .addCommand(
+        new Command("pause")
+            .description(
+                "Pause a sandbox, keeping its files and memory; ends a keep",
+            )
+            .argument("<id>")
+            .action(async (id: string) => {
+                requireKey();
+                try {
+                    await pauseSandbox(id);
+                    printSuccess(
+                        `Sandbox ${id} paused. Resume it with \`polli sandbox timeout ${id} <seconds>\` or \`polli sandbox keep ${id}\`.`,
+                    );
+                } catch (err) {
+                    fail(`Failed to pause sandbox ${id}`, err);
                 }
             }),
     )

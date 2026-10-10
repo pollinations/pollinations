@@ -167,3 +167,44 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         );
     });
 });
+
+describe("sandbox keep and pause", () => {
+    async function prepare() {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        setKeyOverride("sk_test");
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        const fetch = vi.fn(async () => Response.json({ sandboxID: "sbx1" }));
+        vi.stubGlobal("fetch", fetch);
+        const { sandboxCommand } = await import("./index.js");
+        return {
+            run: (...args: string[]) =>
+                sandboxCommand.parseAsync(args, { from: "user" }),
+            fetch,
+        };
+    }
+
+    it("keeps a sandbox with E2B's largest timeout", async () => {
+        const command = await prepare();
+
+        await command.run("keep", "sbx1");
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes/sbx1/connect"),
+            expect.objectContaining({
+                method: "POST",
+                body: JSON.stringify({ timeout: 2 ** 31 - 1 }),
+            }),
+        );
+    });
+
+    it("pauses a sandbox", async () => {
+        const command = await prepare();
+
+        await command.run("pause", "sbx1");
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes/sbx1/pause"),
+            expect.objectContaining({ method: "POST" }),
+        );
+    });
+});

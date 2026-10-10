@@ -1,0 +1,40 @@
+{
+  "pr_number": 16991,
+  "title": "feat: website page views and source attribution in product analytics",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16991",
+  "merged_at": "2026-10-10T20:45:12Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Added website page-view analytics through Enter’s POST /api/analytics/website-page-view route and the existing Tinybird product_event table. The route accepts requests only from the sibling website origin and records allowlisted pages as website_page_viewed, separate from Enter’s funnels. The website sends one beacon per known page view, without a cookie or visitor identifier; unknown pages and browsers without sendBeacon are skipped. Referrer, UTM and ref source data is kept in sessionStorage and passed through Enter links so traffic_sources can attribute signups and purchases. Enter now reads source data at module load, before redirects can discard UTM parameters; links retain noopener but no longer use noreferrer. The Cloudflare traffic sync now includes /subprocessors. Privacy policy §7 was extended to cover the website and needs operator review.",
+    "keywords": [
+      "website analytics",
+      "page views",
+      "source attribution",
+      "Tinybird",
+      "privacy"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16991.jpg",
+    "prompt": "A cozy pixel art garden path leads from a pollinations.ai website screen to an Enter terminal, with small flower markers for page views and a friendly CRT monitor robot counting them; lime green (#ecf874) glows against warm cream, mint and peach pastels with dark purple (#110518) outlines. Polli wears a tiny surveyor’s hat and follows the path: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-10T20:47:19.787063+00:00",
+  "area": "Data & insights",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "5102dd3e23f855266e3174574e3417535dee0b97",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "5102dd3e23f855266e3174574e3417535dee0b97^1",
+    "after_ref": "5102dd3e23f855266e3174574e3417535dee0b97"
+  }
+}

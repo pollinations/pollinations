@@ -1,0 +1,11 @@
+{
+  "name": "polli-ai",
+  "server": {
+    "entry": "src/main.ts"
+  },
+  "permissions": {
+    "reddit": true,
+    "media": true,
+    "redis": true
+  }
+}

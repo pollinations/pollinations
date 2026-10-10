@@ -126,6 +126,7 @@ const BUILD_FEATURES: Feature[] = [
     },
     {
         title: "Users pay",
+        chips: ["BYOP", "Earnings"],
         body: (
             <>
                 Your users sign in with Pollinations and set a spending limit.{" "}

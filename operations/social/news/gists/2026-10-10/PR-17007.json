@@ -1,0 +1,37 @@
+{
+  "pr_number": 17007,
+  "title": "feat: request outcomes, traffic groups and a range picker on observability",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17007",
+  "merged_at": "2026-10-10T22:42:11Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The internal Platform & Usage dashboard now separates requests rejected for insufficient Pollen from requests that failed after the balance check. Over the last 30 days, 55% of regular calls were rejected before metering, almost all with HTTP 402; 8% failed after the balance check; and about 13,000 users had such a request. A new table ranks the top 30 models by failed funded requests, with respan/span-01-lite showing a 99.5% failure rate. Hourly load is now split by traffic group, exposing legacy bridges—about 54% of all calls—alongside operations and dev traffic. A 7/30/90-day picker stores the selection in `?range=` and passes it to Grafana as `from` and `to`; the unused legacy-folder filter was removed, and the dashboard title no longer shifts when switching views. Users & Balances now labels negative balances as 'Accounts in Quest debt' and 'Accounts in Paid overdraft' in a neutral colour because both states are allowed by design. D7 activation now has a rate line, recently at 52–63%. All panel queries were checked read-only at 7, 30 and 90 days. At 90 days, dashboards loaded in under 1.1 seconds except Users & Balances at about 10.6 seconds, due to its existing WAU query and within the 60-second timeout. No Tinybird changes were made.",
+    "keywords": [
+      "observability",
+      "Grafana",
+      "request outcomes",
+      "traffic groups",
+      "Pollen",
+      "dashboards"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-17007.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli studies three softly glowing dashboard charts on a CRT monitor, with lime green (#ecf874) bars, pastel traffic-group flowers, and a tiny 7/30/90 calendar beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny analyst glasses, stays small within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-10T22:43:17.896951+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "3ba8dc12f96077a4c0c58dff659fc5533f948d55",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

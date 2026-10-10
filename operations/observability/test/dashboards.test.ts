@@ -66,3 +66,33 @@ test("starts every linear time-series y-axis at zero", () => {
         );
     assert.deepEqual(missing, []);
 });
+
+test("never reads internal Tinybird pipes, which Grafana's token cannot read", () => {
+    const pipesDir = new URL(
+        "../../../enter.pollinations.ai/observability/pipes/",
+        import.meta.url,
+    );
+    const pipes = readdirSync(pipesDir)
+        .filter((file) => file.endsWith(".pipe"))
+        .map((file) => file.slice(0, -".pipe".length));
+    assert.ok(pipes.length > 0);
+    const dir = new URL("../provisioning/dashboards/", import.meta.url);
+    const reads = readdirSync(dir)
+        .filter((file) => file.endsWith(".json"))
+        .flatMap((file) =>
+            JSON.parse(readFileSync(new URL(file, dir), "utf8")).panels.flatMap(
+                (panel) =>
+                    (panel.targets ?? []).flatMap(({ rawSql = "" }) =>
+                        pipes
+                            .filter((pipe) =>
+                                new RegExp(`\\b${pipe}\\b`).test(rawSql),
+                            )
+                            .map(
+                                (pipe) =>
+                                    `${file}: ${panel.title} reads ${pipe}`,
+                            ),
+                    ),
+            ),
+        );
+    assert.deepEqual(reads, []);
+});

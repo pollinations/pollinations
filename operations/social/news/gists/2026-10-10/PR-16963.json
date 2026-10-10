@@ -1,0 +1,35 @@
+{
+  "pr_number": 16963,
+  "title": "fix(apps): delist aitoolbox.software",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16963",
+  "merged_at": "2026-10-10T10:50:39Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Removed aitoolbox.software (#3400) from the app catalog because its domain no longer hosts the listed AI toolbox and now serves a gambling site. Catalog validation passes with 857 apps.",
+    "keywords": [
+      "app catalog",
+      "delisting",
+      "broken listing",
+      "validation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16963.jpg",
+    "prompt": "In a cozy pixel art garden of app cards, Polli gently lifts an outdated toolbox card off the display while flowers grow around the remaining cards. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny gardener's hat; she is small within the scene, rendered in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-10T10:51:47.774981+00:00",
+  "area": "App catalog & showcase",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "67f1679c9dcf8936aa825b549eedab7dc676a17c",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

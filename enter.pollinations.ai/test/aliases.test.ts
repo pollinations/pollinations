@@ -28,6 +28,7 @@ function serviceAliasTestCases(
 
 test("OpenAI speech model names resolve to the OpenAI TTS models", () => {
     expect(resolveModelName("tts-1")).toBe("openai/tts-1");
+    expect(resolveModelName("tts")).toBe("openai/tts-1");
     expect(resolveModelName("tts-1-hd")).toBe("openai/tts-1-hd");
 });
 

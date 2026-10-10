@@ -42,7 +42,8 @@ Given a set of PR gists (JSON objects with factual summary, Area/Type/Source, ca
       "emoji": "🎵",
       "title": "Eleven v4 speech arrives",
       "text": "Generate speech with `elevenlabs/eleven-v4`, including word timestamps. [Try the audio API](https://gen.pollinations.ai/docs).",
-      "prs": [8115]
+      "prs": [8115],
+      "kind": "model"
     }
   ]
 }
@@ -68,6 +69,7 @@ Skip: bug fixes, refactors, CI and deployment work, docs and tests, internal or 
 - `title`: a short name for the change, 2-6 words
 - `text`: 1-2 sentences on what users can do. Use `backticks` for model IDs and code. No PR numbers or authors. When a link helps, end with one link from the reference links as its own sentence, such as `[Browse models](url).`; never link words inside a sentence. For a new model, link that model on Enter's model page.
 - `prs`: the PR numbers the highlight comes from
+- `kind`: `model` for a new or changed model; `api` for a new or changed endpoint, parameter, request or response field, API key permission, or input limit; `product` for everything else, such as apps, the SDK, CLI and MCP tools, agents, Quests and dashboard features. Enter's Changelog already lists models and API changes, so its News page shows only `product` highlights; the README and social posts use them all.
 - A gist with `app_name` and `app_url` is an app: always link it, as `[Try it](url)` for a live site or `[View repo](url)` for a GitHub repository, and set `"app": true`.
 
 ### Reference links

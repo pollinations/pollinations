@@ -49,13 +49,14 @@ export type Highlight = {
     app?: boolean;
     /** PRs the highlight comes from; older backfilled highlights have none. */
     prs?: number[];
+    /** Set by the daily summary; models and API changes belong to the Changelog. */
+    kind?: "model" | "api" | "product";
 };
 
-/** Highlights for News: not apps (README only) and not PRs the Changelog already lists. */
+/** Highlights for Updates: product news only, and not apps (README only). */
 export function newsHighlights(index: NewsIndex): Highlight[] {
-    const listed = new Set([...index.models, ...index.api].map(({ pr }) => pr));
     return index.highlights.filter(
-        ({ app, prs }) => !app && !prs?.some((pr) => listed.has(pr)),
+        ({ app, kind }) => !app && kind === "product",
     );
 }
 

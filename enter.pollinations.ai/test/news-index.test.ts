@@ -188,7 +188,7 @@ describe("model news cards", () => {
         ]);
     });
 
-    it("leaves highlights the Changelog already lists out of News", () => {
+    it("leaves models and API changes to the Changelog", () => {
         const highlight = (title: string, extra = {}) => ({
             date: "2026-10-07",
             title,
@@ -197,16 +197,17 @@ describe("model news cards", () => {
         });
         expect(
             newsHighlights({
-                models: [news({ pr: 10 })],
+                models: [],
                 api: [],
                 highlights: [
-                    highlight("model launch", { prs: [10] }),
-                    highlight("feature", { prs: [11] }),
-                    highlight("app", { prs: [12], app: true }),
-                    highlight("older, no PR numbers"),
+                    highlight("model launch", { kind: "model" }),
+                    highlight("new endpoint", { kind: "api" }),
+                    highlight("feature", { kind: "product" }),
+                    highlight("app", { kind: "product", app: true }),
+                    highlight("unlabelled"),
                 ],
             }).map(({ title }) => title),
-        ).toEqual(["feature", "older, no PR numbers"]);
+        ).toEqual(["feature"]);
     });
 
     it("moves a highlight's link under its title", () => {

@@ -52,9 +52,8 @@ function NotFoundPage() {
 }
 
 /**
- * One sheet and one vertical beat by default, owned here rather than repeated
- * per route. Play opts into two sibling sheets because its hero and workspace
- * are separate pieces of the interface.
+ * One sheet and one vertical beat for every route, owned here rather than
+ * repeated per route.
  *
  * The gap lives on this flex column, so sections carry no spacing of their
  * own.
@@ -73,9 +72,6 @@ function RootLayout() {
         select: (state) => (state.resolvedLocation ?? state.location).pathname,
     });
     const previousPath = useRef(pathname);
-    const isPlay = useRouterState({
-        select: (state) => state.location.pathname === "/play",
-    });
 
     useLayoutEffect(() => {
         if (previousPath.current === pathname) return;
@@ -98,10 +94,7 @@ function RootLayout() {
             <div className="site-shell site-page-shell flex flex-1 flex-col sm:mb-6 sm:pt-4 min-[700px]:pt-0">
                 <main
                     ref={mainRef}
-                    className={cn(
-                        "flex flex-1 flex-col",
-                        isPlay ? "gap-6" : pageCardClassName,
-                    )}
+                    className={cn("flex flex-1 flex-col", pageCardClassName)}
                 >
                     <Outlet />
                 </main>

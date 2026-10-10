@@ -6,8 +6,7 @@ import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
 import { BottomScene } from "../ui/site/BottomScene";
-import { HeroScene } from "../ui/site/HeroScene";
-import { PageCard } from "../ui/site/PageCard";
+import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import { validatePlaySearch } from "./-play-search";
 
 export const Route = createFileRoute("/play")({
@@ -35,27 +34,25 @@ function PlayPage() {
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            <PageCard className="pb-0 sm:pb-0">
-                {/* The monitor robot, showing off something it just made. */}
-                <HeroScene page="play" compactBottom>
-                    <ContentHeader
-                        eyebrow="Models in the browser"
-                        title="Try it out."
-                        subtitle="Create images, video and audio. Connect your account to use your own pollen."
-                        variant="page"
+            {/* The monitor robot, showing off something it just made. */}
+            <HeroScene page="play" compactBottom>
+                <ContentHeader
+                    eyebrow="Models in the browser"
+                    title="Try it out."
+                    subtitle="Create images, video and audio. Connect your account to use your own pollen."
+                    variant="page"
+                />
+                <div className="self-start">
+                    <AppUserMenu
+                        connectSize="lg"
+                        labels={{ logout: "Disconnect app" }}
                     />
-                    <div className="self-start">
-                        <AppUserMenu
-                            connectSize="lg"
-                            labels={{ logout: "Disconnect app" }}
-                        />
-                    </div>
-                </HeroScene>
-            </PageCard>
-            <PageCard className="pt-6 sm:pt-8">
+                </div>
+            </HeroScene>
+            <div className={postHeroSpacingClassName}>
                 <Playground />
-                <BottomScene page="play" />
-            </PageCard>
+            </div>
+            <BottomScene page="play" />
         </PolliProvider>
     );
 }

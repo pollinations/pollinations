@@ -9,9 +9,6 @@ import { cachePublic } from "./cachePublic";
 import { type UseAsyncOptions, useAsync } from "./useAsync";
 
 const REPO = "pollinations/pollinations";
-/** The news feed (build_news_index.py); its `months` feed the build diary. */
-const NEWS_INDEX =
-    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/index.json";
 const GITHUB = "https://api.github.com";
 const DISCORD_WIDGET =
     "https://discord.com/api/guilds/885844321461485618/widget.json";
@@ -62,23 +59,22 @@ export function useDiscordPresence(options?: UseAsyncOptions) {
 /* ── Contributors ───────────────────────────────────────────────────────── */
 
 /** GitHub's contributor list: all-time commits on main, people and agents alike. */
-export type Contributor = {
+type Contributor = {
     login: string;
     avatar_url: string;
     html_url: string;
     contributions: number;
 };
 
-async function loadContributors() {
-    // One request, already ranked by commit count.
-    const rows = (await loadGithub(
-        `/repos/${REPO}/contributors?per_page=20`,
-    )) as Contributor[];
-    return rows;
-}
-
 export function useContributors() {
-    return useAsync<Contributor[]>(loadContributors, []);
+    // One request, already ranked by commit count.
+    return useAsync<Contributor[]>(
+        async () =>
+            (await loadGithub(
+                `/repos/${REPO}/contributors?per_page=20`,
+            )) as Contributor[],
+        [],
+    );
 }
 
 /* ── Pull requests and open votes ───────────────────────────────────────── */
@@ -166,48 +162,6 @@ const loadQuestLeaderboard = cachePublic(async () => {
 
 export function useQuestLeaderboard() {
     return useAsync<QuestLeaderboardData | null>(loadQuestLeaderboard, null);
-}
-
-/* ── Build diary ────────────────────────────────────────────────────────── */
-
-/** One finished month: merged pull requests, and the write-up when there is one. */
-export type DiaryMonth = {
-    /** YYYY-MM */
-    month: string;
-    merged: number;
-    title?: string;
-    summary?: string;
-    image?: string;
-};
-
-type IndexMonth = {
-    month: string;
-    merged_prs: number;
-    title: string | null;
-    summary: string | null;
-    image: string | null;
-};
-
-const loadBuildDiary = cachePublic(async () => {
-    const response = await fetch(NEWS_INDEX);
-    if (!response.ok) throw new Error(`build diary: ${response.status}`);
-    const { months = [] } = (await response.json()) as {
-        months?: IndexMonth[];
-    };
-    if (months.length === 0) throw new Error("build diary: empty");
-    return months.map(
-        (row): DiaryMonth => ({
-            month: row.month,
-            merged: row.merged_prs,
-            title: row.title ?? undefined,
-            summary: row.summary ?? undefined,
-            image: row.image ?? undefined,
-        }),
-    );
-});
-
-export function useBuildDiary() {
-    return useAsync<DiaryMonth[]>(loadBuildDiary, []);
 }
 
 /**

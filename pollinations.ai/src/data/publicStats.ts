@@ -19,7 +19,7 @@ export type DirectoryApp = {
     screenshot_url: string;
     description: string;
     /** BCP 47 tags, comma-separated when an app has several ("es, en"). */
-    language: string;
+    language: string | null;
     category: string;
     platform: string;
     github_username: string;

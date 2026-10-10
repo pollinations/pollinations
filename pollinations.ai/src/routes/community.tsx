@@ -104,10 +104,10 @@ function FeedState({
     );
 }
 
-/** A live count hides when its feed fails and shows a skeleton while loading. */
 // Only the Discord count is "right now"; the other metrics are totals.
 const LIVE_METRIC = "online in Discord";
 
+/** A live count hides when its feed fails and shows a skeleton while loading. */
 function liveMetric<T>(
     label: string,
     {

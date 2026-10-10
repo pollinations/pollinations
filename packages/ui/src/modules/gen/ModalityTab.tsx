@@ -56,23 +56,19 @@ export function ModalityTab({
             onClick={onClick}
             size={size}
             disabled={disabled}
-            className={cn(Icon && "polli:group polli:gap-2", className)}
+            className={cn(tint && "polli:group", className)}
+            icon={
+                Icon &&
+                (tint ? (
+                    <Icon
+                        className="polli:text-(--polli-tab-icon) polli:group-hover:text-current"
+                        style={{ "--polli-tab-icon": tint } as CSSProperties}
+                    />
+                ) : (
+                    <Icon />
+                ))
+            }
         >
-            {Icon ? (
-                <Icon
-                    aria-hidden="true"
-                    className={cn(
-                        "polli:size-4 polli:shrink-0",
-                        tint &&
-                            "polli:text-(--polli-tab-icon) polli:group-hover:text-current",
-                    )}
-                    style={
-                        tint
-                            ? ({ "--polli-tab-icon": tint } as CSSProperties)
-                            : undefined
-                    }
-                />
-            ) : null}
             {children}
         </TabButton>
     );

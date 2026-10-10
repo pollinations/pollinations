@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
-import { setOutputMode } from "../lib/output.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
 import {
     filterDailyRows,
     isKeyId,
@@ -272,6 +272,66 @@ describe("usage command output", () => {
         expect(urls[0]).toContain("/account/usage/daily?days=7");
         await run(["--daily", "--days", "30"]);
         expect(urls[0]).toContain("/account/usage/daily?days=30");
+    });
+
+    it.each([
+        [
+            ["--history", "--limit", "abc"],
+            "--limit must be an integer between 1 and 50000",
+        ],
+        [
+            ["--history", "--limit", "0"],
+            "--limit must be an integer between 1 and 50000",
+        ],
+        [
+            ["--history", "--limit", "2.5"],
+            "--limit must be an integer between 1 and 50000",
+        ],
+        [
+            ["--history", "--limit", "50001"],
+            "--limit must be an integer between 1 and 50000",
+        ],
+        [
+            ["--history", "--days", "abc"],
+            "--days must be an integer between 1 and 90",
+        ],
+        [
+            ["--daily", "--days", "abc"],
+            "--days must be an integer between 1 and 90",
+        ],
+        [
+            ["--daily", "--days", "0"],
+            "--days must be an integer between 1 and 90",
+        ],
+        [
+            ["--daily", "--days", "999999"],
+            "--days must be an integer between 1 and 90",
+        ],
+        [
+            ["--daily", "--csv", "--days", ""],
+            "--days must be an integer between 1 and 90",
+        ],
+    ])("rejects %j before fetching", async (args, message) => {
+        await expect(run(args)).rejects.toThrow(ExitSignal);
+        expect(urls).toEqual([]);
+        expect(vi.mocked(process.stderr.write).mock.calls).toEqual([
+            [expect.stringContaining(message)],
+        ]);
+    });
+
+    it("sends valid --limit and --days values as integers", async () => {
+        await run(["--history", "--limit", "5", "--days", "90"]);
+        expect(urls[0]).toContain("/account/usage?days=90&limit=5");
+        await run(["--history"]);
+        expect(urls[0]).toContain("/account/usage?limit=20");
+    });
+
+    it("ignores --limit outside the history view", async () => {
+        await run(["--daily", "--limit", "abc"]);
+        expect(urls[0]).toContain("/account/usage/daily?days=7");
+        expect(JSON.parse(await run(["--limit", "abc"]))).toEqual({
+            pollen: 0.123456,
+        });
     });
 
     it("keeps the rounded human table and raw CSV/balance output", async () => {

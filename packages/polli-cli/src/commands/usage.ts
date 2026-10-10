@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     ExitSignal,
     fail,
@@ -60,6 +61,12 @@ export interface UsageKeyInfo {
     id: string;
     name: string | null;
 }
+
+// Server-side bounds of /account/usage and /account/usage/daily (see
+// enter.pollinations.ai/src/routes/account.ts), checked locally so a typo
+// fails fast with a CLI error instead of the API's raw 400.
+export const MAX_USAGE_DAYS = 90;
+export const MAX_USAGE_LIMIT = 50_000;
 
 // better-auth mints API key ids as 32-char alphanumerics; anything else is a
 // key name. Ids pass through without a /account/keys lookup, so keys scoped
@@ -185,7 +192,7 @@ export const usageCommand = new Command("usage")
     .description(
         "Show pollen balance (default), usage history, or daily summary",
     )
-    .option("--limit <n>", "Number of records", "20")
+    .option("--limit <n>", `Number of records (1-${MAX_USAGE_LIMIT})`, "20")
     .option("--history", "Show individual request history")
     .option("--daily", "Show daily summary instead of individual requests")
     .option(
@@ -194,7 +201,10 @@ export const usageCommand = new Command("usage")
         collect,
         [] as string[],
     )
-    .option("--days <n>", "Rolling window in days (--daily defaults to 7)")
+    .option(
+        "--days <n>",
+        `Rolling window in days, 1-${MAX_USAGE_DAYS} (--daily defaults to 7)`,
+    )
     .option("--csv", "Print the raw CSV export")
     .addHelpText(
         "after",
@@ -237,6 +247,19 @@ export const usageCommand = new Command("usage")
             );
             throw new ExitSignal(1);
         }
+
+        // Validate numeric options before any request. --limit only applies
+        // to the history view (--daily has no limit param).
+        const days =
+            opts.days !== undefined
+                ? numberOption("--days", opts.days, 1, MAX_USAGE_DAYS, true)
+                : opts.daily
+                  ? 7
+                  : undefined;
+        const limit =
+            opts.history && !opts.daily
+                ? numberOption("--limit", opts.limit, 1, MAX_USAGE_LIMIT, true)
+                : undefined;
 
         // Default: show balance (unless --history or --daily)
         if (!opts.history && !opts.daily) {
@@ -303,8 +326,7 @@ export const usageCommand = new Command("usage")
         const params = new URLSearchParams();
         // The daily endpoint's 90-day default times out on heavy accounts
         // (#16560), so --daily asks for a week unless --days is given.
-        const days = opts.days ?? (opts.daily ? "7" : undefined);
-        if (days !== undefined) params.set("days", days);
+        if (days !== undefined) params.set("days", String(days));
 
         try {
             if (opts.daily) {
@@ -347,7 +369,7 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            params.set("limit", opts.limit);
+            params.set("limit", String(limit));
             if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));
             if (opts.csv) params.set("format", "csv");

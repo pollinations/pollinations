@@ -1,0 +1,27 @@
+{
+    "status": "blocked_pending_provider_confirmation",
+    "runtime_change": false,
+    "currency": "USD",
+    "price_multiplier": 1,
+    "merge_policy": "Keep draft. Confirm effective date, timezone, serving-route rates and billing evidence; add registry changes and validate before merging.",
+    "model": "stealth/glyph-cluster",
+    "feature_pr": "https://github.com/pollinations/pollinations/pull/16797",
+    "current_price": {
+        "input_per_million_tokens": 0,
+        "output_per_million_tokens": 0
+    },
+    "next_price": null,
+    "merge_on": null,
+    "unknowns": [
+        "Stealth end date",
+        "Post-stealth rates",
+        "Continued model identity and availability"
+    ],
+    "sources": [
+        "https://vercel.com/ai-gateway/models/glyph-cluster"
+    ],
+    "required_changes": [
+        "Update primary route costs and paidOnly when cash-funded",
+        "Recheck training and retention disclosure; do not silently substitute a different model"
+    ]
+}

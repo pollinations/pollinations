@@ -66,7 +66,6 @@ export class ObservabilityGrafana extends Container {
         TINYBIRD_LEGACY_READ_TOKEN: requiredSecret(
             "TINYBIRD_LEGACY_READ_TOKEN",
         ),
-        DISCORD_WEBHOOK_URL: requiredSecret("DISCORD_WEBHOOK_URL"),
     };
 }
 
@@ -112,21 +111,5 @@ export default {
             return response;
         });
         return app.fetch(request, env);
-    },
-
-    async scheduled(_controller, env, ctx) {
-        ctx.waitUntil(
-            grafanaFetch(new Request(HEALTH_URL), env)
-                .then((response) => {
-                    if (!response.ok) {
-                        console.warn(
-                            `Grafana health check returned ${response.status}`,
-                        );
-                    }
-                })
-                .catch((error) => {
-                    console.error("Grafana health check failed", error);
-                }),
-        );
     },
 };

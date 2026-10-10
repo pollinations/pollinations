@@ -27,7 +27,7 @@ tag = "v1"
 new_sqlite_classes = ["ObservabilityGrafana"]
 
 [triggers]
-crons = ["*/5 * * * *"]
+crons = []
 
 [vars]
 GF_SERVER_ROOT_URL = "https://observability.pollinations.ai"

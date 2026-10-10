@@ -16,9 +16,10 @@ Prod:    Browser -> observability.pollinations.ai -> Cloudflare Worker
 ```
 
 The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
-account and routes them to one named Grafana container. A 5-minute cron keeps
-the container awake so Grafana alert evaluation can run. Container disk is
-ephemeral, so dashboards and alerting must stay provisioned from git.
+account and routes them to one named Grafana container. The container sleeps
+after 10 minutes without requests, so the first open after that waits for
+Grafana to cold-start. Container disk is ephemeral, so dashboards must stay
+provisioned from git.
 
 ## Quick Start
 
@@ -93,7 +94,7 @@ same Auth Proxy settings above. `npm run dev` serves the app at localhost:4000
 using `wrangler.local.jsonc`; the proxy uses the same authentication handler as
 production. Configure the approved signing secret in `.dev.vars` and
 register `http://localhost:4000/auth/callback` in the local Enter database.
-Never enable production data sources or alerts just to test local login.
+Never enable production data sources just to test local login.
 
 `CLOUDFLARE_TUNNEL_TOKEN` is only used by the legacy DigitalOcean deployment.
 

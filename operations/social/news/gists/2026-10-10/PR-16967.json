@@ -1,0 +1,37 @@
+{
+  "pr_number": 16967,
+  "title": "Simplify legal pages and service providers list",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16967",
+  "merged_at": "2026-10-10T13:42:40Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Simplified the public legal pages. The Service Providers page now uses one list explaining what each provider does, draws model providers from the registry, and includes Google Workspace for support email. A gen test checks that the provider list stays in sync with the registry, and the model-management skill notes the requirement. The Terms shorten service-level, warranty, liability, and termination wording, state consumer rights on service changes, and remove the confidentiality section; former sections 12–16 become 11–15. The Privacy Policy shortens wording on sub-processors, transfers, email, cookies, and security. The Refunds page corrects EU withdrawal wording for digital services and removes the subscriptions section and review-time target.",
+    "keywords": [
+      "legal pages",
+      "service providers",
+      "model registry",
+      "terms",
+      "privacy",
+      "refunds"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16967.jpg",
+    "prompt": "In a cozy pixel-art garden library, Polli wears tiny reading glasses and helps arrange a short stack of legal pages beside a lime green (#ecf874) flower pot and a softly glowing terminal. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream, mint and lavender around the prominent lime green."
+  },
+  "generated_at": "2026-10-10T13:43:51.555862+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "4ead1048a3e11645149bb1818e235eb1993c86d8",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

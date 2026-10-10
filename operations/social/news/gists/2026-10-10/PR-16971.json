@@ -1,0 +1,36 @@
+{
+  "pr_number": 16971,
+  "title": "fix: count PRs merged into main and master on the Community page",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16971",
+  "merged_at": "2026-10-10T20:15:27Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Fixed the Community page’s “PRs merged” headline to count only PRs merged into main or master, where work landed until November 2025, instead of including feature and staging branches. The count is now 6,058 (4,630 into main and 1,428 into master), down from 6,077 under the old query, and uses the same definition as the monthly contributor counts.",
+    "keywords": [
+      "community page",
+      "merged PRs",
+      "contributor counts",
+      "main",
+      "master"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16971.jpg",
+    "prompt": "In a cozy pixel art garden, Polli wears a tiny counting visor and sorts pull-request cards into two lime green (#ecf874) flower pots labeled “main” and “master,” beside a warm cream Community page display showing “6,058”; small flowers grow around the pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a soft lime green (#ecf874) glow."
+  },
+  "generated_at": "2026-10-10T20:16:33.991124+00:00",
+  "area": "Brand & news",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "83be82de923a2e3f0d47fc0fd0c583323028cb5e",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

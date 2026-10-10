@@ -16,9 +16,10 @@ Prod:    Browser -> observability.pollinations.ai -> Cloudflare Worker
 ```
 
 The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
-account and routes them to one named Grafana container. A 5-minute cron keeps
-the container awake so Grafana alert evaluation can run. Container disk is
-ephemeral, so dashboards and alerting must stay provisioned from git.
+account and routes them to one named Grafana container. The container sleeps
+after 10 minutes without requests, so the first open after that waits for
+Grafana to cold-start. It then starts from a fresh disk, so dashboards must stay
+provisioned from git and Grafana user preferences reset.
 
 ## Quick Start
 
@@ -51,7 +52,7 @@ staging read token against the staging workspace.
 ## Secrets
 
 The local app signing secret is stored in ignored `.dev.vars`;
-production uses Worker secrets. Legacy Docker Compose reads `.env`.
+production uses Worker secrets. Local Docker Compose reads `.env`.
 The public OAuth client ID is configured in `wrangler.toml`.
 
 | Variable | Purpose |
@@ -59,8 +60,8 @@ The public OAuth client ID is configured in `wrangler.toml`.
 | `POLLINATIONS_AUTH_SESSION_SECRET` | Signs the independent app session |
 | `GF_ADMIN_PASSWORD` | Grafana bootstrap admin password (interactive login disabled) |
 | `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` Tinybird workspace |
-| `TINYBIRD_LEGACY_READ_TOKEN` | Read token for the legacy `pollinations_ai` workspace |
-| `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
+
+`DISCORD_WEBHOOK_URL` and `TINYBIRD_LEGACY_READ_TOKEN` are still uploaded but unused until their removal is approved.
 
 Observability uses the same Pollinations OAuth client/session implementation and
 shared sign-in page as KPI and Economics. Its callback is
@@ -93,14 +94,12 @@ same Auth Proxy settings above. `npm run dev` serves the app at localhost:4000
 using `wrangler.local.jsonc`; the proxy uses the same authentication handler as
 production. Configure the approved signing secret in `.dev.vars` and
 register `http://localhost:4000/auth/callback` in the local Enter database.
-Never enable production data sources or alerts just to test local login.
-
-`CLOUDFLARE_TUNNEL_TOKEN` is only used by the legacy DigitalOcean deployment.
+Never enable production data sources just to test local login.
 
 ## Creating Panels
 
 1. Open http://localhost:3000
-2. Edit dashboard in the UI
+2. Edit dashboard in the UI (Grafana refuses to save provisioned dashboards)
 3. Dashboard -> Settings -> JSON Model -> Copy
 4. Replace the matching JSON in `provisioning/dashboards/`
 5. Restart to verify: `docker compose restart grafana`
@@ -119,23 +118,6 @@ Deploy production only through `.github/workflows/deploy-applications.yml`
 from the `production` branch. Its secret synchronization requires separate,
 scoped approval. The workflow checks the Pollinations `/api/health` endpoint.
 
-## DigitalOcean Deployment (Legacy)
-
-The previous deployment ran Grafana on the `207.154.253.25` DigitalOcean droplet
-behind Cloudflare Tunnel. Keep these commands only for rollback while the
-Cloudflare container migration is being verified.
-
-```bash
-ssh root@207.154.253.25
-cd /opt/pollinations/operations/observability
-docker compose -f docker-compose.prod.yml up -d
-```
-
-The legacy container bind-mounts:
-
-- `/opt/pollinations/operations/observability/provisioning` -> `/etc/grafana/provisioning`
-- `grafana-data` -> `/var/lib/grafana`
-
 ## Common Commands
 
 ```bash
@@ -143,10 +125,6 @@ The legacy container bind-mounts:
 docker compose up -d
 docker compose logs -f grafana
 docker compose down
-
-# Legacy DigitalOcean
-docker compose -f docker-compose.prod.yml logs -f
-docker compose -f docker-compose.prod.yml restart grafana
 
 # Reset admin password
 docker compose exec grafana grafana-cli admin reset-admin-password NEW_PASSWORD
@@ -161,11 +139,11 @@ curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/P
 
 Grafana should be configured with
 `GF_SERVER_ROOT_URL=https://observability.pollinations.ai`. If redirects point at
-`observability.myceli.ai`, update the Worker var or legacy `docker-compose.prod.yml`.
+`observability.myceli.ai`, update the Worker var.
 
 ### Plugin health check failed
 - Verify tokens are correct
-- Check the container can reach Tinybird and Cloudflare APIs
+- Check the container can reach Tinybird
 
 ### Dashboard not loading
 - Check datasource UIDs match between dashboard JSON and provisioning

@@ -1,0 +1,41 @@
+{
+  "pr_number": 16862,
+  "title": "feat(gen): SEP-2127 MCP Server Cards and AI Catalog discovery",
+  "author": "SvirepyiBambr",
+  "url": "https://github.com/pollinations/pollinations/pull/16862",
+  "merged_at": "2026-10-10T15:57:00Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added SEP-2127 discovery for hosted MCP servers: GET /.well-known/ai-catalog.json lists each server and links to its GET /mcp/:serverId/server-card. Cards are derived from the existing MCP_SERVERS registry and describe each server, its streamable-HTTP endpoint, and the required Bearer API key. The catalog and cards are public metadata routes, separate from the authenticated MCP connection; they include CORS headers, one-hour public caching, ETags, and 304 responses for matching If-None-Match requests. Added a catalog link to llms.txt and moved shared server-JSON generation into shared/registry/mcp-server-json.ts.",
+    "keywords": [
+      "MCP",
+      "server cards",
+      "AI Catalog",
+      "agent discovery",
+      "streamable HTTP",
+      "authentication"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16862.jpg",
+    "prompt": "In a cozy pixel art garden, Polli wears tiny explorer glasses and points a curious CRT monitor robot toward a lime green (#ecf874) directory of server cards, with code-plants growing beside a little terminal showing a connection path. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, in a cozy pixel art, 8-bit aesthetic scene with soft pastel gradients, warm lighting, retro gaming vibes, and a warm cream background."
+  },
+  "generated_at": "2026-10-10T15:58:43.952453+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "5613701851d3edb26706dd4809cf440ec437b0f2",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "5613701851d3edb26706dd4809cf440ec437b0f2^1",
+    "after_ref": "5613701851d3edb26706dd4809cf440ec437b0f2"
+  }
+}

@@ -64,6 +64,13 @@ describe("pdfFileParts", () => {
         expect(
             filePart(provider, { file_data: DATA_URL, file_name: "a.pdf" }),
         ).toMatchObject({ file: { file_data: DATA_URL, filename: "a.pdf" } });
+        expect(
+            filePart(provider, {
+                file_data: DATA_URL,
+                filename: "b.pdf",
+                file_name: "a.pdf",
+            }),
+        ).toMatchObject({ file: { file_data: DATA_URL, filename: "b.pdf" } });
     });
 
     it("leaves other providers, files and non-PDF data alone", () => {

@@ -23,14 +23,16 @@ function pdfBase64(part: unknown): string | undefined {
         return file.file_data;
 }
 
+type FileShape = (pdf: {
+    data: string;
+    file: Record<string, unknown>;
+    index: number;
+}) => Record<string, unknown>;
+
 // Portkey maps a Bedrock file part to a Converse document block and sends
 // file_data as its raw bytes; Bedrock rejects a document name with a dot.
 // Without a name Portkey sends a random UUID, which breaks prompt caching.
-const bedrockFile = (
-    data: string,
-    _file: Record<string, unknown>,
-    index: number,
-) => ({
+const bedrockFile: FileShape = ({ data, index }) => ({
     file_data: data,
     mime_type: "application/pdf",
     file_name: `document-${index}`,
@@ -38,20 +40,15 @@ const bedrockFile = (
 
 // OpenAI and Azure take a data URL and require filename (without it they
 // report a missing file_id); they reject unknown file fields.
-const openAIFile = (data: string, file: Record<string, unknown>) => ({
-    file_data: `${PDF_DATA_URL}${data}`,
-    filename:
-        typeof file.file_name === "string" ? file.file_name : "document.pdf",
-});
+const openAIFile: FileShape = ({ data, file }) => {
+    const name = file.filename ?? file.file_name;
+    return {
+        file_data: `${PDF_DATA_URL}${data}`,
+        filename: typeof name === "string" ? name : "document.pdf",
+    };
+};
 
-const FILE_SHAPES: Record<
-    string,
-    (
-        data: string,
-        file: Record<string, unknown>,
-        index: number,
-    ) => Record<string, unknown>
-> = {
+const FILE_SHAPES: Record<string, FileShape> = {
     bedrock: bedrockFile,
     "azure-openai": openAIFile,
     openai: openAIFile,
@@ -76,7 +73,11 @@ export function pdfFileParts(
                     const filePart = part as FilePart;
                     return {
                         ...filePart,
-                        file: shape(data, filePart.file, ++index),
+                        file: shape({
+                            data,
+                            file: filePart.file,
+                            index: ++index,
+                        }),
                     };
                 }),
             };

@@ -16,7 +16,7 @@ from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
-from generate_monthly import generate_website_post, rank_contributors, read_earlier_pages
+from generate_monthly import draw_cover, generate_website_post, rank_contributors, read_earlier_pages
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import announced_retirements, model_changes, pr_comparison_refs
@@ -424,6 +424,22 @@ class GistEnrichmentTest(unittest.TestCase):
         with patch("common.requests.get", side_effect=requests.ConnectionError) as get, patch("common.time.sleep"):
             generate_image("A garden", "test", references=["https://x/2026-09.jpg"])
         self.assertEqual(get.call_args.kwargs["params"]["image"].split("|")[1], "https://x/2026-09.jpg")
+
+    def test_monthly_cover_is_redrawn_until_each_character_appears_at_most_once(self):
+        clean = {"bees": 1, "monitor_robots": 1, "nomnom": 0, "black_cats": 1, "humans": 0}
+        counts = [{**clean, "bees": 2}, {**clean, "humans": 1}, clean]
+        with patch("generate_monthly.generate_image", side_effect=[(b"one", None), (b"two", None), (b"three", None)]) as image, \
+             patch("generate_monthly.call_pollinations_api", side_effect=[json.dumps(c) for c in counts]) as vision:
+            self.assertEqual(draw_cover("A garden", "test", ["https://x/page-one.jpg"]), b"three")
+        self.assertEqual(image.call_count, 3)
+        self.assertEqual(image.call_args.kwargs["references"], ["https://x/page-one.jpg"])
+        sent = json.dumps(vision.call_args_list[0].args[1])
+        self.assertIn("data:image/jpeg;base64,b25l", sent)  # base64 of b"one"
+
+        with patch("generate_monthly.generate_image", return_value=(b"cover", None)) as image, \
+             patch("generate_monthly.call_pollinations_api", return_value=json.dumps({**clean, "nomnom": 2})):
+            self.assertIsNone(draw_cover("A garden", "test", []))
+        self.assertEqual(image.call_count, 3)
 
     def test_index_lists_months_with_their_pages_and_top_contributors_of_twelve_months(self):
         with tempfile.TemporaryDirectory() as directory:

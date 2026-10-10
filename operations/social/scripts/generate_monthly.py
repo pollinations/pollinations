@@ -15,6 +15,7 @@ The website's build diary reads it through index.json (build_news_index.py).
 See operations/social/PIPELINE.md for full architecture.
 """
 
+import base64
 import calendar
 import json
 import re
@@ -76,6 +77,18 @@ COSMIC_CAT = (
     "The last attached image is the cosmic cat, who lives in the garden: draw it exactly once, "
     "true to its look."
 )
+# Prompts alone don't stop the image model from copying the cast out of its references,
+# so a vision model counts every cover and a cover breaking these limits is redrawn.
+CAST_LIMITS = {"bees": 1, "monitor_robots": 1, "nomnom": 1, "black_cats": 1, "humans": 0}
+COVER_TRIES = 3
+CAST_COUNT = """Count the characters drawn in this picture, including tiny, partial and background ones, \
+statues, toys and figures on screens. Reply with JSON only: \
+{"bees": n, "monitor_robots": n, "nomnom": n, "black_cats": n, "humans": n}
+- bees: bees of any size or style
+- monitor_robots: robots or creatures with a computer monitor or screen for a head
+- nomnom: round tan or brown ball-shaped creatures
+- black_cats: black cats
+- humans: people of any kind"""
 
 # Every merged PR by anyone, agents and bots included, on any base branch. Release
 # PRs into production are left out: they copy work already merged into main.
@@ -298,6 +311,38 @@ def generate_website_post(digest: Dict, token: str, previous_page: Optional[Dict
     )
 
 
+def cast_problems(image_bytes: bytes, token: str) -> List[str]:
+    """The characters this cover draws more often than CAST_LIMITS allows."""
+    image_url = f"data:image/jpeg;base64,{base64.b64encode(image_bytes).decode()}"
+    response = call_pollinations_api(
+        CAST_COUNT,
+        [{"type": "image_url", "image_url": {"url": image_url}}],
+        token,
+        temperature=0,
+        response_format={"type": "json_object"},
+    )
+    counts = parse_json_response(response or "") or {}
+    # A missing or unreadable count fails too: an unchecked cover is never kept.
+    return [
+        f"{counts.get(name)} {name}"
+        for name, limit in CAST_LIMITS.items()
+        if not isinstance(counts.get(name), int) or counts[name] > limit
+    ]
+
+
+def draw_cover(prompt: str, token: str, references: List[str]) -> Optional[bytes]:
+    """A cover that keeps the cast rules, drawn with a new seed up to COVER_TRIES times."""
+    for attempt in range(1, COVER_TRIES + 1):
+        image_bytes, _ = generate_image(prompt, token, COVER_WIDTH, COVER_HEIGHT, references=references)
+        if not image_bytes:
+            return None
+        problems = cast_problems(image_bytes, token)
+        if not problems:
+            return image_bytes
+        print(f"  Cover {attempt}/{COVER_TRIES} breaks the cast rules: {', '.join(problems)}")
+    return None
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -366,9 +411,7 @@ def main():
         *([COSMIC_CAT] if creatures else []),
         ONE_OF_EACH,
     ])
-    image_bytes, _ = generate_image(
-        prompt, pollinations_token, COVER_WIDTH, COVER_HEIGHT, references=page_one_cover + creatures
-    )
+    image_bytes = draw_cover(prompt, pollinations_token, page_one_cover + creatures)
     if not image_bytes:
         print("  FATAL: Monthly cover generation failed")
         sys.exit(1)

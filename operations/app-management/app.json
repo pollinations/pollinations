@@ -15708,27 +15708,6 @@
     "screenshotUrl": "https://media.pollinations.ai/dc297e1f-2316-402f-a466-6dd8e4500692"
   },
   {
-    "emoji": "🛠",
-    "name": "aitoolbox.software ️",
-    "url": "https://aitoolbox.software/",
-    "description": "Provides an open-source collection of AI tools for productivity and creative tasks.",
-    "language": "id",
-    "category": "writing",
-    "platform": "web",
-    "githubUsername": "huamanraj",
-    "githubUserId": "113578582",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-08-01",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/3400",
-    "approvedDate": "2025-08-05",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/ce2f4472-0635-4d69-b0fc-1df1d04c6a19"
-  },
-  {
     "emoji": "🤖",
     "name": "Botzy AI",
     "url": "https://botzy.hexabiz.com.pk",

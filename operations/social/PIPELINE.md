@@ -116,13 +116,13 @@ PR merge ──→ generate_realtime.py
                                    ├──→ GitHub search: merged PRs + contributors
                                    ├──→ summary.json  (themes + merged_prs + contributors)
                                    ├──→ website.json  + 🎨 GENERATE 1 cover (16:9)
-                                   │      references: character sheet + page one's cover
+                                   │      references: character sheet + page one's bare garden
                                    │
                                    └──→ Commit all to news branch
                                          → news-build-index.yml → index.json months/contributors
 
-             Images generated: 1 (the cover)
-             Images reused:    page one's cover, as a reference
+             Images generated: 1 cover (redrawn up to 3× if a character repeats); page one also makes its bare garden
+             Images reused:    page one's bare garden, as a reference
 ```
 
 ---
@@ -272,8 +272,9 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `summary.json` — canonical monthly summary plus `merged_prs` and `contributors`. Both count every PR merged in the month on any base branch except `production` (release PRs copy work already in `main`), by anyone: people, agents and bots. An account gets credit as the PR author or through a `Co-authored-by` trailer with a GitHub noreply address in the merge commit message; bot co-authors are skipped.
 - `website.json` — simplified platform envelope; `metadata.story` lists every landmark built so far and one open thread, for next month's cover
 - `images/website.jpg` — the 16:9 cover
+- `images/garden.jpg` — page one only: its garden with the characters removed (`metadata.garden`), the reference for every later cover
 
-Each cover is the next page of one picture book: the same garden, growing month by month. Every cover is drawn from page one's cover (the second reference image) and the latest earlier page's story, never from last month's cover: copying a copy blurs a little more each month. The story carries the growth, and a missed month never restarts it. Covers show only Polli, the monitor robot and Nomnom: no people. Generate months one at a time, oldest first, and wait for each run to finish before starting the next: parallel runs read the news branch before the earlier months exist, so each would start the story over.
+Each cover is the next page of one picture book: the same garden, growing month by month. Every later cover is drawn from page one's bare garden (the second reference image) and the latest earlier page's story. Last month's cover would blur a little more each month, and page one itself made the image model copy its characters where they stand. The story carries the growth, and a missed month never restarts it. Polli, the monitor robot and Nomnom are unique and there are no people: after drawing, `google/gemini-3.8-flash` lists the characters in the cover, and any repeat (or a person, or a cat before it moved in) means a redraw, up to 3 tries. Generate months one at a time, oldest first, and wait for each run to finish before starting the next: parallel runs read the news branch before the earlier months exist, so each would start the story over.
 
 ### Platform Envelope
 
@@ -376,7 +377,7 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 ### Tier 4: `generate_monthly.py`
 
 - Reads gists directly for the month. Gists began on 2026-02-05, so months up to and including February 2026 read their daily summaries instead; if there is nothing to read: skip.
-- A GitHub search window over the 1,000-result cap, a failed search, digest, post, cover or commit fails the run. The cover is committed before the JSON, so a page never points at a missing image.
+- A GitHub search window over the 1,000-result cap, a failed search, digest, post or commit fails the run, and so does a cover (or page one's bare garden) that still repeats a character after 3 tries. The cover is committed before the JSON, so a page never points at a missing image.
 
 ### Re-triggering
 

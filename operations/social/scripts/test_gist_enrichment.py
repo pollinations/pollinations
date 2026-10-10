@@ -16,7 +16,7 @@ from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
-from generate_monthly import generate_website_post, rank_contributors, read_earlier_pages
+from generate_monthly import draw_checked, generate_website_post, rank_contributors, read_earlier_pages
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import announced_retirements, model_changes, pr_comparison_refs
@@ -423,7 +423,27 @@ class GistEnrichmentTest(unittest.TestCase):
 
         with patch("common.requests.get", side_effect=requests.ConnectionError) as get, patch("common.time.sleep"):
             generate_image("A garden", "test", references=["https://x/2026-09.jpg"])
-        self.assertEqual(get.call_args.kwargs["params"]["image"].split("|")[1], "https://x/2026-09.jpg")
+            self.assertEqual(get.call_args.kwargs["params"]["image"].split("|")[1], "https://x/2026-09.jpg")
+            generate_image("A garden", "test", references=["https://x/2026-09.jpg"], cast=False)
+            self.assertEqual(get.call_args.kwargs["params"]["image"], "https://x/2026-09.jpg")
+
+        page_one = normalize_platform_post(
+            platform="website", scope="monthly", date="d", period_start="p", period_end="e", generated_at="g",
+            raw_post={"story": "Page one.", "garden": "https://x/garden.jpg"})
+        self.assertEqual(page_one["metadata"], {"story": "Page one.", "garden": "https://x/garden.jpg"})
+
+    def test_monthly_cover_is_redrawn_until_each_character_appears_once(self):
+        one_of_each = {"bees": 1, "monitor_robots": 1, "nomnom": 1, "black_cats": 0, "humans": 0}
+        two_bees = {**one_of_each, "bees": 2}
+        limits = {**one_of_each}
+        with patch("generate_monthly.generate_image", side_effect=[(b"first", None), (b"second", None)]) as draw, \
+             patch("generate_monthly.count_cast", side_effect=[two_bees, one_of_each]):
+            self.assertEqual(draw_checked("A garden", "test", [], limits), b"second")
+        self.assertEqual(draw.call_count, 2)
+        with patch("generate_monthly.generate_image", return_value=(b"cover", None)) as draw, \
+             patch("generate_monthly.count_cast", return_value={**one_of_each, "humans": 1}):
+            self.assertIsNone(draw_checked("A garden", "test", [], limits))
+        self.assertEqual(draw.call_count, 3)
 
     def test_index_lists_months_with_their_pages_and_top_contributors_of_twelve_months(self):
         with tempfile.TemporaryDirectory() as directory:

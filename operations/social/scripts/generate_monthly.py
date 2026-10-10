@@ -15,6 +15,7 @@ The website's build diary reads it through index.json (build_news_index.py).
 See operations/social/PIPELINE.md for full architecture.
 """
 
+import base64
 import calendar
 import json
 import re
@@ -37,7 +38,6 @@ from common import (
     generate_image,
     generate_platform_post,
     get_env,
-    get_post_image_urls,
     get_repo_root,
     gist_context,
     github_api_request,
@@ -55,14 +55,36 @@ MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
 # PR gists began on 2026-02-05; earlier months, February included, read daily summaries.
 FIRST_GIST_MONTH = "2026-03"
 COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
-# Every cover is drawn from page one, never from last month's cover: copying a copy
-# blurs a little more each month. The story text carries the garden's growth.
-PAGE_ONE_COVER = (
-    "The second attached image is page one of this picture book: keep its art style, "
-    "crisp pixels, palette and first buildings, but draw the garden as it stands now, "
-    "grown well beyond page one as described above. Do not copy its characters where they "
-    "stand: draw them only where the description places them."
+COVER_TRIES = 3
+# Later covers are drawn from page one's garden with its characters removed: last
+# month's cover would blur a little more each month, and page one itself makes the
+# image model copy its characters where they stand. The story carries the growth.
+PAGE_ONE_GARDEN = (
+    "The second attached image is the garden of page one, without its characters: keep its "
+    "art style, crisp pixels, palette and first buildings, but draw the garden as it stands "
+    "now, grown well beyond page one as described above."
 )
+BARE_GARDEN = (
+    "Redraw the attached garden scene exactly: the same composition, buildings, paths, plants, "
+    "palette and pixel style, with every character removed. No bee, no robot, no round "
+    "creature, no animals and no people; fill their places with garden."
+)
+CAST_COUNT = """List every living character in this pixel-art image, including tiny ones in the background, one entry per character with where it is. Return only JSON:
+{"characters": [{"kind": "bee", "where": "centre, on the path"}]}
+kind is one of:
+- "bee": a yellow-and-brown striped bee character with a face
+- "monitor_robot": a robot character whose head is a CRT monitor showing a face, or any screen showing a face with eyes
+- "nomnom": a round tan blob creature with a face
+- "black_cat": a black cat
+- "human": a person of any kind
+- "other": any other creature
+Screens, tiles, signs and panels with icons, glyphs or pictures are scenery, not characters. List each character once."""
+# Counts the cast in each cover. On five hand-counted covers it made every pass/fail
+# call right; gpt-6-sol over-counted screens and cats and rejected a clean cover.
+VISION_MODEL = "google/gemini-3.8-flash"
+CAST_KINDS = {"bee": "bees", "monitor_robot": "monitor_robots", "nomnom": "nomnom",
+              "black_cat": "black_cats", "human": "humans"}
+NO_CAST = dict.fromkeys(CAST_KINDS.values(), 0)
 ONE_OF_EACH = (
     "The bee mascot, the monitor robot and the round Nomnom creature each appear at most once: "
     "no copies, no extra bees or robots, no toy robots, statues or screens with faces. "
@@ -298,6 +320,50 @@ def generate_website_post(digest: Dict, token: str, previous_page: Optional[Dict
     )
 
 
+# ── Step 4: Draw the cover, one of each character ───────────────────
+
+def count_cast(image_bytes: bytes, token: str) -> Optional[Dict]:
+    """Count the cast in a cover with a vision call on our own API."""
+    mime = "image/png" if image_bytes[:4] == b"\x89PNG" else "image/jpeg"
+    image_url = f"data:{mime};base64,{base64.b64encode(image_bytes).decode()}"
+    response = call_pollinations_api(
+        "You count characters in images precisely.",
+        [
+            {"type": "text", "text": CAST_COUNT},
+            {"type": "image_url", "image_url": {"url": image_url}},
+        ],
+        token,
+        temperature=0,
+        response_format={"type": "json_object"},
+        model=VISION_MODEL,
+    )
+    listed = parse_json_response(response) if response else None
+    if listed is None:
+        return None
+    counts = dict.fromkeys(NO_CAST, 0)
+    for character in listed.get("characters") or []:
+        key = CAST_KINDS.get(character.get("kind"))
+        if key:
+            counts[key] += 1
+    return counts
+
+
+def draw_checked(prompt: str, token: str, references: List[str], limits: Dict[str, int],
+                 cast: bool = True) -> Optional[bytes]:
+    """Draw until the counted cast fits `limits`, so no cover shows a character twice."""
+    for attempt in range(1, COVER_TRIES + 1):
+        image_bytes, _ = generate_image(
+            prompt, token, COVER_WIDTH, COVER_HEIGHT, references=references, cast=cast
+        )
+        if not image_bytes:
+            continue
+        counts = count_cast(image_bytes, token)
+        if counts is not None and all(int(counts.get(name, 0)) <= limit for name, limit in limits.items()):
+            return image_bytes
+        print(f"  Try {attempt}/{COVER_TRIES} rejected: {counts}")
+    return None
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -358,19 +424,19 @@ def main():
         print(f"  FATAL: Monthly website post is missing {', '.join(missing)}")
         sys.exit(1)
 
-    page_one_cover = get_post_image_urls(earlier_pages[0])[:1] if earlier_pages else []
+    garden = [earlier_pages[0]["metadata"]["garden"]] if earlier_pages else []
     creatures = [CREATURES[name] for name in post.get("creatures") or [] if name in CREATURES]
     prompt = " ".join([
         post["image_prompt"],
-        *([PAGE_ONE_COVER] if page_one_cover else []),
+        *([PAGE_ONE_GARDEN] if garden else []),
         *([COSMIC_CAT] if creatures else []),
         ONE_OF_EACH,
     ])
-    image_bytes, _ = generate_image(
-        prompt, pollinations_token, COVER_WIDTH, COVER_HEIGHT, references=page_one_cover + creatures
-    )
+    limits = {**NO_CAST, "bees": 1, "monitor_robots": 1, "nomnom": 1,
+              "black_cats": int(CREATURES["cosmic-cat"] in creatures)}
+    image_bytes = draw_checked(prompt, pollinations_token, garden + creatures, limits)
     if not image_bytes:
-        print("  FATAL: Monthly cover generation failed")
+        print(f"  FATAL: No cover with one of each character after {COVER_TRIES} tries")
         sys.exit(1)
     url = commit_image_to_branch(
         image_bytes, f"{base_path}/images/website.jpg", GISTS_BRANCH,
@@ -380,6 +446,18 @@ def main():
         print("  FATAL: Monthly cover commit failed")
         sys.exit(1)
     post["image"] = {"url": url, "prompt": prompt}
+
+    if not earlier_pages:
+        # Page one also keeps its garden without characters, for later covers.
+        garden_bytes = draw_checked(BARE_GARDEN, pollinations_token, [url], NO_CAST, cast=False)
+        garden_url = garden_bytes and commit_image_to_branch(
+            garden_bytes, f"{base_path}/images/garden.jpg", GISTS_BRANCH,
+            github_token, owner, repo,
+        )
+        if not garden_url:
+            print("  FATAL: Page one's garden without characters failed")
+            sys.exit(1)
+        post["garden"] = garden_url
 
     # ── Commit to news branch ────────────────────────────────────────
     print("\n[5/5] Committing the month to the news branch...")

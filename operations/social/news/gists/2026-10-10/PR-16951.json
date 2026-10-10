@@ -1,0 +1,96 @@
+{
+  "pr_number": 16951,
+  "title": "fix: point the bare tts alias at free OpenAI TTS",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16951",
+  "merged_at": "2026-10-10T08:53:45Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The bare `tts` alias now selects free `openai/tts-1` instead of paid-only `elevenlabs/eleven-v3`, avoiding 402 responses for Quest-Pollen-only keys using that alias. Requests without a model still default to `openai/tts-1` on `/audio/{text}` and `/v1/audio/speech`. The `text-to-speech`, `eleven` and `elevenlabs` aliases still select ElevenLabs v3, as does the default for `/v1/audio/speech/with-timestamps`, since no free model supports timestamps. Alias and route tests now cover `model=tts` and model-less requests with a Quest-Pollen-only key. Prices, paid-only settings, providers, routes and fallbacks are unchanged.",
+    "keywords": [
+      "tts",
+      "audio",
+      "model alias",
+      "OpenAI TTS",
+      "ElevenLabs",
+      "Quest Pollen"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16951.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears tiny headphones and taps a retro speech terminal marked 'tts' while a code-flower glows prominently in lime green (#ecf874) beside a curious CRT robot. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-10T08:55:33.659637+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "5308e7a7e18d3317f36984b95e4dae69d058f281",
+  "announcements": [
+    {
+      "id": "pr-16951:elevenlabs/eleven-v3",
+      "model_id": "elevenlabs/eleven-v3",
+      "title": "ElevenLabs v3 TTS",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "tts",
+            "text-to-speech",
+            "eleven",
+            "elevenlabs"
+          ],
+          "after": [
+            "text-to-speech",
+            "eleven",
+            "elevenlabs"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-16951:openai/tts-1",
+      "model_id": "openai/tts-1",
+      "title": "OpenAI TTS",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": [
+            "tts-1"
+          ],
+          "after": [
+            "tts-1",
+            "tts"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "5308e7a7e18d3317f36984b95e4dae69d058f281^1",
+    "after_ref": "5308e7a7e18d3317f36984b95e4dae69d058f281"
+  }
+}

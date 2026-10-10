@@ -5,8 +5,8 @@ Reads gists, daily summaries and monthly pages from the news branch checkout and
 - `models`: official model announcements from recent gists
 - `api`: API changes from the post-deploy docs PRs
 - `highlights`: the items each daily summary picked for users
-- `months`: merged PRs per month with that month's website page (the build diary)
-- `contributors`: the top accounts by merged PRs over the last 12 months
+- `months`: merged PRs per month (monthly/*/contributors.json) with that month's website page
+- `contributors`: the top GitHub accounts by merged PRs over the last 12 months
 
     python build_news_index.py --news-dir <checkout>/operations/social/news [--publish]
 
@@ -105,16 +105,15 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
     return items[:README_ITEMS] if len(recent) < README_ITEMS else recent
 
 
-def month_entries(summaries: List[Dict], pages: List[Dict]) -> List[Dict]:
+def month_entries(counts: List[Dict], pages: List[Dict]) -> List[Dict]:
     """The build diary: each month's merged PRs, with its website page once it is written."""
     by_month = {page["period_start"][:7]: page for page in pages}
     entries = []
-    for summary in sorted(summaries, key=lambda s: s["period_start"]):
-        month = summary["period_start"][:7]
-        page = by_month.get(month, {})
+    for record in sorted(counts, key=lambda c: c["month"]):
+        page = by_month.get(record["month"], {})
         entries.append({
-            "month": month,
-            "merged_prs": summary["merged_prs"],
+            "month": record["month"],
+            "merged_prs": record["merged_prs"],
             "title": page.get("title"),
             "summary": page.get("text"),
             "image": next((image["url"] for image in page.get("images") or []), None),
@@ -122,11 +121,11 @@ def month_entries(summaries: List[Dict], pages: List[Dict]) -> List[Dict]:
     return entries
 
 
-def contributor_entries(summaries: List[Dict]) -> List[Dict]:
-    """Merged PRs per account over the last 12 recorded months; the latest month names each one."""
+def contributor_entries(counts: List[Dict]) -> List[Dict]:
+    """Merged PRs per GitHub account over the last 12 recorded months; the latest month names each one."""
     people = {}
-    for summary in sorted(summaries, key=lambda s: s["period_start"])[-CONTRIBUTOR_MONTHS:]:
-        for person in summary["contributors"]:
+    for record in sorted(counts, key=lambda c: c["month"])[-CONTRIBUTOR_MONTHS:]:
+        for person in record["contributors"]:
             entry = people.setdefault(person["id"], {"prs": 0})
             entry.update({**person, "prs": entry["prs"] + person["prs"]})
     return sorted(people.values(), key=lambda p: (-p["prs"], p["login"].lower()))[:TOP_CONTRIBUTORS]
@@ -135,15 +134,15 @@ def contributor_entries(summaries: List[Dict]) -> List[Dict]:
 def build_index(news_dir: Path, today: str) -> Dict:
     since = (datetime.fromisoformat(today) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%d")
     gists = read_json(news_dir.glob("gists/*/PR-*.json"))
-    months = read_json(news_dir.glob("monthly/*/summary.json"))
+    counts = read_json(news_dir.glob("monthly/*/contributors.json"))
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "models": model_entries(gists, since, today),
         "api": api_entries(gists, since),
         "highlights": highlight_entries(read_json(news_dir.glob("daily/*/summary.json")), since),
-        "months": month_entries(months, read_json(news_dir.glob("monthly/*/website.json"))),
-        "contributors": contributor_entries(months),
+        "months": month_entries(counts, read_json(news_dir.glob("monthly/*/website.json"))),
+        "contributors": contributor_entries(counts),
     }
 
 

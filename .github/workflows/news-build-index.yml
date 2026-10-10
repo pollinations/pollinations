@@ -37,7 +37,7 @@ jobs:
           sparse-checkout: |
             operations/social/news/gists/**/*.json
             operations/social/news/daily/*/summary.json
-            operations/social/news/monthly/*/summary.json
+            operations/social/news/monthly/*/contributors.json
             operations/social/news/monthly/*/website.json
             /operations/social/news/index.json
 

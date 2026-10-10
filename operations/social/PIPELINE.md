@@ -113,7 +113,8 @@ PR merge ──→ generate_realtime.py
                                    │  (reads the month's gists directly)
                                    │
                                    ├──→ GitHub search: merged PRs + contributors
-                                   ├──→ summary.json  (themes + merged_prs + contributors)
+                                   ├──→ contributors.json  (merged_prs + contributors, committed first)
+                                   ├──→ summary.json  (themes)
                                    ├──→ website.json  + 🎨 GENERATE 1 cover (16:9)
                                    │      references: character sheet + creatures who live there
                                    │
@@ -267,7 +268,8 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Monthly: `operations/social/news/monthly/YYYY-MM/`
 
-- `summary.json` — canonical monthly summary plus `merged_prs` and `contributors`. Both count every PR merged into `main` in the month, by anyone: people, agents and bots. An account gets credit as the PR author or through a `Co-authored-by` trailer with a GitHub noreply address in the merge commit message; bot co-authors are skipped. Accounts are keyed by their numeric GitHub `id`, which survives renames.
+- `contributors.json` — `month`, `merged_prs` and `contributors` (every account with its GitHub `id`, `login`, `avatar_url`, `url` and `prs`), committed first and on its own so a failed page or cover never loses the counts. They count every PR merged into `main` in the month, by anyone: people, agents and bots. An account gets credit as the PR author or through a `Co-authored-by` trailer with a GitHub noreply address in the merge commit message; bot co-authors are skipped. Accounts are keyed by their numeric GitHub `id`, which survives renames. Every account is stored; readers pick the top N.
+- `summary.json` — canonical monthly summary of the month's themes
 - `website.json` — simplified platform envelope; `metadata.story` lists every landmark built so far and one open thread, for next month's cover
 - `images/website.jpg` — the 16:9 cover
 
@@ -433,7 +435,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 14. **Weekly and monthly read gists directly, independent of dailies** — the weekly summary reads the week's gists (Sun→Sat) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"); the monthly does the same for the month. This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
 
-15. **Monthly counts come from GitHub, not gists** — gists cover `main` only and miss PRs whose gist run failed, so `merged_prs` and `contributors` come from a GitHub search of every merged PR.
+15. **Monthly counts come from GitHub, not gists** — gists cover `main` only and miss PRs whose gist run failed, so `merged_prs` and `contributors` (in `contributors.json`) come from a GitHub search of every PR merged into `main`.
 
 ---
 
@@ -483,7 +485,7 @@ AI calls scale as N+3 (N per-PR gists + summary with highlights + two platform p
 10. **Publish tier gating**: Merge a non-user-facing PR → verify `publish_tier: discord_only` → verify absent from daily summary
 11. **Clustering**: Day with 5+ related PRs → verify daily summary groups them into narrative arcs (not a flat list)
 12. **Concurrent merges**: Merge 3 PRs within 30 seconds → verify all 3 gists committed without conflicts
-13. **Tier 4 — happy path**: Trigger `mode: monthly` for two consecutive months, oldest first → verify `summary.json`, `website.json` and `images/website.jpg` for each, the second cover keeps Lantern Hill's landmarks and last month's story, and `index.json` lists both months
+13. **Tier 4 — happy path**: Trigger `mode: monthly` for two consecutive months, oldest first → verify `contributors.json`, `summary.json`, `website.json` and `images/website.jpg` for each, the second cover keeps Lantern Hill's landmarks and last month's story, and `index.json` lists both months
 
 ---
 

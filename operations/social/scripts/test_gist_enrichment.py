@@ -455,7 +455,7 @@ class GistEnrichmentTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             for month, ids in (("2025-01", [1, 2]), ("2025-02", [2, 3]), ("2025-04", [9])):
                 (Path(root) / f"operations/social/news/monthly/{month}").mkdir(parents=True)
-                (Path(root) / f"operations/social/news/monthly/{month}/summary.json").write_text(
+                (Path(root) / f"operations/social/news/monthly/{month}/contributors.json").write_text(
                     json.dumps({"contributors": [{"id": user_id} for user_id in ids]}))
             self.assertEqual(community_size("2025-03", [{"id": 3}, {"id": 4}], root), 4)
         # Every calendar month has its moment, looked up by the target month's "MM".
@@ -489,13 +489,15 @@ class GistEnrichmentTest(unittest.TestCase):
             for number in range(1, 14):
                 month = f"{2025 + (number - 1) // 12}-{(number - 1) % 12 + 1:02d}"
                 (news / f"monthly/{month}").mkdir(parents=True)
-                (news / f"monthly/{month}/summary.json").write_text(json.dumps({
-                    "period_start": f"{month}-01", "merged_prs": number,
+                (news / f"monthly/{month}/contributors.json").write_text(json.dumps({
+                    "month": month, "merged_prs": number,
                     # Account 7 renamed itself in month 13; its months still add up under the new login.
                     "contributors": [{"id": 1 if number == 1 else 7, "login": "early" if number == 1 else
                                       ("Agent" if number == 13 else "agent-old"), "avatar_url": f"a{number}",
                                       "url": "u", "prs": number}],
                 }))
+            # Older monthly summaries on the news branch carry no counts; the index reads only counts files.
+            (news / "monthly/2025-02/summary.json").write_text(json.dumps({"title": "Old", "summary": "Old."}))
             (news / "monthly/2026-01/website.json").write_text(json.dumps({
                 "period_start": "2026-01-01", "title": "Apps", "text": "A new Apps directory.",
                 "images": [{"url": "https://x/2026-01.jpg"}]}))

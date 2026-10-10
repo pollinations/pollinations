@@ -193,10 +193,10 @@ def community_size(month: str, contributors: List[Dict], repo_root: Optional[str
     """Everyone who has merged a pull request from page one up to and including `month`."""
     monthly_root = Path(repo_root or get_repo_root()) / MONTHLY_REL_DIR
     ids = {person["id"] for person in contributors}
-    for path in monthly_root.glob("*/summary.json"):
+    for path in monthly_root.glob("*/contributors.json"):
         if path.parent.name < month:
-            summary = json.loads(path.read_text(encoding="utf-8"))
-            ids |= {person["id"] for person in summary["contributors"]}
+            counts = json.loads(path.read_text(encoding="utf-8"))
+            ids |= {person["id"] for person in counts["contributors"]}
     return len(ids)
 
 
@@ -286,15 +286,8 @@ PR gists by date:
     return parse_json_response(response)
 
 
-def build_monthly_summary_artifact(
-    digest: Dict,
-    prs: List[Dict],
-    month: str,
-    merged: List[Dict],
-    contributors: List[Dict],
-    generated_at: str,
-) -> Dict:
-    """The canonical summary plus the month's GitHub counts for the website."""
+def build_monthly_summary_artifact(digest: Dict, prs: List[Dict], month: str, generated_at: str) -> Dict:
+    """The canonical summary of the month's themes."""
     period_start, period_end = month_dates(month)
     arcs = digest.get("arcs") or []
     theme = (digest.get("theme") or "").strip()
@@ -312,19 +305,15 @@ def build_monthly_summary_artifact(
         ([theme] if theme and theme != title else []) + arc_summaries
     )
 
-    return {
-        **build_canonical_summary(
-            date=period_end,
-            period_start=period_start,
-            period_end=period_end,
-            title=title,
-            summary=summary_text or theme or title,
-            prs=prs,
-            generated_at=generated_at,
-        ),
-        "merged_prs": len(merged),
-        "contributors": contributors,
-    }
+    return build_canonical_summary(
+        date=period_end,
+        period_start=period_start,
+        period_end=period_end,
+        title=title,
+        summary=summary_text or theme or title,
+        prs=prs,
+        generated_at=generated_at,
+    )
 
 
 # ── Step 3: Generate the website post ───────────────────────────────
@@ -424,19 +413,25 @@ def main():
     base_path = f"{MONTHLY_REL_DIR}/{month}"
     print(f"  Month: {month}")
 
-    # ── Read the month ───────────────────────────────────────────────
-    print(f"\n[1/5] Reading updates for {month}...")
-    gists = filter_daily_gists(read_gists_for_month(month))
-    print(f"  {len(gists)} daily-tier gists")
-    if not gists:
-        print("  Nothing recorded for this month. Skipping.")
-        return
-
     # ── Count merged PRs and contributors ────────────────────────────
-    print("\n[2/5] Counting merged PRs and contributors...")
+    # Recorded on their own first, so a failed page or cover never loses them.
+    print("\n[1/5] Counting merged PRs and contributors...")
     merged = merged_prs(month, github_token, repository)
     contributors = rank_contributors(merged, github_token)
     print(f"  {len(merged)} merged PRs, {len(contributors)} contributors")
+    counts = {"month": month, "merged_prs": len(merged), "contributors": contributors}
+    if not commit_files_to_branch([(f"{base_path}/contributors.json", counts)], GISTS_BRANCH,
+                                  github_token, owner, repo, label=f"for {month}"):
+        print("  FATAL: Monthly contributors commit failed")
+        sys.exit(1)
+
+    # ── Read the month ───────────────────────────────────────────────
+    print(f"\n[2/5] Reading updates for {month}...")
+    gists = filter_daily_gists(read_gists_for_month(month))
+    print(f"  {len(gists)} daily-tier gists")
+    if not gists:
+        print("  Nothing recorded for this month. Skipping the page.")
+        return
 
     # ── Generate summary ─────────────────────────────────────────────
     print("\n[3/5] Generating monthly summary...")
@@ -447,9 +442,7 @@ def main():
     print(f"  Theme: {digest.get('theme', '')}")
     generated_at = datetime.now(timezone.utc).isoformat()
     selected = [{"number": gist.get("pr_number"), "date": (gist.get("merged_at") or "")[:10]} for gist in gists]
-    summary_artifact = build_monthly_summary_artifact(
-        digest, selected, month, merged, contributors, generated_at
-    )
+    summary_artifact = build_monthly_summary_artifact(digest, selected, month, generated_at)
 
     # ── Generate the website post and its cover ──────────────────────
     print("\n[4/5] Generating the website page...")

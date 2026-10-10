@@ -55,6 +55,26 @@ test(
 );
 
 test(
+    "GET /api/account/key - reports a session token as the account owner",
+    { timeout: 30000 },
+    async ({ accountToken, mocks }) => {
+        await mocks.enable("tinybird");
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        // The media service verifies uploads here; a session token must look
+        // like a secret key owned by a real user, not a BYOP key.
+        expect(data.valid).toBe(true);
+        expect(data.type).toBe("secret");
+        expect(data.userId).toBeTruthy();
+        expect(data.byopApp).toBeNull();
+        expect(data.permissions.account).toBeNull();
+    },
+);
+
+test(
     "GET /api/account/key - accepts an agent run token",
     { timeout: 30000 },
     async ({ accountToken, mocks }) => {

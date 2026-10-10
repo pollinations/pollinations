@@ -9,7 +9,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
-import { ENTER_SOURCE_PARAMS } from "../ui/site/Analytics";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import { validatePlaySearch } from "./-play-search";
@@ -37,7 +36,6 @@ function PlayPage() {
         <PolliProvider
             appKey={POLLI_APP_KEY}
             enterUrl={ENTER_URL}
-            authorizeParams={ENTER_SOURCE_PARAMS}
             permissions={["profile", "usage"]}
         >
             <PlayHero />

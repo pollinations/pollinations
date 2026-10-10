@@ -48,18 +48,12 @@ export interface PolliProviderProps {
     expiry?: number;
     /** Auth host. Defaults to `https://enter.pollinations.ai`. */
     enterUrl?: string;
-    /**
-     * Extra query parameters on the authorize URL, such as `utm_*` campaign
-     * tags for Enter's analytics. OAuth parameters always take precedence.
-     */
-    authorizeParams?: Record<string, string>;
     /** Account API host. Derived from `enterUrl + "/api"` unless explicitly set. */
     apiBaseUrl?: string;
 }
 
 function buildAuthorizeUrl(args: {
     enterUrl: string;
-    authorizeParams?: Record<string, string>;
     appKey: string;
     permissions: readonly AccountPermission[];
     redirectUrl: string;
@@ -69,7 +63,7 @@ function buildAuthorizeUrl(args: {
     budget?: number;
     expiry?: number;
 }): string {
-    const params = new URLSearchParams(args.authorizeParams);
+    const params = new URLSearchParams();
     params.set("redirect_uri", args.redirectUrl);
     params.set("client_id", args.appKey);
     params.set("response_type", "code");
@@ -209,7 +203,6 @@ export function PolliProvider({
     budget: defaultBudget,
     expiry: defaultExpiry,
     enterUrl = DEFAULT_ENTER_URL,
-    authorizeParams,
     apiBaseUrl,
 }: PolliProviderProps) {
     const storage = useMemo<StorageAdapter>(
@@ -367,7 +360,6 @@ export function PolliProvider({
                 const codeChallenge = await createPkceChallenge(verifier);
                 window.location.href = buildAuthorizeUrl({
                     enterUrl,
-                    authorizeParams,
                     appKey,
                     permissions: perms,
                     redirectUrl,
@@ -395,7 +387,6 @@ export function PolliProvider({
         },
         [
             enterUrl,
-            authorizeParams,
             appKey,
             defaultPermissions,
             storage,

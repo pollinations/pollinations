@@ -72,14 +72,7 @@ describe("PolliProvider", () => {
 
         await act(async () => {
             create(
-                <PolliProvider
-                    appKey="pk_test"
-                    storage={storage}
-                    authorizeParams={{
-                        utm_source: "reddit",
-                        client_id: "pk_other",
-                    }}
-                >
+                <PolliProvider appKey="pk_test" storage={storage}>
                     <GrabLogin />
                 </PolliProvider>,
             );
@@ -96,10 +89,6 @@ describe("PolliProvider", () => {
         const authorizeUrl = new URL((win.location as { href: string }).href);
         expect(authorizeUrl.pathname).toBe("/authorize");
         expect(authorizeUrl.searchParams.get("response_type")).toBe("code");
-        expect(authorizeUrl.searchParams.get("utm_source")).toBe("reddit");
-        expect(authorizeUrl.searchParams.getAll("client_id")).toEqual([
-            "pk_test",
-        ]);
         expect(authorizeUrl.searchParams.get("redirect_uri")).toBe(
             "https://app.example/",
         );

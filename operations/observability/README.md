@@ -60,8 +60,8 @@ The public OAuth client ID is configured in `wrangler.toml`.
 | `POLLINATIONS_AUTH_SESSION_SECRET` | Signs the independent app session |
 | `GF_ADMIN_PASSWORD` | Grafana bootstrap admin password (interactive login disabled) |
 | `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` Tinybird workspace |
-| `TINYBIRD_LEGACY_READ_TOKEN` | Read token for the legacy `pollinations_ai` workspace |
-| `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
+
+`DISCORD_WEBHOOK_URL` and `TINYBIRD_LEGACY_READ_TOKEN` are still uploaded but unused until their removal is approved.
 
 Observability uses the same Pollinations OAuth client/session implementation and
 shared sign-in page as KPI and Economics. Its callback is

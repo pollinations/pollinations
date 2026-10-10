@@ -1,5 +1,9 @@
-import { PolliProvider } from "@pollinations/sdk/react";
-import { ContentHeader } from "@pollinations/ui";
+import {
+    PolliProvider,
+    useAuthActions,
+    useAuthState,
+} from "@pollinations/sdk/react";
+import { ContentHeader, InlineLink } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
@@ -34,25 +38,51 @@ function PlayPage() {
             enterUrl={ENTER_URL}
             permissions={["profile", "usage"]}
         >
-            {/* The monitor robot, showing off something it just made. */}
-            <HeroScene page="play" compactBottom>
-                <ContentHeader
-                    eyebrow="Models in the browser"
-                    title="Try it out."
-                    subtitle="Create images, video and audio. Connect your account to use your own pollen."
-                    variant="page"
-                />
-                <div className="self-start">
-                    <AppUserMenu
-                        connectSize="lg"
-                        labels={{ logout: "Disconnect app" }}
-                    />
-                </div>
-            </HeroScene>
+            <PlayHero />
             <div className={postHeroSpacingClassName}>
                 <Playground />
             </div>
             <BottomScene page="play" />
         </PolliProvider>
+    );
+}
+
+/**
+ * Before connecting, the sentence itself connects (the playground's Generate
+ * button does too); once connected, the account menu shows below it.
+ */
+function PlayHero() {
+    const { isLoggedIn, isHydrated } = useAuthState();
+    const { login } = useAuthActions();
+    const connect =
+        isHydrated && !isLoggedIn ? (
+            // Wrapped: login() takes an optional request, not the click event.
+            <InlineLink as="button" type="button" onClick={() => login()}>
+                Connect your account
+            </InlineLink>
+        ) : (
+            "Connect your account"
+        );
+
+    return (
+        // The monitor robot, showing off something it just made.
+        <HeroScene page="play" compactBottom>
+            <ContentHeader
+                eyebrow="Models in the browser"
+                title="Try it out."
+                subtitle={
+                    <>
+                        Create images, video and audio. {connect} to use your
+                        own pollen.
+                    </>
+                }
+                variant="page"
+            />
+            {isLoggedIn && (
+                <div className="self-start">
+                    <AppUserMenu labels={{ logout: "Disconnect app" }} />
+                </div>
+            )}
+        </HeroScene>
     );
 }

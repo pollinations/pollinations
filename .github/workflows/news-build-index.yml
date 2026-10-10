@@ -13,17 +13,17 @@ on:
 permissions:
   contents: write
 
-# One writer at a time. A queued run rebuilds from the latest records, so
-# replacing an older pending run loses nothing.
-concurrency:
-  group: news-index
-  cancel-in-progress: false
-
 jobs:
   build:
     # Gist runs for closed, unmerged PRs finish as skipped: nothing new to index.
-    # A failed run is picked up by the 06:30 rebuild.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # A run that failed after committing (e.g. at the Discord step) still rebuilds.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'skipped'
+    # One writer at a time. A queued run rebuilds from the latest records, so
+    # replacing an older pending run loses nothing. Set on the job so a skipped
+    # run never joins the group and replaces a pending rebuild.
+    concurrency:
+      group: news-index
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

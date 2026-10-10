@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🤖",
+    "name": "MebelSmetaBot",
+    "url": "https://t.me/MebelSmetaBot",
+    "description": "Telegram bot for furniture projects: the user sends a phone photo of a kitchen or room, and the bot generates a visualization of the new furniture in that space using the Pollinations image API. It al",
+    "language": "ru",
+    "category": "bots",
+    "platform": "telegram",
+    "githubUsername": "druzhininige-dotcom",
+    "githubUserId": "326755797",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "artem9287",
+    "other": null,
+    "submittedDate": "2026-10-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16877",
+    "approvedDate": "2026-10-10",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/8ac17ea7-539a-451d-a444-118317a7d5a0"
+  },
+  {
     "emoji": "✍️",
     "name": "Nice No",
     "url": "https://nice-no.maxtoms21.chatgpt.site",
@@ -38,7 +59,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16815",
     "approvedDate": "2026-10-09",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 63,
     "screenshotUrl": "https://media.pollinations.ai/1bec1085-d04e-48ad-9afa-e69856c5d861"
   },
   {
@@ -59,7 +80,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16730",
     "approvedDate": "2026-10-09",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 129,
     "screenshotUrl": "https://media.pollinations.ai/da099017-1f50-44d5-96b0-d5bd333dec46"
   },
   {
@@ -122,7 +143,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16655",
     "approvedDate": "2026-10-07",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/bedd21dc-11ca-4ec1-bcbb-a160645421e7"
   },
   {
     "emoji": "🛠️",
@@ -142,7 +164,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15915",
     "approvedDate": "2026-10-07",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 7,
+    "screenshotUrl": "https://media.pollinations.ai/cd5358c6-da28-404f-a746-2b5d25e4bba6"
   },
   {
     "emoji": "📚",
@@ -162,7 +185,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16421",
     "approvedDate": "2026-10-05",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/51601b88-acfa-4466-b391-425484e53558"
   },
   {
     "emoji": "🎮",
@@ -182,7 +206,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15742",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 382
+    "requests24h": 256,
+    "screenshotUrl": "https://media.pollinations.ai/7845d005-08f7-4e30-a4e4-8b689909c326"
   },
   {
     "emoji": "📚",
@@ -202,7 +227,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16330",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 133,
+    "screenshotUrl": "https://media.pollinations.ai/ebed8fdd-865f-4714-be54-ae6f08b38be7"
   },
   {
     "emoji": "📚",
@@ -222,7 +248,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15743",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 382
+    "requests24h": 256,
+    "screenshotUrl": "https://media.pollinations.ai/989becf1-75c6-4125-8371-c08fbed60350"
   },
   {
     "emoji": "🎮",
@@ -242,7 +269,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16327",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 133,
+    "screenshotUrl": "https://media.pollinations.ai/c0b4219f-2a04-4d61-bcd2-f1ea3b551ad6"
   },
   {
     "emoji": "🎮",
@@ -262,7 +290,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15788",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 924
+    "requests24h": 976,
+    "screenshotUrl": "https://media.pollinations.ai/0e45012a-1c29-418c-9cfc-7aff40c6e9d6"
   },
   {
     "emoji": "🎮",
@@ -282,7 +311,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15737",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 382
+    "requests24h": 256,
+    "screenshotUrl": "https://media.pollinations.ai/47ec7cf8-b6ab-49fe-ae6a-0af6615a8f47"
   },
   {
     "emoji": "🎮",
@@ -302,7 +332,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15871",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/dd4600eb-975b-4c9b-ab36-a6774cb1f6ea"
   },
   {
     "emoji": "🎮",
@@ -322,7 +353,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15790",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 185
+    "requests24h": 99,
+    "screenshotUrl": "https://media.pollinations.ai/4b07b7d8-1643-4f50-b861-19ca8520214a"
   },
   {
     "emoji": "🎮",
@@ -342,7 +374,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15749",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 382
+    "requests24h": 256,
+    "screenshotUrl": "https://media.pollinations.ai/8909117e-1acd-4515-baea-883587f931bb"
   },
   {
     "emoji": "🎮",
@@ -362,7 +395,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15882",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 924
+    "requests24h": 921,
+    "screenshotUrl": "https://media.pollinations.ai/631cc1af-9c53-4eb8-a54a-8fcb0d14f958"
   },
   {
     "emoji": "🎮",
@@ -382,7 +416,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15740",
     "approvedDate": "2026-10-04",
     "byop": false,
-    "requests24h": 382
+    "requests24h": 256,
+    "screenshotUrl": "https://media.pollinations.ai/bca9f9c5-bf05-4c19-b00b-5daf64caf416"
   },
   {
     "emoji": "🎮",
@@ -402,7 +437,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15849",
     "approvedDate": "2026-10-03",
     "byop": false,
-    "requests24h": 924
+    "requests24h": 976,
+    "screenshotUrl": "https://media.pollinations.ai/554d1605-4c4a-4522-946f-2e2e10d4b91b"
   },
   {
     "emoji": "💼",
@@ -422,7 +458,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/16155",
     "approvedDate": "2026-10-03",
     "byop": false,
-    "requests24h": 201
+    "requests24h": 61,
+    "screenshotUrl": "https://media.pollinations.ai/9609f959-c5b1-4054-adfe-9ecf272686c9"
   },
   {
     "emoji": "🛠️",
@@ -442,7 +479,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15741",
     "approvedDate": "2026-10-03",
     "byop": false,
-    "requests24h": 382
+    "requests24h": 256,
+    "screenshotUrl": "https://media.pollinations.ai/a50010e6-24f7-44c8-9bd3-92fa2fb11b34"
   },
   {
     "emoji": "🛠️",
@@ -462,7 +500,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15622",
     "approvedDate": "2026-10-02",
     "byop": false,
-    "requests24h": 230
+    "requests24h": 774,
+    "screenshotUrl": "https://media.pollinations.ai/ce9c67c3-3225-49af-9b30-4b6c2acf67a7"
   },
   {
     "emoji": "🖼️",
@@ -482,7 +521,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15715",
     "approvedDate": "2026-10-02",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 133,
+    "screenshotUrl": "https://media.pollinations.ai/fe4dd3cf-798c-4518-aa72-66374bde7faa"
   },
   {
     "emoji": "🖼️",
@@ -502,7 +542,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15611",
     "approvedDate": "2026-10-01",
     "byop": false,
-    "requests24h": 924
+    "requests24h": 921,
+    "screenshotUrl": "https://media.pollinations.ai/30b171a3-6763-43a7-95d1-099a90559e42"
   },
   {
     "emoji": "🎮",
@@ -522,7 +563,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15585",
     "approvedDate": "2026-09-30",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/4fcdaaac-ef62-47c5-8340-48413e1dd6ef"
   },
   {
     "emoji": "🎬",
@@ -542,7 +584,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15703",
     "approvedDate": "2026-09-30",
     "byop": false,
-    "requests24h": 3
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/dded263b-a4d3-43d3-82d0-9821cb73d0e3"
   },
   {
     "emoji": "🖼️",
@@ -562,7 +605,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15705",
     "approvedDate": "2026-09-30",
     "byop": false,
-    "requests24h": 162
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/d738b3be-d00f-4584-9dcd-b9c8d04238b3"
   },
   {
     "emoji": "🎬",
@@ -582,7 +626,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15819",
     "approvedDate": "2026-09-30",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/c7fad31b-e4a0-4841-a52e-4bbd2c453325"
   },
   {
     "emoji": "🖼️",
@@ -602,7 +647,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15713",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 133,
+    "screenshotUrl": "https://media.pollinations.ai/19615392-0e55-4397-8688-40d7d0d7786c"
   },
   {
     "emoji": "✍️",
@@ -622,7 +668,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15711",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 133,
+    "screenshotUrl": "https://media.pollinations.ai/236dc025-cfb7-4224-8773-03bb2743bf24"
   },
   {
     "emoji": "✍️",
@@ -642,7 +689,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15666",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 382
+    "requests24h": 256,
+    "screenshotUrl": "https://media.pollinations.ai/28a4cba9-aa7e-453e-9181-f49277830f84"
   },
   {
     "emoji": "💬",
@@ -662,7 +710,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15239",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/51b73989-6bf3-48ff-8dd2-d7db56f14398"
   },
   {
     "emoji": "🎬",
@@ -682,7 +731,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15636",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 185
+    "requests24h": 99,
+    "screenshotUrl": "https://media.pollinations.ai/9695211e-859b-4fbc-aa81-31e9820e4be5"
   },
   {
     "emoji": "🛠️",
@@ -702,7 +752,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15323",
     "approvedDate": "2026-09-29",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/24de9377-3d4b-4b3f-8bcd-0c2af0356303"
   },
   {
     "emoji": "🖼️",
@@ -764,7 +815,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15341",
     "approvedDate": "2026-09-24",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/da14ef89-fa53-4498-82de-d0bff657f2a0"
   },
   {
@@ -785,7 +836,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15315",
     "approvedDate": "2026-09-23",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/080002df-2c91-4fa8-af7d-25f5f9406a37"
   },
   {
@@ -827,7 +878,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/15205",
     "approvedDate": "2026-09-20",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 133,
     "screenshotUrl": "https://media.pollinations.ai/f38d4978-be81-4e0f-b64b-df56b3da3296"
   },
   {
@@ -978,27 +1029,6 @@
     "screenshotUrl": "https://media.pollinations.ai/fbe0aa8d-aa00-47d0-b114-8bd84d3fb768"
   },
   {
-    "emoji": "🖼️",
-    "name": "DCORE",
-    "url": "https://bot.dtempest.online",
-    "description": "A multi-purpose Discord-Telegram bot featuring image generation via Pollinations, along with useful commands for server owners, developers, and much more; it is currently active on 16 servers.",
-    "language": "en",
-    "category": "image",
-    "platform": "telegram",
-    "githubUsername": "dairyum",
-    "githubUserId": "64420757",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "dairyum img width=\"871\" height=\"602\" alt=\"Image\" src=\"https://github.com/user-at",
-    "other": null,
-    "submittedDate": "2026-09-13",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/14831",
-    "approvedDate": "2026-09-17",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/b15951c7-0cb6-427b-8fbc-65a47159bdfd"
-  },
-  {
     "emoji": "🛠️",
     "name": "GitMuse",
     "url": "https://fadyabohamza-netizen.github.io/gitmuse",
@@ -1058,7 +1088,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14923",
     "approvedDate": "2026-09-16",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 23,
     "screenshotUrl": "https://media.pollinations.ai/29b1da55-5cbc-42d8-bb85-c7f646860b08"
   },
   {
@@ -1205,7 +1235,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14720",
     "approvedDate": "2026-09-11",
     "byop": false,
-    "requests24h": 185,
+    "requests24h": 99,
     "screenshotUrl": "https://media.pollinations.ai/a2d3e132-60b7-4d26-837c-5866a4f11398"
   },
   {
@@ -1226,7 +1256,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14721",
     "approvedDate": "2026-09-11",
     "byop": false,
-    "requests24h": 185,
+    "requests24h": 99,
     "screenshotUrl": "https://media.pollinations.ai/64eb823b-3214-4eea-9849-aeb9d1abca2e"
   },
   {
@@ -1247,7 +1277,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14688",
     "approvedDate": "2026-09-10",
     "byop": false,
-    "requests24h": 9,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/74d3bbe6-1826-4420-a910-827c342c8aa9"
   },
   {
@@ -1310,7 +1340,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14590",
     "approvedDate": "2026-09-09",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/6298efc5-6bc3-4576-8944-afe570c87202"
   },
   {
@@ -1352,7 +1382,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10973",
     "approvedDate": "2026-09-16",
     "byop": false,
-    "requests24h": 382,
+    "requests24h": 256,
     "screenshotUrl": "https://media.pollinations.ai/066bfce8-c4a1-45f2-ac67-b5321c43a5ce"
   },
   {
@@ -1373,7 +1403,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14411",
     "approvedDate": "2026-09-04",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/21f68b74-68e4-490f-b6bb-6c1c03907ac9"
   },
   {
@@ -1387,14 +1417,15 @@
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/openwebui",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-09-03",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14416",
     "approvedDate": "2026-09-03",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 298,
+    "screenshotUrl": "https://media.pollinations.ai/5925b12d-0349-4375-b901-a22c14a78404"
   },
   {
     "emoji": "📚",
@@ -1414,7 +1445,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14310",
     "approvedDate": "2026-09-03",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 7,
     "screenshotUrl": "https://media.pollinations.ai/e4e4aae8-aa25-41e2-90cd-c5fbcf82b8c4"
   },
   {
@@ -1435,7 +1466,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14311",
     "approvedDate": "2026-09-02",
     "byop": false,
-    "requests24h": 2068,
+    "requests24h": 638,
     "screenshotUrl": "https://media.pollinations.ai/308e6244-9cba-444f-bd12-2f81f8837c44"
   },
   {
@@ -1456,7 +1487,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14035",
     "approvedDate": "2026-09-02",
     "byop": false,
-    "requests24h": 33,
+    "requests24h": 38,
     "screenshotUrl": "https://media.pollinations.ai/1a769c42-1850-4363-8610-2eaae1874cb9"
   },
   {
@@ -1666,7 +1697,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11438",
     "approvedDate": "2026-08-24",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 133,
     "screenshotUrl": "https://media.pollinations.ai/577285ce-8147-4eb0-afdc-e84fbd592489"
   },
   {
@@ -1708,7 +1739,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13699",
     "approvedDate": "2026-08-23",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/39af2aad-365d-4fac-9d3f-723090be9d67"
   },
   {
@@ -1750,7 +1781,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13671",
     "approvedDate": "2026-08-22",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/363031f0-5ca1-4af8-816d-66099dd4f7c3"
   },
   {
@@ -1792,7 +1823,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13640",
     "approvedDate": "2026-08-21",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/cd6fc084-7e0e-4f3a-92ae-25a85fb08eb7"
   },
   {
@@ -1813,7 +1844,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13598",
     "approvedDate": "2026-08-20",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/7233066a-c3eb-41fc-976e-99f4fa542516"
   },
   {
@@ -1897,7 +1928,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13511",
     "approvedDate": "2026-08-18",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/ce8d2bd8-0a10-471f-890e-4d09674f5a3d"
   },
   {
@@ -1920,27 +1951,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/c8e3f530-ab92-4f3e-a963-38246cf2b438"
-  },
-  {
-    "emoji": "🖼️",
-    "name": "NeuralCanvas",
-    "url": "https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator",
-    "description": "A native Android app built with Kotlin and Jetpack Compose that turns text prompts into images using the Pollinations image API.",
-    "language": "en",
-    "category": "image",
-    "platform": "android",
-    "githubUsername": "greysonmiller67-lang",
-    "githubUserId": "287692444",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-08-16",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/13448",
-    "approvedDate": "2026-08-16",
-    "byop": false,
-    "requests24h": 93,
-    "screenshotUrl": "https://media.pollinations.ai/4e3bbbc9-c8f5-4ec6-a42a-2566bcde7031"
   },
   {
     "emoji": "💼",
@@ -1966,7 +1976,7 @@
   {
     "emoji": "💼",
     "name": "Indish Marketer's Voice Agent",
-    "url": "https://voice.prototools.in",
+    "url": null,
     "description": "An AI voice agent that businesses embed on their own website. Callers speak naturally instead of filling out a contact form; the agent answers from the business's own knowledge base and captures leads",
     "language": "en",
     "category": "business",
@@ -2023,7 +2033,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11741",
     "approvedDate": "2026-08-14",
     "byop": false,
-    "requests24h": 442,
+    "requests24h": 45,
     "screenshotUrl": "https://media.pollinations.ai/c8cd8b9d-b1f6-4de9-a2cc-c8be8a556fbc"
   },
   {
@@ -2128,7 +2138,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13124",
     "approvedDate": "2026-08-10",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/7e8cc1fc-41be-4998-8189-d52180696372"
   },
   {
@@ -2153,27 +2163,6 @@
     "screenshotUrl": "https://media.pollinations.ai/2e3b778c-335d-433c-87cb-40d0ab82eb2f"
   },
   {
-    "emoji": "🎮",
-    "name": "NEON SHADOWS: CHRONICLES OF THE CORE",
-    "url": "https://habitatai.biz/game",
-    "description": "Supports an AI-driven cyberpunk RPG experience for \"NEON SHADOWS: CHRONICLES OF THE CORE\".",
-    "language": "de-DE",
-    "category": "games",
-    "platform": "web",
-    "githubUsername": "KT-Society",
-    "githubUserId": "50811139",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-05-12",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10900",
-    "approvedDate": "2026-08-08",
-    "byop": false,
-    "requests24h": 20,
-    "screenshotUrl": "https://media.pollinations.ai/318bfb77-244d-4ae2-a9f1-26486715cb82"
-  },
-  {
     "emoji": "📚",
     "name": "studdy",
     "url": "https://bharkodat-ux.github.io/studdy",
@@ -2191,29 +2180,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11055",
     "approvedDate": "2026-08-08",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/9961f52d-ff10-408a-95e9-61f644c9f83b"
-  },
-  {
-    "emoji": "🛠️",
-    "name": "AIOPE Headless",
-    "url": "https://xnet.ngo",
-    "description": "A self-hosted AI assistant server with a web UI, web search, SSH management, file operations, and Pollinations text and image generation.",
-    "language": "en",
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "xnet-admin-1",
-    "githubUserId": "246910385",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "xnet_admin",
-    "other": null,
-    "submittedDate": "2026-05-18",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/11123",
-    "approvedDate": "2026-08-08",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/959392eb-3147-4911-91dd-e3acbc380364"
   },
   {
     "emoji": "🤖",
@@ -2233,7 +2201,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11153",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/7c2533e0-8adf-46f4-8851-b4bf85c074b2"
   },
   {
@@ -2310,7 +2278,7 @@
     "githubUsername": "sizzlebop",
     "githubUserId": "192782247",
     "repositoryUrl": "https://github.com/pinkpixel-dev/promptzy",
-    "repositoryStars": 80,
+    "repositoryStars": 81,
     "discordUsername": "sizzlebopz",
     "other": null,
     "submittedDate": "2026-05-20",
@@ -2359,7 +2327,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13198",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/fe1f50ec-415b-48b8-b9a1-437383a7a313"
   },
   {
@@ -2380,7 +2348,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11354",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 53,
     "screenshotUrl": "https://media.pollinations.ai/64031642-8f78-4e46-87a8-4fc61f21b111"
   },
   {
@@ -2443,7 +2411,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11288",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 9,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/bc6df011-2d96-4509-ac39-c5e0f65cd3ef"
   },
   {
@@ -2485,7 +2453,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12445",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/2818c565-7d57-4b9b-9e17-de56a4033e48"
   },
   {
@@ -2569,7 +2537,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12706",
     "approvedDate": "2026-08-06",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/aee70c45-c1b6-4deb-a14b-5d1f4f8a4d8f"
   },
   {
@@ -2737,7 +2705,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12905",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 33,
     "screenshotUrl": "https://media.pollinations.ai/2a9c2ce0-9ac9-4058-b190-5ba419b347d4"
   },
   {
@@ -2760,27 +2728,6 @@
     "byop": true,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/32aad4c6-2969-4a14-94d1-763d19ab7862"
-  },
-  {
-    "emoji": "💬",
-    "name": "chatty",
-    "url": "https://chatty.ext.io",
-    "description": "simple chat ui that uses pollinations and new byop system [models are a bit outdated will prob update sometime]",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "smplstuff",
-    "githubUserId": "206557620",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "kennet678",
-    "other": null,
-    "submittedDate": "2026-07-23",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/12701",
-    "approvedDate": "2026-08-05",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/a3ac7e4e-925b-47d3-93e9-34c49cb0ae8c"
   },
   {
     "emoji": "💬",
@@ -2926,7 +2873,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12742",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 924,
+    "requests24h": 976,
     "screenshotUrl": "https://media.pollinations.ai/5b6cafa5-7461-40db-adc9-2072d16387ba"
   },
   {
@@ -2934,7 +2881,7 @@
     "name": "Pollinations AI Studio",
     "url": "https://sashafilipov.github.io/pollinations-ai-studio",
     "description": "A multimodal workspace for chat and image generation through the Pollinations.ai API.",
-    "language": "en",
+    "language": "ru",
     "category": "build",
     "platform": "web",
     "githubUsername": "sashafilipov",
@@ -2970,27 +2917,6 @@
     "byop": true,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/b7e4b219-6d14-46e5-b4a1-34bc265760b2"
-  },
-  {
-    "emoji": "🖼️",
-    "name": "Anime Forge",
-    "url": "https://animeforge-k4ltm64.public.builtwithrocket.new",
-    "description": "Anime Forge is an AI-driven anime character design web app powered by Pollinations API for text and image generation.",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "masreamro496-ship-it",
-    "githubUserId": "286899133",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-07-26",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/12773",
-    "approvedDate": "2026-07-28",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/d4fbed8f-2495-489b-8ef1-f903ff6549a0"
   },
   {
     "emoji": "🖼️",
@@ -3052,29 +2978,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11662",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/efa38bdd-e7c0-4f71-86ba-0096efa17e5e"
-  },
-  {
-    "emoji": "🧠",
-    "name": "Blaze Prep",
-    "url": "https://blazeprep.net",
-    "description": "Manage FDNY Prep learning content in Blaze Prep, with AI-generated materials from Pollinations AI.",
-    "language": "en",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "beedieeyez",
-    "githubUserId": "2322289",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-06-08",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/11689",
-    "approvedDate": "2026-07-13",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/bb1ab2f5-80e0-4bf6-9025-0ffadfd91dcb"
   },
   {
     "emoji": "🧩",
@@ -3136,13 +3041,13 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11598",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 16,
+    "requests24h": 38,
     "screenshotUrl": "https://media.pollinations.ai/c3b2b8da-7579-4790-9d1e-5a452ce6ae02"
   },
   {
     "emoji": "🧠",
     "name": "AINewsForge",
-    "url": "Not public",
+    "url": null,
     "description": "AINewsForge is an agentic system built with LangGraph that fetches news, generates LinkedIn posts, verifies claims, creates cover images, reviews quality, and publishes to LinkedIn.",
     "language": "en",
     "category": "business",
@@ -3304,7 +3209,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11820",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 924,
+    "requests24h": 921,
     "screenshotUrl": "https://media.pollinations.ai/0b3e46f4-2d1a-4eac-8d21-eebc49b2d321"
   },
   {
@@ -3318,7 +3223,7 @@
     "githubUsername": "RaptorVampire",
     "githubUserId": "296319174",
     "repositoryUrl": "https://github.com/RaptorVampire/pollinations-image-lab",
-    "repositoryStars": 114,
+    "repositoryStars": null,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-07-01",
@@ -3451,7 +3356,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12315",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 118,
     "screenshotUrl": "https://media.pollinations.ai/97a427db-a6b1-4465-947b-d3b3232c972c"
   },
   {
@@ -3535,7 +3440,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11827",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/339c63d5-95ef-4d0b-920a-d309e6c6e569"
   },
   {
@@ -3557,7 +3462,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12240",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 298
   },
   {
     "emoji": "🖼️",
@@ -3766,7 +3671,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12015",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 46,
     "screenshotUrl": "https://media.pollinations.ai/6440f897-2fc7-4aa4-a5c4-caa6546a9b23"
   },
   {
@@ -3787,7 +3692,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11962",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/95d272f8-c9c2-43ca-93ec-dfba31b55ef0"
   },
   {
@@ -3829,7 +3734,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12013",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 24,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/afd75137-5765-44da-b71c-1e3e375e16e5"
   },
   {
@@ -3913,7 +3818,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10492",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 7,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/4286a626-555d-462a-866e-0992b3b7caf8"
   },
   {
@@ -4066,14 +3971,14 @@
   {
     "emoji": "🤖",
     "name": "ather mini",
-    "url": "minitejas.in",
+    "url": "https://minitejas.in",
     "description": "ather mini provides a ChatGPT-like AI chat to help people learn about AI and uses pollinations.ai for teaching.",
     "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "aadarsh-kandula",
     "githubUserId": "210118812",
-    "repositoryUrl": "minitejas.in",
+    "repositoryUrl": null,
     "repositoryStars": null,
     "discordUsername": null,
     "other": null,
@@ -4207,7 +4112,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10487",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/bcdf9453-1a26-43a9-a02a-200cff2b6096"
   },
   {
@@ -4228,13 +4133,13 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10507",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 21,
     "screenshotUrl": "https://media.pollinations.ai/4bc7a1b1-f075-4ae0-903a-e12527f1cbf9"
   },
   {
     "emoji": "🧩",
     "name": "zolio",
-    "url": "zolio.site",
+    "url": "https://zolio.site",
     "description": "zolioapp",
     "language": "en",
     "category": "business",
@@ -4270,7 +4175,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10570",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ae6e3255-cf4f-4ac3-956f-480856f190ee"
   },
   {
@@ -4295,27 +4200,6 @@
     "screenshotUrl": "https://media.pollinations.ai/966a4413-8c08-4caa-aa79-3a5aa7a923b0"
   },
   {
-    "emoji": "✅",
-    "name": "TaskManager",
-    "url": "https://panel.estehlal.com/",
-    "description": "non-profit",
-    "language": "en",
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "LahbabiCode",
-    "githubUserId": "167795169",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-05-01",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10607",
-    "approvedDate": "2026-06-01",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/4e24688a-b765-4781-a1be-6bc9de95dd47"
-  },
-  {
     "emoji": "📚",
     "name": "KPSS Zamanı",
     "url": "https://kpsszamani.com",
@@ -4333,7 +4217,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10697",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/6147ad0d-2388-4eda-b9cf-f040c39fb0dd"
   },
   {
@@ -4375,7 +4259,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10703",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/bcdf9453-1a26-43a9-a02a-200cff2b6096"
   },
   {
@@ -4459,7 +4343,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10101",
     "approvedDate": "2026-05-30",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/5faa4e70-a9f8-4208-b5e3-a2f6fd0fef5f"
   },
   {
@@ -4732,7 +4616,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10015",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/c60287d0-1547-4bf2-ba12-64d9c21629a4"
   },
   {
@@ -4774,7 +4658,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9994",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/c3f69469-e409-4e27-bedd-764e37c42628"
   },
   {
@@ -4858,13 +4742,13 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9987",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 135,
+    "requests24h": 116,
     "screenshotUrl": "https://media.pollinations.ai/7f20cb3c-3c53-48d1-96c1-ef86908a77e1"
   },
   {
     "emoji": "🎨",
     "name": "PolyDreamer",
-    "url": "https://polydreamer.amitinfotech.net/",
+    "url": null,
     "description": "Generate images and videos from text prompts using Polinations AI with PolyDreamer. Connect your own API key or use the free tier.",
     "language": "en",
     "category": "image",
@@ -4900,7 +4784,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9956",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 30,
+    "requests24h": 28,
     "screenshotUrl": "https://media.pollinations.ai/9552a085-255a-4647-b4ab-4f82c1f9b83e"
   },
   {
@@ -4942,7 +4826,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9949",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 19,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/84af02b1-1819-4c4f-a5f5-be68ea07f9db"
   },
   {
@@ -5026,7 +4910,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9196",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 185,
+    "requests24h": 99,
     "screenshotUrl": "https://media.pollinations.ai/d5475b43-a3b7-4fc8-b454-72908c4b02e8"
   },
   {
@@ -5047,7 +4931,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9118",
     "approvedDate": "2026-05-17",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/18d9510c-6016-47cf-bb22-3f9fec64d3b0"
   },
   {
@@ -5068,7 +4952,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9055",
     "approvedDate": "2026-05-17",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/d7fe1151-39f0-4b86-8900-b998a70cf7a5"
   },
   {
@@ -5089,7 +4973,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9012",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/406a02b0-e265-4f81-83bf-46423ca77c96"
   },
   {
@@ -5236,7 +5120,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10568",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 30,
+    "requests24h": 34,
     "screenshotUrl": "https://media.pollinations.ai/08124785-7171-4564-a8f8-0eb76ab9ed0c"
   },
   {
@@ -5341,7 +5225,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10563",
     "approvedDate": "2026-05-15",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/facd03b0-fc39-4eaa-9729-0dd78296286d"
   },
   {
@@ -5362,7 +5246,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10876",
     "approvedDate": "2026-05-12",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/599a99f4-1656-4c43-ae5a-453bee2bc0c4"
   },
   {
@@ -5425,7 +5309,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10016",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 458,
+    "requests24h": 583,
     "screenshotUrl": "https://media.pollinations.ai/c810a54c-6af1-42cf-b586-6538c117e3bf"
   },
   {
@@ -5488,7 +5372,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10349",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/bcdf9453-1a26-43a9-a02a-200cff2b6096"
   },
   {
@@ -5511,27 +5395,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/8cba865a-7f4f-4a74-a1d9-6a961c3f5ec8"
-  },
-  {
-    "emoji": "💻",
-    "name": "Opticode",
-    "url": "https://www.opticode.tech/",
-    "description": "A collaborative coding platform with AI assistance and real-time pair programming for learning and practicing programming.",
-    "language": "en",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "FalahZKhan",
-    "githubUserId": "183453586",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-04-23",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10423",
-    "approvedDate": "2026-05-10",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/4d7858a4-1305-455a-b880-f41679362828"
   },
   {
     "emoji": "🖼️",
@@ -5656,7 +5519,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9169",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 28,
+    "requests24h": 42,
     "screenshotUrl": "https://media.pollinations.ai/d0fa6dce-1a5e-4ae7-8fd3-3bc0af9ec46c"
   },
   {
@@ -5677,7 +5540,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10709",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/25cdd0c2-5ed9-4e82-a598-de01bb007326"
   },
   {
@@ -5698,7 +5561,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10710",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 7,
+    "requests24h": 19,
     "screenshotUrl": "https://media.pollinations.ai/05bd9ed0-0ac9-416c-a40b-587850361039"
   },
   {
@@ -5719,7 +5582,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10711",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/7cc3fafd-dde8-48f6-91a4-04e1c6c47008"
   },
   {
@@ -5828,27 +5691,6 @@
     "screenshotUrl": "https://media.pollinations.ai/e2240ea1-7be6-4748-9b4d-0e526beb1123"
   },
   {
-    "emoji": "🧾",
-    "name": "Madlisten",
-    "url": "https://madlisten.dk/",
-    "description": "Use Madlisten to browse and view recipes.",
-    "language": "en",
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "SamuelHauptmannvanDam",
-    "githubUserId": "36303155",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-05-08",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/10788",
-    "approvedDate": "2026-05-08",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/15b94ce6-1b75-4f34-9b40-03f91bd86f40"
-  },
-  {
     "emoji": "🖼️",
     "name": "pollimage",
     "url": "https://www.npmjs.com/package/pollimage",
@@ -5893,14 +5735,14 @@
   {
     "emoji": "🧰",
     "name": "App forge",
-    "url": "torrents.signalcity.tv",
+    "url": "https://torrents.signalcity.tv",
     "description": "App forge.",
     "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "sourdiesel135",
     "githubUserId": "206730649",
-    "repositoryUrl": "Signalcity.tv",
+    "repositoryUrl": null,
     "repositoryStars": null,
     "discordUsername": null,
     "other": null,
@@ -5950,7 +5792,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10670",
     "approvedDate": "2026-05-05",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/f66ce806-23df-4a1b-aa2b-1d0347820f8d"
   },
   {
@@ -6034,7 +5876,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10390",
     "approvedDate": "2026-04-29",
     "byop": false,
-    "requests24h": 164,
+    "requests24h": 143,
     "screenshotUrl": "https://media.pollinations.ai/c0ebdadc-2f46-418f-8835-042fc8c60ef8"
   },
   {
@@ -6076,7 +5918,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10464",
     "approvedDate": "2026-04-27",
     "byop": false,
-    "requests24h": 25,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/89634a57-5705-4a63-9313-e3de212a1be4"
   },
   {
@@ -6118,7 +5960,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10351",
     "approvedDate": "2026-04-24",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 22,
     "screenshotUrl": "https://media.pollinations.ai/ea799f33-8654-4bef-8708-641f9f0a3502"
   },
   {
@@ -6139,7 +5981,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10464",
     "approvedDate": "2026-04-27",
     "byop": false,
-    "requests24h": 25,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/89634a57-5705-4a63-9313-e3de212a1be4"
   },
   {
@@ -6181,7 +6023,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10351",
     "approvedDate": "2026-04-24",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 22,
     "screenshotUrl": "https://media.pollinations.ai/ea799f33-8654-4bef-8708-641f9f0a3502"
   },
   {
@@ -6286,7 +6128,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10340",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 18,
     "screenshotUrl": "https://media.pollinations.ai/8a1ae5e5-2740-411c-9b12-55ec869e4f78"
   },
   {
@@ -6349,7 +6191,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10332",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 28,
+    "requests24h": 24,
     "screenshotUrl": "https://media.pollinations.ai/ae8c55a3-24f8-46bd-81ed-efe08e6098c7"
   },
   {
@@ -6412,7 +6254,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4604",
     "approvedDate": "2026-04-18",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/ae17f81c-17b2-4676-a291-7baad08c56b4"
   },
   {
@@ -6433,7 +6275,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9197",
     "approvedDate": "2026-04-18",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/de798c78-cd69-434a-ad08-e8ddd1c85535"
   },
   {
@@ -6475,7 +6317,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10273",
     "approvedDate": "2026-04-17",
     "byop": false,
-    "requests24h": 219,
+    "requests24h": 325,
     "screenshotUrl": "https://media.pollinations.ai/37f4aa10-f7b6-47ea-8f4c-34f5a128921c"
   },
   {
@@ -6517,7 +6359,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2186",
     "approvedDate": "2025-05-31",
     "byop": false,
-    "requests24h": 24,
+    "requests24h": 23,
     "screenshotUrl": "https://media.pollinations.ai/eca74344-6120-4e92-bc5d-aef087713f63"
   },
   {
@@ -6538,7 +6380,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8490",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 382,
+    "requests24h": 256,
     "screenshotUrl": "https://media.pollinations.ai/2816e11e-1142-4b77-8cf0-aba45562933f"
   },
   {
@@ -6769,7 +6611,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9037",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/98b69bef-0fd1-4992-8046-278b8d2dc7ce"
   },
   {
@@ -6790,7 +6632,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9212",
     "approvedDate": "2026-04-09",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/6515e15b-d96f-4a26-8974-56a6643f55ca"
   },
   {
@@ -6874,7 +6716,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9301",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/e70acb92-1c62-4330-b832-0951c12c27d3"
   },
   {
@@ -6937,29 +6779,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9103",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/2e5e45c4-2eec-4dd7-aa79-1c00604207f0"
-  },
-  {
-    "emoji": "🤖",
-    "name": "DAi",
-    "url": "https://ai.dverse.fun",
-    "description": "Provide chat and image generation with DAi using pollination api and nano banana.",
-    "language": "en",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "Dcode9",
-    "githubUserId": "194372792",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-22",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/7565",
-    "approvedDate": "2026-04-09",
-    "byop": false,
-    "requests24h": 15,
-    "screenshotUrl": "https://media.pollinations.ai/730bb042-26a1-4084-bfcf-0e645cbffab8"
   },
   {
     "emoji": "🤔",
@@ -7027,7 +6848,7 @@
   {
     "emoji": "🖼️",
     "name": "PerChamp - AI Image Generation App",
-    "url": "https://play.google.com/store/apps/details?id=com.krpdev.perchamp_image",
+    "url": null,
     "description": "Generate images from text prompts with PerChamp - AI Image Generation App using the Pollinations AI image generation API.",
     "language": "en",
     "category": "image",
@@ -7084,7 +6905,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9972",
     "approvedDate": "2026-04-05",
     "byop": false,
-    "requests24h": 239,
+    "requests24h": 506,
     "screenshotUrl": "https://media.pollinations.ai/2caa7efb-bc90-4a57-85e8-b87fa67eecd1"
   },
   {
@@ -7231,7 +7052,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9841",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/c7ec7d9d-8722-4d31-80f0-54c2240eb57d"
   },
   {
@@ -7252,7 +7073,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9801",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/c0f15332-24da-4686-9617-ca8941b025ac"
   },
   {
@@ -7316,7 +7137,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 46
+    "requests24h": 222
   },
   {
     "emoji": "📝",
@@ -7400,7 +7221,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 46
+    "requests24h": 222
   },
   {
     "emoji": "📚",
@@ -7441,7 +7262,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9766",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/a5a1c06c-cb6d-48f3-b801-280b71885705"
   },
   {
@@ -7462,7 +7283,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9761",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/0b3a57e0-e701-4740-a1fd-68ede2967cca"
   },
   {
@@ -7483,7 +7304,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9759",
     "approvedDate": "2026-03-31",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/a01f1798-8902-46de-8ad3-ef24c43c95de"
   },
   {
@@ -7567,7 +7388,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9305",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 19,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/a93eee25-a5ab-483e-ba35-d391e4fc1326"
   },
   {
@@ -7630,7 +7451,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9472",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/e21cde7c-2e0d-4bad-a04c-d661e23a597d"
   },
   {
@@ -7756,7 +7577,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9719",
     "approvedDate": "2026-03-29",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/e5695d6e-5ee4-404e-976a-3943da4c1b95"
   },
   {
@@ -7840,7 +7661,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9261",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/22b3d4c5-7b0e-4b79-8452-49343478579b"
   },
   {
@@ -7966,7 +7787,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9674",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/81a653f2-8ada-4072-a3e3-b25cc1757857"
   },
   {
@@ -8008,7 +7829,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9580",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/4e5a35c6-787a-4754-ba89-b934269fff6a"
   },
   {
@@ -8050,7 +7871,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9656",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 11,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/30b85416-0921-4de1-bf3e-7479226af7ca"
   },
   {
@@ -8155,7 +7976,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9639",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 25,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/a8d0bd73-3cd1-4b87-b0f5-1c488e93f8ac"
   },
   {
@@ -8176,7 +7997,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9631",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 34,
+    "requests24h": 23,
     "screenshotUrl": "https://media.pollinations.ai/33fb0bf2-db5c-4643-82f2-f2eb1783a338"
   },
   {
@@ -8218,7 +8039,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9649",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 40,
+    "requests24h": 124,
     "screenshotUrl": "https://media.pollinations.ai/3e5a112a-86f6-4fca-81c2-59c3f5b1c0d8"
   },
   {
@@ -8323,7 +8144,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9596",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 407,
+    "requests24h": 25,
     "screenshotUrl": "https://media.pollinations.ai/e0afc3d3-5d81-44bb-b65f-7cb0e8456d56"
   },
   {
@@ -8345,7 +8166,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9451",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 924
+    "requests24h": 976
   },
   {
     "emoji": "⚡",
@@ -8407,7 +8228,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9530",
     "approvedDate": "2026-03-25",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/90d6b7ee-3511-475a-90bf-85fea9454dd5"
   },
   {
@@ -8491,7 +8312,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9552",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/00960940-3a32-4548-aa1f-98de44110d1e"
   },
   {
@@ -8512,7 +8333,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9433",
     "approvedDate": "2026-03-24",
     "byop": false,
-    "requests24h": 124,
+    "requests24h": 320,
     "screenshotUrl": "https://media.pollinations.ai/54b510cb-7a10-41b3-90ba-6f49baa9ce7d"
   },
   {
@@ -8554,7 +8375,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9511",
     "approvedDate": "2026-03-24",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/e71ef244-afee-41ad-b52f-171b7fd18b25"
   },
   {
@@ -8575,7 +8396,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9475",
     "approvedDate": "2026-03-23",
     "byop": false,
-    "requests24h": 13,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/bbec8cea-059c-41d7-a4b2-b4dd7c757df7"
   },
   {
@@ -8659,7 +8480,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9411",
     "approvedDate": "2026-03-22",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/070e2db6-63ff-49d0-a012-d250d70a9a34"
   },
   {
@@ -8680,7 +8501,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9416",
     "approvedDate": "2026-03-22",
     "byop": false,
-    "requests24h": 185,
+    "requests24h": 99,
     "screenshotUrl": "https://media.pollinations.ai/d5475b43-a3b7-4fc8-b454-72908c4b02e8"
   },
   {
@@ -8726,27 +8547,6 @@
     "screenshotUrl": "https://media.pollinations.ai/8f475816-b3c1-49f0-8b93-be1b1d55ee36"
   },
   {
-    "emoji": "🎨",
-    "name": "AI-Ministries Image Generator",
-    "url": "https://images.ai-ministries.com/",
-    "description": "Generate images using AI-Ministries Image Generator and reference the asset at httpsgithub.comuser-attachmentsassetsded25f67-c0c9-469e-81c9-d470e7dcdd49.",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "Tolerable",
-    "githubUserId": "2303210",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "Tolerant ᵗʰᵉ Rev™",
-    "other": null,
-    "submittedDate": "2026-03-21",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9379",
-    "approvedDate": "2026-03-21",
-    "byop": true,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/36a85bd9-affc-4545-ac06-80a559989da4"
-  },
-  {
     "emoji": "🚀",
     "name": "HyperRush AI",
     "url": "https://hyperrushnet.github.io/hrn-ai/",
@@ -8785,29 +8585,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9385",
     "approvedDate": "2026-03-21",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/2bc9e758-7acf-4b2c-9e37-52e8e5e9712e"
-  },
-  {
-    "emoji": "🌌",
-    "name": "InfiniteMud",
-    "url": "https://infinitemud.app/",
-    "description": "Build persistent, procedurally generated worlds with InfiniteMud, offering scalable navigable space and user-created structures.",
-    "language": "en",
-    "category": "games",
-    "platform": "web",
-    "githubUsername": "Tolerable",
-    "githubUserId": "2303210",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "Tolerant ᵗʰᵉ Rev™",
-    "other": null,
-    "submittedDate": "2026-03-21",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/9370",
-    "approvedDate": "2026-03-21",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/e90c5876-2aba-44d3-81ac-8f79fb234615"
   },
   {
     "emoji": "🤖",
@@ -8869,7 +8648,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9315",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/fce65fb8-bf00-4a59-91bb-5407b0272317"
   },
   {
@@ -8890,7 +8669,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8162",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 142,
+    "requests24h": 136,
     "screenshotUrl": "https://media.pollinations.ai/9f94e86f-e63c-4c4a-b391-6728903b9ccb"
   },
   {
@@ -8911,7 +8690,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8136",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 9,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/5cc086aa-939f-44c1-b423-a8a2ecfafbbc"
   },
   {
@@ -9037,7 +8816,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8113",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/9d135e2c-29f7-4eeb-9563-69e297863f51"
   },
   {
@@ -9079,7 +8858,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9059",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/a2575060-1cc6-4046-8707-75a95905e79f"
   },
   {
@@ -9123,27 +8902,6 @@
     "byop": false,
     "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/b1998f70-1b33-4dbc-bd65-93e2a39dbff7"
-  },
-  {
-    "emoji": "📚",
-    "name": "lstation.co Children Story Creator and Player Plat",
-    "url": "https://lstation.co",
-    "description": "Create and play interactive stories for children using lstation.co Children Story Creator and Player Plat with AI-powered storytelling and educational features.",
-    "language": "en",
-    "category": "learn",
-    "platform": "web",
-    "githubUsername": "idebroy",
-    "githubUserId": "4294661",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "iponderer",
-    "other": null,
-    "submittedDate": "2026-03-07",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/8912",
-    "approvedDate": "2026-03-18",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/638a9ca1-7e8c-450f-91b0-b851503441af"
   },
   {
     "emoji": "🎬",
@@ -9268,7 +9026,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9058",
     "approvedDate": "2026-03-15",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/4dbb7ac0-dbb7-48d0-b4a5-d1223c186b08"
   },
   {
@@ -9310,7 +9068,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9085",
     "approvedDate": "2026-03-13",
     "byop": false,
-    "requests24h": 31,
+    "requests24h": 34,
     "screenshotUrl": "https://media.pollinations.ai/c9e70534-b01b-4182-b7b0-c28bbfe13310"
   },
   {
@@ -9478,7 +9236,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8629",
     "approvedDate": "2026-02-26",
     "byop": false,
-    "requests24h": 16,
+    "requests24h": 38,
     "screenshotUrl": "https://media.pollinations.ai/d82f99a8-bcc9-4a57-913c-7e33755e1ef2"
   },
   {
@@ -9541,7 +9299,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8761",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 44,
+    "requests24h": 235,
     "screenshotUrl": "https://media.pollinations.ai/cc5b7b86-bbaf-42a2-b8fa-06c54c649e37"
   },
   {
@@ -9709,7 +9467,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7576",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 132,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/31cba991-8632-47b1-b6e3-8732771ca348"
   },
   {
@@ -9730,7 +9488,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7642",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 25,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/3791038a-8eb7-4791-bfb8-46ddf4e73e7d"
   },
   {
@@ -9757,7 +9515,7 @@
   {
     "emoji": "🎛️",
     "name": "Mharomo.systems",
-    "url": "https://mharomo.systems",
+    "url": null,
     "description": "Generate AI images, music, videos, and voice content from simple prompts.",
     "language": "en",
     "category": "video_audio",
@@ -9877,7 +9635,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7744",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/87884896-60a3-40bd-be88-398d9bafc162"
   },
   {
@@ -9919,7 +9677,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8700",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 44,
+    "requests24h": 235,
     "screenshotUrl": "https://media.pollinations.ai/1dc959ed-a58e-4007-9de2-bea74f463dc7"
   },
   {
@@ -9940,7 +9698,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8665",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 595,
+    "requests24h": 1127,
     "screenshotUrl": "https://media.pollinations.ai/8b5379bc-46cc-414d-9cbe-72a405e01c52"
   },
   {
@@ -10066,7 +9824,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8630",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/bb4d415c-5552-44cf-a5b1-08d3f56a3742"
   },
   {
@@ -10108,7 +9866,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8218",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/985226be-46de-4b50-acc5-f10ff8e105c5"
   },
   {
@@ -10213,7 +9971,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8285",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 9,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/8936b940-b7d6-4332-929a-afbabff8bfa5"
   },
   {
@@ -10339,7 +10097,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8475",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 24,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/8ca9f837-5583-4e43-a989-79c318f48704"
   },
   {
@@ -10591,7 +10349,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7273",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/0542a7fa-ab81-4aff-82e6-4af16ebac205"
   },
   {
@@ -10654,29 +10412,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8312",
     "approvedDate": "2026-02-23",
     "byop": false,
-    "requests24h": 60,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/fdf7b499-6e57-4223-be9e-0f8892356665"
-  },
-  {
-    "emoji": "⚖️",
-    "name": "AutoTutela",
-    "url": "https://angelromero.co/autotutela",
-    "description": "AI legal assistant that drafts Acciones de Tutela for Colombian citizens.",
-    "language": "es",
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "soyangelromero",
-    "githubUserId": "128564349",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": "iangelromero@outlook.com",
-    "submittedDate": "2026-02-22",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/8493",
-    "approvedDate": "2026-02-23",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/82358770-ec47-4312-9f34-fdc4410653e4"
   },
   {
     "emoji": "🔍",
@@ -10759,7 +10496,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7247",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 11,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/f98b87b0-cd34-4266-8fab-49bdc91e34b1"
   },
   {
@@ -10801,7 +10538,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8415",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/ebef35e2-dc9b-4040-9de2-c8a24d1e3200"
   },
   {
@@ -10864,7 +10601,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7635",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/8ce58884-618d-4b78-ba42-3d6dbf75f324"
   },
   {
@@ -10906,7 +10643,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7663",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/3b6386f9-2e65-4ace-b60b-3673da8a2279"
   },
   {
@@ -10969,7 +10706,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7698",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 516,
+    "requests24h": 326,
     "screenshotUrl": "https://media.pollinations.ai/ad09128d-d596-4d78-9c5d-25b90c1a0abe"
   },
   {
@@ -10990,20 +10727,20 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7810",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/5ab17a1f-c632-4a2e-ae9f-7977a9231a92"
   },
   {
     "emoji": "🤖",
     "name": "Postsiva  AI Facebook Automation",
-    "url": "https://facebook.postsiva.com/",
+    "url": null,
     "description": "AI platform to generate, schedule and publish Facebook posts at scale.",
     "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "muhammad-uzair-yasin",
     "githubUserId": "155642882",
-    "repositoryUrl": "https://github.com/Uzair-DeVops/facebook-postsiva.git",
+    "repositoryUrl": "https://github.com/muhammad-uzair-yasin/facebook-postsiva",
     "repositoryStars": 1,
     "discordUsername": "_muhammad_uzair",
     "other": null,
@@ -11011,7 +10748,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7848",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 7,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/e501c6d0-37c0-4595-95de-826ee99e2c50"
   },
   {
@@ -11053,7 +10790,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7908",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 34,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/e278cc23-9a7f-4c76-aff7-f7554f503f21"
   },
   {
@@ -11101,7 +10838,7 @@
   {
     "emoji": "🎬",
     "name": "Postsiva",
-    "url": "https://youtube.postsiva.com/",
+    "url": null,
     "description": "SaaS platform to help YouTube creators manage and optimize their channels.",
     "language": "en",
     "category": "writing",
@@ -11137,7 +10874,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8049",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 97,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/864714cf-3373-47e6-87e3-08fc324d0a9a"
   },
   {
@@ -11242,7 +10979,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8373",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/893fac40-77fe-45e8-ad83-65cb22f85a41"
   },
   {
@@ -11347,7 +11084,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7249",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 21,
+    "requests24h": 12,
     "screenshotUrl": "https://media.pollinations.ai/189d31f9-929e-4f57-abc8-b231b778b259"
   },
   {
@@ -11431,7 +11168,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7327",
     "approvedDate": "2026-02-21",
     "byop": false,
-    "requests24h": 130,
+    "requests24h": 146,
     "screenshotUrl": "https://media.pollinations.ai/44232d04-d2e0-40bf-a457-7ee92b4e150c"
   },
   {
@@ -11460,7 +11197,7 @@
     "name": "Sticker Garden",
     "url": "https://sticker-garden.vercel.app/",
     "description": "Turn text prompts into sticker-ready images with style presets and batch variants.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "GekkeTovie",
@@ -11523,7 +11260,7 @@
     "name": "AI Quiz Simulator",
     "url": "https://mrlearner1606.github.io/quiz/",
     "description": "Free AI-powered quiz simulator for competitive exams with timer, scoring, and explanations.",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "web",
     "githubUsername": "mrlearner1606",
@@ -11544,7 +11281,7 @@
     "name": "Personic",
     "url": "https://github.com/AlanSynn/personic",
     "description": "Generate structured AI personas and matching images from brief action prompts.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "AlanSynn",
@@ -11578,7 +11315,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8093",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 102,
+    "requests24h": 213,
     "screenshotUrl": "https://media.pollinations.ai/6c5c5425-9ed1-4aca-b72c-70ca0f7caf5c"
   },
   {
@@ -11599,7 +11336,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8191",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 174,
     "screenshotUrl": "https://media.pollinations.ai/a0c89634-b454-4b9b-96bf-41f222f7bcce"
   },
   {
@@ -11620,7 +11357,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7871",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/c35f8ec9-5174-4853-9e3e-1965e11f6c57"
   },
   {
@@ -11628,13 +11365,13 @@
     "name": "OpenCode Pollinations Plugin",
     "url": "https://www.npmjs.com/package/opencode-pollinations-plugin",
     "description": "Bridge between OpenCode and Pollinations; use free or Pro AI models in your IDE.",
-    "language": "fr",
+    "language": "en",
     "category": "build",
     "platform": "library",
     "githubUsername": "fkom13",
     "githubUserId": "188256078",
     "repositoryUrl": "https://github.com/fkom13/opencode-pollinations-plugin",
-    "repositoryStars": 25,
+    "repositoryStars": 26,
     "discordUsername": "Eric Nolo",
     "other": null,
     "submittedDate": "2026-01-28",
@@ -11655,7 +11392,7 @@
     "githubUsername": "sligter",
     "githubUserId": "23713984",
     "repositoryUrl": "https://github.com/sligter/LandPPT",
-    "repositoryStars": 3616,
+    "repositoryStars": 3617,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-01-17",
@@ -11809,7 +11546,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8079",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 203,
     "screenshotUrl": "https://media.pollinations.ai/8381114f-b026-405b-a86a-00b516ad21d6"
   },
   {
@@ -11830,7 +11567,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8002",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/9bcc479a-9519-4dd8-9689-5f353d9be742"
   },
   {
@@ -11851,7 +11588,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7276",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/42a52c07-74ad-4886-a123-dfba0b5ca77b"
   },
   {
@@ -11872,7 +11609,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7267",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/2e3fadca-73a4-419a-9fdc-6e6b40123e8a"
   },
   {
@@ -11893,7 +11630,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7732",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 16,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/5014f61d-958e-4687-b5ab-8a4e9ca5d5cb"
   },
   {
@@ -11914,7 +11651,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7278",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 501,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ae213fab-58a1-40d6-9bc6-1f34f8e25ed9"
   },
   {
@@ -11936,7 +11673,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8287",
     "approvedDate": "2026-02-15",
     "byop": false,
-    "requests24h": 36552
+    "requests24h": 54517
   },
   {
     "emoji": "🛡️",
@@ -11956,7 +11693,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7977",
     "approvedDate": "2026-02-15",
     "byop": false,
-    "requests24h": 49,
+    "requests24h": 50,
     "screenshotUrl": "https://media.pollinations.ai/ee1a793f-54d8-4f23-8d3d-b9c06dce2c6e"
   },
   {
@@ -11970,7 +11707,7 @@
     "githubUsername": "pollinations",
     "githubUserId": "86964862",
     "repositoryUrl": "https://github.com/pollinations/pollinations",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": "[openclaw.ai](https://openclaw.ai)",
     "submittedDate": "2026-02-14",
@@ -12019,7 +11756,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7290",
     "approvedDate": null,
     "byop": false,
-    "requests24h": 1450,
+    "requests24h": 1710,
     "screenshotUrl": "https://media.pollinations.ai/17f87fdf-bbd9-4b07-85c9-eaabb212fcdc"
   },
   {
@@ -12124,7 +11861,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6985",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 99,
+    "requests24h": 54,
     "screenshotUrl": "https://media.pollinations.ai/f4e849d4-dc3d-4a8f-a13b-2e2a7b8cf49c"
   },
   {
@@ -12229,7 +11966,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7058",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 36,
+    "requests24h": 87,
     "screenshotUrl": "https://media.pollinations.ai/5b34bcef-ccb0-401c-8ce2-8b96e3f7750e"
   },
   {
@@ -12460,7 +12197,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7064",
     "approvedDate": "2026-01-12",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/a2a50c55-a244-4450-862d-ed89c94b963d"
   },
   {
@@ -12523,7 +12260,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7041",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 24,
     "screenshotUrl": "https://media.pollinations.ai/808e0534-d4b7-48de-a1b0-2747fdad274c"
   },
   {
@@ -12670,7 +12407,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6920",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 31,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/36a9e3b2-ba8f-409a-9770-0df7e20ebc70"
   },
   {
@@ -12712,7 +12449,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6917",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 75,
     "screenshotUrl": "https://media.pollinations.ai/1786d822-cb1a-425f-bba5-e3ec9e030dc1"
   },
   {
@@ -12733,7 +12470,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6910",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/47b33191-4932-45d0-9331-8c9028866d63"
   },
   {
@@ -12775,7 +12512,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6882",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 17,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/8fd0ca3d-3126-43f3-826f-a181e0f00d29"
   },
   {
@@ -12817,13 +12554,13 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6856",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 209,
+    "requests24h": 116,
     "screenshotUrl": "https://media.pollinations.ai/93e68642-a5a7-41cd-a819-46ac941b09e2"
   },
   {
     "emoji": "🖼️",
     "name": "InstAI",
-    "url": "https://adrikiwi.freeboxos.fr/instai/",
+    "url": null,
     "description": "Social platform for creating, sharing and discovering AI-generated images",
     "language": "en",
     "category": "writing",
@@ -12859,7 +12596,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7192",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 9,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/207b2b12-aacc-430e-b96d-190b1c998aa1"
   },
   {
@@ -12922,7 +12659,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7208",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/9fbb9edc-a0a0-499b-8a62-c2f7d3d3855d"
   },
   {
@@ -12943,7 +12680,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7088",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 7,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/b739105f-598d-4f79-ba83-6d8c99f8d0b7"
   },
   {
@@ -12964,7 +12701,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7076",
     "approvedDate": "2026-01-10",
     "byop": false,
-    "requests24h": 274,
+    "requests24h": 467,
     "screenshotUrl": "https://media.pollinations.ai/c57c9033-1183-4d49-b516-fb92a686ada2"
   },
   {
@@ -12993,7 +12730,7 @@
     "name": "Udeki",
     "url": "https://udeki.com/",
     "description": "Academic platform for schools connecting teachers, parents & students with AI",
-    "language": null,
+    "language": "es",
     "category": "learn",
     "platform": "web",
     "githubUsername": "carlosmolano",
@@ -13006,7 +12743,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6980",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/3eb10cc1-1020-4d80-adcc-815b5a3004a0"
   },
   {
@@ -13048,7 +12785,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6954",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/cc960a07-9f46-401a-bb08-bc994ab453b0"
   },
   {
@@ -13077,7 +12814,7 @@
     "name": "Happy Robot",
     "url": "https://discord.com/oauth2/authorize?client_id=1335649491658735737",
     "description": "Discord AI bot with streaming responses, web search & image generation",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "discord",
     "githubUsername": "tiagozip",
@@ -13111,7 +12848,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6505",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 3295,
+    "requests24h": 1829,
     "screenshotUrl": "https://media.pollinations.ai/d3957f87-67f0-4894-8dc0-17921cdf0428"
   },
   {
@@ -13119,7 +12856,7 @@
     "name": "Filmirror",
     "url": "https://filmirror.vercel.app/",
     "description": "Enter a film title to get similar movie picks with reasons & confidence.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "LumsBot",
@@ -13174,29 +12911,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6805",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 10,
-    "screenshotUrl": "https://media.pollinations.ai/5bef8a36-715f-4093-bcba-dafb464721c1"
-  },
-  {
-    "emoji": "🧠",
-    "name": "NeuroX 6.0",
-    "url": "https://al-ahrar.wuaze.com/?i=1",
-    "description": "AI chat platform offering a free, GPT-like dialogue experience",
-    "language": "en, ar, fr",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "AL-AHRAR",
-    "githubUserId": "155243506",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2026-01-03",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6768",
-    "approvedDate": "2026-01-03",
-    "byop": false,
     "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/0f00d6b2-65d3-4706-8b95-4621b6b2da11"
+    "screenshotUrl": "https://media.pollinations.ai/5bef8a36-715f-4093-bcba-dafb464721c1"
   },
   {
     "emoji": "🎬",
@@ -13216,7 +12932,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6762",
     "approvedDate": "2026-01-03",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 190,
     "screenshotUrl": "https://media.pollinations.ai/b830dd53-9dce-4300-a623-60cb334e22a7"
   },
   {
@@ -13224,7 +12940,7 @@
     "name": "Bloom Studio",
     "url": "https://bloomstudio.fun/",
     "description": "Premium AI creative suite with image persistence, social features & multi-model support",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "Simplereally",
@@ -13237,7 +12953,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7595",
     "approvedDate": "2026-01-03",
     "byop": true,
-    "requests24h": 103,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/073d4e53-a0d7-4b9f-bc9d-dcd86e11d293"
   },
   {
@@ -13245,7 +12961,7 @@
     "name": "Pixoo64 Album Art",
     "url": null,
     "description": "AI-generated album art for Divoom Pixoo64 displays via Home Assistant",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "idodov",
@@ -13258,7 +12974,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6756",
     "approvedDate": "2026-01-03",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/6ea6c9e7-fa79-4bfe-8329-c83a1c87728a"
   },
   {
@@ -13266,7 +12982,7 @@
     "name": "How Attractive am I",
     "url": "https://howattractiveami.app/",
     "description": "AI facial analysis that scores attractiveness from your photo",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "zhugezifang",
@@ -13308,7 +13024,7 @@
     "name": "PolliPaper",
     "url": null,
     "description": "AI wallpapers that adapt to weather, time, location & music",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "api",
     "githubUsername": "fricker2025-star",
@@ -13342,7 +13058,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5826",
     "approvedDate": "2025-12-09",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/806a94ca-6389-4edc-9f4f-c40ba3d3b5b1"
   },
   {
@@ -13363,36 +13079,15 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6714",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 11,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/fc877222-edd8-48a7-a54d-9febd0dbea80"
-  },
-  {
-    "emoji": "🏥",
-    "name": "StellarMind",
-    "url": "https://reporttranslator.com/",
-    "description": "AI-powered medical report translation and image generation platform",
-    "language": null,
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "Bhumitpachani",
-    "githubUserId": "131967410",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "bhumitpachani",
-    "other": null,
-    "submittedDate": "2026-01-02",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6712",
-    "approvedDate": "2026-01-02",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/3fbb1999-92d4-4feb-9752-cf2deba66029"
   },
   {
     "emoji": "🎨",
     "name": "Perchance AI Generator",
     "url": "https://www.perchanceaigenerator.com/",
     "description": "Web app for AI image gen with customizable styles and parameters",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "localoca5",
@@ -13405,7 +13100,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6711",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 2771,
+    "requests24h": 2008,
     "screenshotUrl": "https://media.pollinations.ai/4288fcde-57e7-4390-b28e-33ac78229d7b"
   },
   {
@@ -13413,7 +13108,7 @@
     "name": "German Practice",
     "url": "https://mohtisham-cs01.github.io/GermanPractice/",
     "description": "German language learning with AI-generated texts at 7 CEFR levels",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "web",
     "githubUsername": "Mohtisham-cs01",
@@ -13497,7 +13192,7 @@
     "name": "KioKuu",
     "url": null,
     "description": "Drag & drop song importer with AI metadata fetching",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "Kisaramax",
@@ -13573,7 +13268,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6647",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/ac9c3202-6e30-4f63-b1dd-6960fa20cfb8"
   },
   {
@@ -13602,7 +13297,7 @@
     "name": "Study Buzz",
     "url": "https://aistudybuzz.streamlit.app/",
     "description": "Free study tool with AI quizzes, flashcards, guides & gamification",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "web",
     "githubUsername": "ash00718",
@@ -13623,7 +13318,7 @@
     "name": "Celebrations AI",
     "url": "https://celebrations-ai.vercel.app/",
     "description": "Premium multi-cultural greeting card generator with AI art direction",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "humair-m",
@@ -13644,7 +13339,7 @@
     "name": "BuddyLine",
     "url": null,
     "description": "AI companion chat with multi-persona system & emotionally rich conversations",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "api",
     "githubUsername": "titanxl888",
@@ -13665,7 +13360,7 @@
     "name": "PolliVision",
     "url": "https://fabioarieira.com/pollivision",
     "description": "AI video generator with pollen credit system & prompt enhancement",
-    "language": null,
+    "language": "en",
     "category": "video_audio",
     "platform": "web",
     "githubUsername": "FabioArieiraBaia",
@@ -13707,7 +13402,7 @@
     "name": "PollinChat",
     "url": "https://superheroghost.github.io/PollinChat/",
     "description": "Feature-rich chat interface with multi-model AI access including OpenAI & Claude",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Superheroghost",
@@ -13728,7 +13423,7 @@
     "name": "Pollinations VisionAI",
     "url": "https://superheroghost.github.io/VisionAI/",
     "description": "Public AI image generator UI for Pollinations models; supports API keys",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "Superheroghost",
@@ -13749,7 +13444,7 @@
     "name": "Donjon.studio",
     "url": "https://donjon.studio/",
     "description": "AI-generated interactive adventures with evolving stories and images",
-    "language": null,
+    "language": "fr",
     "category": "writing",
     "platform": "web",
     "githubUsername": "PassepartoutFR",
@@ -13762,7 +13457,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6635",
     "approvedDate": "2025-12-30",
     "byop": false,
-    "requests24h": 71,
+    "requests24h": 264,
     "screenshotUrl": "https://media.pollinations.ai/48e5d4ab-1426-41e1-ab76-0acdae4821ce"
   },
   {
@@ -13783,7 +13478,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6551",
     "approvedDate": "2025-12-29",
     "byop": false,
-    "requests24h": 52,
+    "requests24h": 73,
     "screenshotUrl": "https://media.pollinations.ai/cb8dde72-a779-40a6-92d7-4a8afe35aa03"
   },
   {
@@ -13804,29 +13499,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6550",
     "approvedDate": "2025-12-29",
     "byop": false,
-    "requests24h": 10,
-    "screenshotUrl": "https://media.pollinations.ai/75ff9e01-299a-4d22-8b65-5abece343fe2"
-  },
-  {
-    "emoji": "📸",
-    "name": "IDPhotoGen",
-    "url": "https://id-photo-gen.thangoffer91.workers.dev",
-    "description": "Create professional ID photos in 30 seconds with AI",
-    "language": "en",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "thangoffer91",
-    "githubUserId": "141694618",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": "thangoffer91",
-    "other": null,
-    "submittedDate": "2025-12-28",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6506",
-    "approvedDate": "2025-12-28",
-    "byop": false,
     "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/fd28d2ed-6c62-40da-9887-5932fea592f3"
+    "screenshotUrl": "https://media.pollinations.ai/75ff9e01-299a-4d22-8b65-5abece343fe2"
   },
   {
     "emoji": "🖼️",
@@ -13888,7 +13562,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6504",
     "approvedDate": "2025-12-27",
     "byop": false,
-    "requests24h": 55,
+    "requests24h": 84,
     "screenshotUrl": "https://media.pollinations.ai/3713bbb7-2707-4ca5-8afb-fe12ac39470b"
   },
   {
@@ -13896,7 +13570,7 @@
     "name": "z-focus",
     "url": "https://wfsh-1054.github.io/z-focus/",
     "description": "AI art generator with LLM prompt optimization and multi-stage workflow",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "wfsh-1054",
@@ -13930,7 +13604,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6780",
     "approvedDate": "2025-12-27",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/e475f0d0-a562-45af-89ae-2b1b05c9a713"
   },
   {
@@ -13980,7 +13654,7 @@
     "name": "WindowNow",
     "url": "https://windownow.pgit.top",
     "description": "Fullscreen dynamic wallpaper that changes with time, weather & location",
-    "language": null,
+    "language": "zh-CN, en",
     "category": "image",
     "platform": "web",
     "githubUsername": "blackmady",
@@ -14001,7 +13675,7 @@
     "name": "AquaMind",
     "url": "https://aquamind.app",
     "description": "AI-powered aquarium management and fish care assistant",
-    "language": null,
+    "language": "en",
     "category": "business",
     "platform": "web",
     "githubUsername": "aquamind",
@@ -14018,32 +13692,11 @@
     "screenshotUrl": "https://media.pollinations.ai/2d48fbae-cfcc-4f69-aa90-ab80ef0fd7c8"
   },
   {
-    "emoji": "🌏",
-    "name": "nusanexus",
-    "url": "https://nusanexus.com",
-    "description": "AI-powered chat platform for Indonesian users",
-    "language": null,
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "techprocreative",
-    "githubUserId": "221657868",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-24",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6407",
-    "approvedDate": "2025-12-24",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/89191bca-e2fa-40fc-aa6d-3ef2e9e00560"
-  },
-  {
     "emoji": "🇳🇵",
     "name": "BCA Nepal",
     "url": "https://play.google.com/store/apps/details/BCA_Nepal_BCA_Notes_Course?id=com.bcanepal&hl=en_IN",
     "description": "BCA Nepal: Notes, courses, AI chat & PDF AI tools for smarter study",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "android",
     "githubUsername": "sushilbalami",
@@ -14085,7 +13738,7 @@
     "name": "AI Logo and Business Name Generators",
     "url": "https://bilgu.com/tools/ai-generated-names",
     "description": "Pollinations-powered AI logo + business name generators",
-    "language": null,
+    "language": "en",
     "category": "business",
     "platform": "web",
     "githubUsername": "m4jor101",
@@ -14098,29 +13751,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6421",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/4aa41441-fc7c-4974-a70b-5601da1208ef"
-  },
-  {
-    "emoji": "🖼️",
-    "name": "DOPPYai",
-    "url": "https://doppyai.ir",
-    "description": "AI mobile app that generates high-quality images from text prompts",
-    "language": "fa-IR",
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "hosi1996",
-    "githubUserId": "55681575",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-24",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6438",
-    "approvedDate": "2025-12-24",
-    "byop": false,
-    "requests24h": 47,
-    "screenshotUrl": "https://media.pollinations.ai/3bf2027a-7abe-4d1d-aacf-ce50f35a0dd6"
   },
   {
     "emoji": "🧩",
@@ -14140,7 +13772,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6424",
     "approvedDate": "2025-12-24",
     "byop": true,
-    "requests24h": 16,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/86198728-ff3c-4157-9acb-6074c2d86178"
   },
   {
@@ -14148,7 +13780,7 @@
     "name": "Realistic Text To Speech",
     "url": "https://huggingface.co/spaces/NihalGazi/Text-To-Speech-Unlimited",
     "description": "Text-to-speech with prompt-level emotion control.",
-    "language": null,
+    "language": "en",
     "category": "video_audio",
     "platform": "web",
     "githubUsername": "nihal-gazi",
@@ -14161,7 +13793,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6352",
     "approvedDate": "2025-12-22",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/fc30ed4b-dc15-4934-bf9b-e890eede8d8a"
   },
   {
@@ -14169,7 +13801,7 @@
     "name": "Vibed",
     "url": "https://vibed-pollinations.netlify.app",
     "description": "Vibe coding app with Pollinations AI assistant and OPFS project storage",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "aeosntw",
@@ -14190,7 +13822,7 @@
     "name": "Shaper AI",
     "url": "https://getshaper.app/",
     "description": "AI Chrome extension to edit pages, chat, write, and summarize PDFs",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "browser-ext",
     "githubUsername": "stanica",
@@ -14203,7 +13835,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6367",
     "approvedDate": "2025-12-22",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/16e477c7-3e23-4a2b-bd8f-fbdb12b033de"
   },
   {
@@ -14211,7 +13843,7 @@
     "name": "Multi Image Generator",
     "url": "https://perchance.org/multi-image-generator",
     "description": "Generate images via image-to-image and simultaneous multi-model requests to compare outputs across multiple models.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "itzGlitch-AS",
@@ -14224,36 +13856,15 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6331",
     "approvedDate": "2025-12-22",
     "byop": true,
-    "requests24h": 16,
-    "screenshotUrl": "https://media.pollinations.ai/f043f7fc-a465-473d-b106-5f250a1ec597"
-  },
-  {
-    "emoji": "🛠️",
-    "name": "BhaujAI",
-    "url": "https://bhaujai.cc",
-    "description": "Automate up to 70% of routine tasks for creators or businesses using AI with integrations across tools and apps; MVP in beta.",
-    "language": null,
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "royalashu4u",
-    "githubUserId": "71541701",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-12-22",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/6324",
-    "approvedDate": "2025-12-22",
-    "byop": false,
     "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/bfee079a-4a6a-47f1-9a67-223da9a6cbd9"
+    "screenshotUrl": "https://media.pollinations.ai/f043f7fc-a465-473d-b106-5f250a1ec597"
   },
   {
     "emoji": "💬",
     "name": "AI Chat Studio",
     "url": null,
     "description": "Provide a local desktop AI chat with multimodal attachments, in-chat image generation, isolated project file management, saved chats with export, and streaming responses.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "api",
     "githubUsername": "Universe-shifting",
@@ -14274,7 +13885,7 @@
     "name": "Imgoo",
     "url": "https://imgoo.netlify.app/",
     "description": "Generate custom images through a fast web UI for creators seeking non-stock or highly specific visuals.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "redythacker-cyber",
@@ -14295,7 +13906,7 @@
     "name": "TeleChars AI",
     "url": "https://extras.marcosfrg.x10.mx",
     "description": "Plataforma para crear personajes IA personalizados en Telegram. Mirror: telecharsai.byethost14.com",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "MarcosFRG",
@@ -14308,7 +13919,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5660",
     "approvedDate": "2025-12-20",
     "byop": false,
-    "requests24h": 595,
+    "requests24h": 1127,
     "screenshotUrl": "https://media.pollinations.ai/d1609b17-46f2-40d2-a22e-c4984f1db0cf"
   },
   {
@@ -14316,7 +13927,7 @@
     "name": "Nosde Space",
     "url": "https://www.nosde.space/",
     "description": "Provide an all-in-one AI platform for creating images, videos, text, and audio aimed at creators, professionals, and digital businesses.",
-    "language": null,
+    "language": "pt-BR",
     "category": "chat",
     "platform": "web",
     "githubUsername": "nosdeedsonofc",
@@ -14337,7 +13948,7 @@
     "name": "Discord Bot Tutorial",
     "url": null,
     "description": "Guide developers through building Discord bots with Pollinations.ai covering text generation with context, image and voice/TTS generation, error handling, and rate limit best practices.",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "discord",
     "githubUsername": "Tolerable",
@@ -14358,7 +13969,7 @@
     "name": "TuffMeter",
     "url": "https://tuffmeter.netlify.app/",
     "description": "A humorous AI tool that analyzes uploaded videos to rate your aura.",
-    "language": null,
+    "language": "en",
     "category": "video_audio",
     "platform": "web",
     "githubUsername": "VearyTry",
@@ -14379,7 +13990,7 @@
     "name": "NullVector",
     "url": "https://discord.com/oauth2/authorize?client_id=1450613065069494423&permissions=8&integration_type=0&scope=applications.commands+bot",
     "description": "Route Discord messages to appropriate AI models based on intent, maintain conversational context in DMs and servers, and offer optional transparent reasoning views.",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "discord",
     "githubUsername": "CloudCompile",
@@ -14392,7 +14003,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6100",
     "approvedDate": "2025-12-16",
     "byop": false,
-    "requests24h": 40,
+    "requests24h": 124,
     "screenshotUrl": "https://media.pollinations.ai/6822822c-f92b-451f-a078-741391957aad"
   },
   {
@@ -14400,7 +14011,7 @@
     "name": "Northpolelibrary",
     "url": "https://northpolelibrary.eu",
     "description": "Personalized AI-generated Christmas storybooks for children",
-    "language": null,
+    "language": "hu",
     "category": "writing",
     "platform": "web",
     "githubUsername": "bzddbz",
@@ -14421,7 +14032,7 @@
     "name": "pollinations.ai Codex",
     "url": "https://marketplace.visualstudio.com/items?itemName=pollinations-ai-codex.pollinations-like-ai",
     "description": "Provides AI-assisted coding features in Visual Studio Code using Pollinations.ai APIs for code completion, suggestions, and related tooling.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "helpurselfreturn",
@@ -14442,7 +14053,7 @@
     "name": "ToneShift AI",
     "url": "https://toneshift-ai.lovable.app/",
     "description": "Rewrites input text into selectable emotional tones using the Pollinations LLM API and returns tone-adjusted outputs via a backend endpoint.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "UstaDeveloper",
@@ -14463,7 +14074,7 @@
     "name": "AI Food Guide and Track Calories",
     "url": "https://nutri.selfhost.io.vn/",
     "description": "Provides AI-powered nutrition guidance and calorie tracking in a web application with food analysis and logging features.",
-    "language": null,
+    "language": "vi",
     "category": "business",
     "platform": "web",
     "githubUsername": "newnol",
@@ -14484,7 +14095,7 @@
     "name": "BinaryPH RSS AI",
     "url": "https://binary.ph/posts/",
     "description": "A WordPress plugin that transforms RSS feed items into complete blog posts.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "wordpress",
     "githubUsername": "amin-IT",
@@ -14497,7 +14108,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5965",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/340c124e-1791-4786-b17a-38189827bc0c"
   },
   {
@@ -14505,7 +14116,7 @@
     "name": "ChimeraStudio",
     "url": null,
     "description": "Provides a client-side sandbox for testing Pollinations.ai image generation, computer vision analysis, and editing while storing API keys locally in the browser.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "migueland94",
@@ -14526,7 +14137,7 @@
     "name": "Imagly AI",
     "url": "https://imaglyai.web.app/",
     "description": "Generates images and AI artwork via a web interface using image generation models and tools for creating and exporting visuals.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "Eze-ebube",
@@ -14539,7 +14150,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4914",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 132,
+    "requests24h": 145,
     "screenshotUrl": "https://media.pollinations.ai/7f997220-5f6a-4eb2-96cf-c8c55bda287e"
   },
   {
@@ -14547,7 +14158,7 @@
     "name": "imgs_ai_bot",
     "url": "https://t.me/imgs_ai_bot",
     "description": "Operates a Telegram bot that generates images using AI models and returns results directly in chat.",
-    "language": null,
+    "language": "ru",
     "category": "bots",
     "platform": "telegram",
     "githubUsername": "lwakis",
@@ -14560,7 +14171,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5373",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 40,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/ea338ed0-0a86-4929-9008-989d9325a915"
   },
   {
@@ -14568,7 +14179,7 @@
     "name": "DnD Character Sheet Helper",
     "url": "https://rkdn.app/dnd",
     "description": "Create D&D character sheets with AI-generated character visuals.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "ArcadianComp",
@@ -14589,7 +14200,7 @@
     "name": "Kinexus",
     "url": "https://tin2tin.github.io/Kinexus/",
     "description": "Create cinematic choice-based narrative games, interactive fiction, and graphic novels using a zero-code editor with styling and export features.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "tin2tin",
@@ -14610,7 +14221,7 @@
     "name": "Nikke-DB Story/Roleplaying Generator",
     "url": "https://nikke-db.pages.dev/",
     "description": "An interactive story and roleplay generator for Goddess of Victory: NIKKE.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "rhystic1",
@@ -14631,7 +14242,7 @@
     "name": "Chat AI",
     "url": "https://t.me/Chat2qai_bot",
     "description": "Telegram bot for AI chat and image generation powered by Pollinations API",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "telegram",
     "githubUsername": "Alhmam",
@@ -14652,7 +14263,7 @@
     "name": "AI Story Illustrator",
     "url": "https://soft-cucurucho-6758e7.netlify.app/",
     "description": "Write storybook scenes and generate illustrations with AI.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "KAmaL-senpai",
@@ -14673,7 +14284,7 @@
     "name": "️ CHRONOS - Time Machine",
     "url": null,
     "description": "Select any location and year on a 3D globe to generate historically informed scene images and streaming first-person narrative descriptions.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "api",
     "githubUsername": "yvr98",
@@ -14694,13 +14305,13 @@
     "name": "️ Content Auto Manager",
     "url": null,
     "description": "Automate WordPress content production from topic ideation to publishing using LLMs, task scheduling, vector matching, and Pollinations-based text and image generation.",
-    "language": null,
+    "language": "zh-CN",
     "category": "writing",
     "platform": "wordpress",
     "githubUsername": "pptt121212",
     "githubUserId": "130744635",
     "repositoryUrl": "https://github.com/pptt121212/content-auto-manager",
-    "repositoryStars": 38,
+    "repositoryStars": 39,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-11-02",
@@ -14715,7 +14326,7 @@
     "name": "Aqua AI Generator",
     "url": "https://top.gg/bot/1026133323023654932",
     "description": "Provide free Discord image generation across multiple models with custom aspect ratios, reference-image support, and remixing, including Pollinations-backed models.",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "web",
     "githubUsername": "shaqkao1206",
@@ -14736,7 +14347,7 @@
     "name": "Pookie AI",
     "url": "https://pookieai.web.app/",
     "description": "Design and deploy customizable virtual characters with personalities, backstories, and speech patterns for context-aware dialogues via the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "shantoislamdev",
@@ -14757,7 +14368,7 @@
     "name": "Cinepoca",
     "url": "https://cinepoca.com.br",
     "description": "Generate AI-driven movie content including blog posts and custom imagery and automate social media reels, with human review to verify accuracy.",
-    "language": null,
+    "language": "pt-BR",
     "category": "video_audio",
     "platform": "web",
     "githubUsername": "victorchiq",
@@ -14778,7 +14389,7 @@
     "name": "Ecoverse AI",
     "url": "https://ecoverse.cc",
     "description": "Identify and classify waste from user photos using multi-model analysis and Pollinations models, and return disposal guidance.",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "web",
     "githubUsername": "achyuthhq",
@@ -14799,7 +14410,7 @@
     "name": "Flux AI",
     "url": "https://koy.xx.kg/",
     "description": "Provide adaptive AI image generation hosted on Cloudflare Workers.",
-    "language": null,
+    "language": "zh-TW, en",
     "category": "image",
     "platform": "web",
     "githubUsername": "kinai9661",
@@ -14812,7 +14423,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5662",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 15,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/fa2f9a7d-c7cd-42bd-a81f-0cd349c11c1e"
   },
   {
@@ -14820,7 +14431,7 @@
     "name": "Gemini ai telegram-bot",
     "url": "https://t.me/index_bot",
     "description": "Provide a Telegram bot that uses Gemini AI for automated messaging and interactions.",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "telegram",
     "githubUsername": "mosavy",
@@ -14833,7 +14444,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5640",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 62,
+    "requests24h": 83,
     "screenshotUrl": "https://media.pollinations.ai/640310ef-1c69-4903-9f40-a6fbfbdaab47"
   },
   {
@@ -14841,7 +14452,7 @@
     "name": "Godville Heroic Moment",
     "url": null,
     "description": "Generate a periodic 'Heroic Moment' block on Godville hero pages with an AI image and witty quote based on the hero's diary; Firefox extension active when site tab is open.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "browser-ext",
     "githubUsername": "migueland94",
@@ -14862,7 +14473,7 @@
     "name": "LineSketch AI",
     "url": "https://linesketch-muse.lovable.app/",
     "description": "Convert prompts into black-and-white line-art illustrations with selectable styles and aspect ratios, returning downloadable images via the Pollinations image API.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "ArslanDevelop",
@@ -14875,7 +14486,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5647",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/4ec74410-fa2c-4eaa-9bc2-174a7a0f8708"
   },
   {
@@ -14883,7 +14494,7 @@
     "name": "SimplifyMind AI (ELI5)",
     "url": "https://simplify-eloquent-ai.lovable.app/",
     "description": "Explain complex questions in child-friendly ELI5 style using the Pollinations LLM, returning concise metaphor-based explanations via a web chat interface.",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "web",
     "githubUsername": "CompaDeveloper",
@@ -14904,7 +14515,7 @@
     "name": "ViralFlow AI",
     "url": "https://fabioarieira.com/viralflow",
     "description": "Auto-generates cinematic viral videos from a theme (script, TTS, visuals).",
-    "language": null,
+    "language": "pt-BR",
     "category": "video_audio",
     "platform": "web",
     "githubUsername": "FabioArieiraBaia",
@@ -14925,7 +14536,7 @@
     "name": "Aqua Application Programming Interface",
     "url": "https://aquadevs.com/",
     "description": "Learning project API with user tracking, backend checks, and docs soon.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "kiskreforev",
@@ -14938,7 +14549,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5588",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 49,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/78a3fe4a-fa5c-45a3-91c3-56b8b04a01f1"
   },
   {
@@ -14946,7 +14557,7 @@
     "name": "Debootai",
     "url": "https://deboott.puter.site/",
     "description": "AI chat playground with uploads, web search, login, and chat history.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Chess-Base",
@@ -14967,7 +14578,7 @@
     "name": "MindFlow",
     "url": "https://note.aegis-plus.my.id/",
     "description": "AI second-brain notes that turns messy thoughts into structured insights.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Aegis-plus",
@@ -14980,7 +14591,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5601",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 26,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/5c43acb1-a348-4853-b9d1-36428024607a"
   },
   {
@@ -14988,7 +14599,7 @@
     "name": "SAGE",
     "url": "https://starlightguardians.com",
     "description": "Open-source AI orchestration suite for multimedia generation, even Android.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "sebastianpw",
@@ -15009,7 +14620,7 @@
     "name": "Synapse",
     "url": "https://chat.aegis-plus.my.id",
     "description": "Multi-model AI chat app with streaming, sessions, uploads, and Markdown.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Aegis-plus",
@@ -15022,7 +14633,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5600",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 26,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/f8da82d9-cd41-4f95-bfdb-bfa677a9bf99"
   },
   {
@@ -15030,7 +14641,7 @@
     "name": "Noir Ink Tattoo Studio",
     "url": "https://noir-ink.netlify.app/",
     "description": "Monochrome tattoo studio with AI designs, booking, and learning resources.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "Jairedddy",
@@ -15051,7 +14662,7 @@
     "name": "Xibe-chat-cli",
     "url": "https://pypi.org/project/xibe-chat-cli/",
     "description": "Terminal-based AI chat + image generation with a rich-text TUI.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "library",
     "githubUsername": "iotserver24",
@@ -15064,7 +14675,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5490",
     "approvedDate": "2025-11-30",
     "byop": false,
-    "requests24h": 9,
+    "requests24h": 46,
     "screenshotUrl": "https://media.pollinations.ai/1056f386-9978-40d2-b914-52f0927fb2f3"
   },
   {
@@ -15072,7 +14683,7 @@
     "name": "Prompt Vision",
     "url": "https://promptvision.jagrut.me",
     "description": "Create, share, and discover AI images with prompt suggestions and search.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "jagrut-bhole",
@@ -15093,7 +14704,7 @@
     "name": "SRT Translator CLI",
     "url": null,
     "description": "Translates SRT subtitles via AI while preserving timing.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "cli",
     "githubUsername": "smarques",
@@ -15114,7 +14725,7 @@
     "name": "PDF-to-Speech",
     "url": null,
     "description": "Convert PDFs into natural-sounding audio with an open-source Python tool",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "api",
     "githubUsername": "NeoArt3",
@@ -15135,7 +14746,7 @@
     "name": "ImaGenz",
     "url": "https://imagenz.vercel.app",
     "description": "Free, fast image+text generation with community feeds across platforms",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "iamkavy47",
@@ -15156,7 +14767,7 @@
     "name": "AI Image-to-Prompt Generator",
     "url": "https://imagetoprompt.netlify.app",
     "description": "Upload an image to get detailed prompts for recreating similar visuals",
-    "language": null,
+    "language": "zh-CN",
     "category": "build",
     "platform": "web",
     "githubUsername": "mehediprofilebd-alt",
@@ -15173,32 +14784,11 @@
     "screenshotUrl": "https://media.pollinations.ai/a5d79deb-30dd-453c-83e8-a4dbcb94d0f2"
   },
   {
-    "emoji": "🧠",
-    "name": "ReThink AI",
-    "url": "https://rethink.web.id",
-    "description": "Indonesia-focused AI platform with custom LLM + Pollinations integration",
-    "language": "id",
-    "category": "chat",
-    "platform": "web",
-    "githubUsername": "Djongoks",
-    "githubUserId": "113566110",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-10-28",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/4832",
-    "approvedDate": "2025-10-28",
-    "byop": false,
-    "requests24h": 1,
-    "screenshotUrl": "https://media.pollinations.ai/7854897c-2446-48d6-b30d-3174fc296318"
-  },
-  {
     "emoji": "🔄",
     "name": "Opposite Prompt Generator",
     "url": "https://opposite-prompt-generator.pollinations.ai",
     "description": "Flip any prompt to its semantic opposite and generate the matching image",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "voodoohop",
@@ -15211,7 +14801,7 @@
     "issueUrl": null,
     "approvedDate": "2025-10-26",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 298,
     "screenshotUrl": "https://media.pollinations.ai/c0a95e1b-1525-4f34-9f16-24094c73b5d1"
   },
   {
@@ -15219,7 +14809,7 @@
     "name": "Better Call Us: Autonomous AI Instagram System",
     "url": "https://www.instagram.com/bettercallus.io/?hl=en",
     "description": "An Instagram content automation system powered by Pollinations.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "muzz404",
@@ -15240,7 +14830,7 @@
     "name": "Magerun AI",
     "url": "https://preview--prompt-to-vision-18.lovable.app/",
     "description": "Improve image prompts, forward them to Pollinations AI, and select the number of images to generate.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "lilfin1",
@@ -15261,7 +14851,7 @@
     "name": "PollinVerse",
     "url": "https://pollinverse.netlify.app",
     "description": "Generate responsive Tailwind CSS HTML from natural language interface descriptions to produce ready-to-use code snippets for rapid prototyping.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "VearyTry",
@@ -15282,7 +14872,7 @@
     "name": "SHICoPIC",
     "url": "https://shicopic.netlify.app",
     "description": "An AI-powered image generation tool with a simple interface.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "Shervinuri",
@@ -15303,7 +14893,7 @@
     "name": "SpecAI",
     "url": "https://specai.pages.dev",
     "description": "Provide an interactive UI for Pollinations AI that generates images with custom resolutions and reproducible seeds.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "spectre365",
@@ -15324,7 +14914,7 @@
     "name": "Blossom-ai (Python SDK)",
     "url": "https://pypi.org/project/eclips-blossom-ai/",
     "description": "Provide a Python SDK for Pollinations AI that simplifies API calls, prompt handling, and image generation in Python projects.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "PrimeevolutionZ",
@@ -15345,7 +14935,7 @@
     "name": "Pollinations PR Summarizer ️",
     "url": null,
     "description": "Analyze pull requests with the Pollinations Text API to generate summaries, detect risk and breaking changes, and post labeled analysis and diff stats as PR comments.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "CloudCompile",
@@ -15358,7 +14948,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4718",
     "approvedDate": "2025-10-22",
     "byop": false,
-    "requests24h": 40,
+    "requests24h": 124,
     "screenshotUrl": "https://media.pollinations.ai/6ca1c4ac-5623-4192-92ba-f6a3e7bb13d0"
   },
   {
@@ -15366,7 +14956,7 @@
     "name": "ioswbot",
     "url": "https://t.me/ioswbot",
     "description": "Provide a Telegram bot offering ChatGPT-5 and Gemini 2.5 access, GPT-based audio and image editing/generation, search, and support for text, photo, and audio files in Russian and English.",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "telegram",
     "githubUsername": "swtomas",
@@ -15387,7 +14977,7 @@
     "name": "Swapna Shastra Dream Decoder",
     "url": "https://t.me/Swapnashastra_dream_bot",
     "description": "Interpret dreams using Swapna Shastra and mythology, produce spiritual explanations, and generate Pollinations AI visual dream cards for sharing.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "telegram",
     "githubUsername": "ShashankNagaraj",
@@ -15404,32 +14994,11 @@
     "screenshotUrl": "https://media.pollinations.ai/bb50c39e-d753-41c6-b7af-5b50de32b476"
   },
   {
-    "emoji": "🌨",
-    "name": "FoilAI",
-    "url": "https://foilai.in/",
-    "description": "Generate images from text prompts using Pollinations AI via a web interface, offering free beta access without signup and no user data storage.",
-    "language": null,
-    "category": "image",
-    "platform": "web",
-    "githubUsername": "aryanshrai3",
-    "githubUserId": "236373619",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-10-20",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/4622",
-    "approvedDate": "2025-10-20",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/bb9604d7-e5d0-4737-a66a-87d2275160f9"
-  },
-  {
     "emoji": "🌈",
     "name": "BeeCoder",
     "url": null,
     "description": "Enable VSCode Copilot to connect to Pollinations AI for integrated image and generative assistance within the editor.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "cemalgnlts",
@@ -15442,7 +15011,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4613",
     "approvedDate": "2025-10-19",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 33,
     "screenshotUrl": "https://media.pollinations.ai/3801554b-a512-4e4d-8f71-aed55ac7b3e2"
   },
   {
@@ -15450,7 +15019,7 @@
     "name": "Green Hope AI",
     "url": "https://aithumbnails.vercel.app/",
     "description": "Generate AI thumbnails and then edit text, positioning, styles, and effects without recreating the image.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "Mustafiz82",
@@ -15463,7 +15032,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4587",
     "approvedDate": "2025-10-16",
     "byop": false,
-    "requests24h": 11,
+    "requests24h": 14,
     "screenshotUrl": "https://media.pollinations.ai/420f5f87-2f9e-410e-b724-12a509ffebd3"
   },
   {
@@ -15471,7 +15040,7 @@
     "name": "Pollinations AI Samples",
     "url": "https://pollinations.godsbee.com/",
     "description": "Demonstrates Pollinations AI features including text-to-image, animation storyboards, code and web page generation, chat and speech translation, text-to-speech and image-to-text vision analysis.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "nyr-github",
@@ -15484,7 +15053,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4586",
     "approvedDate": "2025-10-16",
     "byop": false,
-    "requests24h": 3816,
+    "requests24h": 5910,
     "screenshotUrl": "https://media.pollinations.ai/e5ac195c-cdf1-44ab-81cf-4d74faca1ae5"
   },
   {
@@ -15492,7 +15061,7 @@
     "name": "VX Project",
     "url": "https://vortexcm.github.io/VorteX-Res/",
     "description": "Hosts the VX project repository placeholder with no additional public description.",
-    "language": null,
+    "language": "fa",
     "category": "chat",
     "platform": "web",
     "githubUsername": "lfni",
@@ -15513,7 +15082,7 @@
     "name": "AI Answers Forms",
     "url": "https://chromewebstore.google.com/detail/fbiccefbjbnnieofnomocjdebppanndo",
     "description": "Provides AI-generated answers for questions on Google Forms via a Chrome extension to assist form responses.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "browser-ext",
     "githubUsername": "Maniii97",
@@ -15534,7 +15103,7 @@
     "name": "DebAI",
     "url": "https://t.me/DebAI_bot",
     "description": "Uses Pollinations AI to power a small Telegram bot for handling user requests; the bot is under development and the project seeks higher API limits.",
-    "language": null,
+    "language": "ru",
     "category": "bots",
     "platform": "telegram",
     "githubUsername": "FROLIAN-cell",
@@ -15547,7 +15116,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4530",
     "approvedDate": "2025-10-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/0db64b8b-58d6-4f7b-9a9c-8b2e0412b843"
   },
   {
@@ -15555,7 +15124,7 @@
     "name": "Artificial Intelligence Orcho",
     "url": "https://play.google.com/store/apps/details?id=orcho.artificialintelligence",
     "description": "Provides mobile chat and image generation features in a compact app.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "android",
     "githubUsername": "ricardoxd",
@@ -15576,7 +15145,7 @@
     "name": "Devil Summoner WIP",
     "url": "https://gamedemo-a65.pages.dev/",
     "description": "Uses procedural text prompts to develop characters and generate LLM-driven story and dialogue alongside combat and item generation mechanics.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "lenankamp",
@@ -15597,7 +15166,7 @@
     "name": "Scribe",
     "url": null,
     "description": "Provides a Markdown editor with rich/markdown/plain views, content management, Pollinations-generated header images, AI proofreading, and export tools.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "api",
     "githubUsername": "nadinev6",
@@ -15618,13 +15187,13 @@
     "name": "Map to Isometric Converter ️",
     "url": null,
     "description": "Convert 2D maps and images into isometric 3D representations using AI.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "AdityaTel89",
     "githubUserId": "101270144",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/map-to-isometric",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -15639,13 +15208,13 @@
     "name": "Product Packaging Designer",
     "url": null,
     "description": "Design custom product packaging with AI assistance.",
-    "language": null,
+    "language": "en",
     "category": "business",
     "platform": "api",
     "githubUsername": "prateekverma145",
     "githubUserId": "148776148",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/product-packaging-designer",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -15660,7 +15229,7 @@
     "name": "NeonSpark AI",
     "url": "https://neonspark-ai.web.app/",
     "description": "AI chat and image generation platform powered by Pollinations API",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "xyz271801",
@@ -15681,13 +15250,13 @@
     "name": "Virtual Makeup Try-On",
     "url": null,
     "description": "Try AI-generated makeup looks and get style recommendations in-browser",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "api",
     "githubUsername": "anmolsah",
     "githubUserId": "113588714",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/virtual-makeup",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -15702,13 +15271,13 @@
     "name": "AI Dungeon Master",
     "url": null,
     "description": "AI-run text RPG that improvises stories, quests, and character dialogue",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "api",
     "githubUsername": "codevector-2003",
     "githubUserId": "197366900",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -15723,7 +15292,7 @@
     "name": "Craftura AI",
     "url": "https://www.craftura.art/",
     "description": "Freemium AI image generator with adjustable styles and model settings",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "TusharSoni014",
@@ -15744,7 +15313,7 @@
     "name": "Anime Comic Movie",
     "url": "https://petersebring.com/showcase.php",
     "description": "Automated anime scene builder: characters + locations into comic-style shots",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "sebastianpw",
@@ -15766,20 +15335,20 @@
     "url": "https://sirius-cybernetics-elevator-challenge.pollinations.ai",
     "screenshotUrl": "https://media.pollinations.ai/caf95830-d507-420e-ae02-9b56d3da91ca",
     "description": "Quirky elevator game with real-time AI-generated encounters and replies",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/sirius-cybernetics-elevator-challenge",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
     "issueUrl": null,
     "approvedDate": "2025-10-02",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 298
   },
   {
     "emoji": "😼",
@@ -15787,20 +15356,20 @@
     "url": "https://catgpt.pollinations.ai/",
     "screenshotUrl": "https://media.pollinations.ai/93452f4a-fbdc-4bcf-b60b-401dddffb742",
     "description": "Ask a question, get a sassy AI-generated cat comic meme response",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/catgpt",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-05",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2284",
     "approvedDate": "2025-10-01",
     "byop": false,
-    "requests24h": 1
+    "requests24h": 298
   },
   {
     "emoji": "�",
@@ -15828,7 +15397,7 @@
     "name": "GenImage",
     "url": "https://genimage.runasp.net/",
     "description": "Simple text-to-image generator for creating visuals from prompts",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "artydev",
@@ -15849,7 +15418,7 @@
     "name": "Chad GPT",
     "url": "https://chadgpt0.vercel.app/",
     "description": "All-in-one generator for AI text, images, and audio in one interface",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "sawwqib",
@@ -15862,7 +15431,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4102",
     "approvedDate": "2025-09-21",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/bbe3169b-28c9-4c8a-9e0b-6ef5ad4e8a22"
   },
   {
@@ -15870,7 +15439,7 @@
     "name": "Strapick Chat",
     "url": "https://strapick-chat.vercel.app/",
     "description": "Minimal chat UI for interacting with Pollinations AI",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "mmojocoder",
@@ -15891,7 +15460,7 @@
     "name": "Prompt2Image",
     "url": "https://marketplace.visualstudio.com/items?itemName=MaazSaboowala.prompt2image-ai-generator",
     "description": "Generate images from text prompts inside VS Code, save outputs to the project's public or root folder, and call Pollinations.ai via the Command Palette.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "MaazS07",
@@ -15912,7 +15481,7 @@
     "name": "Mixbash.com ️",
     "url": "https://mixbash.com",
     "description": "Provide a unified UI to run AI models hosted on Pollinations, Fal, Replicate, Runpod, and Gemini using user API keys.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "jiajasper",
@@ -15933,7 +15502,7 @@
     "name": "StoryWeaver AI",
     "url": "https://storyweaver-ai-umber.vercel.app/",
     "description": "Generate illustrated storybooks as SVG using the Gamini model via the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "Karannn3011",
@@ -15954,7 +15523,7 @@
     "name": "unpkg.ai",
     "url": "https://unpkg.ai",
     "description": "Generate on-demand ESM JavaScript modules using LLMs and serve them via importable URLs.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "vgrichina",
@@ -15975,7 +15544,7 @@
     "name": "Imagen - AI Image Generator",
     "url": "https://altkriz.github.io/imagen/",
     "description": "Provide an open-source web interface to generate and manage AI images via the Pollinations.ai API with adjustable parameters and local history.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "altkriz",
@@ -16017,7 +15586,7 @@
     "name": "AI Agent Portal",
     "url": "https://agent.makululinux.com/",
     "description": "Orchestrate multi-agent workflows to build projects from a single prompt with specialized agents for architecture, coding, and QA plus TDD and Docker automation.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "raymerjacque",
@@ -16030,7 +15599,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3922",
     "approvedDate": "2025-08-31",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/bef13393-a96d-41da-9168-cfb6ea7f5543"
   },
   {
@@ -16038,7 +15607,7 @@
     "name": "iTouch",
     "url": "https://jordanpeteroliver.github.io/itouch/",
     "description": "A chat experience combining images and text.",
-    "language": null,
+    "language": "pt-BR",
     "category": "chat",
     "platform": "web",
     "githubUsername": "jordanpeteroliver",
@@ -16059,7 +15628,7 @@
     "name": "YooAI",
     "url": "https://yooai.co/",
     "description": "Provide integrated AI-Writer, AI-Video, and free Pollinations-based image generation that produces images from prompts without registration.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "5A59",
@@ -16080,7 +15649,7 @@
     "name": "Pollix AI",
     "url": "http://t.me/pollixrobot",
     "description": "A multilingual AI assistant for replies and image understanding.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "telegram",
     "githubUsername": "bladedev",
@@ -16101,7 +15670,7 @@
     "name": "EasyGen",
     "url": "https://easygenme.netlify.app/",
     "description": "Generate Mermaid diagrams and flowcharts from plain-language descriptions.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "Ellweb3",
@@ -16114,7 +15683,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3589",
     "approvedDate": "2025-08-11",
     "byop": false,
-    "requests24h": 50,
+    "requests24h": 47,
     "screenshotUrl": "https://media.pollinations.ai/ded5e7ff-fed4-47b6-b296-d0441f5b32bf"
   },
   {
@@ -16122,7 +15691,7 @@
     "name": "ExodusAI",
     "url": "https://api.whatsapp.com/send/?phone=6285150984232&text=Hi&type=phone_number&app_absent=0",
     "description": "WhatsApp chatbot powered by AI for conversational assistance",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "whatsapp",
     "githubUsername": "FIkriBotDev",
@@ -16135,29 +15704,8 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2041",
     "approvedDate": "2025-08-08",
     "byop": false,
-    "requests24h": 62,
+    "requests24h": 23,
     "screenshotUrl": "https://media.pollinations.ai/dc297e1f-2316-402f-a466-6dd8e4500692"
-  },
-  {
-    "emoji": "🛠",
-    "name": "aitoolbox.software ️",
-    "url": "https://aitoolbox.software/",
-    "description": "Provides an open-source collection of AI tools for productivity and creative tasks.",
-    "language": null,
-    "category": "writing",
-    "platform": "web",
-    "githubUsername": "huamanraj",
-    "githubUserId": "113578582",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-08-01",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/3400",
-    "approvedDate": "2025-08-05",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/ce2f4472-0635-4d69-b0fc-1df1d04c6a19"
   },
   {
     "emoji": "🤖",
@@ -16185,7 +15733,7 @@
     "name": "Visiora - Image Generation using AI",
     "url": "https://visiora-img.netlify.app/",
     "description": "Transforms text prompts into AI-generated images using multiple models, adjustable dimensions and seed control, with persistent local history and a responsive UI.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "Kandariarjun07",
@@ -16206,7 +15754,7 @@
     "name": "Evolve AI",
     "url": "https://evolve-ai-gamma.vercel.app/",
     "description": "Full-stack AI platform with chat, file management, authentication, and payment processing",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "chandankumarm55",
@@ -16227,7 +15775,7 @@
     "name": "Vizbo",
     "url": "https://vizboapp.com/",
     "description": "Creates AI-powered vision boards on mobile devices with tools for arranging images and ideas.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "itislynx",
@@ -16248,7 +15796,7 @@
     "name": "What is this?",
     "url": "https://whatisthis.pinkpixel.dev/",
     "description": "AI vision tool that identifies unknown objects from uploaded photos using Pollinations API",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "sizzlebop",
@@ -16269,7 +15817,7 @@
     "name": "Imagine Draw AI",
     "url": "https://imaginedrawai.vercel.app/",
     "description": "Generates images from text prompts in-browser with selectable styles and resolutions, no login or subscription required.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "techwithai-telugu",
@@ -16290,7 +15838,7 @@
     "name": "Berrry Computer",
     "url": "https://berrry.app",
     "description": "Creates tiny, self-contained web apps using AI.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "vgrichina",
@@ -16311,7 +15859,7 @@
     "name": "DeepSeek Prompt",
     "url": "https://www.deepseekprompt.top/",
     "description": "Provides free AI models while monetizing premium models such as gpt-image-1.",
-    "language": null,
+    "language": "zh-CN",
     "category": "chat",
     "platform": "web",
     "githubUsername": "new-xmon-df",
@@ -16332,7 +15880,7 @@
     "name": "Herramientas IA ️",
     "url": "https://proyectodescartes.org/descartescms/herramientas-ia",
     "description": "Publishes tools built with Pollinations.AI and the DescartesJS editor and links other community-created utilities.",
-    "language": null,
+    "language": "es",
     "category": "build",
     "platform": "web",
     "githubUsername": "Juanrivera126",
@@ -16345,7 +15893,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1294",
     "approvedDate": "2025-07-15",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/cf4c599d-ff84-4534-975f-c81de1525a14"
   },
   {
@@ -16353,7 +15901,7 @@
     "name": "EvilChat",
     "url": "https://altkriz.github.io/evilchat/",
     "description": "An AI chat interface with a dark design and smooth animations.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "altkriz",
@@ -16374,7 +15922,7 @@
     "name": "EzPromptla",
     "url": "https://ezpromptla.netlify.app",
     "description": "A visual prompt builder and creative partner.",
-    "language": null,
+    "language": "ms",
     "category": "writing",
     "platform": "web",
     "githubUsername": "wanbakar2",
@@ -16395,7 +15943,7 @@
     "name": "Querynator5000",
     "url": "https://querynator5000.onrender.com/",
     "description": "Enables natural-language-to-SQL queries and in-browser database exploration with manual query support, multi-database handling, schema creation, and local persistence.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "SuperShivam5000",
@@ -16416,7 +15964,7 @@
     "name": "SocialScribe",
     "url": "https://socialscribe.pages.dev/",
     "description": "Assists writing in-browser via a Chrome extension by fixing grammar, rewriting text, and generating social media content tailored by tone, platform, and language.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "browser-ext",
     "githubUsername": "sh20raj",
@@ -16437,7 +15985,7 @@
     "name": "UltimaX Intelligence",
     "url": "https://umint-ai.hf.space",
     "description": "AI assistant platform hosted on HuggingFace Spaces with text generation capabilities",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "hadadarjt",
@@ -16458,7 +16006,7 @@
     "name": "云渺仙途：凡尘篇",
     "url": "https://ai-game.jkai.de/",
     "description": "《云渺仙途：凡尘篇》是一个由 AI 驱动的文字修仙沙盒游戏。An AI-driven text cultivation sandbox game.",
-    "language": null,
+    "language": "zh-CN",
     "category": "games",
     "platform": "web",
     "githubUsername": "ZhjGo",
@@ -16479,7 +16027,7 @@
     "name": "AIStorium",
     "url": "https://aistorium.vercel.app/",
     "description": "Generate dynamic stories, images, and audio using the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "artegoser",
@@ -16500,7 +16048,7 @@
     "name": "Nuvole AI",
     "url": "https://routinehub.co/shortcut/18431/",
     "description": "Run AI prompts via an iOS/iPadOS Shortcut without installing extra apps or entering API keys.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "ios",
     "githubUsername": "MIKL08",
@@ -16521,7 +16069,7 @@
     "name": "Prompt Explorer",
     "url": "https://play.google.com/store/apps/details?id=com.ismafly.promptexploratorapp",
     "description": "Explore AI art prompts, browse Lexica and Civitai examples, and generate images with the Pollinations API while saving favorites and history.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "android",
     "githubUsername": "ismailazdad",
@@ -16534,7 +16082,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2961",
     "approvedDate": "2025-07-12",
     "byop": false,
-    "requests24h": 24,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/eb0e7d0a-449c-4782-8166-c5d4b308ca14"
   },
   {
@@ -16542,7 +16090,7 @@
     "name": "MCP-B",
     "url": "https://mcp-b.ai",
     "description": "Browser extension exposing website functionality as Model Context Protocol tools for AI agents",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "browser-ext",
     "githubUsername": "MiguelsPizza",
@@ -16563,7 +16111,7 @@
     "name": "VOID.AI",
     "url": "https://thevoidai.vercel.app/",
     "description": "An AI mentor and productivity assistant.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Ajay-Dhakad",
@@ -16584,7 +16132,7 @@
     "name": "Ai Studio",
     "url": "https://ai-studio-pollinations.netlify.app/",
     "description": "Provide a local desktop AI chat with multimodal attachments, in-chat image generation, project workspace file management, and exportable saved conversations.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "sabbirhossainc",
@@ -16605,7 +16153,7 @@
     "name": "Interactive GeoMap ️",
     "url": "https://interactive-geomap.vercel.app",
     "description": "AI-powered geography insights using the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "web",
     "githubUsername": "argyrisAEK",
@@ -16618,7 +16166,7 @@
     "issueUrl": null,
     "approvedDate": "2025-07-05",
     "byop": false,
-    "requests24h": 13,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/ab42ed5e-562b-4f3b-9165-73940ce86589"
   },
   {
@@ -16626,7 +16174,7 @@
     "name": "PairFusion",
     "url": "https://pair-fusion.vercel.app/",
     "description": "A real-time collaborative IDE powered by AI.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "auraticabhi",
@@ -16647,7 +16195,7 @@
     "name": "YankoviC",
     "url": null,
     "description": "Interpret YankoviC programs in JavaScript with C/C++-style syntax, including the Y-IDE Accordion editor with Pollinations-powered autocomplete and chat assistant.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "Sweaterdog",
@@ -16668,7 +16216,7 @@
     "name": "J.A.R.V.I.S.",
     "url": "https://huggingface.co/spaces/hadadrjt/ai",
     "description": "Iron Man–style AI chat with context plus image and audio generation",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "hadadarjt",
@@ -16689,7 +16237,7 @@
     "name": "️ Time Travel Selfie Portal",
     "url": "https://selfie-time-traveler-portal.vercel.app",
     "description": "Remove selfie background, drop into an era, and get a funny bio",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "argyrisAEK",
@@ -16702,7 +16250,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2362",
     "approvedDate": "2025-06-13",
     "byop": false,
-    "requests24h": 13,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/c94aeea7-bb91-41f4-96c6-1042eb5292ab"
   },
   {
@@ -16710,7 +16258,7 @@
     "name": "StoryBolt",
     "url": "https://storybolt.vercel.app/",
     "description": "Create illustrated stories, publish them, and listen or download books",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "sahilalamgir",
@@ -16731,7 +16279,7 @@
     "name": "Image Creator",
     "url": "https://saepulwap.blogspot.com/p/flux-image-creator.html",
     "description": "Generate images from multilingual prompts with automatic translation",
-    "language": null,
+    "language": "id",
     "category": "image",
     "platform": "web",
     "githubUsername": "nosdeedsonofc",
@@ -16786,7 +16334,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2224",
     "approvedDate": "2025-06-03",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/3d09f8a8-bca8-4485-9ea5-b7bf5da77f24"
   },
   {
@@ -16794,7 +16342,7 @@
     "name": "ImageEditer",
     "url": "https://t.me/ImageEditer_bot",
     "description": "Edit and enhance images using Pollinations-powered generative tools and presets.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "telegram",
     "githubUsername": "Itachi-1824",
@@ -16815,7 +16363,7 @@
     "name": "Comeback AI",
     "url": "https://comeback-ai.pinkpixel.dev",
     "description": "Transform mean comments into witty comebacks across ten personas with audio synthesis via pollinations openai-audio and Whisper transcription.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "sizzlebop",
@@ -16836,7 +16384,7 @@
     "name": "LLM7.io",
     "url": "https://llm7.io",
     "description": "Provide a free, open multimodal AI platform with Pollinations text generation backend, experimental search tools, and public usage metrics.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "chigwell",
@@ -16849,7 +16397,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2164",
     "approvedDate": "2025-05-30",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/fa88ffc4-d331-4c88-b84e-3b49d680c2e0"
   },
   {
@@ -16857,7 +16405,7 @@
     "name": "PixPal",
     "url": "https://pixpal.chat",
     "description": "Analyze, edit, and generate images, build websites from screenshots, create 3D games, and draft blog posts within a single chat interface.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "andreaspaps",
@@ -16870,7 +16418,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2146",
     "approvedDate": "2025-05-30",
     "byop": false,
-    "requests24h": 516,
+    "requests24h": 326,
     "screenshotUrl": "https://media.pollinations.ai/d41c06e3-ee9b-4a72-ac24-48e60a227367"
   },
   {
@@ -16878,7 +16426,7 @@
     "name": "️ AI Content Describer",
     "url": null,
     "description": "Extend NVDA with multimodal AI to describe images, UI controls, diagrams, and real-world objects for users with visual impairments via the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "cartertemm",
@@ -16899,7 +16447,7 @@
     "name": "DreamHer",
     "url": "https://dreamher.vercel.app/",
     "description": "AI companion image generator based on questionnaire preferences",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "creation22",
@@ -16920,7 +16468,7 @@
     "name": "AI Code Generator",
     "url": "https://codegen.on.websim.com/",
     "description": "Generate source code from natural-language descriptions and selected languages, with modes for generation, explanation, and review and multiple model choices.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "Miencraft2",
@@ -16941,7 +16489,7 @@
     "name": "️ Windows Walker",
     "url": null,
     "description": "Control Windows via natural language or voice commands translated into PowerShell actions, using a ChatGPT-backed engine and Electron UI.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "windows",
     "githubUsername": "supershivam",
@@ -16962,7 +16510,7 @@
     "name": "Emojiall AI Drawing Platform",
     "url": "https://art.emojiall.com",
     "description": "Provide emoji text translators, recommenders, chatbots, and an AI drawing subdomain for user-guided image generation using the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "James-Qi",
@@ -16975,7 +16523,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2020",
     "approvedDate": "2025-05-20",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/295df102-d06b-422c-bfdc-1f3350742184"
   },
   {
@@ -16983,7 +16531,7 @@
     "name": "MASala",
     "url": null,
     "description": "Multi-agent AI recipe generator that creates personalized meals from available ingredients",
-    "language": null,
+    "language": "en",
     "category": "business",
     "platform": "api",
     "githubUsername": "Naman009",
@@ -17004,7 +16552,7 @@
     "name": "Favorite Puzzles",
     "url": "https://radbrothers.com/games/favorite-puzzles/",
     "description": "Offer jigsaw puzzles with HD images, adjustable difficulty from 6 to 1200 pieces, classic and realistic modes, photo-based puzzle creation, and neural-network generated puzzles.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "radbrothers",
@@ -17017,7 +16565,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1998",
     "approvedDate": "2025-05-19",
     "byop": false,
-    "requests24h": 23,
+    "requests24h": 20,
     "screenshotUrl": "https://media.pollinations.ai/804998cd-180a-46dc-a30c-516ba8118615"
   },
   {
@@ -17025,13 +16573,13 @@
     "name": "Match-cut video ai",
     "url": null,
     "description": "Generate match-cut style videos from text prompts, use a Pollinations LLM for context expansion, and provide API access for integration.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "lrdcxdes",
     "githubUserId": "83734728",
     "repositoryUrl": "https://github.com/lrdcxdes/text-match-cut",
-    "repositoryStars": 25,
+    "repositoryStars": 23,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-18",
@@ -17046,7 +16594,7 @@
     "name": "AI Chat",
     "url": "https://aichat.narendradwivedi.org",
     "description": "A Windows desktop application for working with multiple AI models.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "desktop",
     "githubUsername": "narendradwivedi",
@@ -17067,7 +16615,7 @@
     "name": "AI YouTube Shorts Generator",
     "url": null,
     "description": "Generate short vertical videos for YouTube Shorts from prompts using AI-driven image, video, and audio tools.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "dhruvsharma777",
@@ -17088,13 +16636,13 @@
     "name": "tgpt",
     "url": null,
     "description": "Use AI from the terminal with a cross-platform command-line interface for local or remote model access.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "cli",
     "githubUsername": "aandrew-me",
     "githubUserId": "66430340",
     "repositoryUrl": "https://github.com/aandrew-me/tgpt",
-    "repositoryStars": 3268,
+    "repositoryStars": 3273,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-12-28",
@@ -17109,7 +16657,7 @@
     "name": "Imagemate AI",
     "url": "https://play.google.com/store/apps/details?id=com.madameweb.imgmate",
     "description": "Generate images from text prompts using the Pollinations AI API and receive AI-created visuals for creative projects.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "android",
     "githubUsername": "Shanto-Islam",
@@ -17122,7 +16670,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1971",
     "approvedDate": "2025-05-13",
     "byop": false,
-    "requests24h": 7,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/4c0795eb-a6e0-484c-9f56-59e1212db6fd"
   },
   {
@@ -17130,13 +16678,13 @@
     "name": "MoneyPrinterTurbo",
     "url": null,
     "description": "Provide an open AI platform with multimodal text generation and experimental search, integrating Pollinations for text and planning image API integration.",
-    "language": null,
+    "language": "zh-CN, en",
     "category": "chat",
     "platform": "api",
     "githubUsername": "harry0703",
     "githubUserId": "4928832",
     "repositoryUrl": "https://github.com/harry0703/MoneyPrinterTurbo",
-    "repositoryStars": 128892,
+    "repositoryStars": 129356,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -17151,7 +16699,7 @@
     "name": "Pollinations Task Master",
     "url": null,
     "description": "Offer a fork of Task Master that uses Pollinations, with CLI and MCP interfaces, distributed as the npm package 'pollinations-taskmaster'.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "cli",
     "githubUsername": "notlousybook",
@@ -17172,7 +16720,7 @@
     "name": "Pollinations Task Master",
     "url": null,
     "description": "Offer a fork of Task Master that uses Pollinations, with CLI and MCP interfaces, distributed as the npm package 'pollinations-taskmaster'.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "cli",
     "githubUsername": "notlousybook",
@@ -17193,7 +16741,7 @@
     "name": "TurboReel",
     "url": "https://turboreel.framer.ai/",
     "description": "Provide creative generators for short video and image content, presentation tools, and design helpers driven by text prompts.",
-    "language": null,
+    "language": "en",
     "category": "video_audio",
     "platform": "web",
     "githubUsername": null,
@@ -17214,7 +16762,7 @@
     "name": "Foodie AI",
     "url": "https://foodie-ai.vercel.app/",
     "description": "Indicate the project is closed due to 67 days of inactivity and available to be reopened if still relevant.",
-    "language": null,
+    "language": "da",
     "category": "business",
     "platform": "web",
     "githubUsername": "sizzlebop",
@@ -17235,7 +16783,7 @@
     "name": "Mimir AIP",
     "url": "https://mimir-aip.github.io/",
     "description": "Provide an open-source modular AI pipeline framework for orchestrating models and services with plugin support, multi-provider integration, and testing tools.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "CiaranMcAleer",
@@ -17256,7 +16804,7 @@
     "name": "Pollinations AI Game",
     "url": null,
     "description": "Demonstrates how a basic LLM can become an autonomous agent on low-end phones and educates users on agentic AI behavior.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "api",
     "githubUsername": "ednsinf",
@@ -17277,7 +16825,7 @@
     "name": "pollinations.ai 中文",
     "url": "https://pollinations.vercel.app",
     "description": "Presents Pollinations content in Chinese with emphasis on Vibe Coding and creative AI tools like image, video, and music generators.",
-    "language": null,
+    "language": "zh-CN",
     "category": "chat",
     "platform": "web",
     "githubUsername": "pollinations",
@@ -17298,7 +16846,7 @@
     "name": "Dreamscape AI",
     "url": "https://dreamscape.pinkpixel.dev",
     "description": "Generates and enhances images, optimizes prompts, offers chat and voice interfaces with memory, and provides a web research tool via the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "sizzlebop",
@@ -17319,7 +16867,7 @@
     "name": "JustBuildThings",
     "url": "https://justbuildthings.com",
     "description": "AI platform with 700+ tools for image, video, music generation, chat, and content analysis",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "buildmaster",
@@ -17340,7 +16888,7 @@
     "name": "CoNavic",
     "url": null,
     "description": "Provides a browser extension that uses natural language to access AI assistance, automate browsing tasks, and manage tabs and bookmarks.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "browser-ext",
     "githubUsername": "mkantwala",
@@ -17361,7 +16909,7 @@
     "name": "Server Status Dashboards",
     "url": null,
     "description": "Server metrics dashboards with AI-assisted natural language insights.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "devopper",
@@ -17382,7 +16930,7 @@
     "name": "NailsGen",
     "url": "https://www.nailsgen.com/",
     "description": "Generate custom AI nail art designs in any style and color.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "xiaoliangliang",
@@ -17395,7 +16943,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 190,
     "screenshotUrl": "https://media.pollinations.ai/21242ef2-e36b-4f85-8ade-40f2c0c191a5"
   },
   {
@@ -17403,7 +16951,7 @@
     "name": "NailsGen",
     "url": "https://www.nailsgen.com/",
     "description": "Generate custom AI nail art designs in any style and color.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "xiaoliangliang",
@@ -17416,7 +16964,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 190,
     "screenshotUrl": "https://media.pollinations.ai/3892c9ac-7e2f-4f60-aed7-d26ec9de2365"
   },
   {
@@ -17424,7 +16972,7 @@
     "name": "AI PPT Maker",
     "url": "https://slidesgpt.com",
     "description": "Create PowerPoint decks from prompts with templates and visuals.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": null,
@@ -17445,7 +16993,7 @@
     "name": "FoodAnaly",
     "url": "https://foodanaly.vercel.app/",
     "description": "Analyze ingredients, nutrition, safety, and health impacts of food.",
-    "language": null,
+    "language": "en",
     "category": "business",
     "platform": "web",
     "githubUsername": "kangler-s",
@@ -17466,13 +17014,13 @@
     "name": "Free AI Chatbot & Image Generator",
     "url": "https://vercel.com/templates/ai/ai-sdk-image-generator",
     "description": "Web app for AI chat plus text-to-image generation via Pollinations.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "aidevs",
     "githubUserId": "19439409",
     "repositoryUrl": "https://github.com/vercel/ai/tree/main/examples/ai-image-generator",
-    "repositoryStars": 27155,
+    "repositoryStars": 27219,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -17487,7 +17035,7 @@
     "name": "AIMinistries",
     "url": "https://www.ai-ministries.com",
     "description": "Free AI toolkit: chat, writing, images, TTS, and speech-to-text.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": null,
@@ -17521,36 +17069,15 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1730",
     "approvedDate": "2025-04-20",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/4108cef5-ec21-4c2f-a96e-d6b61142de44"
-  },
-  {
-    "emoji": "🧬",
-    "name": "Strain Navigator",
-    "url": "https://www.strainnavigator.com/",
-    "description": "Open-source toolkit for growers, breeders, and seed banks",
-    "language": null,
-    "category": "business",
-    "platform": "web",
-    "githubUsername": "Tolerable",
-    "githubUserId": "2303210",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/1677",
-    "approvedDate": "2025-04-15",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/2ef5ab16-3bf4-4693-88e8-ea93f82ca01c"
   },
   {
     "emoji": "📖",
     "name": "Artistic Styles Book",
     "url": "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",
     "description": "Interactive gallery-book featuring 90+ art styles",
-    "language": null,
+    "language": "es",
     "category": "learn",
     "platform": "web",
     "githubUsername": "Juanrivera126",
@@ -17563,7 +17090,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1045",
     "approvedDate": "2025-04-15",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/c40c18b6-985f-45a8-a134-04e337ec0181"
   },
   {
@@ -17571,7 +17098,7 @@
     "name": "Flux AI SVG Generator",
     "url": "https://fluxsvggenerator.streamlit.app/",
     "description": "Generates black-and-white SVG vectors from AI images",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "voodoohop",
@@ -17584,36 +17111,15 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1680",
     "approvedDate": "2025-04-15",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 298,
     "screenshotUrl": "https://media.pollinations.ai/cdf20f1c-84f7-432c-9499-44bde583dc9d"
-  },
-  {
-    "emoji": "🕸️",
-    "name": "NetSim",
-    "url": "https://netsim.us.to/",
-    "description": "High-quality websim.ai-style browser simulation clone",
-    "language": null,
-    "category": "build",
-    "platform": "web",
-    "githubUsername": "smplstuff",
-    "githubUserId": "206557620",
-    "repositoryUrl": null,
-    "repositoryStars": null,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": "https://github.com/pollinations/pollinations/issues/1685",
-    "approvedDate": "2025-04-15",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/2077c109-b940-44d7-9b7d-693c5e6f8a55"
   },
   {
     "emoji": "📐",
     "name": "Proyecto Descartes",
     "url": "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html",
     "description": "STEM education initiative integrating Pollinations AI",
-    "language": null,
+    "language": "es",
     "category": "learn",
     "platform": "web",
     "githubUsername": "Juanrivera126",
@@ -17626,7 +17132,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/920",
     "approvedDate": "2025-04-15",
     "byop": true,
-    "requests24h": 64,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/3386bf04-0114-46f5-8a9f-66ce4a742fef"
   },
   {
@@ -17634,7 +17140,7 @@
     "name": "Pollinations.ai Image Generation (for Frame)",
     "url": null,
     "description": "Voice-prompt image generation for the Frame wearable (Flutter)",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "api",
     "githubUsername": "CitizenOneX",
@@ -17655,7 +17161,7 @@
     "name": "Goalani",
     "url": "https://goalani.com",
     "description": "Voice-first AI fitness coach for workouts, food, and weight tracking",
-    "language": null,
+    "language": "en",
     "category": "business",
     "platform": "web",
     "githubUsername": "Goalani",
@@ -17676,7 +17182,7 @@
     "name": "DominiSigns",
     "url": null,
     "description": "AI avatar translating text/audio into Dominican Sign Language (LSRD)",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "api",
     "githubUsername": "cmunozdev",
@@ -17697,7 +17203,7 @@
     "name": "WordPress AI Vision Block",
     "url": "https://wordpress.org/plugins/ai-vision-block/",
     "description": "Gutenberg block to generate AI images from prompts and save to Media Library",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "wordpress",
     "githubUsername": "mahmood-asadi",
@@ -17718,7 +17224,7 @@
     "name": "Riffle",
     "url": "https://riffle.ink",
     "description": "Read English books while learning your vocab via AI-generated contextual content",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "web",
     "githubUsername": "gsx123",
@@ -17731,7 +17237,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1467",
     "approvedDate": "2025-03-28",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 18,
     "screenshotUrl": "https://media.pollinations.ai/985d3389-1be9-4048-ae32-9924d610a767"
   },
   {
@@ -17739,7 +17245,7 @@
     "name": "IMyself AI",
     "url": "https://openai.lmyself.top/",
     "description": "All-in-one AI suite: image, text, audio generation plus speech-to-text",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Shadownc",
@@ -17760,7 +17266,7 @@
     "name": "toai.chat",
     "url": null,
     "description": "Use AI via curl only—multimodal support with MCP capabilities",
-    "language": null,
+    "language": "zh-CN",
     "category": "build",
     "platform": "api",
     "githubUsername": "Veallym0n",
@@ -17781,7 +17287,7 @@
     "name": "FreeAI",
     "url": "https://freeai.aihub.ren/",
     "description": "An AI platform for chat, image generation, and voice synthesis.",
-    "language": null,
+    "language": "zh-CN",
     "category": "chat",
     "platform": "web",
     "githubUsername": "Azad-sl",
@@ -17802,7 +17308,7 @@
     "name": "Minecraft AI (Python)",
     "url": null,
     "description": "Control Minecraft gameplay with natural-language commands using Python + AI",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "api",
     "githubUsername": "Amagash",
@@ -17823,7 +17329,7 @@
     "name": "Pollinations Discord Bot",
     "url": null,
     "description": "Discord bot for AI images: prompt enhance, variations, sizing, and randoms",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "discord",
     "githubUsername": "zingy",
@@ -17844,7 +17350,7 @@
     "name": "Jenny AI",
     "url": "https://jenny-two.vercel.app/",
     "description": "Chatbot + character creator with TTS/STT, image gen, and vision features",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "HiiiiiPritam",
@@ -17865,7 +17371,7 @@
     "name": "CalcuBite AI",
     "url": "https://calcubite.vercel.app/",
     "description": "Snap food photos to estimate calories and nutrients; ads unlock more scans",
-    "language": null,
+    "language": "en",
     "category": "business",
     "platform": "web",
     "githubUsername": "sugamdeol",
@@ -17886,7 +17392,7 @@
     "name": "Connect Pollinations with Open Web UI tutorial",
     "url": null,
     "description": "Step-by-step guide to integrate Pollinations APIs into Open Web UI",
-    "language": null,
+    "language": "en",
     "category": "learn",
     "platform": "api",
     "githubUsername": "cloph-dsp",
@@ -17907,7 +17413,7 @@
     "name": "KoboldAI Lite",
     "url": "https://lite.koboldai.net/",
     "description": "Lightweight creative writing tool powered by Pollinations text generation",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "web",
     "githubUsername": "zzonna",
@@ -17928,7 +17434,7 @@
     "name": "Elixpo Art Chrome Extension",
     "url": "https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh",
     "description": "Chrome extension that turns selected text into AI art with themes/ratios",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "browser-ext",
     "githubUsername": "Circuit-Overtime",
@@ -17941,7 +17447,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1349",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 24,
     "screenshotUrl": "https://media.pollinations.ai/de0f6cf6-aaea-475b-944d-1a8149cf841d"
   },
   {
@@ -17949,7 +17455,7 @@
     "name": "RoastMaster AI",
     "url": "https://roastmaster-ai.vercel.app/",
     "description": "AI roast generator for playful, creative insults and banter",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "sugamdeol",
@@ -17970,7 +17476,7 @@
     "name": "roastmyselfie.app",
     "url": "https://storyai-wizard.vercel.app",
     "description": "Analyzes a selfie to generate a humorous roast and personality-style commentary based on the image.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "andres_11",
@@ -17991,7 +17497,7 @@
     "name": "StoryMagic: Interactive Kids Stories",
     "url": "https://storyai-wizard.vercel.app",
     "description": "Creates interactive, personalized children's stories with branching choices and simple visuals for reading and play.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "api",
     "githubUsername": "Itachi-1824",
@@ -18012,7 +17518,7 @@
     "name": "Quicker Pollinations AI",
     "url": "https://getquicker.net/Sharedaction?code=9ac738ed-a4b2-4ded-933c-08dd5f710a8b&fromMyShare=true",
     "description": "Provides faster access to Pollinations AI features and quick image and media generation workflows.",
-    "language": null,
+    "language": "zh-CN",
     "category": "build",
     "platform": "web",
     "githubUsername": "SapientSi",
@@ -18033,7 +17539,7 @@
     "name": "Anime Character Generator",
     "url": "https://perchance.org/ai-character-generator",
     "description": "Generates anime-style character images from text prompts with customizable attributes and visual styles.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": null,
@@ -18046,7 +17552,7 @@
     "issueUrl": null,
     "approvedDate": "2025-03-01",
     "byop": true,
-    "requests24h": 16,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/fc0bf140-28ba-4d8d-901a-cbc9f50cb72f"
   },
   {
@@ -18054,13 +17560,13 @@
     "name": "LobeHub",
     "url": "https://lobehub.com/",
     "description": "Organize and operate AI agents across long-running tasks, integrations, and multimodal workflows.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "lobehub",
     "githubUserId": "131470832",
     "repositoryUrl": "https://github.com/lobehub/lobehub",
-    "repositoryStars": 83022,
+    "repositoryStars": 83090,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -18075,7 +17581,7 @@
     "name": "Gacha",
     "url": "https://discord.com/oauth2/authorize?client_id=1377330983740903586",
     "description": "Discord bot for gacha-style AI image collecting and trading",
-    "language": null,
+    "language": "en",
     "category": "bots",
     "platform": "discord",
     "githubUsername": "pollinations-ai[bot]",
@@ -18096,7 +17602,7 @@
     "name": "Zelos AI image generator",
     "url": "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
     "description": "Generates images using Pollinations for prompt enhancement and image synthesis.",
-    "language": null,
+    "language": "en",
     "category": "image",
     "platform": "web",
     "githubUsername": "RandomGuy-nobody",
@@ -18117,7 +17623,7 @@
     "name": "Own-AI",
     "url": "https://own-ai.pages.dev/",
     "description": "Personal AI assistant platform deployed on Cloudflare Pages",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "lionelzhang19-hue",
@@ -18138,7 +17644,7 @@
     "name": "Pal Chat",
     "url": "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
     "description": "Unifies multiple LLMs in an iOS chat interface with support for Pollinations models and image generation.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "ios",
     "githubUsername": "PallavAg",
@@ -18159,7 +17665,7 @@
     "name": "Pollinations.ai Model Comparison",
     "url": "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
     "description": "Compares outputs from multiple LLMs via a GitHub Pages tool with prompt input, selectable timeouts, and submit/cancel controls.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "EndemicMedia",
@@ -18180,13 +17686,13 @@
     "name": "Pollinator Android App",
     "url": null,
     "description": "Provides Android access to Pollinations features with emphasis on Vibe Coding and creative media generation tools.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "api",
     "githubUsername": "g-aggarwal",
     "githubUserId": "103292141",
     "repositoryUrl": "https://github.com/g-aggarwal/Pollinator",
-    "repositoryStars": 36,
+    "repositoryStars": 37,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -18201,7 +17707,7 @@
     "name": "Infinite Tales",
     "url": null,
     "description": "AI-powered interactive storytelling with endless adventures.",
-    "language": null,
+    "language": "en",
     "category": "writing",
     "platform": "api",
     "githubUsername": "JayJayBinks",
@@ -18222,7 +17728,7 @@
     "name": "GPT_Project",
     "url": "https://t.me/gpt_project_official_bot",
     "description": "Telegram AI assistant for work/study: chat, images, voice, TTS, analysis.",
-    "language": null,
+    "language": "ru",
     "category": "bots",
     "platform": "telegram",
     "githubUsername": "Lorodn4x",
@@ -18235,7 +17741,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2268",
     "approvedDate": "2024-12-18",
     "byop": false,
-    "requests24h": 344,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/d4e0f497-3b41-4ea3-8f2d-2d95eef818a7"
   },
   {
@@ -18243,7 +17749,7 @@
     "name": "FlowGPT",
     "url": "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
     "description": "Create images on-demand directly from ChatGPT.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": null,
@@ -18264,7 +17770,7 @@
     "name": "G4F Chat UI",
     "url": "http://g4f.dev/chat/pollinations",
     "description": "G4F chat UI for Pollinations with image and video generation.",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "hlohaus",
@@ -18285,7 +17791,7 @@
     "name": "Pollinations Chat",
     "url": "https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4",
     "description": "Pollinations chat for text and image generation.",
-    "language": null,
+    "language": "es",
     "category": "chat",
     "platform": "web",
     "githubUsername": "adrianoprogramer",
@@ -18306,7 +17812,7 @@
     "name": "pollinations_ai",
     "url": "https://pub.dev/packages/pollinations_ai",
     "description": "Dart/Flutter package for integrating the Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "Meenapintu",
@@ -18327,7 +17833,7 @@
     "name": "pypollinations",
     "url": "https://pypi.org/project/pypollinations/",
     "description": "Python SDK with ImageClient and TextClient wrappers for Pollinations AI generation APIs",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "library",
     "githubUsername": "KTS-o7",
@@ -18348,13 +17854,13 @@
     "name": "Qwen-Agent",
     "url": null,
     "description": "Creates customizable autonomous agents shaped by user-provided design, specifications, and behavior parameters.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "api",
     "githubUsername": "QwenLM",
     "githubUserId": "141221163",
     "repositoryUrl": "https://github.com/QwenLM/Qwen-Agent",
-    "repositoryStars": 17137,
+    "repositoryStars": 17161,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-03-25",
@@ -18369,13 +17875,13 @@
     "name": "SillyTavern",
     "url": "https://docs.sillytavern.app/",
     "description": "Provides an open multimodal AI platform with large language model access, experimental search tools, and integrated Pollinations text generation.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "web",
     "githubUsername": "SillyTavern",
     "githubUserId": "134869877",
     "repositoryUrl": "https://github.com/SillyTavern/SillyTavern",
-    "repositoryStars": 34157,
+    "repositoryStars": 34270,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -18390,7 +17896,7 @@
     "name": "Unity AI Lab",
     "url": "https://unity.unityailab.com/",
     "description": "AI platform with chatbots, integration services, and generative tools powered by Pollinations",
-    "language": null,
+    "language": "en",
     "category": "chat",
     "platform": "web",
     "githubUsername": "G-Fourteen",
@@ -18411,7 +17917,7 @@
     "name": "OtakuBox Bot",
     "url": "https://t.me/OtakuBoxbot",
     "description": "Telegram anime bot with AI image generation, sticker packs, card battles, PvP games and Shinobi AI chat powered by Pollinations API.",
-    "language": null,
+    "language": "en",
     "category": "games",
     "platform": "bot",
     "githubUsername": "badamchuk",
@@ -18474,13 +17980,13 @@
     "name": "pollinations.ai Python SDK",
     "url": null,
     "description": "Official Python SDK for working with Pollinations models.",
-    "language": null,
+    "language": "en",
     "category": "build",
     "platform": "web",
     "githubUsername": "pollinations-test",
     "githubUserId": "151645294",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/packages/sdk",
-    "repositoryStars": 5174,
+    "repositoryStars": 5191,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",

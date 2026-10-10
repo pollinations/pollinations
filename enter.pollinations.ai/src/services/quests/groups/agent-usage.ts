@@ -60,6 +60,12 @@ const QUESTS = [
     createUsedCommunityModelQuest,
 ];
 
+/** BYOM: rewards for a published model or agent getting used. */
+export const BYOM_QUEST_IDS = [
+    createUsedAgentQuest.id,
+    createUsedCommunityModelQuest.id,
+];
+
 // Each live quest completes when its flag from quest_agent_usage is 1.
 const QUEST_FLAGS = [
     ["usedAgent", useAgentQuest],

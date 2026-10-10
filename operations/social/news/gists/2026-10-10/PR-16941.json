@@ -1,0 +1,37 @@
+{
+  "pr_number": 16941,
+  "title": "fix: quest leaderboard counts every quest reward except BYOP and BYOM",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16941",
+  "merged_at": "2026-10-10T12:08:58Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The Community quest leaderboard now counts rewards from quest issues, merged PRs, reported issues, censuses, app listings, setup, usage, top-ups, profile and Discord quests, and admin grants. It excludes only BYOP app-growth and BYOM model/agent rewards, using quest IDs exported from those groups. Previously it counted only GitHub quest-issue bounties: 42 participants, 164 rewards and 1,204 Pollen. A read-only production check with the wider scope found 39,382 participants, 72,751 rewards and 45,267 Pollen; tomdacatto led with 540.",
+    "keywords": [
+      "quests",
+      "leaderboard",
+      "Pollen",
+      "rewards",
+      "BYOP",
+      "BYOM"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16941.jpg",
+    "prompt": "In a cozy pixel garden, Polli wears a tiny bookkeeper's visor and updates a lime green (#ecf874) quest leaderboard beside blooming code-plants, with two small BYOP and BYOM baskets set aside. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender tones and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-10T12:10:04.191857+00:00",
+  "area": "Quests & rewards",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "61686b0a45291ab55eb26347f17efd51b19b538f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

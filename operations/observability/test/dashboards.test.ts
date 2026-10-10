@@ -6,6 +6,7 @@ import {
     DEFAULT_DASHBOARD_UID,
     dashboardSrc,
     readDashboardUid,
+    readRange,
 } from "../frontend/src/dashboards.ts";
 
 test("lists dashboards sorted by title", () => {
@@ -34,11 +35,22 @@ test("falls back to the Grafana home dashboard without a url parameter", () => {
     assert.equal(readDashboardUid("?d=core-api-rebuild"), "core-api-rebuild");
 });
 
-test("keeps kiosk mode on the embedded dashboard url", () => {
+test("keeps kiosk mode and the chosen range on the embedded dashboard url", () => {
     assert.equal(
-        dashboardSrc("core-api-rebuild"),
-        "/grafana/d/core-api-rebuild?kiosk",
+        dashboardSrc("core-api-rebuild", "30d"),
+        "/grafana/d/core-api-rebuild?kiosk&from=now-30d/d&to=now-1d/d",
     );
+    assert.equal(
+        dashboardSrc("core-api-rebuild", "90d"),
+        "/grafana/d/core-api-rebuild?kiosk&from=now-90d/d&to=now-1d/d",
+    );
+});
+
+test("falls back to 30 days for a missing or unknown range", () => {
+    assert.equal(readRange(""), "30d");
+    assert.equal(readRange("?range=7d"), "7d");
+    assert.equal(readRange("?range=1y"), "30d");
+    assert.equal(readRange("?range=toString"), "30d");
 });
 
 test("starts every linear time-series y-axis at zero", () => {

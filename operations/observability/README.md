@@ -48,20 +48,6 @@ Staging traffic lives in a separate `pollinations_enter_staging` workspace. This
 dashboard intentionally reads only production. For staging analytics, use a
 staging read token against the staging workspace.
 
-### Tinybird Stripe (ClickHouse)
-- **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
-- **Database:** `default` (workspace: `pollinations_enter`, production only)
-- **Token:** `TINYBIRD_READ_TOKEN`
-- **UID:** `PAD1A0A25CD30D457`
-- **Table:** `stripe_event`
-
-### Tinybird Legacy (ClickHouse)
-- **Host:** `clickhouse.europe-west2.gcp.tinybird.co`
-- **Database:** `default` (workspace: `pollinations_ai`)
-- **Token:** `TINYBIRD_LEGACY_READ_TOKEN`
-- **UID:** `PAD1A0A25CD30D458`
-- **Table:** `text_events`
-
 ## Secrets
 
 The local app signing secret is stored in ignored `.dev.vars`;
@@ -116,7 +102,7 @@ Never enable production data sources or alerts just to test local login.
 1. Open http://localhost:3000
 2. Edit dashboard in the UI
 3. Dashboard -> Settings -> JSON Model -> Copy
-4. Replace the matching JSON in `provisioning/dashboards/` (current) or `provisioning/dashboards/legacy/`
+4. Replace the matching JSON in `provisioning/dashboards/`
 5. Restart to verify: `docker compose restart grafana`
 
 ## Cloudflare Deployment

@@ -1,6 +1,6 @@
 FROM grafana/grafana:11.4.0
 
-ENV GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
+ENV GF_INSTALL_PLUGINS="grafana-clickhouse-datasource 4.22.1"
 
 COPY provisioning /etc/grafana/provisioning
 COPY branding /usr/share/grafana/public/img

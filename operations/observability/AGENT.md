@@ -109,6 +109,10 @@ Grafana doesn't render escaped newlines in tooltips—they appear as literal `\n
 
 BYOP and BYOM are independent dimensions: BYOP is end-user-authenticated consumption inside a developer app (`is_byop`), while BYOM is any community-model consumption (`is_community`). Direct API is neither BYOP nor BYOM. Additive product-path charts must expose four mutually exclusive paths—Direct API, BYOM direct, BYOP with Pollinations models, and BYOP with BYOM—and treat Paid versus Quest as a separate funding dimension.
 
+### Active users and apps: funded requests only
+
+The `users` and `apps` states in `generation_usage_hourly` and `byop_app_daily` count every request, including requests rejected with a 402 for lack of Pollen. Count active users and apps with `funding_source != 'unfunded'`, for example `uniqMergeIf(users, funding_source != 'unfunded')` or `uniqIfMergeIf(apps, funding_source != 'unfunded')`. Without the filter, WAU runs about 24% above the KPI app's WAU.
+
 ### ❌ Don't: Guess field values
 Meter slugs changed over time (`v1:meter:tier` → `local:tier`). Using wrong values returns zero data.
 
@@ -230,7 +234,7 @@ WHERE $__timeFilter(start_time)
 
 ## Dashboard Variables
 
-This dashboard uses only the **built-in time range picker** (default: 30 days). Custom filter variables were intentionally removed to keep the dashboard simple and focused on answering strategic questions rather than ad-hoc filtering.
+Every dashboard shows the **last 30 complete UTC days**: `"time": {"from": "now-30d/d", "to": "now-1d/d"}`, `"timezone": "utc"` and `"refresh": "1h"`, so no generation-data bar is a partial day and Grafana's days match the SQL's UTC days (Registrations' last bar fills in at the ~03:20 UTC d1_user sync). The app embeds Grafana in kiosk mode, which hides the time picker, so readers only ever see this range. Custom filter variables were intentionally removed to keep the dashboards simple and focused on answering strategic questions rather than ad-hoc filtering.
 
 If you need to add variables in the future, edit the `templating.list` array in the dashboard JSON file directly (provisioned dashboards are read-only via API).
 

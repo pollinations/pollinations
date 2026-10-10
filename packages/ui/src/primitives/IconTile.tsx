@@ -7,6 +7,7 @@ const toneClasses = {
     // The wallet's Paid and Quest Pollen colours, for rows about money.
     paid: "polli-wallet-chip-paid",
     tier: "polli-wallet-chip-tier",
+    info: "polli:bg-intent-info-bg-light polli:text-intent-info-text",
 } as const;
 
 export type IconTileProps = {

@@ -259,32 +259,12 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Only the approved low-cost models are exempt from paid balance.
-    const questPollenModels = new Set([
-        "typesafe/jev-1.13",
-        "jaredpalmer/kev-4b",
-        "respan/span-01-lite",
-    ]);
     const openRouterModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);
-        return (
-            definition.provider === "openrouter" &&
-            !questPollenModels.has(model)
-        );
+        return definition.provider === "openrouter";
     });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
-
-    for (const model of questPollenModels) {
-        expect(
-            freeModelNames.has(model),
-            `${model} visible to Quest Pollen`,
-        ).toBe(true);
-        expect(
-            paidModelNames.has(model),
-            `${model} visible to paid users`,
-        ).toBe(true);
-    }
 
     expect(openRouterModelNames.length).toBeGreaterThan(0);
     expect(

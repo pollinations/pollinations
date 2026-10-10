@@ -21,7 +21,8 @@ import {
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
-import type { FC, ReactNode } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
+import { apiClient } from "../../api.ts";
 import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { TopUpPanel } from "./top-up-panel.tsx";
@@ -285,6 +286,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             initialPack={initialPack}
         />
         <Footnotes>
+            <TopUpBonusNote billing={initialBilling} />
             {/* When auto top-up charges, stated before anyone turns it on.
                 "Paid": Quest Pollen doesn't trigger it. */}
             <p className="flex items-start gap-1.5">
@@ -314,6 +316,61 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
         </Footnotes>
     </>
 );
+
+const TOP_UP_QUEST_ID = "top_up_since_launch";
+
+/**
+ * The top-up quest reward while it is unearned: the Stripe webhook credits it
+ * with the next pack. It reloads with the billing, so a purchase hides it.
+ */
+const TopUpBonusNote: FC<{ billing: BillingOverview | null }> = ({
+    billing,
+}) => {
+    const [bonus, setBonus] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!billing) return;
+        let cancelled = false;
+        const load = async () => {
+            const [catalogResponse, rewardsResponse] = await Promise.all([
+                apiClient.quests.catalog.$get(),
+                apiClient.quests.rewards.$get(),
+            ]);
+            if (!catalogResponse.ok || !rewardsResponse.ok) return;
+            const [{ quests }, { rewards }] = await Promise.all([
+                catalogResponse.json(),
+                rewardsResponse.json(),
+            ]);
+            const quest = quests.find((q) => q.id === TOP_UP_QUEST_ID);
+            const earned = rewards.some((r) => r.questId === TOP_UP_QUEST_ID);
+            if (!cancelled) {
+                setBonus(
+                    quest?.state === "available" && !earned
+                        ? quest.rewardAmount
+                        : null,
+                );
+            }
+        };
+        // No bonus line when quests can't load; buying still works.
+        load().catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [billing]);
+
+    if (!bonus) return null;
+    return (
+        <p className="flex items-start gap-1.5">
+            <WalletKindIcon kind="tier" className="mt-0.5" />
+            <span>
+                Your next top-up adds{" "}
+                <strong className="font-semibold text-theme-text-strong">
+                    ${formatPollen(bonus)} quest credit
+                </strong>
+            </span>
+        </p>
+    );
+};
 
 /**
  * The dashboard's footnote block: 8px between lines, 4px inset. The section's

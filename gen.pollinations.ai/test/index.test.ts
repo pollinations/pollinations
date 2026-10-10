@@ -262,7 +262,7 @@ describe("gen worker routing", () => {
         await expect(response.text()).resolves.toContain("Disallow: /api/");
     });
 
-    it("serves an agent index with reachable plain-text CLI and API guides", async () => {
+    it("serves an agent index with reachable Markdown and plain-text guides", async () => {
         const index = await fetchWorker("/llms.txt");
         expect(index.status).toBe(200);
         expect(index.headers.get("Content-Type")).toContain("text/plain");
@@ -270,7 +270,7 @@ describe("gen worker routing", () => {
         const body = await index.text();
         expect(body).toContain("/docs/polli-skill.md");
         expect(body).toContain("/docs/polli-tasks.md");
-        expect(body).toContain("/docs/llm.txt");
+        expect(body).toContain("/docs/index.md");
         expect(body).toContain("/docs/llm.txt?section=cli");
         expect(body).toContain("/docs/llm.txt?section=mcp");
 
@@ -285,6 +285,18 @@ describe("gen worker routing", () => {
                 "text/plain",
             );
             expect(await response.text()).not.toContain("<html");
+        }
+
+        for (const [markdownPath, expectedContent] of [
+            ["/index.md", "# Pollinations"],
+            ["/docs/index.md", "/v1/chat/completions"],
+        ]) {
+            const markdown = await fetchWorker(markdownPath);
+            expect(markdown.status).toBe(200);
+            expect(markdown.headers.get("Content-Type")).toContain(
+                "text/markdown",
+            );
+            expect(await markdown.text()).toContain(expectedContent);
         }
     });
 

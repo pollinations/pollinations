@@ -996,6 +996,12 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
+        .get("/index.md", (c) => {
+            c.header("Cache-Control", "public, max-age=3600");
+            return c.body(LLM_DOC_TEXT, 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+            });
+        })
         .get("/polli-skill.md", (c) => c.text(CLI_SKILL))
         .get("/polli-tasks.md", (c) => c.text(CLI_TASKS))
         .get("/open-api/generate-schema", async (c) => {

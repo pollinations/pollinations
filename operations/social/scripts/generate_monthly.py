@@ -63,9 +63,9 @@ COVER_TRIES = 3
 # story alone. A reference image of an earlier page made every page copy it, so its
 # growth never added up; these landmarks keep each fresh view in the same place.
 LANTERN_HILL = (
-    "The place is Lantern Hill: a glowing lime vine-tree at its heart, Polli's round straw hive "
-    "at its foot, a sandy path curving up the hill and misty green hills beyond. Show at least "
-    "two of these landmarks."
+    "The place is Lantern Hill: a glowing lime vine-tree at its heart, Polli's little round "
+    "cottage with a glowing door at its foot, a sandy path curving up the hill and misty green "
+    "hills beyond. Show at least two of these landmarks."
 )
 PAGE_ONE = "This is page one: Lantern Hill is young and small, with room to grow."
 # Each later page has its calendar month's light and weather, so the book turns through
@@ -77,18 +77,18 @@ MOMENTS = {
     "03": "a spring morning after rain in low warm sun with longer soft shadows, small puddles on the path and dew glinting as single white pixels on the leaves",
     "04": "a blossom day, apricot petals drifting across the green as single pixels",
     "05": "a bright late-spring afternoon, honey pollen motes drifting in the air",
-    "06": "a long summer evening, still light under a warm apricot-cream sky, the bulbs lit and the first fireflies out as single honey pixels",
+    "06": "a long summer evening, still light under a warm apricot-cream sky, the bulbs lit and the first fireflies out as tiny glowing dots",
     "07": "a warm high-summer afternoon, dandelion seeds and pollen motes floating on the breeze",
     "08": "golden hour, warm low light from the right, long soft shadows and the bulbs just lit",
-    "09": "a late-summer sunset after a warm shower, still light under a warm apricot-cream sky, puddles catching the first lit bulbs and a few fireflies over the grass",
+    "09": "a late-summer sunset after a warm shower, still light under a warm apricot-cream sky, puddles catching the first lit bulbs and a few fireflies as tiny glowing dots over the grass",
     "10": "a crisp autumn afternoon, amber and apricot leaves falling and the lanterns lit early",
     "11": "a pale frosty morning in low sun, frost on the beds, the far hills soft and pale, windows lit warm",
-    "12": "first snow after dusk, snowflakes falling, every bulb, lantern and window lit, the Hive's door glowing and the first stars out",
+    "12": "first snow after dusk, snowflakes falling, every bulb, lantern and window lit, Polli's cottage door glowing and the first stars out",
 }
 CAST_COUNT = """List every living character in this pixel-art image, including tiny ones in the background, one entry per character with where it is. Return only JSON:
 {"characters": [{"kind": "bee", "where": "centre, on the path"}]}
 kind is one of:
-- "bee": a yellow-and-brown striped bee character with a face
+- "bee": a yellow-and-brown striped bee of any size, even a tiny one flying in the background
 - "monitor_robot": a robot character whose head is a CRT monitor showing a face, or any screen showing a face with eyes
 - "nomnom": a round tan blob creature with a face
 - "black_cat": a black cat
@@ -105,8 +105,8 @@ CAST_KINDS = {"bee": "bees", "monitor_robot": "monitor_robots", "nomnom": "nomno
               "crystal_scribe": "crystal_scribes", "human": "humans"}
 NO_CAST = dict.fromkeys(CAST_KINDS.values(), 0)
 ONE_OF_EACH = (
-    "Every character appears exactly once: no copies, no extra bees or robots, no toy robots or "
-    "statues. Only the characters have faces, and the robot's screen is the only screen with "
+    "Every character appears exactly once: no copies, no toy robots or statues, and Polli is the "
+    "only bee, with no other bees anywhere, not even tiny ones in the air. Only the characters have faces, and the robot's screen is the only screen with "
     "one: no masks, and screens, pictures, film frames and signs show plants, landscapes or soft "
     "light, never faces, bees, animals or people. No humans anywhere. No letters, words or glyphs."
 )

@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { printEstimate } from "../../lib/estimate.js";
 import {
     ExitSignal,
     getOutputMode,
@@ -34,6 +35,7 @@ export function createImageCommand() {
             "Reference image URL(s) for editing/i2i (repeatable)",
         )
         .option("--output <path>", "Save to file (extension inferred)")
+        .option("--estimate", "Show the estimated Pollen cost; don't generate")
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
@@ -57,6 +59,14 @@ export function createImageCommand() {
                 }
                 params.set("image", opts.image.join("|"));
             }
+
+            if (opts.estimate)
+                return printEstimate(opts.model, {
+                    kind: "image",
+                    width: Number(opts.width),
+                    height: Number(opts.height),
+                    references: opts.image?.length ?? 0,
+                });
 
             const encodedPrompt = encodeURIComponent(prompt);
             const path = `/image/${encodedPrompt}?${params}`;

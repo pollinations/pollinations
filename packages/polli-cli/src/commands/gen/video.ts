@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { printEstimate } from "../../lib/estimate.js";
 import {
     ExitSignal,
     getOutputMode,
@@ -9,6 +10,9 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+
+// The API default when --model is omitted (gen.pollinations.ai video schema).
+const DEFAULT_VIDEO_MODEL = "google/veo-3.1-fast";
 
 export function createVideoCommand() {
     return new Command("video")
@@ -23,6 +27,7 @@ export function createVideoCommand() {
         .option("--seed <n>", "Random seed")
         .option("--image <url>", "Reference frame URL")
         .option("--output <path>", "Save to file", "video.mp4")
+        .option("--estimate", "Show the estimated Pollen cost; don't generate")
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
@@ -44,6 +49,16 @@ export function createVideoCommand() {
                 }
                 params.set("image", opts.image);
             }
+
+            if (opts.estimate)
+                return printEstimate(opts.model ?? DEFAULT_VIDEO_MODEL, {
+                    kind: "video",
+                    width: Number(opts.width),
+                    height: Number(opts.height),
+                    references: opts.image ? 1 : 0,
+                    duration: opts.duration ? Number(opts.duration) : undefined,
+                    audio: !!opts.audio,
+                });
 
             const encodedPrompt = encodeURIComponent(prompt);
             const path = `/video/${encodedPrompt}?${params}`;

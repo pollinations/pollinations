@@ -212,6 +212,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
             ),
         alpha: model.alpha,
         addedDate: model.added_date,
+        retirementDate: model.retirement_date,
         inputSortPrice,
         outputSortPrice,
         prices: [],

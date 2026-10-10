@@ -209,6 +209,10 @@ export const ModelInfoSchema = z.object({
             "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel.",
         ),
     added_date: z.number().optional(),
+    retirement_date: z
+        .number()
+        .optional()
+        .describe("Scheduled model retirement time, in Unix milliseconds."),
     health: ModelHealthSchema.optional(),
 });
 
@@ -329,6 +333,7 @@ export function modelInfoFromDefinition(
                 : undefined),
         pricing_units: service.priceUnits,
         added_date: service.addedDate,
+        retirement_date: service.retirementDate,
     };
 }
 

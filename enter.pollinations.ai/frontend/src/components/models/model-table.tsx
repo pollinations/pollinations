@@ -16,6 +16,7 @@ import {
     getModelDescriptionWithoutName,
     getModelInputModalities,
     getModelModalityLabel,
+    getRetirementDays,
     hasPollinationsTools,
     type InputModality,
     isAlpha,
@@ -174,6 +175,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const retirementDays = getRetirementDays(model);
     const balanceAccess: BalanceAccess = model.free
         ? "free"
         : showPaidOnly
@@ -224,7 +226,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         capabilityLabel={capabilityLabel}
                         perUserRpm={model.perUserRpm}
                     />
-                    {(model.health || showNew || showAlpha) && (
+                    {(model.health ||
+                        showNew ||
+                        showAlpha ||
+                        retirementDays) && (
                         <div className="flex min-h-5 min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                             <ModelStatusChips
                                 health={model.health}
@@ -233,6 +238,8 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 )}
                                 showNew={showNew}
                                 showAlpha={showAlpha}
+                                retirementDays={retirementDays}
+                                retirementDate={model.retirementDate}
                             />
                         </div>
                     )}

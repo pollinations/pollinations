@@ -1034,7 +1034,7 @@
       "type": "table"
     }
   ],
-  "refresh": "5m",
+  "refresh": "1h",
   "schemaVersion": 41,
   "tags": [
     "observability-rebuild",
@@ -1045,11 +1045,11 @@
     "list": []
   },
   "time": {
-    "from": "now-30d",
-    "to": "now"
+    "from": "now-30d/d",
+    "to": "now-1d/d"
   },
   "timepicker": {},
-  "timezone": "browser",
+  "timezone": "utc",
   "title": "BYOM — Community Models",
   "uid": "community-models-rebuild",
   "version": 1,

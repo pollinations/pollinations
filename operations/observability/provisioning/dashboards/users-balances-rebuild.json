@@ -448,7 +448,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily registrations from the latest d1_user snapshot, excluding banned accounts. This is current surviving-account history: accounts deleted before the latest sync are absent. The current day is partial until its UTC day closes.",
+      "description": "Daily registrations from the latest d1_user snapshot, excluding banned accounts. This is current surviving-account history: accounts deleted before the latest sync are absent. The latest day can be partial until the daily d1_user sync (about 03:20 UTC).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -802,7 +802,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5m",
+  "refresh": "1h",
   "schemaVersion": 41,
   "tags": [
     "observability-rebuild",
@@ -813,11 +813,11 @@
     "list": []
   },
   "time": {
-    "from": "now-30d",
-    "to": "now"
+    "from": "now-30d/d",
+    "to": "now-1d/d"
   },
   "timepicker": {},
-  "timezone": "browser",
+  "timezone": "utc",
   "title": "Users & Balances",
   "uid": "users-balances-rebuild",
   "version": 1,

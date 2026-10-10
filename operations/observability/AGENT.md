@@ -234,7 +234,7 @@ WHERE $__timeFilter(start_time)
 
 ## Dashboard Variables
 
-This dashboard uses only the **built-in time range picker** (default: 30 days). Custom filter variables were intentionally removed to keep the dashboard simple and focused on answering strategic questions rather than ad-hoc filtering.
+Every dashboard shows the **last 30 complete UTC days**: `"time": {"from": "now-30d/d", "to": "now-1d/d"}`, `"timezone": "utc"` and `"refresh": "1h"`, so no bar is a partial day and Grafana's days match the SQL's UTC days. The app embeds Grafana in kiosk mode, which hides the time picker, so readers only ever see this range. Custom filter variables were intentionally removed to keep the dashboards simple and focused on answering strategic questions rather than ad-hoc filtering.
 
 If you need to add variables in the future, edit the `templating.list` array in the dashboard JSON file directly (provisioned dashboards are read-only via API).
 

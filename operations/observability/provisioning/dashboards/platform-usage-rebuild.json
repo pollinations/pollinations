@@ -1493,14 +1493,14 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Scope and ownership\n\n- **Source:** `generation_event_v2` → `generation_usage_hourly`\n- **Coverage:** authenticated, non-cached generation events from 9 January 2026\n- **Default:** last 30 days; bars first; tables capped at 50 rows\n- **Not duplicated here:** errors (Tinybird), health (Model Monitor), provider costs and profitability (Economics)\n- **Staging validation:** `debug-prod-copy`; production dashboards use the same queries against production-only data",
+        "content": "### Scope and ownership\n\n- **Source:** `generation_event_v2` → `generation_usage_hourly`\n- **Coverage:** regular traffic only: authenticated, non-cached generation events from 9 January 2026; legacy API bridges, operations and dev traffic are excluded (legacy volume is in the KPI app)\n- **Default:** last 30 complete UTC days (today is not shown); bars first; tables capped at 50 rows\n- **Not duplicated here:** errors (Tinybird), health (Model Monitor), provider costs and profitability (Economics)\n- **Staging validation:** `debug-prod-copy`; production dashboards use the same queries against production-only data",
         "mode": "markdown"
       },
       "title": "Data coverage",
       "type": "text"
     }
   ],
-  "refresh": "5m",
+  "refresh": "1h",
   "schemaVersion": 40,
   "tags": [
     "rebuild",
@@ -1511,11 +1511,11 @@
     "list": []
   },
   "time": {
-    "from": "now-30d",
-    "to": "now"
+    "from": "now-30d/d",
+    "to": "now-1d/d"
   },
   "timepicker": {},
-  "timezone": "browser",
+  "timezone": "utc",
   "title": "Platform & Usage",
   "uid": "platform-usage-rebuild",
   "version": 1,

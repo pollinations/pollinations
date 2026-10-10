@@ -112,7 +112,6 @@ jobs:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
-          PUBLISH_MODE: buffer
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
         run: python operations/social/scripts/publish_daily.py
 

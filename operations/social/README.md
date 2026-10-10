@@ -1,47 +1,27 @@
 # Social Media Pipeline
 
-Automated social media posting for pollinations.ai — 3-tier event-centric architecture.
+Automated news posts for pollinations.ai, built from one note ("gist") per merged PR.
 
-See [PIPELINE.md](PIPELINE.md) for the full design document (architecture, data flow, error handling, schemas, cost estimates, migration plan).
+See [PIPELINE.md](PIPELINE.md) for the design: tiers, data flow, storage, error handling.
 
-## Platform Overview
+## Platforms
 
-| | Twitter/X | LinkedIn | Instagram | Reddit | Discord |
-|---|---|---|---|---|---|
-| **Daily** | Buffer (scheduled) | — | — | VPS deploy | Per-PR (realtime) |
-| **Weekly** | Buffer (scheduled) | Buffer (scheduled) | Buffer (scheduled) | VPS deploy | Webhook |
-| **Review** | Yes (daily PR) | Yes (weekly PR) | Yes (weekly PR) | Yes (daily PR) | No (automatic) |
-| **Images** | 1 per post | 1 per post | up to 3 carousel | 1 per post | 1 per PR |
-| **Model** | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` | `nanobanana-2-lite` |
+| | Twitter/X | LinkedIn | Instagram | Discord |
+|---|---|---|---|---|
+| **Per PR** | — | — | — | Webhook, right after the note |
+| **Daily** | Buffer | — | — | — |
+| **Weekly** | Buffer | Buffer | Buffer (up to 3 images) | Webhook, Sunday 18:00 UTC |
+| **Model news** | — | — | — | Webhook, Wednesday 14:00 UTC |
 
-## Delivery Schedule
-
-Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
-
-| Platform | Daily | Weekly | Notes |
-|---|---|---|---|
-| **Twitter/X** | Yes | Yes | Buffer scheduled delivery |
-| **LinkedIn** | — | Yes | Weekly only |
-| **Instagram** | — | Yes | Weekly only, Sunday 18:00 UTC via Buffer |
-| **Reddit** | Yes | Yes | VPS deploy on merge |
-| **Discord** | Per PR (realtime) | Yes | Webhook on merge / Sun 18:00 UTC |
+Images use `nanobanana-2-lite`. Buffer delivery times are in [`buffer-schedule.yml`](buffer-schedule.yml).
 
 ## Secrets
 
 | Secret | Used by |
 |---|---|
-| `BUFFER_ACCESS_TOKEN` | Buffer staging (X, LI, IG) |
-| `POLLINATIONS_TOKEN` | All AI generation |
-| `DISCORD_WEBHOOK_URL` | Tier 1 + Tier 3 Discord posts |
-| `GITHUB_TOKEN` | PR creation, file commits |
-| `POLLY_BOT_APP_ID` | PR creation (GitHub App) |
-| `POLLY_BOT_PRIVATE_KEY` | PR creation (GitHub App) |
-| `REDDIT_VPS_HOST` | Reddit VPS deployment |
-| `REDDIT_VPS_USER` | Reddit VPS deployment |
-| `REDDIT_VPS_SSH_KEY` | Reddit VPS SSH key (base64) |
-
-## Legacy
-
-The old per-platform standalone scripts and workflows have been removed. The 3-tier pipeline above replaces all of them.
-
-The old Devvit-based Reddit pipeline has been removed. Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.
+| `PLN_GITHUB_NEWS_KEY` | AI text and images (passed to the scripts as `POLLINATIONS_TOKEN`) |
+| `POLLY_BOT_APP_ID`, `POLLY_BOT_PRIVATE_KEY` | GitHub App token: commits to the `news` branch, README PR |
+| `BUFFER_ACCESS_TOKEN` | Buffer staging (X, LinkedIn, Instagram). A personal Buffer API key; Buffer keys expire, check the date in Buffer → Settings → API |
+| `DISCORD_REALTIME_WEBHOOK_URL` | Per-PR Discord post |
+| `DISCORD_WEEKLY_WEBHOOK_URL` | Weekly Discord post |
+| `DISCORD_MODELS_WEBHOOK_URL`, `DISCORD_MODELS_ROLE_ID` | Wednesday model news |

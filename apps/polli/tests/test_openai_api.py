@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 
 from src.ai.client import PollinationsClient
+from src.ai.prompts import SUPPORT_SCOPE, TASK_SCOPE, get_tool_system_prompt
 from src.api.server import ChatRequest, ResponsesRequest, _request_args, _responses_chat_request, create_api_app
 
 
@@ -306,6 +307,133 @@ class FakeHTTPResponse:
 
 
 class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
+    def test_task_persona_requires_api_and_exact_caller_tool(self):
+        task_tool = {"type": "function", "function": {"name": "model_task"}}
+        for mode, tools in (
+            ("api", None),
+            ("api", [{"type": "function", "function": {"name": "other_task"}}]),
+            ("discord", [task_tool]),
+        ):
+            with self.subTest(mode=mode, tools=tools):
+                prompt = get_tool_system_prompt(mode=mode, caller_tools=tools)
+                self.assertIn(SUPPORT_SCOPE, prompt)
+                self.assertNotIn(TASK_SCOPE, prompt)
+
+        prompt = get_tool_system_prompt(mode="api", caller_tools=[task_tool])
+        self.assertIn(TASK_SCOPE, prompt)
+        self.assertNotIn(SUPPORT_SCOPE, prompt)
+        self.assertIn("You are Polli", prompt)
+        self.assertIn("## Pollinations Knowledge", prompt)
+        self.assertIn("## Tool Routing", prompt)
+        self.assertNotIn("`code_search`", prompt)
+        self.assertNotIn("## Issue Rules", prompt)
+
+    async def test_task_tool_feedback_preserves_api_permissions_and_caller_execution(self):
+        client = PollinationsClient()
+        task_tool = {
+            "type": "function",
+            "function": {"name": "model_task", "parameters": {"type": "object"}},
+        }
+        task_call = {
+            "id": "call_task",
+            "type": "function",
+            "function": {"name": "model_task", "arguments": '{"action":"checks"}'},
+        }
+        messages = [
+            {"role": "user", "content": "Implement the runner-approved task"},
+            {"role": "assistant", "content": None, "tool_calls": [task_call]},
+            {"role": "tool", "tool_call_id": "call_task", "content": '{"status":"blocked"}'},
+        ]
+        upstream = AsyncMock(return_value={"content": "", "tool_calls": [task_call], "usage": {}})
+        handler = AsyncMock()
+        client.register_tool_handler("model_task", handler)
+        client.register_tool_handler("github_issue", handler)
+
+        with patch.object(client, "_call_api_with_tools", upstream):
+            result = await client.process_with_tools(
+                user_message="Implement the runner-approved task",
+                discord_username="runner",
+                mode="api",
+                api_params={"tools": [task_tool]},
+                raw_messages=messages,
+            )
+
+        sent_messages = upstream.call_args.args[0]
+        self.assertIn(TASK_SCOPE, sent_messages[0]["content"])
+        self.assertIn("User is NOT admin", sent_messages[0]["content"])
+        self.assertEqual(sent_messages[1:], messages)
+        self.assertEqual(upstream.call_args.kwargs["tools"], [task_tool])
+        upstream.assert_awaited_once()
+        self.assertEqual(result["client_tool_calls"], [task_call])
+        self.assertEqual(result["finish_reason"], "tool_calls")
+        handler.assert_not_awaited()
+
+    async def test_task_mode_blocks_internal_tool_calls_even_if_provider_returns_them(self):
+        client = PollinationsClient()
+        handler = AsyncMock()
+        client.register_tool_handler("github_issue", handler)
+        upstream = AsyncMock(
+            return_value={
+                "content": "",
+                "tool_calls": [
+                    {"id": "internal", "type": "function", "function": {"name": "github_issue", "arguments": "{}"}}
+                ],
+                "usage": {},
+            }
+        )
+        with patch.object(client, "_call_api_with_tools", upstream):
+            result = await client.process_with_tools(
+                user_message="Implement approved task",
+                discord_username="runner",
+                mode="api",
+                api_params={"tools": [{"type": "function", "function": {"name": "model_task"}}]},
+                raw_messages=[{"role": "user", "content": "Implement approved task"}],
+            )
+        self.assertTrue(result["error"])
+        self.assertIn("blocked", result["response"])
+        upstream.assert_awaited_once()
+        handler.assert_not_awaited()
+
+    async def test_task_mode_does_not_replay_failed_paid_requests(self):
+        from src.ai.client import _auth_override
+
+        for task_mode in (True, False):
+            for failure in ("timeout", "http"):
+                with self.subTest(task_mode=task_mode, failure=failure):
+                    client = PollinationsClient()
+                    response = FakeHTTPResponse({})
+                    response.status = 503
+                    post = (
+                        MagicMock(side_effect=TimeoutError())
+                        if failure == "timeout"
+                        else MagicMock(return_value=response)
+                    )
+                    session = SimpleNamespace(post=post)
+
+                    async def get_session(task_session=session):
+                        return task_session
+
+                    client.get_session = get_session
+                    params = {"tools": [{"type": "function", "function": {"name": "model_task"}}]} if task_mode else {}
+                    token = _auth_override.set("Bearer ag_task_test")
+                    try:
+                        with patch("src.ai.client.asyncio.sleep", new=AsyncMock()) as sleep:
+                            result = await client.process_with_tools(
+                                user_message="Task",
+                                discord_username="runner",
+                                mode="api",
+                                api_params=params,
+                                raw_messages=[{"role": "user", "content": "Task"}],
+                            )
+                    finally:
+                        _auth_override.reset(token)
+
+                    self.assertTrue(result["error"])
+                    self.assertEqual(post.call_count, 1 if task_mode else 3)
+                    self.assertEqual(sleep.await_count, 0 if task_mode else 2)
+                    self.assertTrue(all("_task_mode" not in call.kwargs["json"] for call in post.call_args_list))
+                    self.assertNotIn("_task_mode", params)
+
     async def test_buffered_request_omits_seed_by_default(self):
         client = PollinationsClient()
         response = FakeHTTPResponse({"choices": [{"message": {"content": "ok", "tool_calls": []}}], "usage": {}})
@@ -388,7 +516,7 @@ class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
                 [{"role": "user", "content": "hi"}],
                 tools=None,
                 mode="api",
-                api_params={"model": "explicit", "_explicit_model": True},
+                api_params={"model": "explicit", "_explicit_model": True, "_task_mode": True},
                 event_handler=emit,
             )
         finally:
@@ -397,6 +525,7 @@ class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
         payload = session.post.call_args.kwargs["json"]
         self.assertEqual(payload["model"], "explicit")
         self.assertNotIn("_explicit_model", payload)
+        self.assertNotIn("_task_mode", payload)
 
     async def test_generate_text_uses_request_auth_and_cleans_up_after_failure(self):
         client = PollinationsClient()

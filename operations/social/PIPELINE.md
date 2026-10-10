@@ -37,7 +37,7 @@ TIER 4: MONTHLY (1st of the month 06:00 UTC)
 ### Branch Strategy
 
 - **`main` branch** — source code only. No generated content. README "Latest News" section updated via small automated PRs.
-- **`news` branch** — all generated content: gists, daily posts, weekly posts, `index.json`, images. Unprotected (direct commits). Content is reviewed here before cron publishes it.
+- **`news` branch** — all generated content: gists, daily posts, weekly posts, monthly pages, `index.json`, images. Unprotected (direct commits). Content is reviewed here before cron publishes it.
 
 ### Data Flow
 
@@ -110,8 +110,8 @@ PR merge ──→ generate_realtime.py
 ═══════════════════════════════════════════════════════════════════════
 
              1st 06:00 UTC ──→ generate_monthly.py
-                                   │  (reads the month's gists directly; months before
-                                   │   gists began read their daily summaries)
+                                   │  (reads the month's gists directly; months up to
+                                   │   Feb 2026, when gists began, read daily summaries)
                                    │
                                    ├──→ GitHub search: merged PRs + contributors
                                    ├──→ summary.json  (themes + merged_prs + contributors)
@@ -273,7 +273,7 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `website.json` — simplified platform envelope; `metadata.story` says where the picture book stands, for next month's cover
 - `images/website.jpg` — the 16:9 cover
 
-Each cover is the next page of one picture book: the same garden, growing month by month. The generator attaches the latest earlier cover as a second reference image and passes its story to the post prompt, so a missed month never restarts the story. Generate months in order.
+Each cover is the next page of one picture book: the same garden, growing month by month. The generator attaches the latest earlier cover as a second reference image and passes its story to the post prompt, so a missed month never restarts the story. Generate months one at a time, oldest first, and wait for each run to finish before starting the next: parallel runs read the news branch before the earlier months exist, so each would start the story over.
 
 ### Platform Envelope
 
@@ -375,14 +375,14 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 
 ### Tier 4: `generate_monthly.py`
 
-- Reads gists directly for the month. Months before gists began (Feb 2026) read their daily summaries instead; if neither exists: skip.
+- Reads gists directly for the month. Gists began on 2026-02-05, so months up to and including February 2026 read their daily summaries instead; if there is nothing to read: skip.
 - A GitHub search window over the 1,000-result cap, a failed search, digest, post, cover or commit fails the run. The cover is committed before the JSON, so a page never points at a missing image.
 
 ### Re-triggering
 
 All workflows support `workflow_dispatch` for manual re-triggering:
 - `news-create-pr-gist.yml`: accepts `pr_number` input to regenerate a specific gist
-- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly); `mode: monthly` with `target_month` regenerates one month. Regenerate months in order, oldest first, so each cover continues the one before.
+- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly); `mode: monthly` with `target_month` regenerates one month. Regenerate months one at a time, oldest first, waiting for each run to finish (`gh run watch`) before dispatching the next, so each cover continues the one before.
 - `news-publish-social.yml`: accepts `mode` + `target_date` for manual publish of direct channels
 
 ---
@@ -423,7 +423,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 8. **Daily summary clusters related PRs into 3-5 story arcs** — 5 PRs about the same subsystem become one narrative beat. Editorial quality, not a changelog.
 
-9. **Three independent image families** — see Image Generation Strategy section below.
+9. **Four independent image families** — see Image Generation Strategy section below.
 
 10. **Highlights come from the daily summary** — the daily call also picks 0-5 highlights into `summary.json`; a quiet day adds none. `index.json` collects them for Enter and the README "Latest News" section (small PR to main).
 

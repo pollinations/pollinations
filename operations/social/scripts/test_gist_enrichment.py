@@ -141,6 +141,7 @@ class GistEnrichmentTest(unittest.TestCase):
         for module, generate in (
             ("generate_daily", lambda g: generate_summary([g], "2026-10-07", "test")),
             ("generate_weekly", lambda g: generate_digest([g], "2026-10-01", "2026-10-07", "test")),
+            ("generate_monthly", lambda g: generate_monthly_digest([g], [], "2026-10", "test")),
             ("publish_realtime", lambda g: generate_snippet(g, "test")),
         ):
             with patch(f"{module}.call_pollinations_api", return_value='{"arcs": []}') as api:

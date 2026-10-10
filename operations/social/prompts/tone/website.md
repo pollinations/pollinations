@@ -25,7 +25,7 @@ Think: the closing paragraph of a small team's month, written for people who use
 
 ## Website-Specific Image Adaptation
 
-**Website = one page of a picture book.** The cover sits beside the month's text, wide and calm.
+**Website = one page of a picture book.** One wide scene that fills the frame; the page's text sits beside it, never on it.
 
 ### What to Include:
 - One wide 16:9 scene with a single readable focal point

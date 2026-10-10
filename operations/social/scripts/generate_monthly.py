@@ -3,7 +3,7 @@
 Tier 4: Monthly Website Page
 
 1st of the month, 06:00 UTC:
-  1. Read the past month's gists (daily summaries for months before gists began)
+  1. Read the past month's gists (daily summaries up to Feb 2026, when gists began)
   2. Count the month's merged PRs and contributors on GitHub
   3. AI synthesizes the month's themes
   4. Generate the website post: title, summary, cover prompt and story
@@ -52,6 +52,8 @@ from common import (
 
 DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
 MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
+# PR gists began on 2026-02-05; earlier months, February included, read daily summaries.
+FIRST_GIST_MONTH = "2026-03"
 COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
 CONTINUE_COVER = (
     "The second attached image is last month's cover: keep its place, viewpoint, "
@@ -113,7 +115,7 @@ def read_gists_for_month(month: str) -> List[Dict]:
 
 
 def read_daily_summaries(month: str, repo_root: Optional[str] = None) -> List[Dict]:
-    """The month's daily summaries: the record for months before PR gists began (Feb 2026)."""
+    """The month's daily summaries: the record for months before FIRST_GIST_MONTH."""
     daily_root = Path(repo_root or get_repo_root()) / DAILY_REL_DIR
     return [
         json.loads(path.read_text(encoding="utf-8"))
@@ -291,8 +293,9 @@ def main():
 
     # ── Read the month ───────────────────────────────────────────────
     print(f"\n[1/5] Reading updates for {month}...")
-    gists = filter_daily_gists(read_gists_for_month(month))
-    daily_summaries = [] if gists else read_daily_summaries(month)
+    from_gists = month >= FIRST_GIST_MONTH
+    gists = filter_daily_gists(read_gists_for_month(month)) if from_gists else []
+    daily_summaries = [] if from_gists else read_daily_summaries(month)
     print(f"  {len(gists)} daily-tier gists, {len(daily_summaries)} daily summaries")
     if not gists and not daily_summaries:
         print("  Nothing recorded for this month. Skipping.")

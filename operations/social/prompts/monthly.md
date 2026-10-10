@@ -52,6 +52,6 @@ The monthly covers are one picture book about one place: the Pollinations garden
 - **One new thing.** Add one clear change that stands for this month's main story: a new building, path, machine, bridge, greenhouse or visitor. Make it the focal point.
 - **The cast is busy with it.** Polli and her companions are building, tending or celebrating that change.
 - **Follow up.** Pick up where last month's page left off: finish what was started, or let something that was set up pay off.
-- **Calm and readable.** One focal point and quiet space; the cover sits beside the month's text.
+- **Fill the frame.** One clear focal point, and the garden reaches every edge: no empty, faded or plain panel. The page's text sits beside the picture, never on it.
 - **No words in the picture.** No text, dates, numbers, logos, dashboards or signs with writing.
 - **Page one.** When there is no earlier page, establish a small young garden with a workshop, with plenty of room for later pages to grow into.

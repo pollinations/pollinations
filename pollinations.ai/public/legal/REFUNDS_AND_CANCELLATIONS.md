@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-10-05**
+**Updated: 2026-10-10**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -36,12 +36,9 @@ Approval is discretionary except where required by law. On any approved refund, 
 
 ## 4) EU/EEA Consumer Withdrawal
 
-If you purchase as a consumer in the EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content or digital services not supplied on a physical medium, that right can be lost once performance begins if you:
+If you purchase as a consumer in the EEA, you may have a 14-day right of withdrawal for distance contracts. API access is a digital service: that right ends only once the service has been fully performed, and only if you expressly asked for it to start during the withdrawal period and acknowledged that you would then lose the right. If you withdraw after asking for the service to start, you pay for the part already provided.
 
-- expressly request immediate access, and
-- acknowledge that you lose the withdrawal right once performance begins.
-
-We do not currently collect a separate immediate-delivery waiver at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
+We do not currently ask for that request and acknowledgement at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
 
 This policy does not limit any non-waivable statutory rights for non-conforming digital services.
 

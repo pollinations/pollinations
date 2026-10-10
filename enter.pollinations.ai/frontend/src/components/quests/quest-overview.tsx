@@ -21,7 +21,7 @@ import {
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
-import { useLoaderData } from "@tanstack/react-router";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
     type ComponentType,
     type FC,
@@ -41,6 +41,7 @@ import {
     PageStatus,
     SectionContent,
 } from "../layout/dashboard-loading.tsx";
+import { refreshDashboardBalanceAfterClaim } from "./quest-balance-refresh.ts";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 import { QuestStandings } from "./quest-standings.tsx";
 
@@ -603,6 +604,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 };
 
 function QuestOverviewContent({ userId }: { userId: string | null }) {
+    const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
@@ -708,7 +710,13 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             if (!response.ok) {
                 throw new Error("Couldn’t claim the reward. Please try again.");
             }
+            // The claim credited the wallet: refresh the dashboard balance
+            // loader so the sidebar shows it without a page reload. This runs
+            // before the quest-list reload, so a reload failure cannot leave
+            // the balance stale; a failed claim never reaches this line.
+            const balanceRefresh = refreshDashboardBalanceAfterClaim(router);
             const questData = await loadQuestData();
+            await balanceRefresh;
             setState((current) => ({
                 ...current,
                 ...questData,

@@ -71,9 +71,27 @@ PAGE_ONE_WORLD = (
 # image model copy its characters where they stand. The story carries the growth.
 PAGE_ONE_GARDEN = (
     "The second attached image is the garden of page one, without its characters: keep its "
-    "art style, crisp pixels, palette and first buildings, but draw the garden as it stands "
-    "now, grown well beyond page one as described above."
+    "art style, crisp pixels, first buildings and the colours of its ground, foliage and wood, "
+    "but draw the garden as it stands now, grown well beyond page one as described above, "
+    "in this page's moment rather than the attached garden's light."
 )
+# Each later page has its calendar month's light and weather, so the book turns through
+# the seasons and a month rhymes with itself a year later. Page one keeps the Community
+# artwork's daylight. June and September are still-light evenings; only December is dark.
+MOMENTS = {
+    "01": "a clear snowy morning in low warm sun, snow capping the roofs, beds and noticeboard, a few single-pixel snowflakes drifting",
+    "02": "a frosty sunrise, frost on the beds and a pale peach glow low on the horizon, windows lit warm",
+    "03": "a spring morning after rain in low warm sun with longer soft shadows, small puddles on the path and dew glinting as single white pixels on the leaves",
+    "04": "a blossom day, apricot petals drifting across the green as single pixels",
+    "05": "a bright late-spring afternoon, honey pollen motes drifting in the air",
+    "06": "a long summer evening, still light under a warm apricot-cream sky, the bulbs lit and the first fireflies out as single honey pixels",
+    "07": "a warm high-summer afternoon, dandelion seeds and pollen motes floating on the breeze",
+    "08": "golden hour, warm low light from the right, long soft shadows and the bulbs just lit",
+    "09": "a late-summer sunset after a warm shower, still light under a warm apricot-cream sky, puddles catching the first lit bulbs and a few fireflies over the grass",
+    "10": "a crisp autumn afternoon, amber and apricot leaves falling and the lanterns lit early",
+    "11": "a pale frosty morning in low sun, frost on the beds, the far hills soft and pale, windows lit warm",
+    "12": "first snow after dusk, snowflakes falling, every bulb, lantern and window lit, the Hive's door glowing and the first stars out",
+}
 BARE_GARDEN = (
     "Redraw the attached garden scene exactly: the same composition, buildings, paths, plants, "
     "palette and pixel style, with every character removed. No bee, no robot, no round "
@@ -101,7 +119,8 @@ NO_CAST = dict.fromkeys(CAST_KINDS.values(), 0)
 ONE_OF_EACH = (
     "The bee mascot, the monitor robot and the round Nomnom creature each appear at most once: "
     "no copies, no extra bees or robots, no toy robots, statues or screens with faces. "
-    "No humans or people anywhere, not even small in the background."
+    "No humans or people anywhere, not even small in the background. Pictures, canvases and "
+    "notices show plants or landscapes, never faces."
 )
 # Creatures move onto Lantern Hill one at a time as the community grows: each the first
 # month at least `contributors` people and agents merge a pull request, then they stay.
@@ -338,7 +357,7 @@ def residents(moved_in: List[str], contributors: int) -> List[str]:
 def community_context(contributors: int, merged: int, living: List[str], newcomer: Optional[str]) -> str:
     names = ", ".join(CREATURES[name]["name"] for name in living)
     return " ".join([
-        f"{contributors} people and agents merged {merged} pull requests.",
+        f"The community this month: {contributors} people and agents merged {merged} pull requests.",
         f"Living on Lantern Hill besides Polli, the robot and Nomnom: {names}." if living
         else "No other creatures live on Lantern Hill yet.",
         *([f"{CREATURES[newcomer]['name'].capitalize()} moves in this month."] if newcomer else []),
@@ -346,11 +365,11 @@ def community_context(contributors: int, merged: int, living: List[str], newcome
 
 
 def generate_website_post(digest: Dict, token: str, previous_page: Optional[Dict],
-                          community: str) -> Optional[Dict]:
+                          page_notes: str) -> Optional[Dict]:
     return generate_platform_post(
         "website", digest, token,
         "Write this month's page of the website build diary.",
-        extra_context=f"{story_context(previous_page)}\n\nThe community this month: {community}",
+        extra_context=f"{story_context(previous_page)}\n\n{page_notes}",
     )
 
 
@@ -461,8 +480,10 @@ def main():
     living = residents(moved_in, len(contributors))
     newcomer = living[-1] if len(living) > len(moved_in) else None
     print(f"  Creatures: {', '.join(living) or 'none yet'}{f' ({newcomer} moves in)' if newcomer else ''}")
+    moment = f"This page's moment: {MOMENTS[month[5:]]}." if earlier_pages else (
+        "This page's moment: the Community artwork's soft clear daylight.")
     community = community_context(len(contributors), len(merged), living, newcomer)
-    post = generate_website_post(digest, pollinations_token, previous_page, community)
+    post = generate_website_post(digest, pollinations_token, previous_page, f"{community}\n\n{moment}")
     if not post:
         print("  FATAL: Monthly website post generation failed")
         sys.exit(1)
@@ -478,6 +499,7 @@ def main():
     prompt = " ".join([
         post["image_prompt"],
         PAGE_ONE_GARDEN if earlier_pages else PAGE_ONE_WORLD,
+        moment,
         *([f"Attached last: {names}, who live on Lantern Hill. "
            "Draw each exactly once, true to its look."] if living else []),
         ONE_OF_EACH,

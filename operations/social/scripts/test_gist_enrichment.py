@@ -17,7 +17,7 @@ from build_news_index import api_entries, build_index, highlight_entries, model_
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_monthly import (
-    CREATURES, NO_CAST, count_cast, draw_checked, generate_website_post, rank_contributors, read_earlier_pages,
+    CREATURES, MOMENTS, NO_CAST, count_cast, draw_checked, generate_website_post, rank_contributors, read_earlier_pages,
     residents,
 )
 from generate_weekly import generate_digest, generate_discord_post
@@ -447,6 +447,8 @@ class GistEnrichmentTest(unittest.TestCase):
             platform="website", scope="monthly", date="d", period_start="p", period_end="e", generated_at="g",
             raw_post={"story": "The cat moved in.", "creatures": ["cosmic-cat"]})
         self.assertEqual(page["metadata"]["creatures"], ["cosmic-cat"])
+        # Every calendar month has its moment, looked up by the target month's "MM".
+        self.assertEqual(sorted(MOMENTS), [f"{number:02d}" for number in range(1, 13)])
 
     def test_monthly_cover_is_redrawn_until_each_character_appears_once(self):
         one_of_each = {**NO_CAST, "bees": 1, "monitor_robots": 1, "nomnom": 1}

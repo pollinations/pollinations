@@ -32,7 +32,7 @@ export const RANGE_LABELS = {
 export type Range = keyof typeof RANGE_LABELS;
 
 /** Matches the `time` every provisioned dashboard saves. */
-export const DEFAULT_RANGE: Range = "30d";
+const DEFAULT_RANGE: Range = "30d";
 
 /**
  * The dashboards Grafana has provisioned from `provisioning/dashboards/`,

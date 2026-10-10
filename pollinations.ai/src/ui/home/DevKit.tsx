@@ -28,6 +28,7 @@ import {
     WalletIcon,
 } from "@pollinations/ui";
 import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
+import { PaidChip } from "@pollinations/ui/wallet";
 import type { ComponentType, ReactNode } from "react";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
@@ -44,9 +45,10 @@ type Feature = {
     links: { label: string; href: string }[];
     icon: ComponentType<IconProps>;
     /** Live detail shown between the header and the body. */
-    detail?: ComponentType<{ color: string }>;
-    /** The icon's colour, from the Models cards. */
-    color: string;
+    detail?: ComponentType<{ color?: string }>;
+    /** The icon's colour, from the Models cards; without one the card takes
+     * the wallet's paid gold, like the Community card. */
+    color?: string;
     /** A Models-card background, for the publish cards. */
     tint?: string;
 };
@@ -140,10 +142,10 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: WalletIcon,
-        color: "var(--polli-color-paid-deep)",
     },
     {
         title: "Media storage",
+        chips: ["Images", "Audio", "Video"],
         body: (
             <>
                 <Em>Upload images, audio and video</Em> to get a link for model
@@ -260,7 +262,11 @@ function FeatureCard({
             className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
             <div className="flex items-center gap-3">
-                <IconTile icon={feature.icon} color={feature.color} />
+                <IconTile
+                    icon={feature.icon}
+                    color={feature.color}
+                    tone="paid"
+                />
                 <div className="flex min-w-0 flex-col gap-1">
                     <Heading as="h3" size="card">
                         {feature.title}
@@ -422,27 +428,31 @@ function Models() {
 }
 
 /** The hosted servers, live from gen. Nothing shows until they load. */
-function McpServers({ color }: { color: string }) {
+function McpServers({ color }: { color?: string }) {
     const { data: servers } = useMcpServers();
     if (servers.length === 0) return null;
     return <ChipList names={servers} color={color} />;
 }
 
 /** Labels in the card's icon colour: the icon tile's wash, darker text. */
-function ChipList({ names, color }: { names: string[]; color: string }) {
+function ChipList({ names, color }: { names: string[]; color?: string }) {
     return (
         <ul className="flex flex-wrap gap-2">
             {names.map((name) => (
                 <li key={name}>
-                    <Chip
-                        size="md"
-                        style={{
-                            backgroundColor: `color-mix(in oklab, ${color} 14%, transparent)`,
-                            color: `color-mix(in oklab, ${color} 60%, var(--polli-color-text-strong))`,
-                        }}
-                    >
-                        {name}
-                    </Chip>
+                    {color ? (
+                        <Chip
+                            size="md"
+                            style={{
+                                backgroundColor: `color-mix(in oklab, ${color} 14%, transparent)`,
+                                color: `color-mix(in oklab, ${color} 60%, var(--polli-color-text-strong))`,
+                            }}
+                        >
+                            {name}
+                        </Chip>
+                    ) : (
+                        <PaidChip size="md">{name}</PaidChip>
+                    )}
                 </li>
             ))}
         </ul>

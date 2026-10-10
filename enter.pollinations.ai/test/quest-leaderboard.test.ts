@@ -90,8 +90,7 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         },
     ]);
 
-    // Public work counts: a merged PR, a reported issue and a listed app.
-    // Purchase and usage rewards would expose a named person, so they don't.
+    // Every quest reward counts except BYOP app growth and BYOM model/agent use.
     await db.insert(schema.rewards).values(
         [
             { questId: "merged_pr", pollenAmount: 5 },
@@ -99,6 +98,8 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
             { questId: "app_listed", pollenAmount: 10 },
             { questId: "first_top_up", pollenAmount: 1_000 },
             { questId: "use_image_model", pollenAmount: 500 },
+            { questId: "app_active", pollenAmount: 700 },
+            { questId: "create_used_community_model", pollenAmount: 200 },
         ].map(({ questId, pollenAmount }) => ({
             id: `leaderboard-51-${questId}`,
             idempotencyKey: `quest:${questId}:leaderboard-user-51`,
@@ -137,8 +138,8 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
     expect(payload.leaderboard).toHaveLength(50);
     expect(payload.leaderboard[0]).toEqual({
         githubLogin: "builder-51",
-        completedQuests: 6,
-        totalPollen: 69.8,
+        completedQuests: 8,
+        totalPollen: 1569.8,
     });
     expect(payload.leaderboard.at(-1)).toEqual({
         githubLogin: "builder-2",
@@ -146,12 +147,12 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         totalPollen: 2,
     });
 
-    // 1 + ... + 51 + 0.1 + 0.2 + 0.5 + 5 + 3 + 10 = 1344.8. The bonus
-    // contributes Pollen without counting the same quest twice.
+    // 1 + ... + 51 + 0.1 + 0.2 + 0.5 + 5 + 3 + 10 + 1000 + 500 = 2844.8.
+    // The bonus contributes Pollen without counting the same quest twice.
     expect(payload.totals).toEqual({
         contributors: 51,
-        completedQuests: 56,
-        totalPollen: 1344.8,
+        completedQuests: 58,
+        totalPollen: 2844.8,
     });
 });
 

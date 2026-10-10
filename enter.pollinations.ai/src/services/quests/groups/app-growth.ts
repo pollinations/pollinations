@@ -102,8 +102,13 @@ const QUESTS = [
     appListedQuest,
 ];
 
-/** App rewards count as public work on the Quest leaderboard. */
-export const APP_GROWTH_QUEST_IDS = QUESTS.map((quest) => quest.id);
+/** BYOP: rewards for users connecting to and spending through your app. */
+export const BYOP_QUEST_IDS = [
+    firstByopExternalUserQuest.id,
+    firstPaidSpendInAppQuest.id,
+    tenAppUsersQuest.id,
+    paidAppUsageQuest.id,
+];
 
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,

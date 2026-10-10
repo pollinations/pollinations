@@ -1,6 +1,20 @@
 import { describe, expect, test, vi } from "vitest";
 import worker from "./worker";
 
+// HTMLRewriter is a Cloudflare runtime global that plain vitest doesn't ship.
+// The suites below only assert on response headers and redirects, so a
+// pass-through is all the SEO path needs.
+Object.assign(globalThis, {
+    HTMLRewriter: class {
+        on() {
+            return this;
+        }
+        transform(response: Response) {
+            return response;
+        }
+    },
+});
+
 describe("hostname redirects", () => {
     test.each([
         ["GET", "https://old.pollinations.ai/", "https://pollinations.ai/"],
@@ -107,5 +121,53 @@ describe("documentation entry redirect", () => {
         expect(fetchAsset).toHaveBeenCalledWith(request);
         expect(response).toBe(assetResponse);
         expect(response.headers.has("Location")).toBe(false);
+    });
+});
+
+describe("agent discovery", () => {
+    const htmlAsset = () =>
+        new Response(
+            "<!doctype html><html><head><title></title></head></html>",
+            { headers: { "content-type": "text/html; charset=utf-8" } },
+        );
+
+    test.each([
+        "/",
+        "/apps",
+        "/community",
+        "/play",
+    ])("advertises the machine-readable surface on %s", async (path) => {
+        const response = await worker.fetch(
+            new Request(`https://pollinations.ai${path}`),
+            { ASSETS: { fetch: async () => htmlAsset() } },
+        );
+
+        const link = response.headers.get("Link") ?? "";
+        expect(link).toContain(
+            '<https://gen.pollinations.ai/llms.txt>; rel="alternate"',
+        );
+        expect(link).toContain('rel="api-catalog"');
+        expect(link).toContain('rel="ai-catalog"');
+        expect(link).toContain('rel="agent-skills"');
+        expect(link).toContain('rel="service-desc"');
+        expect(link).toContain('rel="service-doc"');
+    });
+
+    test("keeps the header off assets and unknown routes", async () => {
+        const png = new Response("", {
+            headers: { "content-type": "image/png" },
+        });
+        const asset = await worker.fetch(
+            new Request("https://pollinations.ai/art/star.png"),
+            { ASSETS: { fetch: async () => png } },
+        );
+        expect(asset.headers.has("Link")).toBe(false);
+
+        const missing = await worker.fetch(
+            new Request("https://pollinations.ai/not-a-page"),
+            { ASSETS: { fetch: async () => htmlAsset() } },
+        );
+        expect(missing.status).toBe(404);
+        expect(missing.headers.has("Link")).toBe(false);
     });
 });

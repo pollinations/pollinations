@@ -25,6 +25,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { handleTakoMcp } from "@/mcp/tako.ts";
 import { auth } from "@/middleware/auth.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
@@ -102,7 +103,7 @@ async function settleUsage(
             // receipt directly instead of inventing a maximum-cost preflight.
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
-            modelPaidOnly: false,
+            modelPaidOnly: server.paidOnly ?? false,
             questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
@@ -170,6 +171,7 @@ export const mcpRoutes = new Hono<Env>()
                 description: server.description,
                 url: `${getPublicOrigin(c)}/mcp/${server.id}`,
                 pricing: getMcpPricingInfo(server),
+                ...("paidOnly" in server ? { paid_only: server.paidOnly } : {}),
             })),
         }),
     )
@@ -199,14 +201,14 @@ export const mcpRoutes = new Hono<Env>()
             server.billing === "usage_receipt" &&
             message?.method === "tools/call"
         ) {
-            await requireFunds(c, 0, "tool call");
+            await requireFunds(c, 0, "tool call", server.paidOnly);
         }
-        const binding = c.env[server.binding] as Fetcher;
-
         const startedAt = new Date();
-        const response = await binding.fetch(
-            requestForMcp(c.req.raw, server, user),
-        );
+        const request = requestForMcp(c.req.raw, server, user);
+        const response =
+            server.binding === "GEN"
+                ? await handleTakoMcp(request, c.env.AI_GATEWAY_API_KEY)
+                : await (c.env[server.binding] as Fetcher).fetch(request);
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);
             if (usage) {

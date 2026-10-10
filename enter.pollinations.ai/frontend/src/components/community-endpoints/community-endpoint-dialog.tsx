@@ -15,6 +15,7 @@ import {
     Input,
     ScrollArea,
     TabButton,
+    Tooltip,
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard } from "@pollinations/ui/auth";
@@ -58,6 +59,64 @@ import {
     toEndpointPayload,
 } from "./types.ts";
 
+export function getCommunityEndpointSubmitDisabledReason({
+    form,
+    isEdit,
+    isEndpointAgent,
+    hasToken,
+    needsTest,
+    testState,
+    testRequirementMet,
+    hasValidVisiblePrices,
+    hasValidPerUserRpm,
+}: {
+    form: EndpointFormState;
+    isEdit: boolean;
+    isEndpointAgent: boolean;
+    hasToken: boolean;
+    needsTest: boolean;
+    testState: ActionState;
+    testRequirementMet: boolean;
+    hasValidVisiblePrices: boolean;
+    hasValidPerUserRpm: boolean;
+}): string | null {
+    if (form.name.trim() === "") {
+        return isEndpointAgent ? "Enter an agent ID" : "Enter a model ID";
+    }
+    if (form.title.trim() === "") {
+        return "Enter a title";
+    }
+    if (form.url.trim() === "") {
+        return form.modality === "video"
+            ? "Enter a video endpoint URL"
+            : "Enter an endpoint URL";
+    }
+    if (!isEndpointAgent && !isEdit && !hasToken) {
+        return "Enter an API bearer token";
+    }
+    if (needsTest && !testRequirementMet) {
+        if (!hasToken) {
+            return isEdit
+                ? "Re-enter your API bearer token and test the endpoint before publishing"
+                : "Enter your API bearer token and test the endpoint before publishing";
+        }
+        if (testState.status === "loading") {
+            return "Waiting for endpoint test to complete";
+        }
+        if (testState.status === "error") {
+            return "Endpoint test failed. Fix errors and test again before publishing";
+        }
+        return "Test the endpoint before publishing";
+    }
+    if (!hasValidVisiblePrices) {
+        return "Enter valid pricing values (or leave blank for free)";
+    }
+    if (!hasValidPerUserRpm) {
+        return "Enter a valid per-user RPM limit";
+    }
+    return "Complete all required fields to save";
+}
+
 type CommunityEndpointDialogProps = {
     /** Present in edit mode (prefills the form); omit to create. */
     endpoint?: EditableEndpoint;
@@ -88,7 +147,9 @@ export function CommunityEndpointDialog({
     const testableModelId = endpoint
         ? openWebUiTestableModelId(endpoint)
         : null;
-    const [form, setForm] = useState<EndpointFormState>(emptyForm);
+    const [form, setForm] = useState<EndpointFormState>(() =>
+        open && endpoint ? endpointToForm(endpoint) : emptyForm,
+    );
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
         useState<ActionState>(idleAction);
@@ -400,6 +461,39 @@ export function CommunityEndpointDialog({
         hasValidPerUserRpm &&
         saveRequirementMet;
 
+    const submitDisabledReason =
+        isSubmitting || canSubmit
+            ? null
+            : getCommunityEndpointSubmitDisabledReason({
+                  form,
+                  isEdit,
+                  isEndpointAgent,
+                  hasToken,
+                  needsTest,
+                  testState,
+                  testRequirementMet,
+                  hasValidVisiblePrices,
+                  hasValidPerUserRpm,
+              });
+
+    const submitButton = (
+        <Button
+            icon={<BeakerIcon />}
+            type="submit"
+            intent="commit"
+            className="disabled:opacity-50"
+            disabled={!canSubmit}
+        >
+            {isSubmitting
+                ? isEdit
+                    ? "Saving…"
+                    : "Creating…"
+                : isEdit
+                  ? "Save changes"
+                  : "Create model"}
+        </Button>
+    );
+
     const actions = (
         <>
             <Button
@@ -412,21 +506,20 @@ export function CommunityEndpointDialog({
             >
                 Cancel
             </Button>
-            <Button
-                icon={<BeakerIcon />}
-                type="submit"
-                intent="commit"
-                className="disabled:opacity-50"
-                disabled={!canSubmit}
-            >
-                {isSubmitting
-                    ? isEdit
-                        ? "Saving…"
-                        : "Creating…"
-                    : isEdit
-                      ? "Save changes"
-                      : "Create model"}
-            </Button>
+            {submitDisabledReason ? (
+                <Tooltip
+                    triggerAs="span"
+                    tapEnabled
+                    ariaLabel={submitDisabledReason}
+                    content={submitDisabledReason}
+                    align="center"
+                    className="inline-flex cursor-not-allowed"
+                >
+                    {submitButton}
+                </Tooltip>
+            ) : (
+                submitButton
+            )}
         </>
     );
 

@@ -99,7 +99,7 @@ Never enable production data sources just to test local login.
 ## Creating Panels
 
 1. Open http://localhost:3000
-2. Edit dashboard in the UI
+2. Edit dashboard in the UI (Grafana refuses to save provisioned dashboards)
 3. Dashboard -> Settings -> JSON Model -> Copy
 4. Replace the matching JSON in `provisioning/dashboards/`
 5. Restart to verify: `docker compose restart grafana`

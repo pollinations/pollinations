@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-09** – **🎵 MAI voices for speech** Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).
+- **2026-10-09** – **🎵 MAI transcription, two ways** Transcribe multilingual audio files with timed segments using `microsoft/mai-transcribe-2`, or send live PCM audio to `microsoft/mai-transcribe-2-streaming`. [Browse the file transcription model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).
+- **2026-10-09** – **🤖 GPT-6 Luna Decisions** Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).
+- **2026-10-09** – **🎨 Fable Finder** Give it a lesson you keep forgetting; get a four-line fable and an illustration. [Try it](https://mhmdrizki803-boop.github.io/fable-finder).
+- **2026-10-09** – **✨ Nice No** Turn an awkward request into a gentle, firm, or brief boundary message, with a follow-up for pushback. [Try it](https://nice-no.maxtoms21.chatgpt.site).
 - **2026-10-08** – **🤖 Two long-context text models** Try `anthropic/claude-haiku-5.5` and `stepfun/step-5-preview` for text and image input, tool calls and 1M-token contexts. Both are paid-only models available through the [text API](https://gen.pollinations.ai/v1/chat/completions).
 - **2026-10-08** – **🔗 Responses for every Chat model** Models available through Chat Completions can now be called through `/v1/responses`, including Claude, Gemini, community models and chat-only agents. See the [API docs](https://gen.pollinations.ai/docs).
 - **2026-10-08** – **💡 Publish non-streaming text models** Community publishers can register OpenAI-compatible endpoints that return JSON without SSE. Streaming clients still receive a valid event stream, with the full answer delivered at once.
 - **2026-10-08** – **💻 Pi in a browser workbench** Pi Workbench runs upstream Pi in the browser, with a terminal, file access, HTML previews and project ZIP downloads. Visitors can connect their own Pollinations account.
 - **2026-10-08** – **✨ Polish a Japanese memo** Keigo Formatter turns rough Japanese notes into polite business Japanese using the Pollinations text API. [Try it](https://ucalis-uma.github.io/keigo-formatter).
-- **2026-10-07** – **🤖 Two Nex reasoning models** Try paid-only `nex-agi/nex-n2.5-pro` and `nex-agi/nex-n2.5-mini` with text or image input. Pro also supports tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).
-- **2026-10-07** – **🤖 Mistral Large 4 added** Use paid-only Mistral Large 4 for text and image input, reasoning, and tool calling. [Explore text models](https://gen.pollinations.ai/v1/models).
-- **2026-10-07** – **🎨 More video reference options** Pass image, video, or audio reference URLs to video generation through the SDK, including arrays of URLs. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
-- **2026-10-07** – **✨ SoloForge AI joins the catalog** Turn content ideas into generated assets, review them, and organize publishing workflows with Pollinations image generation. [Try it](https://soloforge-ai-web.onrender.com).
-- **2026-10-07** – **🎵 Audio joins the catalog** Try this community text-to-speech app; its BYOP access requires sign-in. [Try it](https://dwikatmahmoud87-source.github.io/Gtdcg).
 ---
 
 ## 🌱 Introduction

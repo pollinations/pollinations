@@ -53,7 +53,10 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         vi.stubGlobal("fetch", fetch);
         const { sandboxCommand } = await import("./index.js");
         return {
-            run: () => sandboxCommand.parseAsync(["create"], { from: "user" }),
+            run: (...args: string[]) =>
+                sandboxCommand.parseAsync(["create", ...args], {
+                    from: "user",
+                }),
             output: () => ({ stdout, stderr }),
             fetch,
         };
@@ -122,6 +125,30 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         );
     });
 
+    it("asks for E2B's largest timeout with --timeout 0", async () => {
+        const command = await prepare(
+            Response.json({ sandboxID: "created123" }),
+        );
+
+        await command.run("--timeout", "0");
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes"),
+            expect.objectContaining({
+                body: JSON.stringify({
+                    templateID: "pollinations",
+                    timeout: 2 ** 31 - 1,
+                    autoPause: true,
+                }),
+            }),
+        );
+        if (mode === "human") {
+            expect(command.output().stderr).toContain(
+                "It runs until you pause or kill it",
+            );
+        }
+    });
+
     it("reports a remote creation failure without running SSH setup", async () => {
         const command = await prepare(
             new Response("template not found", { status: 404 }),
@@ -137,6 +164,47 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         expect(stderr.match(/error:/g)).toHaveLength(1);
         expect(readFileSync(join(home, ".ssh", "config"), "utf8")).toBe(
             "Host existing.example\n",
+        );
+    });
+});
+
+describe("sandbox timeout and pause", () => {
+    async function prepare() {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        setKeyOverride("sk_test");
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        const fetch = vi.fn(async () => Response.json({ sandboxID: "sbx1" }));
+        vi.stubGlobal("fetch", fetch);
+        const { sandboxCommand } = await import("./index.js");
+        return {
+            run: (...args: string[]) =>
+                sandboxCommand.parseAsync(args, { from: "user" }),
+            fetch,
+        };
+    }
+
+    it("never expires a sandbox with a timeout of 0", async () => {
+        const command = await prepare();
+
+        await command.run("timeout", "sbx1", "0");
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes/sbx1/connect"),
+            expect.objectContaining({
+                method: "POST",
+                body: JSON.stringify({ timeout: 2 ** 31 - 1 }),
+            }),
+        );
+    });
+
+    it("pauses a sandbox", async () => {
+        const command = await prepare();
+
+        await command.run("pause", "sbx1");
+
+        expect(command.fetch).toHaveBeenCalledWith(
+            expect.stringContaining("/alpha/e2b/sandboxes/sbx1/pause"),
+            expect.objectContaining({ method: "POST" }),
         );
     });
 });

@@ -27,7 +27,7 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
-import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
+import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
@@ -215,4 +215,6 @@ app.onError(handleError);
 
 export default {
     fetch: app.fetch,
-};
+    // The only cron, every 10 minutes (wrangler.toml).
+    scheduled: (_controller, env, ctx) => keepSandboxes(env, ctx),
+} satisfies ExportedHandler<CloudflareBindings>;

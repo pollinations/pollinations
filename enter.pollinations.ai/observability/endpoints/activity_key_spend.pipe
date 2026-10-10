@@ -1,0 +1,19 @@
+DESCRIPTION >
+    Lifetime billed spend per API key for a user, used to sort the keys list.
+
+TOKEN "tinybird_read" READ
+
+NODE activity_key_spend_node
+SQL >
+    %
+    SELECT
+        api_key_id,
+        sum(price_usd) as total_spend
+    FROM activity_usage_events
+    WHERE
+        user_id = {{ String(user_id, '') }}
+        AND api_key_id != ''
+        AND api_key_id != 'undefined'
+    GROUP BY api_key_id
+
+TYPE endpoint

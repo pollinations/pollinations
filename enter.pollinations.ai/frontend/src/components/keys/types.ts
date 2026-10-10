@@ -11,6 +11,8 @@ export interface ApiKey {
     pollenBalance?: number | null;
     questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
+    /** Lifetime billed spend in Pollen, for the "Total spend" sort. */
+    totalSpend?: number;
 }
 
 export interface ApiKeyUpdateParams {

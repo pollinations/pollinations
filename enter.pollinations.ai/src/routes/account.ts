@@ -58,6 +58,9 @@ const MAX_USAGE_EXPORT_ROWS = 50_000;
 const SECONDS_PER_DAY = 86400;
 const USAGE_MIN_DATE = "2026-01-01";
 const PERIOD_GRANULARITIES = ["day", "week", "month"] as const;
+// Lifetime spend for the keys list sort. Bounded by the Activity TTL and
+// emitted one row per key, so this stays cheap on the user's own events.
+const KEY_SPEND_ENDPOINT = "/v0/pipes/activity_key_spend.json";
 type PeriodGranularity = (typeof PERIOD_GRANULARITIES)[number];
 
 type UsageDebugBindings = CloudflareBindings & {
@@ -1612,7 +1615,37 @@ export const accountRoutes = new Hono<Env>()
                 .from(apikeyTable)
                 .where(eq(apikeyTable.referenceId, user.id))
                 .all();
-            return c.json({ data: keys.map(formatKey) });
+
+            // Lifetime spend drives the "Total spend" sort. Usage analytics are
+            // best-effort: a Tinybird hiccup or rate limit must not break the
+            // keys page, so an unavailable spend map leaves spend at null.
+            let spendByKeyId = new Map<string, number>();
+            try {
+                const spend = await fetchTinybirdRows<{
+                    api_key_id: string;
+                    total_spend: number;
+                }>(
+                    new URL(c.env.TINYBIRD_INGEST_URL).origin,
+                    KEY_SPEND_ENDPOINT,
+                    requireTinybirdReadToken(c.env),
+                    { user_id: user.id },
+                );
+                spendByKeyId = new Map(
+                    spend.map((row) => [row.api_key_id, row.total_spend]),
+                );
+            } catch (error) {
+                c.get("log").warn(
+                    "Couldn't load key spend for keys list: {error}",
+                    { error },
+                );
+            }
+
+            return c.json({
+                data: keys.map((key) => ({
+                    ...formatKey(key),
+                    totalSpend: spendByKeyId.get(key.id) ?? 0,
+                })),
+            });
         },
     )
     .post(

@@ -23,6 +23,8 @@ import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import { findModelByName } from "./availableModels.js";
+import { chatStreamToCompletion } from "./chat/assemble.ts";
 import { publicChatChoices, publicChatStream } from "./chat/public.ts";
 import { completionToChatStream } from "./chat/stream.ts";
 import {
@@ -149,16 +151,42 @@ export async function generateChatAttempt(
     const buffered =
         requestData.stream === true &&
         candidate.definition?.supportsStreaming === false;
-    const attemptData = buffered
-        ? { ...requestData, stream: false }
-        : requestData;
-    const result = await generateTextPortkey(
+    const assembled =
+        requestData.stream !== true && streamsNonStreamRequests(candidate);
+    const attemptData =
+        buffered || assembled
+            ? { ...requestData, stream: assembled }
+            : requestData;
+    const response = await generateTextPortkey(
         attemptData.messages,
         await gatewayContext(c, attemptData, candidate),
         portkey ? (input, init) => portkey.fetch(input, init) : undefined,
     );
-    if (!attemptData.stream) requireChatCompletionUsage(result);
+    const result = assembled
+        ? await chatStreamToCompletion(response)
+        : response;
+    if (!requestData.stream) requireChatCompletionUsage(result);
     return buffered ? completionToChatStream(result) : result;
+}
+
+/**
+ * Cloudflare ends a request with 524 when its origin sends nothing for 125s.
+ * Reasoning models can think longer than that before a JSON answer, so their
+ * non-stream Chat Completions requests are streamed from the provider and
+ * assembled here (#15396). Responses and TypeSafe targets keep their own
+ * transports.
+ */
+function streamsNonStreamRequests(candidate: FallbackCandidate): boolean {
+    const definition = candidate.definition;
+    const transport = findModelByName(candidate.id);
+    return (
+        !candidate.communityEndpoint &&
+        definition?.reasoning === true &&
+        definition.supportsStreaming !== false &&
+        !definition.outputModalities?.includes("audio") &&
+        !transport?.useResponsesApi &&
+        !transport?.useSystemOneApi
+    );
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {

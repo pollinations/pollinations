@@ -4522,6 +4522,7 @@ fixtureTest.each(
                     const upstream = (await request.json()) as {
                         messages: { role: string; content: string }[];
                         reasoning_effort?: string;
+                        stream?: boolean;
                     };
                     expect(upstream.reasoning_effort).toBe("low");
                     if (modelCalls === 2) {
@@ -4568,7 +4569,9 @@ fixtureTest.each(
                                         }
                                       : {}),
                               };
-                    if (!stream)
+                    // Reasoning models are streamed upstream even for
+                    // non-stream callers, so answer what was asked for.
+                    if (!upstream.stream)
                         return Response.json({
                             id: `chatcmpl-managed-${modelCalls}`,
                             object: "chat.completion",

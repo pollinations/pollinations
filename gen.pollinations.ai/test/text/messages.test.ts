@@ -726,6 +726,32 @@ describe("POST /v1/messages", () => {
                 if (body.stream) {
                     return new Response(
                         sse([
+                            ...(options.withThinking
+                                ? [
+                                      {
+                                          choices: [
+                                              {
+                                                  delta: {
+                                                      content_blocks: [
+                                                          {
+                                                              delta: {
+                                                                  thinking:
+                                                                      "A plan",
+                                                              },
+                                                          },
+                                                          {
+                                                              delta: {
+                                                                  signature:
+                                                                      "provider-signature",
+                                                              },
+                                                          },
+                                                      ],
+                                                  },
+                                              },
+                                          ],
+                                      },
+                                  ]
+                                : []),
                             { choices: [{ delta: { content: "Hello" } }] },
                             {
                                 choices: [{ delta: {}, finish_reason: "stop" }],

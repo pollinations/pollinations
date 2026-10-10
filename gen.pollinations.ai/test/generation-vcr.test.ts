@@ -487,8 +487,14 @@ async function fakePortkeyResponse(request: Request) {
     const reportedModel = prompt.includes("provider model mismatch")
         ? "provider-model-version"
         : model;
+    // Prompts written for a JSON reply. Reasoning models now ask for a stream
+    // even for non-stream callers (#15396), so these answer in either form.
+    const jsonPrompt =
+        /vcr (chat json|simple text|post text|empty text|slash\/inside|citations text|moderated text|response extensions|missing chat usage)/.test(
+            prompt,
+        );
 
-    if (body.stream) {
+    if (body.stream && !jsonPrompt) {
         const streamEvent = {
             id: "chatcmpl_vcr_stream",
             object: "chat.completion.chunk",
@@ -607,7 +613,7 @@ async function fakePortkeyResponse(request: Request) {
         model === "openai/gpt-audio-mini" || prompt.includes("vcr audio text");
 
     if (prompt.includes("vcr response extensions")) {
-        return Response.json({
+        return completionResponse(body.stream, {
             provider_response_option: { trace: "kept" },
             choices: [
                 {
@@ -664,40 +670,60 @@ async function fakePortkeyResponse(request: Request) {
         );
     }
 
-    return Response.json(
-        {
-            id: "chatcmpl_vcr",
-            object: "chat.completion",
-            created: 1,
-            model: reportedModel,
-            citations: selectedCase?.citations,
-            prompt_filter_results: selectedCase?.promptFilterResults,
-            choices: [
-                {
-                    index: 0,
-                    message: {
-                        role: "assistant",
-                        content: selectedCase?.content ?? "snapshot response",
-                    },
-                    finish_reason: selectedCase?.finishReason || "stop",
-                    content_filter_results:
-                        selectedCase?.completionFilterResults,
+    return completionResponse(body.stream, {
+        id: "chatcmpl_vcr",
+        object: "chat.completion",
+        created: 1,
+        model: reportedModel,
+        citations: selectedCase?.citations,
+        prompt_filter_results: selectedCase?.promptFilterResults,
+        choices: [
+            {
+                index: 0,
+                message: {
+                    role: "assistant",
+                    content: selectedCase?.content ?? "snapshot response",
                 },
-            ],
-            ...(prompt.includes("vcr missing chat usage")
-                ? {}
-                : {
-                      usage: {
-                          prompt_tokens: selectedCase?.promptTokens || 7,
-                          completion_tokens:
-                              selectedCase?.completionTokens || 3,
-                          total_tokens:
-                              (selectedCase?.promptTokens || 7) +
-                              (selectedCase?.completionTokens || 3),
-                      },
-                  }),
-        },
-        { headers: usageHeaders({}) },
+                finish_reason: selectedCase?.finishReason || "stop",
+                content_filter_results: selectedCase?.completionFilterResults,
+            },
+        ],
+        ...(prompt.includes("vcr missing chat usage")
+            ? {}
+            : {
+                  usage: {
+                      prompt_tokens: selectedCase?.promptTokens || 7,
+                      completion_tokens: selectedCase?.completionTokens || 3,
+                      total_tokens:
+                          (selectedCase?.promptTokens || 7) +
+                          (selectedCase?.completionTokens || 3),
+                  },
+              }),
+    });
+}
+
+/** The provider's JSON reply, or the same reply as Chat Completions SSE. */
+function completionResponse(
+    stream: boolean | undefined,
+    completion: Record<string, unknown> & {
+        choices: Array<Record<string, unknown> & { message?: unknown }>;
+        usage?: unknown;
+    },
+) {
+    if (!stream)
+        return Response.json(completion, { headers: usageHeaders({}) });
+    const { choices, usage, ...rest } = completion;
+    const chunk = { ...rest, object: "chat.completion.chunk" };
+    const events = [
+        ...choices.map(({ message, ...choice }) => ({
+            ...chunk,
+            choices: [{ ...choice, delta: message }],
+        })),
+        ...(usage ? [{ ...chunk, choices: [], usage }] : []),
+    ];
+    return new Response(
+        `${events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join("")}data: [DONE]\n\n`,
+        { headers: { "content-type": "text/event-stream; charset=utf-8" } },
     );
 }
 
@@ -1493,6 +1519,8 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     expect(mocks.responsesDirect.state.requests[0].body).not.toHaveProperty(
         "messages",
     );
+    // A reasoning model on a Responses target keeps its own JSON transport.
+    expect(mocks.responsesDirect.state.requests[0].body.stream).not.toBe(true);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "openai/gpt-5.6-luna",

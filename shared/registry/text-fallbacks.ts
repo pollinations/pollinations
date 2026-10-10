@@ -23,6 +23,22 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-6-luna-decisions": {
+        // Same OpenAI backend; covers direct-route failures, not OpenAI outages.
+        "openai/gpt-6-luna-decisions:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+            // OpenRouter's flat rate must not inherit OpenAI's context tier.
+            costVariants: undefined,
+            selectCostVariant: undefined,
+            costVariantMetadata: undefined,
+            defaultCostVariantLabel: undefined,
+            pricingDimensions: undefined,
+        },
+    },
     "stepfun/step-5-preview": {
         // Same StepFun model through Vercel's AI Gateway at the posted base
         // rates, without OpenRouter's credit fee.

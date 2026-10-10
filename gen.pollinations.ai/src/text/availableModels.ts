@@ -760,6 +760,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "openai/gpt-6-luna-decisions",
+        config: portkeyConfig["gpt-6-luna-decisions"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna-decisions:openrouter",
+        config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(

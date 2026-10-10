@@ -1875,6 +1875,62 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000013125,
     },
   },
+  "microsoft/mai-transcribe-2": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000208333333333333,
+    },
+  },
+  "microsoft/mai-transcribe-2-streaming": {
+    "cost": {
+      "promptAudioSeconds": 0.00015,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0001125,
+    },
+  },
+  "microsoft/mai-transcribe-2:vercel": {
+    "cost": {
+      "promptAudioSeconds": 0.0000277777777777778,
+    },
+    "price": {
+      "promptAudioSeconds": 0.0000208333333333333,
+    },
+  },
+  "microsoft/mai-voice-2.1": {
+    "cost": {
+      "completionAudioTokens": 0.000022,
+    },
+    "price": {
+      "completionAudioTokens": 0.0000165,
+    },
+  },
+  "microsoft/mai-voice-2.1-flash": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.00001125,
+    },
+  },
+  "microsoft/mai-voice-2.1-flash:vercel": {
+    "cost": {
+      "completionAudioTokens": 0.000015,
+    },
+    "price": {
+      "completionAudioTokens": 0.00001125,
+    },
+  },
+  "microsoft/mai-voice-2.1:vercel": {
+    "cost": {
+      "completionAudioTokens": 0.000022,
+    },
+    "price": {
+      "completionAudioTokens": 0.0000165,
+    },
+  },
   "microsoft/trellis-2": {
     "cost": {
       "completionImageTokens": 0.24,
@@ -2524,6 +2580,32 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.00000001,
       "promptImageTokens": 0.0000001,
       "promptTextTokens": 0.0000001,
+    },
+  },
+  "openai/gpt-6-luna-decisions": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0,
+        "promptTextTokens": 0.0000002,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001,
+    },
+  },
+  "openai/gpt-6-luna-decisions:openrouter": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.0000001055,
     },
   },
   "openai/gpt-6-luna:openai": {

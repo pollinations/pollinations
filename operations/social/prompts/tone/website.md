@@ -25,7 +25,7 @@ Think: the closing paragraph of a small team's month, written for people who use
 
 **Website = one page of a picture book set on Lantern Hill**, the Community land of the website's art. The cover sits beside the page's text, never under it.
 
-The art style, the characters' looks and the page's moment are added to the image prompt for you. Describe only the scene, fitting the moment: the place, this month's new thing, and what Polli, the robot and Nomnom are doing.
+The art style, the characters' looks and the page's moment are added to the image prompt for you. Describe only the scene, fitting the moment: the place, this month's new thing, and what each resident is doing.
 
 ### What to Include:
 - One 16:9 medium shot with a single readable focal point: the cast large enough to read clearly

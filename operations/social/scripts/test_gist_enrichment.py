@@ -17,8 +17,8 @@ from build_news_index import api_entries, build_index, highlight_entries, model_
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_monthly import (
-    CREATURES, MOMENTS, NO_CAST, count_cast, draw_checked, generate_website_post, rank_contributors, read_earlier_pages,
-    residents,
+    MOMENTS, NO_CAST, RESIDENTS, community_size, count_cast, draw_checked, generate_website_post, rank_contributors,
+    read_earlier_pages, residents,
 )
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
@@ -436,17 +436,26 @@ class GistEnrichmentTest(unittest.TestCase):
             raw_post={"story": "Page one.", "garden": "https://x/garden.jpg"})
         self.assertEqual(page_one["metadata"], {"story": "Page one.", "garden": "https://x/garden.jpg"})
 
-    def test_monthly_creatures_move_in_one_at_a_time_as_the_community_grows(self):
-        self.assertEqual(residents([], 19), [])
-        self.assertEqual(residents([], 500), ["cosmic-cat"])
-        self.assertEqual(residents(["cosmic-cat"], 79), ["cosmic-cat"])
-        self.assertEqual(residents(["cosmic-cat"], 80), ["cosmic-cat", "axolotl"])
-        self.assertEqual(residents(["cosmic-cat", "axolotl"], 10), ["cosmic-cat", "axolotl"])
-        self.assertEqual(residents(list(CREATURES), 999), list(CREATURES))
+    def test_monthly_cast_starts_with_polli_and_grows_one_at_a_time_with_the_community(self):
+        # Page one is Polli alone, however big the community already is.
+        self.assertEqual(residents([], 5000), ["polli"])
+        self.assertEqual(residents(["polli"], 24), ["polli"])
+        self.assertEqual(residents(["polli"], 5000), ["polli", "robot"])
+        self.assertEqual(residents(["polli", "robot"], 50), ["polli", "robot", "nomnom"])
+        # Residents stay, and the cast never grows past the table.
+        self.assertEqual(residents(list(RESIDENTS), 99999), list(RESIDENTS))
         page = normalize_platform_post(
             platform="website", scope="monthly", date="d", period_start="p", period_end="e", generated_at="g",
-            raw_post={"story": "The cat moved in.", "creatures": ["cosmic-cat"]})
-        self.assertEqual(page["metadata"]["creatures"], ["cosmic-cat"])
+            raw_post={"story": "The robot moved in.", "residents": ["polli", "robot"]})
+        self.assertEqual(page["metadata"]["residents"], ["polli", "robot"])
+
+        # The community counts each person once since page one, later months left out.
+        with tempfile.TemporaryDirectory() as root:
+            for month, logins in (("2025-01", ["a", "B"]), ("2025-02", ["b", "c"]), ("2025-04", ["z"])):
+                (Path(root) / f"operations/social/news/monthly/{month}").mkdir(parents=True)
+                (Path(root) / f"operations/social/news/monthly/{month}/summary.json").write_text(
+                    json.dumps({"contributors": [{"login": login} for login in logins]}))
+            self.assertEqual(community_size("2025-03", [{"login": "C"}, {"login": "d"}], root), 4)
         # Every calendar month has its moment, looked up by the target month's "MM".
         self.assertEqual(sorted(MOMENTS), [f"{number:02d}" for number in range(1, 13)])
 

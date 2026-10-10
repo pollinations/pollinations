@@ -394,23 +394,22 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None, references: List[str] = (), cast: bool = True, style: Optional[str] = None) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None, references: List[str] = (), cast: bool = True) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API.
 
     `references` are image URLs attached after the character sheet, in order.
     `cast=False` draws without the cast: no character sheet, no bee description.
-    `style` replaces the news style and bee description (e.g. the website's art style).
     """
     use_model = model or IMAGE_MODEL
 
     # Append character descriptions if not already present (loaded from prompt file)
-    if style is None and cast and "bee mascot" not in prompt.lower():
+    if cast and "bee mascot" not in prompt.lower():
         bee_desc = load_shared("bee")
         if bee_desc:
             prompt = f"{prompt} {bee_desc}"
 
     # Always append the style — forces consistent pixel art rendering
-    prompt = f"{prompt} {style or (IMAGE_STYLE_SUFFIX if cast else IMAGE_STYLE)}"
+    prompt = f"{prompt} {IMAGE_STYLE_SUFFIX if cast else IMAGE_STYLE}"
     image_refs = [CHARACTER_SHEET_URL, *references] if cast else list(references)
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
@@ -898,9 +897,9 @@ def normalize_platform_post(
         text = (raw_post.get("summary") or "").strip()
         # Where the picture book stands; next month's cover carries it on.
         metadata["story"] = (raw_post.get("story") or "").strip()
-        # The creatures living on Lantern Hill; next month's page keeps them.
-        if raw_post.get("creatures"):
-            metadata["creatures"] = raw_post["creatures"]
+        # Who lives on Lantern Hill; next month's page keeps them.
+        if raw_post.get("residents"):
+            metadata["residents"] = raw_post["residents"]
         # Page one only: its garden without characters, the reference for later covers.
         if raw_post.get("garden"):
             metadata["garden"] = raw_post["garden"]

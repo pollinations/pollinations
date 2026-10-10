@@ -59,12 +59,12 @@ COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
 # model the daily and weekly posts use.
 COVER_MODEL = "nanobanana-2"
 COVER_TRIES = 3
-# Covers sit on the Community page, so they use the website's own art style and
-# start from its Community artwork, Lantern Hill.
+# Covers are drawn in the news posts' style. The place is Lantern Hill, the Community
+# page's artwork, where page one starts.
 COMMUNITY_ART_URL = "https://raw.githubusercontent.com/pollinations/pollinations/main/pollinations.ai/public/art/community-hero-day.webp"
 PAGE_ONE_WORLD = (
-    "The second attached image is the Community page's artwork, Lantern Hill: draw this same "
-    "place in exactly its style and palette, closer in, as a young village green with room to grow."
+    "The second attached image shows Lantern Hill, the Community page's place: draw this same "
+    "place closer in, as a young village green with room to grow."
 )
 # Later covers are drawn from page one's garden with its characters removed: last
 # month's cover would blur a little more each month, and page one itself makes the
@@ -117,19 +117,23 @@ CAST_KINDS = {"bee": "bees", "monitor_robot": "monitor_robots", "nomnom": "nomno
               "crystal_scribe": "crystal_scribes", "human": "humans"}
 NO_CAST = dict.fromkeys(CAST_KINDS.values(), 0)
 ONE_OF_EACH = (
-    "The bee mascot, the monitor robot and the round Nomnom creature each appear at most once: "
-    "no copies, no extra bees or robots, no toy robots, statues or screens with faces. "
-    "No humans or people anywhere, not even small in the background. Pictures, canvases and "
-    "notices show plants or landscapes, never faces."
+    "Every character appears exactly once: no copies, no extra bees or robots, no toy robots, "
+    "statues or screens with faces. No humans or people anywhere, not even small in the "
+    "background. Pictures, canvases and notices show plants or landscapes, never faces."
 )
-# Creatures move onto Lantern Hill one at a time as the community grows: each the first
-# month at least `contributors` people and agents merge a pull request, then they stay.
-# Their looks are prompts/brand/creatures/<id>.png.
+# Polli founds Lantern Hill alone on page one. The others move in one at a time as the
+# community grows: each the first month at least `community` people and agents have
+# merged a pull request since page one, and then they stay. The robot and Nomnom are on
+# the character sheet; the creatures' looks are prompts/brand/creatures/<id>.png.
 CREATURES_URL = "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/creatures"
-CREATURES = {
-    "cosmic-cat": {"name": "the cosmic cat", "contributors": 20, "count": "black_cats"},
-    "axolotl": {"name": "the mint axolotl", "contributors": 80, "count": "axolotls"},
-    "crystal-scribe": {"name": "the crystal scribe", "contributors": 140, "count": "crystal_scribes"},
+RESIDENTS = {
+    "polli": {"name": "Polli the bee", "community": 0, "count": "bees"},
+    "robot": {"name": "the monitor robot", "community": 25, "count": "monitor_robots"},
+    "nomnom": {"name": "Nomnom", "community": 50, "count": "nomnom"},
+    "cosmic-cat": {"name": "the cosmic cat", "community": 200, "count": "black_cats", "creature": True},
+    "axolotl": {"name": "the mint axolotl", "community": 400, "count": "axolotls", "creature": True},
+    "crystal-scribe": {"name": "the crystal scribe", "community": 600, "count": "crystal_scribes",
+                       "creature": True},
 }
 
 # Every merged PR by anyone, agents and bots included, on any base branch. Release
@@ -204,6 +208,17 @@ def read_earlier_pages(month: str, repo_root: Optional[str] = None) -> List[Dict
         for path in sorted(monthly_root.glob("*/website.json"))
         if path.parent.name < month
     ]
+
+
+def community_size(month: str, contributors: List[Dict], repo_root: Optional[str] = None) -> int:
+    """Everyone who has merged a pull request from page one up to and including `month`."""
+    monthly_root = Path(repo_root or get_repo_root()) / MONTHLY_REL_DIR
+    logins = {person["login"].lower() for person in contributors}
+    for path in monthly_root.glob("*/summary.json"):
+        if path.parent.name < month:
+            summary = json.loads(path.read_text(encoding="utf-8"))
+            logins |= {person["login"].lower() for person in summary["contributors"]}
+    return len(logins)
 
 
 # ── Step 1: Count merged PRs and contributors ───────────────────────
@@ -345,22 +360,23 @@ def story_context(previous_page: Optional[Dict]) -> str:
     return f"\n\n{rules}\n\nThe previous page ({previous_page['period_start'][:7]}) left the story here: {story}"
 
 
-def residents(moved_in: List[str], contributors: int) -> List[str]:
-    """Creatures living on Lantern Hill this month: those already moved in, plus the next
-    one once the community is big enough for it."""
-    newcomer = next((name for name in CREATURES if name not in moved_in), None)
-    if newcomer and contributors >= CREATURES[newcomer]["contributors"]:
+def residents(moved_in: List[str], community: int) -> List[str]:
+    """Who lives on Lantern Hill this month: those already moved in, plus the next one
+    once the community is big enough for it."""
+    newcomer = next((name for name in RESIDENTS if name not in moved_in), None)
+    if newcomer and community >= RESIDENTS[newcomer]["community"]:
         return [*moved_in, newcomer]
     return list(moved_in)
 
 
-def community_context(contributors: int, merged: int, living: List[str], newcomer: Optional[str]) -> str:
-    names = ", ".join(CREATURES[name]["name"] for name in living)
+def community_context(contributors: int, merged: int, community: int, living: List[str],
+                      newcomer: Optional[str]) -> str:
+    names = ", ".join(RESIDENTS[name]["name"] for name in living)
     return " ".join([
-        f"The community this month: {contributors} people and agents merged {merged} pull requests.",
-        f"Living on Lantern Hill besides Polli, the robot and Nomnom: {names}." if living
-        else "No other creatures live on Lantern Hill yet.",
-        *([f"{CREATURES[newcomer]['name'].capitalize()} moves in this month."] if newcomer else []),
+        f"The community: {contributors} people and agents merged {merged} pull requests this month,",
+        f"{community} since page one. Living on Lantern Hill: {names}; no one else.",
+        *([f"{RESIDENTS[newcomer]['name'][0].upper()}{RESIDENTS[newcomer]['name'][1:]} moves in this month."]
+          if newcomer else []),
     ])
 
 
@@ -401,20 +417,13 @@ def count_cast(image_bytes: bytes, token: str) -> Optional[Dict]:
     return counts
 
 
-def website_art(section: str) -> str:
-    """One section (Style or Cast) of the website's art style, prompts/brand/website-art.md."""
-    text = load_prompt("brand/website-art")
-    return text.split(f"## {section}\n", 1)[1].split("\n## ", 1)[0].strip()
-
-
 def draw_checked(prompt: str, token: str, references: List[str], limits: Dict[str, int],
                  cast: bool = True) -> Optional[bytes]:
     """Draw until the counted cast fits `limits`, so no cover shows a character twice."""
-    style = website_art("Style") + (f" {website_art('Cast')}" if cast else "")
     for attempt in range(1, COVER_TRIES + 1):
         image_bytes, _ = generate_image(
             prompt, token, COVER_WIDTH, COVER_HEIGHT, model=COVER_MODEL,
-            references=references, cast=cast, style=style,
+            references=references, cast=cast,
         )
         if not image_bytes:
             continue
@@ -476,14 +485,14 @@ def main():
     earlier_pages = read_earlier_pages(month)
     previous_page = earlier_pages[-1] if earlier_pages else None
     print(f"  Continues: {previous_page['period_start'][:7] if previous_page else 'nothing, page one'}")
-    moved_in = ((previous_page or {}).get("metadata") or {}).get("creatures") or []
-    living = residents(moved_in, len(contributors))
+    community = community_size(month, contributors)
+    moved_in = ((previous_page or {}).get("metadata") or {}).get("residents") or []
+    living = residents(moved_in, community)
     newcomer = living[-1] if len(living) > len(moved_in) else None
-    print(f"  Creatures: {', '.join(living) or 'none yet'}{f' ({newcomer} moves in)' if newcomer else ''}")
-    moment = f"This page's moment: {MOMENTS[month[5:]]}." if earlier_pages else (
-        "This page's moment: the Community artwork's soft clear daylight.")
-    community = community_context(len(contributors), len(merged), living, newcomer)
-    post = generate_website_post(digest, pollinations_token, previous_page, f"{community}\n\n{moment}")
+    print(f"  Residents: {', '.join(living)}{f' ({newcomer} moves in)' if newcomer else ''} · community {community}")
+    moment = f"This page's moment: {MOMENTS[month[5:]] if earlier_pages else 'soft warm daylight'}."
+    notes = community_context(len(contributors), len(merged), community, living, newcomer)
+    post = generate_website_post(digest, pollinations_token, previous_page, f"{notes}\n\n{moment}")
     if not post:
         print("  FATAL: Monthly website post generation failed")
         sys.exit(1)
@@ -494,19 +503,19 @@ def main():
 
     # Page one starts from the Community artwork; later pages from page one's garden.
     anchor = [earlier_pages[0]["metadata"]["garden"]] if earlier_pages else [COMMUNITY_ART_URL]
-    post["creatures"] = living
-    names = " and ".join(CREATURES[name]["name"] for name in living)
+    post["residents"] = living
+    creatures = [name for name in living if RESIDENTS[name].get("creature")]
+    creature_names = " and ".join(RESIDENTS[name]["name"] for name in creatures)
     prompt = " ".join([
         post["image_prompt"],
         PAGE_ONE_GARDEN if earlier_pages else PAGE_ONE_WORLD,
         moment,
-        *([f"Attached last: {names}, who live on Lantern Hill. "
-           "Draw each exactly once, true to its look."] if living else []),
+        f"The only characters on this page: {', '.join(RESIDENTS[name]['name'] for name in living)}.",
+        *([f"Attached last: {creature_names}, true to their look."] if creatures else []),
         ONE_OF_EACH,
     ])
-    limits = {**NO_CAST, "bees": 1, "monitor_robots": 1, "nomnom": 1,
-              **{CREATURES[name]["count"]: 1 for name in living}}
-    references = anchor + [f"{CREATURES_URL}/{name}.png" for name in living]
+    limits = {**NO_CAST, **{RESIDENTS[name]["count"]: 1 for name in living}}
+    references = anchor + [f"{CREATURES_URL}/{name}.png" for name in creatures]
     image_bytes = draw_checked(prompt, pollinations_token, references, limits)
     if not image_bytes:
         print(f"  FATAL: No cover with one of each character after {COVER_TRIES} tries")

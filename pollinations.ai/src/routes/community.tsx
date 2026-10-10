@@ -2,12 +2,12 @@ import {
     AppIcon,
     BeakerIcon,
     Callout,
+    Chip,
     CodeIcon,
     ContentHeader,
     cn,
     EmptyState,
     ExternalLinkButton,
-    Eyebrow,
     Heading,
     InlineLink,
     LinkCard,
@@ -18,7 +18,7 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { modalityTextColor } from "@pollinations/ui/gen";
+import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
 import { createFileRoute } from "@tanstack/react-router";
 import { useArt } from "../art";
 import { LINKS, SOCIAL_LINKS } from "../copy/content/socialLinks";
@@ -49,9 +49,10 @@ const WAYS_IN = [
     {
         label: "Apps",
         icon: AppIcon,
-        // Number colours reuse the home page Models cards: modality tints
+        // Badge colours reuse the home page Models cards: modality tints
         // and the Community gold.
         color: modalityTextColor("video"),
+        tint: modalityBgVar("video"),
         title: "List your app",
         body: "Share what you built, get feedback, and help users discover it.",
         cta: {
@@ -63,6 +64,7 @@ const WAYS_IN = [
         label: "Models & agents",
         icon: BeakerIcon,
         color: "var(--polli-color-paid-deep)",
+        tint: "var(--polli-color-paid-pale)",
         title: "Publish a model or agent",
         body: "Bring your own model or managed agent to the public catalog and make it available to builders.",
         cta: {
@@ -75,6 +77,7 @@ const WAYS_IN = [
         icon: CodeIcon,
         // GitHub's merged purple.
         color: modalityTextColor("audio"),
+        tint: modalityBgVar("audio"),
         title: "Improve code and docs",
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         cta: {
@@ -87,6 +90,7 @@ const WAYS_IN = [
         icon: MegaphoneIcon,
         // Closest to Discord's blurple.
         color: modalityTextColor("text"),
+        tint: modalityBgVar("text"),
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
         cta: { label: "Join the Discord", href: SOCIAL_LINKS.discord.url },
@@ -192,10 +196,17 @@ function CommunityParticipation() {
                             >
                                 <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
                                     <div className="flex flex-col gap-2.5">
-                                        <div className="flex items-center gap-1.5 text-theme-text-muted">
+                                        <Chip
+                                            size="sm"
+                                            className="self-start"
+                                            style={{
+                                                backgroundColor: way.tint,
+                                                color: way.color,
+                                            }}
+                                        >
                                             <WayIcon className="size-3.5" />
-                                            <Eyebrow>{way.label}</Eyebrow>
-                                        </div>
+                                            {way.label}
+                                        </Chip>
                                         <Heading as="h3" size="card">
                                             {way.title}
                                         </Heading>
@@ -206,15 +217,7 @@ function CommunityParticipation() {
                                             <StatCard
                                                 variant="display"
                                                 value={
-                                                    way.metric.value ? (
-                                                        <span
-                                                            style={{
-                                                                color: way.color,
-                                                            }}
-                                                        >
-                                                            {way.metric.value}
-                                                        </span>
-                                                    ) : (
+                                                    way.metric.value ?? (
                                                         <Skeleton
                                                             shape="text"
                                                             className="h-9 w-16"

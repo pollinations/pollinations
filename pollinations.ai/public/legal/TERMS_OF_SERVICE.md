@@ -113,7 +113,7 @@ To the extent permitted by law, the Service is provided **"as is"**.
 
 ## 11) Term; Suspension; Termination
 
-Term begins on first access and continues per plan. You may stop using the Service and delete your account at any time. We may suspend or terminate an account and its API keys if you breach these Terms, or immediately where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. After termination, data is handled as described in the Privacy Policy. **Survival:** fees, IP, warranties & liability, and governing law survive.
+Term begins on first access and continues per plan. You may stop using the Service and delete your account at any time. We may suspend an account and its API keys immediately where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. We may terminate an account for serious or repeated breaches of these Terms. After termination, data is handled as described in the Privacy Policy. **Survival:** fees, IP, warranties & liability, and governing law survive.
 
 ## 12) Publicity; Export; Changes; Misc.
 

@@ -288,7 +288,7 @@ describe("gen worker routing", () => {
         }
     });
 
-    it("publishes the polli skill through Agent Skills well-known discovery", async () => {
+    it("publishes the polli and pollinations-api skills through Agent Skills well-known discovery", async () => {
         const index = await fetchWorker("/.well-known/agent-skills/index.json");
         expect(index.status).toBe(200);
         expect(index.headers.get("Content-Type")).toContain("application/json");
@@ -306,14 +306,20 @@ describe("gen worker routing", () => {
         expect(body.$schema).toBe(
             "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
         );
-        expect(body.skills).toHaveLength(1);
-        const [skill] = body.skills;
+        expect(body.skills).toHaveLength(2);
+        const [skill, apiSkill] = body.skills;
         expect(skill).toMatchObject({
             name: "polli",
             type: "skill-md",
             url: "/.well-known/agent-skills/polli/SKILL.md",
         });
         expect(skill.description).toMatch(/^Generate images/);
+        expect(apiSkill).toMatchObject({
+            name: "pollinations-api",
+            type: "skill-md",
+            url: "/.well-known/agent-skills/pollinations-api/SKILL.md",
+        });
+        expect(apiSkill.description).toMatch(/without installing/);
 
         const skillFile = await fetchWorker(skill.url);
         expect(skillFile.status).toBe(200);
@@ -328,9 +334,24 @@ describe("gen worker routing", () => {
             .join("");
         expect(skill.digest).toBe(`sha256:${hex}`);
 
+        const apiFile = await fetchWorker(apiSkill.url);
+        expect(apiFile.status).toBe(200);
+        expect(apiFile.headers.get("Content-Type")).toContain("text/markdown");
+        const apiBytes = new Uint8Array(await apiFile.arrayBuffer());
+        expect(new TextDecoder().decode(apiBytes)).toMatch(
+            /^---\nname: pollinations-api\n/,
+        );
+        const apiHash = await crypto.subtle.digest("SHA-256", apiBytes);
+        const apiHex = [...new Uint8Array(apiHash)]
+            .map((byte) => byte.toString(16).padStart(2, "0"))
+            .join("");
+        expect(apiSkill.digest).toBe(`sha256:${apiHex}`);
+
         const llms = await fetchWorker("/llms.txt");
-        expect(await llms.text()).toContain(
-            "/.well-known/agent-skills/index.json",
+        const llmsBody = await llms.text();
+        expect(llmsBody).toContain("/.well-known/agent-skills/index.json");
+        expect(llmsBody).toContain(
+            "/.well-known/agent-skills/pollinations-api/SKILL.md",
         );
     });
 

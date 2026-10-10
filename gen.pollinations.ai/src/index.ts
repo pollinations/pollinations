@@ -98,6 +98,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
+- [Direct REST API skill](${origin}/.well-known/agent-skills/pollinations-api/SKILL.md): Call the API with curl or fetch when the CLI cannot be installed.
 - [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
 - [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
 - [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser.

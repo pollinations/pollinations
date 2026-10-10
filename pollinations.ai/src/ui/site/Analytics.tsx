@@ -1,5 +1,6 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { knownPage } from "../../routeMeta";
 
 // Enter records the site's page views: pollinations.ai → enter.pollinations.ai,
 // staging.pollinations.ai → staging.enter.pollinations.ai. Other hosts
@@ -56,7 +57,12 @@ function tagEnterLink(event: Event) {
 }
 
 export function Analytics() {
-    const page = useRouterState({ select: (state) => state.location.pathname });
+    // The page, never the raw path: a 404 sends nothing, so URLs people type
+    // or paste never reach Enter. The router's leaf match can't stand in for
+    // this, since /apps/x matches /apps while rendering the 404.
+    const page = useRouterState({
+        select: (state) => knownPage(state.location.pathname),
+    });
 
     useEffect(() => {
         // click covers keyboard activation, auxclick the middle button,
@@ -71,10 +77,9 @@ export function Analytics() {
     }, []);
 
     useEffect(() => {
-        if (!ENTER_ORIGIN) return;
+        if (!ENTER_ORIGIN || !page) return;
         // sendBeacon carries Enter's session cookie (same site), so a
         // signed-in visitor's view is linked to their account as on Enter.
-        // Unknown paths are rejected by Enter's page list.
         const query = new URLSearchParams({ page, ...SOURCE });
         navigator.sendBeacon(
             `${ENTER_ORIGIN}/api/analytics/website-page-view?${query}`,

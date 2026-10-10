@@ -296,13 +296,34 @@ main > * {
 }
 
 /* ── /play ───────────────────────────────────────────────────────────── */
-.polli-playground-audio {
+/* The native audio player, rounded to sit inside its result card. */
+.play-audio {
     height: 2.5rem;
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
 }
 
-.polli-playground-audio::-webkit-media-controls-enclosure {
+.play-audio::-webkit-media-controls-enclosure {
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
+}
+
+/* Parameter rows (FieldStack orientation="inline"): one column, two from lg. */
+.play-parameter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem 2rem;
+}
+.play-parameter-grid:empty {
+    display: none;
+}
+@media (min-width: 64rem) {
+    .play-parameter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: center;
+    }
+}
+
+.play-media-lightbox {
+    background: transparent;
 }

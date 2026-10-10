@@ -291,7 +291,7 @@ This makes all generated content available locally for scripts that read files (
 | `publish_realtime.py` | Per-PR: reads gist → AI announcement → Discord webhook post |
 | `generate_daily.py` | Daily: read gists → summary with highlights + platform post (X) + image → commit to news |
 | `build_news_index.py` | Rebuilds `index.json` (model announcements + highlights) for Enter `/news` and the README |
-| `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → all 5 platform posts + images → commit to news |
+| `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → 4 platform posts (X, LinkedIn, Instagram, Discord) + 6 images → commit to news |
 | `publish_daily.py` | Stage X to Buffer. |
 | `publish_weekly.py` | PUBLISH_MODE=buffer: stage X + LI + IG to Buffer. PUBLISH_MODE=direct: Discord webhook. |
 | `update_readme.py` | README Latest News from `index.json`: `get_top_highlights()`, `update_readme_news_section()` (called by `docs-update-readme-news.yml`) |
@@ -335,8 +335,8 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 
 All workflows support `workflow_dispatch` for manual re-triggering:
 - `news-create-pr-gist.yml`: accepts `pr_number` input to regenerate a specific gist
-- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly)
-- `news-publish-social.yml`: accepts `mode` + `target_date` for manual publish of direct channels
+- `news-generate-summary.yml`: accepts `target_date`, `target_month` and `mode` (auto, daily, daily-generation-only, weekly, weekly-generation-only, monthly)
+- `news-publish-social.yml`: accepts `target_date` (Sunday publish date) to re-post the weekly Discord message
 
 ---
 
@@ -427,7 +427,7 @@ AI calls scale as N+2 (N per-PR gists + summary with highlights + one platform p
 3. **Tier 2 — happy path**: Manually trigger daily workflow → verify platform posts + images committed to `news` branch + README PR to main
 4. **Tier 2 — zero PRs**: Run daily workflow on a day with 0 gists → verify workflow exits cleanly with no content generated
 5. **Tier 3 — happy path**: Manually trigger weekly workflow → verify all 4 platform posts + images committed to `news` branch
-6. **Daily publish — Buffer**: Verify `news-generate-summary.yml` stages X/IG to Buffer immediately after generation
+6. **Daily publish — Buffer**: Verify `news-generate-summary.yml` stages X to Buffer immediately after generation (Mon-Sat)
 7. **Weekly publish — Buffer**: Verify `news-generate-summary.yml` stages X/LI/IG to Buffer immediately after generation
 8. **Weekly publish — Discord**: Verify `news-publish-social.yml` Sunday 18:00 UTC cron publishes Discord
 9. **Publish tier gating**: Merge a non-user-facing PR → verify `publish_tier: discord_only` → verify absent from daily summary

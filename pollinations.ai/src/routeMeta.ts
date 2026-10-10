@@ -31,8 +31,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     },
     "/subprocessors": {
         title: "Service Providers | pollinations.ai",
-        description:
-            "Pollinations.ai service providers and processing locations",
+        description: "Pollinations.ai service providers",
     },
     "/refunds": {
         title: "Refunds | pollinations.ai",

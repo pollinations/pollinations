@@ -9,7 +9,6 @@
 export type SearchResult = {
     uid?: string;
     title?: string;
-    folderUid?: string;
 };
 
 export type Dashboard = {
@@ -23,17 +22,27 @@ export type Dashboard = {
  */
 export const DEFAULT_DASHBOARD_UID = "platform-usage-rebuild";
 
+/** Header range choices, each ending with the last complete UTC day. */
+export const RANGE_LABELS = {
+    "7d": "Last 7 days",
+    "30d": "Last 30 days",
+    "90d": "Last 90 days",
+} as const;
+
+export type Range = keyof typeof RANGE_LABELS;
+
+/** Matches the `time` every provisioned dashboard saves. */
+const DEFAULT_RANGE: Range = "30d";
+
 /**
- * Current dashboards are the ones provisioned at the top level of
- * `provisioning/dashboards/`; `foldersFromFilesStructure` would put any
- * subfolder into a Grafana folder, and foldered dashboards stay out of the
- * picker. Reading the folder keeps the picker in step with the repository
- * instead of a second hand-maintained list.
+ * The dashboards Grafana has provisioned from `provisioning/dashboards/`,
+ * sorted by title. Reading Grafana's list keeps the picker in step with the
+ * repository instead of a second hand-maintained list.
  */
 export function currentDashboards(results: SearchResult[]): Dashboard[] {
     const dashboards: Dashboard[] = [];
-    for (const { uid, title, folderUid } of results) {
-        if (uid && title && !folderUid) dashboards.push({ uid, title });
+    for (const { uid, title } of results) {
+        if (uid && title) dashboards.push({ uid, title });
     }
     return dashboards.sort((left, right) =>
         left.title.localeCompare(right.title),
@@ -44,7 +53,17 @@ export function readDashboardUid(search: string): string {
     return new URLSearchParams(search).get("d") || DEFAULT_DASHBOARD_UID;
 }
 
-/** Kiosk mode hides Grafana navigation. Usage panels have a fixed regular scope. */
-export function dashboardSrc(uid: string): string {
-    return `/grafana/d/${encodeURIComponent(uid)}?kiosk`;
+export function readRange(search: string): Range {
+    const range = new URLSearchParams(search).get("range") ?? "";
+    return Object.hasOwn(RANGE_LABELS, range)
+        ? (range as Range)
+        : DEFAULT_RANGE;
+}
+
+/**
+ * Kiosk mode hides Grafana's navigation and time picker, so the range travels
+ * in the URL, where `from`/`to` override the dashboard's saved time.
+ */
+export function dashboardSrc(uid: string, range: Range): string {
+    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&from=now-${range}/d&to=now-1d/d`;
 }

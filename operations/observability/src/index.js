@@ -68,7 +68,11 @@ export class ObservabilityGrafana extends Container {
 
 async function grafanaFetch(request, env) {
     const container = env.OBSERVABILITY_GRAFANA.getByName(CONTAINER_NAME);
-    await container.startAndWaitForPorts();
+    // The container sleeps when idle, so a request may wait for Grafana to
+    // boot from a fresh disk; the SDK's default 20 s port wait is too short.
+    await container.startAndWaitForPorts({
+        cancellationOptions: { portReadyTimeoutMS: 60_000 },
+    });
     // The SDK uses HTTP for the private hop. Let the browser follow redirects;
     // following Grafana's public HTTPS redirects inside the container fails.
     return container.fetch(new Request(request, { redirect: "manual" }));

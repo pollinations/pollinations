@@ -10,6 +10,7 @@ import {
     ContentHeader,
     cn,
     ExternalLinkButton,
+    ExternalLinkIcon,
     Heading,
     type IconProps,
     IconTile,
@@ -44,6 +45,8 @@ type Feature = {
     icon: ComponentType<IconProps>;
     /** Live detail shown between the header and the body. */
     detail?: ComponentType;
+    /** Models-card colours, for the publish cards. */
+    tint?: { background: string; color: string };
 };
 
 /** The phrase a skimming reader should catch in a card's copy. */
@@ -193,6 +196,10 @@ const PUBLISH_FEATURES: Feature[] = [
         ),
         links: [{ label: "Submit your app", href: LINKS.githubSubmitApp }],
         icon: AppIcon,
+        tint: {
+            background: modalityBgVar("video"),
+            color: modalityTextColor("video"),
+        },
     },
     {
         title: "Publish a model",
@@ -209,6 +216,10 @@ const PUBLISH_FEATURES: Feature[] = [
             },
         ],
         icon: BeakerIcon,
+        tint: {
+            background: modalityBgVar("text"),
+            color: modalityTextColor("text"),
+        },
     },
     {
         title: "Publish an agent",
@@ -224,6 +235,10 @@ const PUBLISH_FEATURES: Feature[] = [
             },
         ],
         icon: RobotIcon,
+        tint: {
+            background: modalityBgVar("audio"),
+            color: modalityTextColor("audio"),
+        },
     },
 ];
 
@@ -422,6 +437,44 @@ function ChipList({ names }: { names: string[] }) {
     );
 }
 
+/**
+ * A publish card, a link like the Models cards: tinted, its icon in the
+ * card's colour, the whole card clickable with its call to action on top.
+ */
+function PublishCard({ feature }: { feature: Feature }) {
+    const Icon = feature.icon;
+    const [link] = feature.links;
+
+    return (
+        <LinkCard
+            href={link.href}
+            tint={feature.tint?.background}
+            showIcon={false}
+            surfaceClassName="gap-3 p-5 sm:p-6"
+        >
+            {/* The call to action and its arrow, top right. */}
+            <div className="mb-1 flex items-start justify-between gap-2">
+                <Icon
+                    aria-hidden="true"
+                    className="size-10 shrink-0"
+                    style={{ color: feature.tint?.color }}
+                />
+                <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-soft">
+                    {link.label}
+                    <ExternalLinkIcon
+                        aria-hidden="true"
+                        className="size-3.5 shrink-0"
+                    />
+                </span>
+            </div>
+            <Heading as="h3" size="card">
+                {feature.title}
+            </Heading>
+            <Text size="sm">{feature.body}</Text>
+        </LinkCard>
+    );
+}
+
 function FeatureGroup({
     title,
     description,
@@ -475,7 +528,7 @@ export function DevKit({ className }: { className?: string }) {
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (
-                        <FeatureCard key={feature.title} feature={feature} />
+                        <PublishCard key={feature.title} feature={feature} />
                     ))}
                 </div>
             </FeatureGroup>

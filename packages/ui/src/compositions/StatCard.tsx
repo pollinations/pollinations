@@ -39,18 +39,17 @@ export const StatCard: FC<StatCardProps> = ({
     detailClassName,
 }) =>
     variant === "display" ? (
-        <div
-            className={cn("polli:flex polli:flex-col polli:gap-1.5", className)}
-        >
+        <div className={cn("polli:flex polli:flex-col polli:gap-1", className)}>
             <div className={cn(valueVariantClasses.display, valueClassName)}>
                 {value}
             </div>
+            {/* Tight and in the number's colour, so the two read as one. */}
             <Text
                 as="div"
                 size="sm"
-                tone="muted"
+                tone="soft"
                 className={cn(
-                    "polli:flex polli:items-center polli:gap-2",
+                    "polli:flex polli:items-center polli:gap-2 polli:leading-tight",
                     labelClassName,
                 )}
             >

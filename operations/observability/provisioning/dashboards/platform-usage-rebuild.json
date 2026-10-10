@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Rebuilt platform usage dashboard backed by generation_usage_hourly. Covers authenticated, non-cached generation traffic without duplicating error, model-health, or economics monitoring.",
+  "description": "Rebuilt platform usage dashboard backed by generation_usage_hourly. Covers authenticated, non-cached generation traffic, including rejected and failed requests, without duplicating model-health or economics monitoring.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -202,7 +202,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Hourly all-call platform load from generation_usage_hourly. This is operational traffic volume, not availability or model health.",
+      "description": "Hourly calls by traffic group from generation_usage_hourly, including rejected and failed requests; the only panel here outside regular traffic. Regular: user and app traffic, the scope of every other panel. Legacy: the legacy image and text API bridges, routed through gen from 18 July 2026. Operations: our bots, monitors and automation. Dev: staff development and tests. Operations and dev are split out from 30 September 2026 and count as regular before that. Load only, not availability or model health.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -253,11 +253,11 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  hour AS time,\n  replaceOne(workload, 'generate.', '') AS metric,\n  sumMerge(all_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time, metric\nORDER BY time, metric",
+          "rawSql": "SELECT\n  hour AS time,\n  traffic_group AS metric,\n  sumMerge(all_calls) AS value\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\nGROUP BY time, metric\nORDER BY time, metric",
           "refId": "A"
         }
       ],
-      "title": "Hourly platform load",
+      "title": "Hourly load by traffic group",
       "type": "timeseries"
     },
     {
@@ -387,12 +387,272 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Daily outcome of every regular request from generation_usage_hourly; the three bars add up to all calls. Served: successful calls. Rejected for lack of Pollen: requests with no meter (almost all HTTP 402, a few 403). Failed after the balance check: funded requests that did not succeed; the hourly table has no status column, so 4xx and 5xx are counted together. Users with an unfunded request (right axis): approximate unique users per day with a request that had no meter. Per-model 5xx health is in Model Monitor.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "served"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Served"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rejected_no_pollen"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rejected for lack of Pollen"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed_after_balance_check"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Failed after the balance check"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unfunded_users"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Users with an unfunded request"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Users"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
+              },
+              {
+                "id": "custom.stacking",
+                "value": {
+                  "group": "A",
+                  "mode": "none"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  sumMerge(successful_calls) AS served,\n  sumMergeIf(all_calls, funding_source = 'unfunded') - sumMergeIf(successful_calls, funding_source = 'unfunded') AS rejected_no_pollen,\n  sumMergeIf(all_calls, funding_source != 'unfunded') - sumMergeIf(successful_calls, funding_source != 'unfunded') AS failed_after_balance_check,\n  uniqMergeIf(users, funding_source = 'unfunded') AS unfunded_users\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Request outcomes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Top 30 models by funded requests that failed after the balance check over the selected range: regular traffic, 4xx and 5xx together (the hourly table has no status column), 402 rejections excluded. Users are approximate unique users with a funded request to the model. Per-model 5xx health is in Model Monitor.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failure_rate"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Failure rate"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 17,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "failed"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  model,\n  if(is_community, 'Community', 'Pollinations') AS source,\n  sumMergeIf(all_calls, funding_source != 'unfunded') - sumMergeIf(successful_calls, funding_source != 'unfunded') AS failed,\n  sumMergeIf(successful_calls, funding_source != 'unfunded') AS served,\n  round(failed / nullIf(failed + served, 0), 3) AS failure_rate,\n  uniqMergeIf(users, funding_source != 'unfunded') AS users\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY model, is_community\nORDER BY failed DESC\nLIMIT 30",
+          "refId": "A"
+        }
+      ],
+      "title": "Models failing after the balance check",
+      "type": "table"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 32
       },
       "id": 13,
       "panels": [],
@@ -531,7 +791,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 33
       },
       "id": 5,
       "options": {
@@ -720,7 +980,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 42
       },
       "id": 6,
       "options": {
@@ -907,7 +1167,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 42
       },
       "id": 14,
       "options": {
@@ -1024,7 +1284,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 50
       },
       "id": 15,
       "options": {
@@ -1144,7 +1404,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 58
       },
       "id": 7,
       "options": {
@@ -1208,7 +1468,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 67
       },
       "id": 8,
       "options": {
@@ -1274,7 +1534,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 67
+        "y": 77
       },
       "id": 10,
       "options": {
@@ -1442,7 +1702,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 67
+        "y": 77
       },
       "id": 11,
       "options": {
@@ -1481,10 +1741,10 @@
       },
       "description": "Reader-facing scope and ownership note.",
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 24,
         "x": 0,
-        "y": 75
+        "y": 85
       },
       "id": 12,
       "options": {
@@ -1493,7 +1753,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Scope and ownership\n\n- **Source:** `generation_event_v2` → `generation_usage_hourly`\n- **Coverage:** regular traffic only: authenticated, non-cached generation events from 9 January 2026; legacy API bridges, operations and dev traffic are excluded (legacy volume is in the KPI app)\n- **Default:** last 30 complete UTC days (today is not shown); bars first; tables capped at 50 rows\n- **Not duplicated here:** errors (Tinybird), health (Model Monitor), provider costs and profitability (Economics)\n- **Staging validation:** `debug-prod-copy`; production dashboards use the same queries against production-only data",
+        "content": "### Scope and ownership\n\n- **Source:** `generation_event_v2` → `generation_usage_hourly`\n- **Coverage:** regular traffic: authenticated, non-cached generation events from 9 January 2026; only Hourly load by traffic group adds legacy API bridges, operations and dev\n- **Range:** last 30 complete UTC days by default, 7 or 90 from the header (today is not shown); bars first; tables capped at 50 rows, failing models at 30\n- **Errors:** Request outcomes and Models failing after the balance check (4xx and 5xx together); per-model 5xx health is in Model Monitor\n- **Not duplicated here:** provider costs and profitability (Economics)\n- **Staging validation:** `debug-prod-copy`; production dashboards use the same queries against production-only data",
         "mode": "markdown"
       },
       "title": "Data coverage",

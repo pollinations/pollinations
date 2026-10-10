@@ -34,7 +34,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Exact current values from the latest d1_user snapshot, excluding banned accounts. Registrations use the selected time range and exclude accounts deleted before the latest snapshot. Negative-account counts are explicit anomaly signals.",
+      "description": "Exact current values from the latest d1_user snapshot, excluding banned accounts. Registrations use the selected time range and exclude accounts deleted before the latest snapshot. Quest debt and Paid overdraft are allowed by design: a request is charged in full after it runs, so the charge can take a balance below zero. Most of these balances are a fraction of a Pollen; Current balance extremes lists the largest.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -130,22 +130,13 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Negative Quest accounts"
+                "value": "Accounts in Quest debt"
               },
               {
-                "id": "thresholds",
+                "id": "color",
                 "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "red",
-                      "value": 1
-                    }
-                  ]
+                  "fixedColor": "blue",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -158,22 +149,13 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Negative Paid accounts"
+                "value": "Accounts in Paid overdraft"
               },
               {
-                "id": "thresholds",
+                "id": "color",
                 "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "red",
-                      "value": 1
-                    }
-                  ]
+                  "fixedColor": "blue",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -689,7 +671,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Registration-day cohorts that completed their first authenticated generation within seven days. Only cohorts whose full seven-day window has elapsed are included. Registration history is based on current surviving d1_user accounts.",
+      "description": "Registration-day cohorts that completed their first authenticated generation within seven days. Only cohorts whose full seven-day window has elapsed are included, so the 7-day range shows none. The D7 rate (right axis) is activated ÷ registered for each cohort day; the legend shows daily means. Registration history is based on current surviving d1_user accounts.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -762,6 +744,61 @@
                 "value": "auto"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "d7_rate"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "D7 activation rate"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 1
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Rate"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "auto"
+              }
+            ]
           }
         ]
       },
@@ -775,7 +812,7 @@
       "options": {
         "legend": {
           "calcs": [
-            "sum"
+            "mean"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -794,7 +831,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  r.registration_day AS time,\n  count() AS registrations,\n  countIf(\n    a.first_activity_time IS NOT NULL\n    AND a.first_activity_time >= fromUnixTimestamp(r.created_at_ts)\n    AND a.first_activity_time <= fromUnixTimestamp(r.created_at_ts) + INTERVAL 7 DAY\n  ) AS d7_activated\nFROM (\n  SELECT\n    id AS user_id,\n    assumeNotNull(created_at) AS created_at_ts,\n    toStartOfDay(fromUnixTimestamp(assumeNotNull(created_at))) AS registration_day\n  FROM d1_user\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n    AND banned = 0\n    AND created_at IS NOT NULL\n    AND fromUnixTimestamp(assumeNotNull(created_at)) >= $__fromTime\n    AND fromUnixTimestamp(assumeNotNull(created_at)) < $__toTime - INTERVAL 7 DAY\n) r\nLEFT JOIN (\n  SELECT\n    user_id,\n    minMerge(first_activity_time) AS first_activity_time\n  FROM user_first_activity_mv\n  GROUP BY user_id\n) a ON r.user_id = a.user_id\nGROUP BY r.registration_day\nORDER BY r.registration_day",
+          "rawSql": "SELECT\n  r.registration_day AS time,\n  count() AS registrations,\n  countIf(\n    a.first_activity_time IS NOT NULL\n    AND a.first_activity_time >= fromUnixTimestamp(r.created_at_ts)\n    AND a.first_activity_time <= fromUnixTimestamp(r.created_at_ts) + INTERVAL 7 DAY\n  ) AS d7_activated,\n  round(d7_activated / registrations, 3) AS d7_rate\nFROM (\n  SELECT\n    id AS user_id,\n    assumeNotNull(created_at) AS created_at_ts,\n    toStartOfDay(fromUnixTimestamp(assumeNotNull(created_at))) AS registration_day\n  FROM d1_user\n  WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n    AND banned = 0\n    AND created_at IS NOT NULL\n    AND fromUnixTimestamp(assumeNotNull(created_at)) >= $__fromTime\n    AND fromUnixTimestamp(assumeNotNull(created_at)) < $__toTime - INTERVAL 7 DAY\n) r\nLEFT JOIN (\n  SELECT\n    user_id,\n    minMerge(first_activity_time) AS first_activity_time\n  FROM user_first_activity_mv\n  GROUP BY user_id\n) a ON r.user_id = a.user_id\nGROUP BY r.registration_day\nORDER BY r.registration_day",
           "refId": "A"
         }
       ],

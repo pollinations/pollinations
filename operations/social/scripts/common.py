@@ -898,6 +898,9 @@ def normalize_platform_post(
         text = (raw_post.get("summary") or "").strip()
         # Where the picture book stands; next month's cover carries it on.
         metadata["story"] = (raw_post.get("story") or "").strip()
+        # The creatures living on Lantern Hill; next month's page keeps them.
+        if raw_post.get("creatures"):
+            metadata["creatures"] = raw_post["creatures"]
         # Page one only: its garden without characters, the reference for later covers.
         if raw_post.get("garden"):
             metadata["garden"] = raw_post["garden"]

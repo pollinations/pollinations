@@ -86,6 +86,8 @@ kind is one of:
 - "monitor_robot": a robot character whose head is a CRT monitor showing a face, or any screen showing a face with eyes
 - "nomnom": a round tan blob creature with a face
 - "black_cat": a black cat
+- "axolotl": a mint-green axolotl with pink frilly gills
+- "crystal_scribe": a purple crystal creature with a dark face, green eyes and round purple arms; not a robot
 - "human": a person of any kind
 - "other": any other creature
 Screens, tiles, signs and panels with icons, glyphs or pictures are scenery, not characters. List each character once."""
@@ -93,21 +95,23 @@ Screens, tiles, signs and panels with icons, glyphs or pictures are scenery, not
 # call right; gpt-6-sol over-counted screens and cats and rejected a clean cover.
 VISION_MODEL = "google/gemini-3.8-flash"
 CAST_KINDS = {"bee": "bees", "monitor_robot": "monitor_robots", "nomnom": "nomnom",
-              "black_cat": "black_cats", "human": "humans"}
+              "black_cat": "black_cats", "axolotl": "axolotls",
+              "crystal_scribe": "crystal_scribes", "human": "humans"}
 NO_CAST = dict.fromkeys(CAST_KINDS.values(), 0)
 ONE_OF_EACH = (
     "The bee mascot, the monitor robot and the round Nomnom creature each appear at most once: "
     "no copies, no extra bees or robots, no toy robots, statues or screens with faces. "
     "No humans or people anywhere, not even small in the background."
 )
-# Creatures that live in the garden besides the three, by the id the website post lists.
+# Creatures move onto Lantern Hill one at a time as the community grows: each the first
+# month at least `contributors` people and agents merge a pull request, then they stay.
+# Their looks are prompts/brand/creatures/<id>.png.
+CREATURES_URL = "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/creatures"
 CREATURES = {
-    "cosmic-cat": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/creatures/cosmic-cat.png",
+    "cosmic-cat": {"name": "the cosmic cat", "contributors": 20, "count": "black_cats"},
+    "axolotl": {"name": "the mint axolotl", "contributors": 80, "count": "axolotls"},
+    "crystal-scribe": {"name": "the crystal scribe", "contributors": 140, "count": "crystal_scribes"},
 }
-COSMIC_CAT = (
-    "The last attached image is the cosmic cat, who lives in the garden: draw it exactly once, "
-    "true to its look."
-)
 
 # Every merged PR by anyone, agents and bots included, on any base branch. Release
 # PRs into production are left out: they copy work already merged into main.
@@ -322,11 +326,31 @@ def story_context(previous_page: Optional[Dict]) -> str:
     return f"\n\n{rules}\n\nThe previous page ({previous_page['period_start'][:7]}) left the story here: {story}"
 
 
-def generate_website_post(digest: Dict, token: str, previous_page: Optional[Dict]) -> Optional[Dict]:
+def residents(moved_in: List[str], contributors: int) -> List[str]:
+    """Creatures living on Lantern Hill this month: those already moved in, plus the next
+    one once the community is big enough for it."""
+    newcomer = next((name for name in CREATURES if name not in moved_in), None)
+    if newcomer and contributors >= CREATURES[newcomer]["contributors"]:
+        return [*moved_in, newcomer]
+    return list(moved_in)
+
+
+def community_context(contributors: int, merged: int, living: List[str], newcomer: Optional[str]) -> str:
+    names = ", ".join(CREATURES[name]["name"] for name in living)
+    return " ".join([
+        f"{contributors} people and agents merged {merged} pull requests.",
+        f"Living on Lantern Hill besides Polli, the robot and Nomnom: {names}." if living
+        else "No other creatures live on Lantern Hill yet.",
+        *([f"{CREATURES[newcomer]['name'].capitalize()} moves in this month."] if newcomer else []),
+    ])
+
+
+def generate_website_post(digest: Dict, token: str, previous_page: Optional[Dict],
+                          community: str) -> Optional[Dict]:
     return generate_platform_post(
         "website", digest, token,
         "Write this month's page of the website build diary.",
-        extra_context=story_context(previous_page),
+        extra_context=f"{story_context(previous_page)}\n\nThe community this month: {community}",
     )
 
 
@@ -433,7 +457,12 @@ def main():
     earlier_pages = read_earlier_pages(month)
     previous_page = earlier_pages[-1] if earlier_pages else None
     print(f"  Continues: {previous_page['period_start'][:7] if previous_page else 'nothing, page one'}")
-    post = generate_website_post(digest, pollinations_token, previous_page)
+    moved_in = ((previous_page or {}).get("metadata") or {}).get("creatures") or []
+    living = residents(moved_in, len(contributors))
+    newcomer = living[-1] if len(living) > len(moved_in) else None
+    print(f"  Creatures: {', '.join(living) or 'none yet'}{f' ({newcomer} moves in)' if newcomer else ''}")
+    community = community_context(len(contributors), len(merged), living, newcomer)
+    post = generate_website_post(digest, pollinations_token, previous_page, community)
     if not post:
         print("  FATAL: Monthly website post generation failed")
         sys.exit(1)
@@ -444,16 +473,19 @@ def main():
 
     # Page one starts from the Community artwork; later pages from page one's garden.
     anchor = [earlier_pages[0]["metadata"]["garden"]] if earlier_pages else [COMMUNITY_ART_URL]
-    creatures = [CREATURES[name] for name in post.get("creatures") or [] if name in CREATURES]
+    post["creatures"] = living
+    names = " and ".join(CREATURES[name]["name"] for name in living)
     prompt = " ".join([
         post["image_prompt"],
         PAGE_ONE_GARDEN if earlier_pages else PAGE_ONE_WORLD,
-        *([COSMIC_CAT] if creatures else []),
+        *([f"Attached last: {names}, who live on Lantern Hill. "
+           "Draw each exactly once, true to its look."] if living else []),
         ONE_OF_EACH,
     ])
     limits = {**NO_CAST, "bees": 1, "monitor_robots": 1, "nomnom": 1,
-              "black_cats": int(CREATURES["cosmic-cat"] in creatures)}
-    image_bytes = draw_checked(prompt, pollinations_token, anchor + creatures, limits)
+              **{CREATURES[name]["count"]: 1 for name in living}}
+    references = anchor + [f"{CREATURES_URL}/{name}.png" for name in living]
+    image_bytes = draw_checked(prompt, pollinations_token, references, limits)
     if not image_bytes:
         print(f"  FATAL: No cover with one of each character after {COVER_TRIES} tries")
         sys.exit(1)

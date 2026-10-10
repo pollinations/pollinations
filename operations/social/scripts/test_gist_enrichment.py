@@ -16,7 +16,10 @@ from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
-from generate_monthly import count_cast, draw_checked, generate_website_post, rank_contributors, read_earlier_pages
+from generate_monthly import (
+    CREATURES, NO_CAST, count_cast, draw_checked, generate_website_post, rank_contributors, read_earlier_pages,
+    residents,
+)
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import announced_retirements, model_changes, pr_comparison_refs
@@ -416,10 +419,11 @@ class GistEnrichmentTest(unittest.TestCase):
         digest = {"pr_count": 1, "arcs": [{"headline": "Apps", "summary": "A new Apps directory."}]}
         for previous_page, expected in ((previous, "The greenhouse glows."), (None, "this cover is page one")):
             with patch("common.call_pollinations_api", return_value='{"title": "T"}') as api:
-                generate_website_post(digest, "test", previous_page)
+                generate_website_post(digest, "test", previous_page, "The cosmic cat moves in this month.")
             task = api.call_args.args[1]
             self.assertIn("## Monthly Story", task)
             self.assertIn(expected, task)
+            self.assertIn("The cosmic cat moves in this month.", task)
 
         with patch("common.requests.get", side_effect=requests.ConnectionError) as get, patch("common.time.sleep"):
             generate_image("A garden", "test", references=["https://x/2026-09.jpg"])
@@ -432,8 +436,20 @@ class GistEnrichmentTest(unittest.TestCase):
             raw_post={"story": "Page one.", "garden": "https://x/garden.jpg"})
         self.assertEqual(page_one["metadata"], {"story": "Page one.", "garden": "https://x/garden.jpg"})
 
+    def test_monthly_creatures_move_in_one_at_a_time_as_the_community_grows(self):
+        self.assertEqual(residents([], 19), [])
+        self.assertEqual(residents([], 500), ["cosmic-cat"])
+        self.assertEqual(residents(["cosmic-cat"], 79), ["cosmic-cat"])
+        self.assertEqual(residents(["cosmic-cat"], 80), ["cosmic-cat", "axolotl"])
+        self.assertEqual(residents(["cosmic-cat", "axolotl"], 10), ["cosmic-cat", "axolotl"])
+        self.assertEqual(residents(list(CREATURES), 999), list(CREATURES))
+        page = normalize_platform_post(
+            platform="website", scope="monthly", date="d", period_start="p", period_end="e", generated_at="g",
+            raw_post={"story": "The cat moved in.", "creatures": ["cosmic-cat"]})
+        self.assertEqual(page["metadata"]["creatures"], ["cosmic-cat"])
+
     def test_monthly_cover_is_redrawn_until_each_character_appears_once(self):
-        one_of_each = {"bees": 1, "monitor_robots": 1, "nomnom": 1, "black_cats": 0, "humans": 0}
+        one_of_each = {**NO_CAST, "bees": 1, "monitor_robots": 1, "nomnom": 1}
         two_bees = {**one_of_each, "bees": 2}
         limits = {**one_of_each}
         with patch("generate_monthly.generate_image", side_effect=[(b"first", None), (b"second", None)]) as draw, \
@@ -446,10 +462,11 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(draw.call_count, 3)
 
         # The cover goes to the vision model as an image; each listed character counts once.
-        listed = {"characters": [{"kind": "bee"}, {"kind": "bee"}, {"kind": "monitor_robot"}, {"kind": "other"}]}
+        listed = {"characters": [{"kind": "bee"}, {"kind": "bee"}, {"kind": "monitor_robot"},
+                                 {"kind": "axolotl"}, {"kind": "other"}]}
         with patch("generate_monthly.call_pollinations_api", return_value=json.dumps(listed)) as vision:
             self.assertEqual(count_cast(b"one", "test"),
-                             {"bees": 2, "monitor_robots": 1, "nomnom": 0, "black_cats": 0, "humans": 0})
+                             {**NO_CAST, "bees": 2, "monitor_robots": 1, "axolotls": 1})
         self.assertIn("data:image/jpeg;base64,b25l", json.dumps(vision.call_args.args[1]))  # base64 of b"one"
         self.assertEqual(vision.call_args.kwargs["model"], "google/gemini-3.8-flash")
 

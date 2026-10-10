@@ -66,6 +66,20 @@ describe("SEP-2127 MCP Server Cards", () => {
         );
     });
 
+    it("gives every card its MCP Registry name and a description within the schema limit", async () => {
+        for (const server of MCP_SERVERS) {
+            const res = await mcpCardRoutes.request(
+                `/mcp/${server.id}/server-card`,
+            );
+            const card = (await res.json()) as {
+                name: string;
+                description: string;
+            };
+            expect(card.name).toBe(`io.github.pollinations/${server.id}`);
+            expect(card.description.length).toBeLessThanOrEqual(100);
+        }
+    });
+
     it("returns 404 for an unknown server id", async () => {
         const res = await mcpCardRoutes.request("/mcp/nope/server-card");
         expect(res.status).toBe(404);

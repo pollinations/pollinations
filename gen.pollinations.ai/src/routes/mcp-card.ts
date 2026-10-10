@@ -1,5 +1,6 @@
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { MCP_SERVERS, type McpServerDefinition } from "@shared/registry/mcp.ts";
+import { buildServerEntry } from "@shared/registry/mcp-server-json.ts";
 import { type Context, Hono } from "hono";
 import type { Env } from "@/env.ts";
 
@@ -11,6 +12,7 @@ const SERVER_CARD_MEDIA_TYPE = "application/mcp-server-card+json";
 const AI_CATALOG_MEDIA_TYPE = "application/ai-catalog+json";
 const SERVER_CARD_SCHEMA_URL =
     "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json";
+const SERVER_CARD_VERSION = "1.0.0";
 
 function etagFor(body: string): string {
     // Small deterministic content hash (FNV-1a) for ETag validation; the
@@ -45,40 +47,11 @@ function cardResponse(
     });
 }
 
-function buildServerCard(
-    server: McpServerDefinition,
-    origin: string,
-): Record<string, unknown> {
+// A Server Card uses the server.json shape; only its $schema differs.
+function buildServerCard(server: McpServerDefinition, origin: string) {
     return {
+        ...buildServerEntry(server, SERVER_CARD_VERSION, origin),
         $schema: SERVER_CARD_SCHEMA_URL,
-        name: `io.pollinations.mcp/${server.id}`,
-        title: server.name,
-        version: "1.0.0",
-        description: server.description,
-        websiteUrl: "https://pollinations.ai",
-        remotes: [
-            {
-                type: "streamable-http",
-                url: `${origin}/mcp/${server.id}`,
-                headers: [
-                    {
-                        name: "Authorization",
-                        description:
-                            "Bearer API key from enter.pollinations.ai/keys. Keyless requests are rejected for these endpoints.",
-                        isRequired: true,
-                        isSecret: true,
-                        value: "Bearer {apiKey}",
-                        variables: {
-                            apiKey: {
-                                description: "Pollinations API key",
-                                isRequired: true,
-                                isSecret: true,
-                            },
-                        },
-                    },
-                ],
-            },
-        ],
     };
 }
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T06:31:25.882163+00:00",
+  "generated_at": "2026-10-10T09:59:06.598015+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -5676,6 +5676,35 @@
             "zh-CN-Mei",
             "zh-CN-Wei"
           ]
+        }
+      }
+    },
+    {
+      "id": "pr-16958:qwen/qwen3-vl-30b-a3b-instruct",
+      "model_id": "qwen/qwen3-vl-30b-a3b-instruct",
+      "title": "Qwen3 VL 30B A3B Instruct",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-10",
+      "pr": 16958,
+      "url": "https://github.com/pollinations/pollinations/pull/16958",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000013715",
+            "completionTextTokens": "0.0000005486"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015825",
+            "completionTextTokens": "0.000000633"
+          }
         }
       }
     }

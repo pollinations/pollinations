@@ -1,0 +1,55 @@
+{
+  "month": "2025-03",
+  "merged_prs": 111,
+  "contributors": [
+    {
+      "id": 160964065,
+      "login": "mentatbot[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/837875?s=80&v=4",
+      "url": "https://github.com/apps/mentatbot",
+      "prs": 64
+    },
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 32
+    },
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?s=80&u=e05f74107a59dc476c73a6757ba999582c3ae952&v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 8
+    },
+    {
+      "id": 74301576,
+      "login": "Circuit-Overtime",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74301576?s=80&u=fe05794e65d22cd313e710ed7266b42627d30586&v=4",
+      "url": "https://github.com/Circuit-Overtime",
+      "prs": 4
+    },
+    {
+      "id": 36754621,
+      "login": "hackall360",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36754621?s=80&v=4",
+      "url": "https://github.com/hackall360",
+      "prs": 1
+    },
+    {
+      "id": 199837812,
+      "login": "sb288912",
+      "avatar_url": "https://avatars.githubusercontent.com/u/199837812?s=80&u=51f7427312ee41e885181f4cda0889b65d2e7d60&v=4",
+      "url": "https://github.com/sb288912",
+      "prs": 1
+    },
+    {
+      "id": 37724661,
+      "login": "TechWithTy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37724661?s=80&u=6d1579507206a226fbf479de26e0c98d994c1975&v=4",
+      "url": "https://github.com/TechWithTy",
+      "prs": 1
+    }
+  ]
+}

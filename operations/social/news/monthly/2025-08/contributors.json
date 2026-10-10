@@ -1,0 +1,76 @@
+{
+  "month": "2025-08",
+  "merged_prs": 48,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 24
+    },
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?s=80&u=e05f74107a59dc476c73a6757ba999582c3ae952&v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 17
+    },
+    {
+      "id": 3340175,
+      "login": "eulervoid",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3340175?s=80&u=d0d89d1120753288c1a47e9958ddb0c1c0a79ae7&v=4",
+      "url": "https://github.com/eulervoid",
+      "prs": 4
+    },
+    {
+      "id": 99643174,
+      "login": "bladedevoff",
+      "avatar_url": "https://avatars.githubusercontent.com/u/99643174?s=80&u=3156ad85489f57d7b2ad6ba0414ec21f28b3690f&v=4",
+      "url": "https://github.com/bladedevoff",
+      "prs": 2
+    },
+    {
+      "id": 149804185,
+      "login": "chandankumarm55",
+      "avatar_url": "https://avatars.githubusercontent.com/u/149804185?v=4",
+      "url": "https://github.com/chandankumarm55",
+      "prs": 1
+    },
+    {
+      "id": 95847507,
+      "login": "Ellweb3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/95847507?s=80&u=c9b0c18ddd82c4a1f564247ecdb09a68924e747d&v=4",
+      "url": "https://github.com/Ellweb3",
+      "prs": 1
+    },
+    {
+      "id": 113578582,
+      "login": "huamanraj",
+      "avatar_url": "https://avatars.githubusercontent.com/u/113578582?v=4",
+      "url": "https://github.com/huamanraj",
+      "prs": 1
+    },
+    {
+      "id": 116184991,
+      "login": "Kandariarjun07",
+      "avatar_url": "https://avatars.githubusercontent.com/u/116184991?v=4",
+      "url": "https://github.com/Kandariarjun07",
+      "prs": 1
+    },
+    {
+      "id": 192782247,
+      "login": "sizzlebop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/192782247?v=4",
+      "url": "https://github.com/sizzlebop",
+      "prs": 1
+    },
+    {
+      "id": 197427877,
+      "login": "zakrya6665",
+      "avatar_url": "https://avatars.githubusercontent.com/u/197427877?v=4",
+      "url": "https://github.com/zakrya6665",
+      "prs": 1
+    }
+  ]
+}

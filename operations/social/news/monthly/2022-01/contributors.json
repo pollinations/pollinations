@@ -1,0 +1,20 @@
+{
+  "month": "2022-01",
+  "merged_prs": 7,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 5
+    },
+    {
+      "id": 378888,
+      "login": "gokaykucuk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/378888?s=80&u=1ddcc38d711ea8fa2add46aa1d55efd3bc3c9230&v=4",
+      "url": "https://github.com/gokaykucuk",
+      "prs": 2
+    }
+  ]
+}

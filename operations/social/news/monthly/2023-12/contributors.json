@@ -1,0 +1,27 @@
+{
+  "month": "2023-12",
+  "merged_prs": 23,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 18
+    },
+    {
+      "id": 152752280,
+      "login": "flowa-ai",
+      "avatar_url": "https://avatars.githubusercontent.com/u/152752280?s=80&u=2598b902d6f50f24801b56bdc219ff561b417eb0&v=4",
+      "url": "https://github.com/flowa-ai",
+      "prs": 5
+    },
+    {
+      "id": 319055,
+      "login": "fofr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/319055?v=4",
+      "url": "https://github.com/fofr",
+      "prs": 2
+    }
+  ]
+}

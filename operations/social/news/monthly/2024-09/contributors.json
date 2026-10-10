@@ -1,0 +1,34 @@
+{
+  "month": "2024-09",
+  "merged_prs": 69,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 64
+    },
+    {
+      "id": 1114356,
+      "login": "chakra-gold",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1114356?v=4",
+      "url": "https://github.com/chakra-gold",
+      "prs": 3
+    },
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 3
+    },
+    {
+      "id": 151645294,
+      "login": "pollinations-test",
+      "avatar_url": "https://avatars.githubusercontent.com/u/151645294?s=80&u=dc52b6c5649a2962312526da541ba255103ace72&v=4",
+      "url": "https://github.com/pollinations-test",
+      "prs": 2
+    }
+  ]
+}

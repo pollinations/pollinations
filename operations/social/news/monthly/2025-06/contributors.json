@@ -1,0 +1,62 @@
+{
+  "month": "2025-06",
+  "merged_prs": 73,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 56
+    },
+    {
+      "id": 160964065,
+      "login": "mentatbot[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/837875?s=80&v=4",
+      "url": "https://github.com/apps/mentatbot",
+      "prs": 29
+    },
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?s=80&u=e05f74107a59dc476c73a6757ba999582c3ae952&v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 11
+    },
+    {
+      "id": 69885286,
+      "login": "withthatway",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69885286?v=4",
+      "url": "https://github.com/withthatway",
+      "prs": 3
+    },
+    {
+      "id": 90309290,
+      "login": "Zingzy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90309290?s=80&u=e72afe1adb66db889e53c8478cbde71580ae3856&v=4",
+      "url": "https://github.com/Zingzy",
+      "prs": 2
+    },
+    {
+      "id": 134748713,
+      "login": "SenhorEgonss",
+      "avatar_url": "https://avatars.githubusercontent.com/u/134748713?v=4",
+      "url": "https://github.com/SenhorEgonss",
+      "prs": 1
+    },
+    {
+      "id": 61162037,
+      "login": "TheSystemGuy1337",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61162037?s=80&u=d45d5311776e7ccf5303087f9a6cabd8d3cb4a79&v=4",
+      "url": "https://github.com/TheSystemGuy1337",
+      "prs": 1
+    },
+    {
+      "id": 118118458,
+      "login": "wBrowsqq",
+      "avatar_url": "https://avatars.githubusercontent.com/u/118118458?v=4",
+      "url": "https://github.com/wBrowsqq",
+      "prs": 1
+    }
+  ]
+}

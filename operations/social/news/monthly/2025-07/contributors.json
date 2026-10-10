@@ -1,0 +1,76 @@
+{
+  "month": "2025-07",
+  "merged_prs": 59,
+  "contributors": [
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 37
+    },
+    {
+      "id": 160964065,
+      "login": "mentatbot[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/837875?s=80&v=4",
+      "url": "https://github.com/apps/mentatbot",
+      "prs": 19
+    },
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?s=80&u=e05f74107a59dc476c73a6757ba999582c3ae952&v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 6
+    },
+    {
+      "id": 3340175,
+      "login": "eulervoid",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3340175?s=80&u=d0d89d1120753288c1a47e9958ddb0c1c0a79ae7&v=4",
+      "url": "https://github.com/eulervoid",
+      "prs": 6
+    },
+    {
+      "id": 69885286,
+      "login": "withthatway",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69885286?v=4",
+      "url": "https://github.com/withthatway",
+      "prs": 5
+    },
+    {
+      "id": 61162037,
+      "login": "TheSystemGuy1337",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61162037?v=4",
+      "url": "https://github.com/TheSystemGuy1337",
+      "prs": 2
+    },
+    {
+      "id": 72049678,
+      "login": "CiaranMcAleer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/72049678?s=80&u=eea2acc1558d3ca2e4e7458dc0e9ef7dc6f04457&v=4",
+      "url": "https://github.com/CiaranMcAleer",
+      "prs": 1
+    },
+    {
+      "id": 74301576,
+      "login": "Circuit-Overtime",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74301576?s=80&u=fe05794e65d22cd313e710ed7266b42627d30586&v=4",
+      "url": "https://github.com/Circuit-Overtime",
+      "prs": 1
+    },
+    {
+      "id": 32127923,
+      "login": "FrancoStino",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32127923?s=80&u=06c00f6e20850c3222cab4ba03cb1bbe34c21020&v=4",
+      "url": "https://github.com/FrancoStino",
+      "prs": 1
+    },
+    {
+      "id": 108380065,
+      "login": "TechMitten",
+      "avatar_url": "https://avatars.githubusercontent.com/u/108380065?s=80&u=aa35147962554a2240e068374080138b2dcc7c72&v=4",
+      "url": "https://github.com/TechMitten",
+      "prs": 1
+    }
+  ]
+}

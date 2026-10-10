@@ -1,0 +1,69 @@
+{
+  "month": "2025-04",
+  "merged_prs": 104,
+  "contributors": [
+    {
+      "id": 160964065,
+      "login": "mentatbot[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/837875?s=80&v=4",
+      "url": "https://github.com/apps/mentatbot",
+      "prs": 43
+    },
+    {
+      "id": 5099901,
+      "login": "voodoohop",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5099901?s=80&v=4",
+      "url": "https://github.com/voodoohop",
+      "prs": 43
+    },
+    {
+      "id": 36901823,
+      "login": "ElliotEtag",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36901823?s=80&u=e05f74107a59dc476c73a6757ba999582c3ae952&v=4",
+      "url": "https://github.com/ElliotEtag",
+      "prs": 18
+    },
+    {
+      "id": 74301576,
+      "login": "Circuit-Overtime",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74301576?s=80&u=fe05794e65d22cd313e710ed7266b42627d30586&v=4",
+      "url": "https://github.com/Circuit-Overtime",
+      "prs": 1
+    },
+    {
+      "id": 173834234,
+      "login": "GoodCoderType",
+      "avatar_url": "https://avatars.githubusercontent.com/u/173834234?v=4",
+      "url": "https://github.com/GoodCoderType",
+      "prs": 1
+    },
+    {
+      "id": 88378769,
+      "login": "Logise1123",
+      "avatar_url": "https://avatars.githubusercontent.com/u/88378769?v=4",
+      "url": "https://github.com/Logise1123",
+      "prs": 1
+    },
+    {
+      "id": 201119022,
+      "login": "mcgdj",
+      "avatar_url": "https://avatars.githubusercontent.com/u/201119022?v=4",
+      "url": "https://github.com/mcgdj",
+      "prs": 1
+    },
+    {
+      "id": 154080171,
+      "login": "metimol",
+      "avatar_url": "https://avatars.githubusercontent.com/u/154080171?v=4",
+      "url": "https://github.com/metimol",
+      "prs": 1
+    },
+    {
+      "id": 154442734,
+      "login": "okeymeta",
+      "avatar_url": "https://avatars.githubusercontent.com/u/154442734?v=4",
+      "url": "https://github.com/okeymeta",
+      "prs": 1
+    }
+  ]
+}

@@ -3569,8 +3569,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.52) * 1.055,
+            promptTextTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:

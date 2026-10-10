@@ -58,23 +58,28 @@ export function useDiscordPresence(options?: UseAsyncOptions) {
 
 /* ── Contributors ───────────────────────────────────────────────────────── */
 
-/** GitHub's contributor list: all-time commits on main, people and agents alike. */
+/** The news index, rebuilt daily on the news branch from the merged-PR gists. */
+const NEWS_INDEX =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/index.json";
+
+/** Merged PRs over a rolling six months, people and bots alike. */
 type Contributor = {
     login: string;
+    prs: number;
     avatar_url: string;
-    html_url: string;
-    contributions: number;
+    url: string;
 };
 
+const loadContributors = cachePublic(async () => {
+    const response = await fetch(NEWS_INDEX);
+    if (!response.ok) throw new Error(`news index: ${response.status}`);
+    const index = (await response.json()) as { contributors?: Contributor[] };
+    if (!index.contributors) throw new Error("news index: no contributors");
+    return index.contributors;
+});
+
 export function useContributors() {
-    // One request, already ranked by commit count.
-    return useAsync<Contributor[]>(
-        async () =>
-            (await loadGithub(
-                `/repos/${REPO}/contributors?per_page=20`,
-            )) as Contributor[],
-        [],
-    );
+    return useAsync<Contributor[]>(loadContributors, []);
 }
 
 /* ── Pull requests and open votes ───────────────────────────────────────── */

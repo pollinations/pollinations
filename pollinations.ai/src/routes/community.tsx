@@ -311,7 +311,7 @@ function Contributors() {
             <ContentHeader
                 eyebrow="Contributors"
                 title="Top code contributors"
-                subtitle="The top 20 by commits, people and agents alike. Want to join them?"
+                subtitle="The top 20 by pull requests merged in the last 6 months, people and agents alike. Want to join them?"
                 action={
                     <InlineLink href={SOCIAL_LINKS.github.url}>
                         Open the repository
@@ -329,7 +329,7 @@ function Contributors() {
                 {people.map((person) => (
                     <LinkCard
                         key={person.login}
-                        href={person.html_url}
+                        href={person.url}
                         showIcon={false}
                         surfaceClassName="flex-row items-center gap-3.5 p-4"
                     >
@@ -343,11 +343,18 @@ function Contributors() {
                             className="size-10 shrink-0 rounded-[10px] bg-theme-bg-subtle"
                         />
                         <span className="flex min-w-0 flex-col">
-                            <span className="truncate font-semibold text-sm text-theme-text-strong">
-                                {person.login}
+                            <span className="flex min-w-0 items-center gap-1.5">
+                                <span className="truncate font-semibold text-sm text-theme-text-strong">
+                                    {person.login.replace(/\[bot\]$/, "")}
+                                </span>
+                                {person.login.endsWith("[bot]") && (
+                                    <Chip intent="neutral" size="sm">
+                                        Agent
+                                    </Chip>
+                                )}
                             </span>
                             <span className="text-xs text-theme-text-muted tabular-nums">
-                                {person.contributions.toLocaleString()} commits
+                                {person.prs.toLocaleString()} merged PRs
                             </span>
                         </span>
                     </LinkCard>

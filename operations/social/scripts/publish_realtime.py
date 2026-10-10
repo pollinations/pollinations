@@ -209,23 +209,6 @@ def main():
 
         if resp.status_code in [200, 201, 204]:
             print("  Discord post sent")
-            try:
-                data = resp.json()
-                channel_id, msg_id = data.get("channel_id"), data.get("id")
-                import os
-
-                token = os.environ.get("DISCORD_TOKEN")
-                if token and channel_id and msg_id:
-                    requests.post(
-                        f"https://discord.com/api/v10/channels/{channel_id}/messages/{msg_id}/crosspost",
-                        headers={
-                            "Authorization": f"Bot {token}",
-                            "Content-Type": "application/json",
-                        },
-                        timeout=10,
-                    )
-            except Exception:
-                pass
         else:
             print(f"  Discord webhook error: {resp.status_code} {resp.text[:200]}")
             sys.exit(1)

@@ -112,23 +112,7 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
         else:
             resp = post_discord_webhook(webhook_url, json_body={"content": chunk})
 
-        if resp.status_code in [200, 201, 204]:
-            try:
-                data = resp.json()
-                channel_id, msg_id = data.get("channel_id"), data.get("id")
-                token = os.environ.get("DISCORD_TOKEN")
-                if token and channel_id and msg_id:
-                    requests.post(
-                        f"https://discord.com/api/v10/channels/{channel_id}/messages/{msg_id}/crosspost",
-                        headers={
-                            "Authorization": f"Bot {token}",
-                            "Content-Type": "application/json",
-                        },
-                        timeout=10,
-                    )
-            except Exception:
-                pass
-        else:
+        if resp.status_code not in [200, 201, 204]:
             print(
                 f"  Discord error on chunk {i + 1}: {resp.status_code} {resp.text[:200]}"
             )

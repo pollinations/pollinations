@@ -131,7 +131,7 @@ function CommunityParticipation() {
     const ways = [
         liveMetric("listed apps", { ...apps, data: apps.data.length }, String),
         liveMetric("community models and agents", platform, (stats) =>
-            compact(stats.community),
+            compact(stats.community + stats.agents),
         ),
         liveMetric("PRs merged", pullRequests, compact),
         // The widget only exposes who is online now; a member total needs
@@ -307,7 +307,7 @@ function Contributors() {
             <ContentHeader
                 eyebrow="Contributors"
                 title="Top code contributors"
-                subtitle="These contributors have helped build and improve the platform. Want to join them?"
+                subtitle="The top 20 by commits, people and agents alike. Want to join them?"
                 action={
                     <InlineLink href={SOCIAL_LINKS.github.url}>
                         Open the repository
@@ -330,7 +330,7 @@ function Contributors() {
                         surfaceClassName="flex-row items-center gap-3.5 p-4"
                     >
                         <img
-                            src={`${person.avatar_url}&s=80`}
+                            src={person.avatar_url}
                             alt=""
                             aria-hidden="true"
                             loading="lazy"
@@ -368,28 +368,25 @@ function CommunityPage() {
                     title="Who keeps the GPUs warm"
                     subtitle="Their credits and infrastructure help keep Pollinations running."
                 />
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3.5">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                     {SUPPORTERS.map((supporter) => (
                         <LinkCard
                             key={supporter.name}
                             href={supporter.url}
                             aria-label={supporter.name}
                             showIcon={false}
-                            surfaceClassName="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-0 px-5 py-4"
+                            surfaceClassName="flex-row items-center gap-2.5 px-3.5 py-2.5"
                         >
                             <span
                                 aria-hidden="true"
-                                className="row-span-2 h-9 w-9 bg-theme-text-strong"
+                                className="size-5 shrink-0 bg-theme-text-strong"
                                 style={{
                                     WebkitMask: `url(${supporter.logo}) center / contain no-repeat`,
                                     mask: `url(${supporter.logo}) center / contain no-repeat`,
                                 }}
                             />
-                            <span className="font-body text-base font-semibold text-theme-text-strong">
+                            <span className="truncate font-body text-sm font-semibold text-theme-text-strong">
                                 {supporter.name}
-                            </span>
-                            <span className="text-sm leading-snug text-theme-text-muted">
-                                {supporter.description}
                             </span>
                         </LinkCard>
                     ))}

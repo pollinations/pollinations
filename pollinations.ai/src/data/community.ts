@@ -9,6 +9,9 @@ import { cachePublic } from "./cachePublic";
 import { type UseAsyncOptions, useAsync } from "./useAsync";
 
 const REPO = "pollinations/pollinations";
+/** The news feed (build_news_index.py); its `months` feed the build diary. */
+const NEWS_INDEX =
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/index.json";
 const GITHUB = "https://api.github.com";
 const DISCORD_WIDGET =
     "https://discord.com/api/guilds/885844321461485618/widget.json";
@@ -58,22 +61,24 @@ export function useDiscordPresence(options?: UseAsyncOptions) {
 
 /* ── Contributors ───────────────────────────────────────────────────────── */
 
-type Contributor = {
+/** GitHub's contributor list: all-time commits on main, people and agents alike. */
+export type Contributor = {
     login: string;
     avatar_url: string;
     html_url: string;
     contributions: number;
-    type: string;
 };
 
+async function loadContributors() {
+    // One request, already ranked by commit count.
+    const rows = (await loadGithub(
+        `/repos/${REPO}/contributors?per_page=20`,
+    )) as Contributor[];
+    return rows;
+}
+
 export function useContributors() {
-    return useAsync<Contributor[]>(async () => {
-        // One request, already ranked by commit count.
-        const rows = (await loadGithub(
-            `/repos/${REPO}/contributors?per_page=20`,
-        )) as Contributor[];
-        return rows.filter((row) => row.type !== "Bot").slice(0, 12);
-    }, []);
+    return useAsync<Contributor[]>(loadContributors, []);
 }
 
 /* ── Pull requests and open votes ───────────────────────────────────────── */
@@ -93,10 +98,19 @@ const searchGithub = (query: string, params: string) =>
         `/search/issues?q=${encodeURIComponent(`repo:${REPO} ${query}`)}&${params}`,
     ) as Promise<GhSearch>;
 
+/**
+ * Every merged pull request on any branch, by anyone. Release pull requests
+ * into production are left out: they copy work already merged into main.
+ */
 export function usePullRequestCount() {
     return useAsync<number | null>(
         async () =>
-            (await searchGithub("is:pr is:merged", "per_page=1")).total_count,
+            (
+                await searchGithub(
+                    "is:pr is:merged -base:production",
+                    "per_page=1",
+                )
+            ).total_count,
         null,
     );
 }
@@ -154,81 +168,166 @@ export function useQuestLeaderboard() {
     return useAsync<QuestLeaderboardData | null>(loadQuestLeaderboard, null);
 }
 
+/* ── Build diary ────────────────────────────────────────────────────────── */
+
+/** One finished month: merged pull requests, and the write-up when there is one. */
+export type DiaryMonth = {
+    /** YYYY-MM */
+    month: string;
+    merged: number;
+    title?: string;
+    summary?: string;
+    image?: string;
+};
+
+type IndexMonth = {
+    month: string;
+    merged_prs: number;
+    title: string | null;
+    summary: string | null;
+    image: string | null;
+};
+
+const loadBuildDiary = cachePublic(async () => {
+    const response = await fetch(NEWS_INDEX);
+    if (!response.ok) throw new Error(`build diary: ${response.status}`);
+    const { months = [] } = (await response.json()) as {
+        months?: IndexMonth[];
+    };
+    if (months.length === 0) throw new Error("build diary: empty");
+    return months.map(
+        (row): DiaryMonth => ({
+            month: row.month,
+            merged: row.merged_prs,
+            title: row.title ?? undefined,
+            summary: row.summary ?? undefined,
+            image: row.image ?? undefined,
+        }),
+    );
+});
+
+export function useBuildDiary() {
+    return useAsync<DiaryMonth[]>(loadBuildDiary, []);
+}
+
 /**
  * Static on purpose: these are sponsorship relationships, not something an
- * API can measure.
+ * API can measure. Alphabetical; logos follow the model registry's publisher
+ * style (24px box, ink fitted to the middle 20px, currentColor).
  */
 export const SUPPORTERS = [
     {
-        name: "AWS Activate",
+        name: "Alibaba Cloud",
+        url: "https://www.alibabacloud.com/",
+        logo: "/supporters/alibaba.svg",
+    },
+    {
+        name: "Anthropic",
+        url: "https://www.anthropic.com/",
+        logo: "/supporters/anthropic.svg",
+    },
+    {
+        name: "AssemblyAI",
+        url: "https://www.assemblyai.com/",
+        logo: "/supporters/assemblyai.svg",
+    },
+    {
+        name: "AWS",
         url: "https://aws.amazon.com/",
         logo: "/supporters/aws.svg",
-        description: "GPU cloud credits",
-    },
-    {
-        name: "Google Cloud for Startups",
-        url: "https://cloud.google.com/",
-        logo: "/supporters/google-cloud.svg",
-        description: "GPU cloud credits",
-    },
-    {
-        name: "NVIDIA Inception",
-        url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
-        logo: "/supporters/nvidia.svg",
-        description: "AI startup support",
-    },
-    {
-        name: "Azure (MS for Startups)",
-        url: "https://azure.microsoft.com/",
-        logo: "/supporters/azure.svg",
-        description: "OpenAI credits",
-    },
-    {
-        name: "Cloudflare",
-        url: "https://developers.cloudflare.com/workers-ai/",
-        logo: "/supporters/cloudflare.svg",
-        description: "Put the connectivity cloud to work for you",
-    },
-    {
-        name: "Scaleway",
-        url: "https://www.scaleway.com/",
-        logo: "/supporters/scaleway.svg",
-        description: "Europe's empowering cloud provider",
-    },
-    {
-        name: "Modal",
-        url: "https://modal.com/",
-        logo: "/supporters/modal.svg",
-        description: "High-performance AI infrastructure",
-    },
-    {
-        name: "Nebius",
-        url: "https://nebius.com/",
-        logo: "/supporters/nebius.svg",
-        description: "AI-optimised cloud with NVIDIA GPU clusters",
-    },
-    {
-        name: "Perplexity AI",
-        url: "https://www.perplexity.ai/",
-        logo: "/supporters/perplexity.svg",
-        description: "AI-powered search and answer engine",
-    },
-    {
-        name: "io.net",
-        url: "https://io.net/",
-        logo: "/supporters/io-net.svg",
-        description: "Decentralised GPU network for AI compute",
     },
     {
         name: "BytePlus",
         url: "https://www.byteplus.com/",
         logo: "/supporters/byteplus.svg",
-        description: "ByteDance cloud services and AI solutions",
+    },
+    {
+        name: "Cloudflare",
+        url: "https://developers.cloudflare.com/workers-ai/",
+        logo: "/supporters/cloudflare.svg",
+    },
+    {
+        name: "Daytona",
+        url: "https://www.daytona.io/",
+        logo: "/supporters/daytona.svg",
+    },
+    {
+        name: "DigitalOcean",
+        url: "https://www.digitalocean.com/",
+        logo: "/supporters/digitalocean.svg",
+    },
+    { name: "E2B", url: "https://e2b.dev/", logo: "/supporters/e2b.svg" },
+    {
+        name: "ElevenLabs",
+        url: "https://elevenlabs.io/",
+        logo: "/supporters/elevenlabs.svg",
+    },
+    { name: "Exa", url: "https://exa.ai/", logo: "/supporters/exa.svg" },
+    {
+        name: "Fireworks AI",
+        url: "https://fireworks.ai/",
+        logo: "/supporters/fireworks.svg",
+    },
+    {
+        name: "Google Cloud",
+        url: "https://cloud.google.com/",
+        logo: "/supporters/google-cloud.svg",
     },
     {
         name: "InferencePort AI",
         url: "https://inferenceport.ai/",
         logo: "/supporters/inferenceport.svg",
-        description: "Cloud and local AI infrastructure",
+    },
+    { name: "io.net", url: "https://io.net/", logo: "/supporters/io-net.svg" },
+    {
+        name: "Lambda",
+        url: "https://lambda.ai/",
+        logo: "/supporters/lambda.svg",
+    },
+    {
+        name: "Microsoft Azure",
+        url: "https://azure.microsoft.com/",
+        logo: "/supporters/azure.svg",
+    },
+    { name: "Modal", url: "https://modal.com/", logo: "/supporters/modal.svg" },
+    {
+        name: "Nebius",
+        url: "https://nebius.com/",
+        logo: "/supporters/nebius.svg",
+    },
+    {
+        name: "NVIDIA",
+        url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
+        logo: "/supporters/nvidia.svg",
+    },
+    {
+        name: "OpenAI",
+        url: "https://openai.com/",
+        logo: "/supporters/openai.svg",
+    },
+    {
+        name: "OpenRouter",
+        url: "https://openrouter.ai/",
+        logo: "/supporters/openrouter.svg",
+    },
+    {
+        name: "OVHcloud",
+        url: "https://www.ovhcloud.com/",
+        logo: "/supporters/ovhcloud.svg",
+    },
+    {
+        name: "Perplexity",
+        url: "https://www.perplexity.ai/",
+        logo: "/supporters/perplexity.svg",
+    },
+    {
+        name: "RunPod",
+        url: "https://www.runpod.io/",
+        logo: "/supporters/runpod.svg",
+    },
+    {
+        name: "Scaleway",
+        url: "https://www.scaleway.com/",
+        logo: "/supporters/scaleway.svg",
     },
 ] as const;

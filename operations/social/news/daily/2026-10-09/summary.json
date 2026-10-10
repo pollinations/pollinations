@@ -1,0 +1,200 @@
+{
+  "date": "2026-10-09",
+  "period_start": "2026-10-09",
+  "period_end": "2026-10-09",
+  "title": "New ways to speak, transcribe, and make decisions",
+  "summary": "New voice, transcription, and Decisions models arrived alongside community apps and a substantial round of API, SDK, and CLI fixes.\n\nMAI-Voice-2.1 and Flash added text-to-speech with 97 voices each. MAI Transcribe 2 added multilingual file transcription with timed segments, plus a separate model for live PCM transcription. GPT-6 Luna Decisions added text and JSON decisions with streaming. Decisions requests no longer hit a local timeout, and region-restricted provider responses can reach a model’s declared fallback.\n\nThe app catalog added Arabic-language Video and Create 3D apps, illustrated four-line fables from Fable Finder, and boundary-message drafts from Nice No. Screenshots were added to the 31 listings missing them, and two language labels were corrected.\n\nGrowing agent conversations can reuse more of their prompt cache. The Responses API now separates parallel Gemini tool calls and streams tool arguments incrementally; the Messages API accepts supported PDF document blocks. Canonical model IDs with unencoded slashes resolve correctly, image and video boolean options accept values like `1` and `yes` while rejecting unknown values, and shell command substitution decodes UTF-8 correctly.",
+  "pr_count": 36,
+  "prs": [
+    {
+      "number": 15192,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16599,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16701,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16758,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16760,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16762,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16764,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16766,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16768,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16770,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16780,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16782,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16784,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16786,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16788,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16790,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16798,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16800,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16802,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16864,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16866,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16867,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16869,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16871,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16873,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16875,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16883,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16884,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16887,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16891,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16892,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16893,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16903,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16907,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16918,
+      "date": "2026-10-09"
+    },
+    {
+      "number": 16924,
+      "date": "2026-10-09"
+    }
+  ],
+  "generated_at": "2026-10-10T06:30:11.746320+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "MAI voices for speech",
+      "text": "Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        16800
+      ]
+    },
+    {
+      "emoji": "🎵",
+      "title": "MAI transcription, two ways",
+      "text": "Transcribe multilingual audio files with timed segments using `microsoft/mai-transcribe-2`, or send live PCM audio to `microsoft/mai-transcribe-2-streaming`. [Browse the file transcription model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).",
+      "prs": [
+        16798,
+        16802
+      ]
+    },
+    {
+      "emoji": "🤖",
+      "title": "GPT-6 Luna Decisions",
+      "text": "Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
+      "prs": [
+        16701
+      ]
+    },
+    {
+      "emoji": "🎨",
+      "title": "Fable Finder",
+      "text": "Give it a lesson you keep forgetting; get a four-line fable and an illustration. [Try it](https://mhmdrizki803-boop.github.io/fable-finder).",
+      "prs": [
+        16869
+      ],
+      "app": true
+    },
+    {
+      "emoji": "✨",
+      "title": "Nice No",
+      "text": "Turn an awkward request into a gentle, firm, or brief boundary message, with a follow-up for pushback. [Try it](https://nice-no.maxtoms21.chatgpt.site).",
+      "prs": [
+        16871
+      ],
+      "app": true
+    }
+  ]
+}

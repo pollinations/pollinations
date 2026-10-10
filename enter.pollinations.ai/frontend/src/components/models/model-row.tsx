@@ -3,6 +3,7 @@ import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import { CopyValue } from "./copy-value.tsx";
+import { ModelDescription } from "./model-description.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -254,9 +255,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                         />
                     </div>
                     {modelDescription && (
-                        <p className="line-clamp-2 text-xs leading-snug text-theme-text-muted">
-                            {modelDescription}
-                        </p>
+                        <ModelDescription text={modelDescription} />
                     )}
                     {model.brandUrl && model.publisher && (
                         <InlineLink

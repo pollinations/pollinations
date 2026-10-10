@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 2026-10-09**
+**Last updated: 2026-10-10**
 
 ## 1) Scope & Roles
 
@@ -29,7 +29,7 @@ This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
 * **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
-* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We do not currently send email directly. If we introduce direct email in the future, transactional messages will be limited to verification, billing, security, and service notices, and any marketing email will only be sent where permitted (consent) and will include an unsubscribe link and `List-Unsubscribe` header.
+* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We do not currently send email directly.
 
 ## 4) Authorized Apps
 
@@ -55,11 +55,11 @@ We use essential cookies and similar storage needed for login, session, security
 
 On the paid dashboard we also keep a first-party usage measurement. It sets no cookie and gives your browser no identifier. We record the page viewed, the country your connection comes from as determined by our network provider (the IP address itself is not stored), the referring website's hostname, any campaign tags in the link you arrived from, and the identifier of the app that sent you to us. Those last three are kept in your tab's session storage so they survive a sign-in redirect, and are discarded when the tab closes. We use this to see which pages and sources lead to sign-ups and purchases, and where people abandon a flow (legitimate interests, §3). It is processed on our own systems and by our analytics sub-processor, contains no name, email, IP address, or page content, and is not shared with advertisers.
 
-We do not use third-party analytics or marketing cookies/SDKs. If we add any, we will request consent first and provide a way to change preferences.
+We do not use third-party analytics or marketing cookies/SDKs.
 
 ## 8) Sharing & Recipients
 
-* **Service providers (sub-processors):** see [Service Providers](/subprocessors) for the named services, available location information, and verification limitations. We give at least 14 days' prior notice of material changes to sub-processors.
+* **Service providers (sub-processors):** see [Service Providers](/subprocessors).
 
 **Depending on your selected model, tool, and fallback route, request content and outputs may be sent to inference, search, connector, or sandbox services (see [Service Providers](/subprocessors)).** Provider retention and any abuse review depend on the service and account settings; transmission is not necessarily transient. Hosted connectors may also process the content and credentials of accounts you connect.
 
@@ -72,7 +72,7 @@ We do not sell personal data.
 
 ## 9) International Transfers
 
-Processing locations depend on the service, route, and any fallback. Transfers outside the EEA require applicable GDPR safeguards, such as an adequacy decision or the appropriate EU Standard Contractual Clauses and supplementary measures. Our [provider disclosure](/subprocessors) identifies available location information and verification limitations; it does not certify that a particular safeguard applies to every listed route. Contact **hello@pollinations.ai** for information about the applicable arrangements and how to obtain a copy of any relevant safeguards before using a route with specific transfer requirements.
+Processing locations depend on the service, route, and any fallback. Transfers outside the EEA require applicable GDPR safeguards, such as an adequacy decision or the appropriate EU Standard Contractual Clauses and supplementary measures. Contact **hello@pollinations.ai** for information about the applicable arrangements and how to obtain a copy of any relevant safeguards before using a route with specific transfer requirements.
 
 Community providers may process data in other countries. Before sending personal data, check that the provider meets any residency or transfer requirements that apply to you.
 
@@ -101,7 +101,7 @@ You can complain to your local authority or the Estonian Data Protection Inspect
 
 ## 12) Security
 
-We apply industry-standard administrative, technical, and physical safeguards, including encryption in transit, encryption at rest where applicable, access controls, and incident response.
+We protect personal data with appropriate technical and organisational measures.
 
 ## 13) Children
 

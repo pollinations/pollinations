@@ -1,0 +1,1703 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Traffic to pollinations.ai and enter.pollinations.ai: Cloudflare arrivals for both sites, first-party page views, visitor sources and sign-in and purchase funnels from product_event, and Google Search. Each source covers different traffic and dates; see Data coverage.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "Arrivals · Cloudflare visits, sampled estimate (both sites)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "How many arrivals each site gets per day. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "website"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "pollinations.ai"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "enter"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "enter.pollinations.ai"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH\n  latest AS (\n    -- A rerun appends the same day again: keep the latest fetch per day.\n    SELECT date, argMax(body, fetched_at) AS body\n    FROM cloudflare_traffic_raw\n    WHERE dataset = 'page_views' AND $__dateFilter(date)\n    GROUP BY date\n  ),\n  groups AS (\n    SELECT\n      date,\n      if(JSONExtractString(g, 'dimensions', 'clientRequestHTTPHost') = 'enter.pollinations.ai', 'enter', 'website') AS site,\n      JSONExtractString(g, 'dimensions', 'clientRequestPath') AS path,\n      JSONExtractString(g, 'dimensions', 'clientCountryName') AS country,\n      JSONExtractString(g, 'dimensions', 'clientDeviceType') = 'mobile' AS mobile,\n      JSONExtractString(g, 'dimensions', 'userAgentBrowser') AS browser,\n      -- Already scaled for sampling by Cloudflare: never multiply by sampleInterval.\n      JSONExtractUInt(g, 'sum', 'visits') AS visits\n    FROM latest\n    ARRAY JOIN JSONExtractArrayRaw(body, 'data', 'viewer', 'zones', 1, 'httpRequestsAdaptiveGroups') AS g\n    WHERE JSONExtractUInt(g, 'dimensions', 'edgeResponseStatus') = 200\n      AND JSONExtractString(g, 'dimensions', 'verifiedBotCategory') = ''\n  )\nSELECT\n  b.1 AS breakdown,\n  toDateTime(if(b.1 = 'day', date, toDate(0))) AS time,\n  b.2 AS key,\n  sumIf(visits, site = 'website') AS website,\n  round(sumIf(visits, site = 'website' AND mobile) / nullIf(website, 0), 3) AS website_mobile,\n  sumIf(visits, site = 'enter') AS enter,\n  round(sumIf(visits, site = 'enter' AND mobile) / nullIf(enter, 0), 3) AS enter_mobile\nFROM groups\nARRAY JOIN [('day', ''), ('page', path), ('country', country)] AS b\n-- Browsers only: scripts, headless Chrome and self-declared crawlers are not visitors.\nWHERE browser NOT IN ('Unknown', 'Curl', 'Wget', 'ChromeHeadless')\n  AND NOT endsWith(browser, 'Bot')\nGROUP BY breakdown, time, key\nORDER BY breakdown, time, website + enter DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Arrivals per day (Cloudflare visits, sampled estimate)",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "breakdown",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "day"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "website",
+                "enter"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Which pages arrivals land on, per site, with the mobile share. pollinations.ai includes www; Enter's / is Enter's root, not the website home. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "key"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Page"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "website"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "pollinations.ai"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "website_mobile"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "pollinations.ai mobile"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "enter"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "enter.pollinations.ai"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "enter_mobile"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Enter mobile"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 1,
+          "refId": "A"
+        }
+      ],
+      "title": "Landing pages",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "breakdown",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "page"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "key",
+                "website",
+                "website_mobile",
+                "enter",
+                "enter_mobile"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Which countries arrivals come from (ISO country code), per site, with the mobile share. Automation that claims a real browser stays in: a desktop-only country spike is usually that. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "key"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Country"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "website"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "pollinations.ai"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "website_mobile"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "pollinations.ai mobile"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "enter"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "enter.pollinations.ai"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "enter_mobile"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Enter mobile"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 1,
+          "refId": "A"
+        }
+      ],
+      "title": "Countries",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "breakdown",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "country"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "key",
+                "website",
+                "website_mobile",
+                "enter",
+                "enter_mobile"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 101,
+      "panels": [],
+      "title": "First-party · Enter since 18 Sep 2026, pollinations.ai after #16991",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Every pollinations.ai page view by route, including in-app navigation, recorded by Enter as product_event website_page_viewed. Shows No data until #16991 ships (Enter first) and website deploys resume. No cookie or browser id: views, not people. Not comparable with Cloudflare arrivals, which count only loads arriving from outside.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "showPoints": "never",
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "displayName": "${__field.labels.page}",
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 0,
+          "range": true,
+          "rawSql": "SELECT\n  toStartOfDay(timestamp) AS time,\n  toString(page) AS page,\n  count() AS views\nFROM product_event\nWHERE environment = 'production'\n  AND event = 'website_page_viewed'\n  AND $__timeFilter(timestamp)\nGROUP BY time, page\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "pollinations.ai page views per day",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Every page view per site and route, including in-app navigation, from product_event (page_viewed for Enter, website_page_viewed for pollinations.ai, so Enter's / is never the website home). pollinations.ai rows appear once website page views exist. Signed-in people are distinct accounts; signed-out views have no identity. Older Enter rows recorded /_dashboard/... and are merged into the real path.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "site"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Site"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "path"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Page"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "views"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Views"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "signed_out_views"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Signed-out views"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "signed_in_people"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Signed-in people"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Views"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  if(event = 'website_page_viewed', 'pollinations.ai', 'enter.pollinations.ai') AS site,\n  -- Enter recorded route ids (/_dashboard/news) before it recorded real paths.\n  replaceRegexpOne(page, '^/_dashboard(/|$)', '/') AS path,\n  count() AS views,\n  countIf(user_id = '') AS signed_out_views,\n  uniqIf(user_id, user_id != '') AS signed_in_people\nFROM product_event\nWHERE environment = 'production'\n  AND event IN ('page_viewed', 'website_page_viewed')\n  AND $__timeFilter(timestamp)\nGROUP BY site, path\nORDER BY views DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Pages viewed",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Source = campaign tag (utm_source or ?ref=), else referring host, else direct. Views count every page view by its own source; the pollinations.ai views column stays blank until website page views exist. People and signups are first touch: each signed-in person counted once, on the source of their earliest Enter view in the range, so rows add up. Signups via pollinations.ai = that first view was referred by the website. Attribution shifts twice: when Enter deploys #16991, landing utm tags survive Enter's redirects; when website v2 deploys, links to Enter carry the visitor's own source, so website-referred signups move from the pollinations.ai row to that source while Signups via pollinations.ai still counts them.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "source"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Source"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "website_views"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "pollinations.ai views"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "enter_views"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Enter views"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "people"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Signed-in people (first touch)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "signups"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Signups (first touch)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "signups_via_website"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Signups via pollinations.ai"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "-- Keep the top 40 sources of each site, so website-heavy sources stay visible.\nSELECT source, website_views, enter_views, people, signups, signups_via_website\nFROM (\n  SELECT\n    *,\n    row_number() OVER (ORDER BY people DESC, enter_views DESC) AS enter_rank,\n    row_number() OVER (ORDER BY ifNull(website_views, 0) DESC) AS website_rank\n  FROM (\n    SELECT\n      source,\n      nullIf(countIf(event = 'website_page_viewed'), 0) AS website_views,\n      countIf(event = 'page_viewed') AS enter_views,\n      countIf(first_touch) AS people,\n      countIf(first_touch AND signed_up) AS signups,\n      countIf(first_touch AND signed_up AND via_website) AS signups_via_website\n    FROM (\n      SELECT\n        event,\n        -- Campaign tag (or ?ref=) first, else the referring host. Agent links\n        -- sometimes carry markdown leftovers after the tag: cut at ) ] , or space.\n        multiIf(\n          utm_source != '', replaceRegexpOne(utm_source, '[)\\\\],\\\\s].*$', ''),\n          referrer_host != '', referrer_host,\n          'direct'\n        ) AS source,\n        referrer_host IN ('pollinations.ai', 'www.pollinations.ai') AS via_website,\n        -- First touch: the earliest signed-in Enter view of each person in the range.\n        user_id != ''\n          AND event = 'page_viewed'\n          AND row_number() OVER (PARTITION BY user_id, event ORDER BY timestamp) = 1 AS first_touch,\n        max(event = 'signup_completed') OVER (PARTITION BY user_id) AS signed_up\n      FROM product_event\n      WHERE environment = 'production'\n        AND event IN ('page_viewed', 'website_page_viewed', 'signup_completed')\n        AND $__timeFilter(timestamp)\n    )\n    WHERE event != 'signup_completed'\n    GROUP BY source\n  )\n)\nWHERE enter_rank <= 40 OR (website_rank <= 40 AND website_views > 0)\nORDER BY people DESC, enter_views DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Where visitors come from",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "GitHub sign-ins in the range: sent to GitHub, came back with a code, session created, and of those a new account. Plain counts, so a retry counts again (same stages as the auth_flow_funnel endpoint). Percentages are of the first stage.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 38
+      },
+      "id": 7,
+      "options": {
+        "displayMode": "basic",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "top",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "/^count$/",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "SELECT\n  funnel,\n  concat(step, ' (', ifNull(toString(round(100 * n / nullIf(first_value(n) OVER (PARTITION BY funnel ORDER BY step), 0))), '0'), '%)') AS stage,\n  n AS count\nFROM (\n  SELECT\n    -- Browser sign-in: plain counts, a retry counts again (auth_flow_funnel).\n    countIf(event = 'sign_in_started') AS started,\n    countIf(event = 'sign_in_returned') AS returned,\n    countIf(event = 'sign_in_completed') AS completed,\n    countIf(event = 'signup_completed') AS signups,\n    -- CLI device sign-in: one count per device row, so a retried stage is not double counted.\n    uniqIf(flow_id, event = 'device_code_issued') AS codes,\n    uniqIf(flow_id, event = 'device_approved') AS approved,\n    uniqIf(flow_id, event = 'device_token_issued') AS tokens,\n    -- Purchase: distinct signed-in people.\n    uniqIf(user_id, event = 'page_viewed' AND user_id != '' AND page IN ('/pollen', '/top-up', '/_dashboard/pollen')) AS viewed_pollen,\n    uniqIf(user_id, event = 'checkout_started') AS checkout,\n    uniqIf(\n      user_id,\n      event = 'checkout_started'\n      AND user_id IN (\n        SELECT user_id\n        FROM stripe_event\n        WHERE livemode = 1\n          AND payment_status = 'paid'\n          AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n          AND $__timeFilter(timestamp)\n      )\n    ) AS paid\n  FROM product_event\n  WHERE environment = 'production'\n    AND $__timeFilter(timestamp)\n    AND event IN (\n      'sign_in_started', 'sign_in_returned', 'sign_in_completed', 'signup_completed',\n      'device_code_issued', 'device_approved', 'device_token_issued',\n      'page_viewed', 'checkout_started'\n    )\n)\nARRAY JOIN\n  ['sign_in', 'sign_in', 'sign_in', 'sign_in', 'cli', 'cli', 'cli', 'purchase', 'purchase', 'purchase'] AS funnel,\n  ['1 · Sent to GitHub', '2 · Back from GitHub', '3 · Signed in', '4 · New account',\n   '1 · Code shown in CLI', '2 · Approved in browser', '3 · Token collected',\n   '1 · Viewed Pollen or top-up page', '2 · Started checkout', '3 · Paid'] AS step,\n  [started, returned, completed, signups, codes, approved, tokens, viewed_pollen, checkout, paid] AS n\nORDER BY funnel, step",
+          "refId": "A"
+        }
+      ],
+      "title": "Browser sign-in",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "funnel",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "sign_in"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "stage",
+                "count"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Device codes shown by a CLI, approved in the browser, then collected as a token. Counted once per device row, so a retried stage is not double counted. Percentages are of the first stage.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 38
+      },
+      "id": 8,
+      "options": {
+        "displayMode": "basic",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "top",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "/^count$/",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 7,
+          "refId": "A"
+        }
+      ],
+      "title": "CLI sign-in (device flow)",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "funnel",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "cli"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "stage",
+                "count"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Distinct signed-in people who viewed the Pollen or top-up page, started a Stripe checkout, and of those starters paid in the range (live-mode checkout completed or async payment succeeded). Auto top-up charges are not checkouts and are not shown. Percentages are of the first stage.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 38
+      },
+      "id": 9,
+      "options": {
+        "displayMode": "basic",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "top",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "/^count$/",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 7,
+          "refId": "A"
+        }
+      ],
+      "title": "Purchase",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "funnel",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "purchase"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "stage",
+                "count"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "id": 102,
+      "panels": [],
+      "title": "Google Search · sc-domain:pollinations.ai",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PAD1A0A25CD30D456"
+      },
+      "description": "Google web search for every pollinations.ai host, latest fetch per day. Days are Pacific time and Google publishes them 3-4 days late, so the last days are always missing. Totals include queries Google hides from the query list.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "custom": {
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "showPoints": "never",
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "clicks"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Clicks"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "impressions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Impressions"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PAD1A0A25CD30D456"
+          },
+          "format": 1,
+          "range": true,
+          "rawSql": "WITH\n  latest AS (\n    SELECT dataset, date, argMax(body, fetched_at) AS body\n    FROM search_console_raw\n    WHERE $__dateFilter(date)\n    GROUP BY dataset, date, start_row\n  ),\n  parsed AS (\n    SELECT\n      multiIf(dataset = 'totals', 'day', dataset = 'queries', 'query', 'page') AS breakdown,\n      toDateTime(if(dataset = 'totals', date, toDate(0))) AS time,\n      if(dataset = 'totals', '', replaceRegexpOne(JSONExtractString(r, 'keys', 1), '^https://', '')) AS key,\n      JSONExtractUInt(r, 'clicks') AS row_clicks,\n      JSONExtractUInt(r, 'impressions') AS row_impressions,\n      JSONExtractFloat(r, 'position') AS row_position\n    FROM latest\n    ARRAY JOIN JSONExtractArrayRaw(body, 'rows') AS r\n  )\nSELECT\n  breakdown,\n  time,\n  key,\n  sum(row_clicks) AS clicks,\n  sum(row_impressions) AS impressions,\n  round(clicks / nullIf(impressions, 0), 4) AS ctr,\n  round(sum(row_position * row_impressions) / nullIf(impressions, 0), 1) AS position\nFROM parsed\nGROUP BY breakdown, time, key\nORDER BY breakdown, time, clicks DESC, impressions DESC\nLIMIT 100 BY breakdown, time",
+          "refId": "A"
+        }
+      ],
+      "title": "Google clicks and impressions per day",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "breakdown",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "day"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "time",
+                "clicks",
+                "impressions"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "The 100 queries with the most clicks in the range. Google hides rare queries, so these add up to less than the daily totals. Position is the impression-weighted average.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "key"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Query"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "clicks"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Clicks"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "impressions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Impressions"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ctr"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "CTR"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "position"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg position"
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 55
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 10,
+          "refId": "A"
+        }
+      ],
+      "title": "Top Google queries",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "breakdown",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "query"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "key",
+                "clicks",
+                "impressions",
+                "ctr",
+                "position"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "description": "Our own page routes only: image URLs that carry prompts are left out at sync time, so these add up to less than the daily totals. Position is the impression-weighted average.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "key"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Page"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "clicks"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Clicks"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "impressions"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Impressions"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ctr"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "CTR"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "position"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg position"
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 55
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 10,
+          "refId": "A"
+        }
+      ],
+      "title": "Google landing pages",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "breakdown",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "page"
+                  }
+                }
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "key",
+                "clicks",
+                "impressions",
+                "ctr",
+                "position"
+              ]
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 65
+      },
+      "id": 103,
+      "panels": [],
+      "title": "About this data",
+      "type": "row"
+    },
+    {
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 66
+      },
+      "id": 13,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### Sources and limits\n\n- **Default range:** the last 30 complete UTC days; yesterday is the latest day\n- **Cloudflare arrivals** `cloudflare_traffic_raw` page_views, from 29 Aug 2026: Cloudflare's visits metric, a sampled estimate of loads arriving from another site or typed in, not page loads; browsers only. page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored\n- **First-party** `product_event`: starts 18–19 Sep 2026, so until 19 Oct the default range holds fewer than 30 days of it. pollinations.ai page views (`website_page_viewed`) appear only after #16991 ships and website deploys resume. No cookie or browser id, so signed-out activity is views, not people\n- **Attribution shifts on two dates:** when Enter deploys #16991, landing utm tags survive Enter's redirects; when website v2 deploys, links to Enter carry the visitor's source\n- **Google** `search_console_raw`: Pacific-time days, published 3–4 days late\n- **Not here:** registrations and balances (Users & Balances), revenue and costs (Economics)",
+        "mode": "markdown"
+      },
+      "title": "Data coverage",
+      "type": "text"
+    }
+  ],
+  "refresh": "1h",
+  "schemaVersion": 41,
+  "tags": [
+    "observability-rebuild",
+    "websites",
+    "growth"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d/d",
+    "to": "now-1d/d"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "Websites",
+  "uid": "websites-rebuild",
+  "version": 1,
+  "weekStart": "monday"
+}

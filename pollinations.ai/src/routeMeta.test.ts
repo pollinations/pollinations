@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { getJsonLd, NOT_FOUND_META, ROUTE_META, routeHead } from "./routeMeta";
+import { websitePageViewSchema } from "../../shared/product-analytics";
+import {
+    getJsonLd,
+    knownPage,
+    NOT_FOUND_META,
+    ROUTE_META,
+    routeHead,
+} from "./routeMeta";
 
 describe("route metadata", () => {
     test.each(
@@ -41,5 +48,19 @@ describe("route metadata", () => {
             ]);
         }
         expect(routeHead("/apps").scripts).toEqual([]);
+    });
+
+    test("page views name the page shown, never the raw path", () => {
+        expect(knownPage("/")).toBe("/");
+        expect(knownPage("/Play")).toBe("/play");
+        expect(knownPage("/apps/")).toBe("/apps");
+        for (const path of ["/apps/x", "/zz", "/a%20cat%20prompt"])
+            expect(knownPage(path)).toBeUndefined();
+    });
+
+    test("Enter accepts a page view for every known page", () => {
+        expect(Object.keys(ROUTE_META).sort()).toEqual(
+            [...websitePageViewSchema.shape.page.options].sort(),
+        );
     });
 });

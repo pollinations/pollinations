@@ -23,4 +23,27 @@ describe("IconButton", () => {
         expect(html).toContain("polli:cursor-not-allowed");
         expect(html).not.toContain("polli:hover:bg-theme-bg-hover");
     });
+
+    test("renders a focusable link when given an href", () => {
+        const html = renderToStaticMarkup(
+            <IconButton
+                href="https://github.com/pollinations/pollinations"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
+                variant="ghost"
+                size="md"
+            >
+                <span aria-hidden="true">G</span>
+            </IconButton>,
+        );
+
+        expect(html.startsWith("<a ")).toBe(true);
+        expect(html).toContain(
+            'href="https://github.com/pollinations/pollinations"',
+        );
+        expect(html).toContain('aria-label="GitHub"');
+        expect(html).toContain("polli-control");
+        expect(html).not.toContain('type="button"');
+    });
 });

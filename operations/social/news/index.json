@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T00:15:38.913921+00:00",
+  "generated_at": "2026-10-10T06:31:25.882163+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -7405,6 +7405,54 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-09",
+      "emoji": "🎵",
+      "title": "MAI voices for speech",
+      "text": "Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        16800
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "emoji": "🎵",
+      "title": "MAI transcription, two ways",
+      "text": "Transcribe multilingual audio files with timed segments using `microsoft/mai-transcribe-2`, or send live PCM audio to `microsoft/mai-transcribe-2-streaming`. [Browse the file transcription model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).",
+      "prs": [
+        16798,
+        16802
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "emoji": "🤖",
+      "title": "GPT-6 Luna Decisions",
+      "text": "Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).",
+      "prs": [
+        16701
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "emoji": "🎨",
+      "title": "Fable Finder",
+      "text": "Give it a lesson you keep forgetting; get a four-line fable and an illustration. [Try it](https://mhmdrizki803-boop.github.io/fable-finder).",
+      "prs": [
+        16869
+      ],
+      "app": true
+    },
+    {
+      "date": "2026-10-09",
+      "emoji": "✨",
+      "title": "Nice No",
+      "text": "Turn an awkward request into a gentle, firm, or brief boundary message, with a follow-up for pushback. [Try it](https://nice-no.maxtoms21.chatgpt.site).",
+      "prs": [
+        16871
+      ],
+      "app": true
+    },
     {
       "date": "2026-10-08",
       "emoji": "🤖",

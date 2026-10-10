@@ -52,7 +52,7 @@ staging read token against the staging workspace.
 ## Secrets
 
 The local app signing secret is stored in ignored `.dev.vars`;
-production uses Worker secrets. Legacy Docker Compose reads `.env`.
+production uses Worker secrets. Local Docker Compose reads `.env`.
 The public OAuth client ID is configured in `wrangler.toml`.
 
 | Variable | Purpose |
@@ -96,8 +96,6 @@ production. Configure the approved signing secret in `.dev.vars` and
 register `http://localhost:4000/auth/callback` in the local Enter database.
 Never enable production data sources just to test local login.
 
-`CLOUDFLARE_TUNNEL_TOKEN` is only used by the legacy DigitalOcean deployment.
-
 ## Creating Panels
 
 1. Open http://localhost:3000
@@ -120,23 +118,6 @@ Deploy production only through `.github/workflows/deploy-applications.yml`
 from the `production` branch. Its secret synchronization requires separate,
 scoped approval. The workflow checks the Pollinations `/api/health` endpoint.
 
-## DigitalOcean Deployment (Legacy)
-
-The previous deployment ran Grafana on the `207.154.253.25` DigitalOcean droplet
-behind Cloudflare Tunnel. Keep these commands only for rollback while the
-Cloudflare container migration is being verified.
-
-```bash
-ssh root@207.154.253.25
-cd /opt/pollinations/operations/observability
-docker compose -f docker-compose.prod.yml up -d
-```
-
-The legacy container bind-mounts:
-
-- `/opt/pollinations/operations/observability/provisioning` -> `/etc/grafana/provisioning`
-- `grafana-data` -> `/var/lib/grafana`
-
 ## Common Commands
 
 ```bash
@@ -144,10 +125,6 @@ The legacy container bind-mounts:
 docker compose up -d
 docker compose logs -f grafana
 docker compose down
-
-# Legacy DigitalOcean
-docker compose -f docker-compose.prod.yml logs -f
-docker compose -f docker-compose.prod.yml restart grafana
 
 # Reset admin password
 docker compose exec grafana grafana-cli admin reset-admin-password NEW_PASSWORD
@@ -162,11 +139,11 @@ curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/P
 
 Grafana should be configured with
 `GF_SERVER_ROOT_URL=https://observability.pollinations.ai`. If redirects point at
-`observability.myceli.ai`, update the Worker var or legacy `docker-compose.prod.yml`.
+`observability.myceli.ai`, update the Worker var.
 
 ### Plugin health check failed
 - Verify tokens are correct
-- Check the container can reach Tinybird and Cloudflare APIs
+- Check the container can reach Tinybird
 
 ### Dashboard not loading
 - Check datasource UIDs match between dashboard JSON and provisioning

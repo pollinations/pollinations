@@ -14,7 +14,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Selected-range totals from generation_usage_hourly. Calls are all authenticated, non-cached generation events. Users and apps are approximate unique counts using Tinybird uniq states.",
+      "description": "Selected-range totals from generation_usage_hourly. Calls are successful authenticated, non-cached generations. Users and BYOP apps are approximate unique counts with at least one request that passed the balance check (402 rejections excluded). Models had at least one successful call and are split into Pollinations and community models.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -42,7 +42,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Calls"
+                "value": "Successful calls"
               }
             ]
           },
@@ -73,12 +73,24 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "active_models"
+              "options": "pollinations_models"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Active models"
+                "value": "Pollinations models"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "community_models"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Community models"
               }
             ]
           }
@@ -115,7 +127,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  sumMerge(all_calls) AS calls,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps,\n  uniqIf(model, model != 'unknown') AS active_models\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'",
+          "rawSql": "SELECT\n  sumMerge(successful_calls) AS calls,\n  uniqMergeIf(users, funding_source != 'unfunded') AS active_users,\n  uniqIfMergeIf(apps, funding_source != 'unfunded') AS active_byop_apps,\n  uniqIf(model, model != 'unknown' AND is_community = 0 AND finalizeAggregation(successful_calls) > 0) AS pollinations_models,\n  uniqIf(model, model != 'unknown' AND is_community = 1 AND finalizeAggregation(successful_calls) > 0) AS community_models\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'",
           "refId": "A"
         }
       ],
@@ -253,7 +265,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily approximate unique authenticated users and trusted BYOP client IDs, merged from aggregate states.",
+      "description": "Daily approximate unique authenticated users and trusted BYOP client IDs with at least one request that passed the balance check (402 rejections excluded), merged from aggregate states.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -367,7 +379,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  uniqMerge(users) AS active_users,\n  uniqIfMerge(apps) AS active_byop_apps\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
+          "rawSql": "SELECT\n  toStartOfDay(hour) AS time,\n  uniqMergeIf(users, funding_source != 'unfunded') AS active_users,\n  uniqIfMergeIf(apps, funding_source != 'unfunded') AS active_byop_apps\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY time\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -1225,7 +1237,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMerge(users) AS users,\n  uniqIfMerge(apps) AS apps,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
+          "rawSql": "SELECT\n  model,\n  sumMerge(successful_calls) AS calls,\n  uniqMergeIf(users, funding_source != 'unfunded') AS users,\n  uniqIfMergeIf(apps, funding_source != 'unfunded') AS apps,\n  round(sumMergeIf(gross_consumption, funding_source = 'paid'), 2) AS paid_pollen,\n  round(sumMergeIf(gross_consumption, funding_source = 'quest'), 2) AS quest_pollen\nFROM generation_usage_hourly\nWHERE $__timeFilter(hour)\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY model\nORDER BY calls DESC\nLIMIT 50",
           "refId": "A"
         }
       ],

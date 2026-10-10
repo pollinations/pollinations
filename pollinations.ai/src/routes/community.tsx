@@ -18,6 +18,7 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import { modalityTextColor } from "@pollinations/ui/gen";
 import { createFileRoute } from "@tanstack/react-router";
 import { useArt } from "../art";
 import { LINKS, SOCIAL_LINKS } from "../copy/content/socialLinks";
@@ -48,6 +49,9 @@ const WAYS_IN = [
     {
         label: "Apps",
         icon: AppIcon,
+        // Number colours reuse the home page Models cards: modality tints
+        // and the Community gold.
+        color: modalityTextColor("video"),
         title: "List your app",
         body: "Share what you built, get feedback, and help users discover it.",
         cta: {
@@ -58,6 +62,7 @@ const WAYS_IN = [
     {
         label: "Models & agents",
         icon: BeakerIcon,
+        color: "var(--polli-color-paid-deep)",
         title: "Publish a model or agent",
         body: "Bring your own model or managed agent to the public catalog and make it available to builders.",
         cta: {
@@ -68,6 +73,8 @@ const WAYS_IN = [
     {
         label: "Code",
         icon: CodeIcon,
+        // GitHub's merged purple.
+        color: modalityTextColor("audio"),
         title: "Improve code and docs",
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         cta: {
@@ -78,6 +85,8 @@ const WAYS_IN = [
     {
         label: "Talk",
         icon: MegaphoneIcon,
+        // Closest to Discord's blurple.
+        color: modalityTextColor("text"),
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
         cta: { label: "Join the Discord", href: SOCIAL_LINKS.discord.url },
@@ -197,7 +206,15 @@ function CommunityParticipation() {
                                             <StatCard
                                                 variant="display"
                                                 value={
-                                                    way.metric.value ?? (
+                                                    way.metric.value ? (
+                                                        <span
+                                                            style={{
+                                                                color: way.color,
+                                                            }}
+                                                        >
+                                                            {way.metric.value}
+                                                        </span>
+                                                    ) : (
                                                         <Skeleton
                                                             shape="text"
                                                             className="h-9 w-16"

@@ -2,7 +2,6 @@ import {
     AccountIcon,
     ArrowLeftIcon,
     Button,
-    InfoTip,
     KeyIcon,
     SproutIcon,
     Surface,
@@ -568,13 +567,8 @@ export function Authorize() {
                     requestedModels={models}
                     lead={
                         <AuthAccessItem icon={<AccountIcon />}>
-                            <span className="inline-flex items-center">
-                                Username and picture
-                                <InfoTip
-                                    text="This app can also see this key’s budget and usage."
-                                    label="Username and picture information"
-                                />
-                            </span>
+                            See your username, picture, and this key’s budget
+                            and usage.
                         </AuthAccessItem>
                     }
                     accountAfter={

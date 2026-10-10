@@ -48,7 +48,6 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     Fragment,
-    type ReactNode,
     useCallback,
     useEffect,
     useMemo,
@@ -70,25 +69,6 @@ import {
 } from "./playground-audio";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 import { reproducibleApiUrl, videoOptions } from "./video-options";
-
-/** A fixed setting shown as an icon and value instead of a control. */
-function MediaFact({
-    label,
-    children,
-}: {
-    label: string;
-    children: ReactNode;
-}) {
-    return (
-        <span
-            role="img"
-            aria-label={label}
-            className="inline-flex items-center gap-1 text-xs tabular-nums text-theme-text-muted [&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:shrink-0"
-        >
-            {children}
-        </span>
-    );
-}
 
 function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -179,11 +159,11 @@ const UPLOAD_ACCEPT: Record<UploadMedia, string> = {
     video: "video/*,.mp4,.mov,.webm,.mkv",
     audio: "audio/*,.mp3,.mpeg,.mpga,.m4a,.wav",
 };
-// Most video models take 16:9 or 9:16; the API rejects or adapts others.
-// "" sends no ratio, so the model picks its default.
-
-const AUDIO_UPLOAD_MAX_SIZE_BYTES = 20 * 1024 * 1024;
-const IMAGE_UPLOAD_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const UPLOAD_MAX_MB: Record<UploadMedia, number> = {
+    image: 5,
+    video: 20,
+    audio: 20,
+};
 
 type PlaygroundResult =
     | {
@@ -306,33 +286,46 @@ function defaultModelId(
     return models.find((model) => model.category === category)?.id ?? "";
 }
 
-function ModalityTabs({
-    activeCategory,
-    onSelectCategory,
+/** A setting's choices as tabs, or its one fixed value as a chip. */
+function OptionField({
+    label,
+    options,
+    value,
+    onChange,
+    format = (option) => option,
 }: {
-    activeCategory: PlaygroundCategory;
-    onSelectCategory: (category: PlaygroundCategory) => void;
+    label: string;
+    options: readonly string[];
+    value: string | undefined;
+    onChange: (option: string) => void;
+    format?: (option: string) => string;
 }) {
+    if (options.length === 0) return null;
     return (
-        // Phones: one row of three equal tabs instead of wrapping "Audio".
-        <fieldset
-            aria-label="Modality"
-            className="m-0 grid min-w-0 grid-cols-3 gap-2 border-0 p-0 sm:flex sm:flex-wrap"
-        >
-            {CATEGORY_ORDER.map((category) => (
-                <ModalityTab
-                    key={category}
-                    active={category === activeCategory}
+        <FieldStack label={label} orientation="inline" className="min-w-0">
+            {options.length === 1 ? (
+                <Chip
                     size="lg"
-                    modality={category}
-                    icon={CATEGORY_ICON[category]}
-                    className="max-sm:px-2"
-                    onClick={() => onSelectCategory(category)}
+                    aria-label={`Fixed ${label.toLowerCase()}: ${format(options[0])}`}
+                    className="justify-self-start"
                 >
-                    {categoryLabel(category)}
-                </ModalityTab>
-            ))}
-        </fieldset>
+                    {format(options[0])}
+                </Chip>
+            ) : (
+                <ButtonGroup aria-label={label}>
+                    {options.map((option) => (
+                        <TabButton
+                            key={option || "auto"}
+                            active={option === value}
+                            size="sm"
+                            onClick={() => onChange(option)}
+                        >
+                            {format(option)}
+                        </TabButton>
+                    ))}
+                </ButtonGroup>
+            )}
+        </FieldStack>
     );
 }
 
@@ -676,7 +669,7 @@ function ResultPanel({ result }: { result: PlaygroundResult }) {
     );
 }
 
-async function uploadReferenceImages(
+async function uploadFiles(
     client: Pollinations,
     files: File[],
 ): Promise<string[]> {
@@ -721,18 +714,28 @@ export function Playground() {
     );
     const [sound, setSound] = useState(search.sound ?? "");
     const [audioFiles, setAudioFiles] = useState<File[]>([]);
-    const [selectedVoice, setSelectedVoice] = useState(search.voice ?? "");
+    const [voice, setVoice] = useState(search.voice ?? "");
     const configuredModelRef = useRef(search.model ?? "");
     const linkedModelRef = useRef(search.model ?? "");
     const [result, setResult] = useState<PlaygroundResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const rejectWith =
-        (
-            messages: Record<"size" | "count" | "type", string>,
-        ): NonNullable<FileUploadProps["onReject"]> =>
-        (rejected) =>
+    // Shared FileUpload limits and rejection messages for these media.
+    const uploadProps = (media: UploadMedia[], tooMany: string) => {
+        const maxMb = Math.max(...media.map((item) => UPLOAD_MAX_MB[item]));
+        const messages = {
+            size: `Each file must be under ${maxMb} MB.`,
+            count: tooMany,
+            type: `Only ${media.join(" or ")} files are allowed.`,
+        };
+        const onReject: FileUploadProps["onReject"] = (rejected) =>
             setError(messages[rejected[0].reason]);
+        return {
+            accept: media.map((item) => UPLOAD_ACCEPT[item]).join(","),
+            maxSizeBytes: maxMb * 1024 * 1024,
+            onReject,
+        };
+    };
     // Writes one tab's inputs and clears the other tab's from the URL.
     const showInUrl = useCallback(
         (values: PlaySearch) => {
@@ -753,41 +756,6 @@ export function Playground() {
         },
         [navigate],
     );
-    useEffect(() => {
-        showInUrl({
-            tab: activeCategory,
-            model: selectedModel,
-            prompt,
-            size: selectedResolution,
-            width,
-            height,
-            aspect: aspectRatio,
-            duration: duration ? String(duration) : undefined,
-            length: audioLength,
-            seed,
-            voice: selectedVoice,
-            language,
-            sound,
-            guidance:
-                referenceMode === "references" ? referenceMode : undefined,
-        });
-    }, [
-        showInUrl,
-        activeCategory,
-        selectedModel,
-        prompt,
-        selectedResolution,
-        width,
-        height,
-        aspectRatio,
-        duration,
-        audioLength,
-        seed,
-        selectedVoice,
-        language,
-        sound,
-        referenceMode,
-    ]);
 
     // Community models stay off the playground menu: this page pitches the
     // official catalog, and owner/model entries would double the list. Every
@@ -857,17 +825,47 @@ export function Playground() {
         catalogError,
     ]);
 
+    // Falls back to the model's first voice; keeps a linked one while loading.
+    const selectedVoice =
+        !currentModel || currentModel.voices.includes(voice)
+            ? voice
+            : (currentModel.voices[0] ?? "");
+
     useEffect(() => {
-        if (!currentModel) return;
-        const [firstVoice] = currentModel.voices;
-        if (!firstVoice) {
-            if (selectedVoice) setSelectedVoice("");
-            return;
-        }
-        if (!currentModel.voices.includes(selectedVoice)) {
-            setSelectedVoice(firstVoice);
-        }
-    }, [currentModel, selectedVoice]);
+        showInUrl({
+            tab: activeCategory,
+            model: selectedModel,
+            prompt,
+            size: selectedResolution,
+            width,
+            height,
+            aspect: aspectRatio,
+            duration: duration ? String(duration) : undefined,
+            length: audioLength,
+            seed,
+            voice: selectedVoice,
+            language,
+            sound,
+            guidance:
+                referenceMode === "references" ? referenceMode : undefined,
+        });
+    }, [
+        showInUrl,
+        activeCategory,
+        selectedModel,
+        prompt,
+        selectedResolution,
+        width,
+        height,
+        aspectRatio,
+        duration,
+        audioLength,
+        seed,
+        selectedVoice,
+        language,
+        sound,
+        referenceMode,
+    ]);
 
     useEffect(() => {
         if (!currentModel) return;
@@ -906,8 +904,6 @@ export function Playground() {
         isVideoReferenceMode &&
         (currentModel?.videoCapabilities.includes("end_frame") ?? false) &&
         maxReferenceImages >= 2;
-    const firstFrameFiles = referenceImages[0] ? [referenceImages[0]] : [];
-    const lastFrameFiles = referenceImages[1] ? [referenceImages[1]] : [];
     const currentAudioEndpoint =
         currentModel?.category === "audio"
             ? audioEndpoint(currentModel)
@@ -928,9 +924,6 @@ export function Playground() {
         currentModel?.category === "audio" &&
         acceptsMediaUpload &&
         !currentModel.inputModalities.includes("text");
-    const mediaUploadAccept = uploadMedia
-        .map((modality) => UPLOAD_ACCEPT[modality])
-        .join(",");
     const mediaUploadLabel = uploadMedia.join(" or ");
     const MediaUploadIcon = isAudioTranscription
         ? MicIcon
@@ -1073,7 +1066,7 @@ export function Playground() {
         setSound("");
     }
 
-    function setFrameImage(index: 0 | 1, files: File[]) {
+    function setFrameImage(index: number, files: File[]) {
         setReferenceImages((current) => {
             const next: Array<File | undefined> = [current[0], current[1]];
             next[index] = files[0];
@@ -1099,7 +1092,7 @@ export function Playground() {
             const requestSeed = fixedSeed ?? randomGenerationSeed();
             const referenceUrls =
                 supportsReferenceImages && !usesReferences
-                    ? await uploadReferenceImages(client, referenceImages)
+                    ? await uploadFiles(client, referenceImages)
                     : [];
 
             if (currentModel.category === "video") {
@@ -1109,10 +1102,7 @@ export function Playground() {
                             REFERENCE_CAPABILITY[media],
                         ) &&
                         (!videoConfig.exclusiveReferences || usesReferences)
-                            ? uploadReferenceImages(
-                                  client,
-                                  videoReferences[media],
-                              )
+                            ? uploadFiles(client, videoReferences[media])
                             : Promise.resolve([]),
                     ),
                 );
@@ -1246,16 +1236,10 @@ export function Playground() {
                     value={audioFiles}
                     onChange={setAudioFiles}
                     maxFiles={1}
-                    maxSizeBytes={AUDIO_UPLOAD_MAX_SIZE_BYTES}
-                    accept={mediaUploadAccept}
+                    {...uploadProps(uploadMedia, "Use one media file.")}
                     icon={<MediaUploadIcon className="h-6 w-6 shrink-0" />}
                     previewIcon={<MediaUploadIcon className="h-5 w-5" />}
                     label={`Add ${mediaUploadLabel}`}
-                    onReject={rejectWith({
-                        size: "Media files must be under 20 MB.",
-                        count: "Use one media file.",
-                        type: `Use ${mediaUploadLabel} files for this model.`,
-                    })}
                 />
                 {!requiresMediaUpload && audioFiles.length > 0 && (
                     <UploadPrivacyNote />
@@ -1264,10 +1248,25 @@ export function Playground() {
         ) : null;
     return (
         <div className="relative z-10 flex w-full flex-col pb-12 text-theme-text-base sm:pb-16">
-            <ModalityTabs
-                activeCategory={activeCategory}
-                onSelectCategory={selectCategory}
-            />
+            {/* Phones: one row of three equal tabs instead of wrapping "Audio". */}
+            <fieldset
+                aria-label="Modality"
+                className="m-0 grid min-w-0 grid-cols-3 gap-2 border-0 p-0 sm:flex sm:flex-wrap"
+            >
+                {CATEGORY_ORDER.map((category) => (
+                    <ModalityTab
+                        key={category}
+                        active={category === activeCategory}
+                        size="lg"
+                        modality={category}
+                        icon={CATEGORY_ICON[category]}
+                        className="max-sm:px-2"
+                        onClick={() => selectCategory(category)}
+                    >
+                        {categoryLabel(category)}
+                    </ModalityTab>
+                ))}
+            </fieldset>
 
             <div className="grid overflow-clip">
                 {catalogError && (
@@ -1335,7 +1334,7 @@ export function Playground() {
                                     key={currentModel.id}
                                     voices={currentModel.voices}
                                     value={selectedVoice}
-                                    onChange={setSelectedVoice}
+                                    onChange={setVoice}
                                 />
                             )}
                             {audioInput}
@@ -1409,15 +1408,11 @@ export function Playground() {
                                             value={referenceImages}
                                             onChange={setReferenceImages}
                                             maxFiles={maxReferenceImages}
-                                            maxSizeBytes={
-                                                IMAGE_UPLOAD_MAX_SIZE_BYTES
-                                            }
+                                            {...uploadProps(
+                                                ["image"],
+                                                `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
+                                            )}
                                             label="Add images"
-                                            onReject={rejectWith({
-                                                size: "Images must be under 5 MB each.",
-                                                count: `Use up to ${maxReferenceImages === 1 ? "1 image" : `${maxReferenceImages} images`}.`,
-                                                type: "Only image files are allowed.",
-                                            })}
                                         />
                                         {referenceImages.length > 0 && (
                                             <UploadPrivacyNote />
@@ -1428,35 +1423,17 @@ export function Playground() {
 
                             {currentModel?.category === "video" &&
                                 videoConfig.exclusiveReferences && (
-                                    <FieldStack
+                                    <OptionField
                                         label="Guidance"
-                                        orientation="inline"
-                                        className="min-w-0"
-                                    >
-                                        <ButtonGroup aria-label="Video guidance">
-                                            {["frames", "references"].map(
-                                                (mode) => (
-                                                    <TabButton
-                                                        key={mode}
-                                                        active={
-                                                            referenceMode ===
-                                                            mode
-                                                        }
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            setReferenceMode(
-                                                                mode,
-                                                            )
-                                                        }
-                                                    >
-                                                        {mode === "frames"
-                                                            ? "Frames"
-                                                            : "References"}
-                                                    </TabButton>
-                                                ),
-                                            )}
-                                        </ButtonGroup>
-                                    </FieldStack>
+                                        options={["frames", "references"]}
+                                        value={referenceMode}
+                                        onChange={setReferenceMode}
+                                        format={(mode) =>
+                                            mode === "frames"
+                                                ? "Frames"
+                                                : "References"
+                                        }
+                                    />
                                 )}
                             {currentModel?.category === "video" &&
                                 (!videoConfig.exclusiveReferences ||
@@ -1465,58 +1442,45 @@ export function Playground() {
                                     currentModel.videoCapabilities.includes(
                                         REFERENCE_CAPABILITY[media],
                                     ),
-                                ).map((media) => (
-                                    <FieldStack
-                                        key={media}
-                                        label={`Reference ${MEDIA_PLURAL[media]}`}
-                                        orientation="inline"
-                                        className="min-w-0"
-                                    >
-                                        <FileUpload
-                                            value={videoReferences[media]}
-                                            onChange={(files) =>
-                                                setVideoReferences(
-                                                    (previous) => ({
-                                                        ...previous,
-                                                        [media]: files,
-                                                    }),
-                                                )
-                                            }
-                                            maxFiles={Infinity}
-                                            accept={UPLOAD_ACCEPT[media]}
-                                            maxSizeBytes={
-                                                media === "image"
-                                                    ? IMAGE_UPLOAD_MAX_SIZE_BYTES
-                                                    : AUDIO_UPLOAD_MAX_SIZE_BYTES
-                                            }
-                                            label={`Add ${MEDIA_PLURAL[media]}`}
-                                            icon={
-                                                media === "video" ? (
-                                                    <VideoIcon className="h-6 w-6 shrink-0" />
-                                                ) : media === "audio" ? (
-                                                    <AudioIcon className="h-6 w-6 shrink-0" />
-                                                ) : (
-                                                    <ImageIcon className="h-6 w-6 shrink-0" />
-                                                )
-                                            }
-                                            previewIcon={
-                                                media === "video" ? (
-                                                    <VideoIcon className="h-6 w-6" />
-                                                ) : media === "audio" ? (
-                                                    <AudioIcon className="h-6 w-6" />
-                                                ) : undefined
-                                            }
-                                            onReject={rejectWith({
-                                                size:
-                                                    media === "image"
-                                                        ? "Images must be under 5 MB each."
-                                                        : "Files must be under 20 MB each.",
-                                                count: "Too many files.",
-                                                type: `Only ${media} files are allowed.`,
-                                            })}
-                                        />
-                                    </FieldStack>
-                                ))}
+                                ).map((media) => {
+                                    const Icon = CATEGORY_ICON[media];
+                                    return (
+                                        <FieldStack
+                                            key={media}
+                                            label={`Reference ${MEDIA_PLURAL[media]}`}
+                                            orientation="inline"
+                                            className="min-w-0"
+                                        >
+                                            <FileUpload
+                                                value={videoReferences[media]}
+                                                onChange={(files) =>
+                                                    setVideoReferences(
+                                                        (previous) => ({
+                                                            ...previous,
+                                                            [media]: files,
+                                                        }),
+                                                    )
+                                                }
+                                                maxFiles={Infinity}
+                                                {...uploadProps(
+                                                    [media],
+                                                    "Too many files.",
+                                                )}
+                                                label={`Add ${MEDIA_PLURAL[media]}`}
+                                                icon={
+                                                    <Icon className="h-6 w-6 shrink-0" />
+                                                }
+                                                // Images preview as thumbnails.
+                                                previewIcon={
+                                                    media ===
+                                                    "image" ? undefined : (
+                                                        <Icon className="h-6 w-6" />
+                                                    )
+                                                }
+                                            />
+                                        </FieldStack>
+                                    );
+                                })}
                             {Object.values(videoReferences).some(
                                 (files) => files.length > 0,
                             ) && (
@@ -1531,55 +1495,40 @@ export function Playground() {
                                     className="min-w-0"
                                 >
                                     <div className="flex flex-wrap items-start gap-3">
-                                        <fieldset
-                                            className="m-0 min-w-0 border-0 p-0"
-                                            aria-label="First image"
-                                        >
-                                            <FileUpload
-                                                value={firstFrameFiles}
-                                                onChange={(files) =>
-                                                    setFrameImage(0, files)
-                                                }
-                                                maxFiles={1}
-                                                maxSizeBytes={
-                                                    IMAGE_UPLOAD_MAX_SIZE_BYTES
-                                                }
-                                                label="Add first image"
-                                                onReject={rejectWith({
-                                                    size: "Images must be under 5 MB each.",
-                                                    count: "Use one first frame.",
-                                                    type: "Only image files are allowed.",
-                                                })}
-                                            />
-                                        </fieldset>
-
-                                        {supportsLastFrame && (
+                                        {(supportsLastFrame
+                                            ? (["first", "last"] as const)
+                                            : (["first"] as const)
+                                        ).map((frame, index) => (
                                             <fieldset
+                                                key={frame}
                                                 className="m-0 min-w-0 border-0 p-0"
-                                                aria-label="Last image"
+                                                aria-label={`${frame === "first" ? "First" : "Last"} image`}
                                             >
                                                 <FileUpload
-                                                    value={lastFrameFiles}
+                                                    value={referenceImages.slice(
+                                                        index,
+                                                        index + 1,
+                                                    )}
                                                     onChange={(files) =>
-                                                        setFrameImage(1, files)
+                                                        setFrameImage(
+                                                            index,
+                                                            files,
+                                                        )
                                                     }
                                                     maxFiles={1}
-                                                    maxSizeBytes={
-                                                        IMAGE_UPLOAD_MAX_SIZE_BYTES
-                                                    }
+                                                    {...uploadProps(
+                                                        ["image"],
+                                                        `Use one ${frame} frame.`,
+                                                    )}
+                                                    // The last frame needs a first.
                                                     disabled={
-                                                        firstFrameFiles.length ===
-                                                        0
+                                                        index > 0 &&
+                                                        !referenceImages[0]
                                                     }
-                                                    label="Add last image"
-                                                    onReject={rejectWith({
-                                                        size: "Images must be under 5 MB each.",
-                                                        count: "Use one last frame.",
-                                                        type: "Only image files are allowed.",
-                                                    })}
+                                                    label={`Add ${frame} image`}
                                                 />
                                             </fieldset>
-                                        )}
+                                        ))}
                                     </div>
                                 </FieldStack>
                             )}
@@ -1593,149 +1542,46 @@ export function Playground() {
 
                             {isVisualModel && (
                                 <div className="contents">
-                                    {currentModel.resolutions.length > 1 ? (
-                                        <FieldStack
-                                            label="Resolution"
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            <ButtonGroup aria-label="Resolution">
-                                                {currentModel.resolutions.map(
-                                                    (resolution) => (
-                                                        <TabButton
-                                                            key={resolution}
-                                                            active={
-                                                                mediaSettings.resolution ===
-                                                                resolution
-                                                            }
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                setSelectedResolution(
-                                                                    resolution,
-                                                                )
-                                                            }
-                                                        >
-                                                            {resolution.toUpperCase()}
-                                                        </TabButton>
-                                                    ),
-                                                )}
-                                            </ButtonGroup>
-                                        </FieldStack>
-                                    ) : mediaSettings.resolution ? (
-                                        <FieldStack
-                                            label="Resolution"
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            <Chip
-                                                size="lg"
-                                                aria-label={`Fixed resolution: ${mediaSettings.resolution}`}
-                                                className="justify-self-start"
-                                            >
-                                                {mediaSettings.resolution.toUpperCase()}
-                                            </Chip>
-                                        </FieldStack>
-                                    ) : null}
+                                    <OptionField
+                                        label="Resolution"
+                                        options={currentModel.resolutions}
+                                        value={mediaSettings.resolution}
+                                        onChange={setSelectedResolution}
+                                        format={(resolution) =>
+                                            resolution.toUpperCase()
+                                        }
+                                    />
 
                                     {currentModel.category === "video" && (
-                                        <FieldStack
-                                            label="Aspect ratio"
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            {videoConfig.ratios.length === 1 ? (
-                                                <Chip
-                                                    size="lg"
-                                                    aria-label={`Fixed aspect ratio: ${videoConfig.ratios[0] || "Auto"}`}
-                                                    className="justify-self-start"
-                                                >
-                                                    {videoConfig.ratios[0] ||
-                                                        "Auto"}
-                                                </Chip>
-                                            ) : (
-                                                <ButtonGroup aria-label="Aspect ratio">
-                                                    {videoConfig.ratios.map(
-                                                        (ratio) => (
-                                                            <TabButton
-                                                                key={
-                                                                    ratio ||
-                                                                    "auto"
-                                                                }
-                                                                active={
-                                                                    videoAspectRatio ===
-                                                                    ratio
-                                                                }
-                                                                size="sm"
-                                                                onClick={() =>
-                                                                    setAspectRatio(
-                                                                        ratio,
-                                                                    )
-                                                                }
-                                                            >
-                                                                {ratio ||
-                                                                    "Auto"}
-                                                            </TabButton>
-                                                        ),
-                                                    )}
-                                                </ButtonGroup>
-                                            )}
-                                        </FieldStack>
-                                    )}
-
-                                    {currentModel.category === "video" && (
-                                        <FieldStack
-                                            label="Sound"
-                                            orientation="inline"
-                                            className="min-w-0"
-                                        >
-                                            {videoConfig.sound !==
-                                            "optional" ? (
-                                                <Chip
-                                                    size="lg"
-                                                    aria-label={`Fixed sound: ${videoConfig.sound === "on" ? "On" : "Off"}`}
-                                                    className="justify-self-start"
-                                                >
-                                                    {videoConfig.sound === "on"
+                                        <>
+                                            <OptionField
+                                                label="Aspect ratio"
+                                                options={videoConfig.ratios}
+                                                value={videoAspectRatio}
+                                                onChange={setAspectRatio}
+                                                format={(ratio) =>
+                                                    ratio || "Auto"
+                                                }
+                                            />
+                                            <OptionField
+                                                label="Sound"
+                                                options={
+                                                    videoConfig.sound ===
+                                                    "optional"
+                                                        ? ["on", "off"]
+                                                        : [videoConfig.sound]
+                                                }
+                                                value={
+                                                    videoSound ? "on" : "off"
+                                                }
+                                                onChange={setSound}
+                                                format={(value) =>
+                                                    value === "on"
                                                         ? "On"
-                                                        : "Off"}
-                                                </Chip>
-                                            ) : (
-                                                <ButtonGroup aria-label="Video sound">
-                                                    {[true, false]
-                                                        .filter(
-                                                            (value) =>
-                                                                videoConfig.sound ===
-                                                                    "optional" ||
-                                                                value ===
-                                                                    (videoConfig.sound ===
-                                                                        "on"),
-                                                        )
-                                                        .map((value) => (
-                                                            <TabButton
-                                                                key={String(
-                                                                    value,
-                                                                )}
-                                                                size="sm"
-                                                                active={
-                                                                    videoSound ===
-                                                                    value
-                                                                }
-                                                                onClick={() =>
-                                                                    setSound(
-                                                                        value
-                                                                            ? "on"
-                                                                            : "off",
-                                                                    )
-                                                                }
-                                                            >
-                                                                {value
-                                                                    ? "On"
-                                                                    : "Off"}
-                                                            </TabButton>
-                                                        ))}
-                                                </ButtonGroup>
-                                            )}
-                                        </FieldStack>
+                                                        : "Off"
+                                                }
+                                            />
+                                        </>
                                     )}
                                     {videoDuration && (
                                         <FieldStack
@@ -1794,13 +1640,13 @@ export function Playground() {
                                                         );
                                                     }}
                                                 />
-                                                <MediaFact
-                                                    label={`Selected duration: ${videoDuration.value} seconds`}
+                                                {/* The slider's aria-valuetext already reads the value. */}
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="text-xs tabular-nums text-theme-text-muted"
                                                 >
-                                                    <span aria-hidden="true">
-                                                        {videoDuration.value}s
-                                                    </span>
-                                                </MediaFact>
+                                                    {videoDuration.value}s
+                                                </span>
                                             </div>
                                         </FieldStack>
                                     )}

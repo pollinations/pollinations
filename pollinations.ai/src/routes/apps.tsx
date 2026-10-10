@@ -12,7 +12,6 @@ import {
     ExternalLinkButton,
     PlusIcon,
     SearchIcon,
-    Surface,
     TabButton,
     TrendUpIcon,
 } from "@pollinations/ui";
@@ -29,8 +28,7 @@ import {
     useWeeklyApps,
 } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
-import { SpotlightCarousel } from "../ui/apps/AppCarousel";
-import { AppRow } from "../ui/apps/cards";
+import { AppListing, RankedAppTile } from "../ui/apps/cards";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import {
@@ -442,36 +440,43 @@ function AppsPage() {
             </HeroScene>
 
             {(spotlightLoading || spotlight.length > 0) && (
-                <Surface
-                    as="section"
-                    variant="card"
+                <section
                     className={cn(
-                        "overflow-hidden p-0",
+                        "flex flex-col gap-5",
                         postHeroSpacingClassName,
                     )}
                 >
-                    <div className="px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
-                        <ContentHeader
-                            eyebrow="Last 7 days"
-                            title="Most-used Pollen Pay apps"
-                            subtitle="Ranked by successful, billable requests through Pollen Pay."
-                        />
-                    </div>
-                    {spotlightLoading ? (
-                        <div
-                            aria-hidden="true"
-                            className="flex flex-col border-theme-text-strong/10 border-t"
-                        >
-                            <div className="aspect-[16/7] animate-pulse bg-theme-bg-subtle sm:aspect-[18/7]" />
-                            <div className="flex flex-col gap-2 px-5 py-4">
-                                <div className="h-6 w-48 max-w-full animate-pulse rounded bg-theme-bg-subtle" />
-                                <div className="h-10 animate-pulse rounded bg-theme-bg-subtle" />
-                            </div>
-                        </div>
-                    ) : (
-                        <SpotlightCarousel apps={spotlight} />
-                    )}
-                </Surface>
+                    <ContentHeader
+                        eyebrow={null}
+                        title="Most used apps for the last 7 days"
+                        subtitle="Ranked by successful, billable requests through Pollen Pay."
+                    />
+                    {/* Bento: #1 large on the left, the next four in a 2×2 beside it. */}
+                    <ol className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                        {spotlightLoading
+                            ? [0, 1, 2, 3, 4].map((i) => (
+                                  <li
+                                      key={`skeleton-${i}`}
+                                      aria-hidden="true"
+                                      className={cn(
+                                          "h-48 animate-pulse rounded-2xl bg-theme-bg-subtle",
+                                          i === 0 &&
+                                              "col-span-2 h-72 lg:row-span-2 lg:h-auto",
+                                      )}
+                                  />
+                              ))
+                            : spotlight.slice(0, 5).map((app, i) => (
+                                  <li
+                                      key={appIdentity(app)}
+                                      className={cn(
+                                          i === 0 && "col-span-2 lg:row-span-2",
+                                      )}
+                                  >
+                                      <RankedAppTile app={app} rank={i + 1} />
+                                  </li>
+                              ))}
+                    </ol>
+                </section>
             )}
 
             <section
@@ -603,9 +608,9 @@ function AppsPage() {
                     </div>
                 ) : (
                     <>
-                        <div className="border-t border-transparent">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                             {visible.map((app) => (
-                                <AppRow key={appIdentity(app)} app={app} />
+                                <AppListing key={appIdentity(app)} app={app} />
                             ))}
                         </div>
                         {filtered.length > visible.length && (

@@ -296,8 +296,9 @@ function FeatureCard({
 /**
  * The models section: one card per official kind, then one for the
  * community, each linking to the matching filter on enter. Laid out like the
- * wallet's balance cards, tinted with the modality colors and the wallet's
- * gold. Counts and the two newest models are live.
+ * wallet's balance cards on a neutral surface; only the icon carries the
+ * modality color or the wallet's gold. Counts and the two newest models are
+ * live.
  */
 function Models() {
     const { data: stats } = usePlatformStats();
@@ -350,33 +351,29 @@ function Models() {
                             <LinkCard
                                 href={href}
                                 surfaceClassName="gap-0 p-3.5 sm:p-5"
-                                style={{ backgroundColor: background }}
                             >
-                                <span
-                                    className="flex items-center gap-2"
-                                    style={{ color }}
-                                >
-                                    <Icon
+                                <span className="flex items-center gap-2 text-theme-text-strong">
+                                    <span
                                         aria-hidden="true"
-                                        className="size-3.5 shrink-0"
-                                    />
+                                        className="flex size-6 shrink-0 items-center justify-center rounded-md"
+                                        style={{
+                                            color,
+                                            backgroundColor: background,
+                                        }}
+                                    >
+                                        <Icon className="size-3.5" />
+                                    </span>
                                     <span className="font-bold text-sm uppercase tracking-wide">
                                         {label}
                                     </span>
                                 </span>
-                                <span
-                                    className="mt-1 min-h-9 font-bold text-4xl leading-none tracking-tight tabular-nums sm:min-h-12 sm:text-5xl"
-                                    style={{ color }}
-                                >
+                                <span className="mt-2 min-h-9 font-bold text-4xl text-theme-text-strong leading-none tracking-tight tabular-nums sm:min-h-12 sm:text-5xl">
                                     {count}
                                 </span>
                                 <Text size="sm" tone="muted" className="mt-1.5">
                                     {names.length > 0 ? (
                                         <>
-                                            <span
-                                                className="font-semibold"
-                                                style={{ color }}
-                                            >
+                                            <span className="font-semibold text-theme-text-strong">
                                                 Latest:
                                             </span>{" "}
                                             {names.slice(0, 2).join(" · ")}

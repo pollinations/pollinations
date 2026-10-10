@@ -163,14 +163,6 @@ export function useWeeklyApps() {
     return useAsync<DirectoryApp[]>(loadWeeklyApps, []);
 }
 
-const loadNewestApps = cachePublic(async () =>
-    [...(await loadDirectory())].sort(newestFirst).slice(0, 8),
-);
-
-export function useNewestApps() {
-    return useAsync<DirectoryApp[]>(loadNewestApps, []);
-}
-
 type PlatformStats = {
     /** Callable agents, counted separately from models. */
     agents: number;

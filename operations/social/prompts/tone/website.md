@@ -31,9 +31,11 @@ Write the image prompt like a news post's: a close, cozy pixel art scene that fo
 
 ### What to Include:
 - One 16:9 close, cozy scene around this month's new thing, full of detail and little things happening
-- The new thing as a wondrous, glowing piece of technology that shows what it does: name the month's tools, models and features, find their visual symbols, and turn them into something magical, such as a monitor tree whose screens bloom with pictures, cables of lime light running like vines, or a camera that projects a starry film
+- The new thing as a wondrous, glowing piece of technology that shows what it does: take the month's tools, models and features, find their visual symbols, and turn them into something magical, such as a monitor tree whose screens bloom with pictures, cables of lime light running like vines, or a camera that projects a starry film
 - The residents busy with it: cute, cozy and friendly, Polli with a fun accessory that fits the theme
 - Two of Lantern Hill's landmarks (the glowing vine-tree, Polli's cottage, the sandy path) and two or three earlier things around it, so it is still the same place
+
+Never write model, product or brand names in the image prompt: the image model paints them as labels. Show each as its symbol instead, such as a petal of music notes, a film-strip leaf or a little landscape. Terminals, computers and machines are plain objects with landscapes or soft light on their screens, never faces.
 
 ### What to AVOID:
 - Plain wooden buildings, empty frames, planks or furniture as the new thing

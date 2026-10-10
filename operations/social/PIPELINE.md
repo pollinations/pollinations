@@ -1,6 +1,6 @@
 # Social Media News Pipeline
 
-> **Status:** Implemented — 3-tier architecture is the sole active system.
+> **Status:** Implemented — 4-tier architecture is the sole active system.
 >
 > **Assumption:** GitHub is the single source of truth. "Merge to main" is the authoritative event for shipping news.
 
@@ -12,7 +12,7 @@ The pipeline uses **event-centric interpretation**: each PR is analyzed once at 
 
 ---
 
-## Architecture: 3 Tiers
+## Architecture: 4 Tiers
 
 ```
 TIER 1: PER-PR (real-time)
@@ -27,12 +27,17 @@ TIER 3: WEEKLY (Sunday 06:00 UTC)
   Read week's gists directly (Sun→Sat) → synthesize weekly themes → platform posts (X, IG, LI, Reddit, Discord)
   → commit to news branch under the Sunday publish date → Buffer stages X + LI + IG immediately
   Reddit + Discord publish via cron at 18:00 UTC Sunday.
+
+TIER 4: MONTHLY (1st of the month 06:00 UTC)
+  Read month's gists directly → count merged PRs + contributors on GitHub → synthesize monthly themes
+  → website post (title, summary, story) + one cover drawn from last month's story
+  → commit to news branch under the month → index.json feeds the website's build diary
 ```
 
 ### Branch Strategy
 
 - **`main` branch** — source code only. No generated content. README "Latest News" section updated via small automated PRs.
-- **`news` branch** — all generated content: gists, daily posts, weekly posts, `index.json`, images. Unprotected (direct commits). Content is reviewed here before cron publishes it.
+- **`news` branch** — all generated content: gists, daily posts, weekly posts, monthly pages, `index.json`, images. Unprotected (direct commits). Content is reviewed here before cron publishes it.
 
 ### Data Flow
 
@@ -99,6 +104,24 @@ PR merge ──→ generate_realtime.py
 
              Images generated: 7 (1 twitter + 1 linkedin + 3 instagram + 1 reddit + 1 discord)
              Images reused:    none
+
+═══════════════════════════════════════════════════════════════════════
+ TIER 4: MONTHLY (1st of the month 06:00 UTC → website build diary)
+═══════════════════════════════════════════════════════════════════════
+
+             1st 06:00 UTC ──→ generate_monthly.py
+                                   │  (reads the month's gists directly)
+                                   │
+                                   ├──→ GitHub search: merged PRs + contributors
+                                   ├──→ contributors.json  (merged_prs + contributors, committed first)
+                                   ├──→ summary.json  (themes)
+                                   ├──→ website.json  + 🎨 GENERATE 1 cover (16:9)
+                                   │      references: character sheet + creatures who live there
+                                   │
+                                   └──→ Commit all to news branch
+                                         → news-build-index.yml → index.json months/contributors
+
+             Images generated: 1 cover (redrawn up to 3× if a character repeats)
 ```
 
 ---
@@ -187,9 +210,9 @@ Existing AI categories, text, images, and publish-tier rules remain available to
 | `announcements` | Exact official-model changes computed once from the registry before/after merge. Scheduled/unconfirmed status is retained. |
 | `image.prompt`, `image.url` | The image prompt stored once and the generated image used by realtime Discord. |
 
-`gist_context()` passes the same facts to realtime Discord, daily and weekly: summary, selection metadata, Area/Type/Source and app links. Only the per-PR Discord post also receives model `announcements`: price, balance and eligibility changes go to Discord and Enter's model news, never to X, Reddit, LinkedIn or Instagram. Platform prose is generated downstream. Existing archive summaries remain readable without a backfill. Optional metadata backfills are prepared locally and preserve existing text, images and publishing flags. `gist.category` remains during classification migration.
+`gist_context()` passes the same facts to realtime Discord, daily, weekly and monthly: summary, selection metadata, Area/Type/Source and app links. Only the per-PR Discord post also receives model `announcements`: price, balance and eligibility changes go to Discord and Enter's model news, never to X, Reddit, LinkedIn or Instagram. Platform prose is generated downstream. Existing archive summaries remain readable without a backfill. Optional metadata backfills are prepared locally and preserve existing text, images and publishing flags. `gist.category` remains during classification migration.
 
-`build_news_index.py` (workflow `news-build-index.yml`, after every gist and daily summary) writes `index.json` on the news branch: model announcements from gists and the daily `highlights`. Enter's `/news` page and the README read only this file.
+`build_news_index.py` (workflow `news-build-index.yml`, after every gist and summary run) writes `index.json` on the news branch: model announcements from gists, the daily `highlights`, the monthly `months` (merged PRs with each month's website page) and `contributors` (top 20 accounts by merged PRs over the last 12 recorded months). Enter's `/news` page, the README and the website's Community page read only this file.
 
 Unconfirmed deployment stays in metadata; public copy describes merged changes without routine deployment disclaimers and includes known effective dates when relevant. Public gists and posts omit unresolved vulnerability details, user complaints and churn narratives; factual descriptions of product fixes remain appropriate.
 
@@ -243,22 +266,31 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `discord.json` — simplified platform envelope
 - `images/` — all generated images
 
+### Monthly: `operations/social/news/monthly/YYYY-MM/`
+
+- `contributors.json` — `month`, `merged_prs` and `contributors` (every account with its GitHub `id`, `login`, `avatar_url`, `url` and `prs`), committed first and on its own so a failed page or cover never loses the counts. They count every PR merged into `main` or `master` in the month, once each, by anyone: people, agents and bots. `merged_prs` is the number of PRs; contributors' `prs` add up to more, because each co-author of a PR gets credit too, so totals come from `merged_prs`. An account gets credit as the PR author or through a `Co-authored-by` trailer with a GitHub noreply address (`<id>+<login>@users.noreply.github.com`) in the merge commit message. A trailer counts only when GitHub confirms its id belongs to that login; agent-written trailers sometimes guess the id, and then the login's own account gets the credit. Renamed accounts keep their id and show the current login. Bots get credit as PR authors only, listed under GitHub's own login (`name[bot]`) and linked to their app page (`github.com/apps/<name>`), as the repository's contributor list shows them. A trailer without an id (app submissions name the submitter that way) credits the account holding that login, if it already existed when the PR merged; a name taken later belongs to someone else. `GIT_ALIASES` maps git names team members commit under that are another GitHub user's login (Thomas's `thomash`). Bot co-authors (including an app's own bot signing without `[bot]`), organisations, placeholder and deleted accounts get no credit. A GitHub lookup that fails for any reason other than "not found" stops the run instead of dropping credit. Accounts are keyed by their numeric GitHub `id`, which survives renames. Every account is stored; readers pick the top N.
+- `summary.json` — canonical monthly summary of the month's themes
+- `website.json` — simplified platform envelope; `metadata.story` lists every landmark built so far and one open thread, for next month's cover
+- `images/website.jpg` — the 16:9 cover
+
+Each cover is the next page of one picture book: Lantern Hill, growing month by month. Covers are written and drawn like the news posts (the visual guide and the same style), from the character sheet and the latest earlier page's story; no earlier cover is attached, because the image model then copied it and the growth never added up. A fixed set of landmarks (`LANTERN_HILL`) keeps each fresh view in the same place, the story carries what was built, and a missed month never restarts it. Each later page gets its calendar month's light and weather (`MOMENTS`). Polli founds the village alone on page one; the monitor robot, Nomnom and three creatures move in one at a time as the number of people and agents who have merged a pull request since page one passes 25, 50, 200, 400 and 600 (`RESIDENTS`, kept in `metadata.residents`). Everyone is unique and there are no people: after drawing, `google/gemini-3.8-flash` lists the characters in the cover, and any repeat, person or character who has not moved in yet means a redraw, up to 3 tries.
+
 ### Platform Envelope
 
-Daily and weekly platform JSON now share one persisted shape:
+Daily, weekly and monthly platform JSON share one persisted shape:
 
 ```json
 {
-  "platform": "twitter|linkedin|instagram|reddit|discord",
-  "scope": "daily|weekly",
+  "platform": "twitter|linkedin|instagram|reddit|discord|website",
+  "scope": "daily|weekly|monthly",
   "date": "YYYY-MM-DD",
   "period_start": "YYYY-MM-DD",
   "period_end": "YYYY-MM-DD",
   "generated_at": "ISO-8601 timestamp",
-  "title": "optional, used by Reddit",
+  "title": "optional, used by Reddit and the website",
   "text": "optional, final publish-ready text",
   "images": [{"url": "https://..."}],
-  "metadata": {"post_type": "post|carousel"}
+  "metadata": {"post_type": "post|carousel", "story": "website only"}
 }
 ```
 
@@ -299,8 +331,9 @@ This makes all generated content available locally for scripts that read files (
 | `generate_realtime.py` | Per-PR: AI analysis → gist JSON → image gen (source of truth) |
 | `publish_realtime.py` | Per-PR: reads gist → AI announcement → Discord webhook post |
 | `generate_daily.py` | Daily: read gists → summary with highlights + platform posts (X, Reddit) + images → commit to news |
-| `build_news_index.py` | Rebuilds `index.json` (model announcements + highlights) for Enter `/news` and the README |
+| `build_news_index.py` | Rebuilds `index.json` (model announcements, highlights, months, contributors) for Enter `/news`, the README and the website |
 | `generate_weekly.py` | Weekly: read gists directly (Sun→Sat) → synthesize themes → all 5 platform posts + images → commit to news |
+| `generate_monthly.py` | Monthly: read gists directly → GitHub merged PRs + contributors → themes → website post + cover drawn from last month's story → commit to news |
 | `publish_daily.py` | PUBLISH_MODE=buffer: stage X to Buffer. PUBLISH_MODE=direct: Reddit VPS deployment. |
 | `publish_weekly.py` | PUBLISH_MODE=buffer: stage X + LI + IG to Buffer. PUBLISH_MODE=direct: Reddit VPS + Discord webhook. |
 | `update_readme.py` | README Latest News from `index.json`: `get_top_highlights()`, `update_readme_news_section()` (called by `docs-update-readme-news.yml`) |
@@ -340,11 +373,16 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 - Reads gists directly for the week (Sun→Sat). No dependency on daily summaries.
 - If no daily-tier gists found for the week: skip.
 
+### Tier 4: `generate_monthly.py`
+
+- Reads gists directly for the month; if there is nothing to read: skip.
+- A GitHub search window over the 1,000-result cap, a failed search, digest, post or commit fails the run, and so does a cover that still repeats a character after 3 tries. The cover is committed before the JSON, so a page never points at a missing image.
+
 ### Re-triggering
 
 All workflows support `workflow_dispatch` for manual re-triggering:
 - `news-create-pr-gist.yml`: accepts `pr_number` input to regenerate a specific gist
-- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly)
+- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly); `mode: monthly` with `target_month` regenerates one month.
 - `news-publish-social.yml`: accepts `mode` + `target_date` for manual publish of direct channels
 
 ---
@@ -385,7 +423,7 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 8. **Daily summary clusters related PRs into 3-5 story arcs** — 5 PRs about the same subsystem become one narrative beat. Editorial quality, not a changelog.
 
-9. **Three independent image families** — see Image Generation Strategy section below.
+9. **Four independent image families** — see Image Generation Strategy section below.
 
 10. **Highlights come from the daily summary** — the daily call also picks 0-5 highlights into `summary.json`; a quiet day adds none. `index.json` collects them for Enter and the README "Latest News" section (small PR to main).
 
@@ -393,25 +431,29 @@ The daily summary runs at 06:00 UTC. A PR merged at 05:59 UTC might have its gis
 
 12. **No fallback content for zero-PR days** — if no PRs merged, the daily workflow skips entirely. No posts generated. Quiet days are quiet days.
 
-13. **Gists hold facts; summaries and posts hold presentation** — creative headlines and platform wording are generated downstream. Monthly diary generation reads canonical daily summaries; README and dashboard news read `index.json`.
+13. **Gists hold facts; summaries and posts hold presentation** — creative headlines and platform wording are generated downstream. README, dashboard news and the website read `index.json`.
 
-14. **Weekly reads gists directly, independent of dailies** — the weekly summary reads the week's gists (Sun→Sat) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"). This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
+14. **Weekly and monthly read gists directly, independent of dailies** — the weekly summary reads the week's gists (Sun→Sat) and synthesizes themes into a bigger narrative ("this week we shipped X, fixed Y, started Z"); the monthly does the same for the month. This eliminates the dependency on daily summaries being generated first, ensuring no PRs are missed.
+
+15. **Monthly counts come from GitHub, not gists** — gists cover `main` only and miss PRs whose gist run failed, so `merged_prs` and `contributors` (in `contributors.json`) come from a GitHub search of every PR merged into `main` or `master`.
 
 ---
 
 ## Image Generation Strategy
 
-There are **3 independent families of images**. Each tier generates its own images with its own prompts and style.
+There are **4 independent families of images**. Each tier generates its own images with its own prompts and style.
 
 | Family | Generated by | When | Style | Count | Used by |
 |---|---|---|---|---|---|
-| **Per-PR pixel art** | `generate_realtime.py` | Tier 1 (on PR merge) | 8-bit pixel art | 1 per PR | Discord post, website diary |
+| **Per-PR pixel art** | `generate_realtime.py` | Tier 1 (on PR merge) | 8-bit pixel art | 1 per PR | Discord post |
 | **Daily platform images** | `generate_daily.py` | Tier 2 (06:00 UTC) | Brand pixel art (from `brand/visual.md`) | 1 Twitter + 1 Reddit = **2 per day** | Twitter and Reddit daily posts (LinkedIn and Instagram = weekly only) |
 | **Weekly platform images** | `generate_weekly.py` | Tier 3 (Sunday 06:00 UTC) | Brand pixel art (from `brand/visual.md`) | 1 Twitter + 1 LinkedIn + 3 Instagram + 1 Reddit + 1 Discord = **7 per week** | Twitter, LinkedIn, Instagram, Reddit, Discord weekly posts |
+| **Monthly cover** | `generate_monthly.py` | Tier 4 (1st of the month 06:00 UTC) | Brand pixel art, 16:9, one picture book | **1 per month** | Website build diary |
 
 **Key points:**
 
-- **Daily and weekly images are freshly generated** from the daily narrative / weekly summary. They are NOT the per-PR pixel art images. The AI creates images that illustrate the aggregated story, not individual PRs.
+- **Daily, weekly and monthly images are freshly generated** from the daily narrative / weekly / monthly summary. They are NOT the per-PR pixel art images. The AI creates images that illustrate the aggregated story, not individual PRs.
+- **Monthly covers are one picture book** — each cover takes last month's story as its brief and Lantern Hill's landmarks, so the same place grows from page to page; the cast joins one by one.
 
 ---
 
@@ -423,7 +465,7 @@ There are **3 independent families of images**. Each tier generates its own imag
 | Daily summary (with highlights) + posts | 3 | 2 (1 twitter + 1 reddit) |
 | **Total** | **8** | **7** |
 
-Weekly adds ~6 AI calls + ~7 image gens on Sundays.
+Weekly adds ~6 AI calls + ~7 image gens on Sundays. Monthly adds 2 AI calls + 1 image gen on the 1st.
 
 AI calls scale as N+3 (N per-PR gists + summary with highlights + two platform posts), not N×platforms. Daily image generation is limited to the two platforms that publish daily.
 
@@ -443,6 +485,7 @@ AI calls scale as N+3 (N per-PR gists + summary with highlights + two platform p
 10. **Publish tier gating**: Merge a non-user-facing PR → verify `publish_tier: discord_only` → verify absent from daily summary
 11. **Clustering**: Day with 5+ related PRs → verify daily summary groups them into narrative arcs (not a flat list)
 12. **Concurrent merges**: Merge 3 PRs within 30 seconds → verify all 3 gists committed without conflicts
+13. **Tier 4 — happy path**: Trigger `mode: monthly` for two consecutive months, oldest first → verify `contributors.json`, `summary.json`, `website.json` and `images/website.jpg` for each, the second cover keeps Lantern Hill's landmarks and last month's story, and `index.json` lists both months
 
 ---
 
@@ -471,10 +514,12 @@ operations/social/prompts/
     instagram.md               # Instagram voice + image adaptation
     reddit.md                  # Reddit voice + image adaptation
     discord.md                 # Discord voice + image adaptation
+    website.md                 # Website build diary voice + image adaptation
 
   gist.md                      # Tier 1: Analyze PR → gist JSON + image prompt
   daily.md                     # Tier 2: Cluster gists into 3-5 narrative arcs + highlights
   weekly.md                    # Tier 3: Synthesize weekly recap from gists
+  monthly.md                   # Tier 4: Synthesize monthly recap from gists + the picture-book story rules
   format.md                    # Output format specs (JSON schemas per platform)
 ```
 

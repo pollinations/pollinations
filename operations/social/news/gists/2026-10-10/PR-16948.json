@@ -1,0 +1,38 @@
+{
+  "pr_number": 16948,
+  "title": "Add MebelSmetaBot to bots",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/16948",
+  "merged_at": "2026-10-10T07:17:34Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added MebelSmetaBot to the README bot list and app catalog. The Telegram bot takes a phone photo of a kitchen or room and uses the Pollinations image API to visualize new furniture in that space.",
+    "keywords": [
+      "MebelSmetaBot",
+      "Telegram",
+      "furniture",
+      "image API",
+      "app catalog"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16948.jpg",
+    "prompt": "In a cozy pixel art furniture workshop, Polli wears a tiny tool belt and looks at a phone with a Telegram paper-plane icon as a photo of a kitchen becomes a furnished visualization; code-plants grow beside the workbench against a prominent lime green (#ecf874), mint-to-peach pastel background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, with consistent rounded proportions, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-10-10T07:18:40.298894+00:00",
+  "app_name": "MebelSmetaBot",
+  "app_url": "https://t.me/MebelSmetaBot",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "24c47dceae23acf5ae0bd264e5fe4b1e739af62d",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

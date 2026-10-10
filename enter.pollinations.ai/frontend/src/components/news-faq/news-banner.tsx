@@ -50,17 +50,20 @@ type Announcement = {
     cta: { label: string; href: string };
 };
 
-/** Newest first. */
+/**
+ * Newest first. Cards share a row, so keep them even: a title of a few
+ * words, one sentence of about 80 characters and a two- or three-word button.
+ */
 const ANNOUNCEMENTS: Announcement[] = [
     {
         date: "2026-11-01",
         until: "2026-11-15",
         label: "Changing",
-        title: "Publishable keys stop spending Pollen",
-        text: "From November 1, publishable (pk_) keys can no longer pay for generations. They still identify your app, like an app ID: with Connect User Wallets, your users sign in and pay with their own Pollen.",
+        title: "Publishable keys",
+        text: "From Nov 1, pk_ keys only identify your app; users pay through Connect User Wallets.",
         icon: KeyIcon,
         cta: {
-            label: "Set up Connect User Wallets",
+            label: "Migrate your app",
             href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         },
     },
@@ -69,10 +72,10 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-10-24",
         label: "New",
         title: "A new pollinations.ai",
-        text: "The website is rebuilt: generate images, video and audio on Play, browse community apps, and see what the community is building.",
+        text: "Redesigned: try models on Play, browse community apps and meet the builders.",
         icon: GlobeIcon,
         cta: {
-            label: "Visit pollinations.ai",
+            label: "Visit the website",
             href: "https://pollinations.ai",
         },
     },
@@ -81,7 +84,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-10-20",
         label: "New",
         title: "Pay with crypto",
-        text: "Buy Pollen packs with USDC. Pick a pack in Pollen, then choose Pay with Crypto.",
+        text: "Buy Pollen packs with USDC: pick a pack, then choose Pay with Crypto.",
         icon: WalletIcon,
         cta: { label: "Buy Pollen", href: "/pollen" },
     },
@@ -90,7 +93,7 @@ const ANNOUNCEMENTS: Announcement[] = [
         until: "2026-10-16",
         label: "New",
         title: "Sandboxes",
-        text: "Create E2B-compatible sandboxes through the API or polli sandbox, then connect over SSH.",
+        text: "Create E2B-compatible sandboxes with the API or polli sandbox, then connect over SSH.",
         icon: TerminalIcon,
         cta: {
             label: "Read the docs",

@@ -377,6 +377,39 @@ describe("gen worker routing", () => {
         expect(await llms.text()).toContain("/.well-known/api-catalog");
     });
 
+    it("advertises OAuth protected resource metadata and links it from llms.txt", async () => {
+        const response = await fetchWorker(
+            "/.well-known/oauth-protected-resource",
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain(
+            "application/json",
+        );
+        expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        const body = (await response.json()) as {
+            resource: string;
+            authorization_servers: string[];
+            bearer_methods_supported: string[];
+            resource_documentation: string;
+        };
+        // The origin follows the serving host (the test worker serves staging).
+        const origin = "https://staging.gen.pollinations.ai";
+        expect(body.resource).toBe(origin);
+        expect(body.authorization_servers).toEqual([
+            "https://staging.enter.pollinations.ai",
+        ]);
+        expect(body.bearer_methods_supported).toEqual(["header"]);
+        expect(body.resource_documentation).toBe(`${origin}/llms.txt`);
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain(
+            "/.well-known/oauth-protected-resource",
+        );
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 

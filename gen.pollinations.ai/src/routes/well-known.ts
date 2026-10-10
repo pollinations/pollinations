@@ -14,6 +14,22 @@ const POLLI_SKILL_PATH = "/.well-known/agent-skills/polli/SKILL.md";
 const POLLI_SKILL_DESCRIPTION =
     CLI_SKILL.match(/^description:\s*(.+)$/m)?.[1].trim() ?? "";
 
+// OAuth 2.0 Protected Resource Metadata (RFC 9728). The gen API accepts the
+// same bearer keys the enter authorization server issues, so a client that
+// gets a 401 can discover where to authenticate instead of asking a human for
+// a key first.
+const AUTHORIZATION_SERVER = "https://enter.pollinations.ai";
+
+function authorizationServerFor(origin: string): string {
+    // Mirror the serving host so staging advertises staging, like api-catalog.
+    const url = new URL(origin);
+    if (url.hostname.startsWith("gen.")) {
+        url.hostname = `enter.${url.hostname.slice("gen.".length)}`;
+        return url.origin;
+    }
+    return AUTHORIZATION_SERVER;
+}
+
 async function sha256Hex(text: string): Promise<string> {
     const hash = await crypto.subtle.digest(
         "SHA-256",
@@ -102,4 +118,15 @@ export const wellKnownRoutes = new Hono<Env>()
                 ],
             }),
         );
+    })
+    .get("/oauth-protected-resource", (c) => {
+        // RFC 9728: tells agents which authorization server protects the API.
+        const origin = getPublicOrigin(c);
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.json({
+            resource: origin,
+            authorization_servers: [authorizationServerFor(origin)],
+            bearer_methods_supported: ["header"],
+            resource_documentation: `${origin}/llms.txt`,
+        });
     });

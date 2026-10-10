@@ -133,6 +133,16 @@ const honeyCensusQuest: QuestDefinition = {
     url: `https://github.com/${REPO}/issues/new?template=honey-census.yml`,
 };
 
+/**
+ * Public contribution rewards with a fixed id. Per-issue rewards are stored as
+ * `github:issue:N` (bounties) and `github:reported_issue:N` (reported issues).
+ */
+export const CONTRIBUTION_QUEST_IDS = [
+    firstMergedPrQuest.id,
+    beeCensusQuest.id,
+    honeyCensusQuest.id,
+];
+
 // A quest-shaped projection of one POLLEN-QUEST issue, computed from GitHub.
 type DerivedQuestIssue = {
     issueNumber: number;

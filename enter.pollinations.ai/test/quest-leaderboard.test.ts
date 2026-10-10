@@ -90,16 +90,25 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         },
     ]);
 
-    // A large product reward must not affect the public GitHub quest board.
-    await db.insert(schema.rewards).values({
-        id: "leaderboard-non-github-reward",
-        idempotencyKey: "quest:first_top_up:leaderboard-user-51",
-        userId: "leaderboard-user-51",
-        questId: "first_top_up",
-        title: "First top up",
-        pollenAmount: 1_000,
-        balanceBucket: "tier",
-    });
+    // Public work counts: a merged PR, a reported issue and a listed app.
+    // Purchase and usage rewards would expose a named person, so they don't.
+    await db.insert(schema.rewards).values(
+        [
+            { questId: "merged_pr", pollenAmount: 5 },
+            { questId: "github:reported_issue:40001", pollenAmount: 3 },
+            { questId: "app_listed", pollenAmount: 10 },
+            { questId: "first_top_up", pollenAmount: 1_000 },
+            { questId: "use_image_model", pollenAmount: 500 },
+        ].map(({ questId, pollenAmount }) => ({
+            id: `leaderboard-51-${questId}`,
+            idempotencyKey: `quest:${questId}:leaderboard-user-51`,
+            userId: "leaderboard-user-51",
+            questId,
+            title: questId,
+            pollenAmount,
+            balanceBucket: "tier" as const,
+        })),
+    );
 
     // A GitHub-shaped reward without a public GitHub login must stay private.
     await db.insert(schema.user).values({
@@ -128,8 +137,8 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
     expect(payload.leaderboard).toHaveLength(50);
     expect(payload.leaderboard[0]).toEqual({
         githubLogin: "builder-51",
-        completedQuests: 3,
-        totalPollen: 51.8,
+        completedQuests: 6,
+        totalPollen: 69.8,
     });
     expect(payload.leaderboard.at(-1)).toEqual({
         githubLogin: "builder-2",
@@ -137,12 +146,12 @@ test("leaderboard limits rows without truncating aggregate totals", async () => 
         totalPollen: 2,
     });
 
-    // 1 + ... + 51 + 0.1 + 0.2 + 0.5 = 1326.8. The bonus contributes
-    // Pollen without counting the same quest twice.
+    // 1 + ... + 51 + 0.1 + 0.2 + 0.5 + 5 + 3 + 10 = 1344.8. The bonus
+    // contributes Pollen without counting the same quest twice.
     expect(payload.totals).toEqual({
         contributors: 51,
-        completedQuests: 53,
-        totalPollen: 1326.8,
+        completedQuests: 56,
+        totalPollen: 1344.8,
     });
 });
 

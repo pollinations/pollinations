@@ -102,6 +102,9 @@ const QUESTS = [
     appListedQuest,
 ];
 
+/** App rewards count as public work on the Quest leaderboard. */
+export const APP_GROWTH_QUEST_IDS = QUESTS.map((quest) => quest.id);
+
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {

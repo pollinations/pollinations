@@ -1,13 +1,30 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { and, eq, gte, inArray, isNotNull, like, lt, sql } from "drizzle-orm";
+import {
+    and,
+    eq,
+    gte,
+    inArray,
+    isNotNull,
+    like,
+    lt,
+    or,
+    sql,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { TOP_UP_QUEST_IDS } from "../services/quests/groups/account-setup.ts";
+import { APP_GROWTH_QUEST_IDS } from "../services/quests/groups/app-growth.ts";
+import { CONTRIBUTION_QUEST_IDS } from "../services/quests/groups/github-contributions.ts";
+
+// Rewards for public work count: GitHub quests and contributions, and app
+// growth. Top-ups, model use and account setup would expose a named person's
+// purchases or usage, so they stay off the public board.
+const PUBLIC_QUEST_IDS = [...CONTRIBUTION_QUEST_IDS, ...APP_GROWTH_QUEST_IDS];
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const LEADERBOARD_CACHE_TTL = 60;
@@ -39,7 +56,7 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
         summary: "Get Quest Leaderboard",
         security: [],
         description:
-            "Returns public aggregate totals and top contributors for completed GitHub POLLEN-QUEST issue rewards.",
+            "Returns public aggregate totals and top contributors for rewards earned by public work: GitHub quests and contributions, and app growth.",
         responses: {
             200: {
                 description: "Quest leaderboard",
@@ -67,9 +84,9 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
 );
 
 /**
- * Aggregate every completed public GitHub quest first, then cap only the
- * returned ranking. This keeps the public totals global even after the board
- * grows beyond the presentation limit.
+ * Aggregate every public-work reward first, then cap only the returned
+ * ranking. This keeps the public totals global even after the board grows
+ * beyond the presentation limit.
  */
 async function buildQuestLeaderboard(
     env: CloudflareBindings,
@@ -92,7 +109,11 @@ async function buildQuestLeaderboard(
         .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
         .where(
             and(
-                like(rewardsTable.questId, "github:issue:%"),
+                or(
+                    // Per-issue rewards: github:issue:N and github:reported_issue:N.
+                    like(rewardsTable.questId, "github:%"),
+                    inArray(rewardsTable.questId, PUBLIC_QUEST_IDS),
+                ),
                 isNotNull(schema.user.githubUsername),
             ),
         )

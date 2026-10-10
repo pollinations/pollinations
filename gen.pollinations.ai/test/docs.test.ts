@@ -428,6 +428,140 @@ describe("docs routes", () => {
         expect(html).toContain("#tag/connect-user-wallets");
     });
 
+    it("serves the guide as Markdown when an agent prefers it", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "text/markdown" },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+        expect(response.headers.get("Vary")).toBe("Accept");
+        // private: Cloudflare ignores Vary on cached responses, so the
+        // negotiated body must not enter a shared cache.
+        expect(response.headers.get("Cache-Control")).toBe(
+            "private, max-age=3600",
+        );
+        const markdown = await response.text();
+        // Same body as /docs/llm.txt, so an agent can page through either URL.
+        expect(response.headers.get("x-markdown-tokens")).toBe(
+            String(Math.ceil(markdown.length / 4)),
+        );
+        expect(markdown).toContain("Base URL:");
+        expect(markdown).toContain("POST /v1/embeddings");
+        expect(markdown).not.toContain("<html");
+    });
+
+    it("negotiates Accept headers the way agents and browsers send them", async () => {
+        // curl and generic clients send */* — keep the HTML reference.
+        const generic = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "*/*" },
+            }),
+            envWithEnterSchema({}),
+            createExecutionContext(),
+        );
+        expect(generic.headers.get("Content-Type")).toContain("text/html");
+
+        // An explicit refusal of Markdown must not serve Markdown either.
+        const refused = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "text/html, text/markdown;q=0" },
+            }),
+            envWithEnterSchema({}),
+            createExecutionContext(),
+        );
+        expect(refused.headers.get("Content-Type")).toContain("text/html");
+
+        // Optional whitespace around ";" is legal (RFC 9110 §5.6.3).
+        const spaced = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "text/markdown ; q=0.9, text/html;q=0.1" },
+            }),
+            envWithEnterSchema({}),
+            createExecutionContext(),
+        );
+        expect(spaced.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+
+        // Section endpoints are plain text and are not negotiated.
+        const section = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=cli",
+                {
+                    headers: { Accept: "text/markdown" },
+                },
+            ),
+            envWithEnterSchema({}),
+            createExecutionContext(),
+        );
+        expect(section.status).toBe(200);
+        expect(section.headers.get("Content-Type")).toContain("text/plain");
+        expect(await section.text()).toContain("## CLI");
+
+        // Representations take the quality of their most specific matching
+        // range (RFC 9110 §12.5.1), so an explicit HTML refusal wins over */*.
+        for (const accept of [
+            "text/markdown;q=0.5, text/html;q=0, */*;q=0.8",
+            "text/*;q=1, text/html;q=0.1",
+            "text/markdown;q=0.9, application/xhtml+xml;q=1, text/html;q=0.1",
+        ]) {
+            const matched = await worker.fetch(
+                new Request("https://gen.pollinations.ai/docs", {
+                    headers: { Accept: accept },
+                }),
+                envWithEnterSchema({}),
+                createExecutionContext(),
+            );
+            expect(matched.headers.get("Content-Type")).toBe(
+                "text/markdown; charset=utf-8",
+            );
+        }
+
+        // Pinned tie-break contracts: equal quality keeps the HTML reference,
+        // and a client that refuses both types still gets a readable page.
+        for (const accept of [
+            "text/html;q=1, text/markdown;q=1",
+            "text/html;q=0, text/markdown;q=0",
+        ]) {
+            const tied = await worker.fetch(
+                new Request("https://gen.pollinations.ai/docs", {
+                    headers: { Accept: accept },
+                }),
+                envWithEnterSchema({}),
+                createExecutionContext(),
+            );
+            expect(tied.status).toBe(200);
+            expect(tied.headers.get("Content-Type")).toContain("text/html");
+        }
+    });
+
+    it("keeps the HTML reference for browser-style Accept headers", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: {
+                    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        expect(response.headers.get("Vary")).toBe("Accept");
+    });
+
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(

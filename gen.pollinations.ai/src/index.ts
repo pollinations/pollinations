@@ -26,7 +26,12 @@ import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
-import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import {
+    buildMergedOpenApiSpec,
+    createDocsRoutes,
+    estimateTokens,
+    servesMarkdown,
+} from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
@@ -87,10 +92,8 @@ function robotsTxt(): Response {
     );
 }
 
-function llmsTxt(c: Context<Env>): Response {
-    const origin = getPublicOrigin(c);
-    return new Response(
-        `# Pollinations
+function llmsTxtBody(origin: string): string {
+    return `# Pollinations
 
 > Generate text, images, audio, video, 3D, and embeddings through the Pollinations API, CLI, or MCP server. API calls use a Pollinations key.
 
@@ -102,7 +105,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
 - [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
 - [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
-- [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser.
+- [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser, or fetch the same guide as Markdown by sending \`Accept: text/markdown\`.
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
@@ -113,14 +116,16 @@ function llmsTxt(c: Context<Env>): Response {
 
 - [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
 - [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
-`,
-        {
-            headers: {
-                "Content-Type": "text/plain; charset=utf-8",
-                "Cache-Control": "public, max-age=3600",
-            },
+`;
+}
+
+function llmsTxt(c: Context<Env>): Response {
+    return new Response(llmsTxtBody(getPublicOrigin(c)), {
+        headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "public, max-age=3600",
         },
-    );
+    });
 }
 
 async function fetchEnter(c: Context<Env>, url: URL): Promise<Response> {
@@ -156,7 +161,20 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
-    .get("/", (c) => c.html(docsLandingHtml(c)))
+    .get("/", (c) => {
+        c.header("Vary", "Accept", { append: true });
+        if (servesMarkdown(c.req.header("accept"))) {
+            const body = llmsTxtBody(getPublicOrigin(c));
+            // Same rationale as /docs: Vary is not honored by Cloudflare's
+            // cache, so keep the negotiated body out of shared caches.
+            c.header("Cache-Control", "private, max-age=3600");
+            c.header("x-markdown-tokens", String(estimateTokens(body)));
+            return c.body(body, 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+            });
+        }
+        return c.html(docsLandingHtml(c));
+    })
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

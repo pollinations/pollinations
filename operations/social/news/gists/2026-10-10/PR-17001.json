@@ -1,0 +1,37 @@
+{
+  "pr_number": 17001,
+  "title": "fix: correct observability dashboard numbers and drop legacy dashboards",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17001",
+  "merged_at": "2026-10-10T20:36:37Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Observability dashboards now count successful calls and funded users and apps, excluding 402 rejections. For the cited 30-day period, platform calls change from 15.8M to 5.9M successful calls and active users from 24.2k to 19.7k; WAU for the week to Oct 4 changes from 9.1k to 7.2k, while the KPI shows 7.4k. The former 1,635 active-model count is replaced by separate counts of 224 Pollinations models and 1,156 community models with at least one successful call. Dashboards now show the last 30 complete UTC days (`now-30d/d` to `now-1d/d`) and refresh hourly, avoiding partial first and last bars in kiosk mode. Removed 12 unused legacy dashboards and their Tinybird Stripe and Tinybird Legacy datasources. Removed three blank observed-balance panels from Users & Balances because Grafana cannot read their internal pipe; a test now rejects dashboards that read pipes under `enter.pollinations.ai/observability/pipes/`. Pinned `grafana-clickhouse-datasource` to 4.22.1 so restarts do not pick up newer plugin releases.",
+    "keywords": [
+      "observability",
+      "Grafana",
+      "dashboard metrics",
+      "successful calls",
+      "UTC date range",
+      "ClickHouse"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-17001.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli studies a CRT dashboard whose tidy lime green (#ecf874) bars grow like code-plants, while a small monitor robot helps clear away dusty old charts. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny accountant glasses, stays small-to-medium beside the robot, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender surroundings and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-10T20:37:52.553498+00:00",
+  "area": "Data & insights",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "f0a6b71d1c5fcc85e43ca2592c4f94d2418a7c01",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

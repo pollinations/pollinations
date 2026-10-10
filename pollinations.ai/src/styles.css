@@ -10,6 +10,12 @@
    the same utility. Site source writes plain `flex`, `gap-4`, `text-sm`. */
 @import "@pollinations/ui/app.css";
 
+/* Elastic overscroll (macOS, iOS) shows the root background: keep it the
+   desk, not the browser's white or black. */
+html {
+    background-color: var(--polli-color-app-bg);
+}
+
 /* The public website uses a wider sheet than apps and dashboards. This is
    site layout, not a reusable package component. Header, page and footer use
    the same two classes so their content stays on one axis. */
@@ -60,7 +66,7 @@
     translate: 0;
 }
 
-@media (min-width: 40rem) and (max-width: 48.749rem) {
+@media (min-width: 40rem) and (max-width: 54.999rem) {
     html {
         scrollbar-gutter: stable both-edges;
     }
@@ -72,58 +78,21 @@
     }
 }
 
-.site-primary-nav-button {
-    border-color: transparent;
-    background-color: transparent;
-    color: var(--polli-color-text-strong);
-    gap: calc(var(--polli-spacing) * 2);
-    font-weight: 700;
-    letter-spacing: 0.01em;
-}
-
-.site-primary-nav-button:hover,
-.site-primary-nav-button[aria-current="page"] {
-    background-color: var(--polli-color-brand-accent);
+/* Hovering the logo previews "Hello" like hovering the pill itself
+   (TabButton intent="brand"). Not on Hello, where it is already the current
+   page. */
+.site-home-nav-group:has(.site-home-logo:hover)
+    .site-home-nav-button:not([aria-current="page"]) {
+    background-color: color-mix(
+        in oklab,
+        var(--polli-color-brand-accent) 60%,
+        transparent
+    );
     color: var(--polli-color-brand-dark);
-}
-
-/* Separate rule: a browser without :has() would drop the whole list above. */
-.site-home-nav-group:has(.site-home-logo:hover) .site-home-nav-button {
-    background-color: var(--polli-color-brand-accent);
-    color: var(--polli-color-brand-dark);
-}
-
-.site-github-stars {
-    border-color: rgb(240 246 252 / 14%);
-    background-color: #0d1117;
-    color: #f0f6fc;
-    filter: none;
-}
-
-.site-github-stars:hover {
-    background-color: #010409;
 }
 
 .site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo {
     transform: translateY(-0.125rem);
-}
-
-.site-home-nav-group:has(.site-home-nav-button:hover) .site-home-logo-accent {
-    opacity: 1;
-}
-
-.site-external-link {
-    background-color: transparent;
-    box-shadow: none;
-    filter: none;
-    transform: none;
-    color: var(--polli-color-text-base);
-}
-
-.site-external-link:hover,
-.site-external-link:focus-visible {
-    box-shadow: none;
-    color: var(--polli-color-text-muted);
 }
 
 .site-drawer-social-label {

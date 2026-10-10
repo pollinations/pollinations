@@ -160,8 +160,27 @@ const PRICE_FIELDS: Record<
     completionVideoSeconds: ["output", "video"],
 };
 
+// Categories the dashboard renders as their own section. Registry categories
+// outside this list (e.g. the alpha "ocr") fall through to the output modality
+// so the model still renders instead of landing in an unknown section bucket.
+const CATALOG_CATEGORIES: readonly string[] = [
+    "text",
+    "image",
+    "audio",
+    "video",
+    "3d",
+    "embedding",
+    "realtime",
+];
+
+function isCatalogCategory(value: string): value is ModelCategory {
+    return CATALOG_CATEGORIES.includes(value);
+}
+
 export function getCatalogCategory(model: ApiModelInfo): ModelCategory {
-    if (model.category) return model.category;
+    if (model.category && isCatalogCategory(model.category)) {
+        return model.category;
+    }
     const outputModalities = model.output_modalities ?? [];
     if (outputModalities.includes("video")) return "video";
     if (outputModalities.includes("image")) return "image";

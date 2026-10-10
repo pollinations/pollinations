@@ -15,8 +15,9 @@ import {
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import { textCache } from "@/middleware/text-cache.ts";
+import { perRequestTextCache, textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import { generateOcrResponse } from "@/ocr/handler.ts";
 import {
     MediaChatCompletionSchema,
     MediaResponseSchema,
@@ -94,6 +95,10 @@ import {
     ModelListHeadersSchema,
     ModelListQueryParamsSchema,
 } from "@/schemas/models.ts";
+import {
+    CreateOcrRequestSchema,
+    CreateOcrResponseSchema,
+} from "@/schemas/ocr.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
@@ -871,6 +876,42 @@ export const proxyRoutes = new Hono<Env>()
         generationAccess,
         deduplicateGeneration,
         every(apiKeyBudgetReservation, generateEmbeddingsResponse),
+    )
+    .post(
+        "/alpha/ocr",
+        describeRoute({
+            tags: ["📄 OCR"],
+            summary: "Optical Character Recognition (experimental)",
+            description: [
+                "Extract structured content from documents and images and get Markdown with layout and bounding boxes for embedded images. The request and response follow Mistral's OCR API, but `/alpha/ocr` is experimental and may change without a version bump.",
+                "",
+                "**Input:** Pass a document via `document_url` (PDF or image URL) or `image_url` (base64 data URL). Use `include_image_base64` to embed extracted images as base64. `document_url` must be a public https URL that the upstream can fetch; private hosts and embedded credentials are rejected.",
+                "",
+                "**Models:** `mistral-ocr` is the only listing today. Defaults to `mistral-ocr`.",
+                "",
+                "**Billing:** $0.004 per page reported in `usage_info.pages_processed`. The returned Markdown is included in that per-page price.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateOcrResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        textBodyLimit,
+        validator("json", CreateOcrRequestSchema),
+        resolveModel("generate.ocr", { supportedEndpoint: "/alpha/ocr" }),
+        track("generate.ocr"),
+        prepareGenerationRequest,
+        perRequestTextCache,
+        every(generationAccess, deduplicateGeneration),
+        apiKeyBudgetReservation,
+        generateOcrResponse,
     )
     .post(
         "/text",

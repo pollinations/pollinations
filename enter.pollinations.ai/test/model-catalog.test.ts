@@ -55,6 +55,18 @@ it("keeps catalog health for filtering and status display", () => {
     expect(models.map((model) => model.health)).toEqual(health);
 });
 
+it("buckets registry categories without a dashboard section by output modality", () => {
+    const [model] = getModelPricesFromCatalog([
+        {
+            name: "mistral-ocr",
+            category: "ocr",
+            output_modalities: ["text"],
+        },
+    ]);
+
+    expect(model.type).toBe("text");
+});
+
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {
     const catalog = [
         {

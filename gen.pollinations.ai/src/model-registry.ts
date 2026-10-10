@@ -10,6 +10,7 @@ import {
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
+import { DEFAULT_OCR_MODEL } from "@shared/registry/ocr.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import {
     type Category,
@@ -55,6 +56,7 @@ const CATEGORY_ORDER: Record<Category, number> = {
     audio: 4,
     realtime: 5,
     embedding: 6,
+    ocr: 7,
 };
 const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
     text: DEFAULT_TEXT_MODEL,
@@ -63,6 +65,7 @@ const DEFAULT_MODEL_BY_CATEGORY: Partial<Record<Category, string>> = {
     audio: DEFAULT_AUDIO_MODEL,
     realtime: DEFAULT_REALTIME_MODEL,
     embedding: DEFAULT_EMBEDDING_MODEL,
+    ocr: DEFAULT_OCR_MODEL,
 };
 
 export type GenerationModelEntry = {
@@ -98,6 +101,7 @@ function eventTypeForCategory(category: Category): EventType {
     if (category === "embedding") return "generate.embedding";
     if (category === "realtime") return "generate.realtime";
     if (category === "text") return "generate.text";
+    if (category === "ocr") return "generate.ocr";
     return "generate.image";
 }
 
@@ -107,6 +111,7 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
         return ["/audio/{text}", "/v1/audio/speech"];
     }
     if (eventType === "generate.embedding") return ["/v1/embeddings"];
+    if (eventType === "generate.ocr") return ["/alpha/ocr"];
     if (eventType === "generate.realtime") {
         return ["/realtime", "/v1/realtime"];
     }

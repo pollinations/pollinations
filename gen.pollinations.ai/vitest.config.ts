@@ -40,6 +40,7 @@ const genAliases = [
     "schemas/image.ts",
     "schemas/model3d.ts",
     "schemas/models.ts",
+    "schemas/ocr.ts",
     "schemas/realtime.ts",
     "schemas/text.ts",
     "userImage.ts",
@@ -79,6 +80,10 @@ const baseConfig = defineWorkersConfig({
             {
                 find: /^@\/model3d\/(.*)$/,
                 replacement: `${genSrc}model3d/$1`,
+            },
+            {
+                find: /^@\/ocr\/(.*)$/,
+                replacement: `${genSrc}ocr/$1`,
             },
             {
                 find: /^@shared\/(.*)$/,

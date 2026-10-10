@@ -16,7 +16,7 @@ from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
-from generate_monthly import draw_checked, generate_website_post, rank_contributors, read_earlier_pages
+from generate_monthly import count_cast, draw_checked, generate_website_post, rank_contributors, read_earlier_pages
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import announced_retirements, model_changes, pr_comparison_refs
@@ -444,6 +444,14 @@ class GistEnrichmentTest(unittest.TestCase):
              patch("generate_monthly.count_cast", return_value={**one_of_each, "humans": 1}):
             self.assertIsNone(draw_checked("A garden", "test", [], limits))
         self.assertEqual(draw.call_count, 3)
+
+        # The cover goes to the vision model as an image; each listed character counts once.
+        listed = {"characters": [{"kind": "bee"}, {"kind": "bee"}, {"kind": "monitor_robot"}, {"kind": "other"}]}
+        with patch("generate_monthly.call_pollinations_api", return_value=json.dumps(listed)) as vision:
+            self.assertEqual(count_cast(b"one", "test"),
+                             {"bees": 2, "monitor_robots": 1, "nomnom": 0, "black_cats": 0, "humans": 0})
+        self.assertIn("data:image/jpeg;base64,b25l", json.dumps(vision.call_args.args[1]))  # base64 of b"one"
+        self.assertEqual(vision.call_args.kwargs["model"], "google/gemini-3.8-flash")
 
     def test_index_lists_months_with_their_pages_and_top_contributors_of_twelve_months(self):
         with tempfile.TemporaryDirectory() as directory:

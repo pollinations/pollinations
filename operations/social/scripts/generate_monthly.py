@@ -232,10 +232,27 @@ def merged_prs(month: str, token: str, repository: str) -> List[Dict]:
 
 
 @lru_cache(maxsize=None)
-def github_user_id(login: str, token: str) -> Optional[int]:
-    """The numeric id of a GitHub account, for co-author lines that give only its login."""
-    response = github_api_request("GET", f"{GITHUB_API_BASE}/users/{login}", headers=_github_headers(token))
-    return response.json().get("id") if response.status_code == 200 else None
+def github_account(path: str, token: str) -> Optional[Dict]:
+    """A GitHub account by `user/<id>` or `users/<login>`; None when it does not exist."""
+    response = github_api_request("GET", f"{GITHUB_API_BASE}/{path}", headers=_github_headers(token))
+    return response.json() if response.status_code == 200 else None
+
+
+def coauthor(user_id: str, login: str, token: str) -> Optional[Dict]:
+    """The person behind a noreply co-author trailer, or None. Agent-written trailers sometimes
+    pair a login with someone else's id, so the id counts only if it belongs to that login, or
+    to a renamed account whose old login is gone. Lines without an id cannot be tied to one
+    account and are skipped; organisations, placeholders and deleted accounts get no credit."""
+    if not user_id:
+        return None
+    by_id = github_account(f"user/{user_id}", token)
+    person = by_id if by_id and by_id.get("type") == "User" else None
+    if person and person["login"].lower() == login.lower():
+        return person
+    by_login = github_account(f"users/{login}", token)
+    if by_login:  # the login is someone's: the trailer's id was wrong, so credit the login
+        return by_login if by_login.get("type") == "User" else None
+    return person  # renamed since: the id is right, the login is old
 
 
 def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
@@ -249,9 +266,9 @@ def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
             accounts[author["databaseId"]] = (author["login"], author.get("avatarUrl"), author.get("url"))
         message = (pr.get("mergeCommit") or {}).get("message") or ""
         for user_id, login in NOREPLY_COAUTHOR.findall(message):
-            user_id = int(user_id) if user_id else github_user_id(login.lower(), token)
-            if user_id:  # None when the account no longer exists
-                accounts.setdefault(user_id, (login, None, None))
+            person = coauthor(user_id, login, token)
+            if person:
+                accounts.setdefault(person["id"], (person["login"], person.get("avatar_url"), person.get("html_url")))
         for user_id, (login, avatar_url, url) in accounts.items():
             person = people.setdefault(user_id, {
                 "id": user_id,

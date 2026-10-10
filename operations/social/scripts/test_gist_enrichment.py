@@ -382,6 +382,16 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertIn("One selected update", api.call_args.args[1])
 
     def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
+        user = lambda user_id, login, kind="User": {"id": user_id, "login": login, "type": kind,
+                                                    "avatar_url": f"av{user_id}", "html_url": f"gh/{login}"}
+        github = {
+            "user/12345": user(12345, "FabioArieiraBaia"),        # a trailer whose id matches its login
+            "user/1": user(1, "voodoohop"),
+            "user/555": user(555, "art-otakus", "Organization"),  # an agent guessed someone else's id...
+            "users/GoodCoder": user(173, "GoodCoder"),            # ...so the login's own account gets it
+            "user/808": user(808, "TechMitten"),                  # renamed: the old login is gone
+            "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
+        }
         prs = [
             {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
              "mergeCommit": {"message": "fix: one"}},
@@ -392,22 +402,24 @@ class GistEnrichmentTest(unittest.TestCase):
                  "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
                  "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
                  "Co-authored-by: Claude <noreply@anthropic.com>\n"
-                 "Co-authored-by: Old <oldtimer@users.noreply.github.com>\n"
+                 "Co-authored-by: Thomas <thomash@users.noreply.github.com>\n"
+                 "Co-authored-by: Good <555+GoodCoder@users.noreply.github.com>\n"
+                 "Co-authored-by: Tech <808+techcow2@users.noreply.github.com>\n"
+                 "Co-authored-by: Shark <909+sharktide@users.noreply.github.com>\n"
              )}},
             # The same account under an earlier login still counts once, by its id.
             {"author": {"login": "VoodooHop-old", "databaseId": 1, "avatarUrl": "a", "url": "u"},
              "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
             {"author": None, "mergeCommit": None},
         ]
-        with patch("generate_monthly.github_api_request") as api:
-            api.return_value.status_code = 200
-            api.return_value.json.return_value = {"id": 777}
+        with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)):
             ranked = rank_contributors(prs, "test")
-        self.assertIn("/users/oldtimer", api.call_args.args[1])  # id looked up only for the old-style line
+        # No credit: the line without an id (thomash) and the placeholder account (sharktide's 909).
         self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
-                         [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (777, "oldtimer", 1),
-                          (99, "pollinations-ai", 1)])
-        self.assertEqual(ranked[1]["avatar_url"], "https://avatars.githubusercontent.com/u/12345?s=80")
+                         [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
+                          (99, "pollinations-ai", 1), (808, "TechMitten", 1)])
+        self.assertEqual(ranked[1]["avatar_url"], "av12345")
+        self.assertEqual(ranked[4]["url"], "gh/TechMitten")
         self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")
 
     def test_monthly_story_follows_the_latest_page(self):

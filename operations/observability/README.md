@@ -18,8 +18,8 @@ Prod:    Browser -> observability.pollinations.ai -> Cloudflare Worker
 The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
 account and routes them to one named Grafana container. The container sleeps
 after 10 minutes without requests, so the first open after that waits for
-Grafana to cold-start. Container disk is ephemeral, so dashboards must stay
-provisioned from git.
+Grafana to cold-start. It then starts from a fresh disk, so dashboards must stay
+provisioned from git and Grafana user preferences reset.
 
 ## Quick Start
 

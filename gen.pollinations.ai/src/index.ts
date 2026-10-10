@@ -29,6 +29,7 @@ import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
+import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
 import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
@@ -105,6 +106,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
+- [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
 
 ## Account
@@ -190,6 +192,10 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/v1/audio", audioRoutes)
     .route("/", stemSeparationRoutes)
     .route("/", mcpRoutes)
+    // SEP-2127 Server Cards stay public: mcpRoutes' auth middleware matches
+    // only the exact /mcp/:serverId path, while its /mcp/* edge rate limit
+    // still runs first because the cards are mounted after it.
+    .route("/", mcpCardRoutes)
     .route(E2B_PATH, e2bRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.

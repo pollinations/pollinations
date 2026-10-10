@@ -1,4 +1,6 @@
+import { ValidationError } from "@shared/http/validation-error.ts";
 import debug from "debug";
+import { ZodError } from "zod";
 import type { ChatMessage, ServiceError, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
@@ -27,11 +29,16 @@ function normalizeMessageName(name: unknown, role: string): string | undefined {
  */
 export function prepareMessages(messages: unknown): ChatMessage[] {
     if (!Array.isArray(messages) || messages.length === 0) {
-        const error = new Error(
-            "Messages must be a non-empty array",
-        ) as ServiceError;
-        error.status = 400;
-        throw error;
+        throw new ValidationError(
+            new ZodError([
+                {
+                    code: "custom",
+                    path: ["messages"],
+                    message: "Messages must be a non-empty array",
+                },
+            ]),
+            "json",
+        );
     }
 
     return messages.map((raw) => {

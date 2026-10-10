@@ -44,7 +44,7 @@ type Feature = {
     links: { label: string; href: string }[];
     icon: ComponentType<IconProps>;
     /** Live detail shown between the header and the body. */
-    detail?: ComponentType;
+    detail?: ComponentType<{ color: string }>;
     /** The icon's colour, from the Models cards. */
     color: string;
     /** A Models-card background, for the publish cards. */
@@ -276,8 +276,10 @@ function FeatureCard({
                 </div>
             </div>
 
-            {feature.chips ? <ChipList names={feature.chips} /> : null}
-            {Detail ? <Detail /> : null}
+            {feature.chips ? (
+                <ChipList names={feature.chips} color={feature.color} />
+            ) : null}
+            {Detail ? <Detail color={feature.color} /> : null}
 
             <Text size="sm">{feature.body}</Text>
 
@@ -287,7 +289,7 @@ function FeatureCard({
                         key={link.href}
                         href={link.href}
                         size="md"
-                        intent="paid"
+                        intent="neutral"
                         icon={
                             link.href.startsWith(
                                 "https://gen.pollinations.ai/docs",
@@ -419,18 +421,25 @@ function Models() {
 }
 
 /** The hosted servers, live from gen. Nothing shows until they load. */
-function McpServers() {
+function McpServers({ color }: { color: string }) {
     const { data: servers } = useMcpServers();
     if (servers.length === 0) return null;
-    return <ChipList names={servers} />;
+    return <ChipList names={servers} color={color} />;
 }
 
-function ChipList({ names }: { names: string[] }) {
+/** Labels in the card's icon colour: the icon tile's wash, darker text. */
+function ChipList({ names, color }: { names: string[]; color: string }) {
     return (
         <ul className="flex flex-wrap gap-2">
             {names.map((name) => (
                 <li key={name}>
-                    <Chip intent="neutral" size="md">
+                    <Chip
+                        size="md"
+                        style={{
+                            backgroundColor: `color-mix(in oklab, ${color} 14%, transparent)`,
+                            color: `color-mix(in oklab, ${color} 60%, var(--polli-color-text-strong))`,
+                        }}
+                    >
                         {name}
                     </Chip>
                 </li>

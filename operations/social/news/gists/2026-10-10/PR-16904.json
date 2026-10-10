@@ -1,0 +1,36 @@
+{
+  "pr_number": 16904,
+  "title": "fix(cli): reject directory inputs with a clear error in upload and audio commands",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16904",
+  "merged_at": "2026-10-10T11:56:12Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The `polli upload`, `gen transcribe`, `gen isolate`, and `gen voice-change` commands now check that an input path is a regular file before reading it or making a request. Missing paths produce `error: File not found: <path>`; directories and other non-regular files produce `error: Not a file: <path>`. Both cases exit with code 1. A shared `requireFile` helper performs the check and returns the file size, avoiding a second stat call when upload sets `Content-Length`. The fix ships in `@pollinations/cli` 0.1.38, with eight new validation cases covering the four commands.",
+    "keywords": [
+      "polli-cli",
+      "upload",
+      "audio",
+      "input validation",
+      "error handling"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16904.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny tool belt and checks a folder beside a retro terminal before the monitor robot can send it; lime green (#ecf874) code-plants glow against a warm cream and pastel background, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, shares the frame with the terminal and robot, and is strictly pixel art, never realistic."
+  },
+  "generated_at": "2026-10-10T11:57:25.566395+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "7ec61a9aba4c8c593111016d755303414ae1ac8b",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

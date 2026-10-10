@@ -389,7 +389,7 @@ function Models() {
             <ExternalLinkButton
                 href="https://gen.pollinations.ai/docs"
                 size="md"
-                intent="paid"
+                intent="neutral"
                 icon={
                     <BookIcon aria-hidden="true" className="size-4 shrink-0" />
                 }

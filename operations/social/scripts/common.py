@@ -68,15 +68,12 @@ IMAGE_SIZE = 2048
 CHARACTER_SHEET_URL = "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/characters-ref.jpg"
 # Style suffix appended to every image prompt — ensures consistent pixel art style
 # regardless of what the text AI writes in image_prompt fields
-IMAGE_STYLE = (
+IMAGE_STYLE_SUFFIX = (
     "Cozy pixel art, 8-bit aesthetic, large visible chunky pixels, "
     "soft pastel gradients, warm ambient glow lighting, CRT glow effects. "
     "Lime green #ecf874 used BOLDLY. "
     "Tiny pixel sparkles and glowing particles floating in the air. Magical warm atmosphere. "
-    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike."
-)
-IMAGE_STYLE_SUFFIX = (
-    f"{IMAGE_STYLE} "
+    "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike. "
     "The first attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
     "proportions, and art style consistency. Do NOT copy the layout or background from it. "
     "Only draw the characters mentioned in the prompt above, not all characters from the sheet."
@@ -394,23 +391,22 @@ def call_pollinations_api(
     return None
 
 
-def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None, references: List[str] = (), cast: bool = True) -> tuple[Optional[bytes], Optional[str]]:
+def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None, references: List[str] = ()) -> tuple[Optional[bytes], Optional[str]]:
     """Generate a single image via the pollinations.ai image API.
 
     `references` are image URLs attached after the character sheet, in order.
-    `cast=False` draws without the cast: no character sheet, no bee description.
     """
     use_model = model or IMAGE_MODEL
 
     # Append character descriptions if not already present (loaded from prompt file)
-    if cast and "bee mascot" not in prompt.lower():
+    if "bee mascot" not in prompt.lower():
         bee_desc = load_shared("bee")
         if bee_desc:
             prompt = f"{prompt} {bee_desc}"
 
-    # Always append the style — forces consistent pixel art rendering
-    prompt = f"{prompt} {IMAGE_STYLE_SUFFIX if cast else IMAGE_STYLE}"
-    image_refs = [CHARACTER_SHEET_URL, *references] if cast else list(references)
+    # Always append style suffix — forces consistent pixel art rendering
+    prompt = f"{prompt} {IMAGE_STYLE_SUFFIX}"
+    image_refs = [CHARACTER_SHEET_URL, *references]
 
     # Strip single quotes — they cause 400 errors from the image API even when URL-encoded
     sanitized = prompt.replace("'", "")
@@ -900,9 +896,6 @@ def normalize_platform_post(
         # Who lives on Lantern Hill; next month's page keeps them.
         if raw_post.get("residents"):
             metadata["residents"] = raw_post["residents"]
-        # Page one only: its garden without characters, the reference for later covers.
-        if raw_post.get("garden"):
-            metadata["garden"] = raw_post["garden"]
     else:
         text = (raw_post.get("text") or "").strip()
         title = (raw_post.get("title") or "").strip()

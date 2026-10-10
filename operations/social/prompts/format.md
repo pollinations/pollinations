@@ -122,7 +122,7 @@ Output Format (JSON only):
 {
     "title": "Short title for the month's main story",
     "summary": "One plain paragraph about what changed for people this month.",
-    "image_prompt": "A 16:9 medium shot of Lantern Hill as it stands this month: the place, the new thing, and what each character is doing. Scene only; the art style is added for you.",
+    "image_prompt": "A 16:9 close, cozy pixel art scene on Lantern Hill: this month's new thing as glowing, magical technology, what each resident is doing with it, and one or two earlier places glimpsed around it.",
     "story": "Where the picture book stands after this month.",
     "reasoning": "Why this angle — be brief"
 }

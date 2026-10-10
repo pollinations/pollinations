@@ -59,22 +59,15 @@ COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
 # model the daily and weekly posts use.
 COVER_MODEL = "nanobanana-2"
 COVER_TRIES = 3
-# Covers are drawn in the news posts' style. The place is Lantern Hill, the Community
-# page's artwork, where page one starts.
-COMMUNITY_ART_URL = "https://raw.githubusercontent.com/pollinations/pollinations/main/pollinations.ai/public/art/community-hero-day.webp"
-PAGE_ONE_WORLD = (
-    "The second attached image shows Lantern Hill, the Community page's place: draw this same "
-    "place closer in, as a young village green with room to grow."
+# Covers are drawn like the news posts: the same style, from the character sheet and the
+# story alone. A reference image of an earlier page made every page copy it, so its
+# growth never added up; these landmarks keep each fresh view in the same place.
+LANTERN_HILL = (
+    "The place is Lantern Hill: a glowing lime vine-tree at its heart, Polli's round straw hive "
+    "at its foot, a sandy path curving up the hill and misty green hills beyond. Show at least "
+    "two of these landmarks."
 )
-# Later covers are drawn from page one's garden with its characters removed: last
-# month's cover would blur a little more each month, and page one itself makes the
-# image model copy its characters where they stand. The story carries the growth.
-PAGE_ONE_GARDEN = (
-    "The second attached image is the garden of page one, without its characters: keep its "
-    "art style, crisp pixels, first buildings and the colours of its ground, foliage and wood, "
-    "but draw the garden as it stands now, grown well beyond page one as described above, "
-    "in this page's moment rather than the attached garden's light."
-)
+PAGE_ONE = "This is page one: Lantern Hill is young and small, with room to grow."
 # Each later page has its calendar month's light and weather, so the book turns through
 # the seasons and a month rhymes with itself a year later. Page one keeps the Community
 # artwork's daylight. June and September are still-light evenings; only December is dark.
@@ -92,11 +85,6 @@ MOMENTS = {
     "11": "a pale frosty morning in low sun, frost on the beds, the far hills soft and pale, windows lit warm",
     "12": "first snow after dusk, snowflakes falling, every bulb, lantern and window lit, the Hive's door glowing and the first stars out",
 }
-BARE_GARDEN = (
-    "Redraw the attached garden scene exactly: the same composition, buildings, paths, plants, "
-    "palette and pixel style, with every character removed. No bee, no robot, no round "
-    "creature, no animals and no people; fill their places with garden."
-)
 CAST_COUNT = """List every living character in this pixel-art image, including tiny ones in the background, one entry per character with where it is. Return only JSON:
 {"characters": [{"kind": "bee", "where": "centre, on the path"}]}
 kind is one of:
@@ -117,9 +105,10 @@ CAST_KINDS = {"bee": "bees", "monitor_robot": "monitor_robots", "nomnom": "nomno
               "crystal_scribe": "crystal_scribes", "human": "humans"}
 NO_CAST = dict.fromkeys(CAST_KINDS.values(), 0)
 ONE_OF_EACH = (
-    "Every character appears exactly once: no copies, no extra bees or robots, no toy robots, "
-    "statues or screens with faces. No humans or people anywhere, not even small in the "
-    "background. Pictures, canvases and notices show plants or landscapes, never faces."
+    "Every character appears exactly once: no copies, no extra bees or robots, no toy robots or "
+    "statues. Only the characters have faces, and the robot's screen is the only screen with "
+    "one: no masks, and screens, pictures, film frames and signs show plants, landscapes or soft "
+    "light, never faces, bees, animals or people. No humans anywhere. No letters, words or glyphs."
 )
 # Polli founds Lantern Hill alone on page one. The others move in one at a time as the
 # community grows: each the first month at least `community` people and agents have
@@ -130,10 +119,13 @@ RESIDENTS = {
     "polli": {"name": "Polli the bee", "community": 0, "count": "bees"},
     "robot": {"name": "the monitor robot", "community": 25, "count": "monitor_robots"},
     "nomnom": {"name": "Nomnom", "community": 50, "count": "nomnom"},
-    "cosmic-cat": {"name": "the cosmic cat", "community": 200, "count": "black_cats", "creature": True},
-    "axolotl": {"name": "the mint axolotl", "community": 400, "count": "axolotls", "creature": True},
+    "cosmic-cat": {"name": "the cosmic cat", "community": 200, "count": "black_cats",
+                   "look": "a black cat with a deep navy starry coat, a small constellation on its chest "
+                           "and lime-green eyes, never pastel or lavender"},
+    "axolotl": {"name": "the mint axolotl", "community": 400, "count": "axolotls",
+                "look": "a mint-green axolotl with pink frilly gills and a cream belly"},
     "crystal-scribe": {"name": "the crystal scribe", "community": 600, "count": "crystal_scribes",
-                       "creature": True},
+                       "look": "a purple crystal creature with a dark face, green eyes and round purple arms"},
 }
 
 # Every merged PR by anyone, agents and bots included, on any base branch. Release
@@ -199,15 +191,12 @@ def read_daily_summaries(month: str, repo_root: Optional[str] = None) -> List[Di
     ]
 
 
-def read_earlier_pages(month: str, repo_root: Optional[str] = None) -> List[Dict]:
-    """Website pages before `month`, oldest first: page one anchors every cover, the
-    latest carries the story, so a missed month never restarts it."""
+def read_previous_page(month: str, repo_root: Optional[str] = None) -> Optional[Dict]:
+    """The latest website page before `month`: it carries the story and who lives there,
+    so a missed month never restarts them. None on page one."""
     monthly_root = Path(repo_root or get_repo_root()) / MONTHLY_REL_DIR
-    return [
-        json.loads(path.read_text(encoding="utf-8"))
-        for path in sorted(monthly_root.glob("*/website.json"))
-        if path.parent.name < month
-    ]
+    earlier = [path for path in sorted(monthly_root.glob("*/website.json")) if path.parent.name < month]
+    return json.loads(earlier[-1].read_text(encoding="utf-8")) if earlier else None
 
 
 def community_size(month: str, contributors: List[Dict], repo_root: Optional[str] = None) -> int:
@@ -375,8 +364,7 @@ def community_context(contributors: int, merged: int, community: int, living: Li
     return " ".join([
         f"The community: {contributors} people and agents merged {merged} pull requests this month,",
         f"{community} since page one. Living on Lantern Hill: {names}; no one else.",
-        *([f"{RESIDENTS[newcomer]['name'][0].upper()}{RESIDENTS[newcomer]['name'][1:]} moves in this month."]
-          if newcomer else []),
+        *([f"{RESIDENTS[newcomer]['name'].capitalize()} moves in this month."] if newcomer else []),
     ])
 
 
@@ -417,13 +405,11 @@ def count_cast(image_bytes: bytes, token: str) -> Optional[Dict]:
     return counts
 
 
-def draw_checked(prompt: str, token: str, references: List[str], limits: Dict[str, int],
-                 cast: bool = True) -> Optional[bytes]:
+def draw_checked(prompt: str, token: str, references: List[str], limits: Dict[str, int]) -> Optional[bytes]:
     """Draw until the counted cast fits `limits`, so no cover shows a character twice."""
     for attempt in range(1, COVER_TRIES + 1):
         image_bytes, _ = generate_image(
-            prompt, token, COVER_WIDTH, COVER_HEIGHT, model=COVER_MODEL,
-            references=references, cast=cast,
+            prompt, token, COVER_WIDTH, COVER_HEIGHT, model=COVER_MODEL, references=references,
         )
         if not image_bytes:
             continue
@@ -482,15 +468,14 @@ def main():
 
     # ── Generate the website post and its cover ──────────────────────
     print("\n[4/5] Generating the website page...")
-    earlier_pages = read_earlier_pages(month)
-    previous_page = earlier_pages[-1] if earlier_pages else None
+    previous_page = read_previous_page(month)
     print(f"  Continues: {previous_page['period_start'][:7] if previous_page else 'nothing, page one'}")
     community = community_size(month, contributors)
     moved_in = ((previous_page or {}).get("metadata") or {}).get("residents") or []
     living = residents(moved_in, community)
     newcomer = living[-1] if len(living) > len(moved_in) else None
     print(f"  Residents: {', '.join(living)}{f' ({newcomer} moves in)' if newcomer else ''} · community {community}")
-    moment = f"This page's moment: {MOMENTS[month[5:]] if earlier_pages else 'soft warm daylight'}."
+    moment = f"This page's moment: {MOMENTS[month[5:]] if previous_page else 'soft warm daylight'}."
     notes = community_context(len(contributors), len(merged), community, living, newcomer)
     post = generate_website_post(digest, pollinations_token, previous_page, f"{notes}\n\n{moment}")
     if not post:
@@ -501,21 +486,23 @@ def main():
         print(f"  FATAL: Monthly website post is missing {', '.join(missing)}")
         sys.exit(1)
 
-    # Page one starts from the Community artwork; later pages from page one's garden.
-    anchor = [earlier_pages[0]["metadata"]["garden"]] if earlier_pages else [COMMUNITY_ART_URL]
     post["residents"] = living
-    creatures = [name for name in living if RESIDENTS[name].get("creature")]
-    creature_names = " and ".join(RESIDENTS[name]["name"] for name in creatures)
+    creatures = [name for name in living if "look" in RESIDENTS[name]]
+    looks = "; ".join(f"{RESIDENTS[name]['name']}, {RESIDENTS[name]['look']}" for name in creatures)
     prompt = " ".join([
         post["image_prompt"],
-        PAGE_ONE_GARDEN if earlier_pages else PAGE_ONE_WORLD,
+        LANTERN_HILL,
+        *([] if previous_page else [PAGE_ONE]),
         moment,
         f"The only characters on this page: {', '.join(RESIDENTS[name]['name'] for name in living)}.",
-        *([f"Attached last: {creature_names}, true to their look."] if creatures else []),
+        *([f"{RESIDENTS[newcomer]['name'].capitalize()} has just arrived: it walks up the sandy path "
+           "carrying a small bundle toward its own new spot, clearly visible in the scene, and the "
+           "others turn to greet it."] if newcomer and previous_page else []),
+        *([f"Attached after the character sheet, true to their look: {looks}."] if creatures else []),
         ONE_OF_EACH,
     ])
     limits = {**NO_CAST, **{RESIDENTS[name]["count"]: 1 for name in living}}
-    references = anchor + [f"{CREATURES_URL}/{name}.png" for name in creatures]
+    references = [f"{CREATURES_URL}/{name}.png" for name in creatures]
     image_bytes = draw_checked(prompt, pollinations_token, references, limits)
     if not image_bytes:
         print(f"  FATAL: No cover with one of each character after {COVER_TRIES} tries")
@@ -528,18 +515,6 @@ def main():
         print("  FATAL: Monthly cover commit failed")
         sys.exit(1)
     post["image"] = {"url": url, "prompt": prompt}
-
-    if not earlier_pages:
-        # Page one also keeps its garden without characters, for later covers.
-        garden_bytes = draw_checked(BARE_GARDEN, pollinations_token, [url], NO_CAST, cast=False)
-        garden_url = garden_bytes and commit_image_to_branch(
-            garden_bytes, f"{base_path}/images/garden.jpg", GISTS_BRANCH,
-            github_token, owner, repo,
-        )
-        if not garden_url:
-            print("  FATAL: Page one's garden without characters failed")
-            sys.exit(1)
-        post["garden"] = garden_url
 
     # ── Commit to news branch ────────────────────────────────────────
     print("\n[5/5] Committing the month to the news branch...")

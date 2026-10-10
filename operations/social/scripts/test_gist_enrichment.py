@@ -7,13 +7,16 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import requests
+
 sys.path.insert(0, str(Path(__file__).parent))
-from common import filter_daily_gists, generate_platform_post, validate_gist
+from common import filter_daily_gists, generate_image, generate_platform_post, normalize_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
+from generate_monthly import generate_website_post, rank_contributors, read_earlier_pages
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import announced_retirements, model_changes, pr_comparison_refs
@@ -138,6 +141,7 @@ class GistEnrichmentTest(unittest.TestCase):
         for module, generate in (
             ("generate_daily", lambda g: generate_summary([g], "2026-10-07", "test")),
             ("generate_weekly", lambda g: generate_digest([g], "2026-10-01", "2026-10-07", "test")),
+            ("generate_monthly", lambda g: generate_monthly_digest([g], [], "2026-10", "test")),
             ("publish_realtime", lambda g: generate_snippet(g, "test")),
         ):
             with patch(f"{module}.call_pollinations_api", return_value='{"arcs": []}') as api:
@@ -369,9 +373,78 @@ class GistEnrichmentTest(unittest.TestCase):
             self.assertIn("PRs selected for this recap: 1", task)
             self.assertNotIn("Total PRs merged:", task)
         with patch("generate_monthly.call_pollinations_api", return_value='{"arcs": []}') as api:
-            generate_monthly_digest([{"date": "2026-10-01", "summary": "One selected update", "pr_count": 1}], "2026-10", "test")
-        self.assertIn("PRs selected for daily recaps: 1", api.call_args.args[1])
-        self.assertNotIn("Merged PRs:", api.call_args.args[1])
+            generate_monthly_digest([], [{"date": "2025-10-01", "summary": "One selected update", "pr_count": 1}], "2025-10", "test")
+        self.assertIn("PRs selected for this recap: 1", api.call_args.args[1])
+        self.assertIn("One selected update", api.call_args.args[1])
+
+    def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
+        prs = [
+            {"author": {"login": "voodoohop", "avatarUrl": "a", "url": "u"}, "mergeCommit": {"message": "fix: one"}},
+            {"author": {"login": "pollinations-ai", "avatarUrl": "bot", "url": "https://github.com/apps/pollinations-ai"},
+             "mergeCommit": {"message": (
+                 "Add app\n\n"
+                 "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
+                 "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
+                 "Co-authored-by: Claude <noreply@anthropic.com>\n"
+             )}},
+            {"author": {"login": "VoodooHop", "avatarUrl": "a", "url": "u"},
+             "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
+            {"author": None, "mergeCommit": None},
+        ]
+        ranked = rank_contributors(prs)
+        self.assertEqual([(p["login"], p["prs"]) for p in ranked],
+                         [("voodoohop", 2), ("FabioArieiraBaia", 1), ("pollinations-ai", 1)])
+        self.assertEqual(ranked[1]["avatar_url"], "https://github.com/FabioArieiraBaia.png?size=80")
+        self.assertEqual(ranked[2]["url"], "https://github.com/apps/pollinations-ai")
+
+    def test_monthly_story_follows_the_latest_page_and_covers_start_from_page_one(self):
+        page = lambda month, story: normalize_platform_post(
+            platform="website", scope="monthly", date=f"{month}-28", period_start=f"{month}-01",
+            period_end=f"{month}-28", generated_at="now",
+            raw_post={"title": "T", "summary": "S", "story": story, "image": {"url": f"https://x/{month}.jpg"}})
+        with tempfile.TemporaryDirectory() as root:
+            for month, story in (("2026-07", "A greenhouse frame stands."), ("2026-09", "The greenhouse glows.")):
+                (Path(root) / f"operations/social/news/monthly/{month}").mkdir(parents=True)
+                (Path(root) / f"operations/social/news/monthly/{month}/website.json").write_text(json.dumps(page(month, story)))
+            self.assertEqual(read_earlier_pages("2026-07", root), [])
+            self.assertEqual([p["metadata"]["story"] for p in read_earlier_pages("2026-09", root)],
+                             ["A greenhouse frame stands."])
+            first, previous = read_earlier_pages("2026-10", root)
+        self.assertEqual(first["images"], [{"url": "https://x/2026-07.jpg"}])
+        self.assertEqual(previous["metadata"]["story"], "The greenhouse glows.")
+
+        digest = {"pr_count": 1, "arcs": [{"headline": "Apps", "summary": "A new Apps directory."}]}
+        for previous_page, expected in ((previous, "The greenhouse glows."), (None, "this cover is page one")):
+            with patch("common.call_pollinations_api", return_value='{"title": "T"}') as api:
+                generate_website_post(digest, "test", previous_page)
+            task = api.call_args.args[1]
+            self.assertIn("## Monthly Story", task)
+            self.assertIn(expected, task)
+
+        with patch("common.requests.get", side_effect=requests.ConnectionError) as get, patch("common.time.sleep"):
+            generate_image("A garden", "test", references=["https://x/2026-09.jpg"])
+        self.assertEqual(get.call_args.kwargs["params"]["image"].split("|")[1], "https://x/2026-09.jpg")
+
+    def test_index_lists_months_with_their_pages_and_top_contributors_of_twelve_months(self):
+        with tempfile.TemporaryDirectory() as directory:
+            news = Path(directory)
+            for number in range(1, 14):
+                month = f"{2025 + (number - 1) // 12}-{(number - 1) % 12 + 1:02d}"
+                (news / f"monthly/{month}").mkdir(parents=True)
+                (news / f"monthly/{month}/summary.json").write_text(json.dumps({
+                    "period_start": f"{month}-01", "merged_prs": number,
+                    "contributors": [{"login": "early" if number == 1 else "Agent", "avatar_url": f"a{number}",
+                                      "url": "u", "prs": number}],
+                }))
+            (news / "monthly/2026-01/website.json").write_text(json.dumps({
+                "period_start": "2026-01-01", "title": "Apps", "text": "A new Apps directory.",
+                "images": [{"url": "https://x/2026-01.jpg"}]}))
+            index = build_index(news, "2026-02-01")
+        self.assertEqual(len(index["months"]), 13)
+        self.assertEqual(index["months"][0], {"month": "2025-01", "merged_prs": 1, "title": None, "summary": None, "image": None})
+        self.assertEqual(index["months"][-1], {"month": "2026-01", "merged_prs": 13, "title": "Apps",
+                                               "summary": "A new Apps directory.", "image": "https://x/2026-01.jpg"})
+        self.assertEqual(index["contributors"], [{"login": "Agent", "avatar_url": "a13", "url": "u", "prs": sum(range(2, 14))}])
 
     def test_squash_after_syncing_main_excludes_unrelated_changes(self):
         with tempfile.TemporaryDirectory() as directory:

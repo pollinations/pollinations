@@ -290,16 +290,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
+    it("routes Grok 4.7 directly to its Azure deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "x-ai/grok-4.7",
         });
 
-        expect(result.options.model).toBe("x-ai/grok-4.7");
-        expect(result.options.provider).toEqual({
-            only: ["xai"],
-            allow_fallbacks: false,
+        expect(result.options.model).toBe("grok-4.7");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.7/chat/completions?api-version=2024-12-01-preview",
+            directAuthHeader: "api-key",
+            model: "grok-4.7",
         });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Claude Sonnet 5.5 to the Bedrock global inference profile", () => {

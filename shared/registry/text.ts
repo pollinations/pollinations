@@ -1378,30 +1378,31 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.7": {
-        supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
+        supportedParameters: CHAT_PARAMETERS.azureGrok46,
         aliases: [],
-        provider: "openrouter",
+        provider: "azure",
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-09-21").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
-        // OpenRouter xAI route rates (2026-09-21), including the mandatory
-        // 5.5% OpenRouter credit fee. Image inputs are tokenized into
-        // promptTextTokens; no separate usage is reported. Excludes the
-        // $0.005-per-call web search charge (not exposed on this model).
+        // Provisional until Azure publishes a Grok 4.7 meter. Uses the Grok 4.6
+        // Global Standard meters (eastus, effective 2026-09-01); image inputs bill
+        // at the text input rate.
         cost: {
-            promptTextTokens: perMillion(1.6) * 1.055,
-            promptCachedTokens: perMillion(0.4) * 1.055,
-            completionTextTokens: perMillion(4.8) * 1.055,
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.5),
+            promptImageTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
         },
-        // xAI reprices the whole request from 200K prompt tokens.
+        // Provisional long-context tier: the Grok 4.6 Azure "L" meters, assumed to
+        // apply from 200K prompt tokens.
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(3.2) * 1.055,
-                    promptCachedTokens: perMillion(0.8) * 1.055,
-                    completionTextTokens: perMillion(9.6) * 1.055,
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(1),
+                    completionTextTokens: perMillion(12),
                 },
             },
             longContextAtLeast(200_000),

@@ -162,6 +162,38 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "x-ai/grok-4.7": {
+        "x-ai/grok-4.7:xai": {
+            provider: "xai",
+            addedDate: new Date("2026-10-09").getTime(),
+            // xAI pricing table for grok-4.7 (2026-10-09). Image tokens bill at the
+            // text input rate, as on Grok 4.6.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.5),
+                promptImageTokens: perMillion(2),
+                completionTextTokens: perMillion(6),
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(4),
+                        promptCachedTokens: perMillion(1),
+                        completionTextTokens: perMillion(12),
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (≥200K)",
+                        description:
+                            "xAI doubles text, cached, and output rates for the whole request.",
+                    },
+                },
+                "<200K context",
+            ),
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

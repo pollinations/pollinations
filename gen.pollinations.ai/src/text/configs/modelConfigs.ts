@@ -291,6 +291,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
     }),
+    "grok-4.7": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.7/chat/completions?api-version=2024-12-01-preview",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "grok-4.7",
+        responsesEndpoint:
+            "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        responsesAuthHeader: "api-key",
+    }),
 
     "grok-4.6-azure-sweden": () => ({
         ...portkeyConfig["grok-4.6"](),
@@ -302,6 +313,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     }),
 
     // -- xAI direct -----------------------------------------------------------
+    "grok-4.7-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.7",
+    }),
+
     "grok-4.6-xai": () => ({
         provider: "openai",
         directEndpoint: "https://api.x.ai/v1/chat/completions",
@@ -642,7 +660,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
-    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",

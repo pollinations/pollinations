@@ -103,12 +103,12 @@ describe("Nova 2 Lite media input", () => {
         ).rejects.toMatchObject({
             status: 400,
             message:
-                "Invalid video URL http://127.0.0.1/clip.mp4: private or credentialed video URLs are not allowed.",
+                "Invalid media URL http://127.0.0.1/clip.mp4: private or credentialed URLs are not allowed.",
         });
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("names the video when its host cannot serve it", async () => {
+    it("explains why a video host cannot serve it", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response("missing", { status: 404, statusText: "Not Found" }),
         );
@@ -118,7 +118,7 @@ describe("Nova 2 Lite media input", () => {
         ).rejects.toMatchObject({
             status: 400,
             message:
-                "Failed to fetch video from https://example.com/clip.mp4: HTTP 404 Not Found. The video was not found. Please check the URL is correct.",
+                "Failed to fetch media from https://example.com/clip.mp4: HTTP 404 Not Found. The media was not found. Please check the URL is correct.",
         });
     });
 

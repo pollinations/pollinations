@@ -37,7 +37,6 @@ async function videoToFile(part: VideoPart, budget: { bytes: number }) {
     const { bytes, mimeType } = await fetchUserImage(url, {
         maxBytes: budget.bytes,
         redirect: "manual",
-        kind: "video",
     });
     budget.bytes -= bytes.byteLength;
     const declared = (mime_type ?? mimeType).split(";")[0].trim().toLowerCase();

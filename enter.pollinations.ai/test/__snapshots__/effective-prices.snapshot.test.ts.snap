@@ -346,6 +346,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000004,
     },
   },
+  "anthropic/claude-opus-5.5:fast": {
+    "cost": {
+      "completionTextTokens": 0.0000422,
+      "promptCacheWriteTokens": 0.00001055,
+      "promptCachedTokens": 0.000000422,
+      "promptTextTokens": 0.00000844,
+    },
+    "price": {
+      "completionTextTokens": 0.0000422,
+      "promptCacheWriteTokens": 0.00001055,
+      "promptCachedTokens": 0.000000422,
+      "promptTextTokens": 0.00000844,
+    },
+  },
   "anthropic/claude-opus-5.5:openrouter:anthropic": {
     "cost": {
       "completionTextTokens": 0.0000211,

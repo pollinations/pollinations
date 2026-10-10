@@ -1376,7 +1376,7 @@ describe("POST /v1/embeddings", () => {
         expect(response.status).toBe(400);
         // Refused by the URL guard before any fetch, and coded so a caller can
         // branch on it rather than on the prose.
-        expect(body).toContain("Invalid image URL");
+        expect(body).toContain("Invalid media URL");
         expect(body).toContain("invalid_image_url");
     });
 

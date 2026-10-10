@@ -1112,7 +1112,7 @@ describe("error observability", () => {
             error: {
                 code: "failed_to_download_image",
                 message: expect.stringContaining(
-                    "The image server is rate limiting requests",
+                    "The media server is rate limiting requests",
                 ),
                 details: {
                     upstreamHost: "example.com",

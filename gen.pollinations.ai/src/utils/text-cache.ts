@@ -26,21 +26,19 @@ const CACHED_HEADER_NAMES = new Set([
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 
-function isStreamingErrorResponse(
-    response: Response,
-    body: Uint8Array,
-): boolean {
-    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
-        return false;
-    }
+function sseData(text: string): string[] {
+    return text
+        .split(/\r?\n/)
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice("data:".length).trim());
+}
 
-    const text = new TextDecoder().decode(body);
+function isStreamingErrorResponse(text: string): boolean {
     if (/(?:^|\r?\n)event:\s*error(?:\r?\n|$)/m.test(text)) return true;
 
-    return text.split(/\r?\n/).some((line) => {
-        if (!line.startsWith("data:")) return false;
+    return sseData(text).some((data) => {
         try {
-            const event = JSON.parse(line.slice("data:".length).trim());
+            const event = JSON.parse(data);
             return Boolean(
                 event && typeof event === "object" && "error" in event,
             );
@@ -48,6 +46,52 @@ function isStreamingErrorResponse(
             return false;
         }
     });
+}
+
+// Fields of a Chat Completions stream delta that carry output. Reasoning is
+// not output: `reasoning_content` and Claude's `content_blocks` (thinking and
+// signature deltas only) are left out on purpose.
+const CHAT_OUTPUT_FIELDS = ["content", "tool_calls", "function_call", "audio"];
+
+/**
+ * A Chat Completions stream whose choices carry no output, e.g. a reasoning
+ * model that spent max_tokens on reasoning. Cached, it would be replayed to
+ * every identical request without reaching a model (#14994).
+ */
+function isEmptyChatStream(text: string): boolean {
+    let sawChoice = false;
+    for (const data of sseData(text)) {
+        if (data === "[DONE]") continue;
+        let event: { choices?: unknown };
+        try {
+            event = JSON.parse(data);
+        } catch {
+            return false;
+        }
+        if (!Array.isArray(event?.choices)) return false;
+        for (const choice of event.choices) {
+            sawChoice = true;
+            const hasOutput = CHAT_OUTPUT_FIELDS.some((field) => {
+                const value = choice?.delta?.[field];
+                return Array.isArray(value) ? value.length > 0 : Boolean(value);
+            });
+            if (hasOutput) return false;
+        }
+    }
+    return sawChoice;
+}
+
+/**
+ * Streams are not coordinated, so skipping their write only drops the cache
+ * entry. Non-streaming results must still be written: the generation
+ * coordinator delivers them by reading this entry back.
+ */
+function isUncacheableStream(response: Response, body: Uint8Array): boolean {
+    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+        return false;
+    }
+    const text = new TextDecoder().decode(body);
+    return isStreamingErrorResponse(text) || isEmptyChatStream(text);
 }
 
 function hasActiveSafety(value: unknown): boolean {
@@ -285,7 +329,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         offset += chunk.byteLength;
                     }
 
-                    if (isStreamingErrorResponse(response, completeResponse)) {
+                    if (isUncacheableStream(response, completeResponse)) {
                         resolveWrite();
                         return;
                     }

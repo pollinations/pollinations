@@ -29,18 +29,16 @@ export interface LogEntry {
     fields: Record<string, string>;
 }
 
-// E2B's largest timeout, about 68 years. Past 24 hours, gen keeps the
-// sandbox running, renewing it every hour with the key that set it.
+// E2B ends a run after 24 hours. Past that, gen keeps a sandbox running until
+// its timeout, renewing it every hour with the key that set it.
+export const RUN_SECONDS = 24 * 3600;
+// E2B's largest timeout, about 68 years: polli's "never expires".
 export const KEEP_SECONDS = 2 ** 31 - 1;
 
-export const createSandbox = (templateID: string, keep = false) =>
+export const createSandbox = (templateID: string, timeout = LEASE_SECONDS) =>
     gen<Connection>(`${E2B_PATH}/sandboxes`, {
         method: "POST",
-        body: {
-            templateID,
-            timeout: keep ? KEEP_SECONDS : LEASE_SECONDS,
-            autoPause: true,
-        },
+        body: { templateID, timeout, autoPause: true },
     });
 
 // Running and paused ones.
@@ -62,7 +60,7 @@ export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
     });
 
 // Paused sandboxes keep their files and memory and cost nothing. A pause ends
-// a keep.
+// a timeout over 24 hours.
 export const pauseSandbox = (id: string) =>
     genText(`${E2B_PATH}/sandboxes/${id}/pause`, { method: "POST" });
 

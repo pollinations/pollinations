@@ -17,18 +17,29 @@ import {
     type LogEntry,
     listSandboxes,
     pauseSandbox,
+    RUN_SECONDS,
     sandboxLogs,
 } from "./e2b.js";
 import { proxy, setupSsh } from "./ssh.js";
 
-// Whole seconds, as in E2B's `timeout`.
-function parseSeconds(value: string): number {
+// Whole seconds, as in E2B's `timeout`. 0 never expires, like Daytona's
+// `autoStopInterval: 0`; E2B has no such value, so polli asks for its largest.
+function parseTimeout(value: string): number {
     const seconds = Number(value);
-    if (!Number.isInteger(seconds) || seconds < 1) {
-        throw new InvalidArgumentError("Give a whole number of seconds.");
+    if (!Number.isInteger(seconds) || seconds < 0) {
+        throw new InvalidArgumentError(
+            "Give a whole number of seconds, or 0 to never expire.",
+        );
     }
-    return seconds;
+    return seconds || KEEP_SECONDS;
 }
+
+// Past E2B's 24-hour run, gen keeps a sandbox running until its timeout;
+// otherwise it runs until its lease ends at `endAt`.
+const runsUntil = (seconds: number, endAt: number) =>
+    seconds === KEEP_SECONDS
+        ? "runs until you pause or kill it"
+        : `runs until ${new Date(seconds > RUN_SECONDS ? Date.now() + seconds * 1000 : endAt).toLocaleString()}, then pauses`;
 
 // E2B's tracing fields mean nothing to a user.
 const TRACE_FIELDS = ["edge_trace_id", "trace_id", "span_id", "source_type"];
@@ -55,35 +66,41 @@ export const sandboxCommand = new Command("sandbox")
             .description("Start a sandbox you can ssh into")
             .argument("[template]", "E2B template", "pollinations")
             .option(
-                "--keep",
-                "Keep it running until you pause or kill it, paying for an hour at a time",
+                "--timeout <seconds>",
+                "Keep it running this long without ssh, paid in advance; 0 never expires",
+                parseTimeout,
             )
-            .action(async (template: string, { keep }: { keep?: boolean }) => {
-                requireKey();
-                try {
-                    const { sandboxID } = await createSandbox(template, keep);
+            .action(
+                async (template: string, { timeout }: { timeout?: number }) => {
+                    requireKey();
                     try {
-                        setupSsh();
-                    } catch (err) {
-                        printResult({ id: sandboxID });
-                        fail(
-                            `Sandbox ${sandboxID} created, but failed to set up ssh`,
-                            err,
+                        const { sandboxID } = await createSandbox(
+                            template,
+                            timeout,
                         );
+                        try {
+                            setupSsh();
+                        } catch (err) {
+                            printResult({ id: sandboxID });
+                            fail(
+                                `Sandbox ${sandboxID} created, but failed to set up ssh`,
+                                err,
+                            );
+                        }
+                        printSuccess(
+                            timeout
+                                ? `Sandbox ${sandboxID} created. It ${runsUntil(timeout, Date.now() + timeout * 1000)}.`
+                                : `Sandbox ${sandboxID} created. It pauses after ${LEASE_SECONDS / 60} minutes without an ssh session.`,
+                        );
+                        printResult({
+                            id: sandboxID,
+                            ssh: `ssh ${sandboxID}.polli`,
+                        });
+                    } catch (err) {
+                        fail("Failed to create sandbox", err);
                     }
-                    printSuccess(
-                        keep
-                            ? `Sandbox ${sandboxID} created. It runs until you pause or kill it.`
-                            : `Sandbox ${sandboxID} created. It pauses after ${LEASE_SECONDS / 60} minutes without an ssh session.`,
-                    );
-                    printResult({
-                        id: sandboxID,
-                        ssh: `ssh ${sandboxID}.polli`,
-                    });
-                } catch (err) {
-                    fail("Failed to create sandbox", err);
-                }
-            }),
+                },
+            ),
     )
     .addCommand(
         new Command("list")
@@ -116,17 +133,17 @@ export const sandboxCommand = new Command("sandbox")
     .addCommand(
         new Command("timeout")
             .description(
-                "Keep a sandbox running at least <seconds> from now, paid in advance; resumes a paused one",
+                "Keep a sandbox running at least <seconds> from now, paid in advance; 0 never expires; resumes a paused one",
             )
             .argument("<id>")
-            .argument("<seconds>", "seconds from now", parseSeconds)
+            .argument("<seconds>", "seconds from now, or 0", parseTimeout)
             .action(async (id: string, seconds: number) => {
                 requireKey();
                 try {
                     await connectSandbox(id, seconds);
                     const { endAt } = await getSandbox(id);
                     printSuccess(
-                        `Sandbox ${id} runs until ${new Date(endAt).toLocaleString()}, then pauses.`,
+                        `Sandbox ${id} ${runsUntil(seconds, Date.parse(endAt))}.`,
                     );
                 } catch (err) {
                     fail(`Failed to set the timeout of sandbox ${id}`, err);
@@ -134,27 +151,9 @@ export const sandboxCommand = new Command("sandbox")
             }),
     )
     .addCommand(
-        new Command("keep")
-            .description(
-                "Keep a sandbox running until you pause or kill it, paying for an hour at a time; resumes a paused one",
-            )
-            .argument("<id>")
-            .action(async (id: string) => {
-                requireKey();
-                try {
-                    await connectSandbox(id, KEEP_SECONDS);
-                    printSuccess(
-                        `Sandbox ${id} runs until you pause or kill it.`,
-                    );
-                } catch (err) {
-                    fail(`Failed to keep sandbox ${id}`, err);
-                }
-            }),
-    )
-    .addCommand(
         new Command("pause")
             .description(
-                "Pause a sandbox, keeping its files and memory; ends a keep",
+                "Pause a sandbox, keeping its files and memory, until ssh or timeout resumes it",
             )
             .argument("<id>")
             .action(async (id: string) => {
@@ -162,7 +161,7 @@ export const sandboxCommand = new Command("sandbox")
                 try {
                     await pauseSandbox(id);
                     printSuccess(
-                        `Sandbox ${id} paused. Resume it with \`polli sandbox timeout ${id} <seconds>\` or \`polli sandbox keep ${id}\`.`,
+                        `Sandbox ${id} paused. Resume it with \`ssh ${id}.polli\` or \`polli sandbox timeout ${id} <seconds>\`.`,
                     );
                 } catch (err) {
                     fail(`Failed to pause sandbox ${id}`, err);

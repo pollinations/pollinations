@@ -125,12 +125,12 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
         );
     });
 
-    it("asks gen to keep the sandbox with --keep", async () => {
+    it("asks for E2B's largest timeout with --timeout 0", async () => {
         const command = await prepare(
             Response.json({ sandboxID: "created123" }),
         );
 
-        await command.run("--keep");
+        await command.run("--timeout", "0");
 
         expect(command.fetch).toHaveBeenCalledWith(
             expect.stringContaining("/alpha/e2b/sandboxes"),
@@ -168,7 +168,7 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
     });
 });
 
-describe("sandbox keep and pause", () => {
+describe("sandbox timeout and pause", () => {
     async function prepare() {
         const { setKeyOverride } = await import("../../lib/config.js");
         setKeyOverride("sk_test");
@@ -183,10 +183,10 @@ describe("sandbox keep and pause", () => {
         };
     }
 
-    it("keeps a sandbox with E2B's largest timeout", async () => {
+    it("never expires a sandbox with a timeout of 0", async () => {
         const command = await prepare();
 
-        await command.run("keep", "sbx1");
+        await command.run("timeout", "sbx1", "0");
 
         expect(command.fetch).toHaveBeenCalledWith(
             expect.stringContaining("/alpha/e2b/sandboxes/sbx1/connect"),

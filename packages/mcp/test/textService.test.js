@@ -28,3 +28,29 @@ test("generateText accepts assistant tool calls with null content for tool-use c
     );
     assert.deepEqual(result.data.messages, messages);
 });
+
+test("generateText returns requested token log probabilities", async (t) => {
+    const original = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = original;
+    });
+    const logprobs = {
+        content: [{ token: "Hi", logprob: -0.1, top_logprobs: [] }],
+    };
+    globalThis.fetch = async (input) =>
+        String(input).endsWith("/text/models")
+            ? Response.json([{ name: "test-model" }])
+            : Response.json({
+                  choices: [{ message: { content: "Hi" }, logprobs }],
+              });
+    const generateText = textTools.find(([name]) => name === "generateText")[3];
+    const result = await generateText(
+        {
+            model: "test-model",
+            messages: [{ role: "user", content: "Hi" }],
+            logprobs: true,
+        },
+        { http: { authInfo: { token: "sk_test" } } },
+    );
+    assert.deepEqual(JSON.parse(result.content.at(-1).text).logprobs, logprobs);
+});

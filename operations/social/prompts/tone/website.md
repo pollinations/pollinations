@@ -39,6 +39,6 @@ Write the image prompt like a news post's: a close, cozy pixel art scene that fo
 - Plain wooden buildings, empty frames, planks or furniture as the new thing
 - Lists of every earlier place
 - Humans or people of any kind, and copies of a resident (no extra bees or robots)
-- More than three screens, and faces or creatures on screens, masks, pictures or film frames
+- More than three screens, faces on flowers or objects, and faces, creatures, code or text on screens, masks, pictures or film frames (the robot's own screen always shows its face)
 - Text, letters, dates, numbers, logos and signs with writing
 - Starting over somewhere new: the world grows, it does not move

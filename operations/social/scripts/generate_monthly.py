@@ -106,9 +106,11 @@ CAST_KINDS = {"bee": "bees", "monitor_robot": "monitor_robots", "nomnom": "nomno
 NO_CAST = dict.fromkeys(CAST_KINDS.values(), 0)
 ONE_OF_EACH = (
     "Every character appears exactly once: no copies, no toy robots or statues, and Polli is the "
-    "only bee, with no other bees anywhere, not even tiny ones in the air. Only the characters have faces, and the robot's screen is the only screen with "
-    "one: no masks, and screens, pictures, film frames and signs show plants, landscapes or soft "
-    "light, never faces, bees, animals or people. No humans anywhere. No letters, words or glyphs."
+    "only bee, with no other bees anywhere, not even tiny ones in the air. The robot's screen "
+    "always shows its own face: two square eyes and a small smile. Only the characters have "
+    "faces: no masks, no faces on flowers or objects, and other screens, pictures, film frames "
+    "and signs show plants, landscapes or soft light, never faces, creatures, code or text. "
+    "No humans anywhere. No letters, words or glyphs."
 )
 # Polli founds Lantern Hill alone on page one. The others move in one at a time as the
 # community grows: each the first month at least `community` people and agents have

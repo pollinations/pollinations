@@ -5,11 +5,11 @@ import {
     BeakerIcon,
     BookIcon,
     ChatIcon,
+    Chip,
     CloudUploadIcon,
     ContentHeader,
     cn,
     ExternalLinkButton,
-    type ExternalLinkButtonProps,
     Heading,
     type IconProps,
     IconTile,
@@ -27,7 +27,6 @@ import {
     WalletIcon,
 } from "@pollinations/ui";
 import { modalityBgVar, modalityTextColor } from "@pollinations/ui/gen";
-import { PaidChip } from "@pollinations/ui/wallet";
 import type { ComponentType, ReactNode } from "react";
 import { LINKS } from "../../copy/content/socialLinks";
 import { useMcpServers, usePlatformStats } from "../../data/publicStats";
@@ -231,11 +230,9 @@ const PUBLISH_FEATURES: Feature[] = [
 function FeatureCard({
     feature,
     countLabel,
-    linkIntent = "neutral",
 }: {
     feature: Feature;
     countLabel?: string;
-    linkIntent?: ExternalLinkButtonProps["intent"];
 }) {
     const Detail = feature.detail;
 
@@ -273,7 +270,7 @@ function FeatureCard({
                         key={link.href}
                         href={link.href}
                         size="md"
-                        intent={linkIntent}
+                        intent="paid"
                         icon={
                             link.href.startsWith(
                                 "https://gen.pollinations.ai/docs",
@@ -392,7 +389,7 @@ function Models() {
             <ExternalLinkButton
                 href="https://gen.pollinations.ai/docs"
                 size="md"
-                intent="neutral"
+                intent="paid"
                 icon={
                     <BookIcon aria-hidden="true" className="size-4 shrink-0" />
                 }
@@ -416,7 +413,9 @@ function ChipList({ names }: { names: string[] }) {
         <ul className="flex flex-wrap gap-2">
             {names.map((name) => (
                 <li key={name}>
-                    <PaidChip size="md">{name}</PaidChip>
+                    <Chip intent="neutral" size="md">
+                        {name}
+                    </Chip>
                 </li>
             ))}
         </ul>
@@ -476,11 +475,7 @@ export function DevKit({ className }: { className?: string }) {
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (
-                        <FeatureCard
-                            key={feature.title}
-                            feature={feature}
-                            linkIntent="paid"
-                        />
+                        <FeatureCard key={feature.title} feature={feature} />
                     ))}
                 </div>
             </FeatureGroup>

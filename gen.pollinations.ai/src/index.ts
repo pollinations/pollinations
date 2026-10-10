@@ -190,11 +190,11 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
     .route("/", stemSeparationRoutes)
-    // SEP-2127 Server Cards must be registered before mcpRoutes: its
-    // ".use("/mcp/:serverId", auth(), ...)" middleware would otherwise
-    // gate the unauthenticated card endpoints.
-    .route("/", mcpCardRoutes)
     .route("/", mcpRoutes)
+    // SEP-2127 Server Cards stay public: mcpRoutes' auth middleware matches
+    // only the exact /mcp/:serverId path, while its /mcp/* edge rate limit
+    // still runs first because the cards are mounted after it.
+    .route("/", mcpCardRoutes)
     .route(E2B_PATH, e2bRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.

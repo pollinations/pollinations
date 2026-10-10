@@ -1,6 +1,10 @@
+import { getPublicOrigin } from "@shared/public-origin.ts";
+import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
+import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
+import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
 
 // Agent Skills discovery (RFC 8615 well-known URI), schema v0.2.0:
 // https://github.com/cloudflare/agent-skills-discovery-rfc
@@ -21,6 +25,26 @@ async function sha256Hex(text: string): Promise<string> {
 }
 
 export const wellKnownRoutes = new Hono<Env>()
+    // SEP-2127 AI Catalog: one entry per hosted MCP server's Server Card.
+    .get("/ai-catalog.json", etag(), (c) => {
+        const origin = getPublicOrigin(c);
+        c.header("Content-Type", "application/ai-catalog+json; charset=utf-8");
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.body(
+            JSON.stringify(
+                {
+                    specVersion: "1.0",
+                    entries: MCP_SERVERS.map((server) => ({
+                        identifier: `urn:air:pollinations.ai:mcp:${server.id}`,
+                        type: SERVER_CARD_MEDIA_TYPE,
+                        url: `${origin}/mcp/${server.id}/server-card`,
+                    })),
+                },
+                null,
+                2,
+            ),
+        );
+    })
     .get("/agent-skills/index.json", async (c) => {
         c.header("Cache-Control", "public, max-age=3600");
         return c.json({

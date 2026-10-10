@@ -95,20 +95,25 @@ const searchGithub = (query: string, params: string) =>
     ) as Promise<GhSearch>;
 
 /**
- * Every merged pull request on any branch, by anyone. Release pull requests
- * into production are left out: they copy work already merged into main.
+ * Every pull request merged into main or master (where work landed until
+ * November 2025), by anyone. A pull request has one base, so the two counts
+ * never overlap; release pull requests into production repeat merged work.
  */
 export function usePullRequestCount() {
-    return useAsync<number | null>(
-        async () =>
-            (
-                await searchGithub(
-                    "is:pr is:merged -base:production",
-                    "per_page=1",
-                )
-            ).total_count,
-        null,
-    );
+    return useAsync<number | null>(async () => {
+        const counts = await Promise.all(
+            ["main", "master"].map(
+                async (base) =>
+                    (
+                        await searchGithub(
+                            `is:pr is:merged base:${base}`,
+                            "per_page=1",
+                        )
+                    ).total_count,
+            ),
+        );
+        return counts.reduce((sum, count) => sum + count, 0);
+    }, null);
 }
 
 /**

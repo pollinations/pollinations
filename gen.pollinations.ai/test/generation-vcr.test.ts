@@ -92,8 +92,12 @@ function createGenerationMocks() {
     env.DEEPINFRA_API_KEY = "deepinfra-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
-    const portkeyState: { requests: Record<string, unknown>[] } = {
+    const portkeyState: {
+        requests: Record<string, unknown>[];
+        failStatus: number | null;
+    } = {
         requests: [],
+        failStatus: null,
     };
     const replicateState: {
         requests: Array<{
@@ -109,12 +113,14 @@ function createGenerationMocks() {
             url: string;
         }>;
         omitUsage: boolean;
+        failStatus: number | null;
         failStream: boolean;
         wrongStreamContentType: boolean;
         terminalTypeInEventOnly: boolean;
     } = {
         requests: [],
         omitUsage: false,
+        failStatus: null,
         failStream: false,
         wrongStreamContentType: false,
         terminalTypeInEventOnly: false,
@@ -125,6 +131,9 @@ function createGenerationMocks() {
     const elevenLabsState: { requests: Record<string, unknown>[] } = {
         requests: [],
     };
+    const azureSpeechState: {
+        requests: Array<{ url: string; body: Record<string, unknown> }>;
+    } = { requests: [] };
     const responsesHandler = async (request: Request) => {
         const body = (await request.clone().json()) as Record<string, unknown>;
         responsesState.requests.push({
@@ -132,6 +141,12 @@ function createGenerationMocks() {
             headers: Object.fromEntries(request.headers.entries()),
             url: request.url,
         });
+        if (responsesState.failStatus) {
+            return Response.json(
+                { error: { message: "responses provider unavailable" } },
+                { status: responsesState.failStatus },
+            );
+        }
         const perplexity = body.model === "perplexity/sonar";
         const response = {
             id: "resp_direct_test",
@@ -231,6 +246,25 @@ function createGenerationMocks() {
                 elevenLabsState.requests = [];
             },
         },
+        azureSpeech: {
+            state: azureSpeechState,
+            handlerMap: {
+                "myceli-prod-swedencentral.openai.azure.com": async (
+                    request: Request,
+                ) => {
+                    azureSpeechState.requests.push({
+                        url: request.url,
+                        body: await request.json(),
+                    });
+                    return new Response("audio bytes", {
+                        headers: { "content-type": "audio/mpeg" },
+                    });
+                },
+            },
+            reset: () => {
+                azureSpeechState.requests = [];
+            },
+        },
         portkeyDirect: {
             state: portkeyState,
             handlerMap: {
@@ -241,11 +275,18 @@ function createGenerationMocks() {
                             unknown
                         >,
                     );
+                    if (portkeyState.failStatus) {
+                        return Response.json(
+                            { error: { message: "chat provider unavailable" } },
+                            { status: portkeyState.failStatus },
+                        );
+                    }
                     return fakePortkeyResponse(request);
                 },
             },
             reset: () => {
                 portkeyState.requests = [];
+                portkeyState.failStatus = null;
             },
         },
         responsesDirect: {
@@ -258,6 +299,7 @@ function createGenerationMocks() {
             reset: () => {
                 responsesState.requests = [];
                 responsesState.omitUsage = false;
+                responsesState.failStatus = null;
                 responsesState.failStream = false;
                 responsesState.wrongStreamContentType = false;
                 responsesState.terminalTypeInEventOnly = false;
@@ -1098,6 +1140,59 @@ test("media audio uses native speech billing and preserves literal text", async 
     expect(
         (await getUserBalance(drizzle(env.DB), userId)).packBalance,
     ).toBeLessThan(before.packBalance);
+});
+
+test("speech without a model, or with the tts alias, uses free OpenAI TTS", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "azureSpeech");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        AZURE_MYCELI_PROD_SWEDEN_API_KEY: "azure-speech-test-key",
+    });
+    // Quest Pollen only: a paid-only model would answer 402.
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const speech = (body: Record<string, unknown>): RequestInit => ({
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${key}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+    const requests: Array<[string, RequestInit]> = [
+        [
+            `/audio/${encodeURIComponent(`no model ${crypto.randomUUID()}`)}`,
+            { headers: { authorization: `Bearer ${key}` } },
+        ],
+        [
+            "/v1/audio/speech",
+            speech({
+                input: `no model ${crypto.randomUUID()}`,
+                voice: "alloy",
+            }),
+        ],
+        [
+            "/v1/audio/speech",
+            speech({
+                model: "tts",
+                input: `tts alias ${crypto.randomUUID()}`,
+                voice: "alloy",
+            }),
+        ],
+    ];
+    for (const [path, init] of requests) {
+        const { response, wait } = await fetchWorker(path, init, bindings);
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe("openai/tts-1");
+        await response.arrayBuffer();
+        await wait();
+    }
+    expect(mocks.azureSpeech.state.requests).toHaveLength(3);
+    for (const request of mocks.azureSpeech.state.requests) {
+        expect(request.url).toContain("/deployments/tts/audio/speech");
+        expect(request.body).toMatchObject({ model: "tts-1" });
+    }
 });
 
 test("chat completions use local text generation with VCR-backed Portkey", async ({
@@ -1946,11 +2041,175 @@ test("direct Responses returns 400 for reusable input state", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(0);
 });
 
-test("Responses rejects models without a direct endpoint without calling Chat", async ({
+test.for([
+    ["stepfun/step-3.7-flash", false],
+    ["stepfun/step-3.7-flash", true],
+    ["anthropic/claude-haiku-4.5", false],
+    ["anthropic/claude-haiku-4.5", true],
+    ["google/gemini-3.8-flash", false],
+    ["google/gemini-3.8-flash", true],
+] as const)("Responses on Chat-only %s bills exactly like Chat (stream: %s)", async ([
+    model,
+    stream,
+], { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const db = drizzle(env.DB);
+    const call = async (path: string, body: Record<string, unknown>) => {
+        const caller = await createTestApiKey({ user: { packBalance: 100 } });
+        const before = await getUserBalance(db, caller.userId);
+        const { response, wait } = await fetchWorker(path, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${caller.key}`,
+            },
+            body: JSON.stringify({ model, stream, ...body }),
+        });
+        expect(response.status).toBe(200);
+        const text = await response.text();
+        await wait();
+        const after = await getUserBalance(db, caller.userId);
+        return { text, charged: before.packBalance - after.packBalance };
+    };
+
+    const chat = await call("/v1/chat/completions", {
+        messages: [{ role: "user", content: "vcr adapted billing" }],
+    });
+    const responses = await call("/v1/responses", {
+        input: "vcr adapted billing",
+    });
+
+    // One provider call each, both in Chat form.
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
+        messages: [{ role: "user", content: "vcr adapted billing" }],
+    });
+    expect(mocks.portkeyDirect.state.requests[1]).not.toHaveProperty("input");
+    if (stream) {
+        expect(responses.text).toContain("event: response.completed");
+        expect(responses.text).toContain('"input_tokens":7');
+        expect(responses.text.trimEnd().endsWith("data: [DONE]")).toBe(true);
+    } else {
+        expect(JSON.parse(responses.text)).toMatchObject({
+            object: "response",
+            status: "completed",
+            model,
+            output: [{ type: "message", role: "assistant" }],
+            usage: { input_tokens: 7, output_tokens: 3, total_tokens: 10 },
+        });
+    }
+
+    const [chatEvent, responsesEvent] = mocks.tinybird.state.events;
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const field of [
+        "modelUsed",
+        "isBilledUsage",
+        "tokenCountPromptText",
+        "tokenCountCompletionText",
+        "totalPrice",
+    ] as const) {
+        expect(responsesEvent[field]).toEqual(chatEvent[field]);
+    }
+    expect(responsesEvent).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: true,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+    expect(responsesEvent.totalPrice).toBeGreaterThan(0);
+    expect(responses.charged).toBeCloseTo(chat.charged, 12);
+    expect(responses.charged).toBeCloseTo(responsesEvent.totalPrice, 12);
+});
+
+test.for([
+    {
+        direction: "native to adapted",
+        primary: "meta/llama-3.3-70b-instruct",
+        fallback: "meta/llama-3.3-70b-instruct:deepinfra",
+        failing: "responsesDirect",
+    },
+    {
+        direction: "adapted to native",
+        primary: "anthropic/claude-haiku-4.5",
+        fallback: "anthropic/claude-haiku-4.5:openrouter:vertex-global",
+        failing: "portkeyDirect",
+    },
+] as const)("Responses falls back $direction and bills only the fallback", async ({
+    primary,
+    fallback,
+    failing,
+}, { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
+    mocks[failing].state.failStatus = 503;
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const before = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: primary,
+            input: "vcr responses fallback",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe(fallback);
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await expect(response.json()).resolves.toMatchObject({
+        object: "response",
+        status: "completed",
+        output: [{ type: "message", role: "assistant" }],
+    });
+    await wait();
+
+    // One attempt per upstream: Chat form for the adapted model, Responses
+    // form for the native one.
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        messages: [{ role: "user", content: "vcr responses fallback" }],
+    });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("input");
+    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
+    expect(mocks.responsesDirect.state.requests[0].body).toMatchObject({
+        input: "vcr responses fallback",
+        store: false,
+    });
+    expect(mocks.responsesDirect.state.requests[0].body).not.toHaveProperty(
+        "messages",
+    );
+
+    const events = mocks.tinybird.state.events;
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({
+        modelUsed: primary,
+        responseStatus: 503,
+        isFinal: false,
+        isBilledUsage: false,
+    });
+    expect(events[1]).toMatchObject({
+        modelUsed: fallback,
+        responseStatus: 200,
+        fallbackUsed: true,
+        isFinal: true,
+        isBilledUsage: true,
+    });
+    expect(events[1].totalPrice).toBeGreaterThan(0);
+    const after = await getUserBalance(db, caller.userId);
+    expect(before.packBalance - after.packBalance).toBeCloseTo(
+        events[1].totalPrice,
+        12,
+    );
+});
+
+test("Responses on a Chat-only model fails without provider usage", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
+    await mocks.enable("tinybird", "portkeyDirect");
     const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
@@ -1959,15 +2218,81 @@ test("Responses rejects models without a direct endpoint without calling Chat", 
         },
         body: JSON.stringify({
             model: "stepfun/step-3.7-flash",
-            input: "must not adapt to chat",
+            input: "vcr missing chat usage",
+        }),
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: { message: expect.stringContaining("omitted usage") },
+    });
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+    });
+});
+
+test("Responses stream on a Chat-only model fails without usage and is not billed", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "stepfun/step-3.7-flash",
+            stream: true,
+            input: "vcr missing chat stream usage",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("event: error");
+    expect(stream).toContain('"code":"usage_missing"');
+    expect(stream).toContain("event: response.failed");
+    expect(stream).not.toContain("response.completed");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test("Responses rejects what Chat cannot express before calling a Chat-only model", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "stepfun/step-3.7-flash",
+            input: "must not reach chat",
+            max_tool_calls: 2,
         }),
     });
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-        error: {
-            message: expect.stringContaining("stateless Responses API"),
-        },
+        error: { type: "invalid_request_error", param: "max_tool_calls" },
     });
     await wait();
     expect(mocks.portkeyDirect.state.requests).toHaveLength(0);

@@ -128,8 +128,9 @@ RESIDENTS = {
                        "look": "a purple crystal creature with a dark face, green eyes and round purple arms"},
 }
 
-# Every PR merged into main by anyone, agents and bots included.
-MERGED_PRS = "is:pr is:merged base:main"
+# Every PR merged into main or master by anyone, agents and bots included. Work merged
+# into master until November 2025, and master still takes the odd PR.
+MERGED_BASES = ("main", "master")
 SEARCH_CAP = 1000  # GitHub search returns at most this many results per query
 SEARCH_QUERY = """
 query($q: String!, $after: String) {
@@ -139,6 +140,7 @@ query($q: String!, $after: String) {
     nodes {
       ... on PullRequest {
         number
+        mergedAt
         author { __typename login avatarUrl(size: 80) url ... on User { databaseId } ... on Bot { databaseId } }
         mergeCommit { message }
       }
@@ -148,7 +150,8 @@ query($q: String!, $after: String) {
 """
 # Co-authored-by trailers with a GitHub noreply address name the account:
 # "Name <12345+login@users.noreply.github.com>". Bot accounts ("login[bot]@…") don't match.
-PARTICIPATION_QUERY = "query($q: String!) { search(query: $q, type: ISSUE, first: 1) { issueCount } }"
+# Git names team members commit under that are a different GitHub user's login.
+GIT_ALIASES = {"thomash": "voodoohop"}  # Thomas Haferlach; github.com/ThomasH is someone else
 NOREPLY_COAUTHOR = re.compile(
     r"^co-authored-by:[^<\n]*<(?:(\d+)\+)?([A-Za-z0-9-]+)@users\.noreply\.github\.com>",
     re.IGNORECASE | re.MULTILINE,
@@ -203,31 +206,37 @@ def community_size(month: str, contributors: List[Dict], repo_root: Optional[str
 
 # ── Step 1: Count merged PRs and contributors ───────────────────────
 
+def search_prs(query: str, token: str) -> List[Dict]:
+    """All PRs a GitHub search matches; fails over the search cap rather than miss some."""
+    nodes, after = [], None
+    while True:
+        response = github_api_request(
+            "POST",
+            f"{GITHUB_API_BASE}/graphql",
+            headers=_github_headers(token),
+            json={"query": SEARCH_QUERY, "variables": {"q": query, "after": after}},
+        )
+        payload = response.json()
+        if response.status_code != 200 or payload.get("errors"):
+            raise RuntimeError(f"GitHub search failed: {response.status_code} {payload.get('errors')}")
+        search = payload["data"]["search"]
+        if search["issueCount"] > SEARCH_CAP:
+            raise RuntimeError(f"{query} matches {search['issueCount']} PRs, over the search cap")
+        nodes.extend(node for node in search["nodes"] if node)
+        if not search["pageInfo"]["hasNextPage"]:
+            return nodes
+        after = search["pageInfo"]["endCursor"]
+
+
 def merged_prs(month: str, token: str, repository: str) -> List[Dict]:
-    """Every PR merged in the month, searched a week at a time to stay under the search cap."""
+    """Every PR merged into main or master in the month, a week at a time to stay under the cap."""
     start, end = (date.fromisoformat(day) for day in month_dates(month))
     prs = {}
     while start <= end:
         stop = min(start + timedelta(days=6), end)
-        query = f"repo:{repository} {MERGED_PRS} merged:{start}..{stop}"
-        after = None
-        while True:
-            response = github_api_request(
-                "POST",
-                f"{GITHUB_API_BASE}/graphql",
-                headers=_github_headers(token),
-                json={"query": SEARCH_QUERY, "variables": {"q": query, "after": after}},
-            )
-            payload = response.json()
-            if response.status_code != 200 or payload.get("errors"):
-                raise RuntimeError(f"GitHub search failed: {response.status_code} {payload.get('errors')}")
-            search = payload["data"]["search"]
-            if search["issueCount"] > SEARCH_CAP:
-                raise RuntimeError(f"{query} matches {search['issueCount']} PRs, over the search cap")
-            prs.update((node["number"], node) for node in search["nodes"] if node)
-            if not search["pageInfo"]["hasNextPage"]:
-                break
-            after = search["pageInfo"]["endCursor"]
+        for base in MERGED_BASES:
+            query = f"repo:{repository} is:pr is:merged base:{base} merged:{start}..{stop}"
+            prs.update((pr["number"], pr) for pr in search_prs(query, token))
         start = stop + timedelta(days=1)
     return list(prs.values())
 
@@ -245,31 +254,17 @@ def github_account(path: str, token: str) -> Optional[Dict]:
     return response.json()
 
 
-@lru_cache(maxsize=None)
-def opened_here(login: str, repository: str, token: str) -> bool:
-    """Whether an account ever opened an issue or PR in the repository. Mentions and comments
-    are not enough: people @-mention the wrong account with a similar name, and it replies."""
-    response = github_api_request(
-        "POST", f"{GITHUB_API_BASE}/graphql", headers=_github_headers(token),
-        json={"query": PARTICIPATION_QUERY, "variables": {"q": f"repo:{repository} author:{login}"}},
-    )
-    payload = response.json()
-    if response.status_code != 200 or payload.get("errors"):
-        raise RuntimeError(f"GitHub search author:{login}: {response.status_code} {payload.get('errors')}")
-    return payload["data"]["search"]["issueCount"] > 0
-
-
-def coauthor(user_id: str, login: str, repository: str, token: str) -> Optional[Dict]:
+def coauthor(user_id: str, login: str, merged_at: str, token: str) -> Optional[Dict]:
     """The person behind a noreply co-author trailer, or None. Agent-written trailers sometimes
     pair a login with someone else's id, so the id counts only if it belongs to that login, or
     to a renamed account whose old login is gone. A trailer without an id (app submissions
-    name the submitter that way) counts for that login only if the account has opened an
-    issue or PR here; otherwise it may be a stranger who holds the name. Bots get credit as PR
-    authors only, so a trailer naming an app's own bot (by its id, with or without "[bot]")
-    is skipped; organisations, placeholders and deleted accounts get no credit."""
+    name the submitter that way) credits the account holding that login, if it already
+    existed when the PR merged; a name taken later belongs to someone else. Bots get credit
+    as PR authors only, so a trailer naming an app's own bot (by its id, with or without
+    "[bot]") is skipped; organisations, placeholders and deleted accounts get no credit."""
     if not user_id:
-        person = github_account(f"users/{login}", token)
-        if person and person.get("type") == "User" and opened_here(person["login"], repository, token):
+        person = github_account(f"users/{GIT_ALIASES.get(login.lower(), login)}", token)
+        if person and person.get("type") == "User" and person["created_at"] <= merged_at:
             return person
         return None
     by_id = github_account(f"user/{user_id}", token)
@@ -279,12 +274,12 @@ def coauthor(user_id: str, login: str, repository: str, token: str) -> Optional[
     if person and person["login"].lower() == login.lower():
         return person
     by_login = github_account(f"users/{login}", token)
-    if by_login:  # the login is someone's: the trailer's id was wrong, so credit the login
-        return by_login if by_login.get("type") == "User" else None
-    return person  # renamed since: the id is right, the login is old
+    if by_login and by_login.get("type") == "User":  # the trailer's id was wrong: credit the login
+        return by_login
+    return person  # renamed since (the old login is gone or now an organisation): the id is right
 
 
-def rank_contributors(prs: List[Dict], repository: str, token: str) -> List[Dict]:
+def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
     """Merged PRs per GitHub account id, which stays the same when an account is renamed:
     authors (people, agents and bots) plus noreply co-authors."""
     people = {}
@@ -300,7 +295,7 @@ def rank_contributors(prs: List[Dict], repository: str, token: str) -> List[Dict
             accounts[author["databaseId"]] = (login, author.get("avatarUrl"), author.get("url"))
         message = (pr.get("mergeCommit") or {}).get("message") or ""
         for user_id, login in NOREPLY_COAUTHOR.findall(message):
-            person = coauthor(user_id, login, repository, token)
+            person = coauthor(user_id, login, pr.get("mergedAt") or "", token)
             if person:
                 accounts.setdefault(person["id"], (person["login"], person.get("avatar_url"), person.get("html_url")))
         for user_id, (login, avatar_url, url) in accounts.items():
@@ -468,7 +463,7 @@ def main():
     # Recorded on their own first, so a failed page or cover never loses them.
     print("\n[1/5] Counting merged PRs and contributors...")
     merged = merged_prs(month, github_token, repository)
-    contributors = rank_contributors(merged, repository, github_token)
+    contributors = rank_contributors(merged, github_token)
     print(f"  {len(merged)} merged PRs, {len(contributors)} contributors")
     counts = {"month": month, "merged_prs": len(merged), "contributors": contributors}
     if not commit_files_to_branch([(f"{base_path}/contributors.json", counts)], GISTS_BRANCH,

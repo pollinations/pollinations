@@ -382,8 +382,9 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertIn("One selected update", api.call_args.args[1])
 
     def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
-        user = lambda user_id, login, kind="User": {"id": user_id, "login": login, "type": kind,
-                                                    "avatar_url": f"av{user_id}", "html_url": f"gh/{login}"}
+        user = lambda user_id, login, kind="User", created="2020-01-01T00:00:00Z": {
+            "id": user_id, "login": login, "type": kind, "created_at": created,
+            "avatar_url": f"av{user_id}", "html_url": f"gh/{login}"}
         github = {
             "user/12345": user(12345, "FabioArieiraBaia"),        # a trailer whose id matches its login
             "user/1": user(1, "voodoohop"),
@@ -393,16 +394,21 @@ class GistEnrichmentTest(unittest.TestCase):
             "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
             "user/160": user(160, "mentatbot[bot]", "Bot"),       # an app's bot signing as "MentatBot"
             "users/MentatBot": user(173, "MentatBot"),            # an unrelated user with that name
-            "users/Tolerable": user(2303, "Tolerable"),           # named by login on a bot's PR
-            "users/thomash": user(1145, "ThomasH"),               # a stranger who has that login
+            "users/Tolerable": user(2303, "Tolerable"),           # an app submitter named by login only
+            "users/pixArt": user(4040, "pixArt", created="2026-08-17T00:00:00Z"),  # the name taken later
+            "users/voodoohop": user(1, "voodoohop"),
+            "users/thomash": user(1145, "ThomasH"),               # a stranger: thomash is Thomas's git alias
         }
         prs = [
             {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
-             # A trailer without an id whose login belongs to a stranger who never opened anything here.
+             "mergedAt": "2026-01-15T10:00:00Z",
+             # Thomas's own git alias: credits voodoohop, who already has this PR, not the stranger.
              "mergeCommit": {"message": "fix: one\n\nCo-authored-by: Thomas <thomash@users.noreply.github.com>"}},
             {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
                         "url": "https://github.com/apps/pollinations-ai"},
+             "mergedAt": "2026-01-15T10:00:00Z",
              "mergeCommit": {"message": (
+                 "Co-authored-by: Pix <pixArt@users.noreply.github.com>\n"
                  "Add app\n\n"
                  "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
                  "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
@@ -418,12 +424,10 @@ class GistEnrichmentTest(unittest.TestCase):
              "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
             {"author": None, "mergeCommit": None},
         ]
-        opened_issues = {"Tolerable"}  # submitters open an issue; the stranger ThomasH never did
-        with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)), \
-             patch("generate_monthly.opened_here", side_effect=lambda login, _repo, _token: login in opened_issues):
-            ranked = rank_contributors(prs, "pollinations/pollinations", "test")
-        # No credit: thomash (an id-less line for a stranger), the placeholder account
-        # (sharktide's 909) and the app's own bot as a co-author (bots count as PR authors only).
+        with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)):
+            ranked = rank_contributors(prs, "test")
+        # No credit: pixArt (the account did not exist yet), the placeholder account (sharktide's
+        # 909) and the app's own bot as a co-author (bots count as PR authors only).
         self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
                          [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
                           (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1), (2303, "Tolerable", 1)])

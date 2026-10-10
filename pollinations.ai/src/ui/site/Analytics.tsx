@@ -80,8 +80,9 @@ export function Analytics() {
         if (!ENTER_ORIGIN || !page) return;
         // sendBeacon carries Enter's session cookie (same site), so a
         // signed-in visitor's view is linked to their account as on Enter.
+        // Some hardened browsers and webviews lack it; they send nothing.
         const query = new URLSearchParams({ page, ...SOURCE });
-        navigator.sendBeacon(
+        navigator.sendBeacon?.(
             `${ENTER_ORIGIN}/api/analytics/website-page-view?${query}`,
         );
     }, [page]);

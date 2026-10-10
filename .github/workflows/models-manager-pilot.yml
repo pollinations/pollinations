@@ -1,0 +1,199 @@
+name: Models / Researcher pilot
+
+on:
+  schedule:
+    # One UTC slot: 08:00 Berlin in summer, 07:00 in winter.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      initialize:
+        description: 'Start the first 14-day pilot when no saved state exists'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: model-manager-pilot
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    if: github.repository == 'pollinations/pollinations' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      publish: ${{ steps.report.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.10.0'
+
+      - name: Find the latest trusted state
+        id: previous
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const repo = {...context.repo};
+            const runs = await github.rest.actions.listWorkflowRuns({
+              ...repo, workflow_id: 'models-manager-pilot.yml',
+              branch: 'main', status: 'completed', per_page: 100
+            });
+            let expired = false;
+            // A rerun is currently in_progress, so its earlier attempt is absent
+            // from the completed-run list. Restore its artifact first.
+            const previousIds = runs.data.workflow_runs
+              .filter(run => run.head_repository?.id === context.payload.repository.id)
+              .map(run => run.id);
+            for (const id of [context.runId, ...previousIds]) {
+              const result = await github.rest.actions.listWorkflowRunArtifacts({
+                ...repo, run_id: id, per_page: 100
+              });
+              const artifact = result.data.artifacts.find(a => a.name === 'model-manager-state');
+              if (!artifact) continue;
+              if (artifact.expired) { expired = true; continue; }
+              core.setOutput('artifact', String(artifact.id));
+              core.setOutput('run', String(id));
+              core.setOutput('ready', 'true');
+              return;
+            }
+            if (expired) throw new Error('Pilot state expired; restore operator-held evidence before restarting.');
+            if (Number(process.env.GITHUB_RUN_ATTEMPT) > 1) {
+              throw new Error('Retry has no saved state; reconcile the previous attempt before retrying paid work.');
+            }
+            // Missing/deleted history must never silently restart a paid pilot.
+            if (context.eventName === 'workflow_dispatch' && context.payload.inputs?.initialize === 'true') {
+              core.setOutput('ready', 'true');
+              core.info('Initializing the explicitly requested pilot.');
+            } else {
+              core.setOutput('ready', 'false');
+              core.warning('No saved state: restore it, or manually initialize the first pilot. No paid run started.');
+            }
+
+      - name: Download encrypted state
+        if: steps.previous.outputs.artifact != ''
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.previous.outputs.artifact }}
+          run-id: ${{ steps.previous.outputs.run }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/model-manager-previous
+          merge-multiple: true
+
+      - uses: nhedger/setup-sops@v3
+        if: steps.previous.outputs.ready == 'true'
+
+      - name: Restore history
+        if: steps.previous.outputs.artifact != ''
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: >-
+          node operations/model-manager/state.mjs restore
+          --file "$RUNNER_TEMP/model-manager-previous/state.vars.json"
+          --data "$RUNNER_TEMP/model-manager-data"
+
+      - name: Install launcher
+        if: steps.previous.outputs.ready == 'true'
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
+
+      - name: Run in Pollinations VM
+        id: launch
+        if: steps.previous.outputs.ready == 'true'
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: node operations/model-manager/launch.mjs --out "$RUNNER_TEMP/model-manager-data"
+
+      - name: Encrypt reports and checkpoints
+        if: always() && steps.launch.outputs.checkpoint == 'true'
+        run: >-
+          node operations/model-manager/state.mjs seal
+          --data "$RUNNER_TEMP/model-manager-data"
+          --file "$RUNNER_TEMP/model-manager-export/state.vars.json"
+
+      - name: Preserve encrypted state
+        if: always() && steps.launch.outputs.checkpoint == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-manager-state
+          path: ${{ runner.temp }}/model-manager-export/state.vars.json
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+      - name: Prepare readable assessment
+        id: report
+        if: success() && contains(fromJSON('["saved", "saved_with_source_gaps", "already_recorded"]'), steps.launch.outputs.status)
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile, writeFile, mkdir} from 'node:fs/promises';
+          import {dayKey, reportIssue} from './operations/model-manager/analyze.mjs';
+          const data = `${process.env.RUNNER_TEMP}/model-manager-data`;
+          const report = JSON.parse(await readFile(`${data}/report.json`, 'utf8'));
+          const proof = JSON.parse(await readFile(`${data}/verification.json`, 'utf8'));
+          if (!['saved', 'saved_with_source_gaps'].includes(proof.status) || dayKey(report.at) !== dayKey(new Date())) {
+            throw new Error('Public assessment requires successful evidence from today.');
+          }
+          const output = `${process.env.RUNNER_TEMP}/model-manager-public`;
+          await mkdir(output, {recursive: true});
+          await writeFile(`${output}/report.md`, `<!-- model-manager:${report.at} -->\n${reportIssue(report)}`);
+          await writeFile(process.env.GITHUB_OUTPUT, 'ready=true\n', {flag: 'a'});
+          NODE
+
+      - name: Preserve readable assessment for publication retries
+        if: steps.report.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-manager-report
+          path: ${{ runner.temp }}/model-manager-public/report.md
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+      - name: Summarize run
+        if: always()
+        env:
+          RUN_STATUS: ${{ steps.launch.outputs.status || 'No launch result; see workflow status' }}
+        run: |
+          printf 'Model manager run: %s\n\n' "$RUN_STATUS" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "$RUNNER_TEMP/model-manager-data/report.md" ]; then
+            cat "$RUNNER_TEMP/model-manager-data/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'No new report was produced in this run.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo 'Public assessments: https://github.com/pollinations/pollinations/issues/16517. Execution evidence and checkpoints remain encrypted. No model changes are enabled.' >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: scan
+    if: needs.scan.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: model-manager-report
+          path: ${{ runner.temp }}/model-manager-public
+      - name: Publish public assessment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const {readFile} = await import('node:fs/promises');
+            const body = await readFile(`${process.env.RUNNER_TEMP}/model-manager-public/report.md`, 'utf8');
+            const marker = body.split('\n', 1)[0];
+            if (!/^<!-- model-manager:[0-9T:.Z-]+ -->$/.test(marker)) throw new Error('Invalid report marker');
+            const issue = {...context.repo, issue_number: 16517};
+            const comments = await github.paginate(github.rest.issues.listComments, {...issue, per_page: 100});
+            if (comments.some(comment => comment.body?.startsWith(marker))) {
+              core.info('This assessment is already published.');
+              return;
+            }
+            await github.rest.issues.createComment({...issue, body});

@@ -136,6 +136,9 @@ jobs:
       - name: Test UI
         run: npm test --workspace @pollinations/ui
 
+      - name: Install model-manager launcher
+        run: npm ci --prefix operations/model-manager --workspaces=false --ignore-scripts --no-audit --no-fund
+
       - name: Test maintenance scripts
         run: >-
           node --test
@@ -147,6 +150,7 @@ jobs:
           operations/deployment/*.test.cjs
           operations/community-monitor/*.test.mjs
           operations/model-evals/*.test.js
+          operations/model-manager/*.test.mjs
           operations/model-monitor/src/*.test.js
 
       - name: Test model catalog and accounting compatibility

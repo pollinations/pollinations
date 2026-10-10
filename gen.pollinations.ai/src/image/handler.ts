@@ -51,7 +51,6 @@ import {
     providerErrorText,
 } from "./utils/contentModeration.ts";
 import {
-    bufferToUint8Array,
     detectMimeType,
     downloadUserImage,
     readImageDimensions,
@@ -433,7 +432,14 @@ export async function generateImageOrVideoResponse(
                 formatFallbackTarget(servedIndex),
             );
         }
-        return new Response(bufferToUint8Array(result.buffer), { headers });
+        headers.set("content-length", String(result.buffer.length));
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(result.buffer);
+                controller.close();
+            },
+        });
+        return new Response(body, { headers });
     } catch (error) {
         throwImageError(error);
     }

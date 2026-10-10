@@ -33,6 +33,8 @@ const VIDEO_FRAME_LIMITS = [
     ["alibaba/happyhorse-1.1", 1],
     ["heygen/heygen-video-1", 1],
     ["minimax/minimax-h3", 0],
+    ["sony/mmaudio-v2", 0],
+    ["sony/mmaudio-v2:replicate", 0],
     ["minimax/minimax-h3-max", 2],
     ["minimax/minimax-h3-max-turbo", 2],
     ["prunaai/p-video", 1],

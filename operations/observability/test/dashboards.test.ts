@@ -8,16 +8,11 @@ import {
     readDashboardUid,
 } from "../frontend/src/dashboards.ts";
 
-test("keeps top-level dashboards and drops foldered legacy ones", () => {
+test("lists dashboards sorted by title", () => {
     assert.deepEqual(
         currentDashboards([
             { uid: "users-balances-rebuild", title: "Users & Balances" },
             { uid: "core-api-rebuild", title: "Direct API" },
-            {
-                uid: "pollen-flow",
-                title: "Pollen Flow",
-                folderUid: "legacy-folder",
-            },
         ]),
         [
             { uid: "core-api-rebuild", title: "Direct API" },

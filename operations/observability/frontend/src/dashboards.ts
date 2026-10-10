@@ -9,7 +9,6 @@
 export type SearchResult = {
     uid?: string;
     title?: string;
-    folderUid?: string;
 };
 
 export type Dashboard = {
@@ -24,16 +23,14 @@ export type Dashboard = {
 export const DEFAULT_DASHBOARD_UID = "platform-usage-rebuild";
 
 /**
- * Current dashboards are the ones provisioned at the top level of
- * `provisioning/dashboards/`; `foldersFromFilesStructure` would put any
- * subfolder into a Grafana folder, and foldered dashboards stay out of the
- * picker. Reading the folder keeps the picker in step with the repository
- * instead of a second hand-maintained list.
+ * The dashboards Grafana has provisioned from `provisioning/dashboards/`,
+ * sorted by title. Reading Grafana's list keeps the picker in step with the
+ * repository instead of a second hand-maintained list.
  */
 export function currentDashboards(results: SearchResult[]): Dashboard[] {
     const dashboards: Dashboard[] = [];
-    for (const { uid, title, folderUid } of results) {
-        if (uid && title && !folderUid) dashboards.push({ uid, title });
+    for (const { uid, title } of results) {
+        if (uid && title) dashboards.push({ uid, title });
     }
     return dashboards.sort((left, right) =>
         left.title.localeCompare(right.title),

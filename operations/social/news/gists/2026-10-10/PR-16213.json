@@ -1,0 +1,37 @@
+{
+  "pr_number": 16213,
+  "title": "feat: Play page from website v2",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16213",
+  "merged_at": "2026-10-10T11:08:08Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added the v2 Play page for image, video, and audio generation; Agent is being handled separately in #16393. Inputs stay in shareable URLs. Models appear alphabetically with publisher labels, while audio models remain grouped by function. The page unifies parameter controls, uploads, media previews, downloads, and copyable API URLs that reflect the actual generated request. Updated SDK support exposes available video frames, reference images, videos and audio, sound, and aspect ratios. Removed the unused old Play stack, including text mode.",
+    "keywords": [
+      "Play page",
+      "image generation",
+      "video generation",
+      "audio generation",
+      "SDK",
+      "shareable URLs"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16213.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny headphones and adjusts a lime green (#ecf874) retro Play screen showing an image, a video frame, and an audio waveform, while code-plants bloom beside the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with a soft pastel gradient background, warm lighting, chunky sprites, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-10T11:09:19.860615+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "5cc4b5114f2fbd75e807c286e7661dd0862ae352",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

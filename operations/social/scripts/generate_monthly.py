@@ -21,6 +21,7 @@ import json
 import re
 import sys
 from collections import defaultdict
+from functools import lru_cache
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -139,7 +140,7 @@ query($q: String!, $after: String) {
     nodes {
       ... on PullRequest {
         number
-        author { login avatarUrl(size: 80) url }
+        author { login avatarUrl(size: 80) url ... on User { databaseId } ... on Bot { databaseId } }
         mergeCommit { message }
       }
     }
@@ -149,7 +150,7 @@ query($q: String!, $after: String) {
 # Co-authored-by trailers with a GitHub noreply address name the account:
 # "Name <12345+login@users.noreply.github.com>". Bot accounts ("login[bot]@…") don't match.
 NOREPLY_COAUTHOR = re.compile(
-    r"^co-authored-by:[^<\n]*<(?:\d+\+)?([A-Za-z0-9-]+)@users\.noreply\.github\.com>",
+    r"^co-authored-by:[^<\n]*<(?:(\d+)\+)?([A-Za-z0-9-]+)@users\.noreply\.github\.com>",
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -192,12 +193,12 @@ def read_previous_page(month: str, repo_root: Optional[str] = None) -> Optional[
 def community_size(month: str, contributors: List[Dict], repo_root: Optional[str] = None) -> int:
     """Everyone who has merged a pull request from page one up to and including `month`."""
     monthly_root = Path(repo_root or get_repo_root()) / MONTHLY_REL_DIR
-    logins = {person["login"].lower() for person in contributors}
+    ids = {person["id"] for person in contributors}
     for path in monthly_root.glob("*/summary.json"):
         if path.parent.name < month:
             summary = json.loads(path.read_text(encoding="utf-8"))
-            logins |= {person["login"].lower() for person in summary["contributors"]}
-    return len(logins)
+            ids |= {person["id"] for person in summary["contributors"]}
+    return len(ids)
 
 
 # ── Step 1: Count merged PRs and contributors ───────────────────────
@@ -231,21 +232,32 @@ def merged_prs(month: str, token: str, repository: str) -> List[Dict]:
     return list(prs.values())
 
 
-def rank_contributors(prs: List[Dict]) -> List[Dict]:
-    """Merged PRs per account: authors (people, agents and bots) plus noreply co-authors."""
+@lru_cache(maxsize=None)
+def github_user_id(login: str, token: str) -> Optional[int]:
+    """The numeric id of a GitHub account, for co-author lines that give only its login."""
+    response = github_api_request("GET", f"{GITHUB_API_BASE}/users/{login}", headers=_github_headers(token))
+    return response.json().get("id") if response.status_code == 200 else None
+
+
+def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
+    """Merged PRs per GitHub account id, which stays the same when an account is renamed:
+    authors (people, agents and bots) plus noreply co-authors."""
     people = {}
     for pr in prs:
         accounts = {}
         author = pr.get("author") or {}  # null for deleted accounts
-        if author.get("login"):
-            accounts[author["login"].lower()] = (author["login"], author.get("avatarUrl"), author.get("url"))
+        if author.get("databaseId"):
+            accounts[author["databaseId"]] = (author["login"], author.get("avatarUrl"), author.get("url"))
         message = (pr.get("mergeCommit") or {}).get("message") or ""
-        for login in NOREPLY_COAUTHOR.findall(message):
-            accounts.setdefault(login.lower(), (login, None, None))
-        for key, (login, avatar_url, url) in accounts.items():
-            person = people.setdefault(key, {
+        for user_id, login in NOREPLY_COAUTHOR.findall(message):
+            user_id = int(user_id) if user_id else github_user_id(login.lower(), token)
+            if user_id:  # None when the account no longer exists
+                accounts.setdefault(user_id, (login, None, None))
+        for user_id, (login, avatar_url, url) in accounts.items():
+            person = people.setdefault(user_id, {
+                "id": user_id,
                 "login": login,
-                "avatar_url": avatar_url or f"https://github.com/{login}.png?size=80",
+                "avatar_url": avatar_url or f"https://avatars.githubusercontent.com/u/{user_id}?s=80",
                 "url": url or f"https://github.com/{login}",
                 "prs": 0,
             })
@@ -424,7 +436,7 @@ def main():
     # ── Count merged PRs and contributors ────────────────────────────
     print("\n[2/5] Counting merged PRs and contributors...")
     merged = merged_prs(month, github_token, repository)
-    contributors = rank_contributors(merged)
+    contributors = rank_contributors(merged, github_token)
     print(f"  {len(merged)} merged PRs, {len(contributors)} contributors")
 
     # ── Generate summary ─────────────────────────────────────────────

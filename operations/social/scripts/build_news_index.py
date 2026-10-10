@@ -127,7 +127,7 @@ def contributor_entries(summaries: List[Dict]) -> List[Dict]:
     people = {}
     for summary in sorted(summaries, key=lambda s: s["period_start"])[-CONTRIBUTOR_MONTHS:]:
         for person in summary["contributors"]:
-            entry = people.setdefault(person["login"].lower(), {"prs": 0})
+            entry = people.setdefault(person["id"], {"prs": 0})
             entry.update({**person, "prs": entry["prs"] + person["prs"]})
     return sorted(people.values(), key=lambda p: (-p["prs"], p["login"].lower()))[:TOP_CONTRIBUTORS]
 

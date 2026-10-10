@@ -383,23 +383,32 @@ class GistEnrichmentTest(unittest.TestCase):
 
     def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
         prs = [
-            {"author": {"login": "voodoohop", "avatarUrl": "a", "url": "u"}, "mergeCommit": {"message": "fix: one"}},
-            {"author": {"login": "pollinations-ai", "avatarUrl": "bot", "url": "https://github.com/apps/pollinations-ai"},
+            {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergeCommit": {"message": "fix: one"}},
+            {"author": {"login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
+                        "url": "https://github.com/apps/pollinations-ai"},
              "mergeCommit": {"message": (
                  "Add app\n\n"
                  "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
                  "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
                  "Co-authored-by: Claude <noreply@anthropic.com>\n"
+                 "Co-authored-by: Old <oldtimer@users.noreply.github.com>\n"
              )}},
-            {"author": {"login": "VoodooHop", "avatarUrl": "a", "url": "u"},
+            # The same account under an earlier login still counts once, by its id.
+            {"author": {"login": "VoodooHop-old", "databaseId": 1, "avatarUrl": "a", "url": "u"},
              "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
             {"author": None, "mergeCommit": None},
         ]
-        ranked = rank_contributors(prs)
-        self.assertEqual([(p["login"], p["prs"]) for p in ranked],
-                         [("voodoohop", 2), ("FabioArieiraBaia", 1), ("pollinations-ai", 1)])
-        self.assertEqual(ranked[1]["avatar_url"], "https://github.com/FabioArieiraBaia.png?size=80")
-        self.assertEqual(ranked[2]["url"], "https://github.com/apps/pollinations-ai")
+        with patch("generate_monthly.github_api_request") as api:
+            api.return_value.status_code = 200
+            api.return_value.json.return_value = {"id": 777}
+            ranked = rank_contributors(prs, "test")
+        self.assertIn("/users/oldtimer", api.call_args.args[1])  # id looked up only for the old-style line
+        self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
+                         [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (777, "oldtimer", 1),
+                          (99, "pollinations-ai", 1)])
+        self.assertEqual(ranked[1]["avatar_url"], "https://avatars.githubusercontent.com/u/12345?s=80")
+        self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")
 
     def test_monthly_story_follows_the_latest_page(self):
         page = lambda month, story: normalize_platform_post(
@@ -444,11 +453,11 @@ class GistEnrichmentTest(unittest.TestCase):
 
         # The community counts each person once since page one, later months left out.
         with tempfile.TemporaryDirectory() as root:
-            for month, logins in (("2025-01", ["a", "B"]), ("2025-02", ["b", "c"]), ("2025-04", ["z"])):
+            for month, ids in (("2025-01", [1, 2]), ("2025-02", [2, 3]), ("2025-04", [9])):
                 (Path(root) / f"operations/social/news/monthly/{month}").mkdir(parents=True)
                 (Path(root) / f"operations/social/news/monthly/{month}/summary.json").write_text(
-                    json.dumps({"contributors": [{"login": login} for login in logins]}))
-            self.assertEqual(community_size("2025-03", [{"login": "C"}, {"login": "d"}], root), 4)
+                    json.dumps({"contributors": [{"id": user_id} for user_id in ids]}))
+            self.assertEqual(community_size("2025-03", [{"id": 3}, {"id": 4}], root), 4)
         # Every calendar month has its moment, looked up by the target month's "MM".
         self.assertEqual(sorted(MOMENTS), [f"{number:02d}" for number in range(1, 13)])
 
@@ -482,7 +491,9 @@ class GistEnrichmentTest(unittest.TestCase):
                 (news / f"monthly/{month}").mkdir(parents=True)
                 (news / f"monthly/{month}/summary.json").write_text(json.dumps({
                     "period_start": f"{month}-01", "merged_prs": number,
-                    "contributors": [{"login": "early" if number == 1 else "Agent", "avatar_url": f"a{number}",
+                    # Account 7 renamed itself in month 13; its months still add up under the new login.
+                    "contributors": [{"id": 1 if number == 1 else 7, "login": "early" if number == 1 else
+                                      ("Agent" if number == 13 else "agent-old"), "avatar_url": f"a{number}",
                                       "url": "u", "prs": number}],
                 }))
             (news / "monthly/2026-01/website.json").write_text(json.dumps({
@@ -493,7 +504,8 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(index["months"][0], {"month": "2025-01", "merged_prs": 1, "title": None, "summary": None, "image": None})
         self.assertEqual(index["months"][-1], {"month": "2026-01", "merged_prs": 13, "title": "Apps",
                                                "summary": "A new Apps directory.", "image": "https://x/2026-01.jpg"})
-        self.assertEqual(index["contributors"], [{"login": "Agent", "avatar_url": "a13", "url": "u", "prs": sum(range(2, 14))}])
+        self.assertEqual(index["contributors"],
+                         [{"id": 7, "login": "Agent", "avatar_url": "a13", "url": "u", "prs": sum(range(2, 14))}])
 
     def test_squash_after_syncing_main_excludes_unrelated_changes(self):
         with tempfile.TemporaryDirectory() as directory:

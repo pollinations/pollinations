@@ -4,6 +4,8 @@ import type { Context } from "hono";
 
 export type ProductEvent =
     | "page_viewed"
+    // A pollinations.ai website page, so its "/" never counts as Enter's.
+    | "website_page_viewed"
     | "checkout_started"
     | "auto_top_up_enabled"
     | "auto_top_up_disabled"

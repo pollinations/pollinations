@@ -21,6 +21,12 @@ polli sandbox kill <id>
 - `polli sandbox logs <id>` shows the sandbox's system log: when it started and paused, and each process run in it.
 - Needs Node.js 22 or newer.
 
+### Prepared templates
+
+Templates can include preinstalled packages, so each new sandbox skips installing them. Start a public template with `polli sandbox create <template-name-or-id>`.
+
+To prepare your own, follow [E2B's template guide](https://docs.e2b.dev/template/quickstart). Building templates requires an E2B account and key.
+
 ### Cost and limits
 
 - Billed at [E2B's per-second rates](https://e2b.dev/pricing) for the sandbox's CPU and memory, paid in advance: 10 minutes at creation, 10 minutes at a time while an ssh session is open, and the time you add with `polli sandbox timeout`.

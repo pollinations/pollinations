@@ -56,8 +56,14 @@ function PlayHero() {
     const { login } = useAuthActions();
     const connect =
         isHydrated && !isLoggedIn ? (
+            // Connecting leaves for enter, so it carries the external arrow.
             // Wrapped: login() takes an optional request, not the click event.
-            <InlineLink as="button" type="button" onClick={() => login()}>
+            <InlineLink
+                as="button"
+                type="button"
+                external
+                onClick={() => login()}
+            >
                 Connect your account
             </InlineLink>
         ) : (

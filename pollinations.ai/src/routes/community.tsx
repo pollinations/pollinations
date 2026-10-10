@@ -49,8 +49,8 @@ const WAYS_IN = [
     {
         label: "Apps",
         icon: AppIcon,
-        // Badge colours reuse the home page Models cards: modality tints
-        // and the Community gold.
+        // Badge colours reuse the home page Models cards' modality tints;
+        // the amber stays with the numbers.
         color: modalityTextColor("video"),
         tint: modalityBgVar("video"),
         title: "List your app",
@@ -63,8 +63,8 @@ const WAYS_IN = [
     {
         label: "Models & agents",
         icon: BeakerIcon,
-        color: "var(--polli-color-paid-deep)",
-        tint: "var(--polli-color-paid-pale)",
+        color: modalityTextColor("image"),
+        tint: modalityBgVar("image"),
         title: "Publish a model or agent",
         body: "Bring your own model or managed agent to the public catalog and make it available to builders.",
         cta: {

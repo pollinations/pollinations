@@ -1,4 +1,5 @@
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
+import { PDF_DATA_URL, pdfBase64 } from "../transforms/pdfFileParts.js";
 import type { ChatMessage, ServiceError, TransformOptions } from "../types.js";
 
 type JsonObject = Record<string, unknown>;
@@ -140,6 +141,21 @@ function messageContent(
                         type: "input_image",
                         image_url: imageUrl,
                         ...(typeof detail === "string" ? { detail } : {}),
+                    },
+                    part,
+                ),
+            ];
+        }
+        const file = (part.file ?? {}) as JsonObject;
+        const pdf = pdfBase64(file);
+        if (!output && allowImages && part.type === "file" && pdf) {
+            return [
+                withPromptCacheBreakpoint(
+                    {
+                        type: "input_file",
+                        file_data: PDF_DATA_URL + pdf,
+                        filename:
+                            file.filename ?? file.file_name ?? "document.pdf",
                     },
                     part,
                 ),

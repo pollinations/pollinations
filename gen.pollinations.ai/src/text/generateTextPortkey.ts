@@ -8,6 +8,7 @@ import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
+import { bedrockPdfParts, hasPdfPart } from "./transforms/pdfFileParts.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -62,6 +63,7 @@ export async function generateTextPortkey(
         }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
+        state = await bedrockPdfParts(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
     }
 
@@ -94,11 +96,14 @@ export async function generateTextPortkey(
     delete state.options.portkeyGatewayUrl;
 
     // Models marked for Responses use their declared direct Responses target;
-    // the adapter keeps the public Chat Completions contract stateless.
-    const communityResponsesEndpoint =
-        !modelDef &&
+    // the adapter keeps the public Chat Completions contract stateless. Azure
+    // chat cannot take a PDF file part, so PDFs also go through that target.
+    const responsesEndpoint =
         typeof state.options.modelConfig?.responsesEndpoint === "string";
-    if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
+    if (
+        modelDef?.useResponsesApi ||
+        (responsesEndpoint && (!modelDef || hasPdfPart(state.messages)))
+    ) {
         return await callChatViaResponses(
             state.messages,
             state.options,

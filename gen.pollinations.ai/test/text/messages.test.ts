@@ -719,10 +719,34 @@ describe("POST /v1/messages", () => {
                 }
                 const body = (await upstream.json().catch(() => null)) as {
                     messages?: unknown;
+                    input?: unknown;
                     stream?: boolean;
                 } | null;
-                if (!body?.messages) return Response.json({ data: [] });
+                if (!body?.messages && !body?.input)
+                    return Response.json({ data: [] });
                 providerBodies.push(body);
+                if (body.input) {
+                    return Response.json({
+                        id: "resp_test",
+                        object: "response",
+                        model,
+                        status: "completed",
+                        output: [
+                            {
+                                type: "message",
+                                role: "assistant",
+                                content: [
+                                    { type: "output_text", text: "Hello" },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 120,
+                            output_tokens: 30,
+                            total_tokens: 150,
+                        },
+                    });
+                }
                 if (body.stream) {
                     return new Response(
                         sse([
@@ -995,8 +1019,61 @@ describe("POST /v1/messages", () => {
         });
     });
 
-    it("sends a PDF document to the provider as a Chat file part", async () => {
-        const caller = await createTestApiKey({ user: { tierBalance: 100 } });
+    it.each([
+        {
+            model,
+            // Azure chat cannot take a PDF file part, so GPT goes through
+            // the Azure Responses API.
+            expected: {
+                input: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "input_file",
+                                file_data:
+                                    "data:application/pdf;base64,JVBERi0x",
+                                filename: "document.pdf",
+                            },
+                            {
+                                type: "input_text",
+                                text: "What word is in this PDF?",
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+        {
+            model: "anthropic/claude-haiku-4.5",
+            // Portkey passes file_data to Bedrock as raw document bytes and
+            // names the document with a random UUID unless file_name is set.
+            expected: {
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                file: {
+                                    file_data: "JVBERi0x",
+                                    mime_type: "application/pdf",
+                                    file_name: "document-1",
+                                },
+                            },
+                            { type: "text", text: "What word is in this PDF?" },
+                        ],
+                    },
+                ],
+            },
+        },
+    ])("sends a PDF document to $model in the shape its provider reads", async ({
+        model,
+        expected,
+    }) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
         const { providerBodies } = mockUpstream();
         const { response, text } = await call(
             "/v1/messages",
@@ -1023,20 +1100,56 @@ describe("POST /v1/messages", () => {
             caller.key,
         );
         expect(response.status, text).toBe(200);
-        expect(providerBodies[0].messages).toEqual([
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "file",
-                        file: {
-                            file_data: "data:application/pdf;base64,JVBERi0x",
+        expect(providerBodies[0]).toMatchObject(expected);
+    });
+
+    it("reads raw base64 PDFs from Chat file parts and rejects models that cannot", async () => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 100 },
+        });
+        const { providerBodies } = mockUpstream();
+        const chat = (model: string) =>
+            call(
+                "/v1/chat/completions",
+                {
+                    model,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type: "file",
+                                    file: {
+                                        file_data: "JVBERi0x",
+                                        mime_type: "application/pdf",
+                                    },
+                                },
+                                { type: "text", text: "Which word?" },
+                            ],
                         },
-                    },
-                    { type: "text", text: "What word is in this PDF?" },
-                ],
+                    ],
+                },
+                caller.key,
+            );
+
+        const claude = await chat("anthropic/claude-haiku-4.5");
+        expect(claude.response.status, claude.text).toBe(200);
+        expect(
+            (providerBodies[0].messages as { content: unknown[] }[])[0]
+                .content[0],
+        ).toEqual({
+            type: "file",
+            file: {
+                file_data: "JVBERi0x",
+                mime_type: "application/pdf",
+                file_name: "document-1",
             },
-        ]);
+        });
+
+        const unsupported = await chat("x-ai/grok-4.3");
+        expect(unsupported.response.status).toBe(400);
+        expect(unsupported.text).toContain("does not support PDF input");
+        expect(providerBodies).toHaveLength(1);
     });
 
     it("preserves thinking signatures through response validation", async () => {

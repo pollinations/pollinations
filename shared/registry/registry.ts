@@ -39,6 +39,7 @@ export const MODEL_INPUT_MODALITIES = [
     "image",
     "audio",
     "video",
+    "pdf",
 ] as const;
 
 export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];

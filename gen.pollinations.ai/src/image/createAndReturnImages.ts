@@ -57,6 +57,10 @@ import {
     analyzeImageSafety,
     requireSafePrompt,
 } from "./utils/azureContentSafety.ts";
+import {
+    firstContentPolicyMessage,
+    providerErrorText,
+} from "./utils/contentModeration.ts";
 import { logGptImageError } from "./utils/gptImageLogger.ts";
 import {
     base64ToBuffer,
@@ -452,16 +456,29 @@ function gptImageConfigsInTurn(model: string): GPTImageConfig[] {
 }
 
 /**
- * Azure refused before generating anything: a rate limit or a missing
- * deployment. Only these are safe to send elsewhere, because Azure bills a
- * generation it completed even when we never saw the response. A reference
- * image host's error is not Azure's and is left to the caller.
+ * Statuses Azure returns before it generates anything: a rejected or unpaid
+ * key, a blocked resource (abuse blocks are per resource, so the sibling still
+ * serves), a missing deployment and a rate limit. 5xx, 408 and 524 stay out:
+ * the first region may already have produced, and billed, an image.
+ */
+const GPT_IMAGE_REFUSAL_STATUSES = new Set([401, 402, 403, 404, 429]);
+
+/**
+ * Azure refused before generating anything. Only these are safe to send
+ * elsewhere, because Azure bills a generation it completed even when we never
+ * saw the response. A reference image host's error is not Azure's and is left
+ * to the caller, and a content-policy refusal would fail in every region.
  */
 export function isGPTImageRefusedByAzure(error: unknown): boolean {
     return (
         error instanceof UpstreamError &&
         !(error instanceof UserImageError) &&
-        (error.upstreamStatus === 429 || error.upstreamStatus === 404)
+        error.upstreamStatus !== undefined &&
+        GPT_IMAGE_REFUSAL_STATUSES.has(error.upstreamStatus) &&
+        !firstContentPolicyMessage([
+            error.message,
+            providerErrorText(error.responseBody),
+        ])
     );
 }
 

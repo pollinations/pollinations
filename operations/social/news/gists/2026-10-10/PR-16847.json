@@ -1,0 +1,36 @@
+{
+  "pr_number": 16847,
+  "title": "enter: Show more toggle for clamped model descriptions",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16847",
+  "merged_at": "2026-10-10T09:16:15Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Long model descriptions on Enter’s models page can now be expanded in both desktop and mobile rows instead of being permanently cut off after two lines. A Show more / Show less button appears only when the text is truncated, with ResizeObserver updating that check as the layout changes. Expanding removes the clamp in place, leaving the full description selectable; the button supports keyboard, touch, and mouse and exposes its state through aria-expanded and aria-controls.",
+    "keywords": [
+      "Enter",
+      "models page",
+      "descriptions",
+      "accessibility",
+      "responsive UI"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-10/PR-16847.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and opens a folded model-description card beside a lime green (#ecf874) code-plant, revealing more lines of text while a CRT robot reads along. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, never oversized or dominating, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-10T09:17:51.319539+00:00",
+  "area": "Dashboard",
+  "type": "Feature",
+  "source": "Community",
+  "merge_commit_sha": "e055a157a821dc5294d1a11d27e87293d07afbb4",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

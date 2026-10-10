@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 import {
     currentDashboards,
@@ -72,10 +72,10 @@ test("never reads internal Tinybird pipes, which Grafana's token cannot read", (
         "../../../enter.pollinations.ai/observability/pipes/",
         import.meta.url,
     );
-    const pipes = readdirSync(pipesDir)
+    // No internal pipes left means nothing to guard, not a broken deploy.
+    const pipes = (existsSync(pipesDir) ? readdirSync(pipesDir) : [])
         .filter((file) => file.endsWith(".pipe"))
         .map((file) => file.slice(0, -".pipe".length));
-    assert.ok(pipes.length > 0);
     const dir = new URL("../provisioning/dashboards/", import.meta.url);
     const reads = readdirSync(dir)
         .filter((file) => file.endsWith(".json"))

@@ -11,6 +11,9 @@ Given the month's PR gists grouped by date, find the few themes that best explai
 ## Rules
 
 - Gists and daily summaries are the factual source. Do not invent releases, metrics or outcomes, and do not describe scheduled or unconfirmed changes as live.
+- **Count only what stayed.** If a later update in the month reverts or removes something, leave it out, or say it came and went.
+- **Name each change for what it was.** A fix restores something; it is not a new feature. Moving a model to a new provider or backend is not a new model. An app added to the project listings is not a model. Repository tooling for contributors is not a product feature. Keep who does what the right way round (which model falls back to which) and which surface a feature lives on (dashboard, CLI, API).
+- **Keep facts apart.** Do not merge separate changes into one claim that none of them makes.
 - **Synthesize, don't concatenate.** Find the month's through-lines instead of listing days.
 - **Lead with user-visible progress.** Infrastructure and maintenance belong in supporting themes.
 - **Be concrete.** Name important products, capabilities, models or systems when they matter.

@@ -21,7 +21,7 @@ Think: the closing paragraph of a small team's month, written for people who use
 - Include PR numbers, author names or internal jargon
 - Use hype ("game-changing", "revolutionary"), emojis, hashtags or markdown
 - Discuss revenue, business motivations or operational checklists such as credential approvals and deployment instructions
-- Invent releases, numbers or outcomes the month's updates do not state
+- Invent releases, numbers or outcomes the month's updates do not state, or add names and claims the month's themes do not make
 
 ## Website-Specific Image Adaptation
 

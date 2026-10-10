@@ -3,11 +3,11 @@
 Tier 4: Monthly Website Page
 
 1st of the month, 06:00 UTC:
-  1. Read the past month's gists (daily summaries up to Feb 2026, when gists began)
+  1. Read the past month's gists
   2. Count the month's merged PRs and contributors on GitHub
   3. AI synthesizes the month's themes
   4. Generate the website post: title, summary, cover prompt and story
-  5. Generate one cover drawn from page one's cover and the previous month's story
+  5. Generate one cover that carries on the previous month's story
   6. Commit everything directly to the news branch
 
 The website's build diary reads it through index.json (build_news_index.py).
@@ -50,10 +50,7 @@ from common import (
 
 # ── Constants ────────────────────────────────────────────────────────
 
-DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
 MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
-# PR gists began on 2026-02-05; earlier months, February included, read daily summaries.
-FIRST_GIST_MONTH = "2026-03"
 COVER_WIDTH, COVER_HEIGHT = 2048, 1152  # 16:9, beside the text on the website
 # One cover a month: the full Nano Banana 2 draws them at 2K, sharper than the Lite
 # model the daily and weekly posts use.
@@ -184,15 +181,6 @@ def read_gists_for_month(month: str) -> List[Dict]:
     return gists
 
 
-def read_daily_summaries(month: str, repo_root: Optional[str] = None) -> List[Dict]:
-    """The month's daily summaries: the record for months before FIRST_GIST_MONTH."""
-    daily_root = Path(repo_root or get_repo_root()) / DAILY_REL_DIR
-    return [
-        json.loads(path.read_text(encoding="utf-8"))
-        for path in sorted(daily_root.glob(f"{month}-*/summary.json"))
-    ]
-
-
 def read_previous_page(month: str, repo_root: Optional[str] = None) -> Optional[Dict]:
     """The latest website page before `month`: it carries the story and who lives there,
     so a missed month never restarts them. None on page one."""
@@ -267,29 +255,18 @@ def rank_contributors(prs: List[Dict]) -> List[Dict]:
 
 # ── Step 2: Generate monthly summary ────────────────────────────────
 
-def generate_digest(gists: List[Dict], daily_summaries: List[Dict], month: str,
-                    token: str) -> Optional[Dict]:
-    """Synthesize the month's gists, or its daily summaries before gists began."""
-    if gists:
-        by_date = defaultdict(list)
-        for gist in gists:
-            by_date[gist.get("merged_at", "")[:10] or "unknown"].append(gist_context(gist))
-        heading = "PR gists by date"
-        sections = [{"date": day, "pr_count": len(prs), "prs": prs} for day, prs in sorted(by_date.items())]
-        pr_count = len(gists)
-    else:
-        heading = "Daily summaries (this month predates PR gists)"
-        sections = [
-            {key: summary.get(key) for key in ("date", "title", "summary", "pr_count")}
-            for summary in daily_summaries
-        ]
-        pr_count = sum(int(summary.get("pr_count") or 0) for summary in daily_summaries)
+def generate_digest(gists: List[Dict], month: str, token: str) -> Optional[Dict]:
+    """Synthesize the month's gists."""
+    by_date = defaultdict(list)
+    for gist in gists:
+        by_date[gist.get("merged_at", "")[:10] or "unknown"].append(gist_context(gist))
+    sections = [{"date": day, "pr_count": len(prs), "prs": prs} for day, prs in sorted(by_date.items())]
 
     user_prompt = f"""Month: {month}
-PRs selected for this recap: {pr_count}. This is not the total number of merges.
+PRs selected for this recap: {len(gists)}. This is not the total number of merges.
 Active days: {len(sections)}
 
-{heading}:
+PR gists by date:
 {json.dumps(sections, indent=2, ensure_ascii=False)}"""
 
     response = call_pollinations_api(load_prompt("monthly"), user_prompt, token, temperature=0.3)
@@ -438,11 +415,9 @@ def main():
 
     # ── Read the month ───────────────────────────────────────────────
     print(f"\n[1/5] Reading updates for {month}...")
-    from_gists = month >= FIRST_GIST_MONTH
-    gists = filter_daily_gists(read_gists_for_month(month)) if from_gists else []
-    daily_summaries = [] if from_gists else read_daily_summaries(month)
-    print(f"  {len(gists)} daily-tier gists, {len(daily_summaries)} daily summaries")
-    if not gists and not daily_summaries:
+    gists = filter_daily_gists(read_gists_for_month(month))
+    print(f"  {len(gists)} daily-tier gists")
+    if not gists:
         print("  Nothing recorded for this month. Skipping.")
         return
 
@@ -454,16 +429,13 @@ def main():
 
     # ── Generate summary ─────────────────────────────────────────────
     print("\n[3/5] Generating monthly summary...")
-    digest = generate_digest(gists, daily_summaries, month, pollinations_token)
+    digest = generate_digest(gists, month, pollinations_token)
     if not digest:
         print("  FATAL: Monthly digest generation failed")
         sys.exit(1)
     print(f"  Theme: {digest.get('theme', '')}")
     generated_at = datetime.now(timezone.utc).isoformat()
-    selected = (
-        [{"number": gist.get("pr_number"), "date": (gist.get("merged_at") or "")[:10]} for gist in gists]
-        or [pr for summary in daily_summaries for pr in summary.get("prs") or []]
-    )
+    selected = [{"number": gist.get("pr_number"), "date": (gist.get("merged_at") or "")[:10]} for gist in gists]
     summary_artifact = build_monthly_summary_artifact(
         digest, selected, month, merged, contributors, generated_at
     )

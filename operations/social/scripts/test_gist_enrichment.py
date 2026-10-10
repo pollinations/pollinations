@@ -144,7 +144,7 @@ class GistEnrichmentTest(unittest.TestCase):
         for module, generate in (
             ("generate_daily", lambda g: generate_summary([g], "2026-10-07", "test")),
             ("generate_weekly", lambda g: generate_digest([g], "2026-10-01", "2026-10-07", "test")),
-            ("generate_monthly", lambda g: generate_monthly_digest([g], [], "2026-10", "test")),
+            ("generate_monthly", lambda g: generate_monthly_digest([g], "2026-10", "test")),
             ("publish_realtime", lambda g: generate_snippet(g, "test")),
         ):
             with patch(f"{module}.call_pollinations_api", return_value='{"arcs": []}') as api:
@@ -376,7 +376,8 @@ class GistEnrichmentTest(unittest.TestCase):
             self.assertIn("PRs selected for this recap: 1", task)
             self.assertNotIn("Total PRs merged:", task)
         with patch("generate_monthly.call_pollinations_api", return_value='{"arcs": []}') as api:
-            generate_monthly_digest([], [{"date": "2025-10-01", "summary": "One selected update", "pr_count": 1}], "2025-10", "test")
+            generate_monthly_digest([{"pr_number": 1, "merged_at": "2026-10-01T09:00:00Z",
+                                      "gist": {"summary": "One selected update"}}], "2026-10", "test")
         self.assertIn("PRs selected for this recap: 1", api.call_args.args[1])
         self.assertIn("One selected update", api.call_args.args[1])
 

@@ -110,8 +110,7 @@ PR merge ──→ generate_realtime.py
 ═══════════════════════════════════════════════════════════════════════
 
              1st 06:00 UTC ──→ generate_monthly.py
-                                   │  (reads the month's gists directly; months up to
-                                   │   Feb 2026, when gists began, read daily summaries)
+                                   │  (reads the month's gists directly)
                                    │
                                    ├──→ GitHub search: merged PRs + contributors
                                    ├──→ summary.json  (themes + merged_prs + contributors)
@@ -272,7 +271,7 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `website.json` — simplified platform envelope; `metadata.story` lists every landmark built so far and one open thread, for next month's cover
 - `images/website.jpg` — the 16:9 cover
 
-Each cover is the next page of one picture book: Lantern Hill, growing month by month. Covers are written and drawn like the news posts (the visual guide and the same style), from the character sheet and the latest earlier page's story; no earlier cover is attached, because the image model then copied it and the growth never added up. A fixed set of landmarks (`LANTERN_HILL`) keeps each fresh view in the same place, the story carries what was built, and a missed month never restarts it. Each later page gets its calendar month's light and weather (`MOMENTS`). Polli founds the village alone on page one; the monitor robot, Nomnom and three creatures move in one at a time as the number of people and agents who have merged a pull request since page one passes 25, 50, 200, 400 and 600 (`RESIDENTS`, kept in `metadata.residents`). Everyone is unique and there are no people: after drawing, `google/gemini-3.8-flash` lists the characters in the cover, and any repeat, person or character who has not moved in yet means a redraw, up to 3 tries. Generate months one at a time, oldest first, and wait for each run to finish before starting the next: parallel runs read the news branch before the earlier months exist, so each would start the story over.
+Each cover is the next page of one picture book: Lantern Hill, growing month by month. Covers are written and drawn like the news posts (the visual guide and the same style), from the character sheet and the latest earlier page's story; no earlier cover is attached, because the image model then copied it and the growth never added up. A fixed set of landmarks (`LANTERN_HILL`) keeps each fresh view in the same place, the story carries what was built, and a missed month never restarts it. Each later page gets its calendar month's light and weather (`MOMENTS`). Polli founds the village alone on page one; the monitor robot, Nomnom and three creatures move in one at a time as the number of people and agents who have merged a pull request since page one passes 25, 50, 200, 400 and 600 (`RESIDENTS`, kept in `metadata.residents`). Everyone is unique and there are no people: after drawing, `google/gemini-3.8-flash` lists the characters in the cover, and any repeat, person or character who has not moved in yet means a redraw, up to 3 tries.
 
 ### Platform Envelope
 
@@ -374,14 +373,14 @@ Discord posting (`publish_realtime.py`) runs as a **separate workflow step** aft
 
 ### Tier 4: `generate_monthly.py`
 
-- Reads gists directly for the month. Gists began on 2026-02-05, so months up to and including February 2026 read their daily summaries instead; if there is nothing to read: skip.
+- Reads gists directly for the month; if there is nothing to read: skip.
 - A GitHub search window over the 1,000-result cap, a failed search, digest, post or commit fails the run, and so does a cover that still repeats a character after 3 tries. The cover is committed before the JSON, so a page never points at a missing image.
 
 ### Re-triggering
 
 All workflows support `workflow_dispatch` for manual re-triggering:
 - `news-create-pr-gist.yml`: accepts `pr_number` input to regenerate a specific gist
-- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly); `mode: monthly` with `target_month` regenerates one month. Regenerate months one at a time, oldest first, waiting for each run to finish (`gh run watch`) before dispatching the next, so each cover continues the one before.
+- `news-generate-summary.yml`: accepts `date` input (Mon-Sat runs daily, Sunday runs weekly); `mode: monthly` with `target_month` regenerates one month.
 - `news-publish-social.yml`: accepts `mode` + `target_date` for manual publish of direct channels
 
 ---

@@ -25,9 +25,10 @@ export const DEFAULT_DASHBOARD_UID = "platform-usage-rebuild";
 
 /**
  * Current dashboards are the ones provisioned at the top level of
- * `provisioning/dashboards/`; `foldersFromFilesStructure` puts everything under
- * `legacy/` into a Grafana folder. Reading the folder keeps the picker in step
- * with the repository instead of a second hand-maintained list.
+ * `provisioning/dashboards/`; `foldersFromFilesStructure` would put any
+ * subfolder into a Grafana folder, and foldered dashboards stay out of the
+ * picker. Reading the folder keeps the picker in step with the repository
+ * instead of a second hand-maintained list.
  */
 export function currentDashboards(results: SearchResult[]): Dashboard[] {
     const dashboards: Dashboard[] = [];

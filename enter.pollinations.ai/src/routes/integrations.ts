@@ -78,7 +78,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "List Connected Apps",
             responses: {
                 200: {
@@ -99,7 +99,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/toolkits",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "Search Connectable Apps",
             responses: {
                 200: {
@@ -126,7 +126,7 @@ export const integrationsRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "Connect App",
             responses: {
                 200: { description: "Hosted authentication URL" },
@@ -152,7 +152,7 @@ export const integrationsRoutes = new Hono<Env>()
     .delete(
         "/:id",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "Disconnect App",
             responses: { 204: { description: "App disconnected" } },
         }),

@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "User growth, current exact wallet state, historical active-user balance observations, and Paid versus Quest consumption. Current values come from the latest D1 snapshot; historical balance bars are generation-event observations and are not full wallet snapshots.",
+  "description": "User growth, current exact wallet state, and Paid versus Quest consumption. Current values come from the latest D1 snapshot.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -223,196 +223,6 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily sum of each active user's last observed Quest balance on a successful billed generation. This changes when the active population changes and is not the platform's complete historical wallet stock. One shared query also feeds the Paid and concentration panels.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisSoftMin": 0,
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 85,
-            "lineWidth": 0,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "decimals": 2,
-          "unit": "suffix: Pollen"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "observed_quest_balance"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Observed Quest balance"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 6
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PAD1A0A25CD30D456"
-          },
-          "format": 0,
-          "range": true,
-          "rawSql": "SELECT\n  day AS time,\n  round(sum(quest_balance), 2) AS observed_quest_balance,\n  round(sum(paid_balance), 2) AS observed_paid_balance,\n  round(quantile(0.95)(quest_balance), 2) AS quest_p95,\n  round(quantile(0.99)(quest_balance), 2) AS quest_p99,\n  round(max(quest_balance), 2) AS quest_max,\n  round(quantile(0.95)(paid_balance), 2) AS paid_p95,\n  round(quantile(0.99)(paid_balance), 2) AS paid_p99,\n  round(max(paid_balance), 2) AS paid_max,\n  count() AS active_users\nFROM (\n  SELECT\n    toStartOfDay(start_time) AS day,\n    user_id,\n    argMax(balances['v1:meter:tier'], start_time) AS quest_balance,\n    argMax(balances['v1:meter:pack'], start_time) AS paid_balance\n  FROM generation_events_classified\n  WHERE traffic_group = 'regular' AND start_time >= greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))\n    AND start_time < $__toTime\n    AND environment IN ('production', 'debug-prod-copy')\n    AND response_status >= 200\n    AND response_status < 300\n    AND is_billed_usage\n    AND user_id NOT IN ('', 'undefined')\n    AND user_id NOT IN (\n      SELECT id\n      FROM d1_user\n      WHERE synced_at = (SELECT max(synced_at) FROM d1_user)\n        AND banned = 1\n    )\n  GROUP BY day, user_id\n)\nGROUP BY day\nORDER BY day",
-          "refId": "A"
-        }
-      ],
-      "title": "Observed Quest balance — active users",
-      "transformations": [
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "names": [
-                "time",
-                "observed_quest_balance"
-              ]
-            }
-          }
-        }
-      ],
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "datasource",
-        "uid": "-- Dashboard --"
-      },
-      "description": "Daily sum of each active user's last observed Paid balance on a successful billed generation. This is a balance observation, not cash collected. Reuses the Quest panel query so Tinybird scans generation_event_v2 only once.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisSoftMin": 0,
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 85,
-            "lineWidth": 0,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "decimals": 2,
-          "unit": "suffix: Pollen"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "observed_paid_balance"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Observed Paid balance"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 6
-      },
-      "id": 3,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "datasource",
-            "uid": "-- Dashboard --"
-          },
-          "panelId": 2,
-          "refId": "A"
-        }
-      ],
-      "title": "Observed Paid balance — active users",
-      "transformations": [
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "names": [
-                "time",
-                "observed_paid_balance"
-              ]
-            }
-          }
-        }
-      ],
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PAD1A0A25CD30D456"
-      },
       "description": "Daily successful billed consumption by funding bucket and by who serves the model. Community models are hosted by their owners, and 75% of their price is credited back to the owner in the payer's bucket (Paid to Paid, Quest to Quest). BYOP app markup is also credited to app owners. Paid is therefore consumed value, not cash or Pollinations revenue; Quest is free Pollen. Regular traffic only; excludes legacy, operations and dev.",
       "fieldConfig": {
         "defaults": {
@@ -516,7 +326,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 6
       },
       "id": 4,
       "options": {
@@ -546,180 +356,6 @@
         }
       ],
       "title": "Quest vs Paid spending",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "datasource",
-        "uid": "-- Dashboard --"
-      },
-      "description": "Daily p95, p99, and maximum observed balances among successful billed active users. These anomaly indicators reuse the Quest panel query; they do not represent percentiles of the complete current wallet population. The logarithmic y-axis keeps normal percentiles readable beside occasional maximum-balance spikes.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic-by-name"
-          },
-          "custom": {
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "lineWidth": 2,
-            "scaleDistribution": {
-              "log": 10,
-              "type": "log"
-            },
-            "showPoints": "auto",
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            }
-          },
-          "decimals": 2,
-          "unit": "suffix: Pollen"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "quest_p95"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "light-orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "quest_p99"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "quest_max"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "paid_p95"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "light-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "paid_p99"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "paid_max"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "semi-dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 0,
-        "y": 22
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "datasource",
-            "uid": "-- Dashboard --"
-          },
-          "panelId": 2,
-          "refId": "A"
-        }
-      ],
-      "title": "Observed balance concentration",
-      "transformations": [
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "names": [
-                "time",
-                "quest_p95",
-                "quest_p99",
-                "quest_max",
-                "paid_p95",
-                "paid_p99",
-                "paid_max"
-              ]
-            }
-          }
-        }
-      ],
       "type": "timeseries"
     },
     {
@@ -769,9 +405,9 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 22
+        "w": 24,
+        "x": 0,
+        "y": 14
       },
       "id": 6,
       "options": {
@@ -812,7 +448,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily registrations from the latest d1_user snapshot, excluding banned accounts. This is current surviving-account history: accounts deleted before the latest sync are absent. The current day is partial until its UTC day closes.",
+      "description": "Daily registrations from the latest d1_user snapshot, excluding banned accounts. This is current surviving-account history: accounts deleted before the latest sync are absent. The latest day can be partial until the daily d1_user sync (about 03:20 UTC).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -837,7 +473,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 24
       },
       "id": 7,
       "options": {
@@ -899,7 +535,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 24
       },
       "id": 8,
       "options": {
@@ -936,7 +572,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "Daily active users and trailing-seven-day active users from merged generation_usage_hourly unique-user states. WAU is recalculated for every displayed day and includes that day plus the six preceding days.",
+      "description": "Daily active users and trailing-seven-day active users from merged generation_usage_hourly unique-user states. WAU is recalculated for every displayed day and includes that day plus the six preceding days. Users count when at least one request passed the balance check; users whose only requests got a 402 are excluded, as in the KPI app's WAU.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1016,7 +652,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 40
+        "y": 32
       },
       "id": 9,
       "options": {
@@ -1041,7 +677,7 @@
           },
           "format": 0,
           "range": true,
-          "rawSql": "WITH\n  toStartOfDay(greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))) AS start_day,\n  assumeNotNull(\n    least(\n      toStartOfDay($__toTime),\n      (\n        SELECT toStartOfDay(coalesce(max(hour), toDateTime('2026-01-09 00:00:00')))\n        FROM generation_usage_hourly\n        WHERE environment IN ('production', 'debug-prod-copy')\n          AND traffic_group = 'regular'\n      )\n    )\n  ) AS end_day,\n  dates AS (\n    SELECT start_day + INTERVAL number DAY AS day\n    FROM numbers(toUInt64(greatest(dateDiff('day', start_day, end_day), 0) + 1))\n  )\nSELECT\n  day AS time,\n  uniqMergeIf(users, hour >= day AND hour < day + INTERVAL 1 DAY) AS dau,\n  uniqMergeIf(users, hour >= day - INTERVAL 6 DAY AND hour < day + INTERVAL 1 DAY) AS wau\nFROM dates\nCROSS JOIN generation_usage_hourly\nWHERE hour >= start_day - INTERVAL 6 DAY\n  AND hour < end_day + INTERVAL 1 DAY\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY day\nORDER BY day",
+          "rawSql": "WITH\n  toStartOfDay(greatest($__fromTime, toDateTime('2026-01-09 00:00:00'))) AS start_day,\n  assumeNotNull(\n    least(\n      toStartOfDay($__toTime),\n      (\n        SELECT toStartOfDay(coalesce(max(hour), toDateTime('2026-01-09 00:00:00')))\n        FROM generation_usage_hourly\n        WHERE environment IN ('production', 'debug-prod-copy')\n          AND traffic_group = 'regular'\n      )\n    )\n  ) AS end_day,\n  dates AS (\n    SELECT start_day + INTERVAL number DAY AS day\n    FROM numbers(toUInt64(greatest(dateDiff('day', start_day, end_day), 0) + 1))\n  )\nSELECT\n  day AS time,\n  uniqMergeIf(users, hour >= day AND hour < day + INTERVAL 1 DAY AND funding_source != 'unfunded') AS dau,\n  uniqMergeIf(users, hour >= day - INTERVAL 6 DAY AND hour < day + INTERVAL 1 DAY AND funding_source != 'unfunded') AS wau\nFROM dates\nCROSS JOIN generation_usage_hourly\nWHERE hour >= start_day - INTERVAL 6 DAY\n  AND hour < end_day + INTERVAL 1 DAY\n  AND environment IN ('production', 'debug-prod-copy')\n  AND traffic_group = 'regular'\nGROUP BY day\nORDER BY day",
           "refId": "A"
         }
       ],
@@ -1133,7 +769,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 40
+        "y": 32
       },
       "id": 10,
       "options": {
@@ -1166,7 +802,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5m",
+  "refresh": "1h",
   "schemaVersion": 41,
   "tags": [
     "observability-rebuild",
@@ -1177,11 +813,11 @@
     "list": []
   },
   "time": {
-    "from": "now-30d",
-    "to": "now"
+    "from": "now-30d/d",
+    "to": "now-1d/d"
   },
   "timepicker": {},
-  "timezone": "browser",
+  "timezone": "utc",
   "title": "Users & Balances",
   "uid": "users-balances-rebuild",
   "version": 1,

@@ -61,8 +61,11 @@ export const docsCommand = new Command("docs")
                         sections[sections.length - 1] += line;
                     }
                     const needle = endpoint.replace(/^\//, "").toLowerCase();
-                    const headingMatches = sections.filter((s) =>
-                        s.split("\n")[0].toLowerCase().includes(needle),
+                    // The preamble before the first heading is not a section title.
+                    const headingMatches = sections.filter(
+                        (s) =>
+                            /^#{1,6} /.test(s) &&
+                            s.split("\n")[0].toLowerCase().includes(needle),
                     );
                     const matches = headingMatches.length
                         ? headingMatches
